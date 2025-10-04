@@ -11,10 +11,10 @@ elasticsearch==7.17.12
 elasticsearch-dsl==7.4.0
 factory-boy==3.2.1
 faker-file==0.15.1
-feedparser==6.0.11
+feedparser==6.0.12
 google-api-python-client==2.184.0
 httplib2==0.21.0
-humanize==4.0.0
+humanize==4.13.0
 instaloader==4.9.5
 isodate==0.6.1
 lxml==5.3.0

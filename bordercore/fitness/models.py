@@ -87,9 +87,9 @@ class Exercise(models.Model):
     def get_plot_data(self, count=12, page_number=1):
 
         raw_data = Workout.objects.filter(exercise__id=self.id) \
-                                  .annotate(reps=ArrayAgg("data__reps", ordering="-date")) \
-                                  .annotate(weight=ArrayAgg("data__weight", ordering="-date")) \
-                                  .annotate(duration=ArrayAgg("data__duration", ordering="-date")) \
+                                  .annotate(reps=ArrayAgg("data__reps", order_by="-date")) \
+                                  .annotate(weight=ArrayAgg("data__weight", order_by="-date")) \
+                                  .annotate(duration=ArrayAgg("data__duration", order_by="-date")) \
                                   .order_by("-date")
 
         p = Paginator(raw_data, count).page(page_number)

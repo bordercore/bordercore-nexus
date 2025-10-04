@@ -22,6 +22,7 @@ from PIL import Image
 
 import django
 from django.conf import settings
+from django.utils import timezone
 
 try:
     import fitz
@@ -557,7 +558,7 @@ def metrics(auto_login_user):
         }
     )
     # Overdue metrics
-    md.created = datetime.datetime.now() - timedelta(days=3)
+    md.created = timezone.now() - timedelta(days=3)
     md.save()
 
     # Test coverage metrics
