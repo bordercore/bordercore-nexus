@@ -159,6 +159,7 @@
             create-todo-url="{% url 'todo-list' %}"
             tag-search-url="{% url 'tag:search' %}?query="
             @add="getTodoList()"
+            @delete="onClickDelete"
             @update="getTodoList()"
         >
         </create-update-todo>
@@ -432,7 +433,7 @@
 
                     updateTodo.value.todoInfo = {
                         note: "",
-                        priority: filterPriority.value || 2,
+                        priority: filterPriority.value || 3,
                         tags: initialTagList,
                     };
                     if (filterTag.value) {

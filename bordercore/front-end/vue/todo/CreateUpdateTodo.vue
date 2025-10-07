@@ -4,7 +4,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 id="myModalLabel" class="modal-title">
-                        {{ action }} Todo Task
+                        Save Todo Task
                     </h4>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" />
                 </div>
@@ -85,8 +85,14 @@
                                     </div>
                                 </div>
                                 <div class="row mb-3">
-                                    <div class="col-lg-12 offset-lg-3">
-                                        <input class="btn btn-primary" type="button" :value="action" @click.prevent="handleSubmit">
+                                    <div class="col-lg-9 offset-lg-3 d-flex">
+                                        <button type="button" class="btn btn-outline-danger me-auto" @click="handleDelete">
+                                            <font-awesome-icon icon="trash-alt" /> Delete
+                                        </button>
+                                        <div class="d-flex ms-auto">
+                                            <input class="btn btn-secondary ms-4" type="button" value="Cancel" @click="handleCancel" />
+                                            <input class="btn btn-primary ms-2" type="button" value="Save" @click.prevent="handleSubmit">
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -128,7 +134,7 @@
                 type: String,
             },
         },
-        emits: ["add", "update"],
+        emits: ["add", "delete", "update"],
         setup(props, ctx) {
             const action = ref("Update");
             const isDragOver = ref(false);
@@ -192,6 +198,17 @@
                 }
             };
 
+            function handleCancel() {
+                const modal = Modal.getInstance(document.getElementById("modalUpdateTodo"));
+                modal.hide();
+            };
+
+            function handleDelete() {
+                ctx.emit("delete", todoInfo.value);
+                const modal = Modal.getInstance(document.getElementById("modalUpdateTodo"));
+                modal.hide();
+            };
+
             function handleTagsChanged(newTags) {
                 todoInfo.value.tags = newTags;
             };
@@ -221,6 +238,8 @@
 
             return {
                 action,
+                handleCancel,
+                handleDelete,
                 handleLinkDrop,
                 handleTagsChanged,
                 handleSubmit,
