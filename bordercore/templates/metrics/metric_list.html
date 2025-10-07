@@ -310,7 +310,7 @@
                         "test_overdue": "{{ unit.overdue }}",
                         "test_time_elapsed": "{{ unit.latest_result.test_time_elapsed }}",
                         "test_runtime": "{{ unit.created }}",
-                        "test_output": "{{ unit.latest_result.test_output|escapejs }}",
+                        "test_output": "{{ unit.latest_result.test_output|linebreaksbr }}",
                     },
                     "functional": {
                         "test_count": "{{ functional.latest_result.test_count }}",
@@ -319,7 +319,7 @@
                         "test_overdue": "{{ functional.overdue }}",
                         "test_time_elapsed": "{{ functional.latest_result.test_time_elapsed }}",
                         "test_runtime": "{{ functional.created }}",
-                        "test_output": "{{ functional.latest_result.test_output|escapejs }}",
+                        "test_output": "{{ functional.latest_result.test_output|linebreaksbr }}",
                     },
                     "data": {
                         "test_count": "{{ data.latest_result.test_count }}",
@@ -328,7 +328,7 @@
                         "test_overdue": "{{ data.overdue }}",
                         "test_time_elapsed": "{{ data.latest_result.test_time_elapsed }}",
                         "test_runtime": "{{ data.created }}",
-                        "test_output": "{{ data.latest_result.test_output|escapejs }}",
+                        "test_output": "{{ data.latest_result.test_output|linebreaksbr }}",
                     },
                     "wumpus": {
                         "test_count": "{{ wumpus.latest_result.test_count }}",
@@ -337,7 +337,7 @@
                         "test_overdue": "{{ wumpus.overdue }}",
                         "test_time_elapsed": "{{ wumpus.latest_result.test_time_elapsed }}",
                         "test_runtime": "{{ wumpus.created }}",
-                        "test_output": "{{ wumpus.latest_result.test_output|escapejs }}",
+                        "test_output": "{{ wumpus.latest_result.test_output|linebreaksbr }}",
                     },
                     "coverage": {
                         "line_rate": "{{ coverage.latest_result.line_rate }}",
