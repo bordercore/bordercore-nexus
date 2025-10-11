@@ -63,8 +63,8 @@
                                         <drop-down-menu :show-on-hover="true">
                                             <template #dropdown>
                                                 <li>
-                                                    <a class="dropdown-item" href="#" @click.prevent="handleTodoUpdate(element)">
-                                                        <font-awesome-icon icon="pencil-alt" class="text-primary me-3" />Update
+                                                    <a class="dropdown-item" href="#" @click.prevent="handleTodoEdit(element)">
+                                                        <font-awesome-icon icon="pencil-alt" class="text-primary me-3" />Edit
                                                     </a>
                                                 </li>
                                                 <li>
@@ -129,7 +129,7 @@
                 default: "",
             },
         },
-        emits: ["open-create-update-todo-modal", "update-layout"],
+        emits: ["open-create-edit-todo-modal", "edit-layout"],
         setup(props, ctx) {
             const todoList = ref([]);
 
@@ -157,11 +157,11 @@
             };
 
             function handleTodoCreate() {
-                ctx.emit("open-create-update-todo-modal", "Create");
+                ctx.emit("open-todo-editor-modal", "Create");
             };
 
-            function handleTodoUpdate(todoInfo) {
-                ctx.emit("open-create-update-todo-modal", "Update", todoInfo);
+            function handleTodoEdit(todoInfo) {
+                ctx.emit("open-todo-editor-modal", "Edit", todoInfo);
             };
 
             function onDeleteTodoList() {
@@ -171,7 +171,7 @@
                         "node_uuid": props.nodeUuid,
                     },
                     (response) => {
-                        ctx.emit("update-layout", response.data.layout);
+                        ctx.emit("edit-layout", response.data.layout);
                     },
                     "Todo list deleted",
                 );
@@ -227,7 +227,7 @@
                 handleTodoCreate,
                 handleTodoRemove,
                 onDeleteTodoList,
-                handleTodoUpdate,
+                handleTodoEdit,
                 todoList,
             };
         },

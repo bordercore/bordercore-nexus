@@ -24,10 +24,10 @@
                 object-uuid="{{ object.uuid }}"
                 node-type="drill"
                 related-objects-url="{% url 'drill:related_objects' '00000000-0000-0000-0000-000000000000' %}"
-                add-object-url="{% url 'blob:add_related_object' %}"
+                new-object-url="{% url 'blob:add_related_object' %}"
                 remove-object-url="{% url 'blob:remove_related_object' %}"
-                update-object-note-url="{% url 'blob:update_related_object_note' %}"
-                :new-object="true"
+                edit-related-object-note-url="{% url 'blob:update_related_object_note' %}"
+                :is-new={% if object.uuid %}false{% else %}true{% endif %}
                 @open-object-select-modal="openObjectSelectModal"
             >
             </related-objects>
@@ -125,7 +125,7 @@
 
                 <div>
                     <div class="col-lg-9 offset-lg-2" id="button-wrapper">
-                        <input class="btn btn-primary ms-1" type="submit" name="Go" value="{{ action }}" @click="onClickEdit" />
+                        <input class="btn btn-primary ms-1" type="submit" name="Go" value="Save" @click="onClickEdit" />
                         <input v-if="enableDeleteButton" @click="onClickDelete" class="btn btn-secondary ms-3" type="submit" name="Go" value="Delete" />
                         <a class="ms-3"
                            href="{% if request.GET.return_url %}{{ request.GET.return_url }}{% else %}{% url 'drill:list' %}{% endif %}">Cancel</a>
@@ -239,7 +239,7 @@
                 };
 
                 function selectObject(bcObject) {
-                    relatedObjectsList.value.addObject(bcObject);
+                    relatedObjectsList.value.newObject(bcObject);
                 };
 
                 return {

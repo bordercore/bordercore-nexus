@@ -16,7 +16,7 @@
                                             <span>
                                                 <font-awesome-icon icon="plus" class="text-primary me-3" />
                                             </span>
-                                            Add Object
+                                            New Object
                                         </a>
                                     </li>
                                 </template>
@@ -83,7 +83,7 @@
                                                             <font-awesome-icon icon="pencil-alt" class="text-primary me-3" />Edit <span>{{ element.type }}</span>
                                                         </a>
                                                         <a class="dropdown-item" href="#" @click.prevent="element.noteIsEditable = true">
-                                                            <font-awesome-icon :icon="element.note ? 'pencil-alt' : 'plus'" class="text-primary me-3" />{{ element.note ? 'Edit' : 'Add' }} note
+                                                            <font-awesome-icon :icon="element.note ? 'pencil-alt' : 'plus'" class="text-primary me-3" />{{ element.note ? 'Edit' : 'New' }} note
                                                         </a>
                                                     </li>
                                                 </template>
@@ -135,7 +135,7 @@
                 default: "",
                 type: String,
             },
-            addObjectUrl: {
+            newObjectUrl: {
                 default: "",
                 type: String,
             },
@@ -147,7 +147,7 @@
                 default: "url",
                 type: String,
             },
-            updateRelatedObjectNoteUrl: {
+            editRelatedObjectNoteUrl: {
                 default: "url",
                 type: String,
             },
@@ -159,7 +159,7 @@
                 default: true,
                 type: Boolean,
             },
-            newObject: {
+            isNew: {
                 default: false,
                 type: Boolean,
             },
@@ -169,14 +169,14 @@
             const input = ref(null);
             const objectList = ref([]);
 
-            function addObject(bcObject) {
-                if (props.newObject) {
+            function newObject(bcObject) {
+                if (props.isNew) {
                     objectList.value.push(bcObject);
                     return;
                 }
 
                 doPost(
-                    props.addObjectUrl,
+                    props.newObjectUrl,
                     {
                         "node_uuid": props.objectUuid,
                         "object_uuid": bcObject.uuid,
@@ -213,7 +213,7 @@
 
                 bcObject.note = note;
                 doPost(
-                    props.updateRelatedObjectNoteUrl,
+                    props.editRelatedObjectNoteUrl,
                     {
                         "node_uuid": props.objectUuid,
                         "object_uuid": bcObject.uuid,
@@ -234,7 +234,7 @@
             };
 
             function handleRemoveObject(bcObject) {
-                if (props.newObject) {
+                if (props.isNew) {
                     const newObjectList = objectList.value.filter((x) => x.uuid !== bcObject.uuid);
                     objectList.value = newObjectList;
                     return;
@@ -262,7 +262,7 @@
                 // The backend expects the ordering to begin with 1, not 0, so add 1.
                 const newPosition = event.newIndex + 1;
 
-                if (props.newObject) {
+                if (props.isNew) {
                     return;
                 }
 
@@ -283,13 +283,13 @@
             };
 
             onMounted(() => {
-                if (!props.newObject) {
+                if (!props.isNew) {
                     getRelatedObjects();
                 }
             });
 
             return {
-                addObject,
+                newObject,
                 input,
                 objectList,
                 handleEditNote,

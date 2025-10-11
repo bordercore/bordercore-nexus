@@ -58,7 +58,7 @@
                                         <a class="dropdown-item" href="{% url 'bookmark:create' %}">
                                             <span v-cloak>
                                                 <font-awesome-icon icon="plus" class="text-primary me-3"></font-awesome-icon>
-                                                Add Bookmark
+                                                New Bookmark
                                             </span>
                                         </a>
                                         <a class="dropdown-item" href="{% url 'bookmark:import' %}">
@@ -155,8 +155,8 @@
                                                 <drop-down-menu :show-on-hover="true" class="me-4">
                                                     <template #dropdown>
                                                         <li>
-                                                            <a class="dropdown-item" href="#" @click.prevent="onClickUpdateBookmark(element.uuid)">
-                                                                <font-awesome-icon icon="pencil-alt" class="text-primary me-3"></font-awesome-icon>Update
+                                                            <a class="dropdown-item" href="#" @click.prevent="onClickEditBookmark(element.uuid)">
+                                                                <font-awesome-icon icon="pencil-alt" class="text-primary me-3"></font-awesome-icon>Edit
                                                             </a>
                                                         </li>
                                                         <li>
@@ -447,7 +447,7 @@
                         })
                 };
 
-                function onClickUpdateBookmark(uuid) {
+                function onClickEditBookmark(uuid) {
                     window.location = "{% url 'bookmark:update' '00000000-0000-0000-0000-000000000000' %}".replace(/00000000-0000-0000-0000-000000000000/, uuid);
                 };
 
@@ -572,7 +572,7 @@
                     handleSearch,
                     onClickBookmark,
                     onClickDeleteBookmark,
-                    onClickUpdateBookmark,
+                    onClickEditBookmark,
                     pagination,
                     getNextBookmark,
                     getNote,

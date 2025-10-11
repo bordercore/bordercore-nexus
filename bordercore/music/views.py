@@ -340,7 +340,7 @@ class AlbumUpdateView(FormRequestMixin, UpdateView):
         messages.add_message(
             self.request,
             messages.INFO,
-            "Album updated"
+            "Album edited"
         )
 
         return HttpResponseRedirect(self.get_success_url())
@@ -415,7 +415,7 @@ class SongUpdateView(FormRequestMixin, UpdateView):
         """
         user = cast(User, self.request.user)
         context = super().get_context_data(**kwargs)
-        context["action"] = "Update"
+        context["action"] = "Edit"
         context["artist_name"] = str(self.object.artist)
         context["song_length_pretty"] = convert_seconds(self.object.length)
         context["last_time_played"] = self.object.last_time_played.strftime("%B %d, %Y") \
@@ -439,7 +439,7 @@ class SongUpdateView(FormRequestMixin, UpdateView):
 
         messages.add_message(
             self.request, messages.INFO,
-            "Song updated"
+            "Song edited"
         )
 
         if "return_url" in self.request.POST and self.request.POST["return_url"] != "":
@@ -470,7 +470,7 @@ class SongCreateView(FormRequestMixin, CreateView):
         """
         user = cast(User, self.request.user)
         context = super().get_context_data(**kwargs)
-        context["action"] = "Create"
+        context["action"] = "New"
         context["tag_counts"] = get_song_tags(user)
         return context
 
@@ -852,7 +852,7 @@ class UpdatePlaylistView(FormRequestMixin, UpdateView):
 
         messages.add_message(
             self.request, messages.INFO,
-            "Playlist updated"
+            "Playlist edited"
         )
 
         return HttpResponseRedirect(self.get_success_url())
@@ -1125,7 +1125,7 @@ def add_to_playlist(request: HttpRequest) -> JsonResponse:
 @require_POST
 @validate_post_data("artist_uuid")
 def update_artist_image(request: HttpRequest) -> JsonResponse:
-    """Update the image displayed on the artist detail page.
+    """Edit the image displayed on the artist detail page.
 
     Args:
         request: The HTTP request object containing artist UUID and image file.
@@ -1267,7 +1267,7 @@ def recent_albums(request: HttpRequest, page_number: Union[str, int]) -> JsonRes
 @require_POST
 @validate_post_data("song_uuid")
 def set_song_rating(request: HttpRequest) -> JsonResponse:
-    """Update the rating for a specific song.
+    """Edit the rating for a specific song.
 
     Args:
         request: The HTTP request object containing song UUID and rating value.

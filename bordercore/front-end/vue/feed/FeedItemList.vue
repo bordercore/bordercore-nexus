@@ -34,9 +34,9 @@
             const feedDetailMenuItems = [
                 {
                     id: uuidv4(),
-                    title: "Update Feed",
+                    title: "Edit Feed",
                     url: "#",
-                    clickHandler: handleUpdateFeed,
+                    clickHandler: handleEditFeed,
                     icon: "pencil-alt",
                 },
                 {
@@ -48,8 +48,8 @@
                 },
             ];
 
-            function handleUpdateFeed(evt, action = "Update") {
-                if (action === "Update") {
+            function handleEditFeed(evt, action = "Edit") {
+                if (action === "Edit") {
                     ctx.emit("open-modal", action, feedStore.currentFeed);
                 } else {
                     ctx.emit("open-modal", action, {});
@@ -68,7 +68,7 @@
             return {
                 feedDetailMenuItems,
                 feedStore,
-                handleUpdateFeed,
+                handleEditFeed,
                 handleDeleteFeed,
                 showFeed,
             };

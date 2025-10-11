@@ -1,5 +1,5 @@
 <template>
-    <div id="modalUpdateNote" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div id="modalEditNote" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -12,7 +12,7 @@
                     <div class="row mb-3">
                         <label class="col-lg-3 col-form-label" for="inputTitle">Name</label>
                         <div class="col-lg-9">
-                            <input id="id_name_note" v-model="nodeNote.name" type="text" class="form-control" autocomplete="off" maxlength="200" required @keyup.enter="handleNoteUpdate">
+                            <input id="id_name_note" v-model="nodeNote.name" type="text" class="form-control" autocomplete="off" maxlength="200" required @keyup.enter="handleNoteEdit">
                         </div>
                     </div>
                     <div class="row mb-3">
@@ -25,7 +25,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <input id="btn-action" class="btn btn-primary" type="button" :value="action" @click="handleNoteUpdate">
+                    <input id="btn-action" class="btn btn-primary" type="button" value="Save" @click="handleNoteEdit">
                 </div>
             </div>
         </div>
@@ -36,7 +36,7 @@
 
     export default {
         setup() {
-            const action = ref("Update");
+            const action = ref("Edit");
             const colors = [1, 2, 3, 4];
 
             let callback = null;
@@ -53,7 +53,7 @@
                 nodeNote.value.color = color;
             };
 
-            function handleNoteUpdate() {
+            function handleNoteEdit() {
                 // If any of the properties have changed, trigger the callback
                 if (nodeNote.value !== nodeNoteInitial) {
                     callback(nodeNote.value);
@@ -68,12 +68,12 @@
                 callback = callbackParam;
                 modal.show();
                 setTimeout( () => {
-                    document.querySelector("#modalUpdateNote input").focus();
+                    document.querySelector("#modalEditNote input").focus();
                 }, 500);
             };
 
             onMounted(() => {
-                modal = new Modal("#modalUpdateNote");
+                modal = new Modal("#modalEditNote");
             });
 
             return {
@@ -85,7 +85,7 @@
                 nodeNote,
                 nodeNoteInitial: {},
                 handleColorSelect,
-                handleNoteUpdate,
+                handleNoteEdit,
                 openModal,
             };
         },

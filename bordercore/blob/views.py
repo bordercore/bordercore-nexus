@@ -99,7 +99,7 @@ class BlobCreateView(FormRequestMixin, CreateView, FormValidMixin):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["action"] = "Create"
+        context["action"] = "New"
 
         if "linked_blob_uuid" in self.request.GET:
             linked_blob = Blob.objects.get(user=self.request.user, uuid=self.request.GET["linked_blob_uuid"])
@@ -249,7 +249,7 @@ class BlobUpdateView(FormRequestMixin, UpdateView, FormValidMixin):
             & Q(is_favorite=True)
         )
         context["date_format"] = "year" if self.object.date_is_year else "standard"
-        context["action"] = "Update"
+        context["action"] = "Edit"
         context["title"] = self.object.get_name(remove_edition_string=True)
         context["tags"] = [x.name for x in self.object.tags.all()]
 

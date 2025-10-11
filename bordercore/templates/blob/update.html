@@ -14,7 +14,7 @@
             <div class="me-auto align-self-center">
                 <ul class="breadcrumb mb-0 pt-0 pb-0">
                     <li class="breadcrumb-item"><a href="{% url 'blob:detail' object.uuid %}">Blob Detail</a></li>
-                    <li class="breadcrumb-item active">Update Blob</li>
+                    <li class="breadcrumb-item active">Edit Blob</li>
                 </ul>
             </div>
         </div>
@@ -53,7 +53,7 @@
                         icon="heart"
                         :initial-enabled="{% if form.importance.value == 10 %}true{% else %}false{% endif %}"
                         form-name="importance"
-                        @enable-option="updateFormValue"
+                        @enable-option="editFormValue"
                     >
                     </icon-button>
                     <icon-button
@@ -61,7 +61,7 @@
                         icon="sticky-note"
                         :initial-enabled="{% if form.is_note.value == True %}true{% else %}false{% endif %}"
                         form-name="is_note"
-                        @enable-option="updateFormValue"
+                        @enable-option="editFormValue"
                     >
                     </icon-button>
                     <icon-button
@@ -70,7 +70,7 @@
                         icon="book"
                         :initial-enabled="{% if is_book == True %}true{% else %}false{% endif %}"
                         form-name="is_book"
-                        @enable-option="updateFormValue"
+                        @enable-option="editFormValue"
                     >
                     </icon-button>
                     <icon-button
@@ -78,7 +78,7 @@
                         icon="square-root-alt"
                         :initial-enabled="{% if form.math_support.value == True %}true{% else %}false{% endif %}"
                         form-name="math_support"
-                        @enable-option="updateFormValue"
+                        @enable-option="editFormValue"
                     >
                     </icon-button>
                 </div>
@@ -311,7 +311,7 @@
 
                             <div class="col-lg-10 offset-lg-2 d-flex">
                                 <button type="button" class="btn btn-primary" @click="submitForm">
-                                    {{ action }}
+                                    Save
                                 </button>
                             </div>
 
@@ -393,7 +393,7 @@
 
                             <div class="col-lg-10 offset-lg-2 d-flex">
                                 <button type="button" class="btn btn-primary" @click="submitForm">
-                                    {{ action }}
+                                    Save
                                 </button>
                             </div>
 
@@ -402,14 +402,14 @@
                         <div id="section-cover-image" class="tab-pane col-lg-12 fade">
                             <div class="d-flex align-items-center">
                                 <div class="w-50">
-                                    Specify the PDF page number from which to extract the cover image. This usually takes a few seconds to update.
+                                    Specify the PDF page number from which to extract the cover image. This usually takes a few seconds to refresh.
                                 </div>
                                 <div class="mb-3 d-flex">
                                     <label class="fw-bold col-form-label text-end">Page Number</label>
                                     <div class="d-flex ms-3">
                                         <input type="number" min="1" value="{{ object.data.pdf_page_number|default:1 }}" size="3" class="form-control" autocomplete="off" id="id_page_number" />
-                                        <button type="button" class="btn btn-primary ms-3" @click="onUpdatePageNumber">
-                                            Update
+                                        <button type="button" class="btn btn-primary ms-3" @click="handleEditPageNumber">
+                                            Edit
                                         </button>
                                     </div>
                                 </div>
@@ -440,7 +440,7 @@
         }
 
         const app = createApp({
-            name: "BlobUpdate",
+            name: "BlobEdit",
             delimiters: ["[[", "]]"],
             components: {
                 Datepicker,
@@ -496,7 +496,7 @@
                 const template = ref(-1);
 
                 // Set the initial date format menu values
-                updateDateFormatMenu(dateFormat.value);
+                editDateFormatMenu(dateFormat.value);
 
                 function addMetadata(payload) {
                     nameEl = document.getElementById("metadata_name");
@@ -667,7 +667,7 @@
                     relatedTags.value.setTags(tags);
                 };
 
-                function onUpdatePageNumber() {
+                function handleEditPageNumber() {
                     const pageNumber = document.getElementById("id_page_number").value;
 
                     doPost(
@@ -738,13 +738,13 @@
                     });
                 };
 
-                function updateDateFormatMenu(dateFormat) {
+                function editDateFormatMenu(dateFormat) {
                     dateFormatMenuItems.value.forEach(function (item) {
                         item.icon = item.format === dateFormat ? "check" : undefined;
                     });
                 };
 
-                function updateFormValue(property, value) {
+                function editFormValue(property, value) {
                     if (property === "important") {
                         document.getElementById("form-blob").elements[property].value = 10;
                     } else {
@@ -769,7 +769,7 @@
                 };
 
                 watch(dateFormat, (newFormat) => {
-                    updateDateFormatMenu(newFormat);
+                    editDateFormatMenu(newFormat);
                 })
 
                 useEvent("paste", onPasteDate, {id: "id_date"});
@@ -809,12 +809,12 @@
                     onImageDrop,
                     onPasteDate,
                     onTagsChanged,
-                    onUpdatePageNumber,
+                    handleEditPageNumber,
                     selectMetadataName,
                     selectValue,
                     showRelatedTags,
                     submitForm,
-                    updateFormValue,
+                    editFormValue,
                     relatedTags,
                     tagsInput,
                     template,

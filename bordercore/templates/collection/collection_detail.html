@@ -40,7 +40,7 @@
                 </div>
 
                 <div class="d-flex mb-3">
-                    <strong>Updated</strong>
+                    <strong>Edited</strong>
                     <span class="text-primary ms-1">
                         {{ collection.modified|date:"F j, Y" }}
                     </span>
@@ -100,7 +100,7 @@
                     <hr class="divider" />
 
                     <div class="d-flex ms-2">
-                        <div @drop.prevent="handleBlobAdd($event)" @dragover.prevent="handleBlobDragOver($event)" @dragleave.prevent="handleBlobDragLeave($event)" @dragenter.prevent>
+                        <div @drop.prevent="handleNewBlob($event)" @dragover.prevent="handleBlobDragOver($event)" @dragleave.prevent="handleBlobDragLeave($event)" @dragenter.prevent>
                             <ul class="text-center list-unstyled collection-sortable">
                                 <slick-list
                                     v-model:list="blobList"
@@ -165,12 +165,12 @@
 
         <form action="{% url 'collection:update' collection.uuid %}" method="post" id="form-collection-edit">
             {% csrf_token %}
-            <div class="modal fade" id="modalUpdate" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+            <div class="modal fade" id="modelEdit" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
                 <div class="modal-dialog" role="document">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h4 class="modal-title" id="myModalLabel">
-                                Update Collection
+                                Edit Collection
                             </h4>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
@@ -205,7 +205,7 @@
                         {% endfor %}
                         </div>
                         <div class="modal-footer">
-                            <input id="btn-action" class="btn btn-primary" type="submit" name="Go" value="Update" />
+                            <input id="btn-action" class="btn btn-primary" type="submit" name="Go" value="Save" />
                         </div>
 
                     </div>
@@ -369,7 +369,7 @@
                 const collectionDetailMenuItems = [
                     {
                         id: uuidv4(),
-                        title: "Add Blob",
+                        title: "New Blob",
                         url: "{% url 'blob:create' %}?collection_uuid={{ collection.uuid }}",
                         icon: "plus",
                     },
@@ -382,9 +382,9 @@
                     },
                     {
                         id: uuidv4(),
-                        title: "Update",
+                        title: "Edit",
                         url: "#",
-                        clickHandler: handleUpdate,
+                        clickHandler: handleEdit,
                         icon: "pencil-alt",
                     },
                     {
@@ -455,8 +455,8 @@
                     collectionImage.value.openModal(url);
                 };
 
-                function handleUpdate() {
-                    const modal = new Modal("#modalUpdate");
+                function handleEdit() {
+                    const modal = new Modal("#modelEdit");
                     modal.show();
                 };
 
@@ -530,7 +530,7 @@
 
                 const blobList = ref([]);
 
-                function handleBlobAdd(evt) {
+                function handleNewBlob(evt) {
                     evt.currentTarget.querySelector(".drag-target").classList.remove("collection-drag-over");
 
                     const fileList = evt.dataTransfer.files;
@@ -662,7 +662,7 @@
                     collectionImage,
                     getBlobList,
                     getDescription,
-                    handleBlobAdd,
+                    handleNewBlob,
                     handleItemClick,
                     handleTagSelect,
                     handleBlobDragLeave,

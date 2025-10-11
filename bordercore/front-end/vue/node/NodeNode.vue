@@ -17,7 +17,7 @@
                                         <span>
                                             <font-awesome-icon icon="external-link-alt" class="text-primary me-3" />
                                         </span>
-                                        Update Node
+                                        Edit Node
                                     </a>
                                 </li>
                                 <li>
@@ -105,12 +105,12 @@
                 type: String,
                 default: "",
             },
-            updateNodeUrl: {
+            editNodeUrl: {
                 type: String,
                 default: "",
             },
         },
-        emits: ["open-node-modal", "update-layout"],
+        emits: ["open-node-modal", "edit-layout"],
         setup(props, ctx) {
             const nodeInfo = ref({"images": []});
             const nodeOptions = ref(props.nodeOptionsInitial);
@@ -154,14 +154,14 @@
                         "uuid": props.uuid,
                     },
                     (response) => {
-                        ctx.emit("update-layout", response.data.layout);
+                        ctx.emit("edit-layout", response.data.layout);
                     },
                     "Node removed",
                 );
             };
 
             function handleOpenNodeModal() {
-                ctx.emit("open-node-modal", updateNode, nodeOptions.value);
+                ctx.emit("open-node-modal", editNode, nodeOptions.value);
             };
 
             function setTimer() {
@@ -178,9 +178,9 @@
                 }, 1000 * 60);
             };
 
-            function updateNode(options) {
+            function editNode(options) {
                 doPost(
-                    props.updateNodeUrl,
+                    props.editNodeUrl,
                     {
                         "parent_node_uuid": props.parentNodeUuid,
                         "uuid": props.uuid,
@@ -189,9 +189,9 @@
                     (response) => {
                         nodeOptions.value = options;
                         setTimer();
-                        ctx.emit("update-layout", response.data.layout);
+                        ctx.emit("edit-layout", response.data.layout);
                     },
-                    "Node updated",
+                    "Node edited",
                 );
             };
 

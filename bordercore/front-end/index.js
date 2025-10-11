@@ -208,14 +208,14 @@ window.CollectionObjectList = CollectionObjectList;
 import CollectionObjectListModal from "./vue/collection/CollectionObjectListModal.vue";
 window.CollectionObjectListModal = CollectionObjectListModal;
 
-import CreateUpdateFeed from "./vue/feed/CreateUpdateFeed.vue";
-window.CreateUpdateFeed = CreateUpdateFeed;
+import FeedEditorModal from "./vue/feed/FeedEditorModal.vue";
+window.FeedEditorModal = FeedEditorModal;
 
-import CreateUpdatePlaylist from "./vue/music/CreateUpdatePlaylist.vue";
-window.CreateUpdatePlaylist = CreateUpdatePlaylist;
+import PlaylistEditor from "./vue/music/PlaylistEditor.vue";
+window.PlaylistEditor = PlaylistEditor;
 
-import CreateUpdateTodo from "./vue/todo/CreateUpdateTodo.vue";
-window.CreateUpdateTodo = CreateUpdateTodo;
+import TodoEditor from "./vue/todo/TodoEditor.vue";
+window.TodoEditor = TodoEditor;
 
 import DrillDisabledTags from "./vue/drill/DrillDisabledTags.vue";
 window.DrillDisabledTags = DrillDisabledTags;

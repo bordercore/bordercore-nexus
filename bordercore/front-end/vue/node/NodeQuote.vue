@@ -17,7 +17,7 @@
                                         <span>
                                             <font-awesome-icon icon="pencil-alt" class="text-primary me-3" />
                                         </span>
-                                        Update quote
+                                        Edit quote
                                     </a>
                                 </li>
                                 <li>
@@ -87,12 +87,12 @@
                 type: String,
                 default: "",
             },
-            updateQuoteUrl: {
+            editQuoteUrl: {
                 type: String,
                 default: "",
             },
         },
-        emits: ["open-quote-update-modal", "update-layout"],
+        emits: ["open-quote-edit-modal", "edit-layout"],
         setup(props, ctx) {
             const hover = ref(false);
             const quote = ref(null);
@@ -130,15 +130,15 @@
                         "uuid": props.uuid,
                     },
                     (response) => {
-                        ctx.emit("update-layout", response.data.layout);
+                        ctx.emit("edit-layout", response.data.layout);
                     },
                     "Quote removed",
                 );
             };
 
-            function updateQuote(options) {
+            function editQuote(options) {
                 doPost(
-                    props.updateQuoteUrl,
+                    props.editQuoteUrl,
                     {
                         "node_uuid": props.nodeUuid,
                         "uuid": props.uuid,
@@ -147,13 +147,13 @@
                     (response) => {
                         quoteOptions.value = options;
                         setTimer();
-                        ctx.emit("update-layout", response.data.layout);
+                        ctx.emit("edit-layout", response.data.layout);
                     },
                 );
             };
 
             function handleOpenQuoteModal() {
-                ctx.emit("open-quote-update-modal", updateQuote, quoteOptions.value);
+                ctx.emit("open-quote-edit-modal", editQuote, quoteOptions.value);
             };
 
             function setTimer() {

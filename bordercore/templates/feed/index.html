@@ -11,7 +11,7 @@
             <div class="col-lg-3 d-flex flex-column flex-grow-last">
                 <feed-info
                     ref="feedInfo"
-                    @create-feed="handleFeedCreate"
+                    @new-feed="handleNewFeed"
                 ></feed-info>
             </div>
 
@@ -66,14 +66,14 @@
                 </div>
             </div>
 
-            <create-update-feed
-                ref="updateFeed"
-                update-feed-url="{% url 'feed-detail' '00000000-0000-0000-0000-000000000000' %}"
-                create-feed-url="{% url 'feed-list' %}"
+            <feed-editor-modal
+                ref="editFeed"
+                edit-feed-url="{% url 'feed-detail' '00000000-0000-0000-0000-000000000000' %}"
+                new-feed-url="{% url 'feed-list' %}"
                 feed-check-url="{% url 'feed:check_url' 666 %}"
                 @add-feed="handleFeedAdd"
             >
-            </create-update-feed>
+            </feed-editor-modal>
 
         </div>
 
@@ -91,7 +91,7 @@
         const app = createApp({
             name: "FeedDashboard",
             components: {
-                CreateUpdateFeed,
+                FeedEditorModal,
                 DropDownMenu,
                 FeedInfo,
                 FeedItemList,
@@ -104,7 +104,7 @@
                 const feedInfo = ref(null);
                 const feedItemList = ref(null);
                 const feedListRef = ref(null);
-                const updateFeed = ref(null);
+                const editFeed = ref(null);
 
                 function handleDeleteFeedConfirmation() {
                     axios.delete("{% url 'feed-detail' '00000000-0000-0000-0000-000000000000' %}".replace("00000000-0000-0000-0000-000000000000", feedStore.currentFeed.uuid))
@@ -127,13 +127,13 @@
                     feedListRef.value.addFeed(feedInfo);
                 };
 
-                function handleFeedCreate() {
-                    feedItemList.value.handleUpdateFeed(null, "Create");
+                function handleNewFeed() {
+                    feedItemList.value.handleEditFeed(null, "Create");
                 };
 
                 function openModal(action, feedInfo) {
-                    updateFeed.value.updateModal(action, feedInfo);
-                    const modal = new Modal("#modalUpdateFeed");
+                    editFeed.value.editModal(action, feedInfo);
+                    const modal = new Modal("#modalEditFeed");
                     modal.show();
                 }
 
@@ -153,14 +153,14 @@
                 return {
                     handleDeleteFeedConfirmation,
                     handleFeedAdd,
-                    handleFeedCreate,
+                    handleNewFeed,
                     feedInfo,
                     feedItemList,
                     feedList,
                     feedListRef,
                     openModal,
                     showFeed,
-                    updateFeed,
+                    editFeed,
                 };
             },
         });

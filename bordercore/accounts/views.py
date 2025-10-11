@@ -61,7 +61,7 @@ class UserProfileUpdateView(FormRequestMixin, UpdateView):
         form.save_m2m()
 
         context = self.get_context_data(form=form)
-        context["message"] = "Preferences updated"
+        context["message"] = "Preferences edited"
         return self.render_to_response(context)
 
     def handle_background_image(self, form):
@@ -103,7 +103,7 @@ class UserProfileUpdateView(FormRequestMixin, UpdateView):
             self.object.background_image = background_image_new
             self.object.save()
 
-            # Update the user's profile immediately so the new sidebage image
+            # Edit the user's profile immediately so the new sidebage image
             #  will appear as soon as this view returns the response
             self.request.user.userprofile.background_image = background_image_new
 
@@ -141,7 +141,7 @@ class UserProfileUpdateView(FormRequestMixin, UpdateView):
             self.object.sidebar_image = sidebar_image_new
             self.object.save()
 
-            # Update the user's profile immediately so the new sidebage image
+            # Edit the user's profile immediately so the new sidebage image
             #  will appear as soon as this view returns the response
             self.request.user.userprofile.sidebar_image = sidebar_image_new
 

@@ -40,7 +40,7 @@
                             <li>Song Length <span class="ms-1 text-primary">[[ songInfo.songLengthPretty ]]</span></li>
                             <li>Last Played <span class="ms-1 text-primary">[[ songInfo.songLastPlayed ]]</span></li>
                             <li v-if="songInfo.songTimesPlayed > 0">Times Played <span class="ms-1 text-primary">[[ songInfo.songTimesPlayed ]]</span></li>
-                            {% if action == "Create" %}
+                            {% if action == "New" %}
                                 <li>Song Size <span class="ms-1 text-primary">[[ songInfo.songSize ]]</span></li>
                                 <li>Sample Rate <span class="ms-1 text-primary">[[ songInfo.sampleRate ]]</span></li>
                                 <li>Bit Rate <span class="ms-1 text-primary">[[ songInfo.bitRate ]]</span></li>
@@ -71,7 +71,7 @@
 
             </div>
 
-            {% if action == "Create" %}
+            {% if action == "New" %}
                 <div v-if="songInfo.songLength === null" class="flex-shrink-0">
                     <card title="" class="flex-shrink-0 backdrop-filter ms-3">
                         <template v-slot:content>
@@ -92,7 +92,7 @@
                     <div class="alert alert-success offset-lg-3">Post {{ action }}ed</div>
                 {% endif %}
 
-                <p class="lead offset-lg-3 fw-bold ps-2">{{ action }} a Song</p>
+                <p class="lead offset-lg-3 fw-bold ps-2">{{ action }} Song</p>
 
                 <form enctype="multipart/form-data" id="song-form" action="{{ request.path }}" method="post">
                     {% csrf_token %}
@@ -113,7 +113,7 @@
                 <input type="hidden" name="rating" :value="rating" />
                 <input type="hidden" name="length" :value="songLength" />
 
-                {% if action == "Create" %}
+                {% if action == "New" %}
                     <div class="row mb-3">
                         <label class="col-lg-3 col-form-label fw-bold text-end">File</label>
 
@@ -236,7 +236,7 @@
 
                 <div>
                     <div class="col-lg-9 offset-lg-3">
-                        <input class="btn btn-primary ms-2" type="submit" name="Go" value="{{ action }}">
+                        <input class="btn btn-primary ms-2" type="submit" name="Go" value="Save">
                         {% if form.instance.id %}
                             <input class="btn btn-secondary ms-2" type="submit" name="Go" value="Delete" @click="handleSongDelete">
                         {% endif %}
@@ -278,7 +278,7 @@
                 const isCompilation = ref(false);
                 const uuid = "{{ song.uuid }}";
                 const songInfo = ref({
-                    {% if action == "Create" %}
+                    {% if action == "New" %}
                     songLength: null,
                     songLengthPretty: null,
                     {% else %}
@@ -409,7 +409,7 @@
                 }
 
                 onMounted(() => {
-                    {% if action == "Update" %}
+                    {% if action == "Edit" %}
                     selectValue.value.setValue(artistName);
                     {% endif %}
 

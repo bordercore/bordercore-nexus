@@ -215,8 +215,8 @@
                                         <drop-down-menu :show-on-hover="true">
                                             <template #dropdown>
                                                 <li>
-                                                    <a class="dropdown-item" href="#" @click.prevent="onClickUpdate(props.row.uuid)">
-                                                        <font-awesome-icon icon="pencil-alt" class="text-primary me-3"></font-awesome-icon>Update
+                                                    <a class="dropdown-item" href="#" @click.prevent="onClickEdit(props.row.uuid)">
+                                                        <font-awesome-icon icon="pencil-alt" class="text-primary me-3"></font-awesome-icon>Edit
                                                     </a>
                                                 </li>
                                                 <li>
@@ -248,11 +248,11 @@
 
         </div>
 
-        <div class="modal fade" id="modalUpdateArtistImage" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+        <div class="modal fade" id="modalEditArtistImage" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h4 class="modal-title" id="myModalLabel">Update Artist Image</h4>
+                        <h4 class="modal-title" id="myModalLabel">Edit Artist Image</h4>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
                         </button>
                     </div>
@@ -274,7 +274,7 @@
 
                     </div>
                     <div class="modal-footer">
-                        <input id="btn-action" class="btn btn-primary" data-bs-dismiss="modal" type="button" value="Update" />
+                        <input id="btn-action" class="btn btn-primary" data-bs-dismiss="modal" type="button" value="Edit" />
                     </div>
                 </div>
             </div>
@@ -340,9 +340,9 @@
                     },
                     {
                         id: uuidv4(),
-                        title: "Update Artist Image",
+                        title: "Edit Artist Image",
                         url: "#",
-                        clickHandler: handleUpdateArtistImage,
+                        clickHandler: handleEditArtistImage,
                         icon: "pencil-alt",
                     },
                 ]);
@@ -403,7 +403,7 @@
                     }
                 }
 
-                function onClickUpdate(uuid) {
+                function onClickEdit(uuid) {
                     window.location="{% url 'music:update' '00000000-0000-0000-0000-000000000000' %}?return_url={{ request.get_full_path }}".replace(/00000000-0000-0000-0000-000000000000/, uuid);
                 }
 
@@ -411,8 +411,8 @@
                     addToPlaylist.value.openModal(uuid);
                 }
 
-                function handleUpdateArtistImage() {
-                    const modal = new Modal("#modalUpdateArtistImage");
+                function handleEditArtistImage() {
+                    const modal = new Modal("#modalEditArtistImage");
                     modal.show();
                 }
 
@@ -454,11 +454,11 @@
                     handleIsPlaying,
                     handleRatingMouseLeave,
                     handleRatingMouseOver,
-                    handleUpdateArtistImage,
+                    handleEditArtistImage,
                     isOver,
                     onArtistImageSelect,
                     onClickAddToPlaylist,
-                    onClickUpdate,
+                    onClickEdit,
                     onCurrentSong,
                     onShowNote,
                     onSongClicked,

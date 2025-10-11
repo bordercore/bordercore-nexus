@@ -52,7 +52,7 @@
         <div class="col-lg-9 d-flex flex-grow-last">
             <div class="card-body">
                 <p class="lead offset-lg-2">
-                    {{ form.instance.url|favicon|safe }} {{ action }} Bookmark
+                    {{ form.instance.url|favicon|safe }} {{ form.instance.name|default:"New Bookmark" }}
                 </p>
 
                 <form id="bookmark-form" action="{{ request.path }}" method="post">
@@ -107,7 +107,7 @@
 
                     <div>
                         <div class="col-lg-7 offset-lg-2">
-                            <input class="btn btn-primary" type="submit" name="Go" value="{{ action }}" />
+                            <input class="btn btn-primary" type="submit" name="Go" value="Save" />
                             {% if form.instance.id %}
                                 <input class="btn btn-secondary ms-3" type="button" name="Go" value="Delete" @click="onClickDelete" />
                             {% endif %}

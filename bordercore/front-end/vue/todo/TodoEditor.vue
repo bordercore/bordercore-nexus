@@ -1,5 +1,5 @@
 <template>
-    <div id="modalUpdateTodo" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div id="modalEditTodo" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -121,7 +121,7 @@
                 default: () => [],
                 type: Array,
             },
-            updateTodoUrl: {
+            editTodoUrl: {
                 default: "",
                 type: String,
             },
@@ -134,9 +134,9 @@
                 type: String,
             },
         },
-        emits: ["add", "delete", "update"],
+        emits: ["add", "delete", "edit"],
         setup(props, ctx) {
-            const action = ref("Update");
+            const action = ref("Edit");
             const isDragOver = ref(false);
             const todoInfo = ref({
                 priority: 2,
@@ -158,9 +158,9 @@
 
             function handleSubmit() {
                 const dueDate = document.getElementsByName("due_date")[0].value;
-                if (action.value === "Update") {
+                if (action.value === "Edit") {
                     doPut(
-                        props.updateTodoUrl.replace(/00000000-0000-0000-0000-000000000000/, todoInfo.value.uuid),
+                        props.editTodoUrl.replace(/00000000-0000-0000-0000-000000000000/, todoInfo.value.uuid),
                         {
                             "todo_uuid": todoInfo.value.uuid,
                             "name": todoInfo.value.name,
@@ -171,11 +171,11 @@
                             "due_date": dueDate,
                         },
                         (response) => {
-                            ctx.emit("update", response.data.uuid);
-                            const modal = Modal.getInstance(document.getElementById("modalUpdateTodo"));
+                            ctx.emit("edit", response.data.uuid);
+                            const modal = Modal.getInstance(document.getElementById("modalEditTodo"));
                             modal.hide();
                         },
-                        "Todo updated",
+                        "Todo edited",
                     );
                 } else {
                     doPost(
@@ -190,7 +190,7 @@
                         },
                         (response) => {
                             ctx.emit("add", response.data.uuid);
-                            const modal = Modal.getInstance(document.getElementById("modalUpdateTodo"));
+                            const modal = Modal.getInstance(document.getElementById("modalEditTodo"));
                             modal.hide();
                         },
                         "Todo task created.",
@@ -199,13 +199,13 @@
             };
 
             function handleCancel() {
-                const modal = Modal.getInstance(document.getElementById("modalUpdateTodo"));
+                const modal = Modal.getInstance(document.getElementById("modalEditTodo"));
                 modal.hide();
             };
 
             function handleDelete() {
                 ctx.emit("delete", todoInfo.value);
-                const modal = Modal.getInstance(document.getElementById("modalUpdateTodo"));
+                const modal = Modal.getInstance(document.getElementById("modalEditTodo"));
                 modal.hide();
             };
 
@@ -220,7 +220,7 @@
                 }
                 modal.show();
                 setTimeout( () => {
-                    document.querySelector("#modalUpdateTodo input").focus();
+                    document.querySelector("#modalEditTodo input").focus();
                 }, 500);
             };
 
@@ -233,7 +233,7 @@
             };
 
             onMounted(() => {
-                modal = new Modal("#modalUpdateTodo");
+                modal = new Modal("#modalEditTodo");
             });
 
             return {

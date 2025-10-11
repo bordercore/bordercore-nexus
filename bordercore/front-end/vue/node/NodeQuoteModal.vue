@@ -1,5 +1,5 @@
 <template>
-    <div id="modalUpdateQuote" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div id="modalEditQuote" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -47,7 +47,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <input class="btn btn-primary" type="button" value="Update" @click="handleQuoteUpdate">
+                    <input class="btn btn-primary" type="button" value="Save" @click="handleQuoteEdit">
                 </div>
             </div>
         </div>
@@ -67,9 +67,9 @@
                 type: String,
             },
         },
-        emits: ["update-layout"],
+        emits: ["edit-layout"],
         setup(props, ctx) {
-            const action = ref("Update");
+            const action = ref("Edit");
 
             let callback = null;
             const colors = [1, 2, 3, 4];
@@ -122,7 +122,7 @@
                 return `node-color-${color} ${selectedColor}`;
             };
 
-            function handleQuoteUpdate() {
+            function handleQuoteEdit() {
                 if (action.value === "Add") {
                     doPost(
                         props.addNodeUrl,
@@ -131,7 +131,7 @@
                             "options": JSON.stringify(options.value),
                         },
                         (response) => {
-                            ctx.emit("update-layout", response.data.layout);
+                            ctx.emit("edit-layout", response.data.layout);
                             modal.hide();
                         },
                         "Quote added",
@@ -154,7 +154,7 @@
             };
 
             onMounted(() => {
-                modal = new Modal("#modalUpdateQuote");
+                modal = new Modal("#modalEditQuote");
             });
 
             return {
@@ -163,7 +163,7 @@
                 formatOptions,
                 getClass,
                 handleColorSelect,
-                handleQuoteUpdate,
+                handleQuoteEdit,
                 openModal,
                 options,
                 rotateOptions,

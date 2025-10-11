@@ -2,7 +2,7 @@
     <card title="" class="w-50 backdrop-filter">
         <template #title-slot>
             <div class="card-title text-primary">
-                Add New Workout Data
+                New Workout Data
             </div>
         </template>
         <template #content>
@@ -27,7 +27,7 @@
                         </div>
                     </div>
                     <div class="my-2">
-                        <input class="btn btn-secondary ms-4" type="button" name="Go" value="Add" :disabled="addIsDisabled" @click="onAddWorkoutData">
+                        <input class="btn btn-secondary ms-4" type="button" name="Go" value="Save" :disabled="addIsDisabled" @click="handleSaveWorkoutData">
                         <input id="btn-submit" class="btn btn-primary ms-3" :class="{'d-none': submitIsHidden}" type="submit" name="Go" value="Submit">
                     </div>
                 </div>
@@ -158,7 +158,7 @@
                 items.value[index].isEdit = false;
             };
 
-            function onAddWorkoutData(evt) {
+            function handleSaveWorkoutData(evt) {
                 setCount.value += 1;
                 items.value.push(
                     {
@@ -181,7 +181,7 @@
                 duration,
                 editCellHandler,
                 items,
-                onAddWorkoutData,
+                handleSaveWorkoutData,
                 onBlur,
                 reps,
                 selectedCell,

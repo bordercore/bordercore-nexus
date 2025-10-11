@@ -1,5 +1,5 @@
 <template>
-    <div id="modalUpdateFeed" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div id="modalEditFeed" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -52,7 +52,7 @@
                                 <div v-html="status" />
                             </div>
                         </div>
-                        <input class="btn btn-primary ms-auto" type="submit" :value="action" @click="onAction">
+                        <input class="btn btn-primary ms-auto" type="submit" value="Save" @click="onAction">
                     </div>
                 </div>
             </div>
@@ -70,11 +70,11 @@
             FontAwesomeIcon,
         },
         props: {
-            updateFeedUrl: {
+            editFeedUrl: {
                 default: "",
                 type: String,
             },
-            createFeedUrl: {
+            newFeedUrl: {
                 default: "",
                 type: String,
             },
@@ -110,16 +110,16 @@
                 }
             });
 
-            function updateModal(actionParam, feedInfoParam) {
+            function editModal(actionParam, feedInfoParam) {
                 action.value = actionParam;
                 feedInfo.value = feedInfoParam;
                 status.value = "";
             }
 
             function onAction() {
-                if (action === "Update") {
+                if (action.value === "Edit") {
                     doPut(
-                        props.updateFeedUrl.replace(/00000000-0000-0000-0000-000000000000/, feedInfo.value.uuid),
+                        props.editFeedUrl.replace(/00000000-0000-0000-0000-000000000000/, feedInfo.value.uuid),
                         {
                             "feed_uuid": feedInfo.value.uuid,
                             "homepage": feedInfo.value.homepage,
@@ -127,14 +127,14 @@
                             "url": feedInfo.value.url,
                         },
                         () => {
-                            const modal = Modal.getInstance(document.getElementById("modalUpdateFeed"));
+                            const modal = Modal.getInstance(document.getElementById("modalEditFeed"));
                             modal.hide();
                         },
-                        "Feed updated",
+                        "Feed edited",
                     );
                 } else {
                     doPost(
-                        props.createFeedUrl,
+                        props.newFeedUrl,
                         {
                             "homepage": feedInfo.value.homepage,
                             "name": feedInfo.value.name,
@@ -142,10 +142,10 @@
                         },
                         (response) => {
                             ctx.emit("add-feed", response.data.feed_info);
-                            const modal = Modal.getInstance(document.getElementById("modalUpdateFeed"));
+                            const modal = Modal.getInstance(document.getElementById("modalEditFeed"));
                             modal.hide();
                         },
-                        "Feed created. Please wait up to an hour for the feed to update.",
+                        "Feed added. Please wait up to an hour for the feed to refresh.",
                     );
                 }
             }
@@ -190,7 +190,7 @@
                 checkingStatus,
                 feedInfo,
                 lastResponseCode,
-                updateModal,
+                editModal,
                 onAction,
                 onBlur,
                 status,

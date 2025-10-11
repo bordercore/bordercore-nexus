@@ -29,7 +29,7 @@
                                 @click.prevent="onClickTag"
                                 @dragover="onDragOverTag($event)"
                                 @dragleave="onDragLeaveTag($event)"
-                                @drop="onAddTagToBookmark($event, element)"
+                                @drop="handleNewTagToBookmark($event, element)"
                             >
                                 <div class="ps-2 text-truncate">
                                     {{ element.name }}
@@ -101,7 +101,7 @@
                 evt.currentTarget.classList.remove("hover-tag");
             };
 
-            function onAddTagToBookmark(evt, tag) {
+            function handleNewTagToBookmark(evt, tag) {
                 evt.currentTarget.classList.remove("hover-tag");
 
                 // Ignore if we're dragging a bookmark from a tag list
@@ -178,7 +178,7 @@
                 onClickTag,
                 onDragOverTag,
                 onDragLeaveTag,
-                onAddTagToBookmark,
+                handleNewTagToBookmark,
                 setTags,
                 tags,
             };

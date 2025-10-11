@@ -30,11 +30,11 @@
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item" href="#" @click.prevent="handleUpdateCollectionModal()">
+                                    <a class="dropdown-item" href="#" @click.prevent="handleEditCollectionModal()">
                                         <span>
                                             <font-awesome-icon icon="pencil-alt" class="text-primary me-3" />
                                         </span>
-                                        Update Collection
+                                        Edit Collection
                                     </a>
                                 </li>
                                 <li>
@@ -157,7 +157,7 @@
                 type: String,
                 default: "",
             },
-            updateCollectionUrl: {
+            editCollectionUrl: {
                 type: String,
                 default: "",
             },
@@ -165,7 +165,7 @@
                 type: String,
                 default: "",
             },
-            updateObjectNoteUrl: {
+            editObjectNoteUrl: {
                 type: String,
                 default: "",
             },
@@ -183,10 +183,10 @@
             },
         },
         emits: [
-            "open-collection-update-modal",
+            "open-collection-edit-modal",
             "open-note-image-modal",
             "open-object-select-modal",
-            "update-layout",
+            "edit-layout",
         ],
         setup(props, ctx) {
             const collectionObjectList = ref({});
@@ -205,7 +205,7 @@
                 }
 
                 doPost(
-                    props.updateObjectNoteUrl,
+                    props.editObjectNoteUrl,
                     {
                         "collection_uuid": props.uuid,
                         "object_uuid": object.uuid,
@@ -271,7 +271,7 @@
                         "collection_type": collectionObjectList.value.collection_type,
                     },
                     (response) => {
-                        ctx.emit("update-layout", response.data.layout);
+                        ctx.emit("edit-layout", response.data.layout);
                     },
                     "Collection deleted",
                 );
@@ -298,9 +298,9 @@
                 );
             };
 
-            function handleUpdateCollection(collectionObjectListParam) {
+            function handleEditCollection(collectionObjectListParam) {
                 doPost(
-                    props.updateCollectionUrl,
+                    props.editCollectionUrl,
                     {
                         "collection_uuid": props.uuid,
                         "node_uuid": props.nodeUuid,
@@ -315,7 +315,7 @@
                         collectionObjectList.value.display = collectionObjectListParam.display;
                         setTimer();
                     },
-                    "Collection updated",
+                    "Collection edited",
                 );
             };
 
@@ -347,10 +347,10 @@
                 );
             };
 
-            function handleUpdateCollectionModal() {
+            function handleEditCollectionModal() {
                 ctx.emit(
-                    "open-collection-update-modal",
-                    handleUpdateCollection,
+                    "open-collection-edit-modal",
+                    handleEditCollection,
                     collectionObjectList.value,
                 );
             };
@@ -435,8 +435,8 @@
                 handleObjectDrop,
                 handleObjectDragLeave,
                 handleRemoveObject,
-                handleUpdateCollection,
-                handleUpdateCollectionModal,
+                handleEditCollection,
+                handleEditCollectionModal,
                 handleSort,
                 objectCount,
                 objectList,

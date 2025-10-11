@@ -8,14 +8,14 @@
         </template>
         <template #content>
             <div>
-                <strong>Updated</strong>: {{ feedStore.currentFeed.lastCheck }}
+                <strong>Edited</strong>: {{ feedStore.currentFeed.lastCheck }}
             </div>
             <div>
                 <strong>Status</strong>: <font-awesome-icon class="ms-1" :class="status.class" :icon="status.font" />
             </div>
             <div class="mt-3">
-                <button class="btn btn-primary" @click="onCreateFeed">
-                    Add Feed
+                <button class="btn btn-primary" @click="handleNewFeed">
+                    New Feed
                 </button>
             </div>
         </template>
@@ -39,7 +39,7 @@
                 type: String,
             },
         },
-        emits: ["create-feed"],
+        emits: ["new-feed"],
         setup(props, ctx) {
             const feedStore = useFeedStore();
             const status = computed(() => {
@@ -56,8 +56,8 @@
                 }
             });
 
-            function onCreateFeed() {
-                ctx.emit("create-feed");
+            function handleNewFeed() {
+                ctx.emit("new-feed");
             }
 
             function showFeed(feed) {
@@ -66,7 +66,7 @@
 
             return {
                 feedStore,
-                onCreateFeed,
+                handleNewFeed,
                 showFeed,
                 status,
             };

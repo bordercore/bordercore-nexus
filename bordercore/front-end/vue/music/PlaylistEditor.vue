@@ -1,5 +1,5 @@
 <template>
-    <div id="modalCreateUpdate" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div id="modalEditor" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -22,7 +22,7 @@
                             <textarea id="id_note" v-model="note" name="note" cols="40" rows="3" class="form-control" />
                         </div>
                     </div>
-                    <div v-if="action !== 'Update'" class="row mt-3">
+                    <div v-if="action !== 'Edit'" class="row mt-3">
                         <label class="col-lg-4 col-form-label pt-0" for="id_note">Type</label>
                         <div class="col-lg-8">
                             <div class="d-flex">
@@ -103,7 +103,7 @@
                                     <o-switch v-model="excludeAlbums" name="exclude_albums" :native-value="excludeAlbums" />
                                 </div>
                             </div>
-                            <input v-if="action === 'Update'" type="hidden" name="type" :value="playlist.type">
+                            <input v-if="action === 'Edit'" type="hidden" name="type" :value="playlist.type">
                             <input type="hidden" name="rating" :value="rating">
                             <div v-if="playlistType !== 'manual'">
                                 <div class="row mt-3">
@@ -129,7 +129,7 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div v-if="action === 'Update'" class="row mt-3">
+                                <div v-if="action === 'Edit'" class="row mt-3">
                                     <label class="col-lg-4 col-form-label">Refresh Song List</label>
                                     <div class="col-lg-8 d-flex align-items-center">
                                         <o-switch v-model="refreshSongList" name="refresh_song_list" :native-value="refreshSongList" />
@@ -140,7 +140,7 @@
                     </transition>
                 </div>
                 <div class="modal-footer justify-content-end">
-                    <input id="btn-action" class="btn btn-primary" type="submit" name="Go" :value="action" :disabled="disabledCreateButton">
+                    <input id="btn-action" class="btn btn-primary" type="submit" name="Go" value="Save" :disabled="disabledCreateButton">
                 </div>
             </div>
         </div>

@@ -125,7 +125,7 @@
                 default: undefined,
                 type: Number,
             },
-            updateNoteUrl: {
+            editNoteUrl: {
                 default: "",
                 type: String,
             },
@@ -217,9 +217,9 @@
                 editableTextArea.value.editNote(!note.value);
             };
 
-            function handleNoteUpdate() {
+            function handleNoteEdit() {
                 doPost(
-                    props.updateNoteUrl,
+                    props.editNoteUrl,
                     {
                         "uuid": props.exerciseUuid,
                         "note": note.value,
@@ -230,7 +230,7 @@
 
             watch(note, (newValue) => {
                 if (newValue !== null) {
-                    handleNoteUpdate();
+                    handleNoteEdit();
                 }
             });
 

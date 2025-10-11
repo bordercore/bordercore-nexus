@@ -1,5 +1,5 @@
 <template>
-    <div id="modalUpdateCollection" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div id="modalEditCollection" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -73,7 +73,7 @@
                                 Name
                             </label>
                             <div class="col-lg-8">
-                                <input v-model="collectionObjectList.name" type="text" class="form-control" autocomplete="off" maxlength="200" placeholder="Name" @keyup.enter="handleCollectionUpdate">
+                                <input v-model="collectionObjectList.name" type="text" class="form-control" autocomplete="off" maxlength="200" placeholder="Name" @keyup.enter="handleCollectionEdit">
                             </div>
                         </div>
                     </Transition>
@@ -112,7 +112,7 @@
                             <label class="col-lg-4 col-form-label" for="inputTitle">Limit</label>
                             <div class="col-lg-8">
                                 <div>
-                                    <input v-model="collectionObjectList.limit" type="number" class="form-control" autocomplete="off" maxlength="10" placeholder="Limit" @keyup.enter="handleCollectionUpdate">
+                                    <input v-model="collectionObjectList.limit" type="number" class="form-control" autocomplete="off" maxlength="10" placeholder="Limit" @keyup.enter="handleCollectionEdit">
                                 </div>
                             </div>
                         </div>
@@ -126,7 +126,7 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <input class="btn btn-primary" type="button" :value="action" @click="handleCollectionUpdate">
+                        <input class="btn btn-primary" type="button" value="Save" @click="handleCollectionEdit">
                     </div>
                 </div>
             </div>
@@ -157,9 +157,9 @@
                 type: String,
             },
         },
-        emits: ["update-layout"],
+        emits: ["edit-layout"],
         setup(props, ctx) {
-            const action = ref("Update");
+            const action = ref("Edit");
             const collectionObjectList = ref({});
 
             let callback = null;
@@ -224,7 +224,7 @@
                 callback = callbackParam;
                 modal.show();
                 setTimeout( () => {
-                    document.querySelector("#modalUpdateCollection input").focus();
+                    document.querySelector("#modalEditCollection input").focus();
                 }, 500);
             };
 
@@ -232,10 +232,10 @@
                 collectionObjectList.value.uuid = collection.uuid;
             };
 
-            function handleCollectionUpdate() {
-                // If any of the properties have changed, update the collection
+            function handleCollectionEdit() {
+                // If any of the properties have changed, edit the collection
                 if (collectionObjectList.value !== collectionObjectListInitial) {
-                    if (action.value === "Update") {
+                    if (action.value === "Edit") {
                         callback(collectionObjectList.value);
                         modal.hide();
                     } else {
@@ -251,7 +251,7 @@
                                 "limit": collectionObjectList.value.limit,
                             },
                             (response) => {
-                                ctx.emit("update-layout", response.data.layout);
+                                ctx.emit("edit-layout", response.data.layout);
                                 modal.hide();
                                 nextTick(() => {
                                     selectValue.value.clearOptions();
@@ -264,7 +264,7 @@
             };
 
             onMounted(() => {
-                modal = new Modal("#modalUpdateCollection");
+                modal = new Modal("#modalEditCollection");
             });
 
             return {
@@ -273,7 +273,7 @@
                 displayOptions,
                 handleCollectionTypeChange,
                 handleCollectionSelect,
-                handleCollectionUpdate,
+                handleCollectionEdit,
                 openModal,
                 rotateOptions,
                 selectValue,

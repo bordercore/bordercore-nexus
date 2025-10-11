@@ -108,10 +108,10 @@ class Node(TimeStampedModel):
         rotate: int,
         limit: int | None
     ) -> None:
-        """Update display settings for a collection in the layout.
+        """Edit display settings for a collection in the layout.
 
         Args:
-            collection_uuid: UUID of the collection to update.
+            collection_uuid: UUID of the collection to edit.
             display: New display mode.
             random_order: Whether to randomize collection order.
             rotate: New rotation setting.
@@ -262,7 +262,7 @@ class Node(TimeStampedModel):
         """Set the color for a note component in the layout.
 
         Args:
-            note_uuid: UUID of the note to update.
+            note_uuid: UUID of the note to edit.
             color: Color value to set for the note.
         """
         if not self.layout:
@@ -450,10 +450,10 @@ class Node(TimeStampedModel):
         return new_uuid
 
     def update_component(self, uuid: str, options: Dict[str, Any]) -> None:
-        """Update the options for a quote or node component.
+        """Edit the options for a quote or node component.
 
         Args:
-            uuid: UUID of the component to update.
+            uuid: UUID of the component to edit.
             options: New options dictionary for the component.
         """
         if not self.layout:

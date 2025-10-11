@@ -153,8 +153,8 @@
                                     <drop-down-menu :show-on-hover="true">
                                         <template #dropdown>
                                             <li>
-                                                <a class="dropdown-item" href="#" @click.prevent="onClickUpdate(props.row.uuid)">
-                                                    <font-awesome-icon icon="pencil-alt" class="text-primary me-3"></font-awesome-icon>Update
+                                                <a class="dropdown-item" href="#" @click.prevent="onClickEdit(props.row.uuid)">
+                                                    <font-awesome-icon icon="pencil-alt" class="text-primary me-3"></font-awesome-icon>Edit
                                                 </a>
                                             </li>
                                             <li>
@@ -184,11 +184,11 @@
 
         <form action="{% url 'music:album_update' album.uuid %}" method="post" enctype="multipart/form-data">
         {% csrf_token %}
-            <div class="modal fade" id="modalUpdateAlbum" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+            <div class="modal fade" id="modalEditAlbum" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
                 <div class="modal-dialog" role="document">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h4 class="modal-title" id="myModalLabel">Update Album</h4>
+                            <h4 class="modal-title" id="myModalLabel">Edit Album</h4>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
                             </button>
                         </div>
@@ -265,7 +265,7 @@
 
                             <div class="row">
                                 <div class="col-lg-12 offset-lg-4">
-                                    <input id="btn-action" class="btn btn-primary" type="submit" name="Go" value="Update" />
+                                    <input id="btn-action" class="btn btn-primary" type="submit" name="Go" value="Save" />
                                 </div>
                             </div>
 
@@ -316,9 +316,9 @@
                 const albumDetailMenuItems = ref([
                     {
                         id: uuidv4(),
-                        title: "Update Album",
+                        title: "Edit",
                         url: "#",
-                        clickHandler: handleUpdateAlbum,
+                        clickHandler: handleEditAlbum,
                         icon: "pencil-alt"
                     },
                     {
@@ -386,7 +386,7 @@
                     }
                 }
 
-                function onClickUpdate(uuid) {
+                function onClickEdit(uuid) {
                     window.location="{% url 'music:update' '00000000-0000-0000-0000-000000000000' %}?return_url={{ request.get_full_path }}".replace(/00000000-0000-0000-0000-000000000000/, uuid);
                 }
 
@@ -398,8 +398,8 @@
                     return markdown.render(note);
                 }
 
-                function handleUpdateAlbum() {
-                    const modal = new Modal("#modalUpdateAlbum");
+                function handleEditAlbum() {
+                    const modal = new Modal("#modalEditAlbum");
                     modal.show();
                 }
 
@@ -425,9 +425,9 @@
                     handleRatingMouseLeave,
                     handleRatingMouseOver,
                     handleIsPlaying,
-                    handleUpdateAlbum,
+                    handleEditAlbum,
                     onClickAddToPlaylist,
-                    onClickUpdate,
+                    onClickEdit,
                     onCoverImageSelect,
                     onCurrentSong,
                     onShowNote,

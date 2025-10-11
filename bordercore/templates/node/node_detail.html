@@ -29,10 +29,10 @@
             >
                 <template #dropdown class="mt-0">
                     <li>
-                        <a class="dropdown-item" href="#" @click.prevent="onUpdateNode">
+                        <a class="dropdown-item" href="#" @click.prevent="onEditNode">
                             <span v-cloak>
                                 <font-awesome-icon icon="plus" class="text-primary me-3"></font-awesome-icon>
-                                Update node
+                                Edit node
                             </span>
                         </a>
                     </li>
@@ -40,7 +40,7 @@
                         <a class="dropdown-item" href="#" @click.prevent="openCollectionModal">
                             <span v-cloak>
                                 <font-awesome-icon icon="plus" class="text-primary me-3"></font-awesome-icon>
-                                Add collection
+                                New collection
                             </span>
                         </a>
                     </li>
@@ -48,7 +48,7 @@
                         <a class="dropdown-item" href="#" @click.prevent="openAddNoteModal">
                             <span v-cloak>
                                 <font-awesome-icon icon="plus" class="text-primary me-3"></font-awesome-icon>
-                                Add note
+                                New note
                             </span>
                         </a>
                     </li>
@@ -56,7 +56,7 @@
                         <a class="dropdown-item" href="#" @click.prevent="openSelectImageModal">
                             <span v-cloak>
                                 <font-awesome-icon icon="plus" class="text-primary me-3"></font-awesome-icon>
-                                Add media
+                                New media
                             </span>
                         </a>
                     </li>
@@ -64,7 +64,7 @@
                         <a class="dropdown-item" href="#" @click.prevent="openAddQuoteModal">
                             <span v-cloak>
                                 <font-awesome-icon icon="plus" class="text-primary me-3"></font-awesome-icon>
-                                Add quote
+                                New quote
                             </span>
                         </a>
                     </li>
@@ -72,7 +72,7 @@
                         <a class="dropdown-item" href="#" @click.prevent="onAddTodoList">
                             <span v-cloak>
                                 <font-awesome-icon icon="plus" class="text-primary me-3"></font-awesome-icon>
-                                Add todo list
+                                New todo list
                             </span>
                         </a>
                     </li>
@@ -80,7 +80,7 @@
                         <a class="dropdown-item" href="#" @click.prevent="openAddNodeModal">
                             <span v-cloak>
                                 <font-awesome-icon icon="plus" class="text-primary me-3"></font-awesome-icon>
-                                Add node
+                                New node
                             </span>
                         </a>
                     </li>
@@ -95,12 +95,12 @@
                 </template>
             </drop-down-menu>
 
-            <div class="modal fade" id="modalUpdateNode" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+            <div class="modal fade" id="modalEditNode" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
                 <div class="modal-dialog" role="document">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h4 class="modal-title" id="myModalLabel">
-                                Update Node
+                                Edit Node
                             </h4>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
@@ -113,23 +113,23 @@
                             </div>
                         </div>
                         <div class="modal-footer">
-                            <input class="btn btn-primary" type="button" value="Update" @click.prevent="onClickUpdateNode">
+                            <input class="btn btn-primary" type="button" value="Save" @click.prevent="onClickEditNode">
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <create-update-todo
-            ref="updateTodo"
+        <todo-editor
+            ref="editTodo"
             :priority-list="JSON.parse('{{ priority_list }}')"
-            update-todo-url="{% url 'todo-detail' '00000000-0000-0000-0000-000000000000' %}"
+            edit-todo-url="{% url 'todo-detail' '00000000-0000-0000-0000-000000000000' %}"
             create-todo-url="{% url 'todo-list' %}"
             tag-search-url="{% url 'tag:search' %}?query="
             @add="addNodeTodo"
-            @update="handleTodoUpdate"
+            @edit="handleTodoEdit"
         >
-        </create-update-todo>
+        </todo-editor>
 
         <div class="d-flex g-0 h-100 mx-2">
             <div
@@ -160,16 +160,16 @@
                                     :collection-object-list-initial="row"
                                     add-new-bookmark-url="{% url "collection:add_new_bookmark" %}"
                                     :collection-detail-url="'{% url "collection:detail" '00000000-0000-0000-0000-000000000000' %}'.replace('00000000-0000-0000-0000-000000000000', row.uuid)"
-                                    update-collection-url="{% url "node:update_collection" %}"
-                                    update-object-note-url="{% url "collection:update_object_note" %}"
+                                    edit-collection-url="{% url "node:update_collection" %}"
+                                    edit-object-note-url="{% url "collection:update_object_note" %}"
                                     :get-object-list-url="'{% url "collection:get_object_list" '00000000-0000-0000-0000-000000000000' %}'.replace('00000000-0000-0000-0000-000000000000', row.uuid)"
                                     remove-object-url="{% url "collection:remove_object" %}"
                                     sort-objects-url="{% url "collection:sort_objects" %}"
                                     delete-collection-url="{% url "node:delete_collection" %}"
                                     @open-note-image-modal="openModalNoteImage"
-                                    @open-collection-update-modal="openModalCollectionUpdate"
+                                    @open-collection-edit-modal="openModalCollectionEdit"
                                     @open-object-select-modal="openObjectSelectModal"
-                                    @update-layout="onUpdateLayout"
+                                    @edit-layout="onEditLayout"
                                 >
                                 </collection-object-list>
                             </div>
@@ -180,8 +180,8 @@
                                     :note-url="'{% url "blob-detail" '00000000-0000-0000-0000-000000000000' %}'.replace('00000000-0000-0000-0000-000000000000', row.uuid)"
                                     set-note-color-url="{% url "node:set_note_color" %}"
                                     delete-note-url="{% url 'node:delete_note' %}"
-                                    @open-note-metadata-modal="openModalNoteUpdate"
-                                    @update-layout="onUpdateLayout"
+                                    @open-note-metadata-modal="openModalNoteEdit"
+                                    @edit-layout="onEditLayout"
                                 >
                                 </node-note>
                             </div>
@@ -194,8 +194,8 @@
                                     remove-node-todo-url="{% url 'todo-detail' '00000000-0000-0000-0000-000000000000' %}"
                                     sort-node-todos-url="{% url 'node:sort_todos' %}"
                                     delete-todo-list-url="{% url "node:delete_todo_list" %}"
-                                    @open-create-update-todo-modal="openCreateUpdateTodoModal"
-                                    @update-layout="onUpdateLayout"
+                                    @open-todo-editor-modal="openTodoEditorModal"
+                                    @edit-layout="onEditLayout"
                                 >
                                 </node-todo-list>
                             </div>
@@ -208,7 +208,7 @@
                                     :image-detail-url="'{% url 'blob:detail' '00000000-0000-0000-0000-000000000000' %}'.replace('00000000-0000-0000-0000-000000000000', row.image_uuid)"
                                     remove-component-url="{% url 'node:remove_component' %}"
                                     @open-modal-note-image="openModalNoteImage"
-                                    @update-layout="onUpdateLayout"
+                                    @edit-layout="onEditLayout"
                                 >
                                 </node-image>
                             </div>
@@ -220,9 +220,9 @@
                                     :get-quote-url="'{% url "quote-detail" '00000000-0000-0000-0000-000000000000' %}'.replace('00000000-0000-0000-0000-000000000000', row.quote_uuid)"
                                     get-and-set-quote-url="{% url 'node:get_quote' %}"
                                     remove-component-url="{% url 'node:remove_component' %}"
-                                    update-quote-url="{% url 'node:update_quote' %}"
-                                    @open-quote-update-modal="openQuoteUpdateModal"
-                                    @update-layout="onUpdateLayout"
+                                    edit-quote-url="{% url 'node:update_quote' %}"
+                                    @open-quote-edit-modal="openQuoteEditModal"
+                                    @edit-layout="onEditLayout"
                                 >
                                 </node-quote>
                             </div>
@@ -234,9 +234,9 @@
                                     :get-node-info-url="'{% url 'node:preview' '00000000-0000-0000-0000-000000000000' %}'.replace('00000000-0000-0000-0000-000000000000', row.node_uuid)"
                                     :node-detail-url="'{% url 'node:detail' '00000000-0000-0000-0000-000000000000' %}'.replace('00000000-0000-0000-0000-000000000000', row.node_uuid)"
                                     remove-component-url="{% url 'node:remove_component' %}"
-                                    update-node-url="{% url 'node:update_node' %}"
+                                    edit-node-url="{% url 'node:update_node' %}"
                                     @open-node-modal="openNodeModal"
-                                    @update-layout="onUpdateLayout"
+                                    @edit-layout="onEditLayout"
                                 >
                                 </node-node>
                             </div>
@@ -246,18 +246,18 @@
             </div>
 
             <collection-object-list-modal
-                ref="collectionUpdate"
+                ref="collectionEdit"
                 node-uuid="{{ object.uuid }}"
                 add-collection-url="{% url 'node:add_collection' %}"
                 search-url="{% url 'collection:search' %}?query="
-                @update-layout="onUpdateLayout"
+                @edit-layout="onEditLayout"
             >
             </collection-object-list-modal>
 
             <node-note-modal
-                ref="noteUpdate"
-                @open-modal-note-update="openModalNoteUpdate"
-                @update-layout="onUpdateLayout"
+                ref="noteEdit"
+                @open-modal-note-edit="openModalNoteEdit"
+                @edit-layout="onEditLayout"
             >
             </node-note-modal>
 
@@ -267,10 +267,10 @@
             </node-image-modal>
 
             <node-quote-modal
-                ref="quoteUpdate"
+                ref="quoteEdit"
                 node-uuid="{{ object.uuid }}"
                 add-node-url="{% url 'node:add_quote' %}"
-                @update-layout="onUpdateLayout"
+                @edit-layout="onEditLayout"
             >
             </node-quote-modal>
 
@@ -280,7 +280,7 @@
                 label="_objectSelectImage"
                 ref="objectSelectImage"
                 search-object-url="{% url 'search:search_names' %}"
-                title="Add Media"
+                title="New Media"
                 @select-object="selectObjectImage"
             >
             </object-select>
@@ -298,7 +298,7 @@
                 add-node-url="{% url 'node:add_node' %}"
                 search-url="{% url 'node:search' %}?query="
                 @select-node="handleSelectNode"
-                @update-layout="onUpdateLayout"
+                @edit-layout="onEditLayout"
             >
             </node-node-modal>
 
@@ -322,7 +322,7 @@
             components: {
                 CollectionObjectList,
                 CollectionObjectListModal,
-                CreateUpdateTodo,
+                TodoEditor,
                 FontAwesomeIcon,
                 DropDownMenu,
                 NodeImage,
@@ -344,15 +344,15 @@
                 const nodeName = ref("{{ object.name }}");
                 const nodeUuid = ref("{{ object.uuid }}");
 
-                const collectionUpdate = ref(null);
+                const collectionEdit = ref(null);
                 const noteImage = ref(null);
-                const noteUpdate = ref(null);
-                const quoteUpdate = ref(null);
+                const noteEdit = ref(null);
+                const quoteEdit = ref(null);
                 const objectSelectCollection = ref(null);
                 const objectSelectImage = ref(null);
                 const selectNode = ref(null);
                 const todoList = ref(null);
-                const updateTodo = ref(null);
+                const editTodo = ref(null);
 
                 let layoutCache = cloneDeep(layout.value);
 
@@ -386,7 +386,7 @@
                         (response) => {
                             layout.value = JSON.parse(response.data.layout);
                         },
-                        "Note added",
+                        "Note created",
                     );
                 };
 
@@ -410,7 +410,7 @@
                     layoutCache = layout.value;
                 };
 
-                function handleTodoUpdate() {
+                function handleTodoEdit() {
                     todoList.value[0].getTodoList();
                 };
 
@@ -423,11 +423,11 @@
                         (response) => {
                             layout.value = JSON.parse(response.data.layout);
                         },
-                        "Todo list added",
+                        "Todo list created",
                     );
                 };
 
-                function onClickUpdateNode() {
+                function onClickEditNode() {
                     const name = document.querySelector("#id_node_name").value;
                     doPut(
                         "{% url 'node-detail' object.uuid %}",
@@ -438,19 +438,19 @@
                         (response) => {
                             nodeName.value = name;
                             document.querySelector(".node-name").innerHTML = name;
-                            const modal = Modal.getInstance(document.querySelector("#modalUpdateNode"));
+                            const modal = Modal.getInstance(document.querySelector("#modalEditNode"));
                             modal.hide();
                         },
-                        "Node updated",
+                        "Node edited",
                     );
                 };
 
-                function onUpdateLayout(payload) {
+                function onEditLayout(payload) {
                     layout.value = JSON.parse(payload);
                 };
 
-                function onUpdateNode() {
-                    const modal = new Modal("#modalUpdateNode");
+                function onEditNode() {
+                    const modal = new Modal("#modalEditNode");
                     modal.show();
                     setTimeout(() => {
                         document.querySelector("#id_node_name").focus();
@@ -458,7 +458,7 @@
                 };
 
                 function openCollectionModal() {
-                    collectionUpdate.value.openModal(
+                    collectionEdit.value.openModal(
                         "Add",
                         null,
                         {
@@ -473,23 +473,23 @@
                 };
 
                 function openAddNoteModal() {
-                    noteUpdate.value.openModal("Add", addNote, {"color": 1});
+                    noteEdit.value.openModal("Add", addNote, {"color": 1});
                 };
 
-                function openCreateUpdateTodoModal(action, data) {
-                    updateTodo.value.openModal(action, data);
+                function openTodoEditorModal(action, data) {
+                    editTodo.value.openModal(action, data);
                 };
 
-                function openModalCollectionUpdate(callback, data) {
-                    collectionUpdate.value.openModal("Update", callback, data);
+                function openModalCollectionEdit(callback, data) {
+                    collectionEdit.value.openModal("Edit", callback, data);
                 };
 
                 function openModalNoteImage(data) {
                     noteImage.value.openModal(data);
                 };
 
-                function openModalNoteUpdate(callback, data) {
-                    noteUpdate.value.openModal("Update", callback, data);
+                function openModalNoteEdit(callback, data) {
+                    noteEdit.value.openModal("Edit", callback, data);
                 };
 
                 function openAddNodeModal() {
@@ -497,15 +497,15 @@
                 };
 
                 function openAddQuoteModal() {
-                    quoteUpdate.value.openModal("Add");
+                    quoteEdit.value.openModal("Add");
                 };
 
                 function openNodeModal(callback, options) {
-                    selectNode.value.openModal("Update", callback, options);
+                    selectNode.value.openModal("Edit", callback, options);
                 };
 
-                function openQuoteUpdateModal(callback, data) {
-                    quoteUpdate.value.openModal("Update", callback, data);
+                function openQuoteEditModal(callback, data) {
+                    quoteEdit.value.openModal("Edit", callback, data);
                 };
 
                 function openObjectSelectModal(callback, returnArgs) {
@@ -526,7 +526,7 @@
                         (response) => {
                             layout.value = JSON.parse(response.data.layout);
                         },
-                        "Node added",
+                        "Node created",
                     );
                 };
 
@@ -546,7 +546,7 @@
                         (response) => {
                             callback();
                         },
-                        "Object added",
+                        "Object created",
                     );
                 };
 
@@ -563,42 +563,42 @@
                             }
                             layout.value = JSON.parse(response.data.layout);
                         },
-                        "Image added",
+                        "Image created",
                     );
                 };
 
                 return {
                     addNodeTodo,
                     addNote,
-                    collectionUpdate,
+                    collectionEdit,
                     editLayout,
                     editLayoutDropDownItemValue,
                     handleLayoutChange,
                     handleSelectNode,
                     handleSortStart,
-                    handleTodoUpdate,
+                    handleTodoEdit,
                     hasTodoList,
                     layout,
-                    noteUpdate,
+                    noteEdit,
                     objectSelectCollection,
                     objectSelectImage,
                     onAddTodoList,
-                    onClickUpdateNode,
-                    onUpdateNode,
+                    onClickEditNode,
+                    onEditNode,
                     openAddNoteModal,
                     openAddQuoteModal,
                     openCollectionModal,
-                    openCreateUpdateTodoModal,
-                    openModalCollectionUpdate,
+                    openTodoEditorModal,
+                    openModalCollectionEdit,
                     openModalNoteImage,
-                    openModalNoteUpdate,
+                    openModalNoteEdit,
                     openNodeModal,
-                    openQuoteUpdateModal,
+                    openQuoteEditModal,
                     openObjectSelectModal,
                     openSelectImageModal,
                     openAddNodeModal,
-                    onUpdateLayout,
-                    quoteUpdate,
+                    onEditLayout,
+                    quoteEdit,
                     noteImage,
                     nodeName,
                     nodeUuid,
@@ -606,7 +606,7 @@
                     selectObjectCollection,
                     selectObjectImage,
                     todoList,
-                    updateTodo,
+                    editTodo,
                 };
             },
         });

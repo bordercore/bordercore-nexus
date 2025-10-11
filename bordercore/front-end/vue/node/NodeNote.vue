@@ -8,7 +8,7 @@
                             <font-awesome-icon icon="sticky-note" class="text-primary me-3" />
                         </div>
                         <div class="w-100">
-                            <input v-if="isEditingName" v-model="nodeNote.name" class="form-control w-100" @blur="handleNameUpdate" @keydown.enter="handleNameUpdate">
+                            <input v-if="isEditingName" v-model="nodeNote.name" class="form-control w-100" @blur="handleNameEdit" @keydown.enter="handleNameEdit">
                             <span v-else-if="note" @dblclick="handleNameEdit">
                                 {{ nodeNote.name }}
                             </span>
@@ -18,11 +18,11 @@
                         <drop-down-menu :show-on-hover="true">
                             <template #dropdown>
                                 <li>
-                                    <a class="dropdown-item" href="#" @click.prevent="handleNoteUpdate()">
+                                    <a class="dropdown-item" href="#" @click.prevent="handleNoteEdit()">
                                         <span>
                                             <font-awesome-icon icon="pencil-alt" class="text-primary me-3" />
                                         </span>
-                                        Update note
+                                        Edit note
                                     </a>
                                 </li>
                                 <li>
@@ -30,7 +30,7 @@
                                         <span>
                                             <font-awesome-icon icon="pencil-alt" class="text-primary me-3" />
                                         </span>
-                                        Update note metadata
+                                        Edit note metadata
                                     </a>
                                 </li>
                                 <li>
@@ -96,11 +96,11 @@
                 default: "",
             },
         },
-        emits: ["delete-note", "open-note-metadata-modal", "update-layout"],
+        emits: ["delete-note", "open-note-metadata-modal", "edit-layout"],
         setup(props, ctx) {
             const colors = [1, 2, 3, 4];
             let nameCache = null;
-            const action = ref("Update");
+            const action = ref("Edit");
             const isEditingName = ref(false);
             const nodeNote = ref({});
             const note = ref("");
@@ -110,7 +110,7 @@
 
             watch(noteContents, (newValue) => {
                 if (newValue) {
-                    updateNoteContents();
+                    editNoteContents();
                 }
             });
 
@@ -119,7 +119,7 @@
                 return `node-color-${color} ${selectedColor}`;
             };
 
-            function handleNoteUpdate() {
+            function handleNoteEdit() {
                 editableTextArea.value.editNote(!note.value.content);
             };
 
@@ -129,16 +129,16 @@
             };
 
             function onOpenNoteMetadataModal(actionValue) {
-                ctx.emit("open-note-metadata-modal", updateNoteMetadata, nodeNote.value);
+                ctx.emit("open-note-metadata-modal", editNoteMetadata, nodeNote.value);
             };
 
-            function handleNameUpdate() {
+            function handleNameEdit() {
                 isEditingName.value = false;
                 // If the name hasn't changed, abort
                 if (nameCache === nodeNote.value.name) {
                     return;
                 }
-                updateNoteMetadata(nodeNote.value);
+                editNoteMetadata(nodeNote.value);
             };
 
             function handleNoteDelete() {
@@ -149,7 +149,7 @@
                         "note_uuid": note.value.uuid,
                     },
                     (response) => {
-                        ctx.emit("update-layout", response.data.layout);
+                        ctx.emit("edit-layout", response.data.layout);
                     },
                     "Note deleted",
                 );
@@ -157,7 +157,7 @@
                 ctx.emit("delete-note", note.value.uuid);
             };
 
-            function updateNoteMetadata(note) {
+            function editNoteMetadata(note) {
                 doPost(
                     props.setNoteColorUrl,
                     {
@@ -171,10 +171,10 @@
                     "",
                     "",
                 );
-                updateNoteContents();
+                editNoteContents();
             };
 
-            function updateNoteContents() {
+            function editNoteContents() {
                 doPut(
                     props.noteUrl,
                     {
@@ -216,16 +216,16 @@
                 getClass,
                 getNote,
                 handleNameEdit,
-                handleNameUpdate,
+                handleNameEdit,
                 handleNoteDelete,
-                handleNoteUpdate,
+                handleNoteEdit,
                 isEditingName,
                 onOpenNoteMetadataModal,
                 nodeNote,
                 note,
                 noteContents,
-                updateNoteContents,
-                updateNoteMetadata,
+                editNoteContents,
+                editNoteMetadata,
             };
         },
     };

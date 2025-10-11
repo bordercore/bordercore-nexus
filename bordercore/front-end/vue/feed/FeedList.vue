@@ -23,7 +23,7 @@
             </slick-item>
         </slick-list>
         <div v-if="feedList.length === 0" v-cloak class="text-secondary">
-            No feeds found. <a href="#" @click.prevent="handleUpdateFeed('Update')">Add one here.</a>
+            No feeds found. <a href="#" @click.prevent="handleEditFeed('Edit')">Add a new one here.</a>
         </div>
     </ul>
 </template>

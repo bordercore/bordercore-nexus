@@ -13,7 +13,7 @@
                     Your music library is empty. Feel free to add a song to begin your collection.
                 </h3>
                 <div>
-                    <a href="{% url 'music:create' %}" class="btn btn-primary" role="button"><font-awesome-icon icon="plus" class="me-2"></font-awesome-icon>Add song</a>
+                    <a href="{% url 'music:create' %}" class="btn btn-primary" role="button"><font-awesome-icon icon="plus" class="me-2"></font-awesome-icon>New song</a>
                 </div>
             </div>
 
@@ -53,7 +53,7 @@
                             <template #dropdown>
                                 <li>
                                     <a class="dropdown-item" href="#" @click.prevent="onClickCreate()">
-                                        <font-awesome-icon icon="plus" class="text-primary me-3"></font-awesome-icon>Add Playlist
+                                        <font-awesome-icon icon="plus" class="text-primary me-3"></font-awesome-icon>New Playlist
                                     </a>
                                 </li>
                             </template>
@@ -112,7 +112,7 @@
                                 <li>
                                     <a class="dropdown-item" :href="'{% url 'music:create' %}'">
                                         <font-awesome-icon icon="plus" class="text-primary me-3"></font-awesome-icon>
-                                        <span>Add Song</span>
+                                        <span>New Song</span>
                                     </a>
                                 </li>
                                 <li>
@@ -122,7 +122,7 @@
                                 </li>
                                 <li>
                                     <a class="dropdown-item" href="{% url 'music:create_album' %}">
-                                        <font-awesome-icon icon="plus" class="text-primary me-3"></font-awesome-icon>Add Album
+                                        <font-awesome-icon icon="plus" class="text-primary me-3"></font-awesome-icon>New Album
                                     </a>
                                 </li>
                             </template>
@@ -213,10 +213,10 @@
 
         <form action="{% url 'music:playlist_create' %}" method="post">
             {% csrf_token %}
-            <create-update-playlist
+            <playlist-editor
                 tag-search-url="{% url 'tag:search' %}?doctype=song"
             >
-            </create-update-playlist>
+            </playlist-editor>
         </form>
 
     </div>
@@ -238,7 +238,7 @@
             name: "MusicDashboard",
             components: {
                 Card,
-                CreateUpdatePlaylist,
+                PlaylistEditor,
                 DropDownMenu,
                 FontAwesomeIcon,
                 TagsInput,
@@ -254,7 +254,7 @@
                 }
 
                 function onClickCreate(evt) {
-                    const modal = new Modal("#modalCreateUpdate");
+                    const modal = new Modal("#modalEditor");
                     modal.show();
                     window.setTimeout(() => { document.getElementById("id_name").focus() }, 500);
                 }

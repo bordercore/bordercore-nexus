@@ -23,7 +23,7 @@
             <font-awesome-icon icon="heart" class="icon-hover glow" :class="favoriteClass" @click="onClickFavorite" data-bs-toggle="tooltip" data-placement="bottom" :title="toolTip"></font-awesome-icon>
             <font-awesome-icon :icon="['fab', 'python']" class="icon-hover glow ms-3" @click="showPythonConsole" data-bs-toggle="tooltip" data-placement="bottom" title="Open Python Console"></font-awesome-icon>
             <a href="{% if object.tags.all %}{% url 'drill:add_with_tag' object.tags.all.0 %}{% else %}{% url 'drill:add' %}{% endif %}">
-                <font-awesome-icon icon="plus" class="icon-hover glow ms-3" data-bs-toggle="tooltip" data-placement="bottom" title="Add a Question"></font-awesome-icon>
+                <font-awesome-icon icon="plus" class="icon-hover glow ms-3" data-bs-toggle="tooltip" data-placement="bottom" title="New Question"></font-awesome-icon>
             </a>
         </div>
 
@@ -69,10 +69,10 @@
                 object-uuid="{{ object.uuid }}"
                 node-type="drill"
                 related-objects-url="{% url 'drill:related_objects' object.uuid %}"
-                add-object-url="{% url 'blob:add_related_object' %}"
+                new-object-url="{% url 'blob:add_related_object' %}"
                 remove-object-url="{% url 'blob:remove_related_object' %}"
                 sort-related-objects-url="{% url 'blob:sort_related_objects' %}"
-                update-related-object-note-url="{% url 'blob:update_related_object_note' %}"
+                edit-related-object-note-url="{% url 'blob:update_related_object_note' %}"
                 @open-object-select-modal="openObjectSelectModal"
             >
             </related-objects>
@@ -156,7 +156,7 @@
                                          <span>
                                              <font-awesome-icon icon="pencil-alt" class="text-primary me-3" />
                                          </span>
-                                        Update
+                                        Edit
                                      </a>
                                  </li>
                                  <li>
@@ -337,7 +337,7 @@
                 };
 
                 function selectObject(bcObject) {
-                    relatedObjectsList.value.addObject(bcObject);
+                    relatedObjectsList.value.newObject(bcObject);
                 };
 
                 onMounted(() => {

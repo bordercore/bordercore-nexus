@@ -153,7 +153,7 @@ class NodeCreateView(FormRequestMixin, CreateView):
 @login_required
 @require_POST
 def edit_note(request: HttpRequest) -> JsonResponse:
-    """Update a node's freeform note.
+    """Edit a node's freeform note.
 
     Args:
         request: The HTTP request object.
@@ -363,7 +363,7 @@ def add_collection(request: HttpRequest) -> JsonResponse:
 @require_POST
 @validate_post_data("node_uuid", "collection_uuid")
 def update_collection(request: HttpRequest) -> JsonResponse:
-    """Update collection metadata and node options.
+    """Edit collection metadata and node options.
 
     Args:
         request: The HTTP request object.
@@ -560,7 +560,7 @@ def add_quote(request: HttpRequest) -> JsonResponse:
 @require_POST
 @validate_post_data("node_uuid", "uuid")
 def update_quote(request: HttpRequest) -> JsonResponse:
-    """Update options for an existing quote component.
+    """Edit options for an existing quote component.
 
     Args:
         request: The HTTP request object.
@@ -692,7 +692,7 @@ def add_node(request: HttpRequest) -> JsonResponse:
 @require_POST
 @validate_post_data("parent_node_uuid", "uuid")
 def update_node(request: HttpRequest) -> JsonResponse:
-    """Update options for a nested node component.
+    """Edit options for a nested node component.
 
     Args:
         request: The HTTP request object.

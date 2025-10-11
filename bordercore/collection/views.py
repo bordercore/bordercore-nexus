@@ -141,7 +141,7 @@ class CollectionUpdateView(FormRequestMixin, UpdateView):
         messages.add_message(
             self.request,
             messages.INFO,
-            "Collection updated"
+            "Collection edited"
         )
 
         return HttpResponseRedirect(self.get_success_url())

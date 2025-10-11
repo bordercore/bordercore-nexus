@@ -53,8 +53,8 @@ class QuestionCreateView(FormRequestMixin, CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        context["action"] = "Add"
-        context["title"] = "Drill :: Add Question"
+        context["action"] = "New"
+        context["title"] = "Drill :: New Question"
 
         # If we're adding a question with an initial tag value,
         # pre-populate the form with this tag.
@@ -83,7 +83,7 @@ class QuestionCreateView(FormRequestMixin, CreateView):
         review_url = urls.reverse("drill:detail", kwargs={"uuid": obj.uuid})
         messages.add_message(
             self.request,
-            messages.INFO, f"Question added. <a href='{review_url}'>Review it here</a>",
+            messages.INFO, f"Question created. <a href='{review_url}'>Review it here</a>",
             extra_tags="noAutoHide"
         )
         return HttpResponseRedirect(self.get_success_url())
@@ -164,8 +164,8 @@ class QuestionUpdateView(FormRequestMixin, UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["action"] = "Update"
-        context["title"] = "Drill :: Question Update"
+        context["action"] = "Edit"
+        context["title"] = "Drill :: Edit Question"
         context["tags"] = [x.name for x in self.object.tags.all()]
 
         # Get a list of the most recently used tags

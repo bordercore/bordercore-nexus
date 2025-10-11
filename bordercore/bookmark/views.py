@@ -71,7 +71,7 @@ class FormValidMixin(ModelFormMixin):
         bookmark.index_bookmark()
         bookmark.snarf_favicon()
 
-        messages.add_message(self.request, messages.INFO, "Bookmark Updated", extra_tags="noAutoHide")
+        messages.add_message(self.request, messages.INFO, "Bookmark Edited", extra_tags="noAutoHide")
 
         return super().form_valid(form)
 
@@ -86,7 +86,7 @@ class BookmarkUpdateView(FormRequestMixin, UpdateView, FormValidMixin):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["action"] = "Update"
+        context["action"] = "Edit"
         context["tags"] = [x.name for x in self.object.tags.all()]
         context["back_references"] = Blob.back_references(self.object.uuid)
         context["related_nodes"] = self.object.related_nodes()

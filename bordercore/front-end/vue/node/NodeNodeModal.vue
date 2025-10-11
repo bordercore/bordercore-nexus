@@ -40,7 +40,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <input class="btn btn-primary" type="button" :value="action" @click="handleNodeUpdate">
+                    <input class="btn btn-primary" type="button" value="Save" @click="handleNodeEdit">
                 </div>
             </div>
         </div>
@@ -69,9 +69,9 @@
                 type: String,
             },
         },
-        emits: ["select-node", "update-layout"],
+        emits: ["select-node", "edit-layout"],
         setup(props, ctx) {
-            const action = ref("Update");
+            const action = ref("Edit");
             let callback = null;
             let modal = null;
             const optionsDefault = {"rotate": -1};
@@ -112,7 +112,7 @@
 
             const selectValue = ref(null);
 
-            function handleNodeUpdate() {
+            function handleNodeEdit() {
                 if (action.value === "Add") {
                     doPost(
                         props.addNodeUrl,
@@ -122,10 +122,10 @@
                             "options": JSON.stringify(options.value),
                         },
                         (response) => {
-                            ctx.emit("update-layout", response.data.layout);
+                            ctx.emit("edit-layout", response.data.layout);
                             modal.hide();
                         },
-                        "Node added",
+                        "Node created",
                     );
                 } else {
                     callback(options.value);
@@ -156,7 +156,7 @@
             return {
                 action,
                 handleNodeSelect,
-                handleNodeUpdate,
+                handleNodeEdit,
                 options,
                 openModal,
                 rotateOptions,

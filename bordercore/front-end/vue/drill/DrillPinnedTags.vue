@@ -1,6 +1,6 @@
 <template>
     <div>
-        <div id="modalAddTag" class="modal fade" tabindex="-1" role="dialog">
+        <div id="modalNewTag" class="modal fade" tabindex="-1" role="dialog">
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -15,7 +15,7 @@
                                 <select-value
                                     ref="selectValuePinnedTag"
                                     :search-url="tagSearchUrl + '?doctype=drill&query='"
-                                    place-holder="Add Tag"
+                                    place-holder="New Tag"
                                     @select="handleTagSelect"
                                 />
                             </div>
@@ -49,7 +49,7 @@
                         </ul>
                     </div>
                     <div class="modal-footer justify-content-start">
-                        <input class="btn btn-primary" type="button" value="Done" data-bs-dismiss="modal">
+                        <input class="btn btn-primary" type="button" value="Save" data-bs-dismiss="modal">
                     </div>
                 </div>
             </div>
@@ -208,7 +208,7 @@
             };
 
             function openModal() {
-                const modal = new Modal("#modalAddTag");
+                const modal = new Modal("#modalNewTag");
                 modal.show();
                 setTimeout(() => {
                     selectValuePinnedTag.value.focus();

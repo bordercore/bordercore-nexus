@@ -71,7 +71,7 @@
                                     <a class="dropdown-item" href="#" @click.prevent="handleCreateTodo">
                                         <span v-cloak>
                                             <font-awesome-icon icon="plus" class="text-primary me-3"></font-awesome-icon>
-                                            Add Todo
+                                            New Todo
                                         </span>
                                     </a>
                                 </li>
@@ -132,8 +132,8 @@
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item" href="#" @click.prevent="onClickUpdate(props.row)">
-                                        <font-awesome-icon icon="pencil-alt" class="text-primary me-3"></font-awesome-icon>Update
+                                    <a class="dropdown-item" href="#" @click.prevent="onClickEdit(props.row)">
+                                        <font-awesome-icon icon="pencil-alt" class="text-primary me-3"></font-awesome-icon>Edit
                                     </a>
                                 </li>
                                 <li>
@@ -152,17 +152,17 @@
 
         </div>
 
-        <create-update-todo
-            ref="updateTodo"
+        <todo-editor
+            ref="editTodo"
             :priority-list="JSON.parse('{{ priority_list }}')"
-            update-todo-url="{% url 'todo-detail' '00000000-0000-0000-0000-000000000000' %}"
+            edit-todo-url="{% url 'todo-detail' '00000000-0000-0000-0000-000000000000' %}"
             create-todo-url="{% url 'todo-list' %}"
             tag-search-url="{% url 'tag:search' %}?query="
             @add="getTodoList()"
             @delete="onClickDelete"
-            @update="getTodoList()"
+            @edit="getTodoList()"
         >
-        </create-update-todo>
+        </todo-editor>
 
     </div>
 
@@ -178,7 +178,7 @@
             name: "TodoTable",
             delimiters: ["[[", "]]"],
             components: {
-                CreateUpdateTodo,
+                TodoEditor,
                 DropDownMenu,
                 FontAwesomeIcon,
             },
@@ -194,7 +194,7 @@
                 const filterPriorityOptions = ref();
                 const filterTimeOptions = ref();
                 const table = ref(null);
-                const updateTodo = ref(null);
+                const editTodo = ref(null);
 
                 const defaultSort = JSON.parse("{{ request.session.todo_sort|escapejs|default:'{\"field\":\"sort_order\", \"direction\":\"asc\"}' }}");
 
@@ -220,7 +220,7 @@
                             if (uuid) {
                                 // If a uuid is given, open the modal dialog for that todo task
                                 const todo = items.value.find(x => x.uuid === uuid);
-                                onClickUpdate(todo);
+                                onClickEdit(todo);
                             }
                         },
                         "Error getting todo list",
@@ -412,14 +412,14 @@
                         });
                 }
 
-                function onClickUpdate(todoInfo) {
+                function onClickEdit(todoInfo) {
                     if (todoInfo.due_date !== null) {
                         todoInfo.due_date = new Date(todoInfo.due_date);
                     }
-                    updateTodo.value.setAction("Update");
-                    updateTodo.value.todoInfo = todoInfo;
-                    updateTodo.value.setTags(todoInfo.tags);
-                    const modal = new Modal("#modalUpdateTodo");
+                    editTodo.value.setAction("Edit");
+                    editTodo.value.todoInfo = todoInfo;
+                    editTodo.value.setTags(todoInfo.tags);
+                    const modal = new Modal("#modalEditTodo");
                     modal.show();
                     setTimeout(() => {
                         document.getElementById("id_name").focus();
@@ -427,19 +427,19 @@
                 };
 
                 function handleCreateTodo() {
-                    updateTodo.value.setAction("Create");
+                    editTodo.value.setAction("Create");
 
                     const initialTagList = [filterTag.value];
 
-                    updateTodo.value.todoInfo = {
+                    editTodo.value.todoInfo = {
                         note: "",
                         priority: filterPriority.value || 3,
                         tags: initialTagList,
                     };
                     if (filterTag.value) {
-                        updateTodo.value.setTags(initialTagList);
+                        editTodo.value.setTags(initialTagList);
                     }
-                    const modal = new Modal("#modalUpdateTodo");
+                    const modal = new Modal("#modalEditTodo");
                     modal.show();
                     setTimeout(() => {
                         document.getElementById("id_name").focus();
@@ -503,7 +503,7 @@
                     onClickPriority,
                     onClickTag,
                     onClickTime,
-                    onClickUpdate,
+                    onClickEdit,
                     onDragEnd,
                     onDragOver,
                     onDragStart,
@@ -513,7 +513,7 @@
                     search,
                     table,
                     title,
-                    updateTodo,
+                    editTodo,
                 };
             },
         });

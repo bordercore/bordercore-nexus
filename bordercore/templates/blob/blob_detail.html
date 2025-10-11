@@ -35,7 +35,7 @@
                                 <li>
                                     <a class="dropdown-item" href="{% url 'blob:update' blob.uuid %}">
                                         <span>
-                                            <font-awesome-icon icon="pencil-alt" class="text-primary me-3"></font-awesome-icon>Update
+                                            <font-awesome-icon icon="pencil-alt" class="text-primary me-3"></font-awesome-icon>Edit
                                         </span>
                                     </a>
                                 </li>
@@ -49,7 +49,7 @@
                                 <li>
                                     <a class="dropdown-item" href="#" @click.prevent="openObjectSelectModal">
                                         <span>
-                                            <font-awesome-icon icon="plus" class="text-primary me-3"></font-awesome-icon>Add Related Object
+                                            <font-awesome-icon icon="plus" class="text-primary me-3"></font-awesome-icon>New Related Object
                                         </span>
                                     </a>
                                 </li>
@@ -301,10 +301,10 @@
                     node-type="blob"
                     :show-empty-list="false"
                     related-objects-url="{% url 'blob:related_objects' '00000000-0000-0000-0000-000000000000' %}"
-                    add-object-url="{% url 'blob:add_related_object' %}"
+                    new-object-url="{% url 'blob:add_related_object' %}"
                     remove-object-url="{% url 'blob:remove_related_object' %}"
                     sort-related-objects-url="{% url 'blob:sort_related_objects' %}"
-                    update-related-object-note-url="{% url 'blob:update_related_object_note' %}"
+                    edit-related-object-note-url="{% url 'blob:update_related_object_note' %}"
                     @open-object-select-modal="openObjectSelectModal">
                 </related-objects>
 
@@ -472,7 +472,7 @@
                 };
 
                 function handleObjectAdd(objectInfo) {
-                    relatedObjectsList.value.addObject(objectInfo);
+                    relatedObjectsList.value.newObject(objectInfo);
                 };
 
                 function handleCopySha1sum(sha1sum) {

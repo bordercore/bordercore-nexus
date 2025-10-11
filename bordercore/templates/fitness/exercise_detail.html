@@ -27,7 +27,7 @@
             <schedule
                 change-active-status-url="{% url 'fitness:change_active_status' %}"
                 exercise-name="{{ object.name }}"
-                update-schedule-url="{% url 'fitness:update_schedule' %}"
+                edit-schedule-url="{% url 'fitness:update_schedule' %}"
             >
             </schedule>
            <last-workout
@@ -39,7 +39,7 @@
                 :reps="JSON.parse('{{ latest_reps }}')"
                 :interval="{{ delta_days|default:7 }}"
                 :initial-note="note"
-                update-note-url="{% url 'fitness:edit_note' %}">
+                edit-note-url="{% url 'fitness:edit_note' %}">
             </last-workout>
             <div id="modalTimer" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
                 <div class="modal-dialog modal-sm" role="document">

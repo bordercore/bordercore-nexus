@@ -152,7 +152,7 @@
                 default: "",
                 type: String,
             },
-            updateScheduleUrl: {
+            editScheduleUrl: {
                 default: "",
                 type: String,
             },
@@ -189,7 +189,7 @@
 
             function handleScheduleChange() {
                 doPost(
-                    props.updateScheduleUrl,
+                    props.editScheduleUrl,
                     {
                         "uuid": exerciseStore.uuid,
                         "schedule": exerciseStore.activityInfo.schedule,

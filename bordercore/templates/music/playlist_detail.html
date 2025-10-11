@@ -183,8 +183,8 @@
                                         </a>
                                     </li>
                                     <li>
-                                        <a class="dropdown-item" href="#" @click.prevent="onClickUpdateSong(props.row.uuid)">
-                                            <font-awesome-icon icon="pencil-alt" class="text-primary me-3"></font-awesome-icon>Update
+                                        <a class="dropdown-item" href="#" @click.prevent="onClickEditSong(props.row.uuid)">
+                                            <font-awesome-icon icon="pencil-alt" class="text-primary me-3"></font-awesome-icon>Edit
                                         </a>
                                     </li>
                                 </template>
@@ -234,9 +234,9 @@
 
         <form action="{% url 'music:playlist_update' playlist.uuid %}" method="post">
             {% csrf_token %}
-            <create-update-playlist
+            <playlist-editor
                 tag-search-url="{% url 'tag:search' %}?doctype=song"
-                action="Update"
+                action="Save"
                 :playlist="JSON.parse('{{ playlist_json }}')"
             />
         </form>
@@ -266,7 +266,7 @@
             components: {
                 AudioPlayer,
                 Card,
-                CreateUpdatePlaylist,
+                PlaylistEditor,
                 DropDownMenu,
                 FontAwesomeIcon,
             },
@@ -377,7 +377,7 @@
                         });
                 }
 
-                function onClickUpdateSong(uuid) {
+                function onClickEditSong(uuid) {
                     window.location = "{% url 'music:update' '00000000-0000-0000-0000-000000000000' %}?return_url={{ request.get_full_path }}".replace(/00000000-0000-0000-0000-000000000000/, uuid);
                 }
 
@@ -386,8 +386,8 @@
                     modal.show();
                 }
 
-                function onClickUpdatePlaylist() {
-                    const modal = new Modal("#modalCreateUpdate");
+                function onClickEditPlaylist() {
+                    const modal = new Modal("#modalEditor");
                     modal.show();
                     window.setTimeout(() => {
                         document.getElementById("id_name").focus();
@@ -409,9 +409,9 @@
                     onDragEnd,
                     onDrop,
                     onClickRemove,
-                    onClickUpdateSong,
+                    onClickEditSong,
                     onClickDelete,
-                    onClickUpdatePlaylist,
+                    onClickEditPlaylist,
                     songCount,
                     songCountPluralized,
                     songList,
@@ -422,9 +422,9 @@
                     playlistMenuItems: [
                         {
                             id: uuidv4(),
-                            title: "Update",
+                            title: "Edit",
                             url: "#",
-                            clickHandler: onClickUpdatePlaylist,
+                            clickHandler: onClickEditPlaylist,
                             icon: "pencil-alt",
                         },
                         {

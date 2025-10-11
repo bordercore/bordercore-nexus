@@ -86,7 +86,7 @@
                 <card :title="note.source.name" class="me-0">
                     <template v-slot:title-slot>
                         <div v-if="index === 0" class="position-absolute end-0" v-cloak>
-                            <a class="btn btn-primary ms-2 me-4" href="{% url 'blob:create' %}?is_note=true">Add note</a>
+                            <a class="btn btn-primary ms-2 me-4" href="{% url 'blob:create' %}?is_note=true">New note</a>
                         </div>
 
                         <h2>

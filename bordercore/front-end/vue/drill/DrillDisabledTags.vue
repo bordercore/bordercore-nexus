@@ -36,7 +36,7 @@
                         </ul>
                     </div>
                     <div class="modal-footer justify-content-start">
-                        <input class="btn btn-primary" type="button" value="Done" data-bs-dismiss="modal">
+                        <input class="btn btn-primary" type="button" value="Save" data-bs-dismiss="modal">
                     </div>
                 </div>
             </div>

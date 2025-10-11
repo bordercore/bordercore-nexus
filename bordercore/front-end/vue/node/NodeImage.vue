@@ -91,7 +91,7 @@
                         "uuid": props.uuid,
                     },
                     (response) => {
-                        ctx.emit("update-layout", response.data.layout);
+                        ctx.emit("edit-layout", response.data.layout);
                     },
                     "Image removed",
                 );
