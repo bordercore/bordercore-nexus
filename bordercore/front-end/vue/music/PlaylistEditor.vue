@@ -181,11 +181,10 @@
             const note = ref(getAttribute("note", ""));
             const rating = ref(getAttribute("rating", undefined));
             const size = ref(getAttribute("size", 20));
-            const playlistType = ref(getAttribute("type", "manual"));
+            const playlistType = ref(getPlaylistType());
             const startYear = ref(getAttribute("start_year", undefined));
             const tag = ref(getAttribute("tag", ""));
             const refreshSongList = ref(false);
-
             const {handleRatingMouseLeave, handleRatingMouseOver, setRating} = mouseRating();
 
             if (tag.value) {
@@ -204,6 +203,14 @@
                     (!startYear.value && endYear.value) ||
                     parseInt(endYear.value) < parseInt(startYear.value));
             });
+
+            function getPlaylistType() {
+                if (Object.keys(props.playlist.parameters).length === 0) {
+                    return "manual";
+                } else {
+                    return "smart";
+                }
+            };
 
             function getAttribute(attribute, defaultValue) {
                 if (props.playlist) {
