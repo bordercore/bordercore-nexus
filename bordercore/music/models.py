@@ -45,7 +45,7 @@ class Artist(TimeStampedModel):
         unique_together = ("name", "user")
 
     def __str__(self) -> str:
-        """Return string representation of the artist.
+        """Return the string representation of the artist.
 
         Returns:
             The artist's name.
