@@ -112,7 +112,7 @@
                             <label class="col-lg-4 col-form-label" for="inputTitle">Limit</label>
                             <div class="col-lg-8">
                                 <div>
-                                    <input v-model="collectionObjectList.limit" type="number" class="form-control" autocomplete="off" maxlength="10" placeholder="Limit" @keyup.enter="handleCollectionEdit">
+                                    <input v-model="collectionObjectList.limit" type="number" class="form-control" autocomplete="off" maxlength="10" @keyup.enter="handleCollectionEdit">
                                 </div>
                             </div>
                         </div>
