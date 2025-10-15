@@ -5,12 +5,13 @@ Views for listing, sorting, updating, and validating RSS/Atom feeds.
 from __future__ import annotations
 
 import http.client
-from typing import Any, Dict, List, Optional, TypedDict, cast
+from http import HTTPStatus
+from typing import Any, Dict, List, TypedDict, cast
 from urllib.parse import unquote
 
 import feedparser
 import requests
-from feed.models import Feed
+from feed.models import USER_AGENT, Feed
 from rest_framework.decorators import api_view
 
 from django.contrib.auth.decorators import login_required
@@ -18,9 +19,11 @@ from django.contrib.auth.models import User
 from django.db.models import QuerySet
 from django.http import HttpRequest, JsonResponse
 from django.utils.decorators import method_decorator
+from django.views.decorators.http import require_POST
 from django.views.generic.list import ListView
 
 from accounts.models import UserFeed
+from lib.decorators import validate_post_data
 
 
 class FeedItemPayload(TypedDict):
@@ -38,8 +41,8 @@ class FeedPayload(TypedDict, total=False):
     uuid: Any
     name: str
     lastCheck: str
-    lastResponse: Optional[str | int]
-    homepage: Optional[str]
+    lastResponse: str | int | None
+    homepage: str | None
     url: str
     feedItems: List[FeedItemPayload]
 
@@ -70,11 +73,7 @@ class FeedListView(ListView):
             **kwargs: Additional keyword arguments.
 
         Returns:
-            dict: A context dictionary including:
-                - "title": Static page title.
-                - "feed_list": A list of serialized feeds.
-                - "current_feed": The serialized feed corresponding to the
-                  user's current selection (by session or fallback).
+            Dictionary containing context data for the template.
         """
         context = super().get_context_data(**kwargs)
 
@@ -109,24 +108,20 @@ class FeedListView(ListView):
         context["feed_list"] = feed_list
 
         user = cast(User, self.request.user)
-        current_feed_id: int = Feed.get_current_feed_id(user, self.request.session)
-        current_feed_candidates: List[FeedPayload] = [
-            x for x in feed_list if x["id"] == current_feed_id
-        ]
-
-        # Preserve original indexing behavior while satisfying mypy.
-        context["current_feed"] = cast(FeedPayload, current_feed_candidates[0])
+        current_feed_id = Feed.get_current_feed_id(user, self.request.session)
+        current_feed = next((x for x in feed_list if x["id"] == current_feed_id), None)
+        if current_feed is None and feed_list:
+            current_feed = feed_list[0]
+        context["current_feed"] = cast(FeedPayload, current_feed)
 
         return context
 
 
 @login_required
+@require_POST
+@validate_post_data("feed_id", "position")
 def sort_feed(request: HttpRequest) -> JsonResponse:
     """Reorder a feed within the current user's list.
-
-    Expects POST form fields:
-        - ``feed_id``: The feed's integer ID.
-        - ``position``: The new 0-based position in the list.
 
     Args:
         request: The HTTP request object.
@@ -134,14 +129,14 @@ def sort_feed(request: HttpRequest) -> JsonResponse:
     Returns:
         JSON response with operation status.
     """
-    feed_id = int(request.POST["feed_id"])
-    new_position = int(request.POST["position"])
+    feed_id = int(request.POST.get("feed_id", "").strip())
+    new_position = int(request.POST.get("position", "").strip())
 
     user = cast(User, request.user)
     s = UserFeed.objects.get(userprofile=user.userprofile, feed__id=feed_id)
     UserFeed.reorder(s, new_position)
 
-    return JsonResponse({"status": "OK"}, safe=False)
+    return JsonResponse({"status": "OK"})
 
 
 @api_view(["GET"])
@@ -155,11 +150,17 @@ def update_feed_list(request: HttpRequest, feed_uuid: str) -> JsonResponse:
     Returns:
         Json response with updated count and status.
     """
-    feed = Feed.objects.get(uuid=feed_uuid)
-    updated_count = feed.update()
+    user = cast(User, request.user)
+    feed = Feed.objects.get(user=user, uuid=feed_uuid)
+
+    try:
+        updated_count = feed.update()
+    except Exception as e:
+        return JsonResponse({"status": "ERROR", "message": str(e)}, status=HTTPStatus.SERVICE_UNAVAILABLE)
+
     status: Dict[str, Any] = {"status": "OK", "updated_count": updated_count}
 
-    return JsonResponse(status, safe=False)
+    return JsonResponse(status)
 
 
 @login_required
@@ -179,8 +180,9 @@ def check_url(request: HttpRequest, url: str) -> JsonResponse:
     """
     url = unquote(url)
 
-    r = requests.get(url, timeout=10)
-    if r.status_code != 200:
+    headers: Dict[str, str] = {"user-agent": USER_AGENT}
+    r = requests.get(url, headers=headers, timeout=10)
+    if r.status_code != HTTPStatus.OK   :
         status: Dict[str, Any] = {
             "status": "Error",
             "status_code": r.status_code,
@@ -194,4 +196,4 @@ def check_url(request: HttpRequest, url: str) -> JsonResponse:
             "entry_count": len(d.entries),
         }
 
-    return JsonResponse(status, safe=False)
+    return JsonResponse(status)

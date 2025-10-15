@@ -41,10 +41,11 @@ jobs:
     - name: Run mypy
       run: |
         mypy --config-file mypy.ini \
-          bordercore/todo/ \
-          bordercore/tag/ \
+          bordercore/feed/ \
+          bordercore/node/ \
           bordercore/music/ \
-          bordercore/node/
+          bordercore/tag/ \
+          bordercore/todo/
 
     - name: Run tests
       env:

@@ -7,18 +7,18 @@ Models for RSS/Atom feed aggregation. This module defines two models:
 """
 from __future__ import annotations
 
-import datetime
 import html
 import logging
 import uuid
-from typing import Any, Dict, List, MutableMapping, Optional, TypedDict
+from typing import Any, Dict, List, MutableMapping, TypedDict
 
 import feedparser
 import requests
 
 from django.contrib.auth.models import User
 from django.contrib.sessions.backends.base import SessionBase
-from django.db import models
+from django.db import models, transaction
+from django.utils import timezone
 
 from lib.mixins import TimeStampedModel
 
@@ -73,7 +73,7 @@ class Feed(TimeStampedModel):
         Raises:
             requests.HTTPError: If the HTTP response status is not 200.
         """
-        r: Optional[requests.Response] = None
+        r: requests.Response | None = None
         feed_list: List[Any] = []
 
         try:
@@ -81,37 +81,35 @@ class Feed(TimeStampedModel):
             r = requests.get(self.url, headers=headers, verify=self.verify_ssl_certificate, timeout=10)
 
             if r.status_code != 200:
-                # Will raise for 4xx/5xx and still capture status in finally.
                 r.raise_for_status()
 
             parsed = feedparser.parse(r.text)
             # `entries` is a list-like structure of feed entries with attributes.
             feed_list = list(parsed.entries)
 
-            # Nuke-and-pave: replace items with the freshly parsed set.
-            FeedItem.objects.filter(feed_id=self.pk).delete()
+            with transaction.atomic():
+                # Nuke-and-pave: replace items with the freshly parsed set.
+                FeedItem.objects.filter(feed_id=self.pk).delete()
+                items = []
 
-            for entry in feed_list:
-                try:
-                    # entry.title/link may not exist on malformed items.
-                    title_raw = getattr(entry, "title", "") or "No Title"
-                    link_raw = getattr(entry, "link", "") or ""
-                    title_clean = html.unescape(html.unescape(title_raw.replace("\n", "")))
-                    link_clean = html.unescape(link_raw)
+                for entry in feed_list:
+                    try:
+                        # entry.title/link may not exist on malformed items.
+                        title_raw = getattr(entry, "title", "") or "No Title"
+                        link_raw = getattr(entry, "link", "") or ""
+                        title_clean = html.unescape(html.unescape(title_raw.replace("\n", "")))
+                        link_clean = html.unescape(link_raw)
+                        items.append(FeedItem(feed=self, title=title_clean, link=link_clean))
+                    except AttributeError as e:
+                        log.error("feed_uuid=%s Missing data in feed item: %s", self.uuid, e)
 
-                    FeedItem.objects.create(
-                        feed=self,
-                        title=title_clean,
-                        link=link_clean,
-                    )
-                except AttributeError as e:
-                    log.error("feed_uuid=%s Missing data in feed item: %s", self.uuid, e)
+                FeedItem.objects.bulk_create(items, batch_size=500)
 
         finally:
             # Record status/attempt time regardless of success/failure.
             if r is not None:
                 self.last_response_code = r.status_code
-            self.last_check = datetime.datetime.now(datetime.timezone.utc)
+            self.last_check = timezone.now()
             self.save()
 
         return len(feed_list)
@@ -134,7 +132,7 @@ class Feed(TimeStampedModel):
         Raises:
             ValueError: If the user has no feeds configured at all.
         """
-        current_feed_id: Optional[int] = session.get("current_feed")
+        current_feed_id: int | None = session.get("current_feed")
         if not current_feed_id:
             return Feed.get_first_feed(user)["id"]
 
@@ -164,7 +162,7 @@ class Feed(TimeStampedModel):
         Raises:
             ValueError: If the user has zero feeds configured.
         """
-        result: Optional[FeedIdRow] = (
+        result: FeedIdRow | None = (
             user.userprofile.feeds.values("id").order_by("userfeed__sort_order").first()
         )
         if result is None:
