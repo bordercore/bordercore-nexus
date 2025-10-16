@@ -139,7 +139,7 @@ def sort_feed(request: HttpRequest) -> JsonResponse:
     return JsonResponse({"status": "OK"})
 
 
-@api_view(["GET"])
+@api_view(["POST"])
 def update_feed_list(request: HttpRequest, feed_uuid: str) -> JsonResponse:
     """Trigger a network refresh for a feed and return counts.
 
@@ -150,8 +150,9 @@ def update_feed_list(request: HttpRequest, feed_uuid: str) -> JsonResponse:
     Returns:
         Json response with updated count and status.
     """
-    user = cast(User, request.user)
-    feed = Feed.objects.get(user=user, uuid=feed_uuid)
+    # We do not need to filter the feed by a user because this endpoint
+    #  is only called by an AWS Lambda function using a service account.
+    feed = Feed.objects.get(uuid=feed_uuid)
 
     try:
         updated_count = feed.update()
