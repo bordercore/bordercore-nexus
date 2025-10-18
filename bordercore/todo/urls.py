@@ -1,11 +1,5 @@
 """
 URL configuration for the Todo app.
-
-This module defines all URL routes for managing Todo items, including:
-- listing all todos or a specific todo by UUID
-- sorting and reordering within tag lists
-- moving a todo to the top of its tag list
-- rescheduling a todo’s due date
 """
 
 from django.urls import path

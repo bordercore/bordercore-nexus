@@ -1,3 +1,7 @@
+"""
+URL configuration for the Fitness app.
+"""
+
 from django.urls import path
 
 from . import views
