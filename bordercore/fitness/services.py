@@ -8,7 +8,6 @@ overdue status) and return data suitable for rendering UI lists and badges.
 from __future__ import annotations
 
 import datetime
-from datetime import timedelta
 from typing import List, Tuple, Union, cast
 
 from django.contrib.auth.models import User
@@ -18,94 +17,67 @@ from django.utils import timezone
 
 from fitness.models import Exercise, ExerciseUser
 
+OVERDUE_THRESHOLD_DAYS = 6
 
 def get_fitness_summary(user: User, count_only: bool = False) -> Tuple[List[Exercise], List[Exercise]]:
-    """Return active and inactive exercises for a user, annotated with status.
+    """Return active and inactive exercises for a user, annotated with status."""
 
-    This computes, per exercise, the most recent activity date, whether the
-    user has this exercise marked active, the user's schedule for it, and a
-    lightweight "overdue" status (0 = not due, 1 = due today, 2 = overdue).
-    For convenience in templates, it also attaches a human-readable
-    ``schedule_days`` string to each object.
-
-    Args:
-        user: The Django user whose exercise summary to compute.
-        count_only: If ``True``, skips prefetches for better performance;
-            the return shape does not change.
-
-    Returns:
-        tuple[list[Exercise], list[Exercise]]: Two lists:
-        ``(active_exercises, inactive_exercises)`` ordered so that active
-        items are sorted by their ``overdue`` flag descending.
-    """
-    newest: QuerySet[ExerciseUser] = (
-        ExerciseUser.objects.filter(exercise=OuterRef("pk")).filter(user=user)
+    newest: QuerySet[ExerciseUser] = ExerciseUser.objects.filter(
+        exercise=OuterRef("pk"), user=user
     )
 
-    exercises: QuerySet[Exercise] = (
-        Exercise.objects.annotate(
-            last_active=Max(
-                "workout__data__date",
-                filter=Q(workout__user=user) | Q(workout__isnull=True),
-            ),
-            is_active=Subquery(newest.values("started")[:1]),
-            schedule=Subquery(newest.values("schedule")[:1]),
-            frequency=Subquery(newest.values("frequency")[:1]),
-        ).order_by(F("last_active"))
-    )
+    exercises: QuerySet[Exercise] = Exercise.objects.annotate(
+        last_active=Max(
+            "workout__data__date",
+            filter=Q(workout__user=user) | Q(workout__isnull=True),
+        ),
+        is_active=Subquery(newest.values("started")[:1]),
+        schedule=Subquery(newest.values("schedule")[:1]),
+    ).order_by(F("last_active"))
 
     if not count_only:
         exercises = exercises.prefetch_related("muscle", "muscle__muscle_group")
 
     active_exercises: List[Exercise] = []
     inactive_exercises: List[Exercise] = []
-
-    current_d_o_t_w: int = datetime.date.today().weekday()
+    current_weekday: int = datetime.date.today().weekday()
+    now_date = timezone.localdate()
 
     for e in exercises:
-        # Pull annotated fields via getattr so mypy doesn’t think they’re missing.
         last_active: datetime.datetime | None = getattr(e, "last_active", None)
-        # `started` from Subquery is typically a datetime, but treat as object | None for truthiness.
         is_active_marker: object | None = getattr(e, "is_active", None)
-        # Subquery(schedule) is an array field (list[bool | None]); cast for type-checking.
         schedule_val: List[bool | None] | None = cast(
             List[bool | None] | None, getattr(e, "schedule", None)
         )
 
-        # dynamic presentation attrs (ok to set at runtime)
         e.overdue = 0  # type: ignore[attr-defined]
 
         if last_active:
-            delta = timezone.now() - last_active
+            # Calculate days since last activity (date-only comparison)
+            last_date = last_active.date()
+            days_since = (now_date - last_date).days
+            e.delta_days = days_since  # type: ignore[attr-defined]
 
-            # Round up to the nearest day if >= 12 hours.
-            if delta.seconds // 3600 >= 12:
-                delta = delta + timedelta(days=1)
+            # Check if exercise is scheduled for today and wasn't done today
+            is_scheduled_today = (
+                schedule_val is not None
+                and 0 <= current_weekday < len(schedule_val)
+                and schedule_val[current_weekday] is True
+            )
 
-            e.delta_days = delta.days  # type: ignore[attr-defined]
-
-            if schedule_val and current_d_o_t_w < len(schedule_val) and schedule_val[current_d_o_t_w] and e.delta_days != 0:  # type: ignore[attr-defined]
-                # Exercise is due today
-                e.overdue = 1  # type: ignore[attr-defined]
-            else:
-                days_since = (
-                    (timezone.now() - datetime.datetime(1970, 1, 1).astimezone()).days
-                    - (last_active - datetime.datetime(1970, 1, 1).astimezone()).days
-                    + 1
-                )
-                if days_since > 8:
-                    # Exercise is overdue
-                    e.overdue = 2  # type: ignore[attr-defined]
+            if is_scheduled_today and days_since > 0:
+                e.overdue = 1  # type: ignore[attr-defined]  # Due today
+            elif days_since > OVERDUE_THRESHOLD_DAYS:
+                e.overdue = 2  # type: ignore[attr-defined]  # OverdueDue today
 
             e.schedule_days = ExerciseUser.schedule_days(schedule_val)  # type: ignore[attr-defined]
 
-        # Partition into active/inactive based on the annotated marker.
         if is_active_marker is not None:
             active_exercises.append(e)
         else:
             inactive_exercises.append(e)
 
-    active_exercises = sorted(active_exercises, key=lambda x: x.overdue, reverse=True)  # type: ignore[attr-defined]
+    active_exercises.sort(key=lambda x: x.overdue, reverse=True)  # type: ignore[attr-defined]
 
     return active_exercises, inactive_exercises
 

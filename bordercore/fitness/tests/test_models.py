@@ -15,7 +15,7 @@ def test_fitness_str(auto_login_user, fitness):
     assert str(fitness[0]) == "Bench Press"
     assert "Pectoralis Major" in [str(x) for x in fitness[0].muscle.all()]
     assert "Chest" in [str(x.muscle_group) for x in fitness[0].muscle.all()]
-    assert str(ExerciseUser.objects.get(user=user, exercise=fitness[2])) == "Squats"
+    assert str(ExerciseUser.objects.get(user=user, exercise=fitness[2])) == "Exercise 'Squats' for user testuser"
     assert str(ExerciseMuscle.objects.get(
         exercise=fitness[0],
         muscle=fitness[0].muscle.first()
@@ -48,12 +48,12 @@ def test_get_plot_data(auto_login_user, fitness):
 
     user, _ = auto_login_user()
 
-    plot_data = fitness[0].get_plot_data()
-    reps = json.loads(plot_data["plotdata"])["reps"]
-    weight = json.loads(plot_data["plotdata"])["weight"]
-    paginator = json.loads(plot_data["paginator"])
+    plot_data = fitness[0].get_plot_info()
+    reps = plot_data["plot_data"]["reps"]
+    weight = plot_data["plot_data"]["weight"]
+    paginator = plot_data["paginator"]
 
-    assert len(json.loads(plot_data["labels"])) == 11
+    assert len(plot_data["labels"]) == 11
     assert len(reps) == 11
     assert len(weight) == 11
     assert plot_data["initial_plot_type"] == "weight"
@@ -63,12 +63,12 @@ def test_get_plot_data(auto_login_user, fitness):
     assert paginator["previous_page_number"] is None
     assert paginator["next_page_number"] is None
 
-    plot_data = fitness[0].get_plot_data(count=4)
-    reps = json.loads(plot_data["plotdata"])["reps"]
-    weight = json.loads(plot_data["plotdata"])["weight"]
-    paginator = json.loads(plot_data["paginator"])
+    plot_data = fitness[0].get_plot_info(count=4)
+    reps = plot_data["plot_data"]["reps"]
+    weight = plot_data["plot_data"]["weight"]
+    paginator = plot_data["paginator"]
 
-    assert len(json.loads(plot_data["labels"])) == 4
+    assert len(plot_data["labels"]) == 4
     assert len(reps) == 4
     assert len(weight) == 4
     assert plot_data["initial_plot_type"] == "weight"
@@ -78,12 +78,12 @@ def test_get_plot_data(auto_login_user, fitness):
     assert paginator["previous_page_number"] == 2
     assert paginator["next_page_number"] is None
 
-    plot_data = fitness[4].get_plot_data(count=4, page_number=2)
-    reps = json.loads(plot_data["plotdata"])["reps"]
-    duration = json.loads(plot_data["plotdata"])["duration"]
-    paginator = json.loads(plot_data["paginator"])
+    plot_data = fitness[4].get_plot_info(count=4, page_number=2)
+    reps = plot_data["plot_data"]["reps"]
+    duration = plot_data["plot_data"]["duration"]
+    paginator = plot_data["paginator"]
 
-    assert len(json.loads(plot_data["labels"])) == 4
+    assert len(plot_data["labels"]) == 4
     assert len(reps) == 4
     assert len(duration) == 4
     assert plot_data["initial_plot_type"] == "duration"

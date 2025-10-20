@@ -107,11 +107,11 @@ def test_fitness_get_workout_data(auto_login_user, fitness):
     result = resp.json()
     assert resp.status_code == 200
     assert result["status"] == "OK"
-    assert len(json.loads(result["workout_data"]["labels"])) == 11
-    assert len(json.loads(result["workout_data"]["plotdata"])["reps"]) == 11
-    assert len(json.loads(result["workout_data"]["plotdata"])["reps"][0]) == 4
+    assert len(result["workout_data"]["labels"]) == 11
+    assert len(result["workout_data"]["plot_data"]["reps"]) == 11
+    assert len(result["workout_data"]["plot_data"]["reps"][0]) == 4
     assert result["workout_data"]["initial_plot_type"] == "weight"
-    assert json.loads(result["workout_data"]["paginator"])["page_number"] == 1
+    assert result["workout_data"]["paginator"]["page_number"] == 1
 
 
 def test_fitness_update_schedule(auto_login_user, fitness):

@@ -8,12 +8,11 @@ and visualization data (e.g., recent performance and plotting payloads).
 
 from __future__ import annotations
 
-import datetime
-import json
+import calendar
 import uuid
 from collections import defaultdict
 from datetime import timedelta
-from typing import Any, DefaultDict, Dict, Iterable, List
+from typing import Any, DefaultDict, Dict, List
 
 from django.contrib.auth.models import User
 from django.contrib.postgres.aggregates import ArrayAgg
@@ -21,6 +20,7 @@ from django.contrib.postgres.fields.array import ArrayField
 from django.core.paginator import Page, Paginator
 from django.db import models
 from django.db.models import F, Max, QuerySet
+from django.utils import timezone
 
 from lib.time_utils import get_relative_date_from_date
 
@@ -55,7 +55,7 @@ class Exercise(models.Model):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False)
     name = models.TextField(unique=True)
     muscle: models.ManyToManyField = models.ManyToManyField(
-        Muscle, through="ExerciseMuscle", related_name="muscle"
+        Muscle, through="ExerciseMuscle", related_name="exercises"
     )
     description = models.TextField(blank=True)
     note = models.TextField(blank=True)
@@ -91,15 +91,15 @@ class Exercise(models.Model):
 
         Returns:
             Dict[str, Any]: A dictionary with keys:
-                - "recent_data": QuerySet of Data rows from the latest workout
-                - "latest_reps": list[int] of last set's reps per Data row (0 if null)
-                - "latest_weight": list[float] of last set's weight per Data row (0 if null)
-                - "latest_duration": list[int] of last set's duration per Data row (0 if null)
-                - "delta_days": int day difference from the most recent set to now
+                - "recent_data": list[Data] for that workout (order is the model’s default)
+                - "latest_reps": list[int] (reps for each set, 0 when null)
+                - "latest_weight": list[float] (weight for each set, 0.0 when null)
+                - "latest_duration": list[int] (duration for each set, 0 when null)
+                - "delta_days": int days since the most recent set in that workout
             If no workout exists, lists are empty and no delta is provided.
         """
         workout: Workout | None = (
-            Workout.objects.filter(user=user, exercise__id=self.id).order_by("-date").first()
+            Workout.objects.filter(user=user, exercise=self).order_by("-date").first()
         )
 
         if not workout:
@@ -116,15 +116,11 @@ class Exercise(models.Model):
             "latest_reps": [x.reps or 0 for x in recent_data],
             "latest_weight": [x.weight or 0 for x in recent_data],
             "latest_duration": [x.duration or 0 for x in recent_data],
-            "delta_days": int(
-                (int(datetime.datetime.now().strftime("%s")) - int(recent_data[0].date.strftime("%s"))) / 86400
-            )
-            + 1,
+            "delta_days": (timezone.now() - recent_data[0].date).days + 1,
         }
-
         return info
 
-    def get_plot_data(self, count: int = 12, page_number: int = 1) -> Dict[str, Any]:
+    def get_plot_info(self, count: int = 12, page_number: int = 1) -> Dict[str, Any]:
         """Build plotting payloads (labels, series, notes, pagination) for this exercise.
 
         Args:
@@ -133,11 +129,11 @@ class Exercise(models.Model):
 
         Returns:
             Dict[str, Any]: A dictionary with:
-                - "labels": JSON string of label list (dates)
-                - "plotdata": JSON string mapping series name to list of values
-                - "notes": list[str] of workout notes
+                - "labels": list[str] of date labels (newest first)
+                - "plot_data": dict[str, list[list[int|float|None]]] keyed by "reps", "weight", "duration"
+                - "notes": list[str|None] of workout notes
                 - "initial_plot_type": str of preferred plot series ("reps", "weight", or "duration")
-                - "paginator": JSON string with pagination metadata
+                - "paginator": dict with reversed paging semantics (we page newest → older):
         """
         raw_data: QuerySet[Workout] = (
             Workout.objects.filter(exercise__id=self.id)
@@ -148,42 +144,42 @@ class Exercise(models.Model):
         )
 
         page: Page = Paginator(raw_data, count).page(page_number)
-        page_data: Iterable[Workout] = page.object_list  # QuerySet slice
+        page_data: List[Workout] = list(reversed(page.object_list))
 
         initial_plot_type = "reps"
-        plotdata: Dict[str, Any] = {}
-        plotdata["reps"] = [x.reps for x in page_data][::-1]  # type: ignore[attr-defined]
+        plot_data: Dict[str, Any] = {}
+        plot_data["reps"] = [x.reps for x in page_data]  # type: ignore[attr-defined]
 
-        if [x.weight for x in page_data if getattr(x, "weight", None) and x.weight[0] > 0]:  # type: ignore[attr-defined]
-            plotdata["weight"] = [x.weight for x in page_data][::-1]  # type: ignore[attr-defined]
+        if any(getattr(x, "weight", None) and x.weight[0] > 0 for x in page_data):  # type: ignore[attr-defined]
+            plot_data["weight"] = [x.weight for x in page_data]  # type: ignore[attr-defined]
             initial_plot_type = "weight"
-        elif [x.duration for x in page_data if getattr(x, "duration", None) and x.duration[0] > 0]:  # type: ignore[attr-defined]
-            plotdata["duration"] = [x.duration for x in page_data][::-1]  # type: ignore[attr-defined]
+        elif any(getattr(x, "duration", None) and x.duration[0] > 0 for x in page_data):  # type: ignore[attr-defined]
+            plot_data["duration"] = [x.duration for x in page_data]  # type: ignore[attr-defined]
             initial_plot_type = "duration"
 
         labels: List[str] = [x.date.strftime("%b %d") for x in page_data]
-        notes: List[str | None] = [x.note for x in page_data]  # type: ignore[attr-defined]
+        notes: List[str | None] = [x.note for x in page_data]
 
+        # Note: has_previous and has_next are reversed because we want to show the last
+        #  set of workout data first in the pagination.
         return {
-            "labels": json.dumps(labels[::-1]),
-            "plotdata": json.dumps(plotdata),
+            "labels": labels[::-1],
+            "plot_data": plot_data,
             "notes": notes[::-1],
             "initial_plot_type": initial_plot_type,
-            "paginator": json.dumps(
-                {
-                    "page_number": page_number,
-                    "has_previous": page.has_next(),
-                    "has_next": page.has_previous(),
-                    "previous_page_number": page.next_page_number() if page.has_next() else None,
-                    "next_page_number": page.previous_page_number() if page.has_previous() else None,
-                }
-            ),
+            "paginator": {
+                "page_number": page_number,
+                "has_previous": page.has_next(),
+                "has_next": page.has_previous(),
+                "previous_page_number": page.next_page_number() if page.has_next() else None,
+                "next_page_number": page.previous_page_number() if page.has_previous() else None,
+            }
         }
 
     def get_related_exercises(self) -> QuerySet[Exercise]:
         """Return other exercises that target any of the same muscles.
 
-        Ordering prioritizes most recently active exercises for the user base.
+        Ordering prioritizes the most recently active exercises (across all users).
 
         Returns:
             QuerySet[Exercise]: Related exercises, excluding this one.
@@ -191,7 +187,7 @@ class Exercise(models.Model):
         return (
             Exercise.objects.annotate(last_active=Max("workout__data__date"))
             .filter(muscle__in=self.muscle.all())
-            .exclude(id=self.id)
+            .exclude(pk=self.pk)
             .distinct()
             .order_by(F("last_active").desc(nulls_last=True))
         )
@@ -204,14 +200,14 @@ class ExerciseMuscle(models.Model):
     muscle = models.ForeignKey(Muscle, on_delete=models.CASCADE)
     note = models.TextField(blank=True, null=True)
 
-    WEIGHTS = [
+    TARGETS = [
         ("primary", "primary"),
         ("secondary", "secondary"),
     ]
 
     target: models.CharField = models.CharField(
         max_length=20,
-        choices=WEIGHTS,
+        choices=TARGETS,
         default="primary",
     )
 
@@ -262,7 +258,7 @@ class ExerciseUser(models.Model):
 
     def __str__(self) -> str:
         """Return string representation of the exercise user."""
-        return self.exercise.name
+        return f"Exercise '{self.exercise.name}' for user {self.user.username}"
 
     def activity_info(self) -> Dict[str, Any]:
         """Return a small info bundle describing the user's cadence and start date.
@@ -299,14 +295,5 @@ class ExerciseUser(models.Model):
         if not schedule:
             return ""
 
-        days: List[str] = []
-
-        # We'll start from a known Monday. Let's choose 2023-01-02, which was a Monday.
-        start_date = datetime.datetime(2023, 1, 2)
-
-        for index, day in enumerate(schedule):
-            if day:
-                target_date = start_date + timedelta(days=index)
-                days.append(target_date.strftime("%a"))
-
+        days = [calendar.day_abbr[i] for i, on in enumerate(schedule[:7]) if on]
         return ", ".join(days)

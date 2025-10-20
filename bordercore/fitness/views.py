@@ -13,12 +13,15 @@ from typing import Any, Dict, List, Optional, Tuple, TypedDict, cast
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.db import transaction
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.utils.decorators import method_decorator
+from django.views.decorators.http import require_POST
 from django.views.generic.detail import DetailView
 
 from fitness.services import get_fitness_summary
+from lib.decorators import validate_post_data
 
 from .models import Data, Exercise, ExerciseUser, Workout
 
@@ -53,8 +56,6 @@ class ExerciseDetailView(DetailView):
         Returns:
             dict[str, Any]: A context dictionary containing:
                 - ``object``: The current :class:`Exercise` (from ``DetailView``).
-                - ``plotdata``: A structure returned by
-                  :meth:`Exercise.get_plot_data`.
                 - ``related_exercises``: List of brief dicts describing
                   exercises that share targeted muscles.
                 - ``activity_info``: The user's schedule info for this exercise
@@ -64,15 +65,7 @@ class ExerciseDetailView(DetailView):
         """
         context: Dict[str, Any] = super().get_context_data(**kwargs)
 
-        # Ensure variable is defined for mypy even if the try-block fails.
-        last_workout: Dict[str, Any] = {}
-        try:
-            last_workout = self.object.last_workout(self.request.user)
-        except IndexError:
-            # If there is no workout yet, keep an empty dict to merge below.
-            last_workout = {}
-
-        plot_data: Dict[str, Any] = self.object.get_plot_data()
+        last_workout: Dict[str, Any] = self.object.last_workout(self.request.user)
 
         related_exercises: List[_RelatedExerciseDict] = [
             {
@@ -89,24 +82,20 @@ class ExerciseDetailView(DetailView):
             exercise__id=self.object.id,
         ).first()
 
-        if active:
-            context["activity_info"] = active.activity_info()
-        else:
-            context["activity_info"] = {
-                "schedule": [False, False, False, False, False, False, False],
-            }
+        context["activity_info"] = (active.activity_info() if active else {"schedule": [False] * 7})
 
         # Merge and return final context.
         return {
             **context,
             **last_workout,
-            "plotdata": plot_data,
             "title": f"Exercise Detail :: {self.object.name}",
             "related_exercises": related_exercises,
         }
 
 
 @login_required
+@require_POST
+@validate_post_data("workout-data")
 def fitness_add(request: HttpRequest, exercise_uuid: str) -> HttpResponse:
     """Create a new :class:`Workout` and associated :class:`Data` rows.
 
@@ -123,29 +112,30 @@ def fitness_add(request: HttpRequest, exercise_uuid: str) -> HttpResponse:
         HttpResponse: Redirects to the fitness summary view when complete.
     """
     exercise: Exercise = Exercise.objects.get(uuid=exercise_uuid)
+    user = cast(User, request.user)
+    payload: List[Dict[str, Any]] = json.loads(request.POST["workout-data"])
 
-    if request.method == "POST":
-        user = cast(User, request.user)
-        workout = Workout(user=user, exercise=exercise)
-        if "note" in request.POST:
-            workout.note = request.POST["note"]
-        workout.save()
-
-        payload: List[Dict[str, Any]] = json.loads(request.POST["workout-data"])
-        for datum in payload:
-            new_data = Data(
-                workout=workout,
-                weight=datum["weight"],
-                duration=datum["duration"],
-                reps=datum["reps"],
-            )
-            new_data.save()
-
-        messages.add_message(
-            request,
-            messages.INFO,
-            f"Added workout data for exercise <strong>{exercise}</strong>",
+    with transaction.atomic():
+        workout = Workout.objects.create(user=user, exercise=exercise, note=request.POST.get("note", ""))
+        Data.objects.bulk_create(
+            [
+                Data(
+                    workout=workout,
+                    weight=datum.get("weight") or 0,
+                    duration=datum.get("duration") or 0,
+                    reps=datum.get("reps") or 0,
+                )
+                for datum in payload
+                if isinstance(datum, dict)
+            ],
+            ignore_conflicts=False,
         )
+
+    messages.add_message(
+        request,
+        messages.INFO,
+        f"Added workout data for exercise <strong>{exercise}</strong>",
+    )
 
     return redirect("fitness:summary")
 
@@ -175,6 +165,8 @@ def fitness_summary(request: HttpRequest) -> HttpResponse:
 
 
 @login_required
+@require_POST
+@validate_post_data("uuid")
 def change_active_status(request: HttpRequest) -> JsonResponse:
     """Toggle a user's active status for an exercise, or remove it entirely.
 
@@ -202,15 +194,17 @@ def change_active_status(request: HttpRequest) -> JsonResponse:
         eu = ExerciseUser(
             user=user,
             exercise=exercise,
-            schedule=["True", "False", "False", "False", "False", "False", "False"],
+            schedule=[True, False, False, False, False, False, False],
         )
         eu.save()
         info = eu.activity_info()
 
-    return JsonResponse({"info": info, "status": "OK"}, safe=False)
+    return JsonResponse({"info": info, "status": "OK"})
 
 
 @login_required
+@require_POST
+@validate_post_data("uuid", "note")
 def edit_note(request: HttpRequest) -> JsonResponse:
     """Update the ``note`` field for an :class:`Exercise`.
 
@@ -254,13 +248,15 @@ def get_workout_data(request: HttpRequest) -> JsonResponse:
 
     exercise: Exercise = Exercise.objects.get(uuid=exercise_uuid)
 
-    workout_data: Dict[str, Any] = exercise.get_plot_data(page_number=page_number)
+    workout_data: Dict[str, Any] = exercise.get_plot_info(page_number=page_number)
 
     response: Dict[str, Any] = {"status": "OK", "workout_data": workout_data}
     return JsonResponse(response)
 
 
 @login_required
+@require_POST
+@validate_post_data("uuid", "schedule")
 def update_schedule(request: HttpRequest) -> JsonResponse:
     """Update the weekly schedule for a user's :class:`ExerciseUser` record.
 
@@ -286,10 +282,12 @@ def update_schedule(request: HttpRequest) -> JsonResponse:
     eu.schedule = boolean_values
     eu.save()
 
-    return JsonResponse({"status": "OK"}, safe=False)
+    return JsonResponse({"status": "OK"})
 
 
 @login_required
+@require_POST
+@validate_post_data("uuid", "rest_period")
 def update_rest_period(request: HttpRequest) -> JsonResponse:
     """Update the ``rest_period`` (in seconds/minutes as defined by the model).
 
@@ -312,4 +310,4 @@ def update_rest_period(request: HttpRequest) -> JsonResponse:
     eu.rest_period = rest_period
     eu.save()
 
-    return JsonResponse({"status": "OK"}, safe=False)
+    return JsonResponse({"status": "OK"})

@@ -55,11 +55,6 @@
         <div class="col-lg-9 d-flex flex-column">
             <workout-graph
                 date="{% now " Y - m - d" %}"
-                initial-plot-type="{{ plotdata.initial_plot_type }}"
-                :notes="plotDataNotes"
-                :initial-paginator="JSON.parse('{{ plotdata.paginator|escapejs }}')"
-                :plotdata="JSON.parse('{{ plotdata.plotdata|escapejs }}')"
-                :labels="JSON.parse('{{ plotdata.labels|escapejs }}')"
                 get-workout-data-url="{% url 'fitness:get_workout_data' %}?uuid={{ object.uuid }}&page_number=">
            </workout-graph>
            <div class="d-flex h-100">
@@ -127,7 +122,8 @@
     {{ block.super }}
 
     {{ activity_info|json_script:"activity_info" }}
-    {{ plotdata.notes|json_script:"plotDataNotes" }}
+    {{ plot_info|json_script:"plotInfo" }}
+    {{ plot_info.notes|json_script:"plotDataNotes" }}
     {{ related_exercises|json_script:"related_exercises" }}
 
     <script type="text/javascript" charset="utf-8">
@@ -148,6 +144,7 @@
                 const description = markdown.render("{{ object.description|default:"No description"|escapejs }}");
                 const note = "{{ object.note|escapejs }}";
                 const plotDataNotes = JSON.parse(document.getElementById("plotDataNotes").textContent);
+                const plotInfo = JSON.parse(document.getElementById("plotInfo").textContent);
                 const relatedExercises = JSON.parse(document.getElementById("related_exercises").textContent);
                 const restPeriod = ref({% if activity_info %}{{ activity_info.0.rest_period|default:3 }}{% else %} null{% endif %});
                 const schedule = ref(null);
@@ -203,6 +200,7 @@
                     handleChangeRestPeriod,
                     handleStartTimer,
                     plotDataNotes,
+                    plotInfo,
                     restPeriod,
                 };
             },

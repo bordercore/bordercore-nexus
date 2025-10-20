@@ -7,22 +7,22 @@
                         <button type="button" class="btn btn-primary" :class="{'active': currentPlotType === 'reps' }" @click="switchPlot('reps')">
                             Reps
                         </button>
-                        <button v-if="Object.keys(plotdata).includes('weight')" type="button" class="btn btn-primary" :class="{'active': currentPlotType === 'weight' }" @click="switchPlot('weight')">
+                        <button v-if="plotInfo?.plot_data && 'weight' in plotInfo.plot_data" type="button" class="btn btn-primary" :class="{'active': currentPlotType === 'weight' }" @click="switchPlot('weight')">
                             Weight
                         </button>
-                        <button v-if="Object.keys(plotdata).includes('duration')" type="button" class="btn btn-primary" :class="{'active': currentPlotType === 'duration' }" @click="switchPlot('duration')">
+                        <button v-if="plotInfo?.plot_data && 'duration' in plotInfo.plot_data" type="button" class="btn btn-primary" :class="{'active': currentPlotType === 'duration' }" @click="switchPlot('duration')">
                             Duration
                         </button>
                     </div>
                 </div>
                 <h5 class="ms-auto">
-                    <a v-if="paginator.has_previous" href="#" @click.prevent="paginate('prev')">
+                    <a v-if="plotInfo && plotInfo.paginator.has_previous" href="#" @click.prevent="paginate('prev')">
                         <font-awesome-icon icon="chevron-left" class="text-emphasis glow icon-hover" />
                     </a>
                     <span v-else>
                         <font-awesome-icon icon="chevron-left" class="text-emphasis icon-disabled" />
                     </span>
-                    <a v-if="paginator.has_next" href="#" class="ms-1" @click.prevent="paginate('next')">
+                    <a v-if="plotInfo && plotInfo.paginator.has_next" href="#" class="ms-1" @click.prevent="paginate('next')">
                         <font-awesome-icon icon="chevron-right" class="text-emphasis glow icon-hover" />
                     </a>
                     <span v-else>
@@ -54,38 +54,17 @@
                 default: "",
                 type: String,
             },
-            initialPlotType: {
-                default: "",
-                type: String,
-            },
-            notes: {
-                default: () => [],
-                type: Array,
-            },
-            initialPaginator: {
-                default: function() {},
-                type: Object,
-            },
-            plotdata: {
-                default: function() {},
-                type: Object,
-            },
-            labels: {
-                default: function() {},
-                type: Object,
-            },
             getWorkoutDataUrl: {
                 default: "",
                 type: String,
             },
         },
         setup(props) {
-            const currentPlotType = ref(props.initialPlotType);
-            const notes = ref(props.notes);
-            const paginator = ref(props.initialPaginator);
-            const plotdata = ref(props.plotdata);
+            const currentPlotType = ref("reps");
+            let myChart = null;
+            const plotInfo = ref(null);
             const hasNote = computed(() => {
-                return notes.value.filter((x) => x !== null).length > 0;
+                return plotInfo.value && plotInfo.value.notes.filter((x) => x !== null).length > 0;
             });
 
             function firstSet(workoutData) {
@@ -114,19 +93,29 @@
             };
 
             function paginate(direction) {
-                const pageNumber = direction === "prev" ?
-                    paginator.value.previous_page_number :
-                    paginator.value.next_page_number;
+                const pageNumber =
+                    plotInfo.value?.paginator?.[direction === "prev" ? "previous_page_number" : "next_page_number"] ?? 1;
 
                 doGet(
                     props.getWorkoutDataUrl + pageNumber,
                     (response) => {
-                        plotdata.value = JSON.parse(response.data.workout_data.plotdata);
-                        notes.value = response.data.workout_data.notes;
-                        myChart.data.labels = JSON.parse(response.data.workout_data.labels);
-                        myChart.data.datasets[0].data = JSON.parse(response.data.workout_data.plotdata)[currentPlotType.value].map(firstSet);
+                        const wd = response.data.workout_data;
+                        plotInfo.value = {
+                            labels: wd.labels,
+                            plot_data: wd.plot_data,
+                            paginator: wd.paginator,
+                            notes: wd.notes ?? [],
+                        };
+
+                        if (!myChart) {
+                            createChart();
+                            return;
+                        }
+
+                        myChart.data.labels = response.data.workout_data.labels;
+                        myChart.data.datasets[0].data = response.data.workout_data.plot_data[currentPlotType.value].map(firstSet);
                         myChart.update();
-                        paginator.value = JSON.parse(response.data.workout_data.paginator);
+                        plotInfo.value.paginator = response.data.workout_data.paginator;
                     },
                     "Error getting workout data",
                 );
@@ -134,14 +123,12 @@
 
             function switchPlot(dataset) {
                 currentPlotType.value = dataset;
-                myChart.data.datasets[0].data = plotdata.value[dataset].map(firstSet);
+                myChart.data.datasets[0].data = plotInfo.value.plot_data[dataset].map(firstSet);
                 myChart.options.scales.y.title.text = capitalizeFirstLetter(dataset);
                 myChart.update();
             };
 
-            let myChart = null;
-
-            onMounted(() => {
+            function createChart() {
                 const scaleYText = capitalizeFirstLetter(currentPlotType.value);
                 const styles = getComputedStyle(document.body);
                 const ctx = document.getElementById("exercise-detail-chart").getContext("2d");
@@ -149,10 +136,10 @@
                 myChart = new Chart(ctx, {
                     type: "bar",
                     data: {
-                        labels: props.labels,
+                        labels: plotInfo.value.labels,
                         datasets: [
                             {
-                                data: plotdata.value[currentPlotType.value].map(firstSet),
+                                data: plotInfo.value.plot_data[currentPlotType.value].map(firstSet),
                                 barThickness: 40,
                                 backgroundColor: function(context) {
                                     const chart = context.chart;
@@ -162,13 +149,13 @@
                                         // This case happens on initial chart load
                                         return;
                                     }
-                                    return getGradient(plotdata.value[currentPlotType.value].length);
+                                    return getGradient(plotInfo.value.plot_data[currentPlotType.value].length);
                                 },
                             },
                         ],
                     },
                     options: {
-                        borderRadius: "10",
+                        borderRadius: 10,
                         animation: {
                             onProgress: function(chartInstance) {
                                 const ctx = this.ctx;
@@ -181,7 +168,7 @@
                                     const meta = chartInstance.chart.getDatasetMeta(i);
                                     meta.data.forEach(function(bar, index) {
                                         const data = dataset.data[index];
-                                        const note = notes.value[index];
+                                        const note = plotInfo.value.notes[index];
                                         ctx.fillText(data + (note ? "\n*" : ""), bar.x, bar.y + 30);
                                     });
                                 });
@@ -207,8 +194,8 @@
                                         return null;
                                     },
                                     title(tooltipItem) {
-                                        const data = plotdata.value[currentPlotType.value][tooltipItem[0].dataIndex];
-                                        const note = notes.value[tooltipItem[0].dataIndex];
+                                        const data = plotInfo.value.plot_data[currentPlotType.value][tooltipItem[0].dataIndex];
+                                        const note = plotInfo.value.notes[tooltipItem[0].dataIndex];
                                         return `${capitalizeFirstLetter(currentPlotType.value)}: ${data}` + (note ? `\nNote: ${note}` : "");
                                     },
                                 },
@@ -258,13 +245,17 @@
                         },
                     },
                 });
+            };
+
+            onMounted(() => {
+                paginate("next");
             });
 
             return {
                 currentPlotType,
                 hasNote,
                 paginate,
-                paginator,
+                plotInfo,
                 switchPlot,
             };
         },
