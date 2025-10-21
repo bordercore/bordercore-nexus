@@ -1,0 +1,83 @@
+[tool.coverage.run]
+plugins = ["django_coverage_plugin"]
+
+[tool.coverage.django_coverage_plugin]
+template_extensions = "html"
+
+[tool.coverage.report]
+omit = [
+  "*/__init__.py*",
+  "*test*",
+  "*/migrations/*",
+  "bordercore/apps/rfc3339.py",
+  "*/env/*",
+  "*/node_modules/*",
+  "*aws-sam*",
+]
+
+# Plugin-specific configuration (Django)
+[tool.django-stubs]
+django_settings_module = "config.settings.dev"
+
+[tool.isort]
+sections = ["FUTURE", "STDLIB", "THIRDPARTY", "DJANGO", "FIRSTPARTY", "LOCALFOLDER"]
+known_django = ["django"]
+known_first_party = [
+  "accounts", "api", "blob", "bookmark", "collection", "drill",
+  "fitness", "homepage", "lib", "metrics", "music", "node",
+  "search", "quote", "tag", "todo"
+]
+virtual_env = "/home/jerrell/dev/django/env"
+
+[tool.mypy]
+ignore_missing_imports = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+explicit_package_bases = true
+
+# Keep your verbose-regex exclude exactly as-is
+exclude = '''
+(?x)(
+    # Exclude all test files
+    (^|/)tests/
+    |
+    # Exclude test configuration file
+    conftest\.py
+ )
+'''
+
+# Search path additions
+mypy_path = ["bordercore"]
+
+# Plugins (Django)
+plugins = ["mypy_django_plugin.main"]
+
+# Per-module overrides (equivalent to [mypy-modules.rfc3339] in INI)
+[[tool.mypy.overrides]]
+module = ["modules.rfc3339"]
+ignore_errors = true
+
+[tool.pylint.MAIN]
+load-plugins = ["pylint_django"]
+django-settings-module = "config.settings.dev"
+max-line-length = 160
+
+[tool.pylint."MESSAGES CONTROL"]
+disable = ["imported-auth-user"]
+
+[tool.pytest.ini_options]
+addopts = "--capture=no --tb=line -p no:cacheprovider --ignore=node_modules"
+markers = [
+    "data_quality: tests that measure data integrity",
+    "django_db: Access the Django database (provided by pytest-django)",
+    "functional: functional tests",
+    "wumpus: tests that should only be run on wumpus",
+]
+filterwarnings = [
+    # Wait for PyMuPDF upgrade for these warnings to go away
+    # https://github.com/swig/swig/issues/2881#issuecomment-2332652634
+    "ignore:.*swigvarlink has no __module__ attribute:DeprecationWarning",
+    "ignore:.*SwigPy(Packed|Object|varlink).*__module__ attribute",
+    # Remove this after upgrading to Django 6
+    "ignore:The FORMS_URLFIELD_ASSUME_HTTPS transitional setting is deprecated.",
+]

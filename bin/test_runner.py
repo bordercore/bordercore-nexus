@@ -145,7 +145,7 @@ def run_test(test_kind: TestKind, is_verbose: bool = False) -> int:
                 f"--cov={os.environ.get('BORDERCORE_HOME')}",
                 "--cov-report=html",
                 f"--cov-report=xml:{COVERAGE_REPORT}",
-                f"--cov-config={os.environ.get('BORDERCORE_HOME')}/../.coveragerc"
+                f"--cov-config={os.environ.get('BORDERCORE_HOME')}/../pyproject.toml"
             ]
         }
 
