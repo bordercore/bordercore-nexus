@@ -55,10 +55,19 @@ def get_recent_objects(request):
     #  is only included when needed because of its size.
     skip_content = urls.reverse("blob:list") != request.get_full_path()
 
-    recent_blobs, doctypes = get_recent_blobs_service(request.user, skip_content=skip_content)
-    recent_media = get_recent_media(request.user)
-    recent_bookmarks = get_recent_bookmarks(request.user)
-    recently_viewed_blobs = get_recently_viewed(request.user)
+    recent_blobs, doctypes = [], []
+    recent_media = []
+    recent_bookmarks = []
+    recently_viewed_blobs = []
+    elasticsearch_error = ""
+
+    try:
+        recent_blobs, doctypes = get_recent_blobs_service(request.user, skip_content=skip_content)
+        recent_media = get_recent_media(request.user)
+        recent_bookmarks = get_recent_bookmarks(request.user)
+        recently_viewed_blobs = get_recently_viewed(request.user)
+    except Exception as e:
+        elasticsearch_error = e.error
 
     return {
         "recent_blobs": {
@@ -73,7 +82,8 @@ def get_recent_objects(request):
         },
         "recently_viewed": {
             "blobList": recently_viewed_blobs
-        }
+        },
+        "elasticsearch_error": elasticsearch_error
     }
 
 

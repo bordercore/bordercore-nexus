@@ -41,9 +41,9 @@ def get_recent_blobs(user, limit=10, skip_content=False):
     # Create user-specific cache key
     cache_key = f"recent_blobs_{user.id}"
 
-    cached_bookmarks = cache.get(cache_key)
-    if cached_bookmarks is not None:
-        return cached_bookmarks
+    cached_blobs = cache.get(cache_key)
+    if cached_blobs is not None:
+        return cached_blobs
 
     blob_list = Blob.objects.filter(
         user=user
@@ -100,9 +100,9 @@ def get_recent_media(user, limit=10):
     # Create user-specific cache key
     cache_key = f"recent_media_{user.id}"
 
-    cached_bookmarks = cache.get(cache_key)
-    if cached_bookmarks is not None:
-        return cached_bookmarks
+    cached_media = cache.get(cache_key)
+    if cached_media is not None:
+        return cached_media
 
     image_list = Blob.objects.filter(
         Q(user=user) & (

@@ -40,6 +40,12 @@
             </toast>
         </div>
 
+        {% if elasticsearch_error %}
+        <div class="site-banner alert alert-danger fs-5" role="alert">
+            <strong>Error connecting to Elasticsearch:</strong> {{ elasticsearch_error }}
+        </div>
+        {% endif %}
+
         <div class="wrapper {% if request.session.show_sidebar == "false" %}collapsed{% else %}sidebar-transition{% endif %}">
 
             <div class="container-fluid d-flex flex-column" id="content">
