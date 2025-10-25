@@ -2,7 +2,7 @@
     <card title="" class="flex-grow-0 me-2 pt-3 backdrop-filter">
         <template #content>
             <div class="d-flex">
-                <div>
+                <div class="d-flex w-100">
                     <div class="btn-group" role="group" aria-label="Basic example">
                         <button type="button" class="btn btn-primary" :class="{'active': currentPlotType === 'reps' }" @click="switchPlot('reps')">
                             Reps
@@ -14,8 +14,13 @@
                             Duration
                         </button>
                     </div>
+                    <div class="d-flex justify-content-center w-100">
+                        <h2 class="fw-semibold">
+                            Workout Data
+                        </h2>
+                    </div>
                 </div>
-                <h5 class="ms-auto">
+                <h5 class="text-nowrap ms-auto">
                     <a v-if="plotInfo && plotInfo.paginator.has_previous" href="#" @click.prevent="paginate('prev')">
                         <font-awesome-icon icon="chevron-left" class="text-emphasis glow icon-hover" />
                     </a>
@@ -176,14 +181,7 @@
                         },
                         plugins: {
                             title: {
-                                display: true,
-                                text: "Workout Data",
-                                color: styles.getPropertyValue("--chart-title-color"),
-                                font: {
-                                    family: "Lato",
-                                    size: 48,
-                                    weight: "normal",
-                                },
+                                display: false,
                             },
                             legend: {
                                 display: false,
