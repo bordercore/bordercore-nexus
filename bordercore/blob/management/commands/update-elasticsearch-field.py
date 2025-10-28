@@ -53,12 +53,12 @@ class Command(BaseCommand):
                     "uuid": uuid,
                 }
             },
-            "from": 0,
+            "from_": 0,
             "size": 1,
             "_source": [field]
         }
 
-        return self.es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)["hits"]["hits"][0]["_source"][field]
+        return self.es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)["hits"]["hits"][0]["_source"][field]
 
     def set_content_type(self, uuid, field, value):
 

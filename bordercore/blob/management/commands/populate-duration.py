@@ -123,8 +123,8 @@ class Command(BaseCommand):
                     }
                 }
             },
-            "from": 0, "size": 1000,
+            "from_": 0, "size": 1000,
             "_source": ["duration", "filename", "uuid"]
         }
 
-        return es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)["hits"]
+        return es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)["hits"]

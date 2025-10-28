@@ -193,7 +193,7 @@ class SearchListView(ListView):
                 "order": "score"
             },
             "sort": {sort_field: {"order": "desc"}},
-            "from": offset,
+            "from_": offset,
             "size": self.RESULT_COUNT_PER_PAGE,
             "_source": [
                 "album_uuid",
@@ -253,7 +253,7 @@ class SearchListView(ListView):
 
         es = get_elasticsearch_connection(host=settings.ELASTICSEARCH_ENDPOINT, timeout=40)
         try:
-            results = es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)
+            results = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
         except RequestError as e:
             messages.add_message(self.request, messages.ERROR, f"Request Error: {e.status_code} {e.info['error']}")
             return []
@@ -295,7 +295,7 @@ class NoteListView(SearchListView):
     def refine_search(self, search_object):
 
         page = int(self.request.GET.get("page", 1))
-        search_object["from"] = (page - 1) * self.RESULT_COUNT_PER_PAGE
+        search_object["from_"] = (page - 1) * self.RESULT_COUNT_PER_PAGE
 
         search_object["_source"].append("contents")
 
@@ -457,7 +457,7 @@ class SearchTagDetailView(ListView):
                 {"importance": {"order": "desc"}},
                 {"last_modified": {"order": "desc"}}
             ],
-            "from": 0,
+            "from_": 0,
             "size": self.RESULT_COUNT_PER_PAGE,
             "_source": [
                 "artist",
@@ -482,7 +482,7 @@ class SearchTagDetailView(ListView):
             ]
         }
 
-        return es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)
+        return es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
 
     def get_context_data(self, **kwargs):
 
@@ -737,7 +737,7 @@ def search_tags_es(user, search_term, doc_types):
                 }
             }
         },
-        "from": 0, "size": 100,
+        "from_": 0, "size": 100,
         "_source": ["album_id",
                     "album",
                     "artist",
@@ -771,7 +771,7 @@ def search_tags_es(user, search_term, doc_types):
             }
         )
 
-    results = es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)
+    results = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
 
     matches = []
     for tag_result in results["aggregations"]["Distinct Tags"]["buckets"]:
@@ -883,7 +883,7 @@ def search_names_es(user, search_term, doc_types):
                 "artist.autocomplete": {}
             }
         },
-        "from": 0,
+        "from_": 0,
         "size": SEARCH_LIMIT,
         "_source": ["album_uuid",
                     "album",
@@ -970,7 +970,7 @@ def search_names_es(user, search_term, doc_types):
             }
         )
 
-    results = es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)
+    results = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
     matches = []
 
     cache_checker = is_cached()
@@ -1061,7 +1061,7 @@ def search_music(request):
                 }
             }
         },
-        "from": 0,
+        "from_": 0,
         "size": limit,
         "_source": ["album_uuid",
                     "album",
@@ -1149,7 +1149,7 @@ def search_music(request):
             search_object["sort"] = {"track": {"order": "asc"}}
             search_object["size"] = 1000  # Get all songs from the album
 
-    results = es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)
+    results = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
 
     return JsonResponse(
         [

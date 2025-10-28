@@ -249,7 +249,7 @@ def get_books(user, tag=None, search=None):
         )
         search_object["size"] = 1000
 
-    return es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)
+    return es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
 
 
 def get_blob_sizes(blob_list):
@@ -275,7 +275,7 @@ def get_blob_sizes(blob_list):
     }
 
     es = get_elasticsearch_connection(host=settings.ELASTICSEARCH_ENDPOINT, timeout=5)
-    found = es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)
+    found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
 
     blob_cache = {}
     for match in found["hits"]["hits"]:

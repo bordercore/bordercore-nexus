@@ -97,7 +97,7 @@ class Command(BaseCommand):
             "_source": ["uuid"]
         }
 
-        found = es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)
+        found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
 
         blobs = {}
         for match in found["hits"]["hits"]:

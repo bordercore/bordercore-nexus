@@ -115,7 +115,7 @@ def test_songs_in_db_exist_in_elasticsearch(es):
             "_source": [""]
         }
 
-        found = es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)
+        found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
 
         assert found["hits"]["total"]["value"] == batch_size,\
             "Songs found in the database but not in Elasticsearch: " + get_missing_blob_ids(songs[batch:batch + step_size], found)
@@ -154,10 +154,10 @@ def test_elasticsearch_songs_exist_in_s3(es):
                 ]
             }
         },
-        "from": 0, "size": 10000,
+        "from_": 0, "size": 10000,
         "_source": ["uuid"]
     }
-    songs_in_elasticsearch = es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)["hits"]["hits"]
+    songs_in_elasticsearch = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)["hits"]["hits"]
     es_uuids = [song["_source"]["uuid"] for song in songs_in_elasticsearch]
 
     # Get all song UUIDs from S3

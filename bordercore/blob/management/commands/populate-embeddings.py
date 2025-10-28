@@ -103,8 +103,8 @@ class Command(BaseCommand):
                     }
                 }
             },
-            "from": 0,
+            "from_": 0,
             "_source": ["name", "uuid"]
         }
 
-        return len(es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)["hits"]["hits"]) > 0
+        return len(es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)["hits"]["hits"]) > 0

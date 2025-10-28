@@ -144,7 +144,7 @@ def get_random_image(request, content_type=None):
                 }
             }
         },
-        "from": 0,
+        "from_": 0,
         "size": 1,
         "_source": [
             "filename",
@@ -153,7 +153,7 @@ def get_random_image(request, content_type=None):
         ]
     }
 
-    results = es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)
+    results = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
 
     if results["hits"]["hits"]:
         return results["hits"]["hits"][0]["_source"]

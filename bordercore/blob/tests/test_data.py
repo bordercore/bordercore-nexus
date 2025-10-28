@@ -72,11 +72,11 @@ def test_books_with_tags(es):
                 ]
             }
         },
-        "from": 0, "size": 10000,
+        "from_": 0, "size": 10000,
         "_source": ["uuid"]
     }
 
-    found = es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)['hits']
+    found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)['hits']
 
     assert found['total']['value'] == 0, f"{found['total']['value']} books found without tags, uuid={found['hits'][0]['_id']}"
 
@@ -122,11 +122,11 @@ def test_documents_and_notes_with_dates(es):
                 ]
             }
         },
-        "from": 0, "size": 10000,
+        "from_": 0, "size": 10000,
         "_source": ["uuid"]
     }
 
-    found = es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)["hits"]
+    found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)["hits"]
 
     assert found["total"]["value"] == 0, f"{found['total']['value']} documents or notes have no date, uuid={found['hits'][0]['_id']}"
 
@@ -156,11 +156,11 @@ def test_videos_with_durations(es):
                 ]
             }
         },
-        "from": 0, "size": 10000,
+        "from_": 0, "size": 10000,
         "_source": ["uuid"]
     }
 
-    found = es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)["hits"]
+    found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)["hits"]
 
     assert found["total"]["value"] == 0, f"{found['total']['value']} videos found with no duration, uuid={found['hits'][0]['_id']}"
 
@@ -201,11 +201,11 @@ def test_dates_with_unixtimes(es):
                 ]
             }
         },
-        "from": 0, "size": 10000,
+        "from_": 0, "size": 10000,
         "_source": ["uuid"]
     }
 
-    found = es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)["hits"]["total"]["value"]
+    found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)["hits"]["total"]["value"]
     assert found == 0, f"{found} documents fail this test"
 
 
@@ -234,11 +234,11 @@ def test_books_with_names(es):
                 ]
             }
         },
-        "from": 0, "size": 10000,
+        "from_": 0, "size": 10000,
         "_source": ["uuid"]
     }
 
-    found = es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)["hits"]["total"]["value"]
+    found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)["hits"]["total"]["value"]
 
     assert found == 0, f"{found} books found with no name"
 
@@ -273,11 +273,11 @@ def test_books_with_author(es):
                 ]
             }
         },
-        "from": 0, "size": 10000,
+        "from_": 0, "size": 10000,
         "_source": ["uuid"]
     }
 
-    found = es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)["hits"]
+    found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)["hits"]
     assert found["total"]["value"] == 0, f"{found['total']['value']} books found with no author, uuid={found['hits'][0]['_id']}"
 
 
@@ -307,11 +307,11 @@ def test_books_with_contents(es):
                 ]
             }
         },
-        "from": 0, "size": 10000,
+        "from_": 0, "size": 10000,
         "_source": ["filename", "uuid"]
     }
 
-    found = es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)["hits"]
+    found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)["hits"]
 
     for match in found["hits"]:
         if match["_source"]["filename"].endswith("pdf") and match["_id"] not in blobs_not_indexed:
@@ -354,7 +354,7 @@ def test_blobs_in_db_exist_in_elasticsearch(es):
             "track_total_hits": True  # Ensure accurate total count
         }
 
-        found = es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)
+        found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
         found_count = found["hits"]["total"]["value"]
 
         assert found_count == batch_size, (
@@ -490,11 +490,11 @@ def test_elasticsearch_blobs_exist_in_s3(es):
                 }
             }
         },
-        "from": 0, "size": 10000,
+        "from_": 0, "size": 10000,
         "_source": ["filename", "sha1sum", "uuid"]
     }
 
-    found = es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)["hits"]["hits"]
+    found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)["hits"]["hits"]
 
     s3_resource = boto3.resource("s3")
 
@@ -569,7 +569,7 @@ def test_elasticsearch_blobs_exist_in_db(es):
         "_source": ["uuid"]
     }
 
-    found = es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)["hits"]["hits"]
+    found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)["hits"]["hits"]
 
     if not found:
         return
@@ -645,7 +645,7 @@ def test_blob_metadata_exists_in_elasticsearch(es):
         }
 
         try:
-            result = es.search(index=settings.ELASTICSEARCH_INDEX, body=search_body)
+            result = es.search(index=settings.ELASTICSEARCH_INDEX, **search_body)
             found_blobs = {hit["_source"]["uuid"]: hit["_source"] for hit in result["hits"]["hits"]}
 
             # Verify each blob's metadata
@@ -687,7 +687,7 @@ def test_elasticsearch_search(es):
         "_source": ["uuid"]
     }
 
-    found = es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)["hits"]["total"]["value"]
+    found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)["hits"]["total"]["value"]
     assert found >= 1, "Simple Elasticsearch fails"
 
 
@@ -761,7 +761,7 @@ def test_blob_tags_match_elasticsearch(es):
             "_source": ["uuid"],
         }
 
-        found = es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)
+        found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
         expected_count = len(should_queries)
         actual_count = found["hits"]["total"]["value"]
 
@@ -819,11 +819,11 @@ def test_blobs_have_size_field(es):
                 ]
             }
         },
-        "from": 0, "size": 10000,
+        "from_": 0, "size": 10000,
         "_source": ["uuid"]
     }
 
-    found = es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)["hits"]
+    found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)["hits"]
     assert found["total"]["value"] == 0, f"{found['total']['value']} blobs found with no size, uuid={found['hits'][0]['_source']['uuid']}"
 
 
@@ -845,11 +845,11 @@ def test_no_test_data_in_elasticsearch(es):
                 },
             }
         },
-        "from": 0, "size": 10000,
+        "from_": 0, "size": 10000,
         "_source": ["uuid"]
     }
 
-    found = es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)["hits"]
+    found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)["hits"]
 
     assert found["total"]["value"] == 0, f"{found['total']['value']} documents with test data found, uuid={found['hits'][0]['_id']}"
 
@@ -872,7 +872,7 @@ def test_embeddings_exist(es):
         "_source": ["contents", "uuid"]
     }
 
-    found = es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)["hits"]
+    found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)["hits"]
 
     # Note that we can't filter out documents whose contents are the empty string
     # in the query, since that field is analyzed and thus whitespace would be

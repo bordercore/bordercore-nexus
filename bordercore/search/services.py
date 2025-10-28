@@ -59,7 +59,7 @@ def semantic_search(request, search):
 
     es = get_elasticsearch_connection(host=settings.ELASTICSEARCH_ENDPOINT)
     try:
-        return es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)
+        return es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
     except RequestError as e:
         messages.add_message(request, messages.ERROR, f"Request Error: {e.status_code} {e.info['error']}")
         return []

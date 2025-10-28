@@ -69,7 +69,7 @@ def test_bookmarks_in_db_exist_in_elasticsearch(es):
             "_source": ["uuid"]
         }
 
-        found = es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)
+        found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
         if found["hits"]["total"]["value"] != batch_size:
             missing_uuids = get_missing_bookmark_ids(bookmarks[batch:batch + step], found)
             uuid_list = "\nuuid:".join(x for x in missing_uuids)
@@ -154,7 +154,7 @@ def test_bookmark_tags_match_elasticsearch(es):
             "_source": ["uuid"],
         }
 
-        found = es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)
+        found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
         expected_count = len(should_queries)
         actual_count = found["hits"]["total"]["value"]
 
@@ -182,12 +182,12 @@ def test_elasticsearch_bookmarks_exist_in_db(es):
                 "doctype": "bookmark"
             }
         },
-        "from": 0,
+        "from_": 0,
         "size": 10000,
         "_source": ["uuid"]
     }
 
-    found = es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)["hits"]["hits"]
+    found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)["hits"]["hits"]
 
     if not found:
         return

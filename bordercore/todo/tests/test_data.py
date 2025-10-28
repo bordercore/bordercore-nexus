@@ -41,7 +41,7 @@ def test_todo_tasks_in_db_exist_in_elasticsearch(es):
         "_source": ["uuid"]
     }
 
-    found = es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)
+    found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
 
     # Convert ES results to set for fast O(1) lookups
     es_uuids = {hit["_source"]["uuid"] for hit in found["hits"]["hits"]}
@@ -100,7 +100,7 @@ def test_todo_tags_match_elasticsearch(es):
 
     # Execute all searches in ONE Elasticsearch request
     if search_requests:
-        results = es.msearch(body=search_requests)
+        results = es.msearch(search_requests)
 
         # Check results (one result per todo)
         for i, task in enumerate(todos_list):
@@ -122,10 +122,10 @@ def test_elasticsearch_todo_tasks_exist_in_db(es):
                 "doctype": "todo"
             }
         },
-        "from": 0, "size": 10000,
+        "from_": 0, "size": 10000,
         "_source": ["_id", "bordercore_id"]
     }
-    found = es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)["hits"]["hits"]
+    found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)["hits"]["hits"]
 
     if not found:
         return

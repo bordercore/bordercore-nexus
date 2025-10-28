@@ -165,7 +165,7 @@ def search(
                 }
             }
         },
-        "from": 0,
+        "from_": 0,
         "size": 0,
         "_source": ["tags"]
     }
@@ -181,7 +181,7 @@ def search(
             },
         )
 
-    results = es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)
+    results = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
 
     matches = []
     for tag_result in results["aggregations"]["distinct_tags"]["buckets"]:
@@ -239,7 +239,7 @@ def find_related_tags(tag_name: str, user: User, doc_type: Optional[str]) -> Lis
                 }
             }
         },
-        "from": 0,
+        "from_": 0,
         "size": 0,
         "_source": ["tags"]
     }
@@ -253,7 +253,7 @@ def find_related_tags(tag_name: str, user: User, doc_type: Optional[str]) -> Lis
             }
         )
 
-    results = es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)
+    results = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
 
     matches = []
     for tag_result in results["aggregations"]["distinct_tags"]["buckets"]:

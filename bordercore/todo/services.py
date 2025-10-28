@@ -73,7 +73,7 @@ def search(user: User, todo_name: str) -> List[Dict[str, Any]]:
                 ]
             }
         },
-        "from": 0,
+        "from_": 0,
         "size": SEARCH_LIMIT,
         "_source": [
             "date",
@@ -87,7 +87,7 @@ def search(user: User, todo_name: str) -> List[Dict[str, Any]]:
         ]
     }
 
-    results = es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)
+    results = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
 
     return [
         {

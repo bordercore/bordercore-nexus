@@ -263,12 +263,12 @@ def search(user: User, artist_name: str) -> List[Dict[str, str]]:
                 }
             }
         },
-        "from": 0,
+        "from_": 0,
         "size": 0,
         "_source": [""]
     }
 
-    results: Dict[str, Any] = es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)
+    results: Dict[str, Any] = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
 
     return [
         {
