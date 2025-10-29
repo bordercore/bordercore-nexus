@@ -40,11 +40,13 @@ jobs:
 
     - name: Run mypy
       run: |
-        mypy --config-file mypy.ini \
-          bordercore/todo/ \
-          bordercore/tag/ \
+        mypy --config-file pyproject.toml \
+          bordercore/drill/ \
+          bordercore/feed/ \
+          bordercore/fitness/ \
+          bordercore/node/ \
           bordercore/music/ \
-          bordercore/node/
+          bordercore/tag/
 
     - name: Run tests
       env:
