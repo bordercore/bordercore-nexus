@@ -1438,6 +1438,45 @@ blockquote > p {
   color: var(--text5);
 }
 
+// Tags drawer for responsive design
+.bookmark-tags-sidebar {
+  @media (max-width: 991.98px) {
+    position: fixed;
+    z-index: 1050;
+    top: 0;
+    left: 0;
+    width: 18.75rem;
+    max-width: 80vw;
+    height: 100vh;
+    background-color: var(--surface2);
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.3);
+    overflow-y: auto;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease-in-out;
+
+    &.drawer-open {
+      transform: translateX(0);
+    }
+  }
+}
+
+.bookmark-tags-drawer-overlay {
+  @media (max-width: 991.98px) {
+    position: fixed;
+    z-index: 1040;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    transition: opacity 0.3s ease-in-out;
+  }
+}
+
+.bookmark-tags-drawer-toggle {
+  min-width: 5rem;
+}
+
 #bookmark-list-container {
   min-height: 100%;
   border-radius: var(--border-radius2);

@@ -6,7 +6,15 @@
 
     <div id="vue-app" class="row g-0 h-100 mx-2">
 
-        <div class="col-lg-3 d-flex flex-column">
+        <!-- Tags drawer overlay (for mobile) -->
+        <div
+            v-if="drawerOpen"
+            class="bookmark-tags-drawer-overlay"
+            @click="toggleDrawer"
+        ></div>
+
+        <!-- Tags section - hidden on small screens, shown in drawer -->
+        <div class="col-lg-3 d-flex flex-column bookmark-tags-sidebar" :class="{'drawer-open': drawerOpen}">
             <pinned-tags
                 ref="pinnedTags"
                 add-tag-url="{% url "bookmark:add_tag" %}"
@@ -24,6 +32,16 @@
                 <div id="bookmark-search-form" class="d-flex flex-column me-2 p-3">
                     <div v-cloak>
                         <div class="d-flex">
+                            <!-- Tags/Filters button for mobile -->
+                            <button
+                                type="button"
+                                class="btn btn-primary bookmark-tags-drawer-toggle d-lg-none me-2"
+                                @click="toggleDrawer"
+                                aria-label="Toggle Tags"
+                            >
+                                <font-awesome-icon icon="tags" class="me-2"></font-awesome-icon>
+                                Tags
+                            </button>
                             <form class="form-inline" role="form" method="get" @submit.prevent>
                             {% csrf_token %}
                                 <input :value="pinnedTags && bookmarkStore.selectedTagName" type="hidden" name="tag" />
@@ -260,6 +278,7 @@
                 const searchTerm = ref();
                 const selectedBookmarkUuid = ref();
                 const viewType = ref("{{ request.session.bookmark_view_type|default:'normal' }}");
+                const drawerOpen = ref(false);
 
                 const pinnedTags = ref(null);
                 const selectValue = ref(null);
@@ -549,6 +568,10 @@
                     );
                 };
 
+                function toggleDrawer() {
+                    drawerOpen.value = !drawerOpen.value;
+                };
+
                 function unescapeHtml(html) {
                     // Source: https://stackoverflow.com/a/46851765/378256
                     const el = document.createElement("div");
@@ -562,9 +585,17 @@
                     return pinnedTags.value && bookmarkStore.selectedTagName !== null && bookmarkStore.selectedTagName !== "Untagged";
                 });
 
+                // Close drawer when a tag is selected on mobile
+                watch(() => bookmarkStore.selectedTagName, () => {
+                    if (drawerOpen.value && window.innerWidth < 992) {
+                        drawerOpen.value = false;
+                    }
+                });
+
                 return {
                     bookmarkList,
                     bookmarkStore,
+                    drawerOpen,
                     filteredTags,
                     getBookmarkList,
                     getPage,
@@ -591,6 +622,7 @@
                     selectValue,
                     switchViewType,
                     tagIsSelected,
+                    toggleDrawer,
                     unescapeHtml,
                     viewType,
                 }
