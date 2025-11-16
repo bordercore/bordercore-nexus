@@ -751,8 +751,56 @@ a.tag {
     border-bottom: 1px solid var(--surface6);
   }
 
+  tbody tr {
+    background-color: var(--surface2);
+    color: var(--text1);
+  }
+
+  tbody td {
+    color: var(--text1);
+  }
+
   &.o-table--hoverable tbody tr {
     @extend .hoverable-cells;
+  }
+
+  // Ensure mobile cards (if enabled) have proper styling
+  @media (max-width: 991.98px) {
+    tbody tr {
+      background-color: var(--surface2) !important;
+      color: var(--text1) !important;
+    }
+
+    tbody td {
+      background-color: transparent !important;
+      color: var(--text1) !important;
+    }
+  }
+}
+
+// Oruga mobile cards styling (when table switches to card view on mobile)
+.o-table__mobile-cards .o-table__mobile-card {
+  background-color: var(--surface2) !important;
+  color: var(--text1) !important;
+
+  .o-table__mobile-card-label,
+  .o-table__mobile-card-content {
+    color: var(--text1) !important;
+  }
+}
+
+// Ensure table cells have proper color even in responsive wrappers
+.table-responsive {
+  .o-table {
+    tbody tr {
+      background-color: var(--surface2) !important;
+      color: var(--text1) !important;
+    }
+
+    tbody td {
+      background-color: transparent !important;
+      color: var(--text1) !important;
+    }
   }
 }
 
@@ -2102,6 +2150,45 @@ div #dateapp {
 //
 // Todo
 //
+
+// Filters drawer for responsive design
+.todo-filters-sidebar {
+  @media (max-width: 991.98px) {
+    position: fixed;
+    z-index: 1050;
+    top: 0;
+    left: 0;
+    width: 18.75rem;
+    max-width: 80vw;
+    height: 100vh;
+    background-color: var(--surface2);
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.3);
+    overflow-y: auto;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease-in-out;
+
+    &.drawer-open {
+      transform: translateX(0);
+    }
+  }
+}
+
+.todo-filters-drawer-overlay {
+  @media (max-width: 991.98px) {
+    position: fixed;
+    z-index: 1040;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    transition: opacity 0.3s ease-in-out;
+  }
+}
+
+.todo-filters-drawer-toggle {
+  min-width: 5rem;
+}
 
 .tag-list {
   border-radius: var(--border-radius1);

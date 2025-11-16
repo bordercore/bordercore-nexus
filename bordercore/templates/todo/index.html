@@ -5,7 +5,15 @@
 {% block content %}
 
     <div class="row g-0 h-100 mx-2" id="vue-app">
-        <div class="col-lg-3 d-flex flex-column">
+        <!-- Filters drawer overlay (for mobile) -->
+        <div
+            v-if="drawerOpen"
+            class="todo-filters-drawer-overlay"
+            @click="toggleDrawer"
+        ></div>
+
+        <!-- Filters section - hidden on small screens, shown in drawer -->
+        <div class="col-lg-3 d-flex flex-column todo-filters-sidebar" :class="{'drawer-open': drawerOpen}">
             <div class="sticky-top card-body backdrop-filter h-100" v-cloak>
                 <h4>Priority</h4>
                 <div v-for="option in filterPriorityOptions" :class="getPriorityClass(option[0])" class="list-with-counts ps-2 py-1 pe-1 d-flex" @click.prevent="onClickPriority" :data-priority="option[0]">
@@ -48,6 +56,17 @@
             <div class="card-grid ms-2">
 
                 <div class="d-flex justify-content-between">
+
+                    <!-- Filters button for mobile -->
+                    <button
+                        type="button"
+                        class="btn btn-primary todo-filters-drawer-toggle d-lg-none me-2"
+                        @click="toggleDrawer"
+                        aria-label="Toggle Filters"
+                    >
+                        <font-awesome-icon icon="bars" class="me-2"></font-awesome-icon>
+                        Filters
+                    </button>
 
                     <form class="form-inline" role="form">
                         <div class="position-relative ms-2">
@@ -188,6 +207,7 @@
                 const filterPriority = ref("{{ filter.todo_filter_priority|default:'' }}");
                 const filterTime = ref("{{ filter.todo_filter_time|default:'' }}");
                 const filterSearch = ref("");
+                const drawerOpen = ref(false);
                 let filterCache = null;
                 const items = ref([]);
                 let draggingRow = null;
@@ -309,6 +329,10 @@
                         });
                 };
 
+                function toggleDrawer() {
+                    drawerOpen.value = !drawerOpen.value;
+                };
+
                 function onClickTag(evt) {
                     currentSearchFilter.value = "";
                     filterSearch.value = "";
@@ -316,6 +340,10 @@
                         filterTag.value = "";
                     } else {
                         filterTag.value = evt.currentTarget.dataset.tag;
+                    }
+                    // Close drawer when a filter is applied on mobile
+                    if (drawerOpen.value && window.innerWidth < 992) {
+                        drawerOpen.value = false;
                     }
                     getTodoList();
                 };
@@ -328,6 +356,10 @@
                     } else {
                         filterPriority.value = evt.currentTarget.dataset.priority;
                     }
+                    // Close drawer when a filter is applied on mobile
+                    if (drawerOpen.value && window.innerWidth < 992) {
+                        drawerOpen.value = false;
+                    }
                     getTodoList();
                 };
 
@@ -338,6 +370,10 @@
                         filterTime.value = "";
                     } else {
                         filterTime.value = evt.currentTarget.dataset.created;
+                    }
+                    // Close drawer when a filter is applied on mobile
+                    if (drawerOpen.value && window.innerWidth < 992) {
+                        drawerOpen.value = false;
                     }
                     getTodoList();
                 };
@@ -483,6 +519,7 @@
                 return {
                     currentSearchFilter,
                     defaultSort,
+                    drawerOpen,
                     filterTag,
                     filterPriority,
                     filterTime,
@@ -513,6 +550,7 @@
                     search,
                     table,
                     title,
+                    toggleDrawer,
                     editTodo,
                 };
             },
