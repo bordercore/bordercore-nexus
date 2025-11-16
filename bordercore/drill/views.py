@@ -1,11 +1,21 @@
+"""Views for the drill application.
+
+This module contains views for managing questions, study sessions,
+and tag-related operations in the drill/flashcard system.
+"""
 import json
 import random
+from typing import Any, Dict, Optional, cast
 from urllib.parse import unquote
 
 from django import urls
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseRedirect, JsonResponse
+from django.contrib.auth.models import User
+from django.db.models import QuerySet
+from django.forms import BaseModelForm
+from django.http import (HttpRequest, HttpResponse, HttpResponseRedirect,
+                         JsonResponse)
 from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
 from django.utils.decorators import method_decorator
@@ -26,31 +36,71 @@ from .models import Question
 
 @method_decorator(login_required, name="dispatch")
 class DrillListView(ListView):
+    """View for displaying the drill question list page.
+
+    Shows tags with their question counts, last reviewed dates, progress information,
+    and study session progress.
+    """
 
     template_name = "drill/drill_list.html"
     queryset = Question.objects.none()
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
+        """Get context data for the drill list view.
+
+        Args:
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Context dictionary containing:
+                - cols: Column names for the table
+                - title: Page title
+                - tags_last_reviewed: List of tags with last reviewed dates
+                - random_tag: A random tag for the user
+                - favorite_questions_progress: Progress on favorite questions
+                - total_progress: Total tag progress for the user
+                - study_session_progress: Current study session progress
+        """
         context = super().get_context_data(**kwargs)
+
+        user = cast(User, self.request.user)
 
         return {
             **context,
             "cols": ["tag_name", "question_count", "last_reviewed", "lastreviewed_sort", "id"],
             "title": "Home",
-            "tags_last_reviewed": Question.objects.tags_last_reviewed(self.request.user)[:20],
-            "random_tag": Question.objects.get_random_tag(self.request.user),
-            "favorite_questions_progress": Question.objects.favorite_questions_progress(self.request.user),
-            "total_progress": Question.objects.total_tag_progress(self.request.user),
+            "tags_last_reviewed": Question.objects.tags_last_reviewed(user)[:20],
+            "random_tag": Question.objects.get_random_tag(user),
+            "favorite_questions_progress": Question.objects.favorite_questions_progress(user),
+            "total_progress": Question.objects.total_tag_progress(user),
             "study_session_progress": Question.get_study_session_progress(self.request.session)
         }
 
 
 @method_decorator(login_required, name="dispatch")
 class QuestionCreateView(FormRequestMixin, CreateView):
+    """View for creating a new question.
+
+    Handles the creation of new drill questions, including saving tags
+    and indexing the question in Elasticsearch.
+    """
+
     template_name = "drill/question_edit.html"
     form_class = QuestionForm
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
+        """Get context data for the question creation form.
+
+        Args:
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Context dictionary containing:
+                - action: "New" to indicate creation mode
+                - title: Page title
+                - tags: Pre-populated tags if provided in initial data
+                - recent_tags: List of most recently used tags
+        """
         context = super().get_context_data(**kwargs)
 
         context["action"] = "New"
@@ -66,8 +116,18 @@ class QuestionCreateView(FormRequestMixin, CreateView):
 
         return context
 
-    def form_valid(self, form):
+    def form_valid(self, form: BaseModelForm) -> HttpResponseRedirect:
+        """Handle a valid form submission.
 
+        Saves the question, associates it with the current user, saves tags,
+        indexes the question in Elasticsearch, and handles related objects.
+
+        Args:
+            form: The validated question form.
+
+        Returns:
+            Redirect to the success URL with a success message.
+        """
         obj = form.save(commit=False)
         obj.user = self.request.user
         obj.save()
@@ -88,12 +148,25 @@ class QuestionCreateView(FormRequestMixin, CreateView):
         )
         return HttpResponseRedirect(self.get_success_url())
 
-    def get_success_url(self):
+    def get_success_url(self) -> str:
+        """Get the URL to redirect to after successful form submission.
+
+        Returns:
+            URL for the question creation page.
+        """
         return reverse("drill:add")
 
 
-def handle_related_objects(question, request):
+def handle_related_objects(question: Question, request: HttpRequest) -> None:
+    """Handle adding related objects to a question.
 
+    Parses related object information from the request POST data and
+    associates them with the question.
+
+    Args:
+        question: The Question instance to add related objects to.
+        request: The HTTP request containing related object data in POST.
+    """
     info = request.POST.get("related-objects", None)
 
     if not info:
@@ -105,17 +178,36 @@ def handle_related_objects(question, request):
 
 @method_decorator(login_required, name="dispatch")
 class QuestionDeleteView(DeleteView):
+    """View for deleting a question.
+
+    Allows users to delete their own questions. Filters questions to
+    only show those owned by the logged-in user.
+    """
 
     model = Question
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
     success_url = reverse_lazy("drill:add")
 
-    def get_queryset(self):
-        # Filter the queryset to only include objects owned by the logged-in user
-        return self.model.objects.filter(user=self.request.user)
+    def get_queryset(self) -> QuerySet[Question]:
+        """Get the queryset filtered to the current user's questions.
 
-    def form_valid(self, form):
+        Returns:
+            Questions owned by the logged-in user.
+        """
+        # Filter the queryset to only include objects owned by the logged-in user
+        user = cast(User, self.request.user)
+        return self.model.objects.filter(user=user)
+
+    def form_valid(self, form: BaseModelForm) -> HttpResponse:
+        """Handle a valid deletion form submission.
+
+        Args:
+            form: The validated deletion form.
+
+        Returns:
+            Redirect to the success URL with a success message.
+        """
         messages.add_message(
             self.request,
             messages.INFO,
@@ -126,17 +218,48 @@ class QuestionDeleteView(DeleteView):
 
 @method_decorator(login_required, name="dispatch")
 class QuestionDetailView(DetailView):
+    """View for displaying a question detail page.
+
+    Shows a single question with its tags, progress information, intervals,
+    and study session context.
+    """
 
     model = Question
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
     template_name = "drill/question.html"
 
-    def get_object(self, queryset=None):
-        obj = Question.objects.get(user=self.request.user, uuid=self.kwargs.get("uuid"))
+    def get_object(self, queryset: Optional[QuerySet[Question]] = None) -> Question:
+        """Get the question object for the current user.
+
+        Args:
+            queryset: Optional queryset to use (unused in this implementation).
+
+        Returns:
+            The question matching the UUID for the current user.
+        """
+        user = cast(User, self.request.user)
+        obj = Question.objects.get(user=user, uuid=self.kwargs.get("uuid"))
         return obj
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
+        """Get context data for the question detail view.
+
+        Args:
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Context dictionary containing:
+                - tag_info: Progress information for all tags
+                - question: The question object
+                - title: Page title
+                - tag_list: Comma-separated list of tag names
+                - study_session_progress: Current study session progress
+                - last_response: The last response recorded for this question
+                - intervals: Question intervals (description only)
+                - reverse_question: Whether to show the question in reverse
+                - sql_db: SQL database information if applicable
+        """
         context = super().get_context_data(**kwargs)
 
         return {
@@ -155,6 +278,12 @@ class QuestionDetailView(DetailView):
 
 @method_decorator(login_required, name="dispatch")
 class QuestionUpdateView(FormRequestMixin, UpdateView):
+    """View for updating an existing question.
+
+    Handles editing of drill questions, including updating tags
+    and re-indexing the question in Elasticsearch.
+    """
+
     model = Question
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
@@ -162,7 +291,19 @@ class QuestionUpdateView(FormRequestMixin, UpdateView):
     form_class = QuestionForm
     template_name = "drill/question_edit.html"
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
+        """Get context data for the question edit form.
+
+        Args:
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Context dictionary containing:
+                - action: "Edit" to indicate edit mode
+                - title: Page title
+                - tags: List of current tag names
+                - recent_tags: List of most recently used tags
+        """
         context = super().get_context_data(**kwargs)
         context["action"] = "Edit"
         context["title"] = "Drill :: Edit Question"
@@ -173,8 +314,18 @@ class QuestionUpdateView(FormRequestMixin, UpdateView):
 
         return context
 
-    def form_valid(self, form):
+    def form_valid(self, form: BaseModelForm) -> HttpResponseRedirect:
+        """Handle a valid form submission.
 
+        Updates the question, saves tags, and re-indexes the question
+        in Elasticsearch.
+
+        Args:
+            form: The validated question form.
+
+        Returns:
+            HTTP redirect to the success URL.
+        """
         question = form.instance
         question.tags.set(form.cleaned_data["tags"])
         self.object = form.save()
@@ -192,16 +343,34 @@ class QuestionUpdateView(FormRequestMixin, UpdateView):
 
         return HttpResponseRedirect(self.get_success_url())
 
-    def get_success_url(self):
+    def get_success_url(self) -> str:
+        """Get the URL to redirect to after successful form submission.
 
+        Returns the return_url from POST if provided, otherwise redirects
+        to the drill list page.
+
+        Returns:
+            URL to redirect to after successful update.
+        """
         if "return_url" in self.request.POST:
             return self.request.POST["return_url"]
         return reverse("drill:list")
 
 
 @login_required
-def get_next_question(request):
+def get_next_question(request: HttpRequest) -> HttpResponseRedirect:
+    """Get the next question in the current study session.
 
+    Advances to the next question in the study session. If the session
+    is complete, clears it and redirects to the drill list.
+
+    Args:
+        request: The HTTP request containing the study session data.
+
+    Returns:
+        Redirect to the next question detail page,
+            or to the drill list if the session is complete.
+    """
     if "drill_study_session" in request.session:
         request.session.modified = True
 
@@ -219,8 +388,19 @@ def get_next_question(request):
 
 
 @login_required
-def get_current_question(request):
+def get_current_question(request: HttpRequest) -> HttpResponseRedirect:
+    """Get the current question in the study session.
 
+    Redirects to the detail page of the current question in the active
+    study session.
+
+    Args:
+        request: The HTTP request containing the study session data.
+
+        Returns:
+            Redirect to the current question detail page,
+                or to the drill list if no session is active.
+    """
     if "drill_study_session" in request.session:
         current_question = request.session["drill_study_session"]["current"]
         return redirect("drill:detail", uuid=current_question)
@@ -228,12 +408,28 @@ def get_current_question(request):
 
 
 @login_required
-def start_study_session(request):
+def start_study_session(request: HttpRequest) -> HttpResponseRedirect:
+    """Start a new study session.
+
+    Initializes a study session based on the study method and filters
+    provided in the request GET parameters.
+
+    Args:
+        request: The HTTP request containing study session parameters:
+            - study_method: The method to use for selecting questions
+            - filter: Filter type (default: "review")
+            - count: Number of questions to include (optional)
+            - interval: Interval filter (optional)
+            - keyword: Keyword filter (optional)
+            - tags: Tag filter (optional)
+
+        Returns:
+            Redirect to the first question in the session,
+                or to the drill list with a warning if no questions are found.
     """
-    Start a study session
-    """
+    user = cast(User, request.user)
     first_question = Question.start_study_session(
-        request.user,
+        user,
         request.session,
         request.GET["study_method"],
         request.GET.get("filter", "review"),
@@ -251,31 +447,41 @@ def start_study_session(request):
 
 
 @login_required
-def record_response(request, uuid, response):
+def record_response(request: HttpRequest, uuid: str, response: str) -> HttpResponseRedirect:
+    """Record a user's response to a question.
 
-    question = Question.objects.get(user=request.user, uuid=uuid)
+    Records the user's response (e.g., correct/incorrect) and advances
+    to the next question in the study session.
+
+    Args:
+        request: The HTTP request.
+        uuid: The UUID of the question being answered.
+        response: The response value to record.
+
+    Returns:
+        Redirect to the next question in the session.
+    """
+    user = cast(User, request.user)
+    question = Question.objects.get(user=user, uuid=uuid)
     question.record_response(response)
 
     return get_next_question(request)
 
 
 @login_required
-def get_pinned_tags(request):
+def get_pinned_tags(request: HttpRequest) -> JsonResponse:
+    """Get a list of pinned tags for the current user.
 
-    tags = Question.objects.get_pinned_tags(request.user)
+    Args:
+        request: The HTTP request.
 
-    response = {
-        "status": "OK",
-        "tag_list": tags
-    }
-
-    return JsonResponse(response)
-
-
-@login_required
-def get_disabled_tags(request):
-
-    tags = Question.objects.get_disabled_tags(request.user)
+    Returns:
+        JSON response containing:
+            - status: "OK"
+            - tag_list: List of pinned tags
+    """
+    user = cast(User, request.user)
+    tags = Question.objects.get_pinned_tags(user)
 
     response = {
         "status": "OK",
@@ -286,11 +492,48 @@ def get_disabled_tags(request):
 
 
 @login_required
-def pin_tag(request):
+def get_disabled_tags(request: HttpRequest) -> JsonResponse:
+    """Get a list of disabled tags for the current user.
 
+    Args:
+        request: The HTTP request.
+
+    Returns:
+        JSON response containing:
+            - status: "OK"
+            - tag_list: List of disabled tags
+    """
+    user = cast(User, request.user)
+    tags = Question.objects.get_disabled_tags(user)
+
+    response = {
+        "status": "OK",
+        "tag_list": tags
+    }
+
+    return JsonResponse(response)
+
+
+@login_required
+def pin_tag(request: HttpRequest) -> JsonResponse:
+    """Pin a tag for the current user.
+
+    Creates a DrillTag association to pin a tag. Returns an error if
+    the tag is already pinned.
+
+    Args:
+        request: The HTTP request containing:
+            - tag: The name of the tag to pin
+
+    Returns:
+        JSON response containing:
+            - status: "OK" on success, "Error" on failure
+            - message: Error message if status is "Error"
+    """
     tag_name = request.POST["tag"]
 
-    if DrillTag.objects.filter(userprofile=request.user.userprofile, tag__name=tag_name).exists():
+    user = cast(User, request.user)
+    if DrillTag.objects.filter(userprofile=user.userprofile, tag__name=tag_name).exists():
 
         response = {
             "status": "Error",
@@ -299,8 +542,8 @@ def pin_tag(request):
 
     else:
 
-        tag = Tag.objects.get(name=tag_name, user=request.user)
-        so = DrillTag(userprofile=request.user.userprofile, tag=tag)
+        tag = Tag.objects.get(name=tag_name, user=user)
+        so = DrillTag(userprofile=user.userprofile, tag=tag)
         so.save()
 
         response = {
@@ -311,11 +554,25 @@ def pin_tag(request):
 
 
 @login_required
-def unpin_tag(request):
+def unpin_tag(request: HttpRequest) -> JsonResponse:
+    """Unpin a tag for the current user.
 
+    Removes the DrillTag association to unpin a tag. Returns an error
+    if the tag is not currently pinned.
+
+    Args:
+        request: The HTTP request containing:
+            - tag: The name of the tag to unpin
+
+    Returns:
+        JSON response containing:
+            - status: "OK" on success, "Error" on failure
+            - message: Error message if status is "Error"
+    """
     tag_name = request.POST["tag"]
 
-    if not DrillTag.objects.filter(userprofile=request.user.userprofile, tag__name=tag_name).exists():
+    user = cast(User, request.user)
+    if not DrillTag.objects.filter(userprofile=user.userprofile, tag__name=tag_name).exists():
 
         response = {
             "status": "Error",
@@ -324,7 +581,7 @@ def unpin_tag(request):
 
     else:
 
-        so = DrillTag.objects.get(userprofile=request.user.userprofile, tag__name=tag_name)
+        so = DrillTag.objects.get(userprofile=user.userprofile, tag__name=tag_name)
         so.delete()
 
         response = {
@@ -335,15 +592,25 @@ def unpin_tag(request):
 
 
 @login_required
-def sort_pinned_tags(request):
-    """
-    Move a given pinned tag to a new position in a sorted list
+def sort_pinned_tags(request: HttpRequest) -> JsonResponse:
+    """Reorder a pinned tag to a new position.
+
+    Moves a pinned tag to a new position in the sorted list of pinned tags.
+
+    Args:
+        request: The HTTP request containing:
+            - tag_name: The name of the tag to reorder
+            - new_position: The new position index for the tag
+
+    Returns:
+        JSON response with operation status.
     """
 
     tag_name = request.POST["tag_name"]
     new_position = int(request.POST["new_position"])
 
-    so = DrillTag.objects.get(tag__name=tag_name, userprofile=request.user.userprofile)
+    user = cast(User, request.user)
+    so = DrillTag.objects.get(tag__name=tag_name, userprofile=user.userprofile)
     DrillTag.reorder(so, new_position)
 
     response = {
@@ -354,11 +621,25 @@ def sort_pinned_tags(request):
 
 
 @login_required
-def disable_tag(request):
+def disable_tag(request: HttpRequest) -> JsonResponse:
+    """Disable all questions with a given tag.
 
+    Marks all questions with the specified tag as disabled. Returns an
+    error if questions with that tag are already disabled.
+
+    Args:
+        request: The HTTP request containing:
+            - tag: The name of the tag to disable
+
+    Returns:
+        JSON response containing:
+            - status: "OK" on success, "Error" on failure
+            - message: Error message if status is "Error"
+    """
     tag_name = request.POST["tag"]
 
-    if tag_name in [x["name"] for x in Question.objects.get_disabled_tags(request.user)]:
+    user = cast(User, request.user)
+    if tag_name in [x["name"] for x in Question.objects.get_disabled_tags(user)]:
         response = {
             "status": "Error",
             "message": "Questions with that tag are already disabled."
@@ -373,11 +654,25 @@ def disable_tag(request):
 
 
 @login_required
-def enable_tag(request):
+def enable_tag(request: HttpRequest) -> JsonResponse:
+    """Enable all questions with a given tag.
 
+    Marks all questions with the specified tag as enabled. Returns an
+    error if no questions with that tag are currently disabled.
+
+    Args:
+        request: The HTTP request containing:
+            - tag: The name of the tag to enable
+
+    Returns:
+        JSON response containing:
+            - status: "OK" on success, "Error" on failure
+            - message: Error message if status is "Error"
+    """
     tag_name = request.POST["tag"]
 
-    if tag_name not in [x["name"] for x in Question.objects.get_disabled_tags(request.user)]:
+    user = cast(User, request.user)
+    if tag_name not in [x["name"] for x in Question.objects.get_disabled_tags(user)]:
         response = {
             "status": "Error",
             "message": "No question with that tag is disabled."
@@ -393,8 +688,20 @@ def enable_tag(request):
 
 
 @login_required
-def is_favorite_mutate(request):
+def is_favorite_mutate(request: HttpRequest) -> JsonResponse:
+    """Add or remove a question from favorites.
 
+    Updates the favorite status of a question based on the mutation type.
+
+    Args:
+        request: The HTTP request containing:
+            - question_uuid: The UUID of the question to modify
+            - mutation: Either "add" to favorite or "delete" to unfavorite
+
+    Returns:
+        JSON response containing:
+            - status: "OK"
+    """
     question_uuid = request.POST["question_uuid"]
     mutation = request.POST["mutation"]
 
@@ -411,15 +718,32 @@ def is_favorite_mutate(request):
 
 
 @login_required
-def get_title_from_url(request):
+def get_title_from_url(request: HttpRequest) -> JsonResponse:
+    """Extract the title from a URL.
 
+    Attempts to get the title from a URL by first checking if it exists
+    as a bookmark in the system, and if not, parsing the title from
+    the URL directly.
+
+    Args:
+        request: The HTTP request containing:
+            - url: The URL to extract the title from (URL-encoded)
+
+        Returns:
+            JSON response containing:
+                - status: "OK"
+                - title: The extracted title, or None if extraction failed
+                - bookmarkUuid: UUID of existing bookmark if found, None otherwise
+                - message: Status message or error message
+    """
     url = unquote(request.GET["url"])
 
     message = ""
     title = None
     bookmark_uuid = None
 
-    url_info = Bookmark.objects.filter(url=url, user=request.user)
+    user = cast(User, request.user)
+    url_info = Bookmark.objects.filter(url=url, user=user)
     if url_info:
         title = url_info[0].name
         message = "Existing bookmark found in Bordercore."
@@ -440,12 +764,24 @@ def get_title_from_url(request):
     return JsonResponse(response)
 
 
-def get_related_objects(request, uuid):
-    """
-    Get all related objects to a given question.
+def get_related_objects(request: HttpRequest, uuid: str) -> JsonResponse:
+    """Get all related objects for a given question.
+
+    Retrieves all objects (blobs, bookmarks, etc.) that are related
+    to the specified question.
+
+    Args:
+        request: The HTTP request.
+        uuid: The UUID of the question to get related objects for.
+
+    Returns:
+        JSON response containing:
+            - status: "OK"
+            - related_objects: List of related objects
     """
 
-    question = Question.objects.get(user=request.user, uuid=uuid)
+    user = cast(User, request.user)
+    question = Question.objects.get(user=user, uuid=uuid)
 
     response = {
         "status": "OK",

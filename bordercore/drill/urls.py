@@ -1,3 +1,7 @@
+"""
+URL configuration for the Drill app.
+"""
+
 from django.urls import path
 
 from . import views
