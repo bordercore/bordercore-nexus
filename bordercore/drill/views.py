@@ -13,12 +13,14 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.db.models import QuerySet
+from django.db.models.query import QuerySet as QuerySetType
 from django.forms import BaseModelForm
 from django.http import (HttpRequest, HttpResponse, HttpResponseRedirect,
                          JsonResponse)
 from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
 from django.utils.decorators import method_decorator
+from django.views.decorators.http import require_POST
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.views.generic.list import ListView
@@ -271,7 +273,7 @@ class QuestionDetailView(DetailView):
             "study_session_progress": Question.get_study_session_progress(self.request.session),
             "last_response": self.object.get_last_response(),
             "intervals": self.object.get_intervals(description_only=True),
-            "reverse_question": random.randint(1, 2) == 1 if self.object.is_reversible else False,
+            "reverse_question": self.object.is_reversible and random.choice([True, False]),
             "sql_db": self.object.sql_db
         }
 
@@ -290,6 +292,15 @@ class QuestionUpdateView(FormRequestMixin, UpdateView):
 
     form_class = QuestionForm
     template_name = "drill/question_edit.html"
+
+    def get_queryset(self) -> QuerySetType[Question]:
+        """Limit updates to the current user's questions.
+
+        Returns:
+            QuerySet of Question objects for this user.
+        """
+        user = cast(User, self.request.user)
+        return Question.objects.filter(user=user).prefetch_related("tags")
 
     def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
         """Get context data for the question edit form.
@@ -515,6 +526,7 @@ def get_disabled_tags(request: HttpRequest) -> JsonResponse:
 
 
 @login_required
+@require_POST
 def pin_tag(request: HttpRequest) -> JsonResponse:
     """Pin a tag for the current user.
 
@@ -554,6 +566,7 @@ def pin_tag(request: HttpRequest) -> JsonResponse:
 
 
 @login_required
+@require_POST
 def unpin_tag(request: HttpRequest) -> JsonResponse:
     """Unpin a tag for the current user.
 
@@ -592,6 +605,7 @@ def unpin_tag(request: HttpRequest) -> JsonResponse:
 
 
 @login_required
+@require_POST
 def sort_pinned_tags(request: HttpRequest) -> JsonResponse:
     """Reorder a pinned tag to a new position.
 
@@ -621,6 +635,7 @@ def sort_pinned_tags(request: HttpRequest) -> JsonResponse:
 
 
 @login_required
+@require_POST
 def disable_tag(request: HttpRequest) -> JsonResponse:
     """Disable all questions with a given tag.
 
@@ -639,13 +654,13 @@ def disable_tag(request: HttpRequest) -> JsonResponse:
     tag_name = request.POST["tag"]
 
     user = cast(User, request.user)
-    if tag_name in [x["name"] for x in Question.objects.get_disabled_tags(user)]:
+    if tag_name in {x["name"] for x in Question.objects.get_disabled_tags(user)}:
         response = {
             "status": "Error",
             "message": "Questions with that tag are already disabled."
         }
     else:
-        Question.objects.filter(tags__name=tag_name).update(is_disabled=True)
+        Question.objects.filter(tags__name=tag_name, user=user).update(is_disabled=True)
         response = {
             "status": "OK"
         }
@@ -654,6 +669,7 @@ def disable_tag(request: HttpRequest) -> JsonResponse:
 
 
 @login_required
+@require_POST
 def enable_tag(request: HttpRequest) -> JsonResponse:
     """Enable all questions with a given tag.
 
@@ -672,13 +688,13 @@ def enable_tag(request: HttpRequest) -> JsonResponse:
     tag_name = request.POST["tag"]
 
     user = cast(User, request.user)
-    if tag_name not in [x["name"] for x in Question.objects.get_disabled_tags(user)]:
+    if tag_name not in {x["name"] for x in Question.objects.get_disabled_tags(user)}:
         response = {
             "status": "Error",
             "message": "No question with that tag is disabled."
         }
     else:
-        Question.objects.filter(tags__name=tag_name).update(is_disabled=False)
+        Question.objects.filter(tags__name=tag_name, user=user).update(is_disabled=False)
 
         response = {
             "status": "OK"
@@ -688,6 +704,7 @@ def enable_tag(request: HttpRequest) -> JsonResponse:
 
 
 @login_required
+@require_POST
 def is_favorite_mutate(request: HttpRequest) -> JsonResponse:
     """Add or remove a question from favorites.
 
@@ -705,7 +722,8 @@ def is_favorite_mutate(request: HttpRequest) -> JsonResponse:
     question_uuid = request.POST["question_uuid"]
     mutation = request.POST["mutation"]
 
-    question = Question.objects.get(uuid=question_uuid)
+    user = cast(User, request.user)
+    question = Question.objects.get(uuid=question_uuid, user=user)
 
     if mutation == "add":
         question.is_favorite = True
@@ -714,7 +732,7 @@ def is_favorite_mutate(request: HttpRequest) -> JsonResponse:
 
     question.save()
 
-    return JsonResponse({"status": "OK"}, safe=False)
+    return JsonResponse({"status": "OK"})
 
 
 @login_required
@@ -752,7 +770,7 @@ def get_title_from_url(request: HttpRequest) -> JsonResponse:
         try:
             title = parse_title_from_url(url)[1]
         except Exception as e:
-            message = str(e)
+            return JsonResponse({"status": "ERROR", "message": str(e)})
 
     response = {
         "status": "OK",
@@ -764,6 +782,7 @@ def get_title_from_url(request: HttpRequest) -> JsonResponse:
     return JsonResponse(response)
 
 
+@login_required
 def get_related_objects(request: HttpRequest, uuid: str) -> JsonResponse:
     """Get all related objects for a given question.
 
