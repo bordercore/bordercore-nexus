@@ -201,8 +201,7 @@ class Question(TimeStampedModel):
             }
         return {
             "description": (
-                f"Interval stays at <strong>{self.interval.days} "
-                f"day{pluralize(self.interval.days)}</strong>"
+                "Reset interval to <strong>1 day</strong>"
             ),
             "interval": timedelta(days=1),
             "interval_index": 0,
@@ -260,7 +259,10 @@ class Question(TimeStampedModel):
             response: One of "good", "easy", "hard", or "reset".
         """
         intervals = self.get_intervals()
-        chosen = cast(IntervalResponse, intervals[response])
+        try:
+            chosen = cast(IntervalResponse, intervals[response])
+        except KeyError:
+            raise ValueError(f"Invalid response value: {response}")
 
         self.interval = chosen["interval"]
         self.interval_index = chosen["interval_index"]
@@ -406,7 +408,7 @@ class Question(TimeStampedModel):
         }
 
         if self.last_reviewed:
-            doc["last_reviewed"] = self.last_reviewed.strftime("%s")
+            doc["_source"]["last_reviewed"] = self.last_reviewed.strftime("%s")
 
         return doc
 
@@ -447,18 +449,20 @@ class Question(TimeStampedModel):
         questions: QuerySet[Question] = Question.objects.filter(user=user, is_disabled=False)
 
         if study_type == "favorites":
-            questions = Question.objects.filter(is_favorite=True)
+            questions = questions.filter(is_favorite=True)
         elif study_type == "recent":
             # params["interval"] is expected to be an int-like string (days)
-            questions = Question.objects.filter(
+            questions = questions.filter(
                 created__gte=timezone.now()
-                - timedelta(days=int(params["interval"]))
+                - timedelta(days=int(params.get("interval", 7)))
             )
         elif study_type == "tag":
-            for tag in str(params.get("tags", "")).split(","):
-                questions = questions.filter(tags__name=tag)
+            tags_param = params.get("tags", "")
+            tag_names = [t.strip() for t in str(tags_param).split(",") if t.strip()]
+            for tag_name in tag_names:
+                questions = questions.filter(tags__name=tag_name)
         elif study_type == "keyword":
-            questions = Question.objects.filter(
+            questions = questions.filter(
                 Q(question__icontains=params.get("keyword", ""))
                 | Q(answer__icontains=params.get("keyword", "")),
             )
@@ -480,7 +484,7 @@ class Question(TimeStampedModel):
         uuid_rows: list[dict[str, Any]] = list(uuid_rows_iter)
 
         if study_type == "random":
-            count = int(params.get("count", 0))
+            count = int(params.get("count", 10))
             uuid_rows = uuid_rows[:count]
 
         if uuid_rows:
@@ -635,11 +639,11 @@ class QuestionToObject(SortOrderMixin):
 
     class Meta:
         ordering = ("sort_order",)
-        unique_together = (
-            ("node", "blob"),
-            ("node", "bookmark"),
-            ("node", "question"),
-        )
+        constraints = [
+            models.UniqueConstraint(fields=("node", "blob"), name="uniq_node_blob"),
+            models.UniqueConstraint(fields=("node", "bookmark"), name="uniq_node_bookmark"),
+            models.UniqueConstraint(fields=("node", "question"), name="uniq_node_question"),
+        ]
 
     def __str__(self) -> str:
         """Return the string representation of this relationship.
