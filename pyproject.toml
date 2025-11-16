@@ -43,6 +43,9 @@ exclude = '''
     |
     # Exclude test configuration file
     conftest\.py
+    |
+    # Exclude all migration files
+    (^|/)migrations/
  )
 '''
 
