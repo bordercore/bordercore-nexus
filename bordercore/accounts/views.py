@@ -355,7 +355,7 @@ def store_in_session(request: HttpRequest) -> JsonResponse:
     return JsonResponse({"status": "OK"})
 
 
-def bc_login(request: HttpRequest) -> HttpResponse:
+def bordercore_login(request: HttpRequest) -> HttpResponse:
     """Handle user login.
 
     Authenticates users and logs them into the system. Validates username
@@ -401,7 +401,7 @@ def bc_login(request: HttpRequest) -> HttpResponse:
 
 
 @login_required
-def bc_logout(request: HttpRequest) -> HttpResponseRedirect:
+def bordercore_logout(request: HttpRequest) -> HttpResponseRedirect:
     """Handle user logout.
 
     Logs out the current user and redirects to the login page.
