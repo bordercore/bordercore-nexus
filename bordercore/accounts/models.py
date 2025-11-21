@@ -91,14 +91,14 @@ def remove_tag(sender, instance, **kwargs):
 class UserNote(SortOrderMixin):
 
     userprofile = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
-    note = models.ForeignKey(Blob, on_delete=models.CASCADE)
+    blob = models.ForeignKey(Blob, on_delete=models.CASCADE)
 
     field_name = "userprofile"
 
     class Meta:
         ordering = ("sort_order",)
         unique_together = (
-            ("userprofile", "note")
+            ("userprofile", "blob")
         )
 
 

@@ -198,7 +198,7 @@ def auto_login_user(client, blob_text_factory, tag):
 
         if user is None:
             user = UserFactory()
-            UserNote.objects.get_or_create(userprofile=user.userprofile, note=blob_text_factory[0])
+            UserNote.objects.get_or_create(userprofile=user.userprofile, blob=blob_text_factory[0])
 
             # Make the user an admin
             admin_group, _ = Group.objects.get_or_create(name="Admin")
