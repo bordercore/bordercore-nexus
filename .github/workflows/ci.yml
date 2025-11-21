@@ -41,6 +41,7 @@ jobs:
     - name: Run mypy
       run: |
         mypy --config-file pyproject.toml \
+          bordercore/accounts/ \
           bordercore/drill/ \
           bordercore/feed/ \
           bordercore/fitness/ \

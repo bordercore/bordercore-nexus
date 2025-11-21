@@ -1,3 +1,10 @@
+"""Forms for the accounts application.
+
+This module contains Django form classes for handling user profile-related forms,
+including validation and field configuration.
+"""
+from typing import Any
+
 from django.forms import (ModelChoiceField, ModelForm, Select, Textarea,
                           TextInput)
 
@@ -8,7 +15,29 @@ from tag.models import Tag
 
 
 class UserProfileForm(ModelForm):
-    def __init__(self, *args, **kwargs):
+    """Form for creating and editing ``UserProfile`` instances.
+
+    This form handles user profile settings including theme, background images,
+    homepage collections, drill intervals, muted tags, and API credentials. It
+    includes dynamic field configuration based on user's available collections.
+
+    Attributes:
+        request: The HTTP request object, used for user-specific data filtering.
+    """
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Initialize the UserProfileForm instance.
+
+        Sets up form fields with appropriate widgets and labels. The request
+        object is extracted from kwargs to enable user-specific collection and
+        tag filtering. Collection fields are dynamically added or removed based
+        on whether the user has any collections.
+
+        Args:
+            *args: Variable length argument list passed to parent ModelForm.
+            **kwargs: Arbitrary keyword arguments. May contain 'request' key
+                which is extracted and stored as self.request.
+        """
 
         # The request object is passed in from UserProfileUpdateView.get_form_kwargs()
         self.request = kwargs.pop("request", None)
@@ -48,6 +77,11 @@ class UserProfileForm(ModelForm):
             self.fields.pop("homepage_default_collection")
 
     class Meta:
+        """Meta configuration for UserProfileForm.
+
+        Defines the model, fields, and widgets used by the form.
+        """
+
         model = UserProfile
         fields = (
             "theme",
