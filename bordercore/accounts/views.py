@@ -3,7 +3,6 @@
 This module contains views for managing user profiles, authentication,
 password changes, and user-related operations.
 """
-import io
 from typing import Any, cast
 
 import boto3
@@ -20,7 +19,6 @@ from django.core.files.uploadedfile import UploadedFile
 from django.forms import BaseModelForm
 from django.http import (HttpRequest, HttpResponse, HttpResponseRedirect,
                          JsonResponse)
-from django.http.response import HttpResponseBase
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
@@ -113,121 +111,107 @@ class UserProfileUpdateView(FormRequestMixin, UpdateView):
         # Save the drill_tags_muted field
         form.save_m2m()
 
-        context = self.get_context_data(form=form)
-        context["message"] = "Preferences edited"
-        return self.render_to_response(context)
+        messages.success(self.request, "Preferences edited")
+        return redirect("accounts:prefs")  # or whatever route
+
+    def _handle_s3_image(
+        self,
+        *,
+        form: BaseModelForm,
+        field_name: str,
+        file_field_name: str,
+        delete_flag_name: str,
+        s3_prefix: str,
+    ) -> None:
+        """Shared handler for S3-backed profile image fields.
+
+        Handles delete requests and uploads of new images, updating the model
+        field and deleting any previous object from S3.
+
+        Args:
+            form: The bound form instance.
+            field_name: Name of the model field (e.g. "background_image").
+            file_field_name: Key in ``request.FILES`` (e.g. "background_image_file").
+            delete_flag_name: Key in ``request.POST`` for delete flag.
+            s3_prefix: S3 key prefix (e.g. "background" or "sidebar").
+        """
+        user = cast(User, self.request.user)
+        bucket_name = settings.AWS_STORAGE_BUCKET_NAME
+        s3_client = boto3.client("s3")
+
+        old_name = form.initial.get(field_name)
+        uploaded_file = cast(
+            UploadedFile | None,
+            self.request.FILES.get(file_field_name),
+        )
+        delete_requested = self.request.POST.get(delete_flag_name) == "true"
+
+        # Delete branch
+        if delete_requested:
+            if old_name:
+                s3_client.delete_object(
+                    Bucket=bucket_name,
+                    Key=f"{s3_prefix}/{user.userprofile.uuid}/{old_name}",
+                )
+
+            setattr(self.object, field_name, None)
+            self.object.save()
+            return
+
+        # Upload branch
+        if uploaded_file and field_name in form.changed_data:
+            # Delete previous object, if any
+            if old_name:
+                s3_client.delete_object(
+                    Bucket=bucket_name,
+                    Key=f"{s3_prefix}/{user.userprofile.uuid}/{old_name}",
+                )
+
+            key = f"{s3_prefix}/{user.userprofile.uuid}/{uploaded_file.name}"
+
+            extra_args = {}
+            if uploaded_file.content_type:
+                extra_args["ContentType"] = uploaded_file.content_type
+
+            upload_kwargs = {}
+            if extra_args:
+                upload_kwargs["ExtraArgs"] = extra_args
+
+            # Use the file-like directly instead of reading into memory
+            s3_client.upload_fileobj(
+                uploaded_file.file,
+                bucket_name,
+                key,
+                **upload_kwargs,
+            )
+
+            # Update the profile field
+            setattr(self.object, field_name, uploaded_file.name)
+            self.object.save()
+
+            # Mirror onto the user's profile instance in case templates
+            # are using that object directly
+            setattr(user.userprofile, field_name, uploaded_file.name)
 
     def handle_background_image(self, form: BaseModelForm) -> None:
-        """Handle background image upload or deletion.
-
-        Manages background image changes including deleting old images from S3,
-        uploading new images, and updating the user profile.
-
-        Args:
-            form: The user profile form instance.
-        """
-        background_image_old = form.initial["background_image"]
-        background_image_new = self.request.FILES.get("background_image_file", None)
-
-        s3_client = boto3.client("s3")
-
-        if self.request.POST.get("delete_background") == "true":
-            user = cast(User, self.request.user)
-            # Delete the image from S3
-            s3_client.delete_object(
-                Bucket=settings.AWS_STORAGE_BUCKET_NAME,
-                Key=f"background/{user.userprofile.uuid}/{background_image_old}"
-            )
-
-            # Delete it from the model
-            self.object.background_image = None
-            self.object.save()
-
-        elif background_image_new and "background_image" in form.changed_data:
-            user = cast(User, self.request.user)
-            # Delete the old image from S3
-            s3_client.delete_object(
-                Bucket=settings.AWS_STORAGE_BUCKET_NAME,
-                Key=f"background/{user.userprofile.uuid}/{background_image_old}"
-            )
-
-            # Upload the new image to S3
-            uploaded_file = cast(UploadedFile, self.request.FILES["background_image_file"])
-            key = f"background/{user.userprofile.uuid}/{uploaded_file.name}"
-            fo = io.BytesIO(uploaded_file.read())
-            s3_client.upload_fileobj(
-                fo,
-                settings.AWS_STORAGE_BUCKET_NAME,
-                key,
-                ExtraArgs={"ContentType": "image/jpeg"}
-            )
-
-            self.object.background_image = uploaded_file.name
-            self.object.save()
-
-            # Edit the user's profile immediately so the new sidebage image
-            #  will appear as soon as this view returns the response
-            user.userprofile.background_image = uploaded_file.name
+        """Handle background image upload or deletion."""
+        self._handle_s3_image(
+            form=form,
+            field_name="background_image",
+            file_field_name="background_image_file",
+            delete_flag_name="delete_background",
+            s3_prefix="background",
+        )
 
     def handle_sidebar(self, form: BaseModelForm) -> None:
-        """Handle sidebar image upload or deletion.
-
-        Manages sidebar image changes including deleting old images from S3,
-        uploading new images, and updating the user profile.
-
-        Args:
-            form: The user profile form instance.
-        """
-        sidebar_image_old = form.initial["sidebar_image"]
-        sidebar_image_new = self.request.FILES.get("sidebar_image_file", None)
-
-        s3_client = boto3.client("s3")
-
-        if self.request.POST.get("delete_sidebar") == "true":
-            user = cast(User, self.request.user)
-            # Delete the image from S3
-            s3_client.delete_object(
-                Bucket=settings.AWS_STORAGE_BUCKET_NAME,
-                Key=f"sidebar/{user.userprofile.uuid}/{sidebar_image_old}"
-            )
-
-            # Delete it from the model
-            self.object.sidebar_image = None
-            self.object.save()
-
-        elif sidebar_image_new and "sidebar_image" in form.changed_data:
-            user = cast(User, self.request.user)
-            # Delete the old image from S3
-            s3_client.delete_object(
-                Bucket=settings.AWS_STORAGE_BUCKET_NAME,
-                Key=f"sidebar/{user.userprofile.uuid}/{sidebar_image_old}"
-            )
-
-            # Upload the new image to S3
-            uploaded_file = cast(UploadedFile, self.request.FILES["sidebar_image_file"])
-            key = f"sidebar/{user.userprofile.uuid}/{uploaded_file.name}"
-            fo = io.BytesIO(uploaded_file.read())
-            s3_client.upload_fileobj(fo, settings.AWS_STORAGE_BUCKET_NAME, key)
-
-            self.object.sidebar_image = uploaded_file.name
-            self.object.save()
-
-            # Edit the user's profile immediately so the new sidebage image
-            #  will appear as soon as this view returns the response
-            user.userprofile.sidebar_image = uploaded_file.name
-
-    @method_decorator(login_required)
-    def dispatch(self, *args: Any, **kwargs: Any) -> HttpResponseBase:
-        """Dispatch the request to the appropriate handler method.
-
-        Args:
-            *args: Positional arguments.
-            **kwargs: Keyword arguments.
-
-        Returns:
-            HTTP response from the parent dispatch method.
-        """
-        return super().dispatch(*args, **kwargs)
+        """Handle sidebar image upload or deletion."""
+        self._handle_s3_image(
+            form=form,
+            field_name="sidebar_image",
+            file_field_name="sidebar_image_file",
+            delete_flag_name="delete_sidebar",
+            s3_prefix="sidebar",
+        )
 
 
 @method_decorator(login_required, name="dispatch")
@@ -304,10 +288,10 @@ def sort_pinned_notes(request: HttpRequest) -> JsonResponse:
     new_position = int(request.POST["new_position"])
 
     user = cast(User, request.user)
-    s = UserNote.objects.get(userprofile=user.userprofile, blob__uuid=note_uuid)
-    UserNote.reorder(s, new_position)
+    user_note = UserNote.objects.get(userprofile=user.userprofile, blob__uuid=note_uuid)
+    UserNote.reorder(user_note, new_position)
 
-    return JsonResponse({"status": "OK"}, safe=False)
+    return JsonResponse({"status": "OK"})
 
 
 @login_required
@@ -325,8 +309,8 @@ def pin_note(request: HttpRequest) -> JsonResponse:
 
     Returns:
         JSON response containing:
-            - status: "OK" on success, "Not OK" on failure
-            - message: Error message if status is "Not OK"
+            - status: "OK" on success, "ERROR" on failure
+            - message: Error message if status is "ERROR"
     """
     uuid = request.POST["uuid"]
     remove = request.POST.get("remove", False)
@@ -344,13 +328,13 @@ def pin_note(request: HttpRequest) -> JsonResponse:
     else:
         if UserNote.objects.filter(userprofile=user.userprofile, blob=note).exists():
             message = "That note is already pinned."
-            status = "Not OK"
+            status = "ERROR"
         else:
-            c = UserNote(userprofile=user.userprofile, blob=note)
-            c.save()
+            user_note = UserNote(userprofile=user.userprofile, blob=note)
+            user_note.save()
             status = "OK"
 
-    return JsonResponse({"status": status, "message": message}, safe=False)
+    return JsonResponse({"status": status, "message": message})
 
 
 @login_required
@@ -368,7 +352,7 @@ def store_in_session(request: HttpRequest) -> JsonResponse:
     """
     for key in request.POST:
         request.session[key] = request.POST[key]
-    return JsonResponse({"status": "OK"}, safe=False)
+    return JsonResponse({"status": "OK"})
 
 
 def bc_login(request: HttpRequest) -> HttpResponse:
