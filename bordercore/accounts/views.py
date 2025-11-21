@@ -12,7 +12,8 @@ from django.contrib import messages
 from django.contrib.auth import (authenticate, login, logout,
                                  update_session_auth_hash)
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.hashers import check_password
+from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.contrib.auth.views import PasswordChangeView
 from django.core.files.uploadedfile import UploadedFile
@@ -21,7 +22,6 @@ from django.http import (HttpRequest, HttpResponse, HttpResponseRedirect,
                          JsonResponse)
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
-from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_POST
 from django.views.generic.edit import UpdateView
 
@@ -31,8 +31,7 @@ from blob.models import Blob
 from lib.mixins import FormRequestMixin
 
 
-@method_decorator(login_required, name="dispatch")
-class UserProfileUpdateView(FormRequestMixin, UpdateView):
+class UserProfileUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView):
     """View for updating user profile preferences.
 
     Handles editing of user profile settings including background images,
@@ -93,7 +92,7 @@ class UserProfileUpdateView(FormRequestMixin, UpdateView):
             form: The validated user profile form.
 
         Returns:
-            HTTP response with updated context and success message.
+            Redirect to the preferences page with a success message.
         """
         self.handle_sidebar(form)
         self.handle_background_image(form)
@@ -214,59 +213,61 @@ class UserProfileUpdateView(FormRequestMixin, UpdateView):
         )
 
 
-@method_decorator(login_required, name="dispatch")
-class ChangePasswordView(PasswordChangeView):
-    """View for changing user password.
-
-    Handles password change requests with validation for old password
-    correctness and new password matching.
+class ChangePasswordView(LoginRequiredMixin, PasswordChangeView):
+    """
+    View for changing the current user's password using Django's built-in
+    PasswordChangeForm and password validation framework, with all feedback
+    going through the Django messages framework.
     """
 
     template_name = "prefs/password.html"
     success_url = reverse_lazy("accounts:password")
 
-    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        """Get context data for the password change form.
+    def form_valid(self, form: PasswordChangeForm) -> HttpResponse:
+        """Process valid form submission for password change.
+
+        Saves the new password using Django's validators, keeps the user
+        logged in, and adds a success message to the messages framework.
 
         Args:
-            **kwargs: Additional keyword arguments.
+            form: The validated password change form.
 
         Returns:
-            Context dictionary containing:
-                - nav: Navigation identifier ("prefs")
-                - title: Page title
+            HTTP response redirecting to the success URL.
         """
-        context = super().get_context_data(**kwargs)
-        context["nav"] = "prefs"
-        context["title"] = "Preferences"
-        return context
+        user = form.save()
+        update_session_auth_hash(self.request, user)
 
-    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponseRedirect:
-        """Handle password change form submission.
+        messages.success(self.request, "Your password has been updated.")
+        return super().form_valid(form)
 
-        Validates the old password, checks that new passwords match,
-        and updates the user's password if validation passes.
+    def form_invalid(self, form: PasswordChangeForm) -> HttpResponse:
+        """Handle an invalid form submission.
+
+        Pushes all relevant errors into the messages framework so that
+        base.html can render them.
 
         Args:
-            request: The HTTP request containing password change data.
-            *args: Positional arguments.
-            **kwargs: Keyword arguments.
+            form: The invalid password change form.
 
         Returns:
-            Redirect to the success URL with appropriate status message.
+            HTTP response rendering the form with error messages.
         """
-        user = cast(User, request.user)
-        if not check_password(request.POST["old_password"], user.password):
-            messages.add_message(request, messages.ERROR, "Incorrect password")
-        elif request.POST["new_password1"] != request.POST["new_password2"]:
-            messages.add_message(request, messages.ERROR, "New passwords do not match")
-        else:
-            user.set_password(request.POST["new_password1"])
-            user.save()
-            update_session_auth_hash(request, user)
-            messages.add_message(request, messages.INFO, "Password updated")
+        # Non-field errors (e.g. "Your old password was entered incorrectly")
+        for error in form.non_field_errors():
+            messages.error(self.request, str(error))
 
-        return HttpResponseRedirect(self.get_success_url())
+        # Field-specific errors
+        for field_name, field_errors in form.errors.items():
+            for error in field_errors:
+                error_str = str(error)
+                if field_name == "__all__":
+                    messages.error(self.request, error_str)
+                else:
+                    messages.error(self.request, f"{field_name}: {error_str}")
+
+        # Let the base view re-render the form with errors as well
+        return super().form_invalid(form)
 
 
 @login_required
