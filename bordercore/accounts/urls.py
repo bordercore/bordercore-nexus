@@ -26,12 +26,12 @@ urlpatterns = [
     ),
     path(
         route="login/",
-        view=views.bc_login,
+        view=views.bordercore_login,
         name="login"
     ),
     path(
         route="logout/",
-        view=views.bc_logout,
+        view=views.bordercore_logout,
         name="logout"
     ),
     path(
