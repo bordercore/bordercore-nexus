@@ -264,10 +264,8 @@ class Collection(TimeStampedModel):
 
         queryset = CollectionObject.objects.filter(
             collection=self
-        ).prefetch_related(
-            "blob"
-        ).prefetch_related(
-            "bookmark"
+        ).select_related(
+            "blob", "bookmark"
         )
 
         if request and "tag" in request.GET:
