@@ -14,7 +14,7 @@ from feed.models import Feed
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
-from django.db.models import JSONField
+from django.db.models import JSONField, UniqueConstraint
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 
@@ -104,9 +104,12 @@ class UserTag(SortOrderMixin):
 
     class Meta:
         ordering = ("sort_order",)
-        unique_together = (
-            ("userprofile", "tag")
-        )
+        constraints = [
+            UniqueConstraint(
+                fields=["userprofile", "tag"],
+                name="accounts_usertag_userprofile_tag_uniq",
+            ),
+        ]
 
 
 @receiver(pre_delete, sender=UserTag)
@@ -133,9 +136,12 @@ class UserNote(SortOrderMixin):
 
     class Meta:
         ordering = ("sort_order",)
-        unique_together = (
-            ("userprofile", "blob")
-        )
+        constraints = [
+            UniqueConstraint(
+                fields=["userprofile", "blob"],
+                name="accounts_usernote_userprofile_blob_uniq",
+            ),
+        ]
 
 
 class UserFeed(SortOrderMixin):
@@ -152,9 +158,12 @@ class UserFeed(SortOrderMixin):
 
     class Meta:
         ordering = ("sort_order",)
-        unique_together = (
-            ("userprofile", "feed")
-        )
+        constraints = [
+            UniqueConstraint(
+                fields=["userprofile", "feed"],
+                name="accounts_userfeed_userprofile_feed_uniq",
+            ),
+        ]
 
 
 @receiver(pre_delete, sender=UserFeed)
@@ -181,9 +190,12 @@ class DrillTag(SortOrderMixin):
 
     class Meta:
         ordering = ("sort_order",)
-        unique_together = (
-            ("userprofile", "tag")
-        )
+        constraints = [
+            UniqueConstraint(
+                fields=["userprofile", "tag"],
+                name="accounts_drilltag_userprofile_tag_uniq",
+            ),
+        ]
 
 
 @receiver(pre_delete, sender=DrillTag)
