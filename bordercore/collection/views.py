@@ -465,6 +465,7 @@ def get_object_list(request: HttpRequest, collection_uuid: str) -> JsonResponse:
         request: The HTTP request containing:
             - pageNumber: Page number to retrieve (default: 1)
             - random_order: Whether to randomize object order (default: false)
+            - tag: Optional tag name to filter objects
         collection_uuid: The UUID of the collection.
 
     Returns:
@@ -472,11 +473,13 @@ def get_object_list(request: HttpRequest, collection_uuid: str) -> JsonResponse:
     """
     collection = Collection.objects.get(uuid=collection_uuid)
     random_order = request.GET.get("random_order", "false") in ("true")
+    tag = request.GET.get("tag") or None
+    page_number = int(request.GET.get("pageNumber", 1))
 
     object_list = collection.get_object_list(
-        request=request,
-        page_number=int(request.GET.get("pageNumber", 1)),
-        random_order=random_order
+        page_number=page_number,
+        random_order=random_order,
+        tag=tag
     )
 
     return JsonResponse(object_list, safe=False)

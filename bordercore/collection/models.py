@@ -26,7 +26,6 @@ from django.db import models
 from django.db.models import CheckConstraint, F, Q, UniqueConstraint
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
-from django.http import HttpRequest
 from django.urls import reverse
 from django.utils import timezone
 
@@ -258,7 +257,7 @@ class Collection(TimeStampedModel):
             "index": position
         }
 
-    def get_object_list(self, request: HttpRequest | None = None, limit: int = BLOB_COUNT_PER_PAGE, page_number: int = 1, random_order: bool = False) -> dict[str, Any]:
+    def get_object_list(self, limit: int = BLOB_COUNT_PER_PAGE, page_number: int = 1, random_order: bool = False, tag: str | None = None) -> dict[str, Any]:
         """Return a paginated list of objects in this collection.
 
         Retrieves the collection's contents (Blobs and Bookmarks) with optional
@@ -266,11 +265,10 @@ class Collection(TimeStampedModel):
         the object list for rendering collection detail pages.
 
         Args:
-            request: Optional Django request object. If provided, extracts "tag"
-                and "page" query parameters.
             limit: Number of objects per page.
             page_number: Which page to return (1-indexed).
             random_order: If True, randomize the order of objects.
+            tag: Optional tag name to filter the collection's Blobs.
 
         Returns:
             A dict containing:
@@ -287,17 +285,11 @@ class Collection(TimeStampedModel):
             "blob", "bookmark"
         )
 
-        if request and "tag" in request.GET:
-            queryset = queryset.filter(blob__tags__name=request.GET["tag"])
+        if tag:
+            queryset = queryset.filter(blob__tags__name=tag)
 
         if random_order:
             queryset = queryset.order_by("?")
-
-        if request and "page" in request.GET:
-            try:
-                page_number = int(request.GET["page"])
-            except (ValueError, TypeError):
-                page_number = 1
 
         paginator = Paginator(queryset, limit)
         page = paginator.page(page_number)
