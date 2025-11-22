@@ -119,6 +119,15 @@ class CollectionDetailView(FormRequestMixin, FormMixin, DetailView):
     slug_url_kwarg = "uuid"
     form_class = CollectionForm
 
+    def get_queryset(self) -> QuerySet[Collection]:
+        """Get the queryset of collections for the current user.
+
+        Returns:
+            QuerySet of Collection objects filtered by user.
+        """
+        user = cast(User, self.request.user)
+        return Collection.objects.filter(user=user)
+
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         """Get context data for the collection detail view.
 
@@ -306,7 +315,8 @@ def get_blob(request: HttpRequest, collection_uuid: str) -> JsonResponse:
     Returns:
         JSON response containing blob information.
     """
-    collection = Collection.objects.get(uuid=collection_uuid)
+    user = cast(User, request.user)
+    collection = Collection.objects.get(uuid=collection_uuid, user=user)
     direction = request.GET.get("direction", "next")
     blob_position = int(request.GET.get("position", 0))
     tag_name = request.GET.get("tag", None)
@@ -330,6 +340,8 @@ def get_images(request: HttpRequest, collection_uuid: str) -> JsonResponse:
         JSON response containing a list of image dictionaries with
         uuid and filename fields.
     """
+    # Note: This is an API view that may be called by AWS Lambda, so user filtering may not apply
+    # However, collections should still be user-scoped for security
     blob_list = Collection.objects.get(uuid=str(collection_uuid)).get_recent_images()
 
     return JsonResponse(
@@ -475,7 +487,8 @@ def get_object_list(request: HttpRequest, collection_uuid: str) -> JsonResponse:
     Returns:
         JSON response containing paginated object list data.
     """
-    collection = Collection.objects.get(uuid=collection_uuid)
+    user = cast(User, request.user)
+    collection = Collection.objects.get(uuid=collection_uuid, user=user)
     random_order = request.GET.get("random_order", "false") in ("true")
     tag = request.GET.get("tag") or None
     page_number = int(request.GET.get("pageNumber", 1))
@@ -514,13 +527,14 @@ def add_object(request: HttpRequest) -> JsonResponse:
     blob_uuid = request.POST.get("blob_uuid", None)
     bookmark_uuid = request.POST.get("bookmark_uuid", None)
 
-    collection = Collection.objects.get(uuid=collection_uuid)
+    user = cast(User, request.user)
+    collection = Collection.objects.get(uuid=collection_uuid, user=user)
 
     object: Blob | Bookmark
     if blob_uuid:
-        object = Blob.objects.get(uuid=blob_uuid)
+        object = Blob.objects.get(uuid=blob_uuid, user=user)
     elif bookmark_uuid:
-        object = Bookmark.objects.get(uuid=bookmark_uuid)
+        object = Bookmark.objects.get(uuid=bookmark_uuid, user=user)
     else:
         return JsonResponse(
             {
@@ -563,7 +577,8 @@ def remove_object(request: HttpRequest) -> JsonResponse:
     collection_uuid = request.POST["collection_uuid"]
     object_uuid = request.POST["object_uuid"]
 
-    collection = Collection.objects.get(uuid=collection_uuid)
+    user = cast(User, request.user)
+    collection = Collection.objects.get(uuid=collection_uuid, user=user)
     collection.remove_object(object_uuid)
 
     response = {
@@ -596,9 +611,11 @@ def sort_objects(request: HttpRequest) -> JsonResponse:
     object_uuid = request.POST["object_uuid"]
     new_position = int(request.POST["new_position"])
 
+    user = cast(User, request.user)
     so = CollectionObject.objects.get(
         Q(blob__uuid=object_uuid) | Q(bookmark__uuid=object_uuid),
-        collection__uuid=collection_uuid
+        collection__uuid=collection_uuid,
+        collection__user=user
     )
     CollectionObject.reorder(so, new_position)
 
@@ -631,9 +648,11 @@ def update_object_note(request: HttpRequest) -> JsonResponse:
     object_uuid = request.POST["object_uuid"]
     note = request.POST["note"]
 
+    user = cast(User, request.user)
     so = CollectionObject.objects.get(
         Q(blob__uuid=object_uuid) | Q(bookmark__uuid=object_uuid),
-        collection__uuid=collection_uuid
+        collection__uuid=collection_uuid,
+        collection__user=user
     )
     so.note = note
     so.save()
@@ -685,7 +704,7 @@ def add_new_bookmark(request: HttpRequest) -> JsonResponse:
         )
         bookmark.index_bookmark()
 
-    collection = Collection.objects.get(uuid=collection_uuid)
+    collection = Collection.objects.get(uuid=collection_uuid, user=user)
 
     if CollectionObject.objects.filter(
             collection=collection,
