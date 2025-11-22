@@ -22,7 +22,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.db import models
-from django.db.models import F, Q
+from django.db.models import CheckConstraint, F, Q, UniqueConstraint
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 from django.http import HttpRequest
@@ -393,9 +393,28 @@ class CollectionObject(SortOrderMixin):
 
     class Meta:
         ordering = ("sort_order",)
-        unique_together = (
-            ("collection", "blob", "bookmark")
-        )
+        constraints = [
+            # 1. Integrity Constraint: Ensure one AND ONLY one target is set (XOR logic)
+            CheckConstraint(
+                condition=(
+                    Q(blob__isnull=False, bookmark__isnull=True) |
+                    Q(blob__isnull=True, bookmark__isnull=False)
+                ),
+                name="collection_object_has_exactly_one_target"
+            ),
+            # 2. Uniqueness Constraint: Prevent duplicate Blobs in the same collection
+            UniqueConstraint(
+                fields=["collection", "blob"],
+                condition=Q(blob__isnull=False),
+                name="unique_collection_blob"
+            ),
+            # 3. Uniqueness Constraint: Prevent duplicate Bookmarks in the same collection
+            UniqueConstraint(
+                fields=["collection", "bookmark"],
+                condition=Q(bookmark__isnull=False),
+                name="unique_collection_bookmark"
+            )
+        ]
 
     def __str__(self) -> str:
         """Return string representation of this collection object.
