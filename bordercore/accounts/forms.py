@@ -46,7 +46,6 @@ class UserProfileForm(ModelForm):
 
         self.fields["drill_intervals"].widget.attrs["class"] = "form-control"
         self.fields["nytimes_api_key"].label = "NYTimes API key"
-        self.fields["nytimes_api_key"].required = False
 
         self.fields["drill_tags_muted"] = ModelCommaSeparatedChoiceField(
             request=self.request,
