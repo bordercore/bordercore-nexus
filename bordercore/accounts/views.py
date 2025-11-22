@@ -28,6 +28,7 @@ from django.views.generic.edit import UpdateView
 from accounts.forms import UserProfileForm
 from accounts.models import UserNote, UserProfile
 from blob.models import Blob
+from lib.decorators import validate_post_data
 from lib.mixins import FormRequestMixin
 
 
@@ -270,6 +271,7 @@ class ChangePasswordView(LoginRequiredMixin, PasswordChangeView):
 
 @login_required
 @require_POST
+@validate_post_data("note_uuid", "new_position")
 def sort_pinned_notes(request: HttpRequest) -> JsonResponse:
     """Reorder a pinned note to a new position.
 
@@ -295,6 +297,7 @@ def sort_pinned_notes(request: HttpRequest) -> JsonResponse:
 
 @login_required
 @require_POST
+@validate_post_data("uuid")
 def pin_note(request: HttpRequest) -> JsonResponse:
     """Pin or unpin a note for the current user.
 
