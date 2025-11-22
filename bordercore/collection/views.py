@@ -36,7 +36,7 @@ from collection.models import Collection, CollectionObject
 from lib.decorators import validate_post_data
 from lib.exceptions import DuplicateObjectError
 from lib.mixins import FormRequestMixin
-from lib.util import parse_title_from_url
+from lib.util import calculate_sha1sum, parse_title_from_url
 from tag.models import Tag
 
 
@@ -430,8 +430,8 @@ def create_blob(request: HttpRequest) -> JsonResponse:
     """
     collection_uuid = request.POST["collection_uuid"]
     uploaded_file = cast(UploadedFile, request.FILES["blob"])
+    sha1sum = calculate_sha1sum(uploaded_file)
     file_contents = uploaded_file.read()
-    sha1sum = hashlib.sha1(file_contents).hexdigest()
 
     user = cast(User, request.user)
     dupe_check = Blob.objects.filter(sha1sum=sha1sum, user=user)
@@ -454,7 +454,7 @@ def create_blob(request: HttpRequest) -> JsonResponse:
 
         blob.file_modified = str(int(timezone.now().timestamp()))  # type: ignore[attr-defined]
         blob.file.save(uploaded_file.name, BytesIO(file_contents))
-        blob.sha1sum = hashlib.sha1(file_contents).hexdigest()
+        blob.sha1sum = sha1sum
         blob.save()
 
         blob.index_blob()

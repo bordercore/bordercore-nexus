@@ -1,3 +1,4 @@
+import hashlib
 import os
 import string
 from pathlib import PurePath
@@ -194,3 +195,57 @@ def get_field(obj: Union[Dict[str, Any], Any], field_name: str) -> Any:
         return [x.name for x in obj.tags.all()]
 
     return getattr(obj, field_name, None)
+
+
+def calculate_sha1sum(file_like: Union[str, Any], chunk_size: int = 65536) -> str:
+    """
+    Calculate SHA1 hash of a file-like object or file path in chunks to avoid memory issues.
+
+    This function reads the file in chunks rather than loading the entire file into memory,
+    making it suitable for large files.
+
+    Args:
+        file_like: Either a file path string or a file-like object with a read() method
+            (e.g., UploadedFile, file handle, Django FileField).
+        chunk_size: Size of chunks to read at a time (default: 65536 bytes = 64KB).
+
+    Returns:
+        Hexadecimal string representation of the SHA1 hash.
+
+    Examples:
+        # With a file path
+        sha1 = calculate_sha1sum("/path/to/file.pdf")
+
+        # With a file-like object (e.g., UploadedFile)
+        sha1 = calculate_sha1sum(uploaded_file)
+
+        # With a Django FileField
+        sha1 = calculate_sha1sum(blob.file)
+    """
+    hasher = hashlib.sha1()
+
+    if isinstance(file_like, str):
+        # File path provided
+        with open(file_like, "rb") as f:
+            while True:
+                chunk = f.read(chunk_size)
+                if not chunk:
+                    break
+                hasher.update(chunk)
+    else:
+        # File-like object provided
+        # Reset file pointer to beginning if possible
+        if hasattr(file_like, "seek"):
+            file_like.seek(0)
+        
+        while True:
+            chunk = file_like.read(chunk_size)
+            if not chunk:
+                break
+            hasher.update(chunk)
+        
+        # Reset file pointer to beginning for potential reuse
+        if hasattr(file_like, "seek"):
+            file_like.seek(0)
+
+    return hasher.hexdigest()
