@@ -9,7 +9,6 @@ thumbnails, and paginated browsing of their contents.
 
 from __future__ import unicode_literals
 
-import datetime
 import json
 import logging
 import re
@@ -27,6 +26,7 @@ from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 from django.http import HttpRequest
 from django.urls import reverse
+from django.utils import timezone
 
 if TYPE_CHECKING:
     from blob.models import Blob
@@ -114,8 +114,8 @@ class Collection(TimeStampedModel):
             raise ValueError(f"Unsupported type: {type(object)}")
         so.save()
 
-        self.modified = datetime.datetime.now()
-        self.save()
+        self.modified = timezone.now()
+        self.save(update_fields=["modified"])
 
         self.create_collection_thumbnail()
 
@@ -139,7 +139,7 @@ class Collection(TimeStampedModel):
         )
         so.delete()
 
-        self.modified = datetime.datetime.now()
+        self.modified = timezone.now()
         self.save()
 
         self.create_collection_thumbnail()
