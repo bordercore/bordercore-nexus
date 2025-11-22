@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING, Any
 import boto3
 from botocore.exceptions import ClientError
 
+from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
@@ -100,8 +101,8 @@ class Collection(TimeStampedModel):
             DuplicateObjectError: If the object is already in this collection.
             ValueError: If the object is not a Blob or Bookmark.
         """
-        from blob.models import Blob
-        from bookmark.models import Bookmark
+        Blob = apps.get_model("blob.Blob")
+        Bookmark = apps.get_model("bookmark.Bookmark")
 
         if isinstance(object, Bookmark):
             if CollectionObject.objects.filter(collection=self, bookmark=object).exists():
