@@ -87,7 +87,9 @@ class UserProfile(models.Model):
         Returns:
             str: Comma-separated tag names.
         """
-        return ", ".join([tag.name for tag in self.pinned_tags.all().order_by("usertag__sort_order")])
+        return ", ".join(
+            self.pinned_tags.order_by("usertag__sort_order").values_list("name", flat=True)
+        )
 
     def __str__(self) -> str:
         """Return string representation of the user profile."""
@@ -101,6 +103,10 @@ class UserTag(SortOrderMixin):
     tag = models.ForeignKey(Tag, on_delete=models.CASCADE)
 
     field_name = "userprofile"
+
+    def __str__(self) -> str:
+        """Return string representation of the user tag."""
+        return f"SortOrder: {self.userprofile}, {self.tag}"
 
     class Meta:
         ordering = ("sort_order",)
@@ -133,6 +139,10 @@ class UserNote(SortOrderMixin):
     blob = models.ForeignKey(Blob, on_delete=models.CASCADE)
 
     field_name = "userprofile"
+
+    def __str__(self) -> str:
+        """Return string representation of the user note."""
+        return f"SortOrder: {self.userprofile}, {self.blob}"
 
     class Meta:
         ordering = ("sort_order",)
@@ -183,10 +193,14 @@ def remove_feed(sender: type[UserFeed], instance: UserFeed, **kwargs: Any) -> No
 class DrillTag(SortOrderMixin):
     """Through-model linking a UserProfile to a Tag for drill functionality with sort ordering."""
 
-    userprofile = models.ForeignKey("accounts.UserProfile", on_delete=models.CASCADE)
+    userprofile = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
     tag = models.ForeignKey(Tag, on_delete=models.CASCADE)
 
     field_name = "userprofile"
+
+    def __str__(self) -> str:
+        """Return string representation of the drill tag."""
+        return f"SortOrder: {self.userprofile}, {self.tag}"
 
     class Meta:
         ordering = ("sort_order",)
@@ -226,6 +240,7 @@ def remove_note(sender: type[UserNote], instance: UserNote, **kwargs: Any) -> No
     instance.handle_delete()
 
 
+@receiver(post_save, sender=User)
 def create_user_profile(sender: type[User], instance: User, created: bool, **kwargs: Any) -> None:
     """Create a UserProfile when a new User is created.
 
@@ -240,9 +255,4 @@ def create_user_profile(sender: type[User], instance: User, created: bool, **kwa
         **kwargs: Additional keyword arguments.
     """
     if created:
-        p = UserProfile()
-        p.user = instance
-        p.save()
-
-
-post_save.connect(create_user_profile, sender=User)
+        UserProfile.objects.create(user=instance)
