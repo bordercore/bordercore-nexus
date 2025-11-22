@@ -56,6 +56,7 @@ class UserProfile(models.Model):
     google_calendar = JSONField(blank=True, null=True)
     google_calendar_email = models.EmailField(blank=True, null=True)
     instagram_credentials = JSONField(blank=True, null=True)
+    weather = JSONField(blank=True, null=True)
     nytimes_api_key = models.TextField(null=True, blank=True)
     homepage_default_collection = models.OneToOneField(Collection, related_name="default_collection", null=True, on_delete=models.PROTECT)
     homepage_image_collection = models.OneToOneField(Collection, related_name="image_collection", null=True, on_delete=models.PROTECT)
