@@ -53,7 +53,6 @@ class UserProfileUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView):
                 - nav: Navigation identifier ("prefs")
                 - title: Page title
                 - drill_tags_muted: List of muted drill tag names
-                - tags: List of pinned tag names (reversed)
                 - instagram_username: Instagram username if credentials exist
                 - instagram_password: Instagram password if credentials exist
         """
@@ -63,7 +62,6 @@ class UserProfileUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView):
         context["nav"] = "prefs"
         context["title"] = "Preferences"
         context["drill_tags_muted"] = [x.name for x in self.object.drill_tags_muted.all()]
-        context["tags"] = [x.name for x in self.object.pinned_tags.all()[::-1]]
         if user.userprofile.instagram_credentials:
             context["instagram_username"] = user.userprofile.instagram_credentials.get("username", "")
             context["instagram_password"] = user.userprofile.instagram_credentials.get("password", "")
