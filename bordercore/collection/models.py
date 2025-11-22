@@ -17,6 +17,7 @@ from random import randint
 from typing import TYPE_CHECKING, Any
 
 import boto3
+from botocore.exceptions import ClientError
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -33,7 +34,7 @@ if TYPE_CHECKING:
     from blob.models import Blob
     from bookmark.models import Bookmark
 
-from lib.exceptions import DuplicateObjectError
+from lib.exceptions import DuplicateObjectError, S3Error
 from lib.mixins import SortOrderMixin, TimeStampedModel
 from tag.models import Tag
 
@@ -154,7 +155,8 @@ class Collection(TimeStampedModel):
 
         Before deletion, removes the collection's cover thumbnail image from S3.
         Then calls the superclass delete to remove the collection and cascade
-        delete all related CollectionObjects.
+        delete all related CollectionObjects. If S3 deletion fails, raises S3Error
+        and does not delete the Django object.
 
         Args:
             using: Database alias (unused).
@@ -162,10 +164,18 @@ class Collection(TimeStampedModel):
 
         Returns:
             A tuple of (number of objects deleted, dict of deletion counts by model).
+
+        Raises:
+            S3Error: If the S3 thumbnail deletion fails.
         """
         # Delete the collection's thumbnail image in S3
-        s3 = boto3.resource("s3")
-        s3.Object(settings.AWS_STORAGE_BUCKET_NAME, f"collections/{self.uuid}.jpg").delete()
+        try:
+            s3 = boto3.resource("s3")
+            s3.Object(settings.AWS_STORAGE_BUCKET_NAME, f"collections/{self.uuid}.jpg").delete()
+        except ClientError as e:
+            raise S3Error(f"Failed to delete collection thumbnail from S3: {e}") from e
+        except Exception as e:
+            raise S3Error(f"Unexpected error deleting collection thumbnail from S3: {e}") from e
 
         return super().delete(using=using, keep_parents=keep_parents)
 
