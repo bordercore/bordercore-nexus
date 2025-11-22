@@ -54,7 +54,7 @@ class UserProfileForm(ModelForm):
             to_field_name="name")
 
         collections_list = Collection.objects.filter(user=self.request.user).exclude(name="")
-        if collections_list:
+        if collections_list.exists():
             self.fields["homepage_default_collection"] = ModelChoiceField(
                 empty_label="Select Collection",
                 label="Default collection",
