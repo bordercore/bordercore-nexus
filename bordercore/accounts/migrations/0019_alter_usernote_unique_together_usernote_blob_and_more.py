@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("accounts", "0018_userprofile_weather"),
+        ("accounts", "0017_userprofile_google_calendar_email"),
     ]
 
     operations = [
