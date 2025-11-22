@@ -3,7 +3,6 @@
 This module contains views for managing collections, collection objects,
 and related operations in the collection system.
 """
-import datetime
 import hashlib
 from io import BytesIO
 from typing import Any, cast
@@ -22,6 +21,7 @@ from django.forms.models import model_to_dict
 from django.http import (HttpRequest, HttpResponse, HttpResponseRedirect,
                          JsonResponse)
 from django.urls import reverse, reverse_lazy
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_POST
 from django.views.generic.detail import DetailView
@@ -145,7 +145,7 @@ class CollectionDetailView(FormRequestMixin, FormMixin, DetailView):
         """
         context = super().get_context_data(**kwargs)
 
-        context["tags"] = [x.name for x in self.object.tags.all()]
+        context["tags"] = list(self.object.tags.values_list("name", flat=True))
 
         # Get a list of all tags used by all objects in this collection,
         #  along with their total counts
@@ -449,10 +449,10 @@ def create_blob(request: HttpRequest) -> JsonResponse:
 
         blob = Blob.objects.create(
             user=user,
-            date=datetime.datetime.now().strftime("%Y-%m-%d")
+            date=timezone.now().date().strftime("%Y-%m-%d")
         )
 
-        blob.file_modified = datetime.datetime.now().strftime("%s")  # type: ignore[attr-defined]
+        blob.file_modified = str(int(timezone.now().timestamp()))  # type: ignore[attr-defined]
         blob.file.save(uploaded_file.name, BytesIO(file_contents))
         blob.sha1sum = hashlib.sha1(file_contents).hexdigest()
         blob.save()
@@ -489,7 +489,7 @@ def get_object_list(request: HttpRequest, collection_uuid: str) -> JsonResponse:
     """
     user = cast(User, request.user)
     collection = Collection.objects.get(uuid=collection_uuid, user=user)
-    random_order = request.GET.get("random_order", "false") in ("true")
+    random_order = request.GET.get("random_order", "").lower() == "true"
     tag = request.GET.get("tag") or None
     page_number = int(request.GET.get("pageNumber", 1))
 
@@ -530,11 +530,11 @@ def add_object(request: HttpRequest) -> JsonResponse:
     user = cast(User, request.user)
     collection = Collection.objects.get(uuid=collection_uuid, user=user)
 
-    object: Blob | Bookmark
+    item: Blob | Bookmark
     if blob_uuid:
-        object = Blob.objects.get(uuid=blob_uuid, user=user)
+        item = Blob.objects.get(uuid=blob_uuid, user=user)
     elif bookmark_uuid:
-        object = Bookmark.objects.get(uuid=bookmark_uuid, user=user)
+        item = Bookmark.objects.get(uuid=bookmark_uuid, user=user)
     else:
         return JsonResponse(
             {
@@ -544,7 +544,7 @@ def add_object(request: HttpRequest) -> JsonResponse:
         )
 
     try:
-        collection.add_object(object)
+        collection.add_object(item)
         response = {
             "status": "OK",
         }
