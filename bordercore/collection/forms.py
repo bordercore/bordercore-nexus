@@ -46,10 +46,9 @@ class CollectionForm(ModelForm):
         super().__init__(*args, **kwargs)
 
         # If this form has a model attached, get the tags and display them separated by commas
-        if self.instance.id:
+        if self.instance.pk:
             self.initial["tags"] = self.instance.get_tags()
 
-        self.fields["is_favorite"].label = "Is Favorite"
         user = cast(User, self.request.user)
         self.fields["tags"] = ModelCommaSeparatedChoiceField(
             request=self.request,
@@ -65,6 +64,9 @@ class CollectionForm(ModelForm):
 
         model = Collection
         fields = ("name", "description", "tags", "is_favorite")
+        labels = {
+            "is_favorite": "Is Favorite",
+        }
         widgets = {
             "description": Textarea(attrs={"class": "form-control"}),
             "name": TextInput(attrs={"class": "form-control", "autocomplete": "off"})
