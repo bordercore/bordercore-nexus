@@ -1,4 +1,4 @@
-"""Forms for the drill application.
+"""Django forms for the drill application.
 
 This module contains Django form classes for handling question-related forms,
 including validation and field configuration.

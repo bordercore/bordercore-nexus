@@ -1,16 +1,26 @@
+"""Views for the collection application.
+
+This module contains views for managing collections, collection objects,
+and related operations in the collection system.
+"""
 import datetime
 import hashlib
 from io import BytesIO
+from typing import Any, cast
 
 from rest_framework.decorators import api_view
 
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Count, Exists, OuterRef, Q
+from django.core.files.uploadedfile import UploadedFile
+from django.db.models import Count, Exists, OuterRef, Q, QuerySet
+from django.forms import BaseModelForm
 from django.forms.models import model_to_dict
-from django.http import HttpResponseRedirect, JsonResponse
+from django.http import (HttpRequest, HttpResponse, HttpResponseRedirect,
+                         JsonResponse)
 from django.urls import reverse, reverse_lazy
 from django.utils.decorators import method_decorator
 from django.views.generic.detail import DetailView
@@ -30,18 +40,32 @@ from tag.models import Tag
 
 @method_decorator(login_required, name="dispatch")
 class CollectionListView(FormRequestMixin, FormMixin, ListView):
+    """View for displaying the collection list page.
+
+    Shows favorite collections for the current user with their blob counts
+    and cover images. Supports filtering by collection name.
+    """
 
     form_class = CollectionForm
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Collection]:
+        """Get the queryset of favorite collections for the current user.
 
+        Filters collections to only show favorites, optionally filters by
+        name if a query parameter is provided, and annotates with blob counts.
+
+        Returns:
+            QuerySet of Collection objects filtered to favorites, ordered by
+            modification date (newest first).
+        """
+        user = cast(User, self.request.user)
         query = Collection.objects.filter(
-            user=self.request.user,
+            user=user,
             is_favorite=True
         )
 
         if "query" in self.request.GET:
-            query = query.filter(name__icontains=self.request.GET.get("query"))
+            query = query.filter(name__icontains=self.request.GET["query"])
 
         query = query.annotate(num_blobs=Count("collectionobject"))
 
@@ -49,7 +73,19 @@ class CollectionListView(FormRequestMixin, FormMixin, ListView):
 
         return query
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        """Get context data for the collection list view.
+
+        Args:
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Context dictionary containing:
+                - collection_list: List of collection dictionaries with uuid,
+                  name, url, num_blobs, and cover_url
+                - cover_url: Base URL for collection cover images
+                - title: Page title
+        """
         context = super().get_context_data(**kwargs)
 
         context["collection_list"] = [
@@ -70,13 +106,32 @@ class CollectionListView(FormRequestMixin, FormMixin, ListView):
 
 @method_decorator(login_required, name="dispatch")
 class CollectionDetailView(FormRequestMixin, FormMixin, DetailView):
+    """View for displaying a collection detail page.
+
+    Shows a single collection with its tags, object tags with counts,
+    and collection metadata.
+    """
 
     model = Collection
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
     form_class = CollectionForm
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        """Get context data for the collection detail view.
+
+        Args:
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Context dictionary containing:
+                - tags: List of tag names associated with the collection
+                - object_tags: List of tags used by objects in the collection
+                  with their blob counts
+                - collection_json: Dictionary representation of the collection
+                  with name and description fields
+                - title: Page title
+        """
         context = super().get_context_data(**kwargs)
 
         context["tags"] = [x.name for x in self.object.tags.all()]
@@ -104,12 +159,30 @@ class CollectionDetailView(FormRequestMixin, FormMixin, DetailView):
 
 @method_decorator(login_required, name="dispatch")
 class CollectionCreateView(FormRequestMixin, CreateView):
+    """View for creating a new collection.
+
+    Handles the creation of new collections, including saving tags
+    and associating the collection with the current user.
+    """
+
     template_name = "collection/collection_list.html"
     form_class = CollectionForm
 
-    def form_valid(self, form):
+    def form_valid(self, form: BaseModelForm) -> HttpResponseRedirect:
+        """Handle a valid form submission.
+
+        Saves the collection, associates it with the current user,
+        and saves tags.
+
+        Args:
+            form: The validated collection form.
+
+        Returns:
+            Redirect to the collection list page.
+        """
         collection = form.save(commit=False)
-        collection.user = self.request.user
+        user = cast(User, self.request.user)
+        collection.user = user
         collection.save()
 
         # Save the tags
@@ -117,23 +190,49 @@ class CollectionCreateView(FormRequestMixin, CreateView):
 
         return HttpResponseRedirect(self.get_success_url())
 
-    def get_success_url(self):
+    def get_success_url(self) -> str:
+        """Get the URL to redirect to after successful form submission.
+
+        Returns:
+            URL for the collection list page.
+        """
         return reverse("collection:list")
 
 
 @method_decorator(login_required, name="dispatch")
 class CollectionUpdateView(FormRequestMixin, UpdateView):
+    """View for updating an existing collection.
+
+    Handles editing of collections, including updating tags.
+    Filters collections to only show those owned by the logged-in user.
+    """
 
     model = Collection
     form_class = CollectionForm
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
 
-    def get_queryset(self):
-        base_qs = super().get_queryset()
-        return base_qs.filter(user=self.request.user)
+    def get_queryset(self) -> QuerySet[Collection]:
+        """Get the queryset filtered to the current user's collections.
 
-    def form_valid(self, form):
+        Returns:
+            Collections owned by the logged-in user.
+        """
+        base_qs = super().get_queryset()
+        user = cast(User, self.request.user)
+        return base_qs.filter(user=user)
+
+    def form_valid(self, form: BaseModelForm) -> HttpResponseRedirect:
+        """Handle a valid form submission.
+
+        Updates the collection and saves tags.
+
+        Args:
+            form: The validated collection form.
+
+        Returns:
+            Redirect to the success URL with a success message.
+        """
         collection = form.instance
         collection.tags.set(form.cleaned_data["tags"])
         self.object = form.save()
@@ -149,17 +248,36 @@ class CollectionUpdateView(FormRequestMixin, UpdateView):
 
 @method_decorator(login_required, name="dispatch")
 class CollectionDeleteView(DeleteView):
+    """View for deleting a collection.
+
+    Allows users to delete their own collections. Filters collections to
+    only show those owned by the logged-in user.
+    """
 
     model = Collection
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
     success_url = reverse_lazy("collection:list")
 
-    def get_queryset(self):
-        # Filter the queryset to only include objects owned by the logged-in user
-        return self.model.objects.filter(user=self.request.user)
+    def get_queryset(self) -> QuerySet[Collection]:
+        """Get the queryset filtered to the current user's collections.
 
-    def form_valid(self, form):
+        Returns:
+            Collections owned by the logged-in user.
+        """
+        # Filter the queryset to only include objects owned by the logged-in user
+        user = cast(User, self.request.user)
+        return self.model.objects.filter(user=user)
+
+    def form_valid(self, form: BaseModelForm) -> HttpResponse:
+        """Handle a valid deletion form submission.
+
+        Args:
+            form: The validated deletion form.
+
+        Returns:
+            Redirect to the success URL with a success message.
+        """
         messages.add_message(
             self.request,
             messages.INFO,
@@ -169,8 +287,23 @@ class CollectionDeleteView(DeleteView):
 
 
 @login_required
-def get_blob(request, collection_uuid):
+def get_blob(request: HttpRequest, collection_uuid: str) -> JsonResponse:
+    """Get a blob from a collection.
 
+    Retrieves a blob from the specified collection based on position,
+    direction, optional tag filter, and randomization settings.
+
+    Args:
+        request: The HTTP request containing:
+            - direction: Direction to navigate ("next" or "prev", default: "next")
+            - position: Current blob position (default: 0)
+            - tag: Optional tag name to filter by
+            - randomize: Whether to randomize selection (default: false)
+        collection_uuid: The UUID of the collection.
+
+    Returns:
+        JSON response containing blob information.
+    """
     collection = Collection.objects.get(uuid=collection_uuid)
     direction = request.GET.get("direction", "next")
     blob_position = int(request.GET.get("position", 0))
@@ -181,10 +314,19 @@ def get_blob(request, collection_uuid):
 
 
 @api_view(["GET"])
-def get_images(request, collection_uuid):
-    """
-    Get four recent images from a collection, to be used in
-    creating a thumbnail image.
+def get_images(request: HttpRequest, collection_uuid: str) -> JsonResponse:
+    """Get four recent images from a collection.
+
+    Retrieves recent images from a collection to be used in creating
+    a thumbnail image.
+
+    Args:
+        request: The HTTP request.
+        collection_uuid: The UUID of the collection.
+
+    Returns:
+        JSON response containing a list of image dictionaries with
+        uuid and filename fields.
     """
     blob_list = Collection.objects.get(uuid=str(collection_uuid)).get_recent_images()
 
@@ -201,14 +343,29 @@ def get_images(request, collection_uuid):
 
 
 @login_required
-def search(request):
+def search(request: HttpRequest) -> JsonResponse:
+    """Search for collections.
 
-    query = Collection.objects.filter(user=request.user)
+    Searches collections for the current user with optional filters by
+    name, blob UUID, and exclusion of collections containing a blob.
+
+    Args:
+        request: The HTTP request containing optional query parameters:
+            - query: Collection name to search for (case-insensitive)
+            - blob_uuid: Filter collections containing this blob UUID
+            - exclude_blob_uuid: Annotate whether collection contains this blob
+
+    Returns:
+        JSON response containing a list of collection dictionaries with
+        name, uuid, num_objects, url, cover_url, and optionally contains_blob.
+    """
+    user = cast(User, request.user)
+    query = Collection.objects.filter(user=user)
 
     query = query.annotate(num_objects=Count("collectionobject"))
 
     if "query" in request.GET:
-        query = query.filter(name__icontains=request.GET.get("query"))
+        query = query.filter(name__icontains=request.GET["query"])
 
     if "blob_uuid" in request.GET:
         query = query.filter(collectionobject__blob__uuid__in=[request.GET.get("blob_uuid")])
@@ -237,17 +394,36 @@ def search(request):
 
 
 @login_required
-def create_blob(request):
+def create_blob(request: HttpRequest) -> JsonResponse:
+    """Create a new blob and add it to a collection.
 
+    Creates a new blob from uploaded file contents, checks for duplicates
+    by SHA1 hash, and adds it to the specified collection. Returns an error
+    if a blob with the same SHA1 hash already exists.
+
+    Args:
+        request: The HTTP request containing:
+            - collection_uuid: UUID of the collection to add the blob to
+            - blob: The uploaded file
+
+    Returns:
+        JSON response containing:
+            - status: "OK" on success, "Error" on failure
+            - blob_uuid: UUID of the created blob (on success)
+            - message: Error message with link to existing blob (on error)
+    """
     collection_uuid = request.POST["collection_uuid"]
-    file_contents = request.FILES["blob"].read()
+    uploaded_file = cast(UploadedFile, request.FILES["blob"])
+    file_contents = uploaded_file.read()
     sha1sum = hashlib.sha1(file_contents).hexdigest()
 
-    dupe_check = Blob.objects.filter(sha1sum=sha1sum, user=request.user)
+    user = cast(User, request.user)
+    dupe_check = Blob.objects.filter(sha1sum=sha1sum, user=user)
+    existing_blob = dupe_check.first()
 
-    if dupe_check:
+    if existing_blob:
 
-        blob_url = reverse("blob:detail", kwargs={"uuid": dupe_check.first().uuid})
+        blob_url = reverse("blob:detail", kwargs={"uuid": existing_blob.uuid})
         response = {
             "status": "Error",
             "message": f"This blob <a href='{blob_url}'>already exists</a>."
@@ -256,31 +432,44 @@ def create_blob(request):
     else:
 
         blob = Blob.objects.create(
-            user=request.user,
+            user=user,
             date=datetime.datetime.now().strftime("%Y-%m-%d")
         )
 
-        blob.file_modified = datetime.datetime.now().strftime("%s")
-        blob.file.save(request.FILES["blob"].name, BytesIO(file_contents))
+        blob.file_modified = datetime.datetime.now().strftime("%s")  # type: ignore[attr-defined]
+        blob.file.save(uploaded_file.name, BytesIO(file_contents))
         blob.sha1sum = hashlib.sha1(file_contents).hexdigest()
         blob.save()
 
         blob.index_blob()
 
-        collection = Collection.objects.get(uuid=collection_uuid, user=request.user)
+        collection = Collection.objects.get(uuid=collection_uuid, user=user)
         collection.add_object(blob)
 
         response = {
             "status": "OK",
-            "blob_uuid": blob.uuid
+            "blob_uuid": str(blob.uuid)
         }
 
     return JsonResponse(response)
 
 
 @login_required
-def get_object_list(request, collection_uuid):
+def get_object_list(request: HttpRequest, collection_uuid: str) -> JsonResponse:
+    """Get a paginated list of objects in a collection.
 
+    Retrieves objects from the specified collection with optional
+    randomization and pagination.
+
+    Args:
+        request: The HTTP request containing:
+            - pageNumber: Page number to retrieve (default: 1)
+            - random_order: Whether to randomize object order (default: false)
+        collection_uuid: The UUID of the collection.
+
+    Returns:
+        JSON response containing paginated object list data.
+    """
     collection = Collection.objects.get(uuid=collection_uuid)
     random_order = request.GET.get("random_order", "false") in ("true")
 
@@ -294,14 +483,31 @@ def get_object_list(request, collection_uuid):
 
 
 @login_required
-def add_object(request):
+def add_object(request: HttpRequest) -> JsonResponse:
+    """Add an object (blob or bookmark) to a collection.
 
+    Adds a blob or bookmark to the specified collection. Returns an error
+    if the object is already in the collection or if neither blob_uuid
+    nor bookmark_uuid is provided.
+
+    Args:
+        request: The HTTP request containing:
+            - collection_uuid: UUID of the collection
+            - blob_uuid: UUID of the blob to add (optional)
+            - bookmark_uuid: UUID of the bookmark to add (optional)
+
+    Returns:
+        JSON response containing:
+            - status: "OK" on success, "Error" on failure
+            - message: Error message if status is "Error"
+    """
     collection_uuid = request.POST["collection_uuid"]
     blob_uuid = request.POST.get("blob_uuid", None)
     bookmark_uuid = request.POST.get("bookmark_uuid", None)
 
     collection = Collection.objects.get(uuid=collection_uuid)
 
+    object: Blob | Bookmark
     if blob_uuid:
         object = Blob.objects.get(uuid=blob_uuid)
     elif bookmark_uuid:
@@ -329,8 +535,20 @@ def add_object(request):
 
 
 @login_required
-def remove_object(request):
+def remove_object(request: HttpRequest) -> JsonResponse:
+    """Remove an object from a collection.
 
+    Removes a blob or bookmark from the specified collection.
+
+    Args:
+        request: The HTTP request containing:
+            - collection_uuid: UUID of the collection
+            - object_uuid: UUID of the object to remove
+
+    Returns:
+        JSON response containing:
+            - status: "OK"
+    """
     collection_uuid = request.POST["collection_uuid"]
     object_uuid = request.POST["object_uuid"]
 
@@ -345,11 +563,22 @@ def remove_object(request):
 
 
 @login_required
-def sort_objects(request):
-    """
-    Move a given object to a new position in a sorted list
-    """
+def sort_objects(request: HttpRequest) -> JsonResponse:
+    """Move an object to a new position in a collection.
 
+    Reorders an object (blob or bookmark) to a new position in the
+    sorted list of collection objects.
+
+    Args:
+        request: The HTTP request containing:
+            - collection_uuid: UUID of the collection
+            - object_uuid: UUID of the object to reorder
+            - new_position: The new position index for the object
+
+    Returns:
+        JSON response containing:
+            - status: "OK"
+    """
     collection_uuid = request.POST["collection_uuid"]
     object_uuid = request.POST["object_uuid"]
     new_position = int(request.POST["new_position"])
@@ -368,8 +597,21 @@ def sort_objects(request):
 
 
 @login_required
-def update_object_note(request):
+def update_object_note(request: HttpRequest) -> JsonResponse:
+    """Update the note for an object in a collection.
 
+    Updates the note field for a blob or bookmark in the specified collection.
+
+    Args:
+        request: The HTTP request containing:
+            - collection_uuid: UUID of the collection
+            - object_uuid: UUID of the object to update
+            - note: The new note text
+
+    Returns:
+        JSON response containing:
+            - status: "OK"
+    """
     collection_uuid = request.POST["collection_uuid"]
     object_uuid = request.POST["object_uuid"]
     note = request.POST["note"]
@@ -389,14 +631,30 @@ def update_object_note(request):
 
 
 @login_required
-def add_new_bookmark(request):
+def add_new_bookmark(request: HttpRequest) -> JsonResponse:
+    """Add a new bookmark to a collection.
 
+    Creates a new bookmark from a URL (or uses an existing one if found)
+    and adds it to the specified collection. Returns an error if the
+    bookmark is already in the collection.
+
+    Args:
+        request: The HTTP request containing:
+            - collection_uuid: UUID of the collection
+            - url: URL of the bookmark to create/add
+
+    Returns:
+        JSON response containing:
+            - status: "OK" on success, "Error" on failure
+            - message: Error message if status is "Error"
+    """
     collection_uuid = request.POST["collection_uuid"]
     url = request.POST["url"]
 
+    user = cast(User, request.user)
     bookmark = None
     try:
-        bookmark = Bookmark.objects.get(user=request.user, url=url)
+        bookmark = Bookmark.objects.get(user=user, url=url)
     except ObjectDoesNotExist:
         pass
 
@@ -404,7 +662,7 @@ def add_new_bookmark(request):
         title = parse_title_from_url(url)[1]
 
         bookmark = Bookmark.objects.create(
-            user=request.user,
+            user=user,
             name=title,
             url=url
         )
