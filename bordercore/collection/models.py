@@ -13,6 +13,7 @@ import json
 import logging
 import re
 import uuid
+from random import randint
 from typing import TYPE_CHECKING, Any
 
 import boto3
@@ -211,15 +212,23 @@ class Collection(TimeStampedModel):
         # Filter to only CollectionObjects that have a blob (not bookmarks)
         so = so.filter(blob__isnull=False)
 
-        count = len(so)
+        count = so.count()
+        if count == 0:
+            return None
 
         if randomize:
-            blob = so.order_by("?")[0]
+            count = so.count()
+            if count == 0:
+                return None
+            position = randint(0, count - 1)
+            blob = so[position]
         else:
             if direction == "next":
                 position = 0 if position == count - 1 else position + 1
             elif direction == "previous":
                 position = count - 1 if position == 0 else position - 1
+            if not 0 <= position < count:
+                position = 0
             blob = so[position]
 
         if blob.blob is None:
