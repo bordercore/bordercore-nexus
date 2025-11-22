@@ -23,6 +23,7 @@ from django.http import (HttpRequest, HttpResponse, HttpResponseRedirect,
                          JsonResponse)
 from django.urls import reverse, reverse_lazy
 from django.utils.decorators import method_decorator
+from django.views.decorators.http import require_POST
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import (CreateView, DeleteView, FormMixin,
                                        UpdateView)
@@ -32,6 +33,7 @@ from blob.models import Blob
 from bookmark.models import Bookmark
 from collection.forms import CollectionForm
 from collection.models import Collection, CollectionObject
+from lib.decorators import validate_post_data
 from lib.exceptions import DuplicateObjectError
 from lib.mixins import FormRequestMixin
 from lib.util import parse_title_from_url
@@ -394,6 +396,8 @@ def search(request: HttpRequest) -> JsonResponse:
 
 
 @login_required
+@require_POST
+@validate_post_data("collection_uuid")
 def create_blob(request: HttpRequest) -> JsonResponse:
     """Create a new blob and add it to a collection.
 
@@ -486,6 +490,8 @@ def get_object_list(request: HttpRequest, collection_uuid: str) -> JsonResponse:
 
 
 @login_required
+@require_POST
+@validate_post_data("collection_uuid")
 def add_object(request: HttpRequest) -> JsonResponse:
     """Add an object (blob or bookmark) to a collection.
 
@@ -538,6 +544,8 @@ def add_object(request: HttpRequest) -> JsonResponse:
 
 
 @login_required
+@require_POST
+@validate_post_data("collection_uuid", "object_uuid")
 def remove_object(request: HttpRequest) -> JsonResponse:
     """Remove an object from a collection.
 
@@ -566,6 +574,8 @@ def remove_object(request: HttpRequest) -> JsonResponse:
 
 
 @login_required
+@require_POST
+@validate_post_data("collection_uuid", "object_uuid", "new_position")
 def sort_objects(request: HttpRequest) -> JsonResponse:
     """Move an object to a new position in a collection.
 
@@ -600,6 +610,8 @@ def sort_objects(request: HttpRequest) -> JsonResponse:
 
 
 @login_required
+@require_POST
+@validate_post_data("collection_uuid", "object_uuid", "note")
 def update_object_note(request: HttpRequest) -> JsonResponse:
     """Update the note for an object in a collection.
 
@@ -634,6 +646,8 @@ def update_object_note(request: HttpRequest) -> JsonResponse:
 
 
 @login_required
+@require_POST
+@validate_post_data("collection_uuid", "url")
 def add_new_bookmark(request: HttpRequest) -> JsonResponse:
     """Add a new bookmark to a collection.
 
