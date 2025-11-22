@@ -107,14 +107,14 @@ class Collection(TimeStampedModel):
         if isinstance(object, Bookmark):
             if CollectionObject.objects.filter(collection=self, bookmark=object).exists():
                 raise DuplicateObjectError
-            so = CollectionObject(collection=self, bookmark=object)
+            co = CollectionObject(collection=self, bookmark=object)
         elif isinstance(object, Blob):
             if CollectionObject.objects.filter(collection=self, blob=object).exists():
                 raise DuplicateObjectError
-            so = CollectionObject(collection=self, blob=object)
+            co = CollectionObject(collection=self, blob=object)
         else:
             raise ValueError(f"Unsupported type: {type(object)}")
-        so.save()
+        co.save()
 
         self.modified = timezone.now()
         self.save(update_fields=["modified"])
@@ -135,11 +135,11 @@ class Collection(TimeStampedModel):
             CollectionObject.DoesNotExist: If no object with that UUID exists
                 in this collection.
         """
-        so = CollectionObject.objects.get(
+        co = CollectionObject.objects.get(
             Q(blob__uuid=object_uuid) | Q(bookmark__uuid=object_uuid),
             collection__uuid=self.uuid
         )
-        so.delete()
+        co.delete()
 
         self.modified = timezone.now()
         self.save()
@@ -185,7 +185,7 @@ class Collection(TimeStampedModel):
         Returns:
             Comma-separated human-readable list of tag names.
         """
-        return ", ".join([tag.name for tag in self.tags.all()])
+        return ", ".join(self.tags.values_list("name", flat=True))
 
     def get_blob(self, position: int, direction: str, randomize: bool = False, tag_name: str | None = None) -> dict[str, str | None | int] | None:
         """Return metadata for a Blob in this collection by position or direction.
