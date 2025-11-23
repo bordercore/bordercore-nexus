@@ -338,7 +338,6 @@ class BookmarkListView(ListView):
     or untagged status. Used for AJAX requests to load bookmarks dynamically.
     """
 
-    paginate_by = 2
     model = Bookmark
 
     def get_queryset(self) -> Any:
