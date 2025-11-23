@@ -1,3 +1,11 @@
+"""Django forms for the bookmark application.
+
+This module contains Django form classes for handling bookmark-related forms,
+including validation and field configuration.
+"""
+from collections.abc import Mapping
+from typing import Any
+
 from django.forms import (CheckboxInput, JSONField, ModelForm, Textarea,
                           TextInput, URLInput, ValidationError)
 
@@ -7,27 +15,66 @@ from tag.models import Tag
 
 
 class DailyCheckboxInput(CheckboxInput):
+    """Custom checkbox widget for the daily bookmark tracking field.
 
-    def format_value(self, value):
-        """
-        This insures that the widget is never rendered with a "value" attribute.
+    This widget handles the special case where the daily field stores JSON data
+    ({"viewed": "true"}) rather than a simple boolean. It ensures the widget
+    renders without a value attribute and returns JavaScript boolean strings.
+    """
+
+    def format_value(self, value: Any) -> None:
+        """Format the value for widget rendering.
+
+        Ensures that the widget is never rendered with a "value" attribute.
         We only care about whether it's checked or not, not its value.
+
+        Args:
+            value: The field value (unused).
         """
         return
 
-    def value_from_datadict(self, data, files, name):
-        """
-        Return JavaScript booleans rather than the default Python ones. This is
-        needed to avoid an error when rendering the field value after a form
-        submission that results in validation errors.
+    def value_from_datadict(self, data: Mapping[str, Any], files: Any, name: str) -> str:
+        """Extract the value from the form data dictionary.
+
+        Returns JavaScript boolean strings rather than the default Python ones.
+        This is needed to avoid an error when rendering the field value after
+        a form submission that results in validation errors.
+
+        Args:
+            data: The form data dictionary.
+            files: The uploaded files dictionary (unused).
+            name: The field name.
+
+        Returns:
+            "true" if the field is present in data, "false" otherwise.
         """
         return "true" if "daily" in data else "false"
 
 
 class BookmarkForm(ModelForm):
+    """Form for creating and editing ``Bookmark`` instances.
 
-    def __init__(self, *args, **kwargs):
+    This form handles bookmark URL, name, notes, tags, importance flag, pinned
+    status, and daily tracking. It includes custom validation for duplicate URLs
+    and special handling for tag management and checkbox fields.
 
+    Attributes:
+        request: The HTTP request object, used for user-specific tag filtering.
+    """
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Initialize the BookmarkForm instance.
+
+        Sets up form fields with appropriate widgets and initial values.
+        The request object is extracted from kwargs to enable user-specific
+        tag filtering. Configures field requirements and labels, and sets
+        initial values for existing bookmark instances.
+
+        Args:
+            *args: Variable length argument list passed to parent ModelForm.
+            **kwargs: Arbitrary keyword arguments. May contain 'request' key
+                which is extracted and stored as self.request.
+        """
         # The request object is passed in from a view's get_form_kwargs() method
         self.request = kwargs.pop("request", None)
 
@@ -55,7 +102,19 @@ class BookmarkForm(ModelForm):
             queryset=Tag.objects.filter(user=self.request.user),
             to_field_name="name")
 
-    def clean_url(self):
+    def clean_url(self) -> str:
+        """Validate the URL field.
+
+        Ensures that the URL is not a duplicate for the current user. Excludes
+        the current bookmark instance when checking for duplicates.
+
+        Returns:
+            The cleaned URL data if validation passes.
+
+        Raises:
+            ValidationError: If a bookmark with the same URL already exists
+                for the current user.
+        """
         data = self.cleaned_data["url"]
         # Verify that this url is not a dupe. Exclude current url when searching.
         found = Bookmark.objects.filter(
@@ -69,6 +128,11 @@ class BookmarkForm(ModelForm):
         return data
 
     class Meta:
+        """Meta configuration for BookmarkForm.
+
+        Defines the model, fields, widgets, and field classes used by the form.
+        """
+
         model = Bookmark
         fields = ("url", "name", "note", "tags", "importance", "is_pinned", "daily", "id")
         widgets = {

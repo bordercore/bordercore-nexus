@@ -1,7 +1,17 @@
+"""
+Models for the bookmark system.
+
+This module defines Bookmark (a saved URL with metadata, tags, and cover images),
+a custom JSONField for daily bookmark tracking, and utilities for generating
+thumbnails, indexing in Elasticsearch, and managing relationships with tags
+and collections.
+"""
+
 import json
 import logging
 import re
 import uuid
+from typing import Any
 
 import boto3
 import isodate
@@ -28,18 +38,50 @@ MAX_AGE = 2592000
 
 
 class DailyBookmarkJSONField(JSONField):
+    """Custom JSONField for daily bookmark tracking.
+
+    This field allows a checkbox on the form to store JSON data (specifically
+    {"viewed": "false"}) in the database instead of a boolean value when checked.
+    When unchecked or empty, it stores None.
     """
-    This custom field lets us use a checkbox on the form, which, if checked,
-    results in a blob of JSON stored in the database rather than
-    the usual boolean value.
-    """
-    def to_python(self, value):
+    def to_python(self, value: Any) -> dict[str, str] | None:
+        """Convert form input to Python value.
+
+        Args:
+            value: The form input value (typically from a checkbox).
+
+        Returns:
+            A dict with {"viewed": "false"} if value is truthy, None otherwise.
+        """
         if value:
             return {"viewed": "false"}
         return None
 
 
 class Bookmark(TimeStampedModel):
+    """A saved URL bookmark with metadata, tags, and cover images.
+
+    Each Bookmark represents a URL saved by a user, with optional notes, tags,
+    pinning status, and cover image thumbnails. Bookmarks can be tracked for
+    daily viewing, monitored for URL availability, and indexed in Elasticsearch
+    for search.
+
+    Attributes:
+        uuid: Stable UUID identifier for this bookmark.
+        url: The bookmarked URL (max 1000 characters).
+        name: Display name/title for the bookmark.
+        user: The User who owns this bookmark.
+        note: Optional text note attached to the bookmark.
+        tags: Many-to-many relationship with Tag objects.
+        is_pinned: Whether this bookmark is pinned for quick access.
+        daily: Optional JSON field for daily bookmark tracking.
+        last_check: Timestamp of the last URL availability check.
+        last_response_code: HTTP response code from the last check.
+        importance: Integer importance rating (default 1).
+        data: Optional JSON field for additional metadata (e.g., video duration).
+        created: Timestamp when the bookmark was created (indexed).
+    """
+
     uuid = models.UUIDField(default=uuid.uuid4, editable=False)
     url = models.URLField(max_length=1000)
     name = models.TextField()
@@ -57,14 +99,33 @@ class Bookmark(TimeStampedModel):
 
     objects = BookmarkManager()
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """Return string representation of the bookmark.
+
+        Returns:
+            The bookmark's name field.
+        """
         return self.name
 
-    def get_tags(self):
+    def get_tags(self) -> str:
+        """Return a comma-separated string of this bookmark's tag names.
+
+        Returns:
+            Comma-separated human-readable list of tag names.
+        """
         return ", ".join([tag.name for tag in self.tags.all()])
 
-    def save(self, *args, **kwargs):
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        """Save the bookmark and generate cover image if new.
 
+        On first save (when the bookmark is created), this automatically
+        generates a cover image thumbnail. After every save, it invalidates
+        the user's recent bookmarks cache.
+
+        Args:
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+        """
         new_object = not self.id
 
         super().save(*args, **kwargs)
@@ -77,26 +138,51 @@ class Bookmark(TimeStampedModel):
         # After every bookmark mutation, invalidate the cache
         cache.delete(f"recent_bookmarks_{self.user.id}")
 
-    def delete(self):
+    def delete(self, using: Any | None = None, keep_parents: bool = False) -> tuple[int, dict[str, int]]:
+        """Delete the bookmark and clean up associated resources.
 
-        super().delete()
+        This removes the bookmark from the database, invalidates the user's
+        recent bookmarks cache, removes it from Elasticsearch, and deletes
+        all cover image files from S3.
+
+        Args:
+            using: Optional database alias.
+            keep_parents: Whether to keep parent objects.
+
+        Returns:
+            Tuple of (number of objects deleted, dictionary with deletion counts).
+        """
+        delete_document(str(self.uuid))
+
+        self.delete_cover_image()
 
         # After every bookmark mutation, invalidate the cache
         cache.delete(f"recent_bookmarks_{self.user.id}")
 
-        delete_document(self.uuid)
+        return super().delete(using=using, keep_parents=keep_parents)
 
-        self.delete_cover_image()
+    def delete_tag(self, tag: Tag) -> None:
+        """Remove a tag from this bookmark.
 
-    def delete_tag(self, tag):
+        This deletes the TagBookmark relationship object, removes the tag
+        from the bookmark's tags, and re-indexes the bookmark in Elasticsearch.
 
+        Args:
+            tag: The Tag instance to remove from this bookmark.
+        """
         s = TagBookmark.objects.get(tag=tag, bookmark=self)
         s.delete()
         self.tags.remove(tag)
         self.index_bookmark()
 
-    def generate_cover_image(self):
+    def generate_cover_image(self) -> None:
+        """Generate a cover image thumbnail for this bookmark.
 
+        For YouTube URLs, this delegates to generate_youtube_cover_image().
+        For other URLs, it publishes a message to SNS to trigger a Puppeteer-based
+        screenshot generation service that will create a JPEG thumbnail and store
+        it in S3.
+        """
         if self.url.startswith("https://www.youtube.com/watch"):
             self.generate_youtube_cover_image()
             return
@@ -121,10 +207,12 @@ class Bookmark(TimeStampedModel):
             Message=json.dumps(message),
         )
 
-    def generate_youtube_cover_image(self):
-        """
-        Use Google's Youtube API to get the video's thumbnail url.
-        Download it and store in S3.
+    def generate_youtube_cover_image(self) -> None:
+        """Generate cover image for a YouTube bookmark using the YouTube API.
+
+        This fetches video metadata from Google's YouTube API, extracts the
+        thumbnail URL, downloads it, and stores it in S3. It also extracts and
+        stores the video duration in the bookmark's data field.
         """
 
         m = re.search(r"https://www.youtube.com/watch\?v=(.*)", self.url)
@@ -160,9 +248,11 @@ class Bookmark(TimeStampedModel):
                 Metadata={"cover-image": "Yes"}
             )
 
-    def delete_cover_image(self):
-        """
-        After deletion, remove the bookmark's cover images from S3
+    def delete_cover_image(self) -> None:
+        """Remove all cover image files for this bookmark from S3.
+
+        This deletes the PNG, small PNG, and JPG thumbnail files associated
+        with this bookmark's UUID from the S3 bucket.
         """
 
         s3 = boto3.resource("s3")
@@ -176,14 +266,37 @@ class Bookmark(TimeStampedModel):
         key = f"bookmarks/{self.uuid}.jpg"
         s3.Object(settings.AWS_STORAGE_BUCKET_NAME, key).delete()
 
-    def index_bookmark(self, es=None):
+    def index_bookmark(self, es: Any | None = None) -> None:
+        """Index this bookmark in Elasticsearch.
+
+        Args:
+            es: Optional Elasticsearch client (unused, kept for compatibility).
+        """
         index_document(self.elasticsearch_document)
 
     @property
-    def cover_url(self):
+    def cover_url(self) -> str:
+        """Return the URL for this bookmark's full-size cover image.
+
+        Returns:
+            Full URL path to the PNG cover image in S3.
+        """
         return f"{settings.COVER_URL}bookmarks/{self.uuid}.png"
 
-    def thumbnail_url_static(bookmark_uuid, url):
+    @staticmethod
+    def thumbnail_url_static(bookmark_uuid: str, url: str) -> str:
+        """Return the thumbnail URL for a bookmark given its UUID and URL.
+
+        For YouTube URLs, returns the JPG thumbnail. For other URLs, returns
+        the small PNG thumbnail.
+
+        Args:
+            bookmark_uuid: The UUID of the bookmark.
+            url: The bookmark's URL string.
+
+        Returns:
+            Full URL path to the appropriate thumbnail image in S3.
+        """
         prefix = f"{settings.COVER_URL}bookmarks"
 
         if url.startswith("https://www.youtube.com/watch"):
@@ -191,20 +304,31 @@ class Bookmark(TimeStampedModel):
         return f"{prefix}/{bookmark_uuid}-small.png"
 
     @property
-    def thumbnail_url(self):
-        return Bookmark.thumbnail_url_static(self.uuid, self.url)
+    def thumbnail_url(self) -> str:
+        """Return the thumbnail URL for this bookmark.
+
+        Returns:
+            Full URL path to the appropriate thumbnail image in S3.
+        """
+        return Bookmark.thumbnail_url_static(str(self.uuid), self.url)
 
     @property
-    def video_duration(self):
+    def video_duration(self) -> str:
+        """Return a human-readable video duration string.
 
+        Returns:
+            Formatted duration string (e.g., "5:23") if available, empty string otherwise.
+        """
         if self.data and "video_duration" in self.data:
             return convert_seconds(self.data["video_duration"])
         return ""
 
     @property
-    def elasticsearch_document(self):
-        """
-        Return a representation of the bookmark suitable for indexing in Elasticsearch
+    def elasticsearch_document(self) -> dict[str, Any]:
+        """Return a representation of the bookmark suitable for indexing in Elasticsearch.
+
+        Returns:
+            Dictionary containing the bookmark data formatted for Elasticsearch indexing.
         """
 
         return {
@@ -227,8 +351,12 @@ class Bookmark(TimeStampedModel):
             }
         }
 
-    def snarf_favicon(self):
+    def snarf_favicon(self) -> None:
+        """Trigger an asynchronous Lambda function to fetch and store the bookmark's favicon.
 
+        This invokes the SnarfFavicon Lambda function asynchronously to extract
+        the favicon from the bookmark's URL and store it in S3.
+        """
         client = boto3.client("lambda")
 
         payload = {
@@ -244,12 +372,32 @@ class Bookmark(TimeStampedModel):
             Payload=json.dumps(payload)
         )
 
-    def get_favicon_url(self, size=32):
+    def get_favicon_url(self, size: int = 32) -> str:
+        """Return an HTML img tag for this bookmark's favicon.
+
+        Args:
+            size: The width and height of the favicon image in pixels (default 32).
+
+        Returns:
+            HTML img tag string pointing to the favicon, or empty string if unavailable.
+        """
         return Bookmark.get_favicon_url_static(self.url, size)
 
     @staticmethod
-    def get_favicon_url_static(url, size=32):
+    def get_favicon_url_static(url: str, size: int = 32) -> str:
+        """Return an HTML img tag for a favicon given a URL.
 
+        This extracts the domain from the URL, strips the "www." prefix if present,
+        and returns an img tag pointing to the favicon stored in S3.
+
+        Args:
+            url: The URL to extract the domain from.
+            size: The width and height of the favicon image in pixels (default 32).
+
+        Returns:
+            HTML img tag string pointing to the favicon, or empty string if the
+            URL cannot be parsed or is empty.
+        """
         if not url:
             return ""
 
@@ -266,19 +414,29 @@ class Bookmark(TimeStampedModel):
             return f"<img src=\"https://www.bordercore.com/favicons/{domain}.ico\" width=\"{size}\" height=\"{size}\" />"
         return ""
 
-    def related_nodes(self):
-        """
-        Return a list of nodes with collections containing this bookmark
+    def related_nodes(self) -> list[dict[str, str]]:
+        """Return a list of nodes that contain collections with this bookmark.
+
+        This searches through all nodes owned by the bookmark's user and finds
+        any nodes whose layout includes collections that contain this bookmark.
+
+        Returns:
+            A list of dictionaries, each containing:
+            - "name": The node's name.
+            - "url": The URL to view the node detail page.
+            - "uuid": The node's UUID.
         """
 
         Node = apps.get_model("node", "Node")
 
         found_nodes = set()
 
-        for so in self.collectionobject_set.all().select_related("collection"):
+        for co in self.collectionobject_set.all().select_related("collection"):
+            if co.collection is None:
+                continue
             for node in Node.objects.filter(user=self.user):
                 for col in node.layout:
-                    found = [x for x in col if "uuid" in x and x["uuid"] == str(so.collection.uuid)]
+                    found = [x for x in col if "uuid" in x and x["uuid"] == str(co.collection.uuid)]
                     if found:
                         found_nodes.add(node)
 
@@ -286,21 +444,32 @@ class Bookmark(TimeStampedModel):
             {
                 "name": x.name,
                 "url": urls.reverse("node:detail", kwargs={"uuid": x.uuid}),
-                "uuid": x.uuid
+                "uuid": str(x.uuid)
             }
             for x in
             found_nodes
         ]
 
 
-def tags_changed(sender, **kwargs):
+def tags_changed(sender: type[Bookmark], **kwargs: Any) -> None:
+    """Signal handler for when tags are added to a bookmark.
 
+    When tags are added to a bookmark via the many-to-many relationship, this
+    creates corresponding TagBookmark relationship objects to track the association.
+
+    Args:
+        sender: The model class that sent the signal.
+        **kwargs: Signal keyword arguments including:
+            - "action": The action being performed (we only handle "post_add").
+            - "instance": The Bookmark instance being modified.
+            - "pk_set": Set of primary keys for tags being added.
+    """
     if kwargs["action"] == "post_add":
         bookmark = kwargs["instance"]
 
         for tag_id in kwargs["pk_set"]:
-            so = TagBookmark(tag=Tag.objects.get(pk=tag_id), bookmark=bookmark)
-            so.save()
+            tb = TagBookmark(tag=Tag.objects.get(pk=tag_id), bookmark=bookmark)
+            tb.save()
 
 
 m2m_changed.connect(tags_changed, sender=Bookmark.tags.through)
