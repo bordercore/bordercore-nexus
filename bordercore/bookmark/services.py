@@ -9,7 +9,7 @@ Functions:
     get_recent_bookmarks: Retrieve recently created bookmarks for a user with caching
 """
 
-from typing import Any, Dict, List
+from typing import Any
 
 from django.contrib.auth.models import User
 from django.core.cache import cache
@@ -18,7 +18,7 @@ from django.urls import reverse
 from bookmark.models import Bookmark
 
 
-def get_recent_bookmarks(user: User, limit: int = 10) -> List[Dict[str, Any]]:
+def get_recent_bookmarks(user: User, limit: int = 10) -> list[dict[str, Any]]:
     """
     Return a list of recently created bookmarks for a specific user.
     Results are cached per user to improve performance.
@@ -44,11 +44,8 @@ def get_recent_bookmarks(user: User, limit: int = 10) -> List[Dict[str, Any]]:
         "-created"
     )[:limit]
 
-    returned_bookmark_list = []
-
-    for bookmark in bookmark_list:
-
-        bookmark_dict = {
+    returned_bookmark_list = [
+        {
             "name": bookmark.name,
             "url": reverse("bookmark:update", kwargs={"uuid": bookmark.uuid}),
             "uuid": str(bookmark.uuid),
@@ -56,8 +53,8 @@ def get_recent_bookmarks(user: User, limit: int = 10) -> List[Dict[str, Any]]:
             "thumbnail_url": bookmark.thumbnail_url,
             "type": "bookmark"
         }
-
-        returned_bookmark_list.append(bookmark_dict)
+        for bookmark in bookmark_list
+    ]
 
     cache.set(cache_key, returned_bookmark_list)
 
