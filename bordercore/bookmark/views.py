@@ -33,7 +33,7 @@ from django.views.generic.edit import ModelFormMixin
 from accounts.models import UserTag
 from blob.models import Blob
 from bookmark.forms import BookmarkForm
-from bookmark.models import Bookmark
+from bookmark.models import IMPORTANCE_HIGH, Bookmark
 from lib.decorators import validate_post_data
 from lib.mixins import FormRequestMixin
 from lib.util import get_pagination_range, parse_title_from_url
@@ -94,7 +94,7 @@ class BookmarkFormValidMixin(ModelFormMixin):
         bookmark.user = user
 
         if "importance" in self.request.POST:
-            bookmark.importance = 10
+            bookmark.importance = IMPORTANCE_HIGH
 
         bookmark.save()
 

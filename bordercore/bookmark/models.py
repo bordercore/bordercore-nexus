@@ -36,6 +36,7 @@ from .managers import BookmarkManager
 
 log = logging.getLogger(f"bordercore.{__name__}")
 MAX_AGE = 2592000
+IMPORTANCE_HIGH = 10
 
 
 class DailyBookmarkJSONField(JSONField):
