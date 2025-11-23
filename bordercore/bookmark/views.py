@@ -9,7 +9,6 @@ import re
 from typing import TYPE_CHECKING, Any, cast
 from urllib.parse import unquote
 
-import lxml.html as lh
 import pytz
 
 from django.contrib import messages
@@ -17,7 +16,6 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.core.exceptions import ObjectDoesNotExist
-from django.core.files.uploadedfile import UploadedFile
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Count, QuerySet
@@ -280,123 +278,6 @@ def get_tags_used_by_bookmarks(request: HttpRequest) -> JsonResponse:
     ).distinct("name")
 
     return JsonResponse([{"label": x.name, "is_meta": x.is_meta} for x in tags], safe=False)
-
-
-def add_bookmarks_from_import(request: HttpRequest, tag: str, bookmarks: list[dict[str, Any]]) -> None:
-    """Add bookmarks with the provided tag. Ignore duplicates.
-
-    Creates bookmarks from a list of bookmark data, associating them with
-    the specified tag. Skips bookmarks that already exist for the user.
-
-    Args:
-        request: The HTTP request.
-        tag: The tag name to associate with imported bookmarks.
-        bookmarks: List of bookmark dictionaries containing:
-            - url: The bookmark URL
-            - name: The bookmark name/title
-            - created: The creation datetime
-    """
-    user = cast(User, request.user)
-    added_count = 0
-    dupe_count = 0
-
-    for link in bookmarks:
-        try:
-            Bookmark.objects.get(url=link["url"], user=user)
-            dupe_count = dupe_count + 1
-        except ObjectDoesNotExist:
-            b = Bookmark(
-                user=user,
-                url=link["url"],
-                name=link["name"],
-                created=link["created"],
-                modified=link["created"]
-            )
-            b.save()
-
-            # Add the specified tag to the bookmark.
-            # Create the tag if it doesn't exist.
-            try:
-                t = Tag.objects.get(user=user, name=tag)
-            except ObjectDoesNotExist:
-                t = Tag(name=tag)
-                t.save()
-            b.tags.set([t])
-
-            # We need to save the model again after adding the tags,
-            #  since the b.tags.set() line above *doesn't* call the
-            #  Bookmark model's post_save signal.
-            b.save()
-
-            b.index_bookmark()
-            b.snarf_favicon()
-            added_count = added_count + 1
-
-    messages.add_message(request, messages.INFO, f"Bookmarks added: {added_count}. Duplicates ignored: {dupe_count}.")
-
-
-@login_required
-def do_import(request: HttpRequest) -> HttpResponse:
-    """Import bookmarks from a file.
-
-    Imports bookmarks from a Google bookmark export format file. Parses
-    the XML file and extracts bookmarks from a specified starting folder.
-
-    Supported formats: Google bookmark export format
-
-    Args:
-        request: The HTTP request containing:
-            - start_folder: The folder name to start importing from
-            - tags: The tag name to associate with imported bookmarks
-            - file: The uploaded bookmark file
-
-    Returns:
-        Rendered import template page.
-    """
-    if request.method == "POST":
-
-        start = request.POST.get("start_folder", "")
-        tag = request.POST.get("tags", "")
-
-        links = []
-
-        try:
-
-            if not tag:
-                messages.add_message(request, messages.ERROR, "Please specify a tag")
-                raise ValueError()
-            if not start:
-                messages.add_message(request, messages.ERROR, "Please specify a starting folder")
-                raise ValueError()
-
-            xml_string = ""
-            uploaded_file = cast(UploadedFile, request.FILES["file"])
-            for chunk in uploaded_file.chunks():
-                xml_string = xml_string + str(chunk)
-
-            tree = lh.fromstring(xml_string)
-
-            found = tree.xpath(f"//dt/h3[text()='{start}']/following::dl[1]//a")
-
-            if not found:
-                messages.add_message(request, messages.ERROR, "No bookmarks were found")
-                raise ValueError()
-
-            for link in found:
-                links.append(
-                    {
-                        "url": link.get("href"),
-                        "created": datetime.datetime.fromtimestamp(int(link.get("add_date"))),
-                        "name": link.text
-                    }
-                )
-
-            add_bookmarks_from_import(request, tag, links)
-
-        except ValueError:
-            pass
-
-    return render(request, "bookmark/import.html", {})
 
 
 @login_required

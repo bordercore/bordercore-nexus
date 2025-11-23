@@ -40,11 +40,6 @@ urlpatterns = [
         name="get_title_from_url"
     ),
     path(
-        route="import/",
-        view=views.do_import,
-        name="import"
-    ),
-    path(
         route="snarf_link.html",
         view=views.snarf_link,
         name="snarf"
