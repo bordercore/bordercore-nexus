@@ -61,4 +61,4 @@ def test_related_nodes(monkeypatch_bookmark, node):
     related_nodes = bookmark.related_nodes()
 
     assert len(related_nodes) == 1
-    assert node.uuid in [x["uuid"] for x in related_nodes]
+    assert str(node.uuid) in [x["uuid"] for x in related_nodes]

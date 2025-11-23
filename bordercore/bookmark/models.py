@@ -428,19 +428,34 @@ class Bookmark(TimeStampedModel):
             - "url": The URL to view the node detail page.
             - "uuid": The node's UUID.
         """
-
         Node = apps.get_model("node", "Node")
 
+        # Collect all collection UUIDs in one query
+        collection_uuids = {
+            str(co.collection.uuid)
+            for co in self.collectionobject_set.select_related("collection").all()
+            if co.collection is not None
+        }
+
+        if not collection_uuids:
+            return []
+
+        # Fetch all nodes once
+        nodes = Node.objects.filter(user=self.user).only("id", "name", "uuid", "layout")
         found_nodes = set()
 
-        for co in self.collectionobject_set.all().select_related("collection"):
-            if co.collection is None:
+        # Check each node's layout efficiently
+        for node in nodes:
+            if not node.layout:
                 continue
-            for node in Node.objects.filter(user=self.user):
-                for col in node.layout:
-                    found = [x for x in col if "uuid" in x and x["uuid"] == str(co.collection.uuid)]
-                    if found:
-                        found_nodes.add(node)
+            # Check if any collection UUID appears in any column/item
+            if any(
+                str(item.get("uuid")) in collection_uuids
+                for col in node.layout
+                for item in col
+                if isinstance(item, dict) and "uuid" in item
+            ):
+                found_nodes.add(node)
 
         return [
             {
@@ -448,8 +463,7 @@ class Bookmark(TimeStampedModel):
                 "url": urls.reverse("node:detail", kwargs={"uuid": x.uuid}),
                 "uuid": str(x.uuid)
             }
-            for x in
-            found_nodes
+            for x in found_nodes
         ]
 
 
