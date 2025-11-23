@@ -12,6 +12,7 @@ import logging
 import re
 import uuid
 from typing import Any
+from urllib.parse import parse_qs, urlparse
 
 import boto3
 import isodate
@@ -215,12 +216,13 @@ class Bookmark(TimeStampedModel):
         stores the video duration in the bookmark's data field.
         """
 
-        m = re.search(r"https://www.youtube.com/watch\?v=(.*)", self.url)
-        if m:
-            youtube_id = m.group(1)
+        parsed_url = urlparse(self.url)
+        query_params = parse_qs(parsed_url.query)
+        youtube_id = query_params.get("v", [None])[0]
+        if youtube_id:
             api_key = settings.GOOGLE_API_KEY
 
-            r = requests.get(f"https://www.googleapis.com/youtube/v3/videos?id={youtube_id}&key={api_key}&part=snippet,contentDetails,statistics")
+            r = requests.get(f"https://www.googleapis.com/youtube/v3/videos?id={youtube_id}&key={api_key}&part=snippet,contentDetails,statistics", timeout=10)
             video_info = r.json()
 
             # Store the video duration
@@ -238,7 +240,7 @@ class Bookmark(TimeStampedModel):
             s3_resource = boto3.resource("s3")
             bucket_name = settings.AWS_STORAGE_BUCKET_NAME
 
-            r = requests.get(video_info["items"][0]["snippet"]["thumbnails"]["medium"]["url"])
+            r = requests.get(video_info["items"][0]["snippet"]["thumbnails"]["medium"]["url"], timeout=10)
             s3_object = s3_resource.Object(bucket_name, f"bookmarks/{self.uuid}.jpg")
             s3_object.put(
                 Body=r.content,
