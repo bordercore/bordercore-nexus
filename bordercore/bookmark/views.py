@@ -260,11 +260,7 @@ def overview(request):
 
     sorted_bookmarks = []
 
-    bare_count = Bookmark.objects.bare_bookmarks(
-        request.user,
-        limit=None,
-        sort=False
-    ).count()
+    bare_count = Bookmark.objects.bare_bookmarks_count(user)
 
     pinned_tags = request.user.userprofile.pinned_tags.all().annotate(
         bookmark_count=Count("tagbookmark")

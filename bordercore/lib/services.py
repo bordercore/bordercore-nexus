@@ -13,9 +13,8 @@ def site_stats(request):
 
     return JsonResponse(
         {
-            "untagged_bookmarks": Bookmark.objects.bare_bookmarks(
-                user=request.user,
-                count_only=True
+            "untagged_bookmarks": Bookmark.objects.bare_bookmarks_count(
+                user=request.user
             ),
             "bookmarks_total": Bookmark.objects.filter(
                 user=request.user
