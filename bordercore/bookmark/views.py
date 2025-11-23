@@ -507,10 +507,14 @@ class BookmarkListTagView(BookmarkListView):
         Returns:
             QuerySet of TagBookmark objects with aggregated tags.
         """
-        return TagBookmark.objects.filter(tag__name=self.kwargs.get("tag_filter")) \
-                                           .annotate(tags=ArrayAgg("bookmark__tags__name")) \
-                                           .select_related("bookmark") \
-                                           .order_by("sort_order")
+        user = cast(User, self.request.user)
+        return TagBookmark.objects.filter(
+            tag__name=self.kwargs.get("tag_filter"),
+            tag__user=user,
+            bookmark__user=user,
+        ).annotate(tags=ArrayAgg("bookmark__tags__name")) \
+                                  .select_related("bookmark") \
+                                  .order_by("sort_order")
 
 
 @login_required
