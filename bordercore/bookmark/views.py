@@ -13,6 +13,7 @@ import pytz
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.core.exceptions import ObjectDoesNotExist
@@ -182,7 +183,7 @@ class BookmarkCreateView(FormRequestMixin, BookmarkFormValidMixin, CreateView):
 
 
 @method_decorator(login_required, name="dispatch")
-class BookmarkDeleteView(DeleteView):
+class BookmarkDeleteView(LoginRequiredMixin, DeleteView):
     """View for deleting a bookmark.
 
     Allows users to delete their own bookmarks.
@@ -192,6 +193,16 @@ class BookmarkDeleteView(DeleteView):
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
     success_url = reverse_lazy("bookmark:overview")
+
+    def get_queryset(self) -> QuerySet[Bookmark]:
+        """Get the queryset filtered to the current user's bookmarks.
+
+        Returns:
+            Bookmarks owned by the logged-in user.
+        """
+        # Filter the queryset to only include objects owned by the logged-in user
+        user = cast(User, self.request.user)
+        return self.model.objects.filter(user=user)
 
 
 @login_required
