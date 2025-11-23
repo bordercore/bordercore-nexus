@@ -533,7 +533,7 @@ class BookmarkListView(ListView):
                     "name": re.sub("[\n\r]", "", x.name),
                     "last_response_code": x.last_response_code,
                     "note": x.note,
-                    "favicon_url": x.get_favicon_url(size=16),
+                    "favicon_url": x.get_favicon_img_tag(size=16),
                     "tags": [x.name for x in x.tags.all()],
                     "thumbnail_url": x.thumbnail_url,
                     "video_duration": x.video_duration
@@ -591,7 +591,7 @@ class BookmarkListTagView(BookmarkListView):
                     "name": re.sub("[\n\r]", "", x.bookmark.name),
                     "last_response_code": x.bookmark.last_response_code,
                     "note": x.note,
-                    "favicon_url": x.bookmark.get_favicon_url(size=16),
+                    "favicon_url": x.bookmark.get_favicon_img_tag(size=16),
                     "tags": getattr(x, "tags", []),  # tags is an annotated field from ArrayAgg
                     "thumbnail_url": x.bookmark.thumbnail_url,
                     "video_duration": x.bookmark.video_duration

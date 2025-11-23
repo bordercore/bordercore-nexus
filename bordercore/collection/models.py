@@ -478,7 +478,7 @@ class CollectionObject(SortOrderMixin):
                 "uuid": self.bookmark.uuid,
                 "name": self.bookmark.name,
                 "url": self.bookmark.url,
-                "favicon_url": self.bookmark.get_favicon_url(size=16)
+                "favicon_url": self.bookmark.get_favicon_img_tag(size=16)
             }
         raise ValueError(f"Unsupported object: {self}")
 

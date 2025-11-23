@@ -139,7 +139,7 @@ class Bookmark(TimeStampedModel):
         # After every bookmark mutation, invalidate the cache
         cache.delete(f"recent_bookmarks_{self.user.id}")
 
-    def delete(self, using: Any | None = None, keep_parents: bool = False) -> tuple[int, dict[str, int]]:
+    def delete(self, using: str | None = None, keep_parents: bool = False) -> tuple[int, dict[str, int]]:
         """Delete the bookmark and clean up associated resources.
 
         This removes the bookmark from the database, invalidates the user's
@@ -194,7 +194,7 @@ class Bookmark(TimeStampedModel):
             self.generate_youtube_cover_image()
             return
 
-        SNS_TOPIC = settings.SNS_TOPIC_ARN
+        sns_topic = settings.SNS_TOPIC_ARN
         client = boto3.client("sns")
 
         message = {
@@ -210,7 +210,7 @@ class Bookmark(TimeStampedModel):
         }
 
         client.publish(
-            TopicArn=SNS_TOPIC,
+            TopicArn=sns_topic,
             Message=json.dumps(message),
         )
 
@@ -341,7 +341,7 @@ class Bookmark(TimeStampedModel):
             "_source": {
                 "bordercore_id": self.id,
                 "name": self.name,
-                "tags": [tag.name for tag in self.tags.all()],
+                "tags": list(self.tags.values_list("name", flat=True)),
                 "url": self.url,
                 "note": self.note,
                 "importance": self.importance,
@@ -376,7 +376,7 @@ class Bookmark(TimeStampedModel):
             Payload=json.dumps(payload)
         )
 
-    def get_favicon_url(self, size: int = 32) -> str:
+    def get_favicon_img_tag(self, size: int = 32) -> str:
         """Return an HTML img tag for this bookmark's favicon.
 
         Args:
@@ -385,10 +385,10 @@ class Bookmark(TimeStampedModel):
         Returns:
             HTML img tag string pointing to the favicon, or empty string if unavailable.
         """
-        return Bookmark.get_favicon_url_static(self.url, size)
+        return Bookmark.get_favicon_img_tag_static(self.url, size)
 
     @staticmethod
-    def get_favicon_url_static(url: str, size: int = 32) -> str:
+    def get_favicon_img_tag_static(url: str, size: int = 32) -> str:
         """Return an HTML img tag for a favicon given a URL.
 
         This extracts the domain from the URL, strips the "www." prefix if present,

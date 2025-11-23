@@ -32,23 +32,23 @@ def test_bookmark_thumbnail_url(bookmark):
     assert bookmark[0].thumbnail_url == f"https://blobs.bordercore.com/bookmarks/{bookmark[0].uuid}-small.png"
 
 
-def test_get_favicon_url(monkeypatch_bookmark):
+def test_get_favicon_img_tag(monkeypatch_bookmark):
 
     bookmark = BookmarkFactory(url="https://www.bordercore.com")
 
-    url = bookmark.get_favicon_url()
+    url = bookmark.get_favicon_img_tag()
     assert url == "<img src=\"https://www.bordercore.com/favicons/bordercore.com.ico\" width=\"32\" height=\"32\" />"
 
     bookmark.url = "http://www.bordercore.com"
-    url = bookmark.get_favicon_url()
+    url = bookmark.get_favicon_img_tag()
     assert url == "<img src=\"https://www.bordercore.com/favicons/bordercore.com.ico\" width=\"32\" height=\"32\" />"
 
     bookmark.url = "http://www.bordercore.com/path"
-    url = bookmark.get_favicon_url()
+    url = bookmark.get_favicon_img_tag()
     assert url == "<img src=\"https://www.bordercore.com/favicons/bordercore.com.ico\" width=\"32\" height=\"32\" />"
 
     bookmark.url = "bordercore.com/path"
-    url = bookmark.get_favicon_url()
+    url = bookmark.get_favicon_img_tag()
     assert url == ""
 
 
