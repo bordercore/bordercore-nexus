@@ -23,7 +23,7 @@ from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.cache import cache
-from django.db import models
+from django.db import models, transaction
 from django.db.models import JSONField
 from django.db.models.signals import m2m_changed
 
@@ -162,18 +162,24 @@ class Bookmark(TimeStampedModel):
 
         return super().delete(using=using, keep_parents=keep_parents)
 
-    def delete_tag(self, tag: Tag) -> None:
-        """Remove a tag from this bookmark.
-
-        This deletes the TagBookmark relationship object, removes the tag
-        from the bookmark's tags, and re-indexes the bookmark in Elasticsearch.
-
-        Args:
-            tag: The Tag instance to remove from this bookmark.
+    def delete_tag(self, tag: "Tag") -> None:
         """
-        s = TagBookmark.objects.get(tag=tag, bookmark=self)
-        s.delete()
-        self.tags.remove(tag)
+        Remove a tag from this bookmark and keep TagBookmark in sync.
+
+        This:
+        * Safely deletes any TagBookmark rows (including duplicates).
+        * Removes the tag from the ManyToMany relation.
+        * Reindexes the bookmark afterwards.
+        """
+
+        with transaction.atomic():
+            # Delete all TagBookmark rows for this (bookmark, tag) pair.
+            TagBookmark.objects.filter(tag=tag, bookmark=self).delete()
+
+            # Remove tag from the M2M relation. This is safe even if it was already gone.
+            self.tags.remove(tag)
+
+        # Refresh search index after the DB state is consistent.
         self.index_bookmark()
 
     def generate_cover_image(self) -> None:
