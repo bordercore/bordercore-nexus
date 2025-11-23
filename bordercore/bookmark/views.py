@@ -16,7 +16,6 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.contrib.postgres.aggregates import ArrayAgg
-from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Count, QuerySet
@@ -217,7 +216,7 @@ def delete(request: HttpRequest, bookmark_id: int | None = None) -> JsonResponse
         bookmark_id: The ID of the bookmark to delete (optional).
 
     Returns:
-        JSON response with "OK" status.
+        JsonResponse containing {"status": "OK"}.
     """
     if bookmark_id is None:
         raise Http404("Bookmark ID is required")
@@ -225,7 +224,7 @@ def delete(request: HttpRequest, bookmark_id: int | None = None) -> JsonResponse
     bookmark = Bookmark.objects.get(user=user, pk=bookmark_id)
     bookmark.delete()
 
-    return JsonResponse("OK")
+    return JsonResponse({"status": "OK"})
 
 
 @login_required
@@ -258,7 +257,7 @@ def snarf_link(request: HttpRequest) -> HttpResponseRedirect:
             f"Bookmark already exists and was added on <strong>{b.created.strftime('%B %d, %Y')}</strong>"
         )
         return redirect("bookmark:update", b.uuid)
-    except ObjectDoesNotExist:
+    except Bookmark.DoesNotExist:
         b = Bookmark(is_pinned=False, user=user, url=url, name=name)
         b.save()
         b.index_bookmark()
@@ -313,7 +312,6 @@ def overview(request: HttpRequest) -> HttpResponse:
             - title: Page title
     """
     user = cast(User, request.user)
-    sorted_bookmarks: list[Any] = []
 
     bare_count = Bookmark.objects.bare_bookmarks_count(user)
 
@@ -325,7 +323,6 @@ def overview(request: HttpRequest) -> HttpResponse:
 
     return render(request, "bookmark/index.html",
                   {
-                      "bookmarks": sorted_bookmarks,
                       "untagged_count": bare_count,
                       "pinned_tags": list(pinned_tags),
                       "tag": request.GET.get("tag", None),
@@ -356,8 +353,6 @@ class BookmarkListView(ListView):
         query = Bookmark.objects.filter(user=user)
         if "search" in self.kwargs:
             query = query.filter(name__icontains=self.kwargs.get("search"))
-        elif "tag_filter" in self.kwargs:
-            query = query.filter(name__icontains=self.kwargs.get("tag_filter"))
         else:
             query = query.filter(
                 tags__isnull=True,
@@ -554,9 +549,7 @@ def sort_pinned_tags(request: HttpRequest) -> JsonResponse:
         s = UserTag.objects.get(userprofile=user.userprofile, tag=tag)
         UserTag.reorder(s, new_position)
 
-        response = {
-            "status": "OK"
-        }
+        response = {"status": "OK"}
 
     return JsonResponse(response)
 
