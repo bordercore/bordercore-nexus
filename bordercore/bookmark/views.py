@@ -222,7 +222,7 @@ def delete(request: HttpRequest, bookmark_id: int | None = None) -> JsonResponse
     bookmark = Bookmark.objects.get(user=user, pk=bookmark_id)
     bookmark.delete()
 
-    return JsonResponse("OK", safe=False)
+    return JsonResponse("OK")
 
 
 @login_required
@@ -435,8 +435,7 @@ class BookmarkListView(ListView):
             {
                 "bookmarks": bookmarks,
                 "pagination": pagination
-            },
-            safe=False
+            }
         )
 
 
@@ -493,8 +492,7 @@ class BookmarkListTagView(BookmarkListView):
             {
                 "bookmarks": bookmarks,
                 "pagination": pagination
-            },
-            safe=False
+            }
         )
 
     def get_queryset(self) -> QuerySet[TagBookmark]:
@@ -557,7 +555,7 @@ def sort_pinned_tags(request: HttpRequest) -> JsonResponse:
             "status": "OK"
         }
 
-    return JsonResponse(response, safe=False)
+    return JsonResponse(response)
 
 
 @login_required
@@ -586,7 +584,7 @@ def sort_bookmarks(request: HttpRequest) -> JsonResponse:
     tb = TagBookmark.objects.get(tag__name=tag_name, tag__user=user, bookmark__uuid=bookmark_uuid, bookmark__user=user)
     TagBookmark.reorder(tb, new_position)
 
-    return JsonResponse({"status": "OK"}, safe=False)
+    return JsonResponse({"status": "OK"})
 
 
 @login_required
@@ -621,7 +619,7 @@ def add_note(request: HttpRequest) -> JsonResponse:
         bookmark__user=user
     ).update(note=note)
 
-    return JsonResponse({"status": "OK"}, safe=False)
+    return JsonResponse({"status": "OK"})
 
 
 @login_required
