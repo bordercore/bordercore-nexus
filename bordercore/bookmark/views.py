@@ -93,6 +93,8 @@ class BookmarkFormValidMixin(ModelFormMixin):
         user = cast(User, self.request.user)
         bookmark.user = user
 
+        new_object = bookmark.pk is None
+
         if "importance" in self.request.POST:
             bookmark.importance = IMPORTANCE_HIGH
 
@@ -114,7 +116,8 @@ class BookmarkFormValidMixin(ModelFormMixin):
         bookmark.index_bookmark()
         bookmark.snarf_favicon()
 
-        messages.add_message(self.request, messages.INFO, "Bookmark Edited", extra_tags="noAutoHide")
+        message = "Bookmark Created" if new_object else "Bookmark Edited"
+        messages.add_message(self.request, messages.INFO, message, extra_tags="noAutoHide")
 
         return super().form_valid(form)
 
