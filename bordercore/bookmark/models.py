@@ -274,12 +274,8 @@ class Bookmark(TimeStampedModel):
         key = f"bookmarks/{self.uuid}.jpg"
         s3.Object(settings.AWS_STORAGE_BUCKET_NAME, key).delete()
 
-    def index_bookmark(self, es: Any | None = None) -> None:
-        """Index this bookmark in Elasticsearch.
-
-        Args:
-            es: Optional Elasticsearch client (unused, kept for compatibility).
-        """
+    def index_bookmark(self) -> None:
+        """Index this bookmark in Elasticsearch."""
         index_document(self.elasticsearch_document)
 
     @property
