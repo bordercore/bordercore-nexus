@@ -14,14 +14,16 @@ from itertools import cycle
 from typing import Any
 
 import requests
+from github_sample import GitHubCodeSampler
 from requests import Response, Session
 from rich import box
 from rich.color import Color, parse_rgb_hex
-from rich.console import Console
+from rich.console import Console, Group
 from rich.layout import Layout
 from rich.live import Live
 from rich.panel import Panel
 from rich.style import Style
+from rich.syntax import Syntax
 from rich.table import Table
 from rich.text import Text
 
@@ -46,9 +48,24 @@ class Dashboard():
             raise Exception("DRF_TOKEN not found in environment")
         self.drf_token = os.environ["DRF_TOKEN"]
 
+        if "GITHUB_TOKEN" not in os.environ:
+            raise Exception("GITHUB_TOKEN not found in environment")
+        self.github_token = os.environ["GITHUB_TOKEN"]
+
         self.console = Console()
         self.layout = Layout()
         self.session = session
+
+        # Initialize independent timers for each update function
+        # Format: {function_name: {"last_update": timestamp, "interval": seconds}}
+        default_interval = 10.0
+        self.update_timers = {
+            "bookmarks": {"last_update": 0.0, "interval": default_interval},
+            "todos": {"last_update": 0.0, "interval": default_interval},
+            "stats": {"last_update": 0.0, "interval": default_interval},
+            "status": {"last_update": 0.0, "interval": default_interval},
+            "code_echoes": {"last_update": 0.0, "interval": 600.0},  # 10 minutes
+        }
 
         # Divide the "screen" in to three parts
         self.layout.split(
@@ -56,13 +73,15 @@ class Dashboard():
             Layout(ratio=1, name="main"),
             Layout(size=3, name="status"),
         )
-        # Divide the "main" layout in to "side" and "bookmarks"
+        # Divide the "main" layout in to "side" and "left"
         self.layout["main"].split_row(
             Layout(name="side"),
-            Layout(name="bookmarks", ratio=2)
+            Layout(name="left", ratio=2)
         )
         # Divide the "side" layout in to two
         self.layout["side"].split(Layout(name="todo"), Layout(name="stats"))
+        # Divide the "left" layout in to "bookmarks" and "code_echoes"
+        self.layout["left"].split(Layout(name="bookmarks"), Layout(name="code_echoes"))
 
         color = Color.from_triplet(parse_rgb_hex("ffa500"))
         text = Text(justify="center", style=Style(color=color, bold=True))
@@ -73,6 +92,7 @@ class Dashboard():
         ))
 
         self.layout["bookmarks"].update(Panel("Recent bookmarks", title="Bookmarks"))
+        self.layout["code_echoes"].update(Panel("", title="Code Echoes"))
 
     def _get(self, url: str) -> dict[str, Any]:
         """Make an authenticated GET request to the API.
@@ -110,6 +130,7 @@ class Dashboard():
                 title=Text("Status")
             )
         )
+        self.update_timers["status"]["last_update"] = time.time()
 
     def update_bookmarks(self) -> None:
         """Fetches and displays recent bookmarks from the Bordercore API.
@@ -132,6 +153,7 @@ class Dashboard():
                 text,
                 title=Text("Bookmarks")
             ))
+        self.update_timers["bookmarks"]["last_update"] = time.time()
 
     def update_todos(self) -> None:
         """Fetches and displays high-priority todos from the Bordercore API.
@@ -154,6 +176,7 @@ class Dashboard():
                 text,
                 title=Text("Todo Items")
             ))
+        self.update_timers["todos"]["last_update"] = time.time()
 
     def update_stats(self) -> None:
         """Fetches and displays site statistics from the Bordercore API.
@@ -183,30 +206,231 @@ class Dashboard():
             table,
             title=Text("Site Stats")
         ))
+        self.update_timers["stats"]["last_update"] = time.time()
+
+    def _normalize_language(self, language: str) -> str:
+        """Normalize GitHub language names to Pygments lexer names.
+
+        Args:
+            language: Language name from GitHub (may be None, empty, or in various formats)
+
+        Returns:
+            Normalized language name for Pygments
+        """
+        if not language:
+            return "text"
+
+        language = language.lower().strip()
+
+        # Map common GitHub language names to Pygments lexer names
+        language_map = {
+            "javascript": "javascript",
+            "typescript": "typescript",
+            "python": "python",
+            "java": "java",
+            "c++": "cpp",
+            "cpp": "cpp",
+            "c": "c",
+            "c#": "csharp",
+            "csharp": "csharp",
+            "go": "go",
+            "rust": "rust",
+            "ruby": "ruby",
+            "php": "php",
+            "swift": "swift",
+            "kotlin": "kotlin",
+            "scala": "scala",
+            "html": "html",
+            "css": "css",
+            "json": "json",
+            "yaml": "yaml",
+            "yml": "yaml",
+            "markdown": "markdown",
+            "shell": "bash",
+            "bash": "bash",
+            "sh": "bash",
+            "powershell": "powershell",
+            "sql": "sql",
+            "dockerfile": "dockerfile",
+            "makefile": "make",
+            "make": "make",
+        }
+
+        return language_map.get(language, language)
+
+    def _write_debug(self, message: str) -> None:
+        """Write debug message to /tmp/rich_dashboard_debug.log.
+
+        Args:
+            message: Debug message to write
+        """
+        debug_file = "/tmp/rich_dashboard_debug.log"
+        try:
+            with open(debug_file, "a") as f:
+                f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {message}\n")
+        except Exception:
+            pass  # Silently fail if we can't write debug file
+
+    def update_code_echoes(self) -> None:
+        """Updates the Code echoes panel with code samples from GitHub.
+
+        Fetches code samples using GitHubCodeSampler and displays the code_preview
+        with syntax highlighting based on the language field.
+        """
+        # Show "Retrieving code..." while fetching
+        self.layout["code_echoes"].update(Panel(
+            "Retrieving code...",
+            title=Text("Code Echoes")
+        ))
+
+        sampler = GitHubCodeSampler(
+            token=self.github_token,
+            max_events=100,
+            num_lines=50
+        )
+        sample_dict = sampler.get_sample()
+        code_preview = sample_dict.get("code_preview", "No code preview available")
+        repo = sample_dict.get("repo", {})
+        raw_language = repo.get("language", "text")
+        language = self._normalize_language(raw_language)
+
+        # Debug: Write to file instead of console
+        debug_msg = f"Raw language: {raw_language!r}, Normalized: {language!r}, Code preview length: {len(code_preview)}"
+        self._write_debug(debug_msg)
+
+        # Build header with repo name and description
+        header_parts = []
+
+        # Repo name in blue as clickable link
+        repo_name = repo.get("name", "")
+        repo_url = repo.get("html_url", "")
+        if repo_name:
+            if repo_url:
+                header_parts.append(Text(repo_name, style=f"blue link {repo_url}"))
+            else:
+                header_parts.append(Text(repo_name, style="blue"))
+
+        # Description in green (if not empty and not "None")
+        description = sample_dict.get("description", "") or repo.get("description", "")
+        if description and description != "None":
+            # Get first part (first line or first 100 chars)
+            first_line = description.split("\n")[0]
+            if len(first_line) > 100:
+                first_line = first_line[:100] + "..."
+            header_parts.append(Text(first_line, style="green"))
+
+        # Filename (base filename and enclosing directory) in dim yellow
+        file_info = sample_dict.get("file", {})
+        filename = file_info.get("filename", "")
+        if filename:
+            # Extract directory and base filename
+            dirname = os.path.dirname(filename)
+            basename = os.path.basename(filename)
+            if dirname:
+                # Get just the last directory component
+                parent_dir = os.path.basename(dirname)
+                truncated_filename = f"{parent_dir}/{basename}"
+            else:
+                truncated_filename = basename
+            header_parts.append(Text(truncated_filename, style="dim yellow"))
+
+        # Language (raw, not normalized) on third line
+        if raw_language:
+            header_parts.append(Text(raw_language))
+
+        # Add blank line
+        header_parts.append(Text(""))
+
+        # Create header text
+        header = Text()
+        for i, part in enumerate(header_parts):
+            if i > 0:
+                header.append("\n")
+            header.append(part)
+
+        # Create syntax-highlighted code
+        # Use word_wrap=True to handle long lines better
+        try:
+            syntax = Syntax(
+                code_preview,
+                language,
+                theme="monokai",
+                line_numbers=False,
+                word_wrap=True
+            )
+        except Exception as e:
+            # If syntax highlighting fails, fall back to plain text with error info
+            error_msg = f"Syntax highlighting error: {e}"
+            self._write_debug(error_msg)
+            syntax = Text(f"Syntax highlighting error: {e}\nLanguage: {raw_language} -> {language}\n\n{code_preview}")
+
+        # Combine header and syntax
+        content = Group(header, syntax)
+
+        self.layout["code_echoes"].update(Panel(
+            content,
+            title=Text("Code Echoes")
+        ))
+        self.update_timers["code_echoes"]["last_update"] = time.time()
 
 
 def main() -> None:
     """Run the live Bordercore dashboard loop.
 
     Sets up the session, initializes the Dashboard, and continuously updates
-    all sections of the UI at a fixed interval.
+    each section of the UI at its own independent interval.
     """
     session: Session = requests.Session()
     session.trust_env = False  # Ignore .netrc, useful for local dev
 
     dash = Dashboard(session=session)
-    dash.update_bookmarks()
+    current_time = time.time()
+
+    # Initialize all timers to current time so they'll trigger on first loop
+    for timer in dash.update_timers.values():
+        timer["last_update"] = current_time - timer["interval"]
 
     with Live(dash.layout, screen=True):
         while True:
-            try:
-                dash.update_bookmarks()
-                dash.update_todos()
-                dash.update_stats()
-                dash.update_status("All subsystems normal")
-            except Exception as e:
-                dash.update_status(str(e), error=True)
-            time.sleep(10)
+            current_time = time.time()
+
+            # Check and update bookmarks if its timer has elapsed
+            if current_time - dash.update_timers["bookmarks"]["last_update"] >= dash.update_timers["bookmarks"]["interval"]:
+                try:
+                    dash.update_bookmarks()
+                except Exception as e:
+                    dash.update_status(str(e), error=True)
+
+            # Check and update todos if its timer has elapsed
+            if current_time - dash.update_timers["todos"]["last_update"] >= dash.update_timers["todos"]["interval"]:
+                try:
+                    dash.update_todos()
+                except Exception as e:
+                    dash.update_status(str(e), error=True)
+
+            # Check and update stats if its timer has elapsed
+            if current_time - dash.update_timers["stats"]["last_update"] >= dash.update_timers["stats"]["interval"]:
+                try:
+                    dash.update_stats()
+                except Exception as e:
+                    dash.update_status(str(e), error=True)
+
+            # Check and update status if its timer has elapsed
+            if current_time - dash.update_timers["status"]["last_update"] >= dash.update_timers["status"]["interval"]:
+                try:
+                    dash.update_status("All subsystems normal")
+                except Exception as e:
+                    dash.update_status(str(e), error=True)
+
+            # Check and update code_echoes if its timer has elapsed
+            if current_time - dash.update_timers["code_echoes"]["last_update"] >= dash.update_timers["code_echoes"]["interval"]:
+                try:
+                    dash.update_code_echoes()
+                except Exception as e:
+                    dash.update_status(str(e), error=True)
+
+            # Sleep for a short interval to avoid busy-waiting
+            time.sleep(0.1)
 
 if __name__ == "__main__":
     main()
