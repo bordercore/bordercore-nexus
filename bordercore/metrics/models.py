@@ -7,14 +7,11 @@ test results, coverage reports, and other periodic measurements.
 """
 
 import uuid
-from collections.abc import Iterable
 from datetime import timedelta
-from typing import Any, Mapping
 
 from django.contrib.auth.models import User
 from django.db import models
 from django.db.models import JSONField
-from django.utils import timezone
 
 from .managers import MetricsManager
 
@@ -29,7 +26,7 @@ class Metric(models.Model):
 
     Attributes:
         uuid: Stable UUID identifier for this metric.
-        name: Human-readable name of the metric (e.g., "Bordercore Test Coverage").
+        name: Human-readable name of the metric (e.g., COVERAGE_METRIC_NAME).
         user: ForeignKey to the User who owns this metric.
         note: Optional free-form text annotation.
         frequency: DurationField indicating how often this metric should be updated.
@@ -43,6 +40,8 @@ class Metric(models.Model):
     objects = MetricsManager()
 
     COVERAGE_MINIMUM = 80
+    COVERAGE_REPORT_NAME = "Bordercore Coverage Report"
+    COVERAGE_METRIC_NAME = "Bordercore Test Coverage"
 
     def __str__(self) -> str:
         """Return string representation of the metric.
@@ -51,40 +50,6 @@ class Metric(models.Model):
             The name of the metric.
         """
         return self.name
-
-    @staticmethod
-    def get_failed_test_count(user: User) -> int:
-        failed_test_count = 0
-
-        latest_metrics: Iterable[Mapping[str, Any]] = (
-            Metric.objects.latest_metrics(user)
-            .exclude(name="Bordercore Coverage Report")
-            .values()
-        )
-
-        for metric in latest_metrics:
-            created = metric["created"]
-            frequency = metric["frequency"]
-            latest_result = metric.get("latest_result") or {}
-
-            if timezone.now() - created > frequency:
-                failed_test_count += 1
-
-            if "test_errors" in latest_result:
-                failed_test_count += int(latest_result["test_errors"])
-
-            if "test_failures" in latest_result:
-                failed_test_count += int(latest_result["test_failures"])
-
-            if (
-                metric["name"] == "Bordercore Test Coverage"
-                and "line_rate" in latest_result
-            ):
-                line_rate = int(round(float(latest_result["line_rate"]) * 100, 0))
-                if line_rate < Metric.COVERAGE_MINIMUM:
-                    failed_test_count += 1
-
-        return failed_test_count
 
 
 class MetricData(models.Model):
@@ -104,3 +69,6 @@ class MetricData(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     metric = models.ForeignKey(Metric, on_delete=models.CASCADE)
     value = JSONField(blank=True, null=True)
+
+    class Meta:
+        ordering = ["-created"]

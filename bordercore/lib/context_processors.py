@@ -33,7 +33,7 @@ def get_counts(request):
     bookmark_untagged_count = Bookmark.objects.filter(user=request.user, tags__isnull=True).count()
 
     # Get failed test count
-    failed_test_count = Metric.get_failed_test_count(request.user)
+    failed_test_count = Metric.objects.get_failed_test_count(request.user)
 
     return {
         "bookmark_untagged_count": bookmark_untagged_count,

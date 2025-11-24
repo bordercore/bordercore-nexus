@@ -34,8 +34,8 @@ class MetricListView(UserPassesTestMixin, ListView):
         "Bordercore Functional Tests": "functional",
         "Bordercore Data Quality Tests": "data",
         "Bordercore Wumpus Tests": "wumpus",
-        "Bordercore Test Coverage": "coverage",
-        "Bordercore Coverage Report": "coverage_repot"
+        Metric.COVERAGE_METRIC_NAME: "coverage",
+        Metric.COVERAGE_REPORT_NAME: "coverage_repot"
     }
 
     def test_func(self) -> bool:
@@ -88,7 +88,7 @@ class MetricListView(UserPassesTestMixin, ListView):
                     metric.overdue = True
 
                 context[self.test_types[metric.name]] = metric
-                if metric.name == "Bordercore Test Coverage":
+                if metric.name == Metric.COVERAGE_METRIC_NAME:
                     metric.latest_result["line_rate"] = int(round(float(metric.latest_result["line_rate"]) * 100, 0))  # type: ignore[attr-defined]
 
         return context
