@@ -3,22 +3,19 @@
 This module contains views for displaying and managing metrics tracking,
 including test results, coverage reports, and other periodic measurements.
 """
-import html
 from typing import Any, cast
 
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import UserPassesTestMixin
+from django.contrib.auth.mixins import (LoginRequiredMixin,
+                                        PermissionRequiredMixin)
 from django.contrib.auth.models import User
 from django.db.models import QuerySet
 from django.utils import timezone
-from django.utils.decorators import method_decorator
 from django.views.generic.list import ListView
 
 from .models import Metric
 
 
-@method_decorator(login_required, name="dispatch")
-class MetricListView(UserPassesTestMixin, ListView):
+class MetricListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     """View for displaying the metrics list page.
 
     Shows the latest metrics for the current user, including test results,
@@ -28,14 +25,15 @@ class MetricListView(UserPassesTestMixin, ListView):
     model = Metric
     template_name = "metrics/metric_list.html"
     context_object_name = "metrics"
+    permission_required = "metrics.view_metric"
 
     test_types = {
-        "Bordercore Unit Tests": "unit",
-        "Bordercore Functional Tests": "functional",
-        "Bordercore Data Quality Tests": "data",
-        "Bordercore Wumpus Tests": "wumpus",
+        Metric.UNIT_TESTS_NAME: "unit",
+        Metric.FUNCTIONAL_TESTS_NAME: "functional",
+        Metric.DATA_QUALITY_TESTS_NAME: "data",
+        Metric.WUMPUS_TESTS_NAME: "wumpus",
         Metric.COVERAGE_METRIC_NAME: "coverage",
-        Metric.COVERAGE_REPORT_NAME: "coverage_repot"
+        Metric.COVERAGE_REPORT_NAME: "coverage_report"
     }
 
     def test_func(self) -> bool:
@@ -79,15 +77,18 @@ class MetricListView(UserPassesTestMixin, ListView):
         context = super().get_context_data(**kwargs)
 
         context["title"] = "Bordercore Metrics"
+        now = timezone.now()
 
         for metric in self.object_list:
 
             if metric.created:  # type: ignore[attr-defined]
 
-                if timezone.now() - metric.created > metric.frequency:  # type: ignore[attr-defined]
+                if now - metric.created > metric.frequency:  # type: ignore[attr-defined]
                     metric.overdue = True
 
-                context[self.test_types[metric.name]] = metric
+                test_type = self.test_types.get(metric.name)
+                if test_type:
+                    context[test_type] = metric
                 if metric.name == Metric.COVERAGE_METRIC_NAME:
                     metric.latest_result["line_rate"] = int(round(float(metric.latest_result["line_rate"]) * 100, 0))  # type: ignore[attr-defined]
 

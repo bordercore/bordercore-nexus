@@ -42,6 +42,10 @@ class Metric(models.Model):
     COVERAGE_MINIMUM = 80
     COVERAGE_REPORT_NAME = "Bordercore Coverage Report"
     COVERAGE_METRIC_NAME = "Bordercore Test Coverage"
+    UNIT_TESTS_NAME = "Bordercore Unit Tests"
+    FUNCTIONAL_TESTS_NAME = "Bordercore Functional Tests"
+    DATA_QUALITY_TESTS_NAME = "Bordercore Data Quality Tests"
+    WUMPUS_TESTS_NAME = "Bordercore Wumpus Tests"
 
     def __str__(self) -> str:
         """Return string representation of the metric.
@@ -67,7 +71,7 @@ class MetricData(models.Model):
             percentages, etc.).
     """
     created = models.DateTimeField(auto_now_add=True)
-    metric = models.ForeignKey(Metric, on_delete=models.CASCADE)
+    metric = models.ForeignKey(Metric, on_delete=models.CASCADE, related_name="data_points")
     value = JSONField(blank=True, null=True)
 
     def __str__(self) -> str:
