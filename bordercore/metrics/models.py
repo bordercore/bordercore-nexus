@@ -70,5 +70,13 @@ class MetricData(models.Model):
     metric = models.ForeignKey(Metric, on_delete=models.CASCADE)
     value = JSONField(blank=True, null=True)
 
+    def __str__(self) -> str:
+        """Return string representation of the metric data.
+
+        Returns:
+            String in the format "{metric_name} @ {created_timestamp}".
+        """
+        return f"{self.metric.name} @ {self.created}"
+
     class Meta:
         ordering = ["-created"]
