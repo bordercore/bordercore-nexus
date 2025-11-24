@@ -48,6 +48,7 @@ jobs:
           bordercore/feed/ \
           bordercore/fitness/ \
           bordercore/node/ \
+          bordercore/metrics/ \
           bordercore/music/ \
           bordercore/tag/ \
           bordercore/todo/
