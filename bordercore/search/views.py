@@ -42,7 +42,7 @@ from tag.services import get_tag_aliases, get_tag_link
 
 from .models import RecentSearch
 
-SEARCH_LIMIT = 1000
+SEARCH_LIMIT = 100
 
 
 def get_creators(matches: dict[str, Any]) -> str:
@@ -710,9 +710,9 @@ class SearchTagDetailView(ListView):
             descending order, excluding items in tag_list.
         """
         tag_counts = {}
-        for buckets in aggregation["buckets"]:
-            if buckets["key"] not in tag_list:
-                tag_counts[buckets["key"]] = buckets["doc_count"]
+        for bucket in aggregation["buckets"]:
+            if bucket["key"] not in tag_list:
+                tag_counts[bucket["key"]] = bucket["doc_count"]
 
         tag_counts_sorted = sorted(tag_counts.items(), key=operator.itemgetter(1), reverse=True)
 
@@ -891,8 +891,6 @@ def get_doctype(match: dict[str, Any]) -> str:
         A title-cased document type string (e.g., "Song", "Artist", "Album").
     """
     if match["_source"]["doctype"] == "song" and "highlight" in match:
-        highlight_fields = list(match["highlight"].keys())
-
         highlight_fields = [x if x != "name" else "Song" for x in match["highlight"].keys()]
         # There could be multiple highlighted fields. For now,
         #  pick the first one.
