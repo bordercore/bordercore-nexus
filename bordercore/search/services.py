@@ -54,7 +54,7 @@ def get_elasticsearch_source_fields() -> list[str]:
     ]
 
 
-def semantic_search(request: HttpRequest, search: str) -> dict[str, Any] | list:
+def semantic_search(request: HttpRequest, search: str) -> dict[str, Any]:
     """Perform semantic search using embeddings and Elasticsearch.
 
     Searches for notes using cosine similarity between the query embedding
@@ -68,10 +68,8 @@ def semantic_search(request: HttpRequest, search: str) -> dict[str, Any] | list:
     Returns:
         A dictionary containing Elasticsearch search results with hits,
         aggregations, and metadata, or an empty list if a RequestError occurs.
-
-    Raises:
-        elasticsearch.RequestError: If the Elasticsearch query fails, an error
-            message is added to the request and an empty list is returned.
+        If a RequestError occurs, an error message is added to the request
+        and an empty list is returned (the exception is caught and handled).
     """
 
     embeddings = len_safe_get_embedding(search)
@@ -128,7 +126,7 @@ def semantic_search(request: HttpRequest, search: str) -> dict[str, Any] | list:
     except RequestError as e:
         error_info = cast(dict[str, Any], e.info)
         messages.add_message(request, messages.ERROR, f"Request Error: {e.status_code} {error_info.get('error')}")
-        return []
+        return {"hits": {"hits": [], "total": {"value": 0}}}
 
 
 def index_document(doc: dict[str, Any]) -> None:

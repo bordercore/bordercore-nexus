@@ -722,7 +722,6 @@ class SemanticSearchListView(SearchListView):
             The modified search query dictionary configured for semantic
             similarity search.
         """
-
         embeddings = len_safe_get_embedding(self.request.GET["semantic_search"])
 
         search_object["sort"] = {"_score": {"order": "desc"}}

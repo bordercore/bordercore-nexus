@@ -48,6 +48,21 @@ class RecentSearch(TimeStampedModel):
 
     @classmethod
     def add(cls, user: User, search_text: str) -> None:
+        """Add a new search query to the user's recent searches.
+
+        This method adds a search query to the top of the user's recent searches list.
+        If the search already exists, it removes the old entry and adds it to the top.
+        The method maintains a maximum of MAX_SIZE recent searches per user by
+        removing the oldest entries when the limit is exceeded.
+
+        Args:
+            user: The user who performed the search.
+            search_text: The search query text to add. Whitespace is stripped
+                before processing.
+
+        Returns:
+            None. The method returns early if the normalized search text is empty.
+        """
         normalized = search_text.strip()
         if not normalized:
             return
