@@ -41,6 +41,7 @@ from tag.models import Tag
 from tag.services import get_tag_aliases, get_tag_link
 
 from .models import RecentSearch
+from .services import get_elasticsearch_source_fields
 
 SEARCH_LIMIT = 100
 
@@ -623,27 +624,7 @@ class SearchTagDetailView(ListView):
             ],
             "from_": 0,
             "size": self.RESULT_COUNT_PER_PAGE,
-            "_source": [
-                "artist",
-                "artist_uuid",
-                "author",
-                "content_type",
-                "contents",
-                "date",
-                "date_unixtime",
-                "doctype",
-                "filename",
-                "importance",
-                "bordercore_id",
-                "last_modified",
-                "name",
-                "question",
-                "sha1sum",
-                "tags",
-                "title",
-                "url",
-                "uuid"
-            ]
+            "_source": get_elasticsearch_source_fields()
         }
 
         return es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
@@ -1041,21 +1022,7 @@ def search_tags_es(user: User, search_term: str, doctypes: list[str]) -> list[di
             }
         },
         "from_": 0, "size": 100,
-        "_source": ["album_id",
-                    "album",
-                    "artist",
-                    "author",
-                    "date",
-                    "date_unixtime",
-                    "doctype",
-                    "filename",
-                    "importance",
-                    "name",
-                    "question",
-                    "sha1sum",
-                    "tags",
-                    "url",
-                    "uuid"]
+        "_source": get_elasticsearch_source_fields()
     }
 
     if len(doctypes) > 1:
@@ -1227,25 +1194,7 @@ def search_names_es(user: User, search_term: str, doctypes: list[str]) -> list[d
         },
         "from_": 0,
         "size": SEARCH_LIMIT,
-        "_source": ["album_uuid",
-                    "album",
-                    "artist",
-                    "artist_uuid",
-                    "author",
-                    "bordercore_id",
-                    "date",
-                    "date_unixtime",
-                    "doctype",
-                    "filename",
-                    "importance",
-                    "name",
-                    "note",
-                    "question",
-                    "sha1sum",
-                    "tags",
-                    "title",
-                    "url",
-                    "uuid"]
+        "_source": get_elasticsearch_source_fields()
     }
 
     if len(doctypes) > 0:
@@ -1423,26 +1372,7 @@ def search_music(request: Request) -> JsonResponse:
         },
         "from_": 0,
         "size": limit,
-        "_source": ["album_uuid",
-                    "album",
-                    "artist",
-                    "artist_uuid",
-                    "author",
-                    "bordercore_id",
-                    "date",
-                    "date_unixtime",
-                    "doctype",
-                    "filename",
-                    "importance",
-                    "name",
-                    "note",
-                    "question",
-                    "sha1sum",
-                    "tags",
-                    "title",
-                    "track",
-                    "url",
-                    "uuid"]
+        "_source": get_elasticsearch_source_fields()
     }
 
     constraints = search_object["query"]["function_score"]["query"]["bool"]["must"]

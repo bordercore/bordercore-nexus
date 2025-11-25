@@ -16,6 +16,44 @@ from lib.embeddings import len_safe_get_embedding
 from lib.util import get_elasticsearch_connection
 
 
+def get_elasticsearch_source_fields() -> list[str]:
+    """Get a list of Elasticsearch _source fields for common search queries.
+
+    Returns a superset of all fields used across multiple search functions.
+    It's safe to include fields that some queries don't need, as Elasticsearch
+    will simply omit them from results if they're not present in the document.
+
+    Returns:
+        A list of field names to include in the Elasticsearch _source parameter.
+    """
+    return [
+        "album",
+        "album_id",
+        "album_uuid",
+        "artist",
+        "artist_uuid",
+        "author",
+        "bordercore_id",
+        "content_type",
+        "contents",
+        "date",
+        "date_unixtime",
+        "doctype",
+        "filename",
+        "importance",
+        "last_modified",
+        "name",
+        "note",
+        "question",
+        "sha1sum",
+        "tags",
+        "title",
+        "track",
+        "url",
+        "uuid",
+    ]
+
+
 def semantic_search(request: HttpRequest, search: str) -> dict[str, Any] | list:
     """Perform semantic search using embeddings and Elasticsearch.
 
