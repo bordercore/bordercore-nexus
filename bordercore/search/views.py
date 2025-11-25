@@ -219,8 +219,10 @@ class SearchListView(ListView):
         # Store the "sort" field in the user's session
         self.request.session["search_sort_by"] = self.request.GET.get("sort", None)
 
-        search_term = self.request.GET.get("term_search", None) or \
-            self.request.GET.get("search", None)
+        search_term = (
+            self.request.GET.get("term_search")
+            or self.request.GET.get("search")
+        )
         sort_field = self.request.GET.get("sort", "date_unixtime")
         boolean_type = self.request.GET.get("boolean_search_type", "AND")
         doctype = self.request.GET.get("doctype", None)
@@ -743,9 +745,6 @@ class SemanticSearchListView(SearchListView):
         embeddings = len_safe_get_embedding(self.request.GET["semantic_search"])
 
         search_object["sort"] = {"_score": {"order": "desc"}}
-
-        # Remove the function that heavily weighs important blobs
-        search_object["query"]["function_score"]["query"]["bool"]["must"].pop(-1)
 
         search_object["query"]["function_score"]["functions"] = [
             {
