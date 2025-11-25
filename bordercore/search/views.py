@@ -130,21 +130,22 @@ class SearchListView(ListView):
 
         return paginator
 
-    def get_aggregations(self, context: dict[str, Any], aggregation: str) -> list[dict[str, Any]]:
+    def get_aggregations(self, object_list_dict: dict[str, Any], aggregation: str) -> list[dict[str, Any]]:
         """Extract aggregation data from Elasticsearch results.
 
         Args:
-            context: Context dictionary containing search results with
-                aggregations data.
-            aggregation: The name of the aggregation to extract.
+            object_list_dict: Dictionary containing Elasticsearch search results
+                with an "aggregations" key containing aggregation data.
+            aggregation: The name of the aggregation to extract from the
+                aggregations dictionary.
 
         Returns:
             A list of dictionaries, each containing:
-                - doctype: The document type name
-                - count: The number of documents of that type
+                - doctype: The aggregation bucket key (typically a document type name)
+                - count: The document count for that bucket (doc_count)
         """
         aggregations = []
-        for x in context["object_list"]["aggregations"][aggregation]["buckets"]:
+        for x in object_list_dict["aggregations"][aggregation]["buckets"]:
             aggregations.append({"doctype": x["key"], "count": x["doc_count"]})
         return aggregations
 
@@ -378,7 +379,7 @@ class SearchListView(ListView):
 
         if context["object_list"]:
             object_list_dict = cast(dict[str, Any], context["object_list"])
-            context["aggregations"] = self.get_aggregations(context, "Doctype Filter")
+            context["aggregations"] = self.get_aggregations(object_list_dict, "Doctype Filter")
 
             page = int(self.request.GET.get("page", 1))
             context["paginator"] = json.dumps(
