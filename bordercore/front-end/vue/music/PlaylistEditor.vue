@@ -205,6 +205,9 @@
             });
 
             function getPlaylistType() {
+                if (!props.playlist || !props.playlist.parameters) {
+                    return "manual";
+                }
                 if (Object.keys(props.playlist.parameters).length === 0) {
                     return "manual";
                 } else {
