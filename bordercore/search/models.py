@@ -31,6 +31,13 @@ class RecentSearch(TimeStampedModel):
 
     MAX_SIZE = 10
 
+    class Meta:
+        ordering = ["sort_order", "-created"]
+        indexes = [
+            models.Index(fields=["user", "sort_order"]),
+            models.Index(fields=["user", "search_text"]),
+        ]
+
     def __str__(self) -> str:
         """Return string representation of the search.
 
@@ -39,54 +46,31 @@ class RecentSearch(TimeStampedModel):
         """
         return self.search_text or ""
 
-    @staticmethod
-    def add(user: User, search_text: str) -> None:
-        """Add a new search to the user's recent searches list.
-
-        This method ensures that:
-        - Duplicate searches are removed before adding the new one
-        - The new search appears first (sort_order = 1)
-        - All existing searches are reordered accordingly
-        - Only MAX_SIZE searches are kept per user (oldest are deleted)
-
-        Args:
-            user: The User who performed the search.
-            search_text: The text that was searched for.
-        """
-        # Delete any previous rows containing this search text to avoid duplicates
-        exists = RecentSearch.objects.filter(search_text=search_text).first()
-        if exists:
-            RecentSearch.objects.filter(search_text=search_text).delete()
-
-            # Re-order all searches *after* the deleted one by reducing their sort_order by one
-            RecentSearch.objects.filter(
-                user=user,
-                sort_order__gt=exists.sort_order
-            ).update(
-                sort_order=F("sort_order") - 1
-            )
+    @classmethod
+    def add(cls, user: User, search_text: str) -> None:
+        normalized = search_text.strip()
+        if not normalized:
+            return
 
         with transaction.atomic():
+            # Drop existing instance(s) of this search for this user
+            cls.objects.filter(user=user, search_text=normalized).delete()
 
-            # Update the sort order so that the new search is first
-            RecentSearch.objects.filter(
-                user=user
-            ).update(
-                sort_order=F("sort_order") + 1
+            # Bump sort orders down the list
+            cls.objects.filter(user=user).update(sort_order=F("sort_order") + 1)
+
+            # Insert at top
+            cls.objects.create(
+                user=user,
+                search_text=normalized,
+                sort_order=1,
             )
 
-            # Create the new search with default sort_order = 1
-            obj = RecentSearch(user=user, search_text=search_text)
-            obj.save()
-
-        # Insure that only MAX_SIZE searches exist per user
-        searches = RecentSearch.objects.filter(
-            user=user
-        ).only(
-            "id"
-        ).order_by(
-            "-created"
-        )[RecentSearch.MAX_SIZE:]
-
-        if searches:
-            RecentSearch.objects.filter(id__in=[x.id for x in searches]).delete()
+            # Trim old entries
+            old_ids = list(
+                cls.objects.filter(user=user)
+                .order_by("-created")
+                .values_list("id", flat=True)[cls.MAX_SIZE :]
+            )
+            if old_ids:
+                cls.objects.filter(id__in=old_ids).delete()
