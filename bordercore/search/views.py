@@ -818,11 +818,11 @@ def sort_results(matches: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return response
 
 
-def get_link(doc_type: str, match: dict[str, Any]) -> str:
+def get_link(doctype: str, match: dict[str, Any]) -> str:
     """Generate a URL for a document based on its type.
 
     Args:
-        doc_type: The document type (e.g., "bookmark", "song", "album").
+        doctype: The document type (e.g., "bookmark", "song", "album").
         match: Dictionary containing document data, including uuid and
             other type-specific fields.
 
@@ -832,45 +832,45 @@ def get_link(doc_type: str, match: dict[str, Any]) -> str:
     """
     url = ""
 
-    if doc_type == "bookmark":
+    if doctype == "bookmark":
         url = match["url"]
-    elif doc_type == "song":
+    elif doctype == "song":
         if "album_uuid" in match:
             url = reverse("music:album_detail", kwargs={"uuid": match["album_uuid"]})
         else:
             url = reverse("music:artist_detail", kwargs={"uuid": match["artist_uuid"]})
-    elif doc_type == "album":
+    elif doctype == "album":
         url = reverse("music:album_detail", kwargs={"uuid": match["uuid"]})
-    elif doc_type == "artist":
+    elif doctype == "artist":
         url = reverse("music:artist_detail", kwargs={"uuid": match["artist_uuid"]})
-    elif doc_type in ("blob", "book", "document", "note"):
+    elif doctype in ("blob", "book", "document", "note"):
         url = reverse("blob:detail", kwargs={"uuid": match["uuid"]})
-    elif doc_type == "drill":
+    elif doctype == "drill":
         url = reverse("drill:detail", kwargs={"uuid": match["uuid"]})
-    elif doc_type == "todo":
+    elif doctype == "todo":
         url = reverse("todo:detail", kwargs={"uuid": match["uuid"]})
 
     return url
 
 
-def get_name(doc_type: str, match: dict[str, Any]) -> str:
+def get_name(doctype: str, match: dict[str, Any]) -> str:
     """Extract a display name for a document based on its type.
 
     Args:
-        doc_type: The document type (e.g., "Song", "Artist", "Album").
+        doctype: The document type (e.g., "Song", "Artist", "Album").
         match: Dictionary containing document data with type-specific
             fields like title, artist, question, or name.
 
     Returns:
         A formatted display name string for the document.
     """
-    if doc_type == "Song":
+    if doctype == "Song":
         return f"{match['title']} - {match['artist']}"
-    if doc_type == "Artist":
+    if doctype == "Artist":
         return match["artist"]
-    if doc_type == "Album":
+    if doctype == "Album":
         return match["title"]
-    if doc_type == "Drill":
+    if doctype == "Drill":
         return match["question"][:30]
 
     return match["name"].title()
@@ -903,10 +903,10 @@ def get_doctype(match: dict[str, Any]) -> str:
     return match["_source"]["doctype"].title()
 
 
-def get_doc_types_from_request(request: HttpRequest) -> list[str]:
+def get_doctypes_from_request(request: HttpRequest) -> list[str]:
     """Extract document type filters from request parameters.
 
-    Parses the "doc_type" GET parameter and handles special cases like
+    Parses the "doctype" GET parameter and handles special cases like
     "music" which maps to multiple document types.
 
     Args:
@@ -915,18 +915,18 @@ def get_doc_types_from_request(request: HttpRequest) -> list[str]:
     Returns:
         A list of document type strings to filter by.
     """
-    doc_type_param = request.GET.get("doc_type", "")
-    if doc_type_param != "":
-        doc_types = doc_type_param.split(",")
+    doctype_param = request.GET.get("doctype", "")
+    if doctype_param != "":
+        doctypes = doctype_param.split(",")
     else:
-        doc_types = []
+        doctypes = []
 
     # The front-end filter "Music" translates to the two doctypes
     #  "album" and "song" in the Elasticsearch index
-    if "music" in doc_types:
-        doc_types = ["album", "song"]
+    if "music" in doctypes:
+        doctypes = ["album", "song"]
 
-    return doc_types
+    return doctypes
 
 
 def is_cached() -> Any:
@@ -969,25 +969,25 @@ def search_tags_and_names(request: HttpRequest) -> JsonResponse:
     Args:
         request: HTTP request containing:
             - term: Search query string
-            - doc_type: Optional comma-separated list of document types
+            - doctype: Optional comma-separated list of document types
 
     Returns:
         JSON response containing sorted list of matching tags and documents.
     """
     search_term = request.GET["term"].lower()
 
-    doc_types = get_doc_types_from_request(request)
+    doctypes = get_doctypes_from_request(request)
 
     user = cast(User, request.user)
-    matches = search_names_es(user, search_term, doc_types)
+    matches = search_names_es(user, search_term, doctypes)
 
     # Add tag search results to the list of matches
-    matches.extend(search_tags_es(user, search_term, doc_types))
+    matches.extend(search_tags_es(user, search_term, doctypes))
 
     return JsonResponse(sort_results(matches), safe=False)
 
 
-def search_tags_es(user: User, search_term: str, doc_types: list[str]) -> list[dict[str, Any]]:
+def search_tags_es(user: User, search_term: str, doctypes: list[str]) -> list[dict[str, Any]]:
     """Search Elasticsearch for tags matching the search term.
 
     Performs a tag autocomplete search and returns matching tag names
@@ -996,7 +996,7 @@ def search_tags_es(user: User, search_term: str, doc_types: list[str]) -> list[d
     Args:
         user: The User whose tags to search.
         search_term: The search query string (lowercase).
-        doc_types: List of document types to filter by.
+        doctypes: List of document types to filter by.
 
     Returns:
         A list of dictionaries, each containing:
@@ -1060,7 +1060,7 @@ def search_tags_es(user: User, search_term: str, doc_types: list[str]) -> list[d
                     "uuid"]
     }
 
-    if len(doc_types) > 1:
+    if len(doctypes) > 1:
         search_object["query"]["bool"]["must"].append(
             {
                 "bool": {
@@ -1070,7 +1070,7 @@ def search_tags_es(user: User, search_term: str, doc_types: list[str]) -> list[d
                                 "doctype": x
                             }
                         }
-                        for x in doc_types
+                        for x in doctypes
                     ]
                 }
             }
@@ -1086,7 +1086,7 @@ def search_tags_es(user: User, search_term: str, doc_types: list[str]) -> list[d
                                "doctype": "Tag",
                                "name": tag_result["key"],
                                "id": tag_result["key"],
-                               "link": get_tag_link(tag_result["key"], doc_types)
+                               "link": get_tag_link(tag_result["key"], doctypes)
                            }
                            )
 
@@ -1105,7 +1105,7 @@ def search_names(request: HttpRequest) -> JsonResponse:
     Args:
         request: HTTP request containing:
             - term: Search query string (URL-encoded)
-            - doc_type: Optional comma-separated list of document types
+            - doctype: Optional comma-separated list of document types
 
     Returns:
         JSON response containing list of matching documents with names,
@@ -1124,14 +1124,14 @@ def search_names(request: HttpRequest) -> JsonResponse:
     search_term = unquote(request.GET["term"].lower())
     search_term = " ".join([x[:10] for x in re.split(r"\s+", search_term) if len(x) > 1])
 
-    doc_types = get_doc_types_from_request(request)
+    doctypes = get_doctypes_from_request(request)
 
     user = cast(User, request.user)
-    matches = search_names_es(user, search_term, doc_types)
+    matches = search_names_es(user, search_term, doctypes)
     return JsonResponse(matches, safe=False)
 
 
-def search_names_es(user: User, search_term: str, doc_types: list[str]) -> list[dict[str, Any]]:
+def search_names_es(user: User, search_term: str, doctypes: list[str]) -> list[dict[str, Any]]:
     """Search Elasticsearch for objects based on name or equivalent fields.
 
     Performs autocomplete-style search across name, title, artist, and
@@ -1141,7 +1141,7 @@ def search_names_es(user: User, search_term: str, doc_types: list[str]) -> list[
     Args:
         user: The User whose objects to search.
         search_term: The search query string.
-        doc_types: List of document types to filter by. Special values:
+        doctypes: List of document types to filter by. Special values:
             - "image": Matches content_type "image/*"
             - "media": Matches content_type "image/*" or "video/*"
 
@@ -1250,12 +1250,12 @@ def search_names_es(user: User, search_term: str, doc_types: list[str]) -> list[
                     "uuid"]
     }
 
-    if len(doc_types) > 0:
+    if len(doctypes) > 0:
 
-        if "image" in doc_types:
+        if "image" in doctypes:
             # 'image' isn't an official ES doctype, so treat this
             #  as a search for a content type that matches an image.
-            doc_types.remove("image")
+            doctypes.remove("image")
             search_object["query"]["function_score"]["query"]["bool"]["must"].append(
                 {
                     "bool": {
@@ -1271,11 +1271,11 @@ def search_names_es(user: User, search_term: str, doc_types: list[str]) -> list[
                     }
                 }
             )
-        elif "media" in doc_types:
+        elif "media" in doctypes:
             # 'media' isn't an official ES doctype, so treat this
             #  as a search for a content type that matches either
             #  an image or a video
-            doc_types.remove("media")
+            doctypes.remove("media")
             search_object["query"]["function_score"]["query"]["bool"]["must"].append(
                 {
                     "bool": {
@@ -1308,7 +1308,7 @@ def search_names_es(user: User, search_term: str, doc_types: list[str]) -> list[
                                 "doctype": x
                             }
                         }
-                        for x in doc_types
+                        for x in doctypes
                     ]
                 }
             }
@@ -1320,10 +1320,10 @@ def search_names_es(user: User, search_term: str, doc_types: list[str]) -> list[
     cache_checker = is_cached()
 
     for match in results["hits"]["hits"]:
-        doc_type_pretty = get_doctype(match)
-        name = get_name(doc_type_pretty, match["_source"])
+        doctype_pretty = get_doctype(match)
+        name = get_name(doctype_pretty, match["_source"])
 
-        if not cache_checker(doc_type_pretty, name):
+        if not cache_checker(doctype_pretty, name):
             if "date_unixtime" in match["_source"] and match["_source"]["date_unixtime"] is not None:
                 date = datetime.datetime.fromtimestamp(
                     int(match["_source"]["date_unixtime"])
@@ -1336,24 +1336,24 @@ def search_names_es(user: User, search_term: str, doc_types: list[str]) -> list[
                 {
                     "name": name,
                     "date": date,
-                    "doctype": doc_type_pretty,
+                    "doctype": doctype_pretty,
                     "note": match["_source"].get("note", ""),
                     "uuid": match["_source"].get("uuid"),
                     "id": match["_source"].get("uuid"),
                     "important": match["_source"].get("importance"),
                     "url": match["_source"].get("url", None),
-                    "link": get_link(doc_type_pretty.lower(), match["_source"]),
+                    "link": get_link(doctype_pretty.lower(), match["_source"]),
                     "score": match["_score"]
                 }
             )
-            if doc_type_pretty in ["Blob", "Book", "Document"]:
+            if doctype_pretty in ["Blob", "Book", "Document"]:
                 matches[-1]["cover_url"] = Blob.get_cover_url_static(
                     match["_source"].get("uuid"),
                     match["_source"].get("filename"),
                     size="small"
                 )
                 matches[-1]["type"] = "blob"
-            if doc_type_pretty == "Bookmark":
+            if doctype_pretty == "Bookmark":
                 matches[-1]["cover_url"] = Bookmark.thumbnail_url_static(
                     match["_source"].get("uuid"),
                     match["_source"].get("url"),

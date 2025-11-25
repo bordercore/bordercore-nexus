@@ -7,7 +7,7 @@ import django
 from django import urls
 from django.test import RequestFactory
 
-from search.views import (SearchTagDetailView, get_doc_types_from_request,
+from search.views import (SearchTagDetailView, get_doctypes_from_request,
                           get_doctype, get_name, is_cached, sort_results)
 
 pytestmark = [pytest.mark.django_db]
@@ -65,19 +65,19 @@ def test_get_doc_types_from_request():
     request_mock = Mock()
 
     request_mock.GET = {}
-    assert get_doc_types_from_request(request_mock) == []
+    assert get_doctypes_from_request(request_mock) == []
 
-    request_mock.GET = {"doc_type": ""}
-    assert get_doc_types_from_request(request_mock) == []
+    request_mock.GET = {"doctype": ""}
+    assert get_doctypes_from_request(request_mock) == []
 
-    request_mock.GET = {"doc_type": "music"}
-    assert get_doc_types_from_request(request_mock) == ["album", "song"]
+    request_mock.GET = {"doctype": "music"}
+    assert get_doctypes_from_request(request_mock) == ["album", "song"]
 
-    request_mock.GET = {"doc_type": "book"}
-    assert get_doc_types_from_request(request_mock) == ["book"]
+    request_mock.GET = {"doctype": "book"}
+    assert get_doctypes_from_request(request_mock) == ["book"]
 
-    request_mock.GET = {"doc_type": "blob,book,document"}
-    assert get_doc_types_from_request(request_mock) == ["blob", "book", "document"]
+    request_mock.GET = {"doctype": "blob,book,document"}
+    assert get_doctypes_from_request(request_mock) == ["blob", "book", "document"]
 
 
 def test_sort_results():
