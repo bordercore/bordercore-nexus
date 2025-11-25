@@ -1,13 +1,40 @@
+"""Django services module for search application.
+
+This module provides service functions for semantic search, document indexing,
+and document deletion using Elasticsearch.
+"""
+
+from typing import Any, cast
+
 from elasticsearch import RequestError, helpers
 
 from django.conf import settings
 from django.contrib import messages
+from django.http import HttpRequest
 
 from lib.embeddings import len_safe_get_embedding
 from lib.util import get_elasticsearch_connection
 
 
-def semantic_search(request, search):
+def semantic_search(request: HttpRequest, search: str) -> dict[str, Any] | list:
+    """Perform semantic search using embeddings and Elasticsearch.
+
+    Searches for notes using cosine similarity between the query embedding
+    and document embeddings. Results are filtered by user and limited to
+    note document types, returning the top match.
+
+    Args:
+        request: The HTTP request object containing the authenticated user.
+        search: The search query string to generate embeddings from.
+
+    Returns:
+        A dictionary containing Elasticsearch search results with hits,
+        aggregations, and metadata, or an empty list if a RequestError occurs.
+
+    Raises:
+        elasticsearch.RequestError: If the Elasticsearch query fails, an error
+            message is added to the request and an empty list is returned.
+    """
 
     embeddings = len_safe_get_embedding(search)
 
@@ -61,11 +88,12 @@ def semantic_search(request, search):
     try:
         return es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
     except RequestError as e:
-        messages.add_message(request, messages.ERROR, f"Request Error: {e.status_code} {e.info['error']}")
+        error_info = cast(dict[str, Any], e.info)
+        messages.add_message(request, messages.ERROR, f"Request Error: {e.status_code} {error_info.get('error')}")
         return []
 
 
-def index_document(doc: dict) -> None:
+def index_document(doc: dict[str, Any]) -> None:
     """Index a document in Elasticsearch.
 
     This function is the application-wide entry point for indexing a document.
@@ -83,7 +111,7 @@ def index_document(doc: dict) -> None:
     _index_document(doc)
 
 
-def _index_document(doc: dict) -> None:
+def _index_document(doc: dict[str, Any]) -> None:
     """Actual implementation of Elasticsearch document indexing.
 
     This function performs the real Elasticsearch call using the `helpers.bulk`

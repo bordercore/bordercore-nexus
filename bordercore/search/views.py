@@ -1,18 +1,31 @@
+"""
+Views for the search system.
+
+This module contains views for searching across Bordercore objects using
+Elasticsearch, including full-text search, semantic search, tag-based search,
+and autocomplete functionality.
+"""
+
+from __future__ import annotations
+
 import datetime
 import json
 import math
 import operator
 import re
+from typing import Any, cast
 from urllib.parse import unquote, urlparse
 
 import markdown
 from elasticsearch import RequestError
 from rest_framework.decorators import api_view
+from rest_framework.request import Request
 
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.contrib.auth.models import User
+from django.http import HttpRequest, JsonResponse
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views.generic.list import ListView
@@ -32,9 +45,19 @@ from .models import RecentSearch
 SEARCH_LIMIT = 1000
 
 
-def get_creators(matches):
-    """
-    Return all "creator" related fields
+def get_creators(matches: dict[str, Any]) -> str:
+    """Return all "creator" related fields from a match result.
+
+    Extracts author, artist, and photographer fields from the metadata
+    and returns them as a comma-separated string.
+
+    Args:
+        matches: A dictionary containing search result data, expected to
+            have a "metadata" key with creator-related fields.
+
+    Returns:
+        A comma-separated string of creator names, or empty string if
+        no metadata or creators are found.
     """
 
     if "metadata" not in matches:
@@ -52,12 +75,35 @@ def get_creators(matches):
 
 @method_decorator(login_required, name="dispatch")
 class SearchListView(ListView):
+    """View for displaying search results.
+
+    This view handles full-text search queries against Elasticsearch,
+    displays paginated results, and provides filtering by document type.
+    """
 
     template_name = "search/search.html"
     RESULT_COUNT_PER_PAGE = 10
     is_notes_search = False
 
-    def get_paginator(self, page, num_results):
+    def build_pagination_dict(self, page: int, num_results: int) -> dict[str, Any]:
+        """Build pagination data dictionary for search results.
+
+        Args:
+            page: The current page number (1-indexed).
+            num_results: Total number of search results.
+
+        Returns:
+            A dictionary containing pagination information:
+                - page_number: Current page number
+                - num_pages: Total number of pages
+                - total_results: Total number of results
+                - range: List of page numbers to display
+                - has_previous: Whether there is a previous page
+                - has_next: Whether there is a next page
+                - previous_page_number: Previous page number
+                - next_page_number: Next page number
+            Returns empty dict if num_results is 0.
+        """
 
         if num_results == 0:
             return {}
@@ -84,14 +130,36 @@ class SearchListView(ListView):
 
         return paginator
 
-    def get_aggregations(self, context, aggregation):
+    def get_aggregations(self, context: dict[str, Any], aggregation: str) -> list[dict[str, Any]]:
+        """Extract aggregation data from Elasticsearch results.
 
+        Args:
+            context: Context dictionary containing search results with
+                aggregations data.
+            aggregation: The name of the aggregation to extract.
+
+        Returns:
+            A list of dictionaries, each containing:
+                - doctype: The document type name
+                - count: The number of documents of that type
+        """
         aggregations = []
         for x in context["object_list"]["aggregations"][aggregation]["buckets"]:
             aggregations.append({"doctype": x["key"], "count": x["doc_count"]})
         return aggregations
 
-    def filter_results(self, results, search_term):
+    def filter_results(self, results: list[dict[str, Any]], search_term: str | None) -> None:
+        """Process and filter search results for display.
+
+        This method modifies the results in-place, adding computed fields
+        like URLs, cover images, formatted dates, and markdown rendering
+        for certain document types.
+
+        Args:
+            results: List of search result dictionaries from Elasticsearch.
+            search_term: The search query string, or None if no text search
+                was performed.
+        """
 
         for match in results:
             # Django templates don't support variables with underscores or dots, so
@@ -128,8 +196,18 @@ class SearchListView(ListView):
             if match["source"]["doctype"] == "todo":
                 match["source"]["name"] = markdown.markdown(match["source"]["name"])
 
-    def get_queryset(self):
+    def get_queryset(self) -> Any:
+        """Build and execute the Elasticsearch query.
 
+        Constructs an Elasticsearch query based on request parameters,
+        including search term, sorting, filtering, and pagination.
+        Handles both regular text search and semantic search.
+
+        Returns:
+            Elasticsearch search results dictionary with keys like "hits",
+            "aggregations", etc., or empty list if no search parameters
+            are provided (unless is_notes_search is True).
+        """
         if not any(key in self.request.GET for key in [
                 "search",
                 "term_search",
@@ -147,11 +225,12 @@ class SearchListView(ListView):
         doctype = self.request.GET.get("doctype", None)
 
         if search_term:
-            RecentSearch.add(self.request.user, search_term)
+            user = cast(User, self.request.user)
+            RecentSearch.add(user, search_term)
 
         offset = (int(self.request.GET.get("page", 1)) - 1) * self.RESULT_COUNT_PER_PAGE
 
-        search_object = {
+        search_object: dict[str, Any] = {
             "query": {
                 "function_score": {
                     "functions": [
@@ -255,44 +334,87 @@ class SearchListView(ListView):
         try:
             results = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
         except RequestError as e:
-            messages.add_message(self.request, messages.ERROR, f"Request Error: {e.status_code} {e.info['error']}")
+            error_info = cast(dict[str, Any], e.info)
+            messages.add_message(self.request, messages.ERROR, f"Request Error: {e.status_code} {error_info.get('error')}")
             return []
 
         self.filter_results(results["hits"]["hits"], search_term)
 
         return results
 
-    def refine_search(self, search_object):
+    def refine_search(self, search_object: dict[str, Any]) -> dict[str, Any]:
+        """Allow subclasses to modify the search query.
+
+        This method can be overridden by subclasses to customize the
+        Elasticsearch query before execution.
+
+        Args:
+            search_object: The Elasticsearch query dictionary.
+
+        Returns:
+            The (possibly modified) search query dictionary.
+        """
         return search_object
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        """Get context data for the search results template.
+
+        Args:
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Context dictionary containing:
+                - doctype_filter: List of selected document types
+                - title: Page title
+                - aggregations: Document type aggregation data
+                - paginator: JSON-encoded pagination data
+                - count: Total number of results
+                - results: List of search result hits
+        """
         context = super().get_context_data(**kwargs)
 
         context["doctype_filter"] = self.request.GET.get("doctype", "").split(",")
         context["title"] = "Search"
 
         if context["object_list"]:
+            object_list_dict = cast(dict[str, Any], context["object_list"])
             context["aggregations"] = self.get_aggregations(context, "Doctype Filter")
 
             page = int(self.request.GET.get("page", 1))
             context["paginator"] = json.dumps(
-                self.get_paginator(page, context["object_list"]["hits"]["total"]["value"])
+                self.build_pagination_dict(page, object_list_dict["hits"]["total"]["value"])
             )
 
-            context["count"] = context["object_list"]["hits"]["total"]["value"]
-            context["results"] = context["object_list"]["hits"]["hits"]
+            context["count"] = object_list_dict["hits"]["total"]["value"]
+            context["results"] = object_list_dict["hits"]["hits"]
 
         return context
 
 
 @method_decorator(login_required, name="dispatch")
 class NoteListView(SearchListView):
+    """View for displaying note search results.
+
+    A specialized search view that filters results to only show notes
+    and supports tag-based filtering.
+    """
 
     template_name = "blob/note_list.html"
     RESULT_COUNT_PER_PAGE = 10
     is_notes_search = True
 
-    def refine_search(self, search_object):
+    def refine_search(self, search_object: dict[str, Any]) -> dict[str, Any]:
+        """Refine the search query for note-specific searches.
+
+        Adds filters to restrict results to notes and optionally filter
+        by tag. Also ensures the "contents" field is included in results.
+
+        Args:
+            search_object: The Elasticsearch query dictionary.
+
+        Returns:
+            The modified search query dictionary with note-specific filters.
+        """
 
         page = int(self.request.GET.get("page", 1))
         search_object["from_"] = (page - 1) * self.RESULT_COUNT_PER_PAGE
@@ -319,18 +441,32 @@ class NoteListView(SearchListView):
 
         return search_object
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        """Get context data for the note list template.
 
+        Includes pinned notes when no search is performed, and ensures
+        pagination data is properly formatted.
+
+        Args:
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Context dictionary with note-specific data:
+                - pinned_notes: List of pinned notes (when no search)
+                - paginator: JSON-encoded pagination data
+                - Other fields from parent class
+        """
         context = super().get_context_data(**kwargs)
 
         if "search" not in self.request.GET:
-            context["pinned_notes"] = self.request.user.userprofile.pinned_notes.all().only("file", "name", "uuid").order_by("usernote__sort_order")
+            user = cast(User, self.request.user)
+            context["pinned_notes"] = user.userprofile.pinned_notes.all().only("file", "name", "uuid").order_by("usernote__sort_order")
 
         if "results" in context:
             page = int(self.request.GET.get("page", 1))
 
             context["paginator"] = json.dumps(
-                self.get_paginator(page, context["count"])
+                self.build_pagination_dict(page, context["count"])
             )
 
         return context
@@ -338,13 +474,30 @@ class NoteListView(SearchListView):
 
 @method_decorator(login_required, name="dispatch")
 class SearchTagDetailView(ListView):
+    """View for displaying search results filtered by tags.
+
+    This view shows all objects that have been tagged with specific tags,
+    organized by document type.
+    """
 
     template_name = "search/tag_detail.html"
     RESULT_COUNT_PER_PAGE = 1000
 
-    def filter_results(self):
-        results = {}
-        for match in self.object_list["hits"]["hits"]:
+    def filter_results(self) -> dict[str, list[dict[str, Any]]]:
+        """Process and organize search results by document type.
+
+        Transforms Elasticsearch results into a dictionary keyed by
+        document type, with each value being a list of formatted result
+        dictionaries.
+
+        Returns:
+            A dictionary mapping document type names to lists of result
+            dictionaries, each containing fields like name, title, url,
+            uuid, tags, etc.
+        """
+        results: dict[str, list[dict[str, Any]]] = {}
+        object_list_dict = cast(dict[str, Any], self.object_list)
+        for match in object_list_dict["hits"]["hits"]:
 
             result = {
                 "artist": match["_source"].get("artist", ""),
@@ -401,8 +554,16 @@ class SearchTagDetailView(ListView):
 
         return results
 
-    def get_queryset(self):
+    def get_queryset(self) -> Any:
+        """Build and execute Elasticsearch query for tag-based search.
 
+        Constructs a query that matches documents containing all specified
+        tags, with aggregations for document types and additional tags.
+
+        Returns:
+            Elasticsearch search results dictionary containing hits and
+            aggregations.
+        """
         taglist = self.kwargs.get("taglist", "").split(",")
 
         es = get_elasticsearch_connection(host=settings.ELASTICSEARCH_ENDPOINT)
@@ -484,28 +645,48 @@ class SearchTagDetailView(ListView):
 
         return es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        """Get context data for the tag detail template.
 
+        Processes aggregations to provide tag and document type counts,
+        excluding tags that are already being searched for.
+
+        Args:
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Context dictionary containing:
+                - results: Filtered and organized search results
+                - tag_counts: List of (tag, count) tuples for other tags
+                - doctype_counts: List of (doctype, count) tuples
+                - meta_tags: List of meta tag names
+                - doctypes: List of document type names
+                - search_tag_detail_current_tab: Current tab from session
+                - tag_list: List of tags being searched
+                - title: Page title
+        """
         context = super().get_context_data(**kwargs)
 
         context["results"] = self.filter_results()
 
         tag_list = self.kwargs.get("taglist", "").split(",") if "taglist" in self.kwargs else []
 
+        object_list_dict = cast(dict[str, Any], self.object_list)
         # Get a list of tags and their counts, to be displayed
         #  in the "Other tags" dropdown
         context["tag_counts"] = self.get_doc_counts(
             tag_list,
-            self.object_list["aggregations"]["Tag Filter"]
+            object_list_dict["aggregations"]["Tag Filter"]
         )
 
         # Get a list of doc types and their counts
         context["doctype_counts"] = self.get_doc_counts(
             tag_list,
-            self.object_list["aggregations"]["Doctype Filter"]
+            object_list_dict["aggregations"]["Doctype Filter"]
         )
 
-        context["meta_tags"] = [x[0] for x in context["tag_counts"] if x[0] in Tag.get_meta_tags(self.request.user)]
+        user = cast(User, self.request.user)
+        context["meta_tags"] = [x[0] for x in context["tag_counts"] if x[0] in Tag.get_meta_tags(user)]
         context["doctypes"] = [x[0] for x in context["doctype_counts"]]
         context["search_tag_detail_current_tab"] = self.request.session.get("search_tag_detail_current_tab", "")
         context["tag_list"] = tag_list
@@ -513,7 +694,18 @@ class SearchTagDetailView(ListView):
 
         return context
 
-    def get_doc_counts(self, tag_list, aggregation):
+    def get_doc_counts(self, tag_list: list[str], aggregation: dict[str, Any]) -> list[tuple[str, int]]:
+        """Extract counts from aggregation, excluding specified tags.
+
+        Args:
+            tag_list: List of tag names to exclude from the results.
+            aggregation: Elasticsearch aggregation result dictionary
+                containing buckets with keys and doc_count values.
+
+        Returns:
+            A sorted list of (name, count) tuples, sorted by count in
+            descending order, excluding items in tag_list.
+        """
         tag_counts = {}
         for buckets in aggregation["buckets"]:
             if buckets["key"] not in tag_list:
@@ -526,8 +718,26 @@ class SearchTagDetailView(ListView):
 
 @method_decorator(login_required, name="dispatch")
 class SemanticSearchListView(SearchListView):
+    """View for semantic/vector-based search.
 
-    def refine_search(self, search_object):
+    Performs similarity search using embeddings vectors to find documents
+    semantically similar to the search query.
+    """
+
+    def refine_search(self, search_object: dict[str, Any]) -> dict[str, Any]:
+        """Refine the search query for semantic search.
+
+        Replaces the text-based query with a cosine similarity search
+        using embeddings vectors. Removes importance-based scoring in
+        favor of similarity scoring.
+
+        Args:
+            search_object: The Elasticsearch query dictionary.
+
+        Returns:
+            The modified search query dictionary configured for semantic
+            similarity search.
+        """
 
         embeddings = len_safe_get_embedding(self.request.GET["semantic_search"])
 
@@ -552,11 +762,27 @@ class SemanticSearchListView(SearchListView):
         return search_object
 
 
-def sort_results(matches):
+def sort_results(matches: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Sort search results by document type in a predefined order.
 
+    Organizes matches into categories by document type, then returns them
+    in a specific order with category headers (splitters) inserted between
+    each type group.
+
+    Args:
+        matches: List of search result dictionaries, each containing a
+            "doctype" key.
+
+    Returns:
+        A list of result dictionaries, with category splitter dictionaries
+        inserted between each document type group. Splitters have:
+            - id: "__{Type}"
+            - name: "{Type}s"
+            - splitter: True
+    """
     # These categories are sorted according to importance and define
     #  the order matches appear in the search results
-    types = {
+    types: dict[str, list] = {
         "Tag": [],
         "Artist": [],
         "Song": [],
@@ -592,7 +818,18 @@ def sort_results(matches):
     return response
 
 
-def get_link(doc_type, match):
+def get_link(doc_type: str, match: dict[str, Any]) -> str:
+    """Generate a URL for a document based on its type.
+
+    Args:
+        doc_type: The document type (e.g., "bookmark", "song", "album").
+        match: Dictionary containing document data, including uuid and
+            other type-specific fields.
+
+    Returns:
+        A URL string pointing to the detail page for the document, or
+        empty string if the type is not recognized.
+    """
     url = ""
 
     if doc_type == "bookmark":
@@ -616,8 +853,17 @@ def get_link(doc_type, match):
     return url
 
 
-def get_name(doc_type, match):
+def get_name(doc_type: str, match: dict[str, Any]) -> str:
+    """Extract a display name for a document based on its type.
 
+    Args:
+        doc_type: The document type (e.g., "Song", "Artist", "Album").
+        match: Dictionary containing document data with type-specific
+            fields like title, artist, question, or name.
+
+    Returns:
+        A formatted display name string for the document.
+    """
     if doc_type == "Song":
         return f"{match['title']} - {match['artist']}"
     if doc_type == "Artist":
@@ -630,8 +876,20 @@ def get_name(doc_type, match):
     return match["name"].title()
 
 
-def get_doctype(match):
+def get_doctype(match: dict[str, Any]) -> str:
+    """Determine the display document type from a search result.
 
+    For songs, checks highlighted fields to determine if the match was
+    on artist, title, etc., and returns the appropriate type. For other
+    types, returns the doctype from the source.
+
+    Args:
+        match: Search result dictionary containing "_source" with "doctype"
+            and optionally "highlight" fields.
+
+    Returns:
+        A title-cased document type string (e.g., "Song", "Artist", "Album").
+    """
     if match["_source"]["doctype"] == "song" and "highlight" in match:
         highlight_fields = list(match["highlight"].keys())
 
@@ -645,10 +903,21 @@ def get_doctype(match):
     return match["_source"]["doctype"].title()
 
 
-def get_doc_types_from_request(request):
+def get_doc_types_from_request(request: HttpRequest) -> list[str]:
+    """Extract document type filters from request parameters.
 
-    if request.GET.get("doc_type", "") != "":
-        doc_types = request.GET.get("doc_type").split(",")
+    Parses the "doc_type" GET parameter and handles special cases like
+    "music" which maps to multiple document types.
+
+    Args:
+        request: HTTP request object with GET parameters.
+
+    Returns:
+        A list of document type strings to filter by.
+    """
+    doc_type_param = request.GET.get("doc_type", "")
+    if doc_type_param != "":
+        doc_types = doc_type_param.split(",")
     else:
         doc_types = []
 
@@ -660,15 +929,24 @@ def get_doc_types_from_request(request):
     return doc_types
 
 
-def is_cached():
+def is_cached() -> Any:
+    """Create a cache checker function for deduplicating results.
 
-    cache = {
+    Returns a closure that maintains an in-memory cache of seen
+    Artist and Album names to prevent duplicate results in search
+    output.
+
+    Returns:
+        A function that takes (doctype, value) and returns True if
+        the value has been seen before, False otherwise. Only caches
+        "Artist" and "Album" doctypes.
+    """
+    cache: dict[str, dict] = {
         "Artist": {},
         "Album": {}
     }
 
-    def check_cache(doctype, value):
-
+    def check_cache(doctype: str, value: str) -> bool:
         if doctype not in ["Artist", "Album"]:
             return False
 
@@ -682,28 +960,55 @@ def is_cached():
 
 
 @login_required
-def search_tags_and_names(request):
-    """
-    Endpoint for top-search "auto-complete" matching tags and names
-    """
+def search_tags_and_names(request: HttpRequest) -> JsonResponse:
+    """Endpoint for top-search autocomplete matching tags and names.
 
+    Performs parallel searches for matching document names and tags,
+    combines the results, sorts them by type, and returns JSON.
+
+    Args:
+        request: HTTP request containing:
+            - term: Search query string
+            - doc_type: Optional comma-separated list of document types
+
+    Returns:
+        JSON response containing sorted list of matching tags and documents.
+    """
     search_term = request.GET["term"].lower()
 
     doc_types = get_doc_types_from_request(request)
 
-    matches = search_names_es(request.user, search_term, doc_types)
+    user = cast(User, request.user)
+    matches = search_names_es(user, search_term, doc_types)
 
     # Add tag search results to the list of matches
-    matches.extend(search_tags_es(request.user, search_term, doc_types))
+    matches.extend(search_tags_es(user, search_term, doc_types))
 
     return JsonResponse(sort_results(matches), safe=False)
 
 
-def search_tags_es(user, search_term, doc_types):
+def search_tags_es(user: User, search_term: str, doc_types: list[str]) -> list[dict[str, Any]]:
+    """Search Elasticsearch for tags matching the search term.
+
+    Performs a tag autocomplete search and returns matching tag names
+    along with their associated document types.
+
+    Args:
+        user: The User whose tags to search.
+        search_term: The search query string (lowercase).
+        doc_types: List of document types to filter by.
+
+    Returns:
+        A list of dictionaries, each containing:
+            - doctype: "Tag"
+            - name: Tag name
+            - id: Tag name (same as name)
+            - link: URL to search for objects with this tag
+    """
 
     es = get_elasticsearch_connection(host=settings.ELASTICSEARCH_ENDPOINT)
 
-    search_object = {
+    search_object: dict[str, Any] = {
         "query": {
             "bool": {
                 "must": [
@@ -773,7 +1078,7 @@ def search_tags_es(user, search_term, doc_types):
 
     results = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
 
-    matches = []
+    matches: list[dict[str, Any]] = []
     for tag_result in results["aggregations"]["Distinct Tags"]["buckets"]:
         if tag_result["key"].lower().find(search_term.lower()) != -1:
             matches.insert(0,
@@ -790,8 +1095,22 @@ def search_tags_es(user, search_term, doc_types):
 
 
 @login_required
-def search_names(request):
+def search_names(request: HttpRequest) -> JsonResponse:
+    """Endpoint for searching document names via autocomplete.
 
+    Performs a name-based search with special handling for ngram tokenizer
+    limitations: truncates terms to 10 characters and filters out terms
+    shorter than 2 characters.
+
+    Args:
+        request: HTTP request containing:
+            - term: Search query string (URL-encoded)
+            - doc_type: Optional comma-separated list of document types
+
+    Returns:
+        JSON response containing list of matching documents with names,
+        dates, UUIDs, and other metadata.
+    """
     # Limit each search term to 10 characters, since we've configured the
     # Elasticsearch ngram_tokenizer to only analyze tokens up to that many
     # characters (see mappings.json). Otherwise no results will be returned
@@ -807,19 +1126,44 @@ def search_names(request):
 
     doc_types = get_doc_types_from_request(request)
 
-    matches = search_names_es(request.user, search_term, doc_types)
+    user = cast(User, request.user)
+    matches = search_names_es(user, search_term, doc_types)
     return JsonResponse(matches, safe=False)
 
 
-def search_names_es(user, search_term, doc_types):
-    """
-    Search Elasticsearch for objects based on a name, or equivalent field (eg title).
-    Primarily used by autocomplete inputs.
+def search_names_es(user: User, search_term: str, doc_types: list[str]) -> list[dict[str, Any]]:
+    """Search Elasticsearch for objects based on name or equivalent fields.
+
+    Performs autocomplete-style search across name, title, artist, and
+    question fields. Supports filtering by document type and special
+    handling for image and media content types.
+
+    Args:
+        user: The User whose objects to search.
+        search_term: The search query string.
+        doc_types: List of document types to filter by. Special values:
+            - "image": Matches content_type "image/*"
+            - "media": Matches content_type "image/*" or "video/*"
+
+    Returns:
+        A list of dictionaries, each containing:
+            - name: Display name for the object
+            - date: Formatted date string
+            - doctype: Document type
+            - note: Optional note field
+            - uuid: Object UUID
+            - id: Object UUID (same as uuid)
+            - important: Importance score
+            - url: Object URL
+            - link: Detail page URL
+            - score: Search relevance score
+            - cover_url: Optional cover image URL
+            - type: Optional type indicator ("blob" or "bookmark")
     """
 
     es = get_elasticsearch_connection(host=settings.ELASTICSEARCH_ENDPOINT)
 
-    search_object = {
+    search_object: dict[str, Any] = {
         "query": {
             "function_score": {
                 "field_value_factor": {
@@ -1020,8 +1364,26 @@ def search_names_es(user, search_term, doc_types):
 
 
 @api_view(["GET"])
-def search_music(request):
+def search_music(request: Request) -> JsonResponse:
+    """API endpoint for searching music (songs, artists, albums).
 
+    Performs music-specific searches with support for filtering by artist,
+    song title, or album. When searching by album, returns all songs in
+    track order.
+
+    Args:
+        request: REST framework request containing query parameters:
+            - artist: Optional artist name to filter by
+            - song: Optional song title to filter by
+            - album: Optional album title to filter by
+
+    Returns:
+        JSON response containing list of song dictionaries with:
+            - artist: Artist name
+            - uuid: Song UUID
+            - title: Song title
+            - track: Optional track number (for album searches)
+    """
     limit = 10
 
     artist = None
@@ -1037,7 +1399,7 @@ def search_music(request):
 
     es = get_elasticsearch_connection(host=settings.ELASTICSEARCH_ENDPOINT)
 
-    search_object = {
+    search_object: dict[str, Any] = {
         "query": {
             "function_score": {
                 "functions": [

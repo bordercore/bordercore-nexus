@@ -50,6 +50,7 @@ jobs:
           bordercore/node/ \
           bordercore/metrics/ \
           bordercore/music/ \
+          bordercore/search/ \
           bordercore/tag/ \
           bordercore/todo/
 

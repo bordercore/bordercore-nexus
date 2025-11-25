@@ -1,3 +1,12 @@
+"""
+Models for the search system.
+
+This module defines RecentSearch, which tracks a user's recent search queries
+and maintains them in a sorted order for quick access.
+"""
+
+from __future__ import annotations
+
 import uuid
 
 from django.contrib.auth.models import User
@@ -8,6 +17,13 @@ from lib.mixins import TimeStampedModel
 
 
 class RecentSearch(TimeStampedModel):
+    """A single recent search query entry for a user.
+
+    Each RecentSearch tracks one search text string, maintains a sort order
+    for display purposes, and is associated with a user. The system maintains
+    a maximum number of recent searches per user (MAX_SIZE).
+    """
+
     uuid = models.UUIDField(default=uuid.uuid4, editable=False)
     search_text = models.TextField()
     sort_order = models.IntegerField(default=1)
@@ -15,12 +31,28 @@ class RecentSearch(TimeStampedModel):
 
     MAX_SIZE = 10
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """Return string representation of the search.
+
+        Returns:
+            The search text, or empty string if search_text is None.
+        """
         return self.search_text or ""
 
     @staticmethod
-    def add(user, search_text):
+    def add(user: User, search_text: str) -> None:
+        """Add a new search to the user's recent searches list.
 
+        This method ensures that:
+        - Duplicate searches are removed before adding the new one
+        - The new search appears first (sort_order = 1)
+        - All existing searches are reordered accordingly
+        - Only MAX_SIZE searches are kept per user (oldest are deleted)
+
+        Args:
+            user: The User who performed the search.
+            search_text: The text that was searched for.
+        """
         # Delete any previous rows containing this search text to avoid duplicates
         exists = RecentSearch.objects.filter(search_text=search_text).first()
         if exists:
