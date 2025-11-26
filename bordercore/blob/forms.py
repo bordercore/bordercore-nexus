@@ -1,11 +1,22 @@
+"""Django forms for the blob application.
+
+This module contains Django form classes for handling blob-related forms,
+including file uploads, metadata editing, and validation.
+"""
+from __future__ import annotations
+
 import datetime
 import hashlib
 import re
+from typing import Any, cast
 
 from django import forms
+from django.contrib.auth.models import User
+from django.core.files.uploadedfile import UploadedFile
 from django.forms import (CheckboxInput, ModelForm, Textarea, TextInput,
                           ValidationError)
 from django.forms.fields import CharField, IntegerField
+from django.http import HttpRequest
 from django.urls import reverse_lazy
 from django.utils.safestring import mark_safe
 
@@ -16,9 +27,35 @@ from tag.models import Tag
 
 
 class BlobForm(ModelForm):
+    """Form for creating and editing ``Blob`` instances.
 
-    def __init__(self, *args, **kwargs):
+    This form handles file uploads, metadata editing (name, date, tags, content,
+    note, importance), filename validation, duplicate file detection via SHA1
+    checksum, and date format validation.
 
+    Attributes:
+        request: The HTTP request object, used for user-specific tag filtering.
+        filename: Optional filename field for manual filename entry.
+        file_modified: Hidden integer field for tracking file modification time.
+    """
+
+    request: HttpRequest | None
+    filename: CharField
+    file_modified: IntegerField
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Initialize the BlobForm instance.
+
+        Sets up form fields with appropriate widgets and initial values.
+        The request object is extracted from kwargs to enable user-specific
+        tag filtering. For existing blobs, pre-populates fields with current
+        values including tags and formatted dates.
+
+        Args:
+            *args: Variable length argument list passed to parent ModelForm.
+            **kwargs: Arbitrary keyword arguments. May contain 'request' key
+                which is extracted and stored as self.request.
+        """
         # The request object is passed in from a view's SongForm() constructor
         self.request = kwargs.pop("request", None)
 
@@ -27,7 +64,10 @@ class BlobForm(ModelForm):
         self.fields["file"].required = False
         self.fields["file"].label = "File"
         self.fields["date"].required = False
-        self.fields["date"].input_formats = ["%m-%d-%Y"]
+
+        date_field = cast(forms.DateField, self.fields["date"])
+        date_field.input_formats = ["%m-%d-%Y"]
+
         self.fields["date"].initial = ""
         self.fields["content"].required = False
         self.fields["note"].required = False
@@ -46,16 +86,17 @@ class BlobForm(ModelForm):
         else:
             self.initial["date"] = datetime.date.today().strftime("%Y-%m-%dT00:00")
 
+        user = cast(User, self.request.user)
         self.fields["tags"] = ModelCommaSeparatedChoiceField(
             request=self.request,
             required=False,
-            queryset=Tag.objects.filter(user=self.request.user),
+            queryset=Tag.objects.filter(user=user),
             to_field_name="name")
 
     filename = CharField(required=False, widget=forms.TextInput(attrs={"class": "form-control"}))
     file_modified = IntegerField(required=False, widget=forms.HiddenInput())
 
-    def clean_filename(self):
+    def clean_filename(self) -> str:
         filename = str(self.cleaned_data.get("filename"))
         if filename in ILLEGAL_FILENAMES:
             self.add_error("filename", ValidationError(f"Error: Illegal filename: {filename}"))
@@ -64,14 +105,28 @@ class BlobForm(ModelForm):
 
         return filename
 
-    def clean_file(self):
+    def clean_file(self) -> UploadedFile | None:
+        """Validate the file field.
+
+        Checks for duplicate files by computing the SHA1 checksum of uploaded
+        files and comparing against existing blobs. Only performs duplicate
+        checking when a new file is uploaded, not when editing metadata only.
+
+        Returns:
+            The cleaned file object if validation passes, or None if no file
+            was uploaded.
+
+        Raises:
+            ValidationError: If a duplicate file with the same SHA1 checksum
+                already exists.
+        """
         file = self.cleaned_data.get("file")
 
         # This insures that we only check for a dupe if the user
         #  added a file via file upload rather than simply edit the
         #  metadata for a file. Without this check the actual file
         #  can't be found to compute the sha1sum.
-        if "file" in self.files:
+        if "file" in self.files and file is not None:
             hasher = hashlib.sha1()
             for chunk in file.chunks():
                 hasher.update(chunk)
@@ -85,8 +140,23 @@ class BlobForm(ModelForm):
 
         return file
 
-    def clean_date(self):
+    def clean_date(self) -> str:
+        """Validate the date field.
+
+        Ensures that the date string matches one of the accepted formats:
+        YYYY-MM-DD HH:MM:SS, YYYY-MM-DD, YYYY-MM, YYYY, or a date range
+        format [YYYY-MM TO YYYY-MM]. Empty dates are also allowed.
+
+        Returns:
+            The cleaned date string if validation passes.
+
+        Raises:
+            ValidationError: If the date format is invalid.
+        """
         date = self.cleaned_data.get("date")
+
+        if date is None:
+            return ""
 
         regex1 = r"^\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d$"
         regex2 = r"^\d\d\d\d-\d\d-\d\d$"

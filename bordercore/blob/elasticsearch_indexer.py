@@ -1,3 +1,14 @@
+"""
+Elasticsearch indexing utilities for blob documents.
+
+This module provides functions and classes for indexing blob documents in
+Elasticsearch, including content extraction, metadata processing, and document
+management. It handles various file types, extracts text content, and manages
+the Elasticsearch document structure for blob search functionality.
+"""
+
+from __future__ import annotations
+
 import base64
 import io
 import json
@@ -9,6 +20,7 @@ import uuid
 from datetime import datetime
 from io import BytesIO
 from pathlib import PurePath
+from typing import Any
 
 import boto3
 import elasticsearch_dsl
@@ -46,10 +58,21 @@ logging.getLogger().setLevel(logging.INFO)
 log = logging.getLogger(__name__)
 
 
-def elasticsearch_merge(data, new_data, raise_on_conflict=False):
-    """
-    This is a monkeypatched version of elasticsearch_dsl.utils.merge()
-    which avoids an issue when indexing documents with date_range fields.
+def elasticsearch_merge(
+    data: dict[str, Any],
+    new_data: dict[str, Any],
+    raise_on_conflict: bool = False,
+) -> None:
+    """Monkeypatched version of elasticsearch_dsl.utils.merge().
+
+    This function avoids an issue when indexing documents with date_range fields
+    by skipping Range objects during merge operations.
+
+    Args:
+        data: The base dictionary to merge into.
+        new_data: The dictionary containing new data to merge.
+        raise_on_conflict: If True, raise ValueError when conflicting keys are
+            found. If False, silently overwrite.
     """
     import collections.abc as collections_abc
 
@@ -81,6 +104,12 @@ def elasticsearch_merge(data, new_data, raise_on_conflict=False):
 
 
 class ESBlob(Document_ES):
+    """Elasticsearch document mapping for blob objects.
+
+    This class defines the schema and field mappings for blob documents in
+    Elasticsearch, including metadata fields, content fields, and date ranges.
+    """
+
     uuid = Text()
     bordercore_id = Long()
     sha1sum = Text()
@@ -102,7 +131,17 @@ class ESBlob(Document_ES):
         name = ELASTICSEARCH_INDEX
 
 
-def get_doctype(blob, metadata):
+def get_doctype(blob: dict[str, Any], metadata: dict[str, Any]) -> str:
+    """Determine the document type for a blob based on its properties.
+
+    Args:
+        blob: Dictionary containing blob information, including "is_note" and
+            "sha1sum" fields.
+        metadata: Dictionary containing metadata, potentially including "is_book".
+
+    Returns:
+        Document type string: "note", "book", "blob", or "document".
+    """
     if blob["is_note"] is True:
         return "note"
     if "is_book" in metadata:
@@ -112,13 +151,37 @@ def get_doctype(blob, metadata):
     return "document"
 
 
-def is_ingestible_file(filename):
+def is_ingestible_file(filename: str | PurePath) -> bool:
+    """Check if a file type is ingestible for content extraction.
+
+    Args:
+        filename: The filename or path to check.
+
+    Returns:
+        True if the file extension is in the list of ingestible file types,
+        False otherwise.
+    """
     extension = PurePath(str(filename)).suffix.lower().lstrip(".")
     return extension in FILE_TYPES_TO_INGEST
 
 
-def get_blob_info(**kwargs):
+def get_blob_info(**kwargs: Any) -> dict[str, Any]:
+    """Retrieve blob information from the Bordercore REST API.
 
+    Fetches blob data by either UUID or SHA1 checksum, processes metadata into
+    a separate structure, and returns the complete blob information.
+
+    Args:
+        **kwargs: Must contain either "uuid" or "sha1sum" as a keyword argument.
+
+    Returns:
+        Dictionary containing blob information with metadata extracted into a
+        separate "metadata" field.
+
+    Raises:
+        ValueError: If neither "uuid" nor "sha1sum" is provided in kwargs.
+        Exception: If the API request returns a non-200 status code.
+    """
     if "sha1sum" in kwargs:
         prefix = "sha1sums"
         param = kwargs["sha1sum"]
@@ -143,7 +206,7 @@ def get_blob_info(**kwargs):
 
     # Extract the blob's metadata and store it separately, since it will
     #  be indexed in its own Elasticsearch field
-    metadata = {}
+    metadata: dict[str, list[Any]] = {}
 
     for x in info["metadata"]:
         for key, value in x.items():
@@ -162,8 +225,15 @@ def get_blob_info(**kwargs):
     }
 
 
-def get_blob_contents_from_s3(blob):
+def get_blob_contents_from_s3(blob: dict[str, Any]) -> bytes:
+    """Download blob file contents from S3.
 
+    Args:
+        blob: Dictionary containing blob information with "uuid" and "file" fields.
+
+    Returns:
+        The binary contents of the blob file.
+    """
     blob_contents = BytesIO()
     s3_key = f'{S3_KEY_PREFIX}/{blob["uuid"]}/{blob["file"]}'
     s3_client = boto3.client("s3")
@@ -173,8 +243,21 @@ def get_blob_contents_from_s3(blob):
     return blob_contents.read()
 
 
-def get_unixtime_from_string(date):
+def get_unixtime_from_string(date: str | None) -> str | None:
+    """Convert a date string to Unix timestamp string.
 
+    Supports various date formats including full datetime, date-only, year-month,
+    year-only, and date ranges. Returns None for empty or None input.
+
+    Args:
+        date: Date string in one of the supported formats, or None/empty string.
+
+    Returns:
+        Unix timestamp as a string, or None if input was None or empty.
+
+    Raises:
+        ValueError: If the date format is not recognized.
+    """
     if date is None or date == "":
         return None
 
@@ -200,8 +283,19 @@ def get_unixtime_from_string(date):
     return return_date
 
 
-def get_range_from_date(date):
+def get_range_from_date(date: str) -> Range:
+    """Convert a date string to an Elasticsearch Range object.
 
+    If the date is a range format "[YYYY-MM TO YYYY-MM]", creates a range with
+    gte and lte bounds. Otherwise, creates a range with the same date for both
+    bounds.
+
+    Args:
+        date: Date string, optionally in range format "[YYYY-MM TO YYYY-MM]".
+
+    Returns:
+        Elasticsearch Range object with appropriate gte and lte values.
+    """
     m = re.search(r"^\[(\d\d\d\d-\d\d) TO (\d\d\d\d-\d\d)\]$", date)
     if m:
         range = Range(gte=m.group(1), lte=m.group(2))
@@ -211,8 +305,15 @@ def get_range_from_date(date):
     return range
 
 
-def get_duration(filename):
+def get_duration(filename: str) -> float:
+    """Extract video duration using ffprobe.
 
+    Args:
+        filename: Path to the video file.
+
+    Returns:
+        Duration in seconds as a float.
+    """
     result = subprocess.run(
         [
             "ffprobe",
@@ -230,14 +331,29 @@ def get_duration(filename):
     return float(result.stdout)
 
 
-def get_num_pages(content):
+def get_num_pages(content: bytes) -> int:
+    """Extract the number of pages from a PDF document.
 
+    Args:
+        content: Binary PDF content.
+
+    Returns:
+        Number of pages in the PDF.
+    """
     doc = fitz.open("pdf", io.BytesIO(content))
     return doc.page_count
 
 
-def delete_metadata(es, uuid):
+def delete_metadata(es: Any, uuid: str) -> None:
+    """Remove metadata field from an Elasticsearch document.
 
+    Uses an update_by_query operation to remove the "metadata" field from the
+    document matching the given UUID.
+
+    Args:
+        es: Elasticsearch client connection.
+        uuid: UUID of the document to update.
+    """
     q = {
         "query": {
             "term": {
@@ -253,7 +369,15 @@ def delete_metadata(es, uuid):
     es.update_by_query(body=q, index=ELASTICSEARCH_INDEX)
 
 
-def create_embeddings(uuid):
+def create_embeddings(uuid: str) -> None:
+    """Trigger an AWS Lambda function to create embeddings for a blob.
+
+    Invokes the "CreateEmbeddings" Lambda function asynchronously to generate
+    embeddings for the blob with the given UUID.
+
+    Args:
+        uuid: UUID of the blob to create embeddings for.
+    """
     lambda_client = boto3.client("lambda")
     lambda_client.invoke(
         FunctionName="CreateEmbeddings",
@@ -262,9 +386,25 @@ def create_embeddings(uuid):
     )
 
 
-def index_blob(**kwargs):
+def index_blob(**kwargs: Any) -> None:
+    """Index a blob document in Elasticsearch.
 
-    es = None
+    Retrieves blob information, processes content if the file has changed,
+    extracts metadata, and indexes or updates the document in Elasticsearch.
+    Handles both new blob indexing and metadata-only updates.
+
+    Args:
+        **kwargs: Keyword arguments including:
+            - "uuid" or "sha1sum": Required identifier for the blob.
+            - "create_connection": If True (default), create Elasticsearch
+              connection. If False, use existing connection.
+            - "extra_fields": Dictionary of additional fields to include.
+            - "file_changed": If True (default), re-process file content.
+              If False, update metadata only.
+            - "new_blob": If True (default), treat as new blob. If False,
+              remove existing metadata before update.
+    """
+    es: Any = None
     if kwargs.get("create_connection", True):
         es = get_elasticsearch_connection()
 

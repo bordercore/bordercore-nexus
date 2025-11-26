@@ -46,6 +46,9 @@ exclude = '''
     |
     # Exclude all migration files
     (^|/)migrations/
+    |
+    # Exclude blob management commands
+    bordercore/blob/management/commands/
  )
 '''
 

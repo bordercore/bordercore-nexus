@@ -6,7 +6,7 @@ blobs and other objects like collections and nodes.
 """
 import json
 import logging
-from typing import Any, cast
+from typing import Any, Generator, Iterator, cast
 
 from django.apps import apps
 from django.conf import settings
@@ -470,12 +470,16 @@ class BlobImportView(View):
         url = request.POST.get("url", None)
 
         user = cast(User, request.user)
-        try:
-            blob = import_blob(user, url)
-        except Exception as e:
-            messages.add_message(request, messages.ERROR, str(e))
+        blob: Blob | None = None
+        if not url:
+            messages.add_message(request, messages.ERROR, "URL is required.")
+        else:
+            try:
+                blob = import_blob(user, url)
+            except Exception as e:
+                messages.add_message(request, messages.ERROR, str(e))
 
-        if not messages.get_messages(request):
+        if blob:
             return HttpResponseRedirect(reverse("blob:detail", kwargs={"uuid": blob.uuid}))
         return render(request, self.template_name, {})
 
@@ -932,10 +936,12 @@ def chat(request: HttpRequest) -> StreamingHttpResponse:
     """
     user = cast(User, request.user)
     try:
-        content_iterator = chatbot(request, request.POST)
+        content_iterator: Generator[str, None, None] = chatbot(request, request.POST)
     except Exception as e:
         log.error("Chat service failed for user %s: %s", user.id, e, exc_info=True)
-        content_iterator = iter([f"An error occurred: {e}"])
+        def error_generator() -> Generator[str, None, None]:
+            yield f"An error occurred: {e}"
+        content_iterator = error_generator()
 
     return StreamingHttpResponse(content_iterator, content_type="text/plain")
 

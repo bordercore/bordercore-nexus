@@ -1,3 +1,10 @@
+"""Django services module for blob application.
+
+This module provides service functions for managing blobs, including retrieval,
+importing from external sources (Instagram, ArtStation, New York Times), and
+chatbot functionality using OpenAI.
+"""
+
 import datetime
 import hashlib
 import itertools
@@ -7,7 +14,8 @@ import re
 import urllib.request
 from collections import defaultdict
 from pathlib import Path
-from urllib.parse import urlparse
+from typing import Any, Generator
+from urllib.parse import ParseResult, urlparse
 
 import humanize
 import instaloader
@@ -21,7 +29,8 @@ from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.core.files import File
 from django.core.files.temp import NamedTemporaryFile
-from django.db.models import Q
+from django.db.models import Q, QuerySet
+from django.http import HttpRequest
 from django.urls import reverse
 from django.utils import timezone
 
@@ -32,10 +41,35 @@ from lib.util import get_elasticsearch_connection, is_image, is_pdf, is_video
 from search.services import semantic_search
 
 
-def get_recent_blobs(user, limit=10, skip_content=False):
-    """
-    Return a list of the most recently created blobs,
-    along with counts of their doctypes.
+def get_recent_blobs(user: User, limit: int = 10, skip_content: bool = False) -> tuple[list[dict[str, Any]], dict[str, int]]:
+    """Get the most recently created blobs for a user.
+
+    Retrieves the most recently created blobs for the specified user, along
+    with counts of their doctypes. Results are cached per user and include
+    blob metadata, tags, URLs, and optionally content previews.
+
+    Args:
+        user: The user to get recent blobs for.
+        limit: Maximum number of blobs to retrieve. Defaults to 10.
+        skip_content: Whether to skip including blob content in the results.
+            Defaults to False.
+
+    Returns:
+        A tuple containing:
+            - List of blob dictionaries with metadata including:
+                - name: Blob name
+                - tags: List of tag names
+                - url: URL to blob detail page
+                - delta_days: Days since blob was last modified
+                - uuid: Blob UUID as string
+                - doctype: Document type
+                - type: Always "blob"
+                - content: Blob content preview (if skip_content is False)
+                - content_size: Humanized content size (if available)
+                - cover_url: Cover image URL (for images/PDFs/videos)
+                - cover_url_small: Small cover image URL (for images/PDFs/videos)
+            - Dictionary mapping doctype names to counts, including an "all"
+              key with the total count
     """
 
     # Create user-specific cache key
@@ -92,9 +126,27 @@ def get_recent_blobs(user, limit=10, skip_content=False):
     return returned_blob_list, doctypes
 
 
-def get_recent_media(user, limit=10):
-    """
-    Return a list of the most recently created images and video.
+def get_recent_media(user: User, limit: int = 10) -> list[dict[str, Any]]:
+    """Get the most recently created images and videos for a user.
+
+    Retrieves the most recently created image and video blobs for the
+    specified user. Results are cached per user and include blob metadata,
+    tags, URLs, and cover image URLs.
+
+    Args:
+        user: The user to get recent media for.
+        limit: Maximum number of media items to retrieve. Defaults to 10.
+
+    Returns:
+        List of blob dictionaries with metadata including:
+            - name: Blob name
+            - tags: List of tag names
+            - url: URL to blob detail page
+            - delta_days: Days since blob was last modified
+            - uuid: Blob UUID as string
+            - type: Always "blob"
+            - cover_url: Cover image URL
+            - cover_url_small: Small cover image URL
     """
 
     # Create user-specific cache key
@@ -142,9 +194,24 @@ def get_recent_media(user, limit=10):
     return returned_image_list
 
 
-def get_recently_viewed(user):
-    """
-    Get a list of recently viewed blobs and nodes
+def get_recently_viewed(user: User) -> list[dict[str, Any]]:
+    """Get a list of recently viewed blobs and nodes for a user.
+
+    Retrieves recently viewed blobs and nodes for the specified user,
+    ordered by most recently viewed first. Includes metadata such as
+    URLs, cover images, doctypes, names, and UUIDs.
+
+    Args:
+        user: The user to get recently viewed items for.
+
+    Returns:
+        List of dictionaries containing recently viewed items with:
+            - url: URL to detail page (blob or node)
+            - cover_url: Cover image URL (for blobs only)
+            - cover_url_small: Small cover image URL (for blobs only)
+            - doctype: Document type (capitalized for blobs, "Node" for nodes)
+            - name: Item name
+            - uuid: Item UUID
     """
 
     objects = RecentlyViewedBlob.objects.filter(
@@ -171,7 +238,7 @@ def get_recently_viewed(user):
                     "uuid": x.blob.uuid
                 }
             )
-        else:
+        elif x.node:
             object_list.append(
                 {
                     "url": reverse("node:detail", kwargs={"uuid": x.node.uuid}),
@@ -184,11 +251,32 @@ def get_recently_viewed(user):
     return object_list
 
 
-def get_books(user, tag=None, search=None):
+def get_books(user: User, tag: str | None = None, search: str | None = None) -> dict[str, Any]:
+    """Search for book blobs using Elasticsearch.
+
+    Searches for book-type blobs in Elasticsearch, optionally filtered by
+    tag or search term. Results are ordered by last modified date (newest first).
+
+    Args:
+        user: The user to scope the search to.
+        tag: Optional tag name to filter results by. If provided, increases
+            result limit to 1000.
+        search: Optional search term to match against metadata, name, and title
+            fields. If provided, increases result limit to 1000.
+
+    Returns:
+        Elasticsearch search result dictionary containing:
+            - hits: Search results with document metadata
+            - Other Elasticsearch response fields
+
+    Note:
+        Default result limit is 10, but increases to 1000 when tag or search
+        parameters are provided.
+    """
 
     es = get_elasticsearch_connection(host=settings.ELASTICSEARCH_ENDPOINT)
 
-    search_object = {
+    search_object: dict[str, Any] = {
         "query": {
             "bool": {
                 "must": [
@@ -252,9 +340,24 @@ def get_books(user, tag=None, search=None):
     return es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
 
 
-def get_blob_sizes(blob_list):
-    """
-    Query Elasticsearch for the sizes of a list of blobs
+def get_blob_sizes(blob_list: QuerySet[Blob]) -> dict[str, dict[str, Any]]:
+    """Query Elasticsearch for the sizes of a list of blobs.
+
+    Retrieves file size information from Elasticsearch for the specified
+    blobs. Uses a short timeout to avoid blocking on slow Elasticsearch
+    connections.
+
+    Args:
+        blob_list: QuerySet of Blob objects to get sizes for.
+
+    Returns:
+        Dictionary mapping blob UUID strings to dictionaries containing:
+            - size: File size in bytes
+            - uuid: Blob UUID
+
+    Note:
+        Only blobs found in Elasticsearch will be included in the result.
+        Missing blobs are silently excluded.
     """
 
     search_object = {
@@ -284,16 +387,42 @@ def get_blob_sizes(blob_list):
     return blob_cache
 
 
-def get_blob_naturalsize(blob_sizes, blob):
-    """
-    Get a humanized size for a blob, when given in bytes
+def get_blob_naturalsize(blob_sizes: dict[str, dict[str, Any]], blob: dict[str, Any]) -> None:
+    """Add a humanized size string to a blob dictionary.
+
+    Modifies the blob dictionary in-place to add a "content_size" key with
+    a human-readable file size (e.g., "1.5 MB") if size information is
+    available for the blob.
+
+    Args:
+        blob_sizes: Dictionary mapping blob UUID strings to size information.
+        blob: Blob dictionary to modify. Must contain a "uuid" key.
+
+    Note:
+        This function modifies the blob dictionary in-place. If size
+        information is not available, the blob dictionary is not modified.
     """
 
     if blob["uuid"] in blob_sizes and "size" in blob_sizes[blob["uuid"]]:
         blob["content_size"] = humanize.naturalsize(blob_sizes[blob["uuid"]]["size"])
 
 
-def import_blob(user, url):
+def import_blob(user: User, url: str) -> Blob:
+    """Import a blob from an external URL.
+
+    Determines the source domain from the URL and delegates to the
+    appropriate import function for Instagram, New York Times, or ArtStation.
+
+    Args:
+        user: The user importing the blob.
+        url: The URL to import from.
+
+    Returns:
+        The created Blob instance.
+
+    Raises:
+        ValueError: If the domain is not supported for importing.
+    """
 
     parsed_url = urlparse(url)
 
@@ -309,9 +438,24 @@ def import_blob(user, url):
     raise ValueError(f"Site not supported for importing: <strong>{domain}</strong>")
 
 
-def parse_shortcode(shortcode):
-    """
-    If the shortcode was given in the form of a url, extract it.
+def parse_shortcode(shortcode: str) -> str:
+    """Extract a shortcode from a URL or return it if already a shortcode.
+
+    Parses various URL formats to extract the shortcode identifier used
+    by Instagram and ArtStation. Handles full URLs, partial URLs, and
+    plain shortcode strings.
+
+    Args:
+        shortcode: A URL string or shortcode identifier. Examples:
+            - "https://www.instagram.com/p/CPLicD6K1uv/"
+            - "https://www.artstation.com/artwork/CPLicD6K1uv/"
+            - "CPLicD6K1uv"
+
+    Returns:
+        The extracted shortcode string.
+
+    Raises:
+        ValueError: If the shortcode cannot be parsed from the input.
     """
 
     patterns = [
@@ -334,7 +478,17 @@ def parse_shortcode(shortcode):
     raise ValueError(f"Can't parse shortcode from {shortcode}")
 
 
-def get_sha1sum(filename):
+def get_sha1sum(filename: str) -> str:
+    """Calculate the SHA-1 hash of a file.
+
+    Reads a file in chunks and calculates its SHA-1 hash digest.
+
+    Args:
+        filename: Path to the file to hash.
+
+    Returns:
+        Hexadecimal string representation of the SHA-1 hash.
+    """
 
     buffer_size = 65536
 
@@ -350,22 +504,52 @@ def get_sha1sum(filename):
     return sha1.hexdigest()
 
 
-def parse_date(date):
-    """
-    Return the date without the time portion.
-    For example, if given '2021-08-15 23:40:56', return '2021-08-15'
+def parse_date(date: str | datetime.datetime) -> str:
+    """Extract the date portion from a datetime string.
+
+    Parses a datetime string and returns only the date portion (YYYY-MM-DD).
+    If parsing fails, converts the input to a string.
+
+    Args:
+        date: A datetime string or datetime object. Example:
+            "2021-08-15 23:40:56" or datetime object.
+
+    Returns:
+        Date string in YYYY-MM-DD format, or string representation of the
+        input if parsing fails.
     """
     patterns = [r"^(\d\d\d\d-\d\d-\d\d)", r"^(\d\d\d\d-\d\d-\d\d)"]
 
+    date_str = str(date)
     for p in patterns:
-        matches = re.compile(p).match(str(date))
+        matches = re.compile(p).match(date_str)
         if matches:
             return matches.group(1)
 
-    return date
+    return date_str
 
 
-def import_instagram(user, parsed_url):
+def import_instagram(user: User, parsed_url: ParseResult) -> Blob:
+    """Import an Instagram post as a blob.
+
+    Downloads an Instagram post image using the user's Instagram credentials,
+    creates a blob with the post caption and metadata, and indexes it in
+    Elasticsearch.
+
+    Args:
+        user: The user importing the post. Must have Instagram credentials
+            configured in their user profile.
+        parsed_url: Parsed URL object from urlparse containing the Instagram
+            post URL.
+
+    Returns:
+        The created Blob instance.
+
+    Raises:
+        ValueError: If Instagram credentials are missing, login fails, or
+            the post is not found.
+        Exception: For other errors during the import process.
+    """
 
     if not user.userprofile.instagram_credentials:
         raise ValueError("Please provide your Instagram credentials in <a href='" + reverse('accounts:prefs') + "'>preferences</a>.")
@@ -414,7 +598,7 @@ def import_instagram(user, parsed_url):
         date=date,
         sha1sum=get_sha1sum(temp_file.name)
     )
-    blob.file_modified = int(os.path.getmtime(temp_file.name))
+    setattr(blob, "file_modified", int(os.path.getmtime(temp_file.name)))
     blob.save()
 
     myfile = File(open(temp_file.name, "rb"))
@@ -432,7 +616,23 @@ def import_instagram(user, parsed_url):
     return blob
 
 
-def import_artstation(user, parsed_url):
+def import_artstation(user: User, parsed_url: ParseResult) -> Blob:
+    """Import an ArtStation artwork as a blob.
+
+    Downloads an ArtStation artwork image, creates a blob with the artwork
+    title and metadata, and indexes it in Elasticsearch.
+
+    Args:
+        user: The user importing the artwork.
+        parsed_url: Parsed URL object from urlparse containing the ArtStation
+            artwork URL.
+
+    Returns:
+        The created Blob instance.
+
+    Raises:
+        ValueError: If the artwork cannot be retrieved or imported.
+    """
 
     short_code = parse_shortcode(parsed_url.geturl())
     url = f"https://www.artstation.com/projects/{short_code}.json"
@@ -462,7 +662,7 @@ def import_artstation(user, parsed_url):
         date=date,
         sha1sum=get_sha1sum(temp_file.name)
     )
-    blob.file_modified = int(os.path.getmtime(str(temp_file.name)))
+    setattr(blob, "file_modified", int(os.path.getmtime(str(temp_file.name))))
     blob.save()
 
     myfile = File(open(temp_file.name, "rb"))
@@ -479,24 +679,22 @@ def import_artstation(user, parsed_url):
     return blob
 
 
-def get_authors(byline):
-    """
-    Parses a byline string and extracts a list of author names.
+def get_authors(byline: str) -> list[str]:
+    """Parse a byline string and extract a list of author names.
 
-    The function handles bylines that:
-    - May begin with "By " (case-insensitive), which will be stripped.
-    - Use commas to separate multiple authors.
-    - Use "and" before the final author's name (Oxford comma optional).
+    Handles bylines that may begin with "By " (case-insensitive), use commas
+    to separate multiple authors, and use "and" before the final author's
+    name (Oxford comma optional).
 
     Example:
-        parse_authors("By Michael D. Shear, Aaron Boxerman and Adam Rasgon")
+        get_authors("By Michael D. Shear, Aaron Boxerman and Adam Rasgon")
         returns ["Michael D. Shear", "Aaron Boxerman", "Adam Rasgon"]
 
     Args:
-        byline (str): A byline string containing one or more author names.
+        byline: A byline string containing one or more author names.
 
     Returns:
-        list[str]: A list of author names, stripped of extra whitespace.
+        A list of author names, stripped of extra whitespace.
     """
 
     if byline.lower().startswith("by "):
@@ -515,7 +713,25 @@ def get_authors(byline):
     return [author for author in authors if author]  # remove any empty strings
 
 
-def import_newyorktimes(user, url):
+def import_newyorktimes(user: User, url: str) -> Blob:
+    """Import a New York Times article as a blob.
+
+    Retrieves article metadata from the New York Times API using the user's
+    API key, creates a blob with the article headline and metadata (including
+    authors, subtitle, and URL), and indexes it in Elasticsearch.
+
+    Args:
+        user: The user importing the article. Must have a New York Times
+            API key configured in their user profile.
+        url: The New York Times article URL to import.
+
+    Returns:
+        The created Blob instance.
+
+    Raises:
+        ValueError: If the API key is missing, the API returns an error,
+            no articles are found, or multiple articles match the URL.
+    """
 
     api_key = user.userprofile.nytimes_api_key
     if not api_key:
@@ -567,12 +783,35 @@ def import_newyorktimes(user, url):
     return blob
 
 
-def chatbot(request, args):
+def chatbot(request: HttpRequest, args: dict[str, Any]) -> Generator[str, None, None]:
+    """Generate a chatbot response using OpenAI.
+
+    Creates a chatbot response based on the provided context, which can be
+    a blob, question, exercise, notes search, or general chat history.
+    Streams the response as it is generated.
+
+    Args:
+        request: The HTTP request object.
+        args: Dictionary containing chatbot parameters:
+            - blob_uuid: UUID of a blob to use as context (optional)
+            - question_uuid: UUID of a question to answer (optional)
+            - exercise_uuid: UUID of an exercise to describe (optional)
+            - mode: Chat mode, "notes" for semantic search-based responses
+            - chat_history: JSON string of chat history (for general chat)
+            - content: User prompt content (when using blob_uuid)
+
+    Yields:
+        Chunks of the chatbot response as strings.
+
+    Note:
+        Requires OPENAI_API_KEY environment variable to be set. Uses
+        GPT-4.1 model for generating responses.
+    """
 
     openai.api_key = os.environ.get("OPENAI_API_KEY")
     model = "gpt-4.1"
-    messages = None
-    added_values = []
+    messages: list[dict[str, str]] = []
+    added_values: list[dict[str, Any]] = []
 
     if "blob_uuid" in args:
         blob_content = Blob.objects.get(uuid=args["blob_uuid"]).content
@@ -630,10 +869,16 @@ def chatbot(request, args):
 
     response = client.chat.completions.create(
         model=model,
-        messages=messages,
+        messages=messages,  # type: ignore[arg-type]
         stream=True
     )
 
-    for chunk in itertools.chain(response, added_values):
-        if chunk.choices[0].delta.content:
-            yield chunk.choices[0].delta.content
+    for chunk in itertools.chain(response, added_values):  # type: ignore[arg-type]
+        # Handle OpenAI response chunks and custom added_values dicts
+        if hasattr(chunk, "choices"):
+            if chunk.choices and chunk.choices[0].delta.content:  # type: ignore[union-attr]
+                yield chunk.choices[0].delta.content  # type: ignore[union-attr]
+        elif isinstance(chunk, dict) and "choices" in chunk:
+            choice_content = chunk["choices"][0].get("delta", {}).get("content")
+            if choice_content:
+                yield choice_content
