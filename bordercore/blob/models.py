@@ -424,7 +424,10 @@ class Blob(TimeStampedModel):
             ]
         }
 
-        results = es.search(index=settings.ELASTICSEARCH_INDEX, body=query)["hits"]["hits"][0]
+        hits = es.search(index=settings.ELASTICSEARCH_INDEX, body=query)["hits"]["hits"]
+        if not hits:
+            return {}
+        results = hits[0]
 
         if "content_type" in results["_source"]:
             results["_source"]["content_type"] = Blob.get_content_type(results["_source"]["content_type"])
