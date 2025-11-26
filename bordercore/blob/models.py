@@ -143,9 +143,12 @@ class Blob(TimeStampedModel):
     bc_objects = models.ManyToManyField("blob.BCObject", through="blob.BlobToObject", through_fields=("node", "bc_object"))
 
     class Meta:
-        unique_together = (
-            ("sha1sum", "user")
-        )
+        constraints = [
+            models.UniqueConstraint(
+                fields=("sha1sum", "user"),
+                name="unique_blob_sha1sum_user",
+            ),
+        ]
 
     def __str__(self) -> str:
         """Return string representation of the blob.
@@ -1292,7 +1295,12 @@ class MetaData(TimeStampedModel):
         return self.name
 
     class Meta:
-        unique_together = ("name", "value", "blob")
+        constraints = [
+            models.UniqueConstraint(
+                fields=("name", "value", "blob"),
+                name="unique_metadata_name_value_blob",
+            ),
+        ]
 
 
 class RecentlyViewedBlob(TimeStampedModel):
@@ -1401,11 +1409,20 @@ class BlobToObject(SortOrderMixin):
 
     class Meta:
         ordering = ("sort_order",)
-        unique_together = (
-            ("node", "blob"),
-            ("node", "bookmark"),
-            ("node", "question")
-        )
+        constraints = [
+            models.UniqueConstraint(
+                fields=("node", "blob"),
+                name="unique_blobtoobject_node_blob",
+            ),
+            models.UniqueConstraint(
+                fields=("node", "bookmark"),
+                name="unique_blobtoobject_node_bookmark",
+            ),
+            models.UniqueConstraint(
+                fields=("node", "question"),
+                name="unique_blobtoobject_node_question",
+            ),
+        ]
 
     def __str__(self) -> str:
         """Return string representation of this relationship.
