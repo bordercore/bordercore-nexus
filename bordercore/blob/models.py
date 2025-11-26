@@ -1302,6 +1302,7 @@ class RecentlyViewedBlob(TimeStampedModel):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False)
     blob = models.ForeignKey(Blob, null=True, on_delete=models.CASCADE)
     node = models.ForeignKey("node.Node", null=True, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
 
     MAX_SIZE = 20
 
@@ -1318,9 +1319,16 @@ class RecentlyViewedBlob(TimeStampedModel):
         return ""
 
     class Meta:
-        unique_together = (
-            ("blob", "node")
-        )
+        constraints = [
+            models.UniqueConstraint(
+                fields=("user", "blob"),
+                name="uniq_recent_blob_per_user",
+            ),
+            models.UniqueConstraint(
+                fields=("user", "node"),
+                name="uniq_recent_node_per_user",
+            ),
+        ]
 
     @staticmethod
     def add(user: User, blob: "Blob" | None = None, node: Any | None = None) -> None:
@@ -1339,7 +1347,7 @@ class RecentlyViewedBlob(TimeStampedModel):
         RecentlyViewedBlob.objects.filter(blob=blob, node=None).delete()
         RecentlyViewedBlob.objects.filter(node=node, blob=None).delete()
 
-        RecentlyViewedBlob.objects.create(blob=blob, node=node)
+        RecentlyViewedBlob.objects.create(user=user, blob=blob, node=node)
 
         # Insure that only MAX_SIZE blobs exist per user
         objects = RecentlyViewedBlob.objects.filter(
