@@ -1,3 +1,15 @@
+"""
+Models for blob storage and management.
+
+This module defines Blob (a file/document storage model with metadata, tags,
+and relationships), metadata storage (MetaData), relationship tracking
+(BlobToObject), and utilities for S3 storage, Elasticsearch indexing, and
+file management. It also includes models for tracking recently viewed blobs
+and blob templates.
+"""
+
+from __future__ import annotations
+
 import datetime
 import hashlib
 import io
@@ -8,8 +20,9 @@ import uuid
 from collections import defaultdict
 from datetime import timedelta
 from pathlib import PurePath
-from typing import Tuple
+from typing import Any
 from urllib.parse import quote_plus, urlparse
+from uuid import UUID
 
 import boto3
 import humanize
@@ -69,13 +82,50 @@ log = logging.getLogger(f"bordercore.{__name__}")
 
 
 class DownloadableS3Boto3Storage(S3Boto3Storage):
+    """S3 storage backend that preserves original filenames.
 
-    # Override this to prevent Django from cleaning the name (eg replacing spaces with underscores)
-    def get_valid_name(self, name):
+    This storage backend overrides the default Django behavior of cleaning
+    filenames (e.g., replacing spaces with underscores) to preserve the
+    original filename as uploaded.
+    """
+
+    def get_valid_name(self, name: str) -> str:
+        """Return the filename unchanged, preserving original characters.
+
+        Args:
+            name: The original filename.
+
+        Returns:
+            The filename unchanged from the input.
+        """
         return name
 
 
 class Blob(TimeStampedModel):
+    """A file or document stored in the system.
+
+    Blob represents a file or document with associated metadata, tags, and
+    relationships. It can store files in S3, track content, maintain metadata,
+    and link to other Bordercore objects via BlobToObject.
+
+    Attributes:
+        uuid: Stable UUID identifier for this blob.
+        content: Text content of the blob (for notes or text documents).
+        name: Display name for the blob.
+        sha1sum: SHA1 hash of the file content for deduplication.
+        file: FileField storing the actual file in S3.
+        user: Owner of this blob.
+        note: Free-form text annotation.
+        tags: Many-to-many relationship with Tag objects.
+        date: Date string associated with the blob.
+        importance: Integer importance level (default 1).
+        is_note: Whether this blob is a note (vs. a file).
+        is_indexed: Whether this blob should be indexed in Elasticsearch.
+        math_support: Whether math rendering is enabled for this blob.
+        data: JSON field for additional structured data.
+        bc_objects: Many-to-many relationship with BCObject via BlobToObject.
+    """
+
     uuid = models.UUIDField(default=uuid.uuid4, editable=False)
     content = models.TextField(null=True)
     name = models.TextField(null=True)
@@ -97,10 +147,24 @@ class Blob(TimeStampedModel):
             ("sha1sum", "user")
         )
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """Return string representation of the blob.
+
+        Returns:
+            The blob's name, or empty string if no name is set.
+        """
         return self.name or ""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Initialize the blob instance.
+
+        This saves the original filename so that when it changes during a blob
+        edit in save(), we can detect the change and delete the old file from S3.
+
+        Args:
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+        """
         super().__init__(*args, **kwargs)
 
         # Save the filename so that when it changes by a blob edit
@@ -108,7 +172,16 @@ class Blob(TimeStampedModel):
         setattr(self, "__original_filename", self.file.name)
 
     @staticmethod
-    def get_content_type(argument):
+    def get_content_type(argument: str) -> str:
+        """Convert a MIME type string to a human-readable content type name.
+
+        Args:
+            argument: MIME type string (e.g., "application/pdf", "image/jpeg").
+
+        Returns:
+            Human-readable content type name (e.g., "PDF", "Image", "Video"),
+            or empty string if the MIME type is not recognized.
+        """
         switcher = {
             "application/mp4": "Video",
             "application/octet-stream": "Video",
@@ -128,7 +201,16 @@ class Blob(TimeStampedModel):
         return switcher.get(argument, "")
 
     @staticmethod
-    def get_duration_humanized(duration):
+    def get_duration_humanized(duration: str) -> str:
+        """Convert a duration in seconds to a human-readable time string.
+
+        Args:
+            duration: Duration in seconds (as integer or string).
+
+        Returns:
+            Human-readable duration string (e.g., "1:23:45" or "45:30"),
+            with leading zeros removed.
+        """
         duration = str(datetime.timedelta(seconds=int(duration)))
 
         # Remove any leading "0:0" or "0:"
@@ -136,16 +218,43 @@ class Blob(TimeStampedModel):
 
         return duration
 
-    def get_parent_dir(self):
+    def get_parent_dir(self) -> str:
+        """Return the S3 directory path for this blob's files.
+
+        Returns:
+            String path in the format "{MEDIA_ROOT}/{uuid}".
+        """
         return f"{settings.MEDIA_ROOT}/{self.uuid}"
 
-    def get_tags(self):
+    def get_tags(self) -> str:
+        """Return a comma-separated string of this blob's tag names.
+
+        Returns:
+            Comma-separated human-readable list of tag names, sorted alphabetically.
+        """
         return ", ".join(sorted([tag.name for tag in self.tags.all()]))
 
-    def get_url(self):
+    def get_url(self) -> str:
+        """Return the URL path for accessing this blob's file.
+
+        Returns:
+            URL path string in the format "{uuid}/{url_encoded_filename}".
+        """
         return f"{self.uuid}/{quote_plus(str(self.file))}"
 
-    def get_name(self, remove_edition_string=False, use_filename_if_present=False):
+    def get_name(self, remove_edition_string: bool = False, use_filename_if_present: bool = False) -> str:
+        """Return the blob's display name with optional formatting.
+
+        Args:
+            remove_edition_string: If True, strip edition suffix (e.g., "2E")
+                from the name.
+            use_filename_if_present: If True and name is empty, return the
+                filename instead of "No name".
+
+        Returns:
+            The formatted name string, or "No name" if no name is available
+            and use_filename_if_present is False.
+        """
         name = self.name
         if name:
             if remove_edition_string:
@@ -158,7 +267,16 @@ class Blob(TimeStampedModel):
             return PurePath(str(self.file)).name
         return "No name"
 
-    def get_edition_string(self):
+    def get_edition_string(self) -> str:
+        """Extract and return the edition string from the blob's name.
+
+        If the name ends with a pattern like "2E", this returns the full
+        edition string (e.g., "Second Edition").
+
+        Returns:
+            Edition string (e.g., "First Edition", "Second Edition"), or
+            empty string if no edition pattern is found.
+        """
         if self.name:
             pattern = re.compile(r"(.*) (\d)E$")
             matches = pattern.match(self.name)
@@ -168,7 +286,16 @@ class Blob(TimeStampedModel):
         return ""
 
     @property
-    def doctype(self):
+    def doctype(self) -> str:
+        """Return the document type classification for this blob.
+
+        The type is determined by checking various attributes in order:
+        note -> book -> image -> video -> blob -> document.
+
+        Returns:
+            String document type: "note", "book", "image", "video", "blob",
+            or "document".
+        """
         if self.is_note is True:
             return "note"
         if "is_book" in [x.name for x in self.metadata.all()]:
@@ -182,25 +309,56 @@ class Blob(TimeStampedModel):
         return "document"
 
     @property
-    def s3_key(self):
+    def s3_key(self) -> str | None:
+        """Return the S3 key (path) for this blob's file.
+
+        Returns:
+            S3 key string, or None if no file is associated with this blob.
+        """
         if self.file:
             return Blob.get_s3_key(self.uuid, self.file)
         return None
 
     @property
-    def date_is_year(self):
+    def date_is_year(self) -> bool:
+        """Check if the blob's date field contains only a year (YYYY format).
+
+        Returns:
+            True if date is exactly four digits, False otherwise.
+        """
         if not self.date:
             return False
         return bool(re.fullmatch(r"\d{4}", self.date))
 
     @staticmethod
-    def get_s3_key(uuid, file):
+    def get_s3_key(uuid: UUID, file: Any) -> str:
+        """Construct the S3 key path for a blob file.
+
+        Args:
+            uuid: UUID of the blob.
+            file: FileField or filename string.
+
+        Returns:
+            S3 key string in the format "{MEDIA_ROOT}/{uuid}/{file}".
+        """
         return f"{settings.MEDIA_ROOT}/{uuid}/{file}"
 
-    def get_metadata(self):
+    def get_metadata(self) -> tuple[dict[str, str], list[dict[str, str]]]:
+        """Return all metadata associated with this blob.
 
-        metadata = {}
-        urls = []
+        This collects all MetaData entries for the blob, handling duplicate
+        names by joining values with commas. URLs are extracted separately
+        with their domains.
+
+        Returns:
+            Tuple of (metadata_dict, urls_list):
+            - metadata_dict: Dictionary mapping metadata names to values.
+              If multiple entries share a name, values are comma-joined.
+            - urls_list: List of dictionaries with "url" and "domain" keys
+              for each URL metadata entry.
+        """
+        metadata: dict[str, str] = {}
+        urls: list[dict[str, str]] = []
 
         for x in self.metadata.all():
             if x.name == "Url":
@@ -217,8 +375,16 @@ class Blob(TimeStampedModel):
 
         return metadata, urls
 
-    def get_elasticsearch_info(self):
+    def get_elasticsearch_info(self) -> dict[str, Any]:
+        """Retrieve and format Elasticsearch document information for this blob.
 
+        Queries Elasticsearch for the blob's indexed document and returns
+        human-readable formatted fields (content type, size, duration).
+
+        Returns:
+            Dictionary containing Elasticsearch document fields with humanized
+            values for content_type, size, and duration, plus the document ID.
+        """
         es = get_elasticsearch_connection(host=settings.ELASTICSEARCH_ENDPOINT)
 
         query = {
@@ -271,8 +437,20 @@ class Blob(TimeStampedModel):
 
         return {**results["_source"], "id": results["_id"]}
 
-    def save(self, *args, **kwargs):
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        """Save the blob and handle file uploads, SHA1 calculation, and S3 cleanup.
 
+        This method:
+        - Sets the S3 storage location based on the blob's UUID
+        - Calculates SHA1 hash if a new file is uploaded
+        - Deletes old S3 file if the file content changed
+        - Updates S3 metadata for file modification time if applicable
+        - Invalidates user caches
+
+        Args:
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+        """
         # Use a custom S3 location for the blob, based on the blob's UUID
         self.file.storage.location = f"blobs/{self.uuid}"
 
@@ -316,13 +494,20 @@ class Blob(TimeStampedModel):
         cache.delete(f"recent_blobs_{self.user.id}")
         cache.delete(f"recent_media_{self.user.id}")
 
-    def set_s3_metadata_file_modified(self):
+    def set_s3_metadata_file_modified(self) -> None:
+        """Store a file's modification time as S3 metadata after it's saved.
+
+        Updates the S3 object's metadata with the file modification time.
+        Note that Content-Type must be explicitly preserved when updating
+        S3 metadata, otherwise it resets to "binary/octet-stream".
         """
-        Store a file's modification time as S3 metadata after it's saved.
-        """
+        if not hasattr(self, "file_modified") or self.file_modified is None:
+            return
 
         s3 = boto3.resource("s3")
         key = self.s3_key
+        if key is None:
+            return
 
         s3_object = s3.Object(settings.AWS_STORAGE_BUCKET_NAME, key)
 
@@ -337,21 +522,42 @@ class Blob(TimeStampedModel):
             MetadataDirective="REPLACE"
         )
 
-    def has_been_modified(self):
-        """
-        If the modified time is greater than the creation time by
-        more than one second, assume it has been edited.
+    def has_been_modified(self) -> bool:
+        """Check if the blob has been modified after creation.
+
+        If the modified time is greater than the creation time by more than
+        one second, assume it has been edited.
+
+        Returns:
+            True if the blob was modified after creation, False otherwise.
         """
         return self.modified - self.created > timedelta(seconds=1)
 
     @staticmethod
-    def related_objects(app, model, base_object):
+    def related_objects(app: str, model: str, base_object: Any) -> list[dict[str, Any]]:
+        """Return a list of objects related to the given base object.
 
-        model = apps.get_model(app, model)
+        Queries the specified relation model for objects linked to base_object,
+        excluding SQL-related entries, and returns formatted dictionaries with
+        metadata for each related object (blob, bookmark, or question).
+
+        Args:
+            app: Django app name (e.g., "blob", "drill").
+            model: Model name within the app (e.g., "BlobToObject").
+            base_object: The model instance (Blob, Question, etc.) to find related objects for.
+
+        Returns:
+            List of dictionaries, each containing:
+            - For blobs: uuid, name, url, edit_url, cover_url, note, type
+            - For bookmarks: uuid, name, url, cover_url, cover_url_large,
+              favicon_url, edit_url, note, type
+            - For questions: uuid, question, note, type
+        """
+        model_class: Any = apps.get_model(app, model)
 
         related_objects = []
 
-        for related_object in model.objects.filter(node=base_object).exclude(note="sql").select_related("bookmark").select_related("blob"):
+        for related_object in model_class.objects.filter(node=base_object).exclude(note="sql").select_related("bookmark").select_related("blob"):
             if related_object.blob:
                 related_objects.append(
                     {
@@ -398,23 +604,30 @@ class Blob(TimeStampedModel):
         return related_objects
 
     @staticmethod
-    def get_node_model(node_type: str) -> type:
+    def get_node_model(node_type: str) -> type[Model]:
+        """Return the relation model class for the given node_type.
+
+        Args:
+            node_type: Type of node ("blob" or "drill").
+
+        Returns:
+            The relation model class (BlobToObject or QuestionToObject).
+
+        Raises:
+            ValueError: If node_type is not supported.
         """
-        Return the relation model class for the given node_type, or raise ValueError.
-        """
-        from typing import Dict, Type
-        RELATION_MODELS: Dict[str, Type[Model]] = {
+        relation_models: dict[str, type[Model]] = {
             "blob": apps.get_model("blob", "BlobToObject"),
             "drill": apps.get_model("drill", "QuestionToObject"),
         }
 
         try:
-            return RELATION_MODELS[node_type]
+            return relation_models[node_type]
         except KeyError as e:
             raise ValueError(f"Unsupported node_type: {node_type}") from e
 
     @staticmethod
-    def add_related_object(node_type: str, node_uuid: str, object_uuid: str) -> Tuple[dict, int]:
+    def add_related_object(node_type: str, node_uuid: str, object_uuid: str) -> tuple[dict[str, str], int]:
         """
         Relates a node to another object
 
@@ -430,16 +643,18 @@ class Blob(TimeStampedModel):
 
         # Resolve models
         try:
-            relation_model = Blob.get_node_model(node_type)
+            relation_model: Any = Blob.get_node_model(node_type)
         except ValueError as e:
             return {"status": "Error", "message": str(e)}, 400
 
-        node_models = {
+        node_models: dict[str, Any] = {
             "blob": Blob,
             "drill": Question,
         }
 
         node_model = node_models.get(node_type)
+        if not node_model:
+            return {"status": "Error", "message": "Invalid node type"}, 400
         node = node_model.objects.filter(uuid=node_uuid).first()
         if not node:
             return {"status": "Error", "message": "Node not found"}, 404
@@ -466,8 +681,21 @@ class Blob(TimeStampedModel):
         return {"status": "OK"}, 200
 
     @staticmethod
-    def back_references(uuid):
+    def back_references(uuid: UUID) -> list[dict[str, Any]]:
+        """Find all objects that reference the blob or bookmark with the given UUID.
 
+        Searches BlobToObject and QuestionToObject for relationships where
+        the blob or bookmark UUID matches, and returns formatted information
+        about the referencing objects.
+
+        Args:
+            uuid: UUID string of the blob or bookmark to find references for.
+
+        Returns:
+            List of dictionaries, each containing:
+            - For blob references: type, name, cover_url, tags, url
+            - For question references: type, question, tags, url
+        """
         back_references = []
 
         QuestionToObject = apps.get_model("drill", "QuestionToObject")
@@ -503,8 +731,16 @@ class Blob(TimeStampedModel):
 
         return back_references
 
-    def get_nodes(self):
+    def get_nodes(self) -> list[Any]:
+        """Return all Node objects that reference this blob in their layout.
 
+        Searches through all nodes owned by the blob's user and checks if
+        this blob's UUID appears in the node's layout structure as a
+        "collection" or "note" type entry.
+
+        Returns:
+            List of Node instances that reference this blob.
+        """
         Node = apps.get_model("node", "Node")
 
         node_list = []
@@ -521,22 +757,53 @@ class Blob(TimeStampedModel):
 
         return node_list
 
-    def is_image(self):
+    def is_image(self) -> bool:
+        """Check if the blob's file is an image.
+
+        Returns:
+            True if the file is an image, False otherwise.
+        """
         return is_image(self.file)
 
-    def is_video(self):
+    def is_video(self) -> bool:
+        """Check if the blob's file is a video.
+
+        Returns:
+            True if the file is a video, False otherwise.
+        """
         return is_video(self.file)
 
-    def is_audio(self):
+    def is_audio(self) -> bool:
+        """Check if the blob's file is an audio file.
+
+        Returns:
+            True if the file is audio, False otherwise.
+        """
         return is_audio(self.file)
 
-    def is_pdf(self):
+    def is_pdf(self) -> bool:
+        """Check if the blob's file is a PDF.
+
+        Returns:
+            True if the file is a PDF, False otherwise.
+        """
         return is_pdf(self.file)
 
-    def is_pinned_note(self):
+    def is_pinned_note(self) -> bool:
+        """Check if this blob is pinned as a note in the user's profile.
+
+        Returns:
+            True if the blob is in the user's pinned notes, False otherwise.
+        """
         return self in self.user.userprofile.pinned_notes.all()
 
-    def get_collections(self):
+    def get_collections(self) -> list[dict[str, Any]]:
+        """Return all collections that contain this blob.
+
+        Returns:
+            List of dictionaries, each containing collection information:
+            name, uuid, url, num_objects, cover_url, and note.
+        """
         collection_list = []
 
         for x in CollectionObject.objects.filter(
@@ -547,6 +814,8 @@ class Blob(TimeStampedModel):
         ).prefetch_related(
             "collection"
         ):
+            if x.collection is None:
+                continue
             collection_list.append(
                 {
                     "name": x.collection.name,
@@ -560,17 +829,42 @@ class Blob(TimeStampedModel):
 
         return collection_list
 
-    def get_date(self):
+    def get_date(self) -> Any:
+        """Parse and return a date object from the blob's date string.
+
+        Returns:
+            Date object parsed from the blob's date field using pattern matching.
+        """
         return get_date_from_pattern({"gte": self.date})
 
     @staticmethod
-    def is_ingestible_file(filename):
+    def is_ingestible_file(filename: str | Any) -> bool:
+        """Check if a file can be ingested (processed for content extraction).
 
+        Args:
+            filename: Filename string or path.
+
+        Returns:
+            True if the file extension is in FILE_TYPES_TO_INGEST, False otherwise.
+        """
         file_extension = PurePath(str(filename)).suffix
         return file_extension[1:].lower() in FILE_TYPES_TO_INGEST
 
-    def get_cover_url_static(blob_uuid, filename, size="large"):
+    @staticmethod
+    def get_cover_url_static(blob_uuid: UUID, filename: str, size: str = "large") -> str:
+        """Generate the cover image URL for a blob.
 
+        For large images, returns the image file URL directly. For other
+        files or small sizes, returns the generated cover thumbnail URL.
+
+        Args:
+            blob_uuid: UUID of the blob.
+            filename: Filename of the blob's file.
+            size: Size variant ("large" or other). Defaults to "large".
+
+        Returns:
+            URL string for the cover image.
+        """
         prefix = settings.COVER_URL + f"blobs/{blob_uuid}"
         s3_key = Blob.get_s3_key(blob_uuid, quote_plus(filename))
 
@@ -586,18 +880,38 @@ class Blob(TimeStampedModel):
 
         return url
 
-    def get_cover_url(self, size="large"):
+    def get_cover_url(self, size: str = "large") -> str:
+        """Return the cover image URL for this blob.
+
+        Args:
+            size: Size variant ("large" or other). Defaults to "large".
+
+        Returns:
+            URL string for the cover image.
+        """
         return Blob.get_cover_url_static(self.uuid, self.file.name, size)
 
-    def get_cover_url_small(self):
+    def get_cover_url_small(self) -> str:
+        """Return the small cover image URL for this blob.
+
+        Returns:
+            URL string for the small cover image.
+        """
         return self.get_cover_url(size="small")
 
-    def clone(self, include_collections=True):
-        """
-        Create a copy of the current blob, including all its metadata and
-        collection memberships.
-        """
+    def clone(self, include_collections: bool = True) -> "Blob":
+        """Create a copy of the current blob, including all its metadata and collection memberships.
 
+        Creates a new blob with the same content, metadata, tags, and optionally
+        collection memberships. The new blob is indexed in Elasticsearch.
+
+        Args:
+            include_collections: If True, add the cloned blob to the same
+                collections as the original. Defaults to True.
+
+        Returns:
+            The newly created Blob instance.
+        """
         new_blob = Blob.objects.create(
             content=self.content,
             name=f"Copy of {self.name}",
@@ -619,16 +933,24 @@ class Blob(TimeStampedModel):
             new_blob.tags.add(tag)
 
         if include_collections:
-            for so in CollectionObject.objects.filter(blob__uuid=self.uuid):
-                so.collection.add_object(new_blob)
+            for co in CollectionObject.objects.filter(blob__uuid=self.uuid):
+                if co.collection is not None:
+                    co.collection.add_object(new_blob)
 
         # Add to Elasticsearch
         new_blob.index_blob()
 
         return new_blob
 
-    def update_cover_image(self, image):
+    def update_cover_image(self, image: bytes) -> None:
+        """Upload and generate cover images for this blob.
 
+        Uploads the provided image as both a large cover image and a small
+        thumbnail (128x128) to S3, storing image dimensions in metadata.
+
+        Args:
+            image: Image bytes (JPEG format).
+        """
         s3_client = boto3.client("s3")
 
         key = f"blobs/{self.uuid}/cover-large.jpg"
@@ -667,8 +989,15 @@ class Blob(TimeStampedModel):
                        "ContentType": "image/jpeg"}
         )
 
-    def update_page_number(self, page_number):
+    def update_page_number(self, page_number: int) -> None:
+        """Update the PDF page number and trigger thumbnail regeneration.
 
+        Stores the page number in the blob's data field and invokes a Lambda
+        function to regenerate the thumbnail for the specified page.
+
+        Args:
+            page_number: Page number to set and generate thumbnail for.
+        """
         if self.data is None:
             self.data = {"pdf_page_number": page_number}
         else:
@@ -710,11 +1039,18 @@ class Blob(TimeStampedModel):
             Payload=json.dumps(payload)
         )
 
-    def rename_file(self, filename):
-        """
-        Rename a file, making the appropriate changes in the database and in S3.
-        """
+    def rename_file(self, filename: str) -> None:
+        """Rename a file, making the appropriate changes in the database and in S3.
 
+        Copies the file to a new S3 key with the new filename, deletes the old
+        file, and updates the blob's file field.
+
+        Args:
+            filename: New filename to use.
+
+        Raises:
+            ValidationError: If the S3 operation fails.
+        """
         try:
             s3 = boto3.resource("s3")
             key_root = f"{settings.MEDIA_ROOT}/{self.uuid}"
@@ -725,18 +1061,22 @@ class Blob(TimeStampedModel):
             )
             s3.Object(settings.AWS_STORAGE_BUCKET_NAME, f"{key_root}/{self.file.name}").delete()
         except Exception as e:
-            raise ValidationError(f"Error renaming file: {e}")
+            raise ValidationError(f"Error renaming file: {e}") from e
 
         self.file.name = filename
         self.save()
 
-    def index_blob(self, file_changed=True, new_blob=True):
-        """
-        Index the blob into Elasticsearch, but only if there is no
-        file associated with it. If there is, then a lambda will be
-        triggered once it's written to S3 to do the indexing
-        """
+    def index_blob(self, file_changed: bool = True, new_blob: bool = True) -> None:
+        """Trigger Elasticsearch indexing for this blob via SNS.
 
+        Publishes a message to SNS that will trigger a Lambda function to
+        index the blob in Elasticsearch. The indexing happens asynchronously
+        after the file is written to S3.
+
+        Args:
+            file_changed: Whether the file content has changed. Defaults to True.
+            new_blob: Whether this is a newly created blob. Defaults to True.
+        """
         client = boto3.client("sns")
 
         message = {
@@ -759,17 +1099,32 @@ class Blob(TimeStampedModel):
             Message=json.dumps(message),
         )
 
-    def tree(self):
+    def tree(self) -> Any:
+        """Return a recursive defaultdict factory for building tree structures.
+
+        Returns:
+            A defaultdict factory that creates nested dictionaries.
+        """
         return defaultdict(self.tree)
 
-    def get_tree(self):
+    def get_tree(self) -> list[dict[str, Any]]:
+        """Parse markdown headings from content and build a hierarchical tree structure.
 
+        Scans the blob's content for markdown headings (#, ##, etc.) and builds
+        a nested tree structure. Headings are numbered with IDs and inserted
+        into the content with markers. Code blocks are skipped to avoid
+        parsing comment-style headings.
+
+        Returns:
+            List of tree nodes, each containing id, label, and nested nodes.
+            Returns empty list if content is empty.
+        """
         if not self.content:
             return []
 
         content_out = ""
 
-        nodes = defaultdict(self.tree)
+        nodes: dict[str, Any] = defaultdict(self.tree)
 
         nodes["label"] = "root"
         nodes["nodes"] = []  # Necessary?
@@ -858,11 +1213,25 @@ class Blob(TimeStampedModel):
 
         return nodes["nodes"]
 
-    def delete(self):
+    def delete(self, using: Any | None = None, keep_parents: bool = False) -> tuple[int, dict[str, int]]:
+        """Delete the blob and clean up associated resources.
 
+        This method:
+        - Removes the blob from Elasticsearch
+        - Deletes all files in the blob's S3 directory
+        - Removes references from nodes
+        - Invalidates user caches
+
+        Args:
+            using: Database alias (unused).
+            keep_parents: Whether to keep parent objects (unused).
+
+        Returns:
+            A tuple of (number of objects deleted, dict of deletion counts by model).
+        """
         # Delete from Elasticsearch
         delete_document(str(self.uuid))
-        super().delete()
+        result = super().delete(using=using, keep_parents=keep_parents)
 
         # Delete from S3
         if self.file:
@@ -884,14 +1253,30 @@ class Blob(TimeStampedModel):
         cache.delete(f"recent_blobs_{self.user.id}")
         cache.delete(f"recent_media_{self.user.id}")
 
+        return result
+
 
 class MetaData(TimeStampedModel):
+    """Metadata key-value pair associated with a blob.
+
+    Attributes:
+        name: Metadata key name.
+        value: Metadata value.
+        blob: ForeignKey to the Blob this metadata belongs to.
+        user: Owner of this metadata entry.
+    """
+
     name = models.TextField()
     value = models.TextField()
     blob = models.ForeignKey(Blob, on_delete=models.CASCADE, related_name="metadata")
     user = models.ForeignKey(User, on_delete=models.PROTECT)
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """Return string representation of the metadata.
+
+        Returns:
+            The metadata name.
+        """
         return self.name
 
     class Meta:
@@ -899,14 +1284,35 @@ class MetaData(TimeStampedModel):
 
 
 class RecentlyViewedBlob(TimeStampedModel):
+    """Tracks recently viewed blobs or nodes for a user.
+
+    Maintains a history of recently viewed items, automatically limiting
+    the list to MAX_SIZE entries per user.
+
+    Attributes:
+        uuid: Stable UUID identifier for this entry.
+        blob: Optional ForeignKey to a Blob.
+        node: Optional ForeignKey to a Node.
+        MAX_SIZE: Maximum number of recent items to keep per user (20).
+    """
+
     uuid = models.UUIDField(default=uuid.uuid4, editable=False)
     blob = models.ForeignKey(Blob, null=True, on_delete=models.CASCADE)
     node = models.ForeignKey("node.Node", null=True, on_delete=models.CASCADE)
 
     MAX_SIZE = 20
 
-    def __str__(self):
-        return self.blob.name or self.node.name or ""
+    def __str__(self) -> str:
+        """Return string representation of the recently viewed item.
+
+        Returns:
+            The blob's name, node's name, or empty string if neither exists.
+        """
+        if self.blob:
+            return self.blob.name or ""
+        if self.node:
+            return self.node.name or ""
+        return ""
 
     class Meta:
         unique_together = (
@@ -914,8 +1320,18 @@ class RecentlyViewedBlob(TimeStampedModel):
         )
 
     @staticmethod
-    def add(user, blob=None, node=None):
+    def add(user: User, blob: "Blob" | None = None, node: Any | None = None) -> None:
+        """Add a blob or node to the user's recently viewed list.
 
+        Removes any existing entries for the same blob/node to avoid
+        duplicates, creates a new entry, and trims the list to MAX_SIZE
+        by deleting the oldest entries.
+
+        Args:
+            user: User who viewed the item.
+            blob: Optional Blob instance that was viewed.
+            node: Optional Node instance that was viewed.
+        """
         # Delete any previous rows containing this object to avoid duplicates
         RecentlyViewedBlob.objects.filter(blob=blob, node=None).delete()
         RecentlyViewedBlob.objects.filter(node=node, blob=None).delete()
@@ -936,6 +1352,22 @@ class RecentlyViewedBlob(TimeStampedModel):
 
 
 class BlobToObject(SortOrderMixin):
+    """Join/association between a Blob (as a node) and another object.
+
+    This model is the through-table for many-to-many style relationships
+    between Blobs acting as nodes and arbitrary "BCObject" entities
+    (other Blobs, Bookmarks, Questions, etc.).
+
+    Attributes:
+        uuid: Stable UUID for this relationship row.
+        node: The Blob acting as the node/container.
+        blob: Optional Blob related to the node.
+        bookmark: Optional Bookmark related to the node.
+        question: Optional Question related to the node.
+        bc_object: Generic BCObject reference.
+        note: Free-form text annotation.
+        sort_order: (inherited from SortOrderMixin) used for ordering.
+    """
 
     uuid = models.UUIDField(default=uuid.uuid4, editable=False)
     node = models.ForeignKey("blob.Blob", null=False, on_delete=models.CASCADE, related_name="nodes")
@@ -955,7 +1387,12 @@ class BlobToObject(SortOrderMixin):
             ("node", "question")
         )
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """Return string representation of this relationship.
+
+        Returns:
+            A string describing which object this node is linked to.
+        """
         if self.blob:
             return f"{self.node} -> {self.blob}"
         if self.bookmark:
@@ -964,20 +1401,52 @@ class BlobToObject(SortOrderMixin):
 
 
 class BCObject(TimeStampedModel):
+    """Generic related object wrapper.
+
+    This is a minimal model used to attach arbitrary objects to Blobs via
+    BlobToObject. It inherits timestamp fields from TimeStampedModel.
+
+    Attributes:
+        uuid: Stable identifier for this object.
+    """
 
     uuid = models.UUIDField(default=uuid.uuid4, editable=False)
 
 
 class BlobTemplate(TimeStampedModel):
+    """Template for creating new blobs with predefined structure.
+
+    Attributes:
+        uuid: Stable UUID identifier for this template.
+        name: Display name of the template.
+        template: JSON field containing the template structure/data.
+        user: Owner of this template.
+    """
+
     uuid = models.UUIDField(default=uuid.uuid4, editable=False)
     name = models.TextField()
     template = JSONField()
     user = models.ForeignKey(User, on_delete=models.PROTECT)
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """Return string representation of the template.
+
+        Returns:
+            The template's name.
+        """
         return self.name
 
 
 @receiver(pre_delete, sender=BlobToObject)
-def remove_relationship(sender, instance, **kwargs):
+def remove_relationship(sender: type[BlobToObject], instance: BlobToObject, **kwargs: Any) -> None:
+    """Signal handler to clean up a BlobToObject before deletion.
+
+    This delegates to the instance's `handle_delete()` so that any extra
+    teardown logic (e.g., removing sort orders, unlinking files) runs.
+
+    Args:
+        sender: The model class (BlobToObject).
+        instance: The BlobToObject instance being deleted.
+        **kwargs: Additional signal metadata (unused).
+    """
     instance.handle_delete()

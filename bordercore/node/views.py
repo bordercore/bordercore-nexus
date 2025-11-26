@@ -102,7 +102,8 @@ class NodeDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         context["priority_list"] = json.dumps(Todo.PRIORITY_CHOICES)
 
-        RecentlyViewedBlob.add(self.request.user, node=self.object)
+        user = cast(User, self.request.user)
+        RecentlyViewedBlob.add(user, node=self.object)
 
         self.object.populate_names()
         self.object.populate_image_info()

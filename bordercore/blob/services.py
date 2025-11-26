@@ -601,7 +601,7 @@ def chatbot(request, args):
         ]
     elif args["mode"] == "notes":
         chat_history = json.loads(args["chat_history"])
-        prompt = chat_history[-1]['content']
+        prompt = chat_history[-1]["content"]
         results = semantic_search(request, prompt)["hits"]["hits"][0]["_source"]
         text = results["contents"]
         messages = [
