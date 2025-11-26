@@ -8,8 +8,6 @@ from typing import Iterable, List, Sequence
 import tiktoken
 from openai import OpenAI
 
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
-
 EMBEDDING_MODEL = "text-embedding-ada-002"
 EMBEDDING_CTX_LENGTH = 8191
 EMBEDDING_ENCODING = "cl100k_base"
@@ -20,6 +18,7 @@ def get_embedding(
     model: str = EMBEDDING_MODEL,
 ) -> List[float]:
     """Create a single embedding and return its vector."""
+    client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
     response = client.embeddings.create(
         input=text_or_tokens,
         model=model,
