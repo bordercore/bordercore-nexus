@@ -8,7 +8,6 @@ import json
 import logging
 from typing import Any, Generator, Iterator, cast
 
-from django.apps import apps
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -682,30 +681,6 @@ def get_related_objects(request: HttpRequest, uuid: str) -> JsonResponse:
     return JsonResponse(response)
 
 
-RELATION_MODELS: dict[str, type[Model]] = {
-    "blob": apps.get_model("blob", "BlobToObject"),
-    "drill": apps.get_model("drill", "QuestionToObject"),
-}
-
-
-def get_node_model(node_type: str) -> type[Model]:
-    """Return the relation model class for the given node_type.
-
-    Args:
-        node_type: A string representing the type of node (e.g., "blob", "drill").
-
-    Returns:
-        The Django model class associated with the given node_type.
-
-    Raises:
-        ValueError: If the node_type is not found in the RELATION_MODELS mapping.
-    """
-    try:
-        return RELATION_MODELS[node_type]
-    except KeyError as e:
-        raise ValueError(f"Unsupported node_type: {node_type}") from e
-
-
 @login_required
 @require_POST
 @validate_post_data("node_uuid", "object_uuid")
@@ -754,7 +729,7 @@ def remove_related_object(request: HttpRequest) -> JsonResponse:
     node_type = request.POST.get("node_type", "blob")
 
     user = cast(User, request.user)
-    node_model = get_node_model(node_type)
+    node_model = Blob.get_node_model(node_type)
 
     cast(Any, node_model).objects.get(
         Q(node__uuid=node_uuid, node__user=user)
@@ -795,7 +770,7 @@ def sort_related_objects(request: HttpRequest) -> JsonResponse:
     node_type = request.POST.get("node_type", "blob")
 
     user = cast(User, request.user)
-    node_model = get_node_model(node_type)
+    node_model = Blob.get_node_model(node_type)
 
     node_to_object = cast(Any, node_model).objects.get(
         Q(node__uuid=node_uuid, node__user=user)
@@ -837,7 +812,7 @@ def update_related_object_note(request: HttpRequest) -> JsonResponse:
     node_type = request.POST.get("node_type", "blob")
 
     user = cast(User, request.user)
-    node_model = get_node_model(node_type)
+    node_model = Blob.get_node_model(node_type)
 
     node_to_object = cast(Any, node_model).objects.get(
         Q(node__uuid=node_uuid, node__user=user)
