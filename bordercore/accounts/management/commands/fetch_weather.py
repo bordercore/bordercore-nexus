@@ -18,6 +18,7 @@ from typing import Any
 import requests
 from django.core.management.base import BaseCommand, CommandError
 from django.contrib.auth.models import User
+from django.db.utils import OperationalError
 
 from accounts.models import UserProfile
 
@@ -79,9 +80,14 @@ class Command(BaseCommand):
             user = User.objects.get(username=username)
         except User.DoesNotExist:
             raise CommandError(f"User '{username}' does not exist")
+        except OperationalError as e:
+            raise CommandError(f"Database connection error: {e}")
         
         # Get or create user profile
-        user_profile, created = UserProfile.objects.get_or_create(user=user)
+        try:
+            user_profile, created = UserProfile.objects.get_or_create(user=user)
+        except OperationalError as e:
+            raise CommandError(f"Database connection error: {e}")
         
         # Build API URL
         url = f"http://api.weatherapi.com/v1/forecast.json?key={api_key}&q=02138&days=1&aqi=yes&alerts=yes"
@@ -101,8 +107,11 @@ class Command(BaseCommand):
             del weather_data["forecast"]
         
         # Store in user profile
-        user_profile.weather = weather_data
-        user_profile.save()
+        try:
+            user_profile.weather = weather_data
+            user_profile.save()
+        except OperationalError as e:
+            raise CommandError(f"Database connection error: {e}")
         
         if options.get("debug"):
             self.stdout.write(
