@@ -703,8 +703,17 @@ class Blob(TimeStampedModel):
 
         QuestionToObject = apps.get_model("drill", "QuestionToObject")
 
-        blob_to_objects = BlobToObject.objects.filter(Q(blob__uuid=uuid) | Q(bookmark__uuid=uuid)).select_related("node")
-        question_to_objects = QuestionToObject.objects.filter(Q(blob__uuid=uuid) | Q(bookmark__uuid=uuid)).select_related("node")
+        blob_to_objects = (
+            BlobToObject.objects
+            .filter(Q(blob__uuid=uuid) | Q(bookmark__uuid=uuid))
+            .select_related("node")
+            .prefetch_related("node__tags")
+        )
+        question_to_objects = (
+            QuestionToObject.objects
+            .filter(Q(blob__uuid=uuid) | Q(bookmark__uuid=uuid))
+            .select_related("node")
+        )
 
         if blob_to_objects:
             back_references.extend(
