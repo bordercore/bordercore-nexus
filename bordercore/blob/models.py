@@ -235,7 +235,7 @@ class Blob(TimeStampedModel):
         Returns:
             Comma-separated human-readable list of tag names, sorted alphabetically.
         """
-        return ", ".join(sorted([tag.name for tag in self.tags.all()]))
+        return ", ".join(sorted(self.tags.values_list("name", flat=True)))
 
     def get_url(self) -> str:
         """Return the URL path for accessing this blob's file.
