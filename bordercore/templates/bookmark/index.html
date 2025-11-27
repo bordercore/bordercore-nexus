@@ -441,7 +441,7 @@
 
                 function onClickDeleteBookmark(uuid) {
                     axios.delete("{% url 'bookmark-detail' '00000000-0000-0000-0000-000000000000' %}".replace('00000000-0000-0000-0000-000000000000', uuid))
-                        .then(() => {
+                        .then((response) => {
                             EventBus.$emit(
                                 "toast",
                                 {
@@ -456,6 +456,20 @@
                                     getBookmarkList({ searchTag: bookmarkStore.selectedTagName });
                             } else {
                                 getBookmarkList({ pageNumber: pagination.value.page_number });
+                            }
+                        })
+                        .catch((error) => {
+                            if (error.response && (error.response.status === 404 || error.response.status === 500)) {
+                                const errorMessage = error.response.data && error.response.data.message 
+                                    ? error.response.data.message 
+                                    : "An error occurred while deleting the bookmark";
+                                EventBus.$emit(
+                                    "toast",
+                                    {
+                                        "body": errorMessage,
+                                        "variant": "danger",
+                                    },
+                                );
                             }
                         })
                 };

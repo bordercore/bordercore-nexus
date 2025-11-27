@@ -4,6 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from django.contrib import messages
+from elasticsearch.exceptions import NotFoundError
 
 from accounts.models import UserFeed
 from blob.models import Blob
@@ -131,6 +132,20 @@ class BookmarkViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         instance = serializer.save()
         instance.index_bookmark()
+
+    def destroy(self, request, *args, **kwargs):
+        """Override destroy to catch NotFoundError and return JSON error response."""
+        try:
+            return super().destroy(request, *args, **kwargs)
+        except NotFoundError:
+            return Response(
+                {"status": "ERROR", "message": "Bookmark not found in Elasticsearch"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+    def perform_destroy(self, instance):
+        """Delete the bookmark."""
+        instance.delete()
 
 
 class CollectionViewSet(viewsets.ModelViewSet):
