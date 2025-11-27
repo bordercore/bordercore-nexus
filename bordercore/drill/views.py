@@ -231,18 +231,14 @@ class QuestionDetailView(DetailView):
     slug_url_kwarg = "uuid"
     template_name = "drill/question.html"
 
-    def get_object(self, queryset: Optional[QuerySet[Question]] = None) -> Question:
-        """Get the question object for the current user.
-
-        Args:
-            queryset: Optional queryset to use (unused in this implementation).
+    def get_queryset(self) -> QuerySetType[Question]:
+        """Get the queryset of questions for the current user.
 
         Returns:
-            The question matching the UUID for the current user.
+            QuerySet of Question objects filtered by user.
         """
         user = cast(User, self.request.user)
-        obj = Question.objects.get(user=user, uuid=self.kwargs.get("uuid"))
-        return obj
+        return Question.objects.filter(user=user)
 
     def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
         """Get context data for the question detail view.
