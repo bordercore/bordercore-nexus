@@ -30,9 +30,13 @@ from django.views.generic.list import ListView
 from blob.forms import BlobForm
 from blob.models import (Blob, BlobTemplate, BlobToObject, MetaData,
                          RecentlyViewedBlob)
-from blob.services import chatbot, get_books, import_blob
+from blob.services import add_related_object as add_related_object_service, chatbot, get_books, import_blob
 from collection.models import Collection, CollectionObject
 from lib.decorators import validate_post_data
+from lib.exceptions import (InvalidNodeTypeError, NodeNotFoundError,
+                            ObjectAlreadyRelatedError,
+                            RelatedObjectNotFoundError,
+                            UnsupportedNodeTypeError)
 from lib.mixins import FormRequestMixin
 from lib.time_utils import parse_date_from_string
 
@@ -702,8 +706,19 @@ def add_related_object(request: HttpRequest) -> JsonResponse:
     node_uuid = request.POST["node_uuid"]
     object_uuid = request.POST["object_uuid"]
 
-    json_data, status_code = Blob.add_related_object(node_type, node_uuid, object_uuid)
-    return JsonResponse(json_data, status=status_code)
+    try:
+        result = add_related_object_service(node_type, node_uuid, object_uuid)
+        return JsonResponse(result, status=200)
+    except UnsupportedNodeTypeError as e:
+        return JsonResponse({"status": "Error", "message": str(e)}, status=400)
+    except InvalidNodeTypeError as e:
+        return JsonResponse({"status": "Error", "message": str(e)}, status=400)
+    except NodeNotFoundError as e:
+        return JsonResponse({"status": "Error", "message": str(e)}, status=404)
+    except RelatedObjectNotFoundError as e:
+        return JsonResponse({"status": "Error", "message": str(e)}, status=400)
+    except ObjectAlreadyRelatedError as e:
+        return JsonResponse({"status": "Error", "message": str(e)}, status=400)
 
 
 @login_required

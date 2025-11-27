@@ -17,8 +17,13 @@ from collection.models import Collection
 django.setup()
 
 from blob.models import Blob, BlobToObject, RecentlyViewedBlob  # isort:skip
+from blob.services import add_related_object
 from blob.tests.factories import BlobFactory
 from drill.tests.factories import QuestionFactory
+from lib.exceptions import (InvalidNodeTypeError, NodeNotFoundError,
+                            ObjectAlreadyRelatedError,
+                            RelatedObjectNotFoundError,
+                            UnsupportedNodeTypeError)
 from node.tests.factories import NodeFactory
 
 faker = FakerFactory.create()
@@ -156,25 +161,20 @@ def test_add_related_object(auto_login_user):
     question = QuestionFactory.create(user=user)
     blob = BlobFactory.create(user=user)
 
-    response, status = Blob.add_related_object("drill", question.uuid, blob.uuid)
-    assert status == 200
+    response = add_related_object("drill", question.uuid, blob.uuid)
     assert response == {"status": "OK"}
 
-    response, status = Blob.add_related_object("drill", uuid.uuid4(), blob.uuid)
-    assert status == 404
-    assert response == {"status": "Error", "message": "Node not found"}
+    with pytest.raises(NodeNotFoundError, match="Node not found"):
+        add_related_object("drill", uuid.uuid4(), blob.uuid)
 
-    response, status = Blob.add_related_object("drill", question.uuid, uuid.uuid4())
-    assert status == 400
-    assert response == {"status": "Error", "message": "Related object not found"}
+    with pytest.raises(RelatedObjectNotFoundError, match="Related object not found"):
+        add_related_object("drill", question.uuid, uuid.uuid4())
 
-    response, status = Blob.add_related_object("drill", question.uuid, blob.uuid)
-    assert status == 400
-    assert response == {"status": "Error", "message": "That object is already related"}
+    with pytest.raises(ObjectAlreadyRelatedError, match="That object is already related"):
+        add_related_object("drill", question.uuid, blob.uuid)
 
-    response, status = Blob.add_related_object("invalid", question.uuid, blob.uuid)
-    assert status == 400
-    assert response == {"status": "Error", "message": "Unsupported node_type: invalid"}
+    with pytest.raises(UnsupportedNodeTypeError, match="Unsupported node_type: invalid"):
+        add_related_object("invalid", question.uuid, blob.uuid)
 
 
 def test_get_nodes(auto_login_user, monkeypatch):

@@ -633,60 +633,6 @@ class Blob(TimeStampedModel):
             raise ValueError(f"Unsupported node_type: {node_type}") from e
 
     @staticmethod
-    def add_related_object(node_type: str, node_uuid: str, object_uuid: str) -> tuple[dict[str, str], int]:
-        """
-        Relates a node to another object
-
-        Args:
-            node_type: Type of the node (e.g., "blob", "drill").
-            node_uuid: UUID of the node.
-            object_uuid: UUID of the related object (Blob or Bookmark).
-
-        Returns:
-            tuple[dict, int]: JSON response and HTTP status code.
-        """
-        Question = apps.get_model("drill", "Question")
-
-        # Resolve models
-        try:
-            relation_model: Any = Blob.get_node_model(node_type)
-        except ValueError as e:
-            return {"status": "Error", "message": str(e)}, 400
-
-        node_models: dict[str, Any] = {
-            "blob": Blob,
-            "drill": Question,
-        }
-
-        node_model = node_models.get(node_type)
-        if not node_model:
-            return {"status": "Error", "message": "Invalid node type"}, 400
-        node = node_model.objects.filter(uuid=node_uuid).first()
-        if not node:
-            return {"status": "Error", "message": "Node not found"}, 404
-
-        # Find the target object (Blob takes precedence)
-        target = (
-            Blob.objects.filter(uuid=object_uuid).first()
-            or Bookmark.objects.filter(uuid=object_uuid).first()
-        )
-        if not target:
-            return {"status": "Error", "message": "Related object not found"}, 400
-
-        # Derive relation field name from the model’s class name
-        model_key = target.__class__.__name__.lower()
-        relation_kwargs = {model_key: target}
-
-        # get_or_create to simplify exists/create
-        _, created = relation_model.objects.get_or_create(
-            node=node, **relation_kwargs
-        )
-        if not created:
-            return {"status": "Error", "message": "That object is already related"}, 400
-
-        return {"status": "OK"}, 200
-
-    @staticmethod
     def back_references(uuid: UUID) -> list[dict[str, Any]]:
         """Find all objects that reference the blob or bookmark with the given UUID.
 

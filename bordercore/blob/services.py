@@ -24,19 +24,25 @@ import requests
 from instaloader import Post
 from openai import OpenAI
 
+from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.core.files import File
 from django.core.files.temp import NamedTemporaryFile
-from django.db.models import Q, QuerySet
+from django.db.models import Model, Q, QuerySet
 from django.http import HttpRequest
 from django.urls import reverse
 from django.utils import timezone
 
 from blob.models import Blob, MetaData, RecentlyViewedBlob
+from bookmark.models import Bookmark
 from drill.models import Question
 from fitness.models import Exercise
+from lib.exceptions import (InvalidNodeTypeError, NodeNotFoundError,
+                            ObjectAlreadyRelatedError,
+                            RelatedObjectNotFoundError,
+                            UnsupportedNodeTypeError)
 from lib.util import get_elasticsearch_connection, is_image, is_pdf, is_video
 from search.services import semantic_search
 
@@ -882,3 +888,63 @@ def chatbot(request: HttpRequest, args: dict[str, Any]) -> Generator[str, None, 
             choice_content = chunk["choices"][0].get("delta", {}).get("content")
             if choice_content:
                 yield choice_content
+
+
+def add_related_object(node_type: str, node_uuid: str, object_uuid: str) -> dict[str, str]:
+    """Relate a node to another object.
+
+    Args:
+        node_type: Type of the node (e.g., "blob", "drill").
+        node_uuid: UUID of the node.
+        object_uuid: UUID of the related object (Blob or Bookmark).
+
+    Returns:
+        dict: Success response with "status" key set to "OK".
+
+    Raises:
+        UnsupportedNodeTypeError: If node_type is not supported.
+        InvalidNodeTypeError: If node_type is invalid.
+        NodeNotFoundError: If the node is not found.
+        RelatedObjectNotFoundError: If the related object is not found.
+        ObjectAlreadyRelatedError: If the object is already related.
+    """
+    Question = apps.get_model("drill", "Question")
+
+    # Resolve models
+    try:
+        relation_model: Any = Blob.get_node_model(node_type)
+    except ValueError as e:
+        raise UnsupportedNodeTypeError(str(e)) from e
+
+    node_models: dict[str, Any] = {
+        "blob": Blob,
+        "drill": Question,
+    }
+
+    node_model = node_models.get(node_type)
+    if not node_model:
+        raise InvalidNodeTypeError("Invalid node type")
+    node = node_model.objects.filter(uuid=node_uuid).first()
+    if not node:
+        raise NodeNotFoundError("Node not found")
+
+    # Find the target object (Blob takes precedence)
+    target = (
+        Blob.objects.filter(uuid=object_uuid).first()
+        or Bookmark.objects.filter(uuid=object_uuid).first()
+    )
+    if not target:
+        raise RelatedObjectNotFoundError("Related object not found")
+
+    # Derive relation field name from the model's class name
+    model_key = target.__class__.__name__.lower()
+    relation_kwargs = {model_key: target}
+
+    # get_or_create to simplify exists/create
+    _, created = relation_model.objects.get_or_create(
+        node=node, **relation_kwargs
+    )
+    if not created:
+        raise ObjectAlreadyRelatedError("That object is already related")
+
+    return {"status": "OK"}
