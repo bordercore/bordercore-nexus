@@ -1060,14 +1060,6 @@ class Blob(TimeStampedModel):
             Message=json.dumps(message),
         )
 
-    def tree(self) -> Any:
-        """Return a recursive defaultdict factory for building tree structures.
-
-        Returns:
-            A defaultdict factory that creates nested dictionaries.
-        """
-        return defaultdict(self.tree)
-
     def get_tree(self) -> list[dict[str, Any]]:
         """Parse markdown headings from content and build a hierarchical tree structure.
 
@@ -1080,12 +1072,20 @@ class Blob(TimeStampedModel):
             List of tree nodes, each containing id, label, and nested nodes.
             Returns empty list if content is empty.
         """
+        def tree() -> Any:
+            """Return a recursive defaultdict factory for building tree structures.
+
+            Returns:
+                A defaultdict factory that creates nested dictionaries.
+            """
+            return defaultdict(tree)
+
         if not self.content:
             return []
 
         content_out = ""
 
-        nodes: dict[str, Any] = defaultdict(self.tree)
+        nodes: dict[str, Any] = defaultdict(tree)
 
         nodes["label"] = "root"
         nodes["nodes"] = []  # Necessary?
