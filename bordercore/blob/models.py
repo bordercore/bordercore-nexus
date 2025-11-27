@@ -772,7 +772,7 @@ class Blob(TimeStampedModel):
                 collection__user=self.user
         ).annotate(
             num_objects=Count("collection__collectionobject")
-        ).prefetch_related(
+        ).select_related(
             "collection"
         ):
             if x.collection is None:
