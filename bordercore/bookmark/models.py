@@ -17,6 +17,7 @@ from urllib.parse import parse_qs, urlparse
 import boto3
 import isodate
 import requests
+from elasticsearch.exceptions import ElasticsearchException, NotFoundError
 
 from django import urls
 from django.apps import apps
@@ -27,6 +28,7 @@ from django.db import models, transaction
 from django.db.models import JSONField
 from django.db.models.signals import m2m_changed
 
+from lib.exceptions import BookmarkSearchDeleteError
 from lib.mixins import TimeStampedModel
 from lib.time_utils import convert_seconds
 from search.services import delete_document, index_document
@@ -153,8 +155,21 @@ class Bookmark(TimeStampedModel):
 
         Returns:
             Tuple of (number of objects deleted, dictionary with deletion counts).
+
+        Raises:
+            ElasticsearchException: If deletion from Elasticsearch fails.
+                The bookmark will not be deleted from the database in this case.
         """
-        delete_document(str(self.uuid))
+        try:
+            delete_document(str(self.uuid))
+        except NotFoundError as exc:
+            # Log and raise a domain-specific error so the view can handle it.
+            error_message = f"Bookmark not found in Elasticsearch"
+            log.exception(
+                "Bookmark %s not found in Elasticsearch",
+                self.uuid,
+            )
+            raise BookmarkSearchDeleteError(error_message) from exc
 
         self.delete_cover_image()
 

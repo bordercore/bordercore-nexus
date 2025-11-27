@@ -34,6 +34,7 @@ from blob.models import Blob
 from bookmark.forms import BookmarkForm
 from bookmark.models import IMPORTANCE_HIGH, Bookmark
 from lib.decorators import validate_post_data
+from lib.exceptions import BookmarkSearchDeleteError
 from lib.mixins import FormRequestMixin
 from lib.util import get_pagination_range, parse_title_from_url
 from tag.models import Tag, TagBookmark
@@ -206,25 +207,20 @@ class BookmarkDeleteView(LoginRequiredMixin, DeleteView):
         user = cast(User, self.request.user)
         return self.model.objects.filter(user=user)
 
+    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        """Handle delete POST and surface ES errors nicely."""
+        self.object = self.get_object()
 
-@login_required
-def delete(request: HttpRequest, bookmark_id: int | None = None) -> JsonResponse:
-    """Delete a bookmark via AJAX request.
-
-    Args:
-        request: The HTTP request.
-        bookmark_id: The ID of the bookmark to delete (optional).
-
-    Returns:
-        JsonResponse containing {"status": "OK"}.
-    """
-    if bookmark_id is None:
-        raise Http404("Bookmark ID is required")
-    user = cast(User, request.user)
-    bookmark = Bookmark.objects.get(user=user, pk=bookmark_id)
-    bookmark.delete()
-
-    return JsonResponse({"status": "OK"})
+        try:
+            return super().post(request, *args, **kwargs)
+        except BookmarkSearchDeleteError as exc:
+            messages.error(
+                request,
+                str(exc),
+                extra_tags="noAutoHide",
+            )
+            # Send user back to the edit screen for this bookmark
+            return redirect("bookmark:update", uuid=self.object.uuid)
 
 
 @login_required
