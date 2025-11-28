@@ -373,9 +373,12 @@ class BlobDetailView(DetailView):
         context["node_list"] = self.object.get_nodes()
         context["title"] = self.object
 
-        context["show_metadata"] = "content_type" in context \
-            or self.object.sha1sum \
+        elasticsearch_info = context.get("elasticsearch_info") or {}
+        context["show_metadata"] = (
+            "content_type" in elasticsearch_info
+            or self.object.sha1sum
             or context["metadata_misc"] != {}
+        )
 
         context["tree"] = {
             "label": "Root",
