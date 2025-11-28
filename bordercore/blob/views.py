@@ -549,14 +549,12 @@ def handle_metadata(blob: Blob, request: HttpRequest) -> None:
 
     if "metadata" in request.POST:
         for pair in json.loads(request.POST["metadata"]):
-            new_metadata, created = MetaData.objects.get_or_create(
+            new_metadata, _ = MetaData.objects.get_or_create(
                 blob=blob,
                 user=user,
                 name=pair["name"],
                 value=pair["value"]
             )
-            if created:
-                new_metadata.save()
 
     if request.POST.get("is_book", ""):
         new_metadata = MetaData(user=user, name="is_book", value="true", blob=blob)
