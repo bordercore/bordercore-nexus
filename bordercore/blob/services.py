@@ -606,9 +606,10 @@ def import_instagram(user: User, parsed_url: ParseResult) -> Blob:
     setattr(blob, "file_modified", int(os.path.getmtime(temp_file.name)))
     blob.save()
 
-    myfile = File(open(temp_file.name, "rb"))
     filename = f"{base_name}{ext}"
-    blob.file.save(filename, myfile)
+    with open(temp_file.name, "rb") as f:
+        myfile = File(f)
+        blob.file.save(filename, myfile)
 
     url = f"https://instagram.com/p/{post.shortcode}/"
     artist_name = post.owner_profile.full_name
@@ -669,8 +670,9 @@ def import_artstation(user: User, parsed_url: ParseResult) -> Blob:
     setattr(blob, "file_modified", int(os.path.getmtime(str(temp_file.name))))
     blob.save()
 
-    myfile = File(open(temp_file.name, "rb"))
-    blob.file.save(filename, myfile)
+    with open(temp_file.name, "rb") as f:
+        myfile = File(f)
+        blob.file.save(filename, myfile)
 
     url = result["permalink"]
     artist_name = result["user"]["full_name"]
