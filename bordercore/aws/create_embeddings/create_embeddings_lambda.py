@@ -29,7 +29,7 @@ def store_in_elasticsearch(uuid, embeddings):
         }
     }
 
-    response = requests.post(url, headers=headers, data=json.dumps(data))
+    response = requests.post(url, headers=headers, data=json.dumps(data), timeout=10)
 
     if response.status_code != 200:
         print(f"Failed to store data. Response from Elasticsearch: {response.content}")

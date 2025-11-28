@@ -58,7 +58,7 @@ def handler(event, context):
             # Favicon does not exist. Attempt to snarf it.
             logging.info(f"Uploading new favicon to S3: {domain}")
 
-            r = requests.get(f"http://{domain}/favicon.ico")
+            r = requests.get(f"http://{domain}/favicon.ico", timeout=10)
             if r.status_code != 200:
                 raise Exception(f"Error: status code for {domain} was {r.status_code}")
 

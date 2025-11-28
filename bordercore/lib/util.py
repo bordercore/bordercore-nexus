@@ -153,7 +153,7 @@ def parse_title_from_url(url):
     from lxml import html
 
     headers = {"user-agent": "Bordercore/1.0"}
-    r = requests.get(url, headers=headers)
+    r = requests.get(url, headers=headers, timeout=10)
     http_content = r.text.encode("utf-8")
 
     # http://stackoverflow.com/questions/15830421/xml-unicode-strings-with-encoding-declaration-are-not-supported

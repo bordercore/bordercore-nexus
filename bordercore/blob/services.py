@@ -642,7 +642,7 @@ def import_artstation(user: User, parsed_url: ParseResult) -> Blob:
 
     short_code = parse_shortcode(parsed_url.geturl())
     url = f"https://www.artstation.com/projects/{short_code}.json"
-    result = requests.get(url)
+    result = requests.get(url, timeout=10)
 
     if not result.ok:
         raise ValueError(f"Error importing image: {result.reason}")
@@ -747,7 +747,7 @@ def import_newyorktimes(user: User, url: str) -> Blob:
     url = url.split("?")[0]
 
     url = f"https://api.nytimes.com/svc/search/v2/articlesearch.json?api-key={api_key}&fq=url:(\"{url}\")"
-    r = requests.get(url)
+    r = requests.get(url, timeout=10)
     result = r.json()
 
     if result["status"] == "ERROR":

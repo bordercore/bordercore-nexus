@@ -21,7 +21,7 @@ s3_client = boto3.client("s3")
 def download_images_from_collection(collection_uuid):
 
     headers = {"Authorization": f"Token {DRF_TOKEN}"}
-    r = requests.get(f"https://www.bordercore.com/api/collections/images/{collection_uuid}/", headers=headers)
+    r = requests.get(f"https://www.bordercore.com/api/collections/images/{collection_uuid}/", headers=headers, timeout=10)
     if r.status_code != 200:
         raise Exception(f"Error: status code: {r.status_code}")
 
