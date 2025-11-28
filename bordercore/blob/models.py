@@ -33,14 +33,13 @@ from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.cache import cache
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Count, JSONField, Model, Q
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 from django.forms import ValidationError
 from django.urls import reverse
 
-from bookmark.models import Bookmark
 from collection.models import CollectionObject
 from lib.mixins import SortOrderMixin, TimeStampedModel
 from lib.time_utils import get_date_from_pattern
@@ -1196,10 +1195,15 @@ class Blob(TimeStampedModel):
         """Delete the blob and clean up associated resources.
 
         This method:
-        - Removes the blob from Elasticsearch
-        - Deletes all files in the blob's S3 directory
+        - Deletes the blob from the database
+        - Removes the blob from Elasticsearch (after transaction commits)
+        - Deletes all files in the blob's S3 directory (after transaction commits)
         - Removes references from nodes
         - Invalidates user caches
+
+        Cleanup operations (Elasticsearch and S3) are deferred until after the
+        database transaction commits to ensure consistency. If the transaction
+        rolls back, cleanup operations are not performed.
 
         Args:
             using: Database alias (unused).
@@ -1208,29 +1212,44 @@ class Blob(TimeStampedModel):
         Returns:
             A tuple of (number of objects deleted, dict of deletion counts by model).
         """
-        # Delete from Elasticsearch
-        delete_document(str(self.uuid))
+        # Save values needed for cleanup before database deletion
+        blob_uuid = str(self.uuid)
+        user = self.user
+        user_id = user.id
+        has_file = bool(self.file)
+        directory = f"{settings.MEDIA_ROOT}/{self.uuid}" if has_file else None
+
+        # Delete from database first
         result = super().delete(using=using, keep_parents=keep_parents)
 
-        # Delete from S3
-        if self.file:
+        # Cleanup operations that should happen after transaction commits
+        def cleanups() -> None:
+            # Delete from Elasticsearch
+            try:
+                delete_document(blob_uuid)
+            except Exception as e:
+                log.error("Failed to delete blob %s from Elasticsearch: %s", blob_uuid, e)
 
-            directory = f"{settings.MEDIA_ROOT}/{self.uuid}"
-            s3 = boto3.resource("s3")
-            my_bucket = s3.Bucket(settings.AWS_STORAGE_BUCKET_NAME)
+            # Delete from S3
+            if has_file and directory:
+                try:
+                    s3 = boto3.resource("s3")
+                    my_bucket = s3.Bucket(settings.AWS_STORAGE_BUCKET_NAME)
 
-            for fn in my_bucket.objects.filter(Prefix=directory):
-                log.info("Deleting blob %s", fn)
-                fn.delete()
+                    for fn in my_bucket.objects.filter(Prefix=directory):
+                        log.info("Deleting blob %s", fn)
+                        fn.delete()
+                except Exception as e:
+                    log.error("Failed to delete blob %s from S3: %s", blob_uuid, e)
 
-            # Pass false so FileField doesn't save the model.
-            self.file.delete(False)
+        transaction.on_commit(cleanups)
 
-        delete_note_from_nodes(self.user, self.uuid)
+        # These operations are safe to run before commit
+        delete_note_from_nodes(user, blob_uuid)
 
         # After every blob mutation, invalidate the cache
-        cache.delete(f"recent_blobs_{self.user.id}")
-        cache.delete(f"recent_media_{self.user.id}")
+        cache.delete(f"recent_blobs_{user_id}")
+        cache.delete(f"recent_media_{user_id}")
 
         return result
 
