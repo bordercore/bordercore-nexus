@@ -6,6 +6,7 @@ blobs and other objects like collections and nodes.
 """
 import json
 import logging
+from http import HTTPStatus
 from typing import Any, Generator, cast
 
 from botocore.exceptions import BotoCoreError, ClientError
@@ -931,7 +932,7 @@ def get_template(request: HttpRequest) -> JsonResponse:
     if not blob_template:
         return JsonResponse({
             "error": "Template not found"
-        })
+        }, status=HTTPStatus.NOT_FOUND)
 
     response = {
         "template": blob_template.template,
@@ -961,7 +962,7 @@ def chat(request: HttpRequest) -> StreamingHttpResponse:
     except Exception as e:
         log.error("Chat service failed for user %s: %s", user.id, e, exc_info=True)
         def error_generator() -> Generator[str, None, None]:
-            yield f"An error occurred: {e}"
+            yield "An unexpected error occurred. Please try again later."
         content_iterator = error_generator()
 
     return StreamingHttpResponse(content_iterator, content_type="text/plain")
