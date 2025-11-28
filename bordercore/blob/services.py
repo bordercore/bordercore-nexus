@@ -79,7 +79,7 @@ def get_recent_blobs(user: User, limit: int = 10, skip_content: bool = False) ->
     """
 
     # Create user-specific cache key
-    cache_key = f"recent_blobs_{user.id}"
+    cache_key = f"recent_blobs_{user.id}_{limit}"
 
     cached_blobs = cache.get(cache_key)
     if cached_blobs is not None:
@@ -156,7 +156,7 @@ def get_recent_media(user: User, limit: int = 10) -> list[dict[str, Any]]:
     """
 
     # Create user-specific cache key
-    cache_key = f"recent_media_{user.id}"
+    cache_key = f"recent_media_{user.id}_{limit}"
 
     cached_media = cache.get(cache_key)
     if cached_media is not None:
