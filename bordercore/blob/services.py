@@ -431,7 +431,12 @@ def import_blob(user: User, url: str) -> Blob:
     parsed_url = urlparse(url)
 
     # We want the domain part of the hostname (eg bordercore.com instead of www.bordercore.com)
-    domain = ".".join(parsed_url.netloc.split(".")[1:])
+    # Extract the last two parts of the domain (handles both www.example.com and example.com)
+    domain_parts = parsed_url.netloc.split(".")
+    if len(domain_parts) >= 2:
+        domain = ".".join(domain_parts[-2:])
+    else:
+        domain = parsed_url.netloc
 
     if domain == "instagram.com":
         return import_instagram(user, parsed_url)
@@ -667,7 +672,7 @@ def import_artstation(user: User, parsed_url: ParseResult) -> Blob:
         date=date,
         sha1sum=get_sha1sum(temp_file.name)
     )
-    setattr(blob, "file_modified", int(os.path.getmtime(str(temp_file.name))))
+    setattr(blob, "file_modified", int(os.path.getmtime(temp_file.name)))
     blob.save()
 
     with open(temp_file.name, "rb") as f:
