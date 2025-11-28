@@ -524,13 +524,15 @@ def parse_date(date: str | datetime.datetime) -> str:
         Date string in YYYY-MM-DD format, or string representation of the
         input if parsing fails.
     """
-    patterns = [r"^(\d\d\d\d-\d\d-\d\d)", r"^(\d\d\d\d-\d\d-\d\d)"]
+    # Handle datetime objects directly
+    if isinstance(date, datetime.datetime):
+        return date.strftime("%Y-%m-%d")
 
+    # For strings, try to extract YYYY-MM-DD pattern
     date_str = str(date)
-    for p in patterns:
-        matches = re.compile(p).match(date_str)
-        if matches:
-            return matches.group(1)
+    match = re.match(r"^(\d{4}-\d{2}-\d{2})", date_str)
+    if match:
+        return match.group(1)
 
     return date_str
 
