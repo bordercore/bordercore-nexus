@@ -6,14 +6,15 @@ blobs and other objects like collections and nodes.
 """
 import json
 import logging
-from typing import Any, Generator, Iterator, cast
+from typing import Any, Generator, cast
 
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import UploadedFile
-from django.db.models import Count, Model, Q, QuerySet
+from django.db.models import Count, Q, QuerySet
+from django.db.models.functions import Lower
 from django.forms import BaseModelForm
 from django.http import (HttpRequest, HttpResponse, HttpResponseRedirect,
                          JsonResponse, StreamingHttpResponse)
@@ -30,7 +31,8 @@ from django.views.generic.list import ListView
 from blob.forms import BlobForm
 from blob.models import (Blob, BlobTemplate, BlobToObject, MetaData,
                          RecentlyViewedBlob)
-from blob.services import add_related_object as add_related_object_service, chatbot, get_books, import_blob
+from blob.services import add_related_object as add_related_object_service
+from blob.services import chatbot, get_books, import_blob
 from collection.models import Collection, CollectionObject
 from lib.decorators import validate_post_data
 from lib.exceptions import (InvalidNodeTypeError, NodeNotFoundError,
@@ -191,6 +193,7 @@ class BlobCreateView(FormRequestMixin, CreateView, FormValidMixin):
                 uuid=self.request.GET["linked_collection"]
             )
             collection_object = CollectionObject.objects.filter(
+                collection__user=user,
                 collection__uuid=self.request.GET["linked_collection"]
             ).first()
             if collection_object and collection_object.blob:
@@ -325,6 +328,9 @@ class BlobDetailView(DetailView):
             # Give Elasticsearch up to a minute to index the blob
             if int(timezone.now().timestamp()) - int(self.object.created.timestamp()) > 60:
                 messages.add_message(self.request, messages.ERROR, "Blob not found in Elasticsearch")
+        except Exception as e:
+            log.warning("Failed to fetch ES info for blob %s: %s", self.object.uuid, e, exc_info=True)
+            context["elasticsearch_info"] = None
 
         context["back_references"] = Blob.back_references(self.object.uuid)
         context["collection_list"] = self.object.collections
@@ -430,7 +436,7 @@ class BlobCloneView(View):
         user = cast(User, request.user)
         original_blob = Blob.objects.get(uuid=kwargs["uuid"], user=user)
         new_blob = original_blob.clone()
-        messages.add_message(self.request, messages.INFO, "New blob successfully cloned")
+        messages.add_message(request, messages.INFO, "New blob successfully cloned")
         return HttpResponseRedirect(reverse("blob:detail", kwargs={"uuid": new_blob.uuid}))
 
 
@@ -497,9 +503,7 @@ def handle_metadata(blob: Blob, request: HttpRequest) -> None:
         blob: The blob instance to update metadata for.
         request: The HTTP request containing metadata in POST data.
     """
-    metadata_old = blob.metadata.all()
-    for i in metadata_old:
-        i.delete()
+    blob.metadata.all().delete()
 
     user = cast(User, request.user)
 
@@ -559,11 +563,9 @@ def metadata_name_search(request: HttpRequest) -> JsonResponse:
     ).distinct(
         "name"
     ).order_by(
-        "name".lower()
+        "name"
     )
-
     return_data = [{"label": x["name"]} for x in m]
-
     return JsonResponse(return_data, safe=False)
 
 
@@ -975,6 +977,7 @@ class BookshelfListView(ListView):
             }
             for hit in
             Blob.objects.filter(
+                user=user,
                 metadata__name="is_book"
             ).values(
                 "tags__name"
