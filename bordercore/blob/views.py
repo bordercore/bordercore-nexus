@@ -592,17 +592,17 @@ def metadata_name_search(request: HttpRequest) -> JsonResponse:
         JSON response with list of matching metadata names.
     """
     user = cast(User, request.user)
-    m = MetaData.objects.filter(
-        user=user
-    ).values(
-        "name"
-    ).filter(
-        name__icontains=request.GET["query"]
-    ).distinct(
-        "name"
-    ).order_by(
-        "name"
+    query = request.GET.get("query", "").strip()
+    if not query:
+        return JsonResponse([], safe=False)
+
+    m = (
+        MetaData.objects.filter(user=user, name__icontains=query)
+        .values("name")
+        .distinct("name")
+        .order_by("name")
     )
+
     return_data = [{"label": x["name"]} for x in m]
     return JsonResponse(return_data, safe=False)
 
