@@ -599,7 +599,6 @@ def import_instagram(user: User, parsed_url: ParseResult) -> Blob:
 
     date = parse_date(post.date)
 
-    user = User.objects.get(username=user.username)
     blob = Blob(
         user=user,
         name=post.caption,
@@ -653,7 +652,6 @@ def import_artstation(user: User, parsed_url: ParseResult) -> Blob:
 
     date = parse_date(result["created_at"])
 
-    user = User.objects.get(username=user.username)
     filename = os.path.basename(urlparse(result["assets"][0]["image_url"]).path)
 
     opener = urllib.request.build_opener()
@@ -768,7 +766,6 @@ def import_newyorktimes(user: User, url: str) -> Blob:
 
     date = datetime.datetime.strptime(matches[0]["pub_date"], "%Y-%m-%dT%H:%M:%S%z").strftime("%Y-%m-%d")
 
-    user = User.objects.get(username=user.username)
     blob = Blob(
         user=user,
         name=matches[0]["headline"]["main"],
@@ -843,7 +840,7 @@ def chatbot(request: HttpRequest, args: dict[str, Any]) -> Generator[str, None, 
         messages = [
             {
                 "role": "user",
-                "content": f"Tell me about the strength training exercise '{exercise.name}. Include a description and talk about proper form and which muscles are targeted."
+                "content": f"Tell me about the strength training exercise '{exercise.name}'. Include a description and talk about proper form and which muscles are targeted."
             }
         ]
     elif args["mode"] == "notes":
