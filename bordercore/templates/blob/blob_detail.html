@@ -103,9 +103,9 @@
                         </drop-down-menu>
                     </div>
 
-                    {% if blob.get_edition_string %}
+                    {% if blob.edition_string %}
                         <h5>
-                        {{ blob.get_edition_string }}
+                        {{ blob.edition_string }}
                         </h5>
                     {% endif %}
 
@@ -232,7 +232,7 @@
                     {% endif %}
 
                     {% if blob.sha1sum %}
-                        <a class="button-icon mt-3" href="{{ MEDIA_URL }}blobs/{{ blob.get_url }}" role="button">
+                        <a class="button-icon mt-3" href="{{ MEDIA_URL }}blobs/{{ blob.url }}" role="button">
                             <font-awesome-icon icon="download" class="text-emphasis" />
                         </a>
                     {% endif %}
@@ -322,7 +322,7 @@
                 {% if blob.is_video %}
                 <div v-cloak>
                     <video class="h-100 w-100" controls muted>
-                        <source src="{{ MEDIA_URL }}blobs/{{ blob.get_url }}" type="video/mp4">
+                        <source src="{{ MEDIA_URL }}blobs/{{ blob.url }}" type="video/mp4">
                     </video>
                 </div>
                 {% elif blob.is_image or blob.is_video or blob.is_pdf %}
@@ -337,7 +337,7 @@
                 {% endif %}
 
                 <media-controller v-if="elasticsearchInfo.content_type === 'Audio'" audio v-cloak class="w-100">
-                    <audio id="player" slot="media" src="{{ MEDIA_URL }}blobs/{{ blob.get_url }}" type="audio/mpeg">
+                    <audio id="player" slot="media" src="{{ MEDIA_URL }}blobs/{{ blob.url }}" type="audio/mpeg">
                     </audio>
                     <media-control-bar class="w-100">
                         <media-play-button></media-play-button>

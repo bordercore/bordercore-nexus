@@ -105,7 +105,7 @@ def get_recent_blobs(user: User, limit: int = 10, skip_content: bool = False) ->
 
         blob_dict = {
             "name": blob.name,
-            "tags": blob.get_tags(),
+            "tags": blob.tags_string,
             "url": reverse("blob:detail", kwargs={"uuid": blob.uuid}),
             "delta_days": delta.days,
             "uuid": str(blob.uuid),
@@ -184,7 +184,7 @@ def get_recent_media(user: User, limit: int = 10) -> list[dict[str, Any]]:
 
         blob_dict = {
             "name": blob.name,
-            "tags": blob.get_tags(),
+            "tags": blob.tags_string,
             "url": reverse("blob:detail", kwargs={"uuid": blob.uuid}),
             "delta_days": delta.days,
             "uuid": str(blob.uuid),

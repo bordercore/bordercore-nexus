@@ -253,7 +253,7 @@ class Collection(TimeStampedModel):
             log.warning("Can't get content type for uuid=%s", blob_obj.uuid)
 
         return {
-            "url": f"{settings.MEDIA_URL}blobs/{blob_obj.get_url()}",
+            "url": f"{settings.MEDIA_URL}blobs/{blob_obj.url}",
             "content_type": content_type,
             "index": position
         }
@@ -467,7 +467,7 @@ class CollectionObject(SortOrderMixin):
                 "name": re.sub("[\n\r]", "", self.blob.name) if self.blob.name else "",
                 "url": reverse("blob:detail", kwargs={"uuid": self.blob.uuid}),
                 "sha1sum": self.blob.sha1sum,
-                "cover_url": self.blob.get_cover_url_small(),
+                "cover_url": self.blob.cover_url_small,
                 "cover_url_large": self.blob.get_cover_url(),
             }
         if self.bookmark is not None:

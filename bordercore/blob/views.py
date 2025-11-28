@@ -178,7 +178,7 @@ class BlobCreateView(FormRequestMixin, CreateView, FormValidMixin):
             linked_blob = Blob.objects.get(user=user, uuid=self.request.GET["linked_blob_uuid"])
             context["linked_blob"] = {
                 "name": linked_blob.name,
-                "thumbnail_url": linked_blob.get_cover_url_small(),
+                "thumbnail_url": linked_blob.cover_url_small,
                 "uuid": linked_blob.uuid
             }
             # Grab the initial metadata and tags from the linked blob
@@ -311,13 +311,13 @@ class BlobDetailView(DetailView):
             ]
         }
 
-        context["date"] = self.object.get_date()
+        context["date"] = self.object.parsed_date
 
         if self.object.sha1sum:
             context["aws_url"] = f"https://s3.console.aws.amazon.com/s3/buckets/{settings.AWS_STORAGE_BUCKET_NAME}/blobs/{self.object.uuid}/"
 
         if self.object.is_note:
-            context["is_pinned_note"] = self.object.is_pinned_note()
+            context["is_pinned_note"] = self.object.is_pinned_note
 
         try:
             context["elasticsearch_info"] = self.object.get_elasticsearch_info()
@@ -327,7 +327,7 @@ class BlobDetailView(DetailView):
                 messages.add_message(self.request, messages.ERROR, "Blob not found in Elasticsearch")
 
         context["back_references"] = Blob.back_references(self.object.uuid)
-        context["collection_list"] = self.object.get_collections()
+        context["collection_list"] = self.object.collections
         context["node_list"] = self.object.get_nodes()
         context["title"] = self.object
 

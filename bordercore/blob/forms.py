@@ -79,7 +79,7 @@ class BlobForm(ModelForm):
             self.fields["filename"].initial = self.instance.file
 
             # If this form has a model attached, get the tags and display them separated by commas
-            self.initial["tags"] = self.instance.get_tags()
+            self.initial["tags"] = self.instance.tags_string
 
             if self.instance.date:
                 self.initial["date"] = get_javascript_date(self.instance.date)

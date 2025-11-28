@@ -64,10 +64,10 @@ def test_get_doctype(blob_image_factory, blob_note, blob_text_factory):
 def test_get_edition_string(blob_image_factory):
 
     blob_image_factory[0].name = "Introduction to Electrodynamics 4E"
-    assert blob_image_factory[0].get_edition_string() == "Fourth Edition"
+    assert blob_image_factory[0].edition_string == "Fourth Edition"
 
     blob_image_factory[0].name = "Name"
-    assert blob_image_factory[0].get_edition_string() == ""
+    assert blob_image_factory[0].edition_string == ""
 
 
 def test_doctype(blob_image_factory, blob_text_factory):
@@ -94,16 +94,16 @@ def test_has_been_modified(auto_login_user, blob_image_factory):
     user, _ = auto_login_user()
 
     blob = BlobFactory.create(user=user)
-    assert blob.has_been_modified() is False
+    assert blob.has_been_modified is False
 
     blob.name = faker.text(max_nb_chars=10)
 
-    # The resolution of has_been_modified() is one second, so
+    # The resolution of has_been_modified is one second, so
     #  we need to wait at least that long to see a difference.
     time.sleep(1)
 
     blob.save()
-    assert blob.has_been_modified() is True
+    assert blob.has_been_modified is True
 
 
 def test_related_blobs(auto_login_user):
@@ -130,12 +130,12 @@ def test_get_content_type():
 
 
 def test_get_parent_dir(blob_image_factory):
-    parent_dir = blob_image_factory[0].get_parent_dir()
+    parent_dir = blob_image_factory[0].parent_dir
     assert parent_dir == f"blobs/{blob_image_factory[0].uuid}"
 
 
 def test_get_url(blob_image_factory):
-    url = blob_image_factory[0].get_url()
+    url = blob_image_factory[0].url
     assert url == f"{blob_image_factory[0].uuid}/{quote_plus(str(blob_image_factory[0].file))}"
 
 
@@ -151,7 +151,7 @@ def test_get_name(blob_image_factory):
 
 
 def test_get_tags(blob_image_factory):
-    assert blob_image_factory[0].get_tags() == "django, linux, video"
+    assert blob_image_factory[0].tags_string == "django, linux, video"
 
 
 def test_add_related_object(auto_login_user):
@@ -194,20 +194,20 @@ def test_get_nodes(auto_login_user, monkeypatch):
 
 
 def test_is_pinned_note(blob_note):
-    assert blob_note[0].is_pinned_note() is False
+    assert blob_note[0].is_pinned_note is False
 
 
 def test_get_collections(collection, blob_pdf_factory):
-    assert len(blob_pdf_factory[0].get_collections()) == 2
-    assert "To Display" in [x["name"] for x in blob_pdf_factory[0].get_collections()]
+    assert len(blob_pdf_factory[0].collections) == 2
+    assert "To Display" in [x["name"] for x in blob_pdf_factory[0].collections]
 
 
 def test_get_linked_blobs(blob_pdf_factory):
-    assert len(blob_pdf_factory[0].get_collections()) == 0
+    assert len(blob_pdf_factory[0].collections) == 0
 
 
 def test_get_date(blob_image_factory):
-    assert blob_image_factory[0].get_date() == datetime.datetime.strptime(blob_image_factory[0].date, '%Y-%m-%d').strftime('%B %d, %Y')
+    assert blob_image_factory[0].parsed_date == datetime.datetime.strptime(blob_image_factory[0].date, '%Y-%m-%d').strftime('%B %d, %Y')
 
 
 def test_is_ingestible_file(blob_image_factory):

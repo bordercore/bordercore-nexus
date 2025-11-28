@@ -184,7 +184,7 @@ def sql(request):
     context = {}
     if "sql_db_uuid" in request.GET:
         sql_db = Blob.objects.get(uuid=request.GET["sql_db_uuid"])
-        context["sql_db_url"] = settings.MEDIA_URL + "blobs/" + sql_db.get_url()
+        context["sql_db_url"] = settings.MEDIA_URL + "blobs/" + sql_db.url
 
     return render(request, "homepage/sql.html", context)
 

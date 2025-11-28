@@ -174,6 +174,210 @@ class Blob(TimeStampedModel):
         #  in save() we know what the original was.
         setattr(self, "__original_filename", self.file.name)
 
+    # Properties - File/Storage
+    @property
+    def parent_dir(self) -> str:
+        """Return the S3 directory path for this blob's files.
+
+        Returns:
+            String path in the format "{MEDIA_ROOT}/{uuid}".
+        """
+        return f"{settings.MEDIA_ROOT}/{self.uuid}"
+
+    @property
+    def s3_key(self) -> str | None:
+        """Return the S3 key (path) for this blob's file.
+
+        Returns:
+            S3 key string, or None if no file is associated with this blob.
+        """
+        if self.file:
+            return Blob.get_s3_key(self.uuid, self.file)
+        return None
+
+    @property
+    def url(self) -> str:
+        """Return the URL path for accessing this blob's file.
+
+        Returns:
+            URL path string in the format "{uuid}/{url_encoded_filename}".
+        """
+        return f"{self.uuid}/{quote_plus(str(self.file))}"
+
+    @property
+    def cover_url_small(self) -> str:
+        """Return the small cover image URL for this blob.
+
+        Returns:
+            URL string for the small cover image.
+        """
+        return self.get_cover_url(size="small")
+
+    # Properties - Metadata/Classification
+    @property
+    def doctype(self) -> str:
+        """Return the document type classification for this blob.
+
+        The type is determined by checking various attributes in order:
+        note -> book -> image -> video -> blob -> document.
+
+        Returns:
+            String document type: "note", "book", "image", "video", "blob",
+            or "document".
+        """
+        if self.is_note:
+            return "note"
+        if self.metadata.filter(name="is_book").exists():
+            return "book"
+        if is_image(self.file):
+            return "image"
+        if is_video(self.file):
+            return "video"
+        if self.sha1sum is not None:
+            return "blob"
+        return "document"
+
+    @property
+    def tags_string(self) -> str:
+        """Return a comma-separated string of this blob's tag names.
+
+        Returns:
+            Comma-separated human-readable list of tag names, sorted alphabetically.
+        """
+        return ", ".join(sorted(self.tags.values_list("name", flat=True)))
+
+    @property
+    def edition_string(self) -> str:
+        """Extract and return the edition string from the blob's name.
+
+        If the name ends with a pattern like "2E", this returns the full
+        edition string (e.g., "Second Edition").
+
+        Returns:
+            Edition string (e.g., "First Edition", "Second Edition"), or
+            empty string if no edition pattern is found.
+        """
+        if self.name:
+            pattern = re.compile(r"(.*) (\d)E$")
+            matches = pattern.match(self.name)
+            if matches and EDITIONS.get(matches.group(2), None):
+                return f"{EDITIONS[matches.group(2)]} Edition"
+
+        return ""
+
+    # Properties - Type Checks
+    @property
+    def is_image(self) -> bool:
+        """Check if the blob's file is an image.
+
+        Returns:
+            True if the file is an image, False otherwise.
+        """
+        return is_image(self.file)
+
+    @property
+    def is_video(self) -> bool:
+        """Check if the blob's file is a video.
+
+        Returns:
+            True if the file is a video, False otherwise.
+        """
+        return is_video(self.file)
+
+    @property
+    def is_audio(self) -> bool:
+        """Check if the blob's file is an audio file.
+
+        Returns:
+            True if the file is audio, False otherwise.
+        """
+        return is_audio(self.file)
+
+    @property
+    def is_pdf(self) -> bool:
+        """Check if the blob's file is a PDF.
+
+        Returns:
+            True if the file is a PDF, False otherwise.
+        """
+        return is_pdf(self.file)
+
+    @property
+    def is_pinned_note(self) -> bool:
+        """Check if this blob is pinned as a note in the user's profile.
+
+        Returns:
+            True if the blob is in the user's pinned notes, False otherwise.
+        """
+        return self in self.user.userprofile.pinned_notes.all()
+
+    # Properties - Date/Time
+    @property
+    def date_is_year(self) -> bool:
+        """Check if the blob's date field contains only a year (YYYY format).
+
+        Returns:
+            True if date is exactly four digits, False otherwise.
+        """
+        if not self.date:
+            return False
+        return bool(re.fullmatch(r"\d{4}", self.date))
+
+    @property
+    def parsed_date(self) -> Any:
+        """Parse and return a date object from the blob's date string.
+
+        Returns:
+            Date object parsed from the blob's date field using pattern matching.
+        """
+        return get_date_from_pattern({"gte": self.date})
+
+    # Properties - State/Relationships
+    @property
+    def has_been_modified(self) -> bool:
+        """Check if the blob has been modified after creation.
+
+        If the modified time is greater than the creation time by more than
+        one second, assume it has been edited.
+
+        Returns:
+            True if the blob was modified after creation, False otherwise.
+        """
+        return self.modified - self.created > timedelta(seconds=1)
+
+    @property
+    def collections(self) -> list[dict[str, Any]]:
+        """Return all collections that contain this blob.
+
+        Returns:
+            List of dictionaries, each containing collection information:
+            name, uuid, url, num_objects, cover_url, and note.
+        """
+        collection_list = []
+
+        for x in CollectionObject.objects.filter(
+                blob=self,
+                collection__user=self.user
+        ).annotate(
+            num_objects=Count("collection__collectionobject")
+        ).select_related(
+            "collection"
+        ):
+            if x.collection is None:
+                continue
+            collection_list.append(
+                {
+                    "name": x.collection.name,
+                    "uuid": x.collection.uuid,
+                    "url": x.collection.get_absolute_url(),
+                    "num_objects": x.num_objects,
+                    "cover_url": x.collection.cover_url,
+                    "note": x.note
+                }
+            )
+
+        return collection_list
+
     @staticmethod
     def get_content_type(argument: str) -> str:
         """Convert a MIME type string to a human-readable content type name.
@@ -221,30 +425,6 @@ class Blob(TimeStampedModel):
 
         return duration
 
-    def get_parent_dir(self) -> str:
-        """Return the S3 directory path for this blob's files.
-
-        Returns:
-            String path in the format "{MEDIA_ROOT}/{uuid}".
-        """
-        return f"{settings.MEDIA_ROOT}/{self.uuid}"
-
-    def get_tags(self) -> str:
-        """Return a comma-separated string of this blob's tag names.
-
-        Returns:
-            Comma-separated human-readable list of tag names, sorted alphabetically.
-        """
-        return ", ".join(sorted(self.tags.values_list("name", flat=True)))
-
-    def get_url(self) -> str:
-        """Return the URL path for accessing this blob's file.
-
-        Returns:
-            URL path string in the format "{uuid}/{url_encoded_filename}".
-        """
-        return f"{self.uuid}/{quote_plus(str(self.file))}"
-
     def get_name(self, remove_edition_string: bool = False, use_filename_if_present: bool = False) -> str:
         """Return the blob's display name with optional formatting.
 
@@ -269,69 +449,6 @@ class Blob(TimeStampedModel):
         if use_filename_if_present:
             return PurePath(str(self.file)).name
         return "No name"
-
-    def get_edition_string(self) -> str:
-        """Extract and return the edition string from the blob's name.
-
-        If the name ends with a pattern like "2E", this returns the full
-        edition string (e.g., "Second Edition").
-
-        Returns:
-            Edition string (e.g., "First Edition", "Second Edition"), or
-            empty string if no edition pattern is found.
-        """
-        if self.name:
-            pattern = re.compile(r"(.*) (\d)E$")
-            matches = pattern.match(self.name)
-            if matches and EDITIONS.get(matches.group(2), None):
-                return f"{EDITIONS[matches.group(2)]} Edition"
-
-        return ""
-
-    @property
-    def doctype(self) -> str:
-        """Return the document type classification for this blob.
-
-        The type is determined by checking various attributes in order:
-        note -> book -> image -> video -> blob -> document.
-
-        Returns:
-            String document type: "note", "book", "image", "video", "blob",
-            or "document".
-        """
-        if self.is_note:
-            return "note"
-        if self.metadata.filter(name="is_book").exists():
-            return "book"
-        if is_image(self.file):
-            return "image"
-        if is_video(self.file):
-            return "video"
-        if self.sha1sum is not None:
-            return "blob"
-        return "document"
-
-    @property
-    def s3_key(self) -> str | None:
-        """Return the S3 key (path) for this blob's file.
-
-        Returns:
-            S3 key string, or None if no file is associated with this blob.
-        """
-        if self.file:
-            return Blob.get_s3_key(self.uuid, self.file)
-        return None
-
-    @property
-    def date_is_year(self) -> bool:
-        """Check if the blob's date field contains only a year (YYYY format).
-
-        Returns:
-            True if date is exactly four digits, False otherwise.
-        """
-        if not self.date:
-            return False
-        return bool(re.fullmatch(r"\d{4}", self.date))
 
     @staticmethod
     def get_s3_key(uuid: UUID, file: Any) -> str:
@@ -479,7 +596,7 @@ class Blob(TimeStampedModel):
                 # This is set in __init__
                 filename_orig = getattr(self, "__original_filename")
 
-                key = f"{self.get_parent_dir()}/{filename_orig}"
+                key = f"{self.parent_dir}/{filename_orig}"
                 log.info("Blob file changed detected. Deleting old file: %s", key)
                 log.info("%s != %s", sha1sum_old, self.sha1sum)
                 s3 = boto3.resource("s3")
@@ -527,17 +644,6 @@ class Blob(TimeStampedModel):
             Metadata=s3_object.metadata,
             MetadataDirective="REPLACE"
         )
-
-    def has_been_modified(self) -> bool:
-        """Check if the blob has been modified after creation.
-
-        If the modified time is greater than the creation time by more than
-        one second, assume it has been edited.
-
-        Returns:
-            True if the blob was modified after creation, False otherwise.
-        """
-        return self.modified - self.created > timedelta(seconds=1)
 
     @staticmethod
     def related_objects(app: str, model: str, base_object: Any) -> list[dict[str, Any]]:
@@ -718,86 +824,6 @@ class Blob(TimeStampedModel):
 
         return node_list
 
-    def is_image(self) -> bool:
-        """Check if the blob's file is an image.
-
-        Returns:
-            True if the file is an image, False otherwise.
-        """
-        return is_image(self.file)
-
-    def is_video(self) -> bool:
-        """Check if the blob's file is a video.
-
-        Returns:
-            True if the file is a video, False otherwise.
-        """
-        return is_video(self.file)
-
-    def is_audio(self) -> bool:
-        """Check if the blob's file is an audio file.
-
-        Returns:
-            True if the file is audio, False otherwise.
-        """
-        return is_audio(self.file)
-
-    def is_pdf(self) -> bool:
-        """Check if the blob's file is a PDF.
-
-        Returns:
-            True if the file is a PDF, False otherwise.
-        """
-        return is_pdf(self.file)
-
-    def is_pinned_note(self) -> bool:
-        """Check if this blob is pinned as a note in the user's profile.
-
-        Returns:
-            True if the blob is in the user's pinned notes, False otherwise.
-        """
-        return self in self.user.userprofile.pinned_notes.all()
-
-    def get_collections(self) -> list[dict[str, Any]]:
-        """Return all collections that contain this blob.
-
-        Returns:
-            List of dictionaries, each containing collection information:
-            name, uuid, url, num_objects, cover_url, and note.
-        """
-        collection_list = []
-
-        for x in CollectionObject.objects.filter(
-                blob=self,
-                collection__user=self.user
-        ).annotate(
-            num_objects=Count("collection__collectionobject")
-        ).select_related(
-            "collection"
-        ):
-            if x.collection is None:
-                continue
-            collection_list.append(
-                {
-                    "name": x.collection.name,
-                    "uuid": x.collection.uuid,
-                    "url": x.collection.get_absolute_url(),
-                    "num_objects": x.num_objects,
-                    "cover_url": x.collection.cover_url,
-                    "note": x.note
-                }
-            )
-
-        return collection_list
-
-    def get_date(self) -> Any:
-        """Parse and return a date object from the blob's date string.
-
-        Returns:
-            Date object parsed from the blob's date field using pattern matching.
-        """
-        return get_date_from_pattern({"gte": self.date})
-
     @staticmethod
     def is_ingestible_file(filename: str | Any) -> bool:
         """Check if a file can be ingested (processed for content extraction).
@@ -851,14 +877,6 @@ class Blob(TimeStampedModel):
             URL string for the cover image.
         """
         return Blob.get_cover_url_static(self.uuid, self.file.name, size)
-
-    def get_cover_url_small(self) -> str:
-        """Return the small cover image URL for this blob.
-
-        Returns:
-            URL string for the small cover image.
-        """
-        return self.get_cover_url(size="small")
 
     def clone(self, include_collections: bool = True) -> "Blob":
         """Create a copy of the current blob, including all its metadata and collection memberships.
