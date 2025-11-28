@@ -161,20 +161,20 @@ def test_add_related_object(auto_login_user):
     question = QuestionFactory.create(user=user)
     blob = BlobFactory.create(user=user)
 
-    response = add_related_object("drill", question.uuid, blob.uuid)
+    response = add_related_object("drill", question.uuid, blob.uuid, user)
     assert response == {"status": "OK"}
 
     with pytest.raises(NodeNotFoundError, match="Node not found"):
-        add_related_object("drill", uuid.uuid4(), blob.uuid)
+        add_related_object("drill", uuid.uuid4(), blob.uuid, user)
 
     with pytest.raises(RelatedObjectNotFoundError, match="Related object not found"):
-        add_related_object("drill", question.uuid, uuid.uuid4())
+        add_related_object("drill", question.uuid, uuid.uuid4(), user)
 
     with pytest.raises(ObjectAlreadyRelatedError, match="That object is already related"):
-        add_related_object("drill", question.uuid, blob.uuid)
+        add_related_object("drill", question.uuid, blob.uuid, user)
 
     with pytest.raises(UnsupportedNodeTypeError, match="Unsupported node_type: invalid"):
-        add_related_object("invalid", question.uuid, blob.uuid)
+        add_related_object("invalid", question.uuid, blob.uuid, user)
 
 
 def test_get_nodes(auto_login_user, monkeypatch):
