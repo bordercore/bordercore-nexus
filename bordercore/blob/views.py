@@ -8,13 +8,15 @@ import json
 import logging
 from typing import Any, Generator, cast
 
+from botocore.exceptions import BotoCoreError, ClientError
+
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import UploadedFile
+from django.db import transaction
 from django.db.models import Count, Q, QuerySet
-from django.db.models.functions import Lower
 from django.forms import BaseModelForm
 from django.http import (HttpRequest, HttpResponse, HttpResponseRedirect,
                          JsonResponse, StreamingHttpResponse)
@@ -71,33 +73,67 @@ class FormValidMixin(ModelFormMixin):
 
         blob = form.save(commit=False)
 
-        # Only rename a blob's file if the file itself hasn't changed
-        if "file" not in form.changed_data and form.cleaned_data["filename"] != blob.file.name:
-            blob.rename_file(form.cleaned_data["filename"])
-
         user = cast(User, self.request.user)
-        blob.user = user
-        blob.file.name = form.cleaned_data["filename"]
-        blob.file_modified = form.cleaned_data["file_modified"]
-        blob.save()
 
-        # Save the tags
-        form.save_m2m()
+        with transaction.atomic():
+            # Only rename a blob's file if the file itself hasn't changed
+            # rename_file sets file.name and calls save(), so it needs to be in the transaction
+            if "file" not in form.changed_data and form.cleaned_data["filename"] != blob.file.name:
+                blob.rename_file(form.cleaned_data["filename"])
+            else:
+                # Only set file.name if rename_file wasn't called (rename_file sets it internally)
+                blob.file.name = form.cleaned_data["filename"]
 
-        handle_metadata(blob, self.request)
+            blob.user = user
+            blob.file_modified = form.cleaned_data["file_modified"]
+            blob.save()
 
-        if new_object:
-            if "linked_blob_uuid" in self.request.POST:
-                linked_blob = Blob.objects.get(uuid=self.request.POST["linked_blob_uuid"], user=user)
-                BlobToObject.objects.create(node=linked_blob, blob=blob)
+            # Save the tags
+            form.save_m2m()
 
-            handle_linked_collection(blob, self.request)
+            handle_metadata(blob, self.request)
 
-            if "collection_uuid" in self.request.POST:
-                collection = Collection.objects.get(uuid=self.request.POST["collection_uuid"], user=user)
-                collection.add_object(blob)
+            if new_object:
+                if "linked_blob_uuid" in self.request.POST:
+                    linked_blob = Blob.objects.get(uuid=self.request.POST["linked_blob_uuid"], user=user)
+                    BlobToObject.objects.create(node=linked_blob, blob=blob)
 
-        blob.index_blob()
+                handle_linked_collection(blob, self.request)
+
+                if "collection_uuid" in self.request.POST:
+                    collection = Collection.objects.get(uuid=self.request.POST["collection_uuid"], user=user)
+                    collection.add_object(blob)
+
+        # Call index_blob outside the transaction since it's an external service call
+        # If indexing fails, we still want the blob to be saved
+        try:
+            blob.index_blob()
+        except (ClientError, BotoCoreError) as e:
+            log.error(
+                "Failed to trigger Elasticsearch indexing for blob %s: %s",
+                blob.uuid,
+                e,
+                exc_info=True
+            )
+            messages.add_message(
+                self.request,
+                messages.WARNING,
+                "Blob saved successfully, but indexing may be delayed. "
+                "The blob will be indexed automatically when available."
+            )
+        except Exception as e:
+            log.error(
+                "Unexpected error triggering Elasticsearch indexing for blob %s: %s",
+                blob.uuid,
+                e,
+                exc_info=True
+            )
+            messages.add_message(
+                self.request,
+                messages.WARNING,
+                "Blob saved successfully, but indexing may be delayed. "
+                "The blob will be indexed automatically when available."
+            )
 
         message = "Blob created" if new_object else "Blob updated"
         messages.add_message(self.request, messages.INFO, message)
