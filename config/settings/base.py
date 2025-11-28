@@ -231,6 +231,9 @@ LOGIN_URL = "/accounts/login/"
 ELASTICSEARCH_ENDPOINT = os.environ.get("ELASTICSEARCH_ENDPOINT", "http://localhost:9200")
 ELASTICSEARCH_INDEX = os.environ.get("ELASTICSEARCH_INDEX", "bordercore")
 
+# OpenAI config
+OPENAI_GPT_MODEL = os.environ.get("OPENAI_GPT_MODEL", "gpt-4o")
+
 ELASTICSEARCH_EXTRA_FIELDS = {}
 
 DJANGO_LOG_DIR = os.environ.get("DJANGO_LOG_DIR", "/var/log/django")

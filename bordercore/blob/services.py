@@ -19,7 +19,6 @@ from urllib.parse import ParseResult, urlparse
 
 import humanize
 import instaloader
-import openai
 import requests
 from instaloader import Post
 from openai import OpenAI
@@ -815,11 +814,10 @@ def chatbot(request: HttpRequest, args: dict[str, Any]) -> Generator[str, None, 
 
     Note:
         Requires OPENAI_API_KEY environment variable to be set. Uses
-        GPT-4.1 model for generating responses.
+        the model configured in settings.OPENAI_GPT_MODEL for generating responses.
     """
 
-    openai.api_key = os.environ.get("OPENAI_API_KEY")
-    model = "gpt-4.1"
+    model = settings.OPENAI_GPT_MODEL
     messages: list[dict[str, str]] = []
     added_values: list[dict[str, Any]] = []
 
