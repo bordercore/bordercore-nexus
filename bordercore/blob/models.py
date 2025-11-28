@@ -299,9 +299,9 @@ class Blob(TimeStampedModel):
             String document type: "note", "book", "image", "video", "blob",
             or "document".
         """
-        if self.is_note is True:
+        if self.is_note:
             return "note"
-        if "is_book" in [x.name for x in self.metadata.all()]:
+        if self.metadata.filter(name="is_book").exists():
             return "book"
         if is_image(self.file):
             return "image"
