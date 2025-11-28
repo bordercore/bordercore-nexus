@@ -890,6 +890,29 @@ def chatbot(request: HttpRequest, args: dict[str, Any]) -> Generator[str, None, 
                 yield choice_content
 
 
+def get_node_to_object_query(node_uuid: str, object_uuid: str, user: User) -> Q:
+    """Build a Q expression for finding a node-to-object relationship.
+
+    Creates a Q expression that matches a relationship between a node and
+    a related object (blob or bookmark), ensuring both belong to the user.
+
+    Args:
+        node_uuid: UUID of the node (Blob or Question).
+        object_uuid: UUID of the related object (Blob or Bookmark).
+        user: User who owns both the node and object.
+
+    Returns:
+        Q expression that can be used with QuerySet.get() or filter().
+    """
+    return (
+        Q(node__uuid=node_uuid, node__user=user)
+        & (
+            Q(blob__uuid=object_uuid, blob__user=user)
+            | Q(bookmark__uuid=object_uuid, bookmark__user=user)
+        )
+    )
+
+
 def add_related_object(node_type: str, node_uuid: str, object_uuid: str) -> dict[str, str]:
     """Relate a node to another object.
 

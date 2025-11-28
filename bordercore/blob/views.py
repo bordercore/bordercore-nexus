@@ -33,7 +33,8 @@ from django.views.generic.list import ListView
 from blob.forms import BlobForm
 from blob.models import (Blob, BlobTemplate, BlobToObject, MetaData,
                          RecentlyViewedBlob)
-from blob.services import add_related_object as add_related_object_service
+from blob.services import (add_related_object as add_related_object_service,
+                           get_node_to_object_query)
 from blob.services import chatbot, get_books, import_blob
 from collection.models import Collection, CollectionObject
 from lib.decorators import validate_post_data
@@ -788,10 +789,7 @@ def remove_related_object(request: HttpRequest) -> JsonResponse:
     node_model = Blob.get_node_model(node_type)
 
     cast(Any, node_model).objects.get(
-        Q(node__uuid=node_uuid, node__user=user)
-        & (
-            Q(blob__uuid=object_uuid, blob__user=user) | Q(bookmark__uuid=object_uuid, bookmark__user=user)
-        )
+        get_node_to_object_query(node_uuid, object_uuid, user)
     ).delete()
 
     response = {
@@ -829,10 +827,7 @@ def sort_related_objects(request: HttpRequest) -> JsonResponse:
     node_model = Blob.get_node_model(node_type)
 
     node_to_object = cast(Any, node_model).objects.get(
-        Q(node__uuid=node_uuid, node__user=user)
-        & (
-            Q(blob__uuid=object_uuid, blob__user=user) | Q(bookmark__uuid=object_uuid, bookmark__user=user)
-        )
+        get_node_to_object_query(node_uuid, object_uuid, user)
     )
     cast(Any, node_model).reorder(node_to_object, new_position)
 
@@ -871,10 +866,7 @@ def update_related_object_note(request: HttpRequest) -> JsonResponse:
     node_model = Blob.get_node_model(node_type)
 
     node_to_object = cast(Any, node_model).objects.get(
-        Q(node__uuid=node_uuid, node__user=user)
-        & (
-            Q(blob__uuid=object_uuid, blob__user=user) | Q(bookmark__uuid=object_uuid, bookmark__user=user)
-        )
+        get_node_to_object_query(node_uuid, object_uuid, user)
     )
     node_to_object.note = note
     node_to_object.save()
