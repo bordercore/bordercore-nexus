@@ -63,7 +63,7 @@ def test_no_text_extracted(mock_extract, mock_requests_get, client):
     mock_extract.return_value = None
 
     response = client.get("/api/extract_text", {"url": "http://example.com"})
-    assert response.status_code == 404
+    assert response.status_code == 422
     assert response.json() == {"error": "No text could be extracted from the given URL"}
 
 
