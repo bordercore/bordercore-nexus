@@ -16,7 +16,6 @@ from django.core.files.uploadedfile import UploadedFile
 from django.forms import (CheckboxInput, ModelForm, Textarea, TextInput,
                           ValidationError)
 from django.forms.fields import CharField, IntegerField
-from django.http import HttpRequest
 from django.urls import reverse_lazy
 from django.utils.safestring import mark_safe
 
@@ -39,10 +38,6 @@ class BlobForm(ModelForm):
         file_modified: Hidden integer field for tracking file modification time.
     """
 
-    request: HttpRequest | None
-    filename: CharField
-    file_modified: IntegerField
-
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the BlobForm instance.
 
@@ -56,12 +51,11 @@ class BlobForm(ModelForm):
             **kwargs: Arbitrary keyword arguments. May contain 'request' key
                 which is extracted and stored as self.request.
         """
-        # The request object is passed in from a view's SongForm() constructor
+        # The request object is passed in from a view's BlobForm() constructor
         self.request = kwargs.pop("request", None)
 
         super().__init__(*args, **kwargs)
 
-        self.fields["file"].required = False
         self.fields["file"].label = "File"
         self.fields["date"].required = False
 
@@ -70,8 +64,6 @@ class BlobForm(ModelForm):
 
         self.fields["date"].initial = ""
         self.fields["content"].required = False
-        self.fields["note"].required = False
-        self.fields["tags"].required = False
         self.fields["name"].required = False
         self.fields["importance"].required = False
 
@@ -97,11 +89,23 @@ class BlobForm(ModelForm):
     file_modified = IntegerField(required=False, widget=forms.HiddenInput())
 
     def clean_filename(self) -> str:
+        """Validate the filename field.
+
+        Ensures that the filename is not in the list of illegal filenames and
+        that it does not exceed the maximum length of 255 characters.
+
+        Returns:
+            The cleaned filename string if validation passes.
+
+        Raises:
+            ValidationError: If the filename is illegal or exceeds the maximum
+                length.
+        """
         filename = str(self.cleaned_data.get("filename"))
         if filename in ILLEGAL_FILENAMES:
-            self.add_error("filename", ValidationError(f"Error: Illegal filename: {filename}"))
+            raise ValidationError(f"Error: Illegal filename: {filename}")
         if len(filename) > 255:
-            self.add_error("filename", ValidationError("Error: Filename must not be longer than 255 characters"))
+            raise ValidationError("Error: Filename must not be longer than 255 characters")
 
         return filename
 
@@ -120,25 +124,25 @@ class BlobForm(ModelForm):
             ValidationError: If a duplicate file with the same SHA1 checksum
                 already exists.
         """
-        file = self.cleaned_data.get("file")
+        uploaded_file = self.cleaned_data.get("file")
 
         # This insures that we only check for a dupe if the user
         #  added a file via file upload rather than simply edit the
         #  metadata for a file. Without this check the actual file
         #  can't be found to compute the sha1sum.
-        if "file" in self.files and file is not None:
+        if "file" in self.files and uploaded_file is not None:
             hasher = hashlib.sha1()
-            for chunk in file.chunks():
+            for chunk in uploaded_file.chunks():
                 hasher.update(chunk)
 
             # If the sha1sum changed (or didn't exist because this is a new object), check for a dupe
             if self.instance.sha1sum != hasher.hexdigest():
-                existing_file = Blob.objects.filter(sha1sum=hasher.hexdigest())
+                existing_file = Blob.objects.filter(sha1sum=hasher.hexdigest()).first()
                 if existing_file:
-                    url = reverse_lazy("blob:detail", kwargs={"uuid": existing_file[0].uuid})
+                    url = reverse_lazy("blob:detail", kwargs={"uuid": existing_file.uuid})
                     raise forms.ValidationError(mark_safe(f"Error: This file <a href='{url}'>already exists.</a>"))
 
-        return file
+        return uploaded_file
 
     def clean_date(self) -> str:
         """Validate the date field.
@@ -158,11 +162,11 @@ class BlobForm(ModelForm):
         if date is None:
             return ""
 
-        regex1 = r"^\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d$"
-        regex2 = r"^\d\d\d\d-\d\d-\d\d$"
-        regex3 = r"^\d\d\d\d-\d\d$"
-        regex4 = r"^\d\d\d\d$"
-        regex5 = r"^\[(\d\d\d\d-\d\d) TO \d\d\d\d-\d\d\]$"
+        regex1 = r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$"
+        regex2 = r"^\d{4}-\d{2}-\d{2}$"
+        regex3 = r"^\d{4}-\d{2}$"
+        regex4 = r"^\d{4}$"
+        regex5 = r"^\[(\d{4}-\d{2}) TO \d{4}-\d{2}\]$"
         regex6 = r"^$"  # Empty dates are fine
 
         if not re.match("|".join([regex1, regex2, regex3, regex4, regex5, regex6]), date):
@@ -171,6 +175,11 @@ class BlobForm(ModelForm):
         return date
 
     class Meta:
+        """Meta configuration for BlobForm.
+
+        Defines the model, fields, widgets, and field classes used by the form.
+        """
+
         model = Blob
         fields = ("file", "name", "filename", "file_modified", "date", "tags", "content", "note", "importance", "is_note", "id", "math_support")
         widgets = {
