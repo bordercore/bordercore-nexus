@@ -226,7 +226,12 @@ class Blob(TimeStampedModel):
         """
         if self.is_note:
             return "note"
-        if self.metadata.filter(name="is_book").exists():
+        # Check prefetched metadata first to avoid N+1 queries
+        if hasattr(self, "_prefetched_objects_cache") and "metadata" in self._prefetched_objects_cache:
+            metadata_list = self._prefetched_objects_cache["metadata"]
+        else:
+            metadata_list = self.metadata.all()
+        if any(m.name == "is_book" for m in metadata_list):
             return "book"
         if is_image(self.file):
             return "image"
