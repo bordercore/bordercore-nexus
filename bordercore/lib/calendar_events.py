@@ -7,7 +7,7 @@ metadata into a simplified list of dictionaries.
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Any, Dict, List, Optional, TypedDict, cast
 
 import dateutil.parser
@@ -16,6 +16,8 @@ from apiclient.discovery import build
 from oauth2client.client import OAuth2Credentials
 from rfc3339 import datetimetostr
 from rfc3339 import now as now_rfc3339
+
+from django.utils import timezone
 
 from accounts.models import UserProfile
 
@@ -121,7 +123,7 @@ class Calendar():
         http = httplib2.Http()
         http = self.credentials.authorize(http)
         service = build(serviceName="calendar", version="v3", http=http, cache_discovery=False)
-        time_max = datetime.now() + timedelta(days=7)
+        time_max = timezone.now() + timedelta(days=7)
 
         events = service.events().list(calendarId=self.calendar_email,
                                        orderBy="startTime",
@@ -129,7 +131,7 @@ class Calendar():
                                        timeMin=str(now_rfc3339()).replace(" ", "T"),
                                        timeMax=datetimetostr(time_max)).execute()
         event_list: List[EventDict] = []
-        for count, e in enumerate(events["items"], start=1):
+        for count, e in enumerate(events.get("items", []), start=1):
             one_event: EventDict = {"count": count}
             for field in ["description", "location", "summary"]:
                 value = e.get(field)
@@ -138,6 +140,5 @@ class Calendar():
             one_event["start_raw"], one_event["start_pretty"] = self._parse_event_time(e["start"])
             one_event["end_raw"], one_event["end_pretty"] = self._parse_event_time(e["end"])
             event_list.append(one_event)
-            count = count + 1
 
         return event_list
