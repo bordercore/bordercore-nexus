@@ -30,12 +30,6 @@ from elasticsearch_dsl import DateRange
 from elasticsearch_dsl import Document as Document_ES
 from elasticsearch_dsl import Integer, Long, Range, Text
 
-try:
-    import fitz
-except ModuleNotFoundError:
-    # Don't worry if this module doesn't exist in production
-    pass
-
 from lib.util import get_elasticsearch_connection, is_pdf, is_video
 
 ELASTICSEARCH_INDEX = os.environ.get("ELASTICSEARCH_INDEX", "bordercore")
@@ -142,11 +136,11 @@ def get_doctype(blob: dict[str, Any], metadata: dict[str, Any]) -> str:
     Returns:
         Document type string: "note", "book", "blob", or "document".
     """
-    if blob["is_note"] is True:
+    if blob.get("is_note") is True:
         return "note"
     if "is_book" in metadata:
         return "book"
-    if blob["sha1sum"] is not None:
+    if blob.get("sha1sum"):
         return "blob"
     return "document"
 
@@ -180,7 +174,7 @@ def get_blob_info(**kwargs: Any) -> dict[str, Any]:
 
     Raises:
         ValueError: If neither "uuid" nor "sha1sum" is provided in kwargs.
-        Exception: If the API request returns a non-200 status code.
+        requests.HTTPError: If the API request returns a non-200 status code.
     """
     if "sha1sum" in kwargs:
         prefix = "sha1sums"
@@ -199,8 +193,7 @@ def get_blob_info(**kwargs: Any) -> dict[str, Any]:
     session.trust_env = False
     r = session.get(f"https://www.bordercore.com/api/{prefix}/{param}/", headers=headers)
 
-    if r.status_code != 200:
-        raise Exception(f"Error when accessing Bordercore REST API: status code={r.status_code}, prefix={prefix}, param={param}")
+    r.raise_for_status()
 
     info = r.json()
 
@@ -340,20 +333,24 @@ def get_num_pages(content: bytes) -> int:
     Returns:
         Number of pages in the PDF.
     """
+    # Import fitz here rather than at module level because only the AWS
+    # index_blob lambda has access to the PyMuPDF package, which provides fitz.
+    # This avoids import errors in other environments where PyMuPDF is not available.
+    import fitz
     doc = fitz.open("pdf", io.BytesIO(content))
     return doc.page_count
 
 
-def delete_metadata(es: Any, uuid: str) -> None:
+def delete_metadata(uuid: str) -> None:
     """Remove metadata field from an Elasticsearch document.
 
     Uses an update_by_query operation to remove the "metadata" field from the
     document matching the given UUID.
 
     Args:
-        es: Elasticsearch client connection.
         uuid: UUID of the document to update.
     """
+    es = get_elasticsearch_connection()
     q = {
         "query": {
             "term": {
@@ -396,18 +393,12 @@ def index_blob(**kwargs: Any) -> None:
     Args:
         **kwargs: Keyword arguments including:
             - "uuid" or "sha1sum": Required identifier for the blob.
-            - "create_connection": If True (default), create Elasticsearch
-              connection. If False, use existing connection.
             - "extra_fields": Dictionary of additional fields to include.
             - "file_changed": If True (default), re-process file content.
               If False, update metadata only.
             - "new_blob": If True (default), treat as new blob. If False,
               remove existing metadata before update.
     """
-    es: Any = None
-    if kwargs.get("create_connection", True):
-        es = get_elasticsearch_connection()
-
     blob_info = get_blob_info(**kwargs)
 
     extra_fields = kwargs.get("extra_fields", {})
@@ -497,7 +488,7 @@ def index_blob(**kwargs: Any) -> None:
         if not kwargs.get("new_blob", True):
             # For existing blobs, remove any existing metadata first before updating,
             #  in case the user is deleting some of it.
-            delete_metadata(es, article.uuid)
+            delete_metadata(article.uuid)
 
         # Monkeypatch Elasticsearch DSL to avoid issue with date ranges
         elasticsearch_dsl.utils.merge = elasticsearch_merge
