@@ -1,7 +1,16 @@
+"""Script to invoke Chromda Lambda function for bookmark thumbnail creation.
+
+This module provides a command-line script to trigger the Chromda Lambda
+function that creates thumbnail images for bookmarks using Puppeteer screenshots.
+It can process individual bookmarks or batch process all bookmarks that don't
+have thumbnails yet.
+"""
+
 import argparse
 import json
 import re
 import time
+from uuid import UUID
 
 import boto3
 
@@ -17,7 +26,18 @@ client = boto3.client("lambda")
 DELAY = 5
 
 
-def populate_action(dry_run):
+def populate_action(dry_run: bool) -> None:
+    """Process all bookmarks that don't have thumbnails in S3.
+
+    Scans S3 bucket for existing bookmark thumbnails, identifies bookmarks
+    without thumbnails, and invokes the Chromda Lambda function for each
+    missing thumbnail. Includes a delay between invocations to avoid
+    overwhelming the system.
+
+    Args:
+        dry_run: If True, only print what would be processed without
+            actually invoking the Lambda function.
+    """
 
     bucket_name = settings.AWS_STORAGE_BUCKET_NAME
     s3_resource = boto3.resource("s3")
@@ -43,7 +63,18 @@ def populate_action(dry_run):
             time.sleep(DELAY)
 
 
-def invoke(uuid, dry_run):
+def invoke(uuid: str | UUID, dry_run: bool) -> None:
+    """Invoke the Chromda Lambda function to create a bookmark thumbnail.
+
+    Retrieves the bookmark by UUID and publishes a message to SNS that triggers
+    the Chromda Lambda function to create a screenshot-based thumbnail using
+    Puppeteer. The thumbnail is saved to S3 at the specified key.
+
+    Args:
+        uuid: UUID string or UUID object identifying the bookmark to process.
+        dry_run: If True, no action is taken (unused in this function but
+            included for consistency with populate_action).
+    """
 
     bookmark = Bookmark.objects.get(uuid=uuid)
 

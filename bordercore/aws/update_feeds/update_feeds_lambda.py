@@ -1,5 +1,14 @@
+"""AWS Lambda function for updating RSS/Atom feeds.
+
+This module provides an AWS Lambda handler that triggers feed updates by
+calling the Bordercore REST API endpoint. It processes feed UUIDs and
+fetches new entries from RSS/Atom feeds.
+"""
+
 import logging
 import os
+from typing import Any
+from uuid import UUID
 
 import requests
 
@@ -10,7 +19,16 @@ DRF_TOKEN = os.environ.get("DRF_TOKEN")
 TIMEOUT = (10.0, 10.0)
 
 
-def handler(event, context):
+def handler(event: dict[str, Any], context: Any) -> None:
+    """AWS Lambda handler for updating feeds.
+
+    Processes events containing feed UUIDs and triggers feed updates via
+    the REST API. Handles errors gracefully and logs completion status.
+
+    Args:
+        event: Lambda event dictionary containing "feed_uuid" key.
+        context: Lambda context object (unused but required by Lambda interface).
+    """
 
     feed_uuid = None
 

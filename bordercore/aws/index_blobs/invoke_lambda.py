@@ -1,6 +1,14 @@
+"""Script to invoke the IndexBlob Lambda function.
+
+This module provides a command-line script to manually trigger the AWS Lambda
+function that indexes blob content in Elasticsearch. It constructs an S3
+event payload and invokes the Lambda function asynchronously.
+"""
+
 import argparse
 import json
 import pprint
+from uuid import UUID
 
 import boto3
 
@@ -11,7 +19,18 @@ django.setup()
 client = boto3.client("lambda")
 
 
-def invoke(uuid, file_changed):
+def invoke(uuid: str | UUID, file_changed: bool) -> None:
+    """Invoke the IndexBlob Lambda function for a blob.
+
+    Constructs an S3 event payload simulating an object creation event and
+    invokes the Lambda function asynchronously to index the blob content
+    in Elasticsearch.
+
+    Args:
+        uuid: UUID string or UUID object identifying the blob to index.
+        file_changed: If True, indicates the file content has changed and
+            should be re-indexed. If False, only metadata is updated.
+    """
 
     message = {
         "Records": [

@@ -1,6 +1,15 @@
+"""Script to invoke the CreateBookmarkThumbnail Lambda function.
+
+This module provides a command-line script to manually trigger the AWS Lambda
+function that creates thumbnail images for bookmarks. It constructs the
+appropriate S3 event payload and invokes the Lambda function asynchronously.
+"""
+
 import argparse
 import json
 import pprint
+from typing import Any
+from uuid import UUID
 
 import boto3
 
@@ -13,7 +22,16 @@ from bookmark.models import Bookmark  # isort:skip
 client = boto3.client("lambda")
 
 
-def invoke(uuid):
+def invoke(uuid: str | UUID) -> None:
+    """Invoke the CreateBookmarkThumbnail Lambda function for a bookmark.
+
+    Retrieves the bookmark by UUID, constructs an S3 event payload simulating
+    an object creation event, and invokes the Lambda function asynchronously
+    to generate a thumbnail image.
+
+    Args:
+        uuid: UUID string or UUID object identifying the bookmark to process.
+    """
 
     bookmark = Bookmark.objects.get(uuid=uuid)
 

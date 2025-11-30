@@ -1,38 +1,19 @@
-"""
-Sequence of events when this lambda gets triggered:
+"""AWS Lambda function for creating blob and bookmark thumbnails.
 
-The S3 object which triggered the lambda gets downloaded from S3
-and into the /tmp directory of the lambda runtime environment. So
-if the original file is called foo.pdf, then it will be downloaded
-to this location:
+This module provides an AWS Lambda handler that processes S3 object creation
+events to generate thumbnail images for blobs and bookmarks. It downloads
+files from S3, creates thumbnails using the thumbnail service, and uploads
+them back to S3 with appropriate metadata.
 
-/tmp/blobs/<uuid>-foo.pdf, eg:
+Sequence of events:
+- S3 object is downloaded to /tmp/blobs/<uuid>-<filename>
+- For PDFs, a specific page is extracted
+- Thumbnails are created in /tmp/covers/<uuid>-cover*.jpg
+- Cover images are uploaded to S3 with metadata
+- Temporary files are cleaned up
 
-/tmp/blobs/b305e9fd-32cb-4c5d-be6f-ad75910e38d8-foo.pdf
-
-For pdfs, one page is extracted and saved. Eg, if the first page
-(the default) is specified, then the filename looks like this:
-
-/tmp/blobs/<uuid>-foo_p0.pdf
-
-Then this page is converted into a large and small cover images
-and stored here:
-
-/tmp/covers/<uuid>-cover.jpg
-/tmp/covers/<uuid>-cover-large.jpg
-
-If the original uploaded file is an image, then its cover image will
-be created here:
-
-/tmp/covers/<uuid>-cover.jpg
-
-Its width and height dimensions are calculated and stored as S3 metadata.
-
-All cover images are then uploaded to S3 in the same directory
-as the original file.
-
-For bookmarks, only a small cover image is created, since the Chromda lambda
-generates the large version based on the bookmark's webpage.
+For bookmarks, only a small cover image is created since Chromda generates
+the large version based on the webpage.
 """
 
 import glob
@@ -41,6 +22,7 @@ import logging
 import os
 import re
 from pathlib import PurePath
+from typing import Any
 from urllib.parse import unquote_plus
 
 import boto3
@@ -59,16 +41,40 @@ BLOBS_DIR = f"{EFS_DIR}/blobs"
 COVERS_DIR = f"{EFS_DIR}/covers"
 
 
-def is_cover_image(bucket, key):
-    """
-    Cover images have metadata "cover-image" set to "Yes"
+def is_cover_image(bucket: str, key: str) -> bool:
+    """Check if an S3 object is a cover image based on metadata.
+
+    Cover images are identified by having the "cover-image" metadata key
+    set to "Yes". This function checks the S3 object metadata to determine
+    if it's a cover image.
+
+    Args:
+        bucket: S3 bucket name containing the object.
+        key: S3 object key (path) to check.
+
+    Returns:
+        True if the object has cover-image metadata set to "Yes", False otherwise.
     """
     response = s3_client.head_object(Bucket=bucket, Key=key)
 
     return response["Metadata"].get("cover-image", None) == "Yes"
 
 
-def extract_uuid(key):
+def extract_uuid(key: str) -> str:
+    """Extract UUID from an S3 key path.
+
+    Searches for a UUID pattern (8-4-4-4-12 hexadecimal digits) in the key
+    and returns the first match.
+
+    Args:
+        key: S3 object key (path) containing a UUID.
+
+    Returns:
+        UUID string extracted from the key.
+
+    Raises:
+        ValueError: If no UUID pattern is found in the key.
+    """
     # UUID format: 8-4-4-4-12 hexadecimal digits
     uuid_pattern = r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
     match = re.search(uuid_pattern, key)
@@ -78,10 +84,20 @@ def extract_uuid(key):
         raise ValueError(f"Can't extract uuid from key: {key}")
 
 
-def get_cover_filename(key, uuid, is_bookmark):
-    """
-    For blobs, the filename is cover.jpg or cover-large.jpg.
-    For bookmarks, the filename is <uuid>-small.png.
+def get_cover_filename(key: str, uuid: str, is_bookmark: bool) -> str:
+    """Determine the cover image filename based on object type.
+
+    For blobs, extracts the filename from the local path (cover.jpg or
+    cover-large.jpg). For bookmarks, generates the filename as
+    <uuid>-small.png.
+
+    Args:
+        key: Local file path to the cover image.
+        uuid: UUID string of the blob or bookmark.
+        is_bookmark: True if processing a bookmark, False for a blob.
+
+    Returns:
+        Cover image filename string.
     """
 
     if is_bookmark:
@@ -92,7 +108,18 @@ def get_cover_filename(key, uuid, is_bookmark):
     return cover_filename
 
 
-def handler(event, context):
+def handler(event: dict[str, Any], context: Any) -> None:
+    """AWS Lambda handler for processing S3 blob and bookmark uploads.
+
+    Processes S3 object creation events to generate thumbnail images for
+    blobs and bookmarks. Downloads files from S3, creates thumbnails, and
+    uploads them back to S3 with metadata. Skips cover images and delete
+    events.
+
+    Args:
+        event: Lambda event dictionary containing SNS records with S3 events.
+        context: Lambda context object (unused but required by Lambda interface).
+    """
 
     try:
 
@@ -160,5 +187,5 @@ def handler(event, context):
 
     except Exception as e:
         import traceback
-        log.info(traceback.print_exc())
+        log.error(traceback.format_exc())
         log.error(f"Lambda Exception: {e}")

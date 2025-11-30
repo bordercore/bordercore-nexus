@@ -1,6 +1,14 @@
+"""Script to invoke the CreateEmbeddings Lambda function.
+
+This module provides a command-line script to manually trigger the AWS Lambda
+function that creates embeddings for blob content or arbitrary text. It can
+invoke the function asynchronously for blob UUIDs or synchronously for text.
+"""
+
 import argparse
 import json
 import sys
+from uuid import UUID
 
 import boto3
 
@@ -12,7 +20,19 @@ django.setup()
 client = boto3.client("lambda")
 
 
-def invoke(uuid, text):
+def invoke(uuid: str | UUID | None, text: str | None) -> None:
+    """Invoke the CreateEmbeddings Lambda function.
+
+    Invokes the Lambda function either asynchronously for a blob UUID or
+    synchronously for text content. The function creates embeddings using
+    the configured embedding model.
+
+    Args:
+        uuid: Optional UUID string or UUID object identifying the blob to
+            process. If provided, invokes asynchronously.
+        text: Optional text string to create embeddings for. If provided,
+            invokes synchronously and prints the response.
+    """
 
     args = {
         "FunctionName": "CreateEmbeddings",
@@ -20,11 +40,13 @@ def invoke(uuid, text):
     }
 
     if uuid:
-        payload = {
+        payload: dict[str, str | UUID] = {
             "uuid": uuid
         }
         args["InvocationType"] = "Event"
     else:
+        if text is None:
+            raise ValueError("Either uuid or text must be provided")
         payload = {
             "text": text
         }

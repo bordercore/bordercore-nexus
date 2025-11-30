@@ -1,6 +1,14 @@
+"""Script to invoke the CreateThumbnail Lambda function.
+
+This module provides a command-line script to manually trigger the AWS Lambda
+function that creates thumbnail images for blobs. It constructs an S3 event
+payload and invokes the Lambda function asynchronously.
+"""
+
 import argparse
 import json
 import pprint
+from uuid import UUID
 
 import boto3
 
@@ -14,7 +22,16 @@ from blob.models import Blob  # isort:skip
 client = boto3.client("lambda")
 
 
-def invoke(uuid):
+def invoke(uuid: str | UUID) -> None:
+    """Invoke the CreateThumbnail Lambda function for a blob.
+
+    Retrieves the blob by UUID, constructs an S3 event payload simulating
+    an object creation event, and invokes the Lambda function asynchronously
+    to generate a thumbnail image.
+
+    Args:
+        uuid: UUID string or UUID object identifying the blob to process.
+    """
 
     blob = Blob.objects.get(uuid=uuid)
 

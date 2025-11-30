@@ -1,8 +1,16 @@
+"""AWS Lambda function for indexing blob content in Elasticsearch.
+
+This module provides an AWS Lambda handler that processes S3 events or direct
+invocations to index blob content in Elasticsearch. It extracts blob UUIDs
+from S3 keys or event payloads and triggers indexing operations.
+"""
+
 import json
 import logging
 import os
 import re
 from pathlib import PurePath
+from typing import Any
 
 import boto3
 from requests_aws4auth import AWS4Auth
@@ -16,7 +24,19 @@ credentials = boto3.Session().get_credentials()
 awsauth = AWS4Auth(credentials.access_key, credentials.secret_key, os.environ["AWS_REGION"], "es", session_token=credentials.token)
 
 
-def handler(event, context):
+def handler(event: dict[str, Any], context: Any) -> None:
+    """AWS Lambda handler for indexing blobs in Elasticsearch.
+
+    Processes SNS events containing S3 object creation events or direct
+    invocations with blob UUIDs. Extracts UUIDs from S3 keys or event
+    payloads, indexes blob content in Elasticsearch, and optionally
+    triggers embedding creation.
+
+    Args:
+        event: Lambda event dictionary containing SNS records with S3 events
+            or direct invocation payloads.
+        context: Lambda context object (unused but required by Lambda interface).
+    """
 
     try:
 

@@ -1,7 +1,16 @@
+"""AWS Lambda function for creating collection thumbnails.
+
+This module provides an AWS Lambda handler that creates thumbnail images for
+collections by downloading images from collection members, combining them into
+a single cover image, and uploading the result to S3.
+"""
+
 import json
 import logging
 import os
 import subprocess
+from typing import Any
+from uuid import UUID
 
 import boto3
 import requests
@@ -18,7 +27,22 @@ S3_BUCKET_NAME = "bordercore-blobs"
 s3_client = boto3.client("s3")
 
 
-def download_images_from_collection(collection_uuid):
+def download_images_from_collection(collection_uuid: str | UUID) -> list[str]:
+    """Download images from collection members for thumbnail creation.
+
+    Retrieves the list of images in a collection from the API, downloads
+    PDF cover images or image files from S3, and returns a list of local
+    filenames for processing.
+
+    Args:
+        collection_uuid: UUID string or UUID object identifying the collection.
+
+    Returns:
+        List of local filenames for downloaded images.
+
+    Raises:
+        Exception: If the API request fails or returns a non-200 status code.
+    """
 
     headers = {"Authorization": f"Token {DRF_TOKEN}"}
     r = requests.get(f"https://www.bordercore.com/api/collections/images/{collection_uuid}/", headers=headers, timeout=10)
@@ -52,7 +76,17 @@ def download_images_from_collection(collection_uuid):
     return filenames
 
 
-def handler(event, context):
+def handler(event: dict[str, Any], context: Any) -> None:
+    """AWS Lambda handler for creating collection thumbnails.
+
+    Processes SNS events containing collection UUIDs, downloads images from
+    collection members, combines them into a thumbnail using a shell script,
+    and uploads the result to S3.
+
+    Args:
+        event: Lambda event dictionary containing SNS records with collection UUIDs.
+        context: Lambda context object (unused but required by Lambda interface).
+    """
 
     try:
 

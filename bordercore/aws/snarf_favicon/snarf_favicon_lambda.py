@@ -1,6 +1,14 @@
+"""AWS Lambda function for downloading and storing website favicons.
+
+This module provides an AWS Lambda handler that downloads favicon images from
+websites and stores them in S3 for caching. It checks if a favicon already
+exists before downloading to avoid redundant requests.
+"""
+
 import logging
 import os
 import re
+from typing import Any
 
 import boto3
 import botocore
@@ -17,7 +25,21 @@ s3_resource = boto3.resource("s3")
 MAX_AGE = 2592000
 
 
-def get_domain(url):
+def get_domain(url: str) -> str:
+    """Extract the domain name from a URL.
+
+    Parses the URL to extract the domain, handling www subdomains by removing
+    them to get the base domain (e.g., "npr.org" instead of "www.npr.org").
+
+    Args:
+        url: URL string to extract the domain from.
+
+    Returns:
+        Domain name string without www prefix if present.
+
+    Raises:
+        Exception: If the URL cannot be parsed to extract a domain.
+    """
 
     p = re.compile(r"https?://(.*?)/")
     m = p.match(url)
@@ -34,7 +56,17 @@ def get_domain(url):
     return domain
 
 
-def handler(event, context):
+def handler(event: dict[str, Any], context: Any) -> None:
+    """AWS Lambda handler for fetching and storing favicons.
+
+    Processes events containing URLs, extracts domain names, checks if favicons
+    already exist in S3, and downloads/stores new favicons if needed.
+
+    Args:
+        event: Lambda event dictionary containing "url" and optional
+            "parse_domain" keys.
+        context: Lambda context object (unused but required by Lambda interface).
+    """
 
     try:
 
