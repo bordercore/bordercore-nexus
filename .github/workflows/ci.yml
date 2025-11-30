@@ -48,6 +48,7 @@ jobs:
           bordercore/drill/ \
           bordercore/feed/ \
           bordercore/fitness/ \
+          bordercore/lib/ \
           bordercore/node/ \
           bordercore/metrics/ \
           bordercore/music/ \
