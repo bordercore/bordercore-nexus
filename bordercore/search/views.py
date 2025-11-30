@@ -24,10 +24,10 @@ from rest_framework.request import Request
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.http import HttpRequest, JsonResponse
 from django.urls import reverse
-from django.utils.decorators import method_decorator
 from django.views.generic.list import ListView
 
 from blob.models import Blob
@@ -74,8 +74,7 @@ def get_creators(matches: dict[str, Any]) -> str:
     return ", ".join(creators)
 
 
-@method_decorator(login_required, name="dispatch")
-class SearchListView(ListView):
+class SearchListView(LoginRequiredMixin, ListView):
     """View for displaying search results.
 
     This view handles full-text search queries against Elasticsearch,
@@ -395,7 +394,6 @@ class SearchListView(ListView):
         return context
 
 
-@method_decorator(login_required, name="dispatch")
 class NoteListView(SearchListView):
     """View for displaying note search results.
 
@@ -476,8 +474,7 @@ class NoteListView(SearchListView):
         return context
 
 
-@method_decorator(login_required, name="dispatch")
-class SearchTagDetailView(ListView):
+class SearchTagDetailView(LoginRequiredMixin, ListView):
     """View for displaying search results filtered by tags.
 
     This view shows all objects that have been tagged with specific tags,
@@ -700,7 +697,6 @@ class SearchTagDetailView(ListView):
         return tag_counts_sorted
 
 
-@method_decorator(login_required, name="dispatch")
 class SemanticSearchListView(SearchListView):
     """View for semantic/vector-based search.
 

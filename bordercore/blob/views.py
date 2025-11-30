@@ -14,6 +14,7 @@ from botocore.exceptions import BotoCoreError, ClientError
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
@@ -24,7 +25,6 @@ from django.http import (HttpRequest, HttpResponse, HttpResponseRedirect,
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_POST
 from django.views.generic.base import View
 from django.views.generic.detail import DetailView
@@ -154,8 +154,7 @@ class FormValidMixin(ModelFormMixin):
         return JsonResponse(form.errors, status=400)
 
 
-@method_decorator(login_required, name="dispatch")
-class BlobListView(ListView):
+class BlobListView(LoginRequiredMixin, ListView):
     """View for displaying the blob list page.
 
     Shows a list of recent blobs for the logged-in user.
@@ -181,8 +180,7 @@ class BlobListView(ListView):
         }
 
 
-@method_decorator(login_required, name="dispatch")
-class BlobCreateView(FormRequestMixin, CreateView, FormValidMixin):
+class BlobCreateView(LoginRequiredMixin, FormRequestMixin, CreateView, FormValidMixin):
     """View for creating a new blob.
 
     Handles the creation of new blobs, including pre-populating form fields
@@ -296,8 +294,7 @@ class BlobCreateView(FormRequestMixin, CreateView, FormValidMixin):
         return form
 
 
-@method_decorator(login_required, name="dispatch")
-class BlobDetailView(DetailView):
+class BlobDetailView(LoginRequiredMixin, DetailView):
     """View for displaying a blob detail page.
 
     Shows a single blob with its metadata, relationships, collections,
@@ -401,8 +398,7 @@ class BlobDetailView(DetailView):
         return Blob.objects.filter(user=user)
 
 
-@method_decorator(login_required, name="dispatch")
-class BlobUpdateView(FormRequestMixin, UpdateView, FormValidMixin):
+class BlobUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView, FormValidMixin):
     """View for updating an existing blob.
 
     Handles editing of blobs, including updating metadata, tags, and
@@ -455,8 +451,7 @@ class BlobUpdateView(FormRequestMixin, UpdateView, FormValidMixin):
         return context
 
 
-@method_decorator(login_required, name="dispatch")
-class BlobCloneView(View):
+class BlobCloneView(LoginRequiredMixin, View):
     """View for cloning an existing blob.
 
     Creates a copy of a blob and redirects to the new blob's detail page.
@@ -481,8 +476,7 @@ class BlobCloneView(View):
         return HttpResponseRedirect(reverse("blob:detail", kwargs={"uuid": new_blob.uuid}))
 
 
-@method_decorator(login_required, name="dispatch")
-class BlobImportView(View):
+class BlobImportView(LoginRequiredMixin, View):
     """View for importing a blob from a URL.
 
     Handles importing blobs from external URLs and creating new blob
@@ -969,8 +963,7 @@ def chat(request: HttpRequest) -> StreamingHttpResponse:
     return StreamingHttpResponse(content_iterator, content_type="text/plain")
 
 
-@method_decorator(login_required, name="dispatch")
-class BookshelfListView(ListView):
+class BookshelfListView(LoginRequiredMixin, ListView):
     """View for displaying the bookshelf page.
 
     Shows a list of books (blobs with is_book metadata) with filtering

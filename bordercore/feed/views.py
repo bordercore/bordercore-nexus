@@ -15,10 +15,10 @@ from feed.models import USER_AGENT, Feed
 from rest_framework.decorators import api_view
 
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.db.models import QuerySet
 from django.http import HttpRequest, JsonResponse
-from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_POST
 from django.views.generic.list import ListView
 
@@ -47,8 +47,7 @@ class FeedPayload(TypedDict, total=False):
     feedItems: List[FeedItemPayload]
 
 
-@method_decorator(login_required, name="dispatch")
-class FeedListView(ListView):
+class FeedListView(LoginRequiredMixin, ListView):
     """Display the current user's feeds and their items."""
 
     template_name = "feed/index.html"

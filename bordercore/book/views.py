@@ -2,13 +2,11 @@ import string
 
 from book.models import Book
 
-from django.contrib.auth.decorators import login_required
-from django.utils.decorators import method_decorator
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic.list import ListView
 
 
-@method_decorator(login_required, name="dispatch")
-class BookListView(ListView):
+class BookListView(LoginRequiredMixin, ListView):
 
     model = Book
     template_name = "book/index.html"

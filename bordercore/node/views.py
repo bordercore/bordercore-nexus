@@ -14,6 +14,7 @@ from typing import Any, Dict, cast
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models.query import QuerySet as QuerySetType
@@ -21,7 +22,6 @@ from django.http import (HttpRequest, HttpResponse, HttpResponseRedirect,
                          JsonResponse)
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_POST
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, FormMixin
@@ -39,8 +39,7 @@ from .models import Node, NodeTodo
 from .services import get_node_list
 
 
-@method_decorator(login_required, name="dispatch")
-class NodeListView(ListView, FormMixin):
+class NodeListView(LoginRequiredMixin, ListView, FormMixin):
     """List view for a user's nodes.
 
     Renders a paginated list of ``Node`` objects for the authenticated user and
@@ -71,8 +70,7 @@ class NodeListView(ListView, FormMixin):
         return context
 
 
-@method_decorator(login_required, name="dispatch")
-class NodeDetailView(DetailView):
+class NodeDetailView(LoginRequiredMixin, DetailView):
     """Detail view for a single node."""
 
     model = Node
@@ -111,8 +109,7 @@ class NodeDetailView(DetailView):
         return context
 
 
-@method_decorator(login_required, name="dispatch")
-class NodeCreateView(FormRequestMixin, CreateView):
+class NodeCreateView(LoginRequiredMixin, FormRequestMixin, CreateView):
     """Create new nodes."""
 
     template_name = "node/node_list.html"

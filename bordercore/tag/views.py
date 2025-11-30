@@ -7,11 +7,11 @@ This module provides Django views for pinning/unpinning tags, searching tags, ma
 from typing import cast
 
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.db.models import QuerySet
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import redirect
-from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_POST
 from django.views.generic.list import ListView
 
@@ -97,8 +97,7 @@ def search(request: HttpRequest) -> JsonResponse:
     return JsonResponse(matches, safe=False)
 
 
-@method_decorator(login_required, name="dispatch")
-class TagListView(ListView):
+class TagListView(LoginRequiredMixin, ListView):
     """
     View for displaying a list of tag aliases (currently returns none).
     """

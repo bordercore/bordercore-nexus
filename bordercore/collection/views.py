@@ -12,6 +12,7 @@ from rest_framework.decorators import api_view
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.uploadedfile import UploadedFile
@@ -22,7 +23,6 @@ from django.http import (HttpRequest, HttpResponse, HttpResponseRedirect,
                          JsonResponse)
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
-from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_POST
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import (CreateView, DeleteView, FormMixin,
@@ -40,8 +40,7 @@ from lib.util import calculate_sha1sum, parse_title_from_url
 from tag.models import Tag
 
 
-@method_decorator(login_required, name="dispatch")
-class CollectionListView(FormRequestMixin, FormMixin, ListView):
+class CollectionListView(LoginRequiredMixin, FormRequestMixin, FormMixin, ListView):
     """View for displaying the collection list page.
 
     Shows favorite collections for the current user with their blob counts
@@ -106,8 +105,7 @@ class CollectionListView(FormRequestMixin, FormMixin, ListView):
         return context
 
 
-@method_decorator(login_required, name="dispatch")
-class CollectionDetailView(FormRequestMixin, FormMixin, DetailView):
+class CollectionDetailView(LoginRequiredMixin, FormRequestMixin, FormMixin, DetailView):
     """View for displaying a collection detail page.
 
     Shows a single collection with its tags, object tags with counts,
@@ -168,8 +166,7 @@ class CollectionDetailView(FormRequestMixin, FormMixin, DetailView):
         return context
 
 
-@method_decorator(login_required, name="dispatch")
-class CollectionCreateView(FormRequestMixin, CreateView):
+class CollectionCreateView(LoginRequiredMixin, FormRequestMixin, CreateView):
     """View for creating a new collection.
 
     Handles the creation of new collections, including saving tags
@@ -210,8 +207,7 @@ class CollectionCreateView(FormRequestMixin, CreateView):
         return reverse("collection:list")
 
 
-@method_decorator(login_required, name="dispatch")
-class CollectionUpdateView(FormRequestMixin, UpdateView):
+class CollectionUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView):
     """View for updating an existing collection.
 
     Handles editing of collections, including updating tags.
@@ -257,8 +253,7 @@ class CollectionUpdateView(FormRequestMixin, UpdateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
-@method_decorator(login_required, name="dispatch")
-class CollectionDeleteView(DeleteView):
+class CollectionDeleteView(LoginRequiredMixin, DeleteView):
     """View for deleting a collection.
 
     Allows users to delete their own collections. Filters collections to

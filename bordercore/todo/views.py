@@ -13,6 +13,7 @@ from datetime import timedelta
 from typing import Any, Dict, Iterable, Optional, Union, cast
 
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models.query import QuerySet
@@ -20,7 +21,6 @@ from django.http import HttpRequest, JsonResponse
 from django.http.response import HttpResponseBase
 from django.test import RequestFactory
 from django.utils import dateformat, timezone
-from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_POST
 from django.views.generic.list import ListView
 
@@ -70,8 +70,7 @@ def serialize_todo(todo: Union[Todo, Dict[str, Any]], sort_order: int = 0) -> Di
     }
 
 
-@method_decorator(login_required, name="dispatch")
-class TodoListView(ListView):
+class TodoListView(LoginRequiredMixin, ListView):
     """Render the main Todo page with filters, tags, and priority data."""
 
     model = Todo
@@ -132,8 +131,7 @@ class TodoListView(ListView):
         }
 
 
-@method_decorator(login_required, name="dispatch")
-class TodoTaskList(ListView):
+class TodoTaskList(LoginRequiredMixin, ListView):
     """Provide a JSON endpoint listing todos filtered by priority, time, tag, or search."""
 
     model = Todo

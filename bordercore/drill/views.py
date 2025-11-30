@@ -11,6 +11,7 @@ from urllib.parse import unquote
 from django import urls
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.db.models import QuerySet
 from django.db.models.query import QuerySet as QuerySetType
@@ -19,7 +20,6 @@ from django.http import (HttpRequest, HttpResponse, HttpResponseRedirect,
                          JsonResponse)
 from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
-from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_POST
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
@@ -36,8 +36,7 @@ from tag.models import Tag
 from .models import Question
 
 
-@method_decorator(login_required, name="dispatch")
-class DrillListView(ListView):
+class DrillListView(LoginRequiredMixin, ListView):
     """View for displaying the drill question list page.
 
     Shows tags with their question counts, last reviewed dates, progress information,
@@ -79,8 +78,7 @@ class DrillListView(ListView):
         }
 
 
-@method_decorator(login_required, name="dispatch")
-class QuestionCreateView(FormRequestMixin, CreateView):
+class QuestionCreateView(LoginRequiredMixin, FormRequestMixin, CreateView):
     """View for creating a new question.
 
     Handles the creation of new drill questions, including saving tags
@@ -178,8 +176,7 @@ def handle_related_objects(question: Question, request: HttpRequest) -> None:
         question.add_related_object(object_info["uuid"])
 
 
-@method_decorator(login_required, name="dispatch")
-class QuestionDeleteView(DeleteView):
+class QuestionDeleteView(LoginRequiredMixin, DeleteView):
     """View for deleting a question.
 
     Allows users to delete their own questions. Filters questions to
@@ -218,8 +215,7 @@ class QuestionDeleteView(DeleteView):
         return super().form_valid(form)
 
 
-@method_decorator(login_required, name="dispatch")
-class QuestionDetailView(DetailView):
+class QuestionDetailView(LoginRequiredMixin, DetailView):
     """View for displaying a question detail page.
 
     Shows a single question with its tags, progress information, intervals,
@@ -274,8 +270,7 @@ class QuestionDetailView(DetailView):
         }
 
 
-@method_decorator(login_required, name="dispatch")
-class QuestionUpdateView(FormRequestMixin, UpdateView):
+class QuestionUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView):
     """View for updating an existing question.
 
     Handles editing of drill questions, including updating tags

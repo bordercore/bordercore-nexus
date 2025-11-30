@@ -12,11 +12,11 @@ from typing import Any, Dict, List, Optional, Tuple, TypedDict, cast
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
-from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_POST
 from django.views.generic.detail import DetailView
 
@@ -34,8 +34,7 @@ class _RelatedExerciseDict(TypedDict, total=False):
     last_active: str
 
 
-@method_decorator(login_required, name="dispatch")
-class ExerciseDetailView(DetailView):
+class ExerciseDetailView(LoginRequiredMixin, DetailView):
     """Show details for a single :class:`Exercise` including history and plots.
 
     The view looks up the exercise by its UUID slug and enriches the context

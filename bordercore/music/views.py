@@ -20,6 +20,7 @@ from rest_framework.request import Request
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
@@ -30,7 +31,6 @@ from django.http import (HttpRequest, HttpResponse, HttpResponseRedirect,
                          JsonResponse)
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
-from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_POST
 from django.views.generic.base import TemplateView
 from django.views.generic.detail import DetailView
@@ -105,8 +105,7 @@ def music_list(request: HttpRequest) -> HttpResponse:
                   })
 
 
-@method_decorator(login_required, name="dispatch")
-class ArtistDetailView(DetailView):
+class ArtistDetailView(LoginRequiredMixin, DetailView):
     """Display detailed information about a specific artist."""
 
     model = Artist
@@ -188,8 +187,7 @@ class ArtistDetailView(DetailView):
         }
 
 
-@method_decorator(login_required, name="dispatch")
-class AlbumListView(ListView):
+class AlbumListView(LoginRequiredMixin, ListView):
     """Display a paginated list of albums organized by artist."""
 
     template_name = "music/album_list.html"
@@ -250,8 +248,7 @@ class AlbumListView(ListView):
         }
 
 
-@method_decorator(login_required, name="dispatch")
-class AlbumDetailView(FormRequestMixin, ModelFormMixin, DetailView):
+class AlbumDetailView(LoginRequiredMixin, FormRequestMixin, ModelFormMixin, DetailView):
     """Display detailed information about a specific album."""
 
     model = Album
@@ -311,8 +308,7 @@ class AlbumDetailView(FormRequestMixin, ModelFormMixin, DetailView):
         return Album.objects.filter(user=user).prefetch_related("tags")
 
 
-@method_decorator(login_required, name="dispatch")
-class AlbumUpdateView(FormRequestMixin, UpdateView):
+class AlbumUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView):
     """Handle updating album information and cover images."""
 
     model = Album
@@ -384,8 +380,7 @@ class AlbumUpdateView(FormRequestMixin, UpdateView):
         )
 
 
-@method_decorator(login_required, name="dispatch")
-class SongUpdateView(FormRequestMixin, UpdateView):
+class SongUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView):
     """Handle updating song information and metadata."""
 
     model = Song
@@ -450,8 +445,7 @@ class SongUpdateView(FormRequestMixin, UpdateView):
         return HttpResponseRedirect(success_url)
 
 
-@method_decorator(login_required, name="dispatch")
-class SongCreateView(FormRequestMixin, CreateView):
+class SongCreateView(LoginRequiredMixin, FormRequestMixin, CreateView):
     """Handle creating new songs with file uploads."""
 
     model = Song
@@ -515,8 +509,7 @@ class SongCreateView(FormRequestMixin, CreateView):
         return super().form_valid(form)
 
 
-@method_decorator(login_required, name="dispatch")
-class MusicDeleteView(DeleteView):
+class MusicDeleteView(LoginRequiredMixin, DeleteView):
     """Handle deletion of songs."""
 
     model = Song
@@ -569,8 +562,7 @@ def search_artists(request: HttpRequest) -> JsonResponse:
     return JsonResponse(matches, safe=False)
 
 
-@method_decorator(login_required, name="dispatch")
-class RecentSongsListView(ListView):
+class RecentSongsListView(LoginRequiredMixin, ListView):
     """Return a JSON list of recent songs, optionally filtered by tag."""
 
     def get_queryset(self) -> QuerySetType[Song]:
@@ -668,8 +660,7 @@ def get_song_id3_info(request: HttpRequest) -> JsonResponse:
     return JsonResponse({**id3_info})
 
 
-@method_decorator(login_required, name="dispatch")
-class SearchTagListView(ListView):
+class SearchTagListView(LoginRequiredMixin, ListView):
     """Return a list of songs and albums which have a given tag."""
 
     template_name = "music/tag_search.html"
@@ -735,8 +726,7 @@ class SearchTagListView(ListView):
         }
 
 
-@method_decorator(login_required, name="dispatch")
-class PlaylistDetailView(DetailView):
+class PlaylistDetailView(LoginRequiredMixin, DetailView):
     """Display detailed information about a specific playlist."""
 
     model = Playlist
@@ -763,8 +753,7 @@ class PlaylistDetailView(DetailView):
         }
 
 
-@method_decorator(login_required, name="dispatch")
-class CreatePlaylistView(FormRequestMixin, CreateView):
+class CreatePlaylistView(LoginRequiredMixin, FormRequestMixin, CreateView):
     """Handle creation of new playlists."""
 
     model = Playlist
@@ -809,8 +798,7 @@ class CreatePlaylistView(FormRequestMixin, CreateView):
         return super().form_valid(form)
 
 
-@method_decorator(login_required, name="dispatch")
-class UpdatePlaylistView(FormRequestMixin, UpdateView):
+class UpdatePlaylistView(LoginRequiredMixin, FormRequestMixin, UpdateView):
     """Handle updating existing playlists."""
 
     model = Playlist
@@ -858,8 +846,7 @@ class UpdatePlaylistView(FormRequestMixin, UpdateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
-@method_decorator(login_required, name="dispatch")
-class PlaylistDeleteView(DeleteView):
+class PlaylistDeleteView(LoginRequiredMixin, DeleteView):
     """Handle deletion of playlists."""
 
     model = Playlist
@@ -894,8 +881,7 @@ class PlaylistDeleteView(DeleteView):
         return super().form_valid(form)
 
 
-@method_decorator(login_required, name="dispatch")
-class CreateAlbumView(TemplateView):
+class CreateAlbumView(LoginRequiredMixin, TemplateView):
     """Display the album creation page with song sources."""
 
     template_name = "music/create_album.html"

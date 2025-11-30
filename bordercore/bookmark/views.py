@@ -24,7 +24,6 @@ from django.http import (Http404, HttpRequest, HttpResponse,
                          HttpResponseRedirect, JsonResponse)
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
-from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DeleteView, ListView, UpdateView
 from django.views.generic.edit import ModelFormMixin
@@ -158,8 +157,7 @@ class BookmarkUpdateView(FormRequestMixin, BookmarkFormValidMixin, UpdateView):
         return context
 
 
-@method_decorator(login_required, name="dispatch")
-class BookmarkCreateView(FormRequestMixin, BookmarkFormValidMixin, CreateView):
+class BookmarkCreateView(LoginRequiredMixin, FormRequestMixin, BookmarkFormValidMixin, CreateView):
     """View for creating a new bookmark.
 
     Handles the creation of new bookmarks, including saving tags and
@@ -185,7 +183,6 @@ class BookmarkCreateView(FormRequestMixin, BookmarkFormValidMixin, CreateView):
         return context
 
 
-@method_decorator(login_required, name="dispatch")
 class BookmarkDeleteView(LoginRequiredMixin, DeleteView):
     """View for deleting a bookmark.
 
@@ -326,8 +323,7 @@ def overview(request: HttpRequest) -> HttpResponse:
                   })
 
 
-@method_decorator(login_required, name="dispatch")
-class BookmarkListView(ListView):
+class BookmarkListView(LoginRequiredMixin, ListView):
     """View for listing bookmarks as JSON.
 
     Returns a paginated list of bookmarks filtered by search query, tag,
@@ -433,7 +429,6 @@ class BookmarkListView(ListView):
         )
 
 
-@method_decorator(login_required, name="dispatch")
 class BookmarkListTagView(BookmarkListView):
     """View for listing bookmarks filtered by a specific tag.
 
