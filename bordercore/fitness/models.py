@@ -163,9 +163,9 @@ class Exercise(models.Model):
         # Note: has_previous and has_next are reversed because we want to show the last
         #  set of workout data first in the pagination.
         return {
-            "labels": labels[::-1],
+            "labels": labels,
             "plot_data": plot_data,
-            "notes": notes[::-1],
+            "notes": notes,
             "initial_plot_type": initial_plot_type,
             "paginator": {
                 "page_number": page_number,
