@@ -42,6 +42,7 @@ jobs:
       run: |
         mypy --config-file pyproject.toml \
           bordercore/accounts/ \
+          bordercore/aws/ \
           bordercore/blob/ \
           bordercore/bookmark/ \
           bordercore/collection/ \

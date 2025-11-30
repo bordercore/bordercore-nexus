@@ -49,6 +49,8 @@ exclude = '''
     |
     # Exclude blob management commands
     bordercore/blob/management/commands/
+    |
+    bordercore/aws/[^/]+/lib/.*$
  )
 '''
 
