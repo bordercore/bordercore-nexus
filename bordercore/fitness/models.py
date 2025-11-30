@@ -76,7 +76,7 @@ class Exercise(models.Model):
             DefaultDict[str, List[Muscle]]: A mapping from target role
             (e.g., "primary", "secondary") to a list of muscles.
         """
-        muscles: DefaultDict[str, List[Muscle]] = defaultdict(list)
+        muscles = defaultdict(list)
 
         for x in ExerciseMuscle.objects.filter(exercise=self).select_related("muscle"):
             muscles[x.target].append(x.muscle)
@@ -98,7 +98,7 @@ class Exercise(models.Model):
                 - "delta_days": int days since the most recent set in that workout
             If no workout exists, lists are empty and no delta is provided.
         """
-        workout: Workout | None = (
+        workout = (
             Workout.objects.filter(user=user, exercise=self).order_by("-date").first()
         )
 
@@ -109,9 +109,9 @@ class Exercise(models.Model):
                 "latest_weight": [],
             }
 
-        recent_data: List[Data] = list(workout.data_set.all())  # realize for indexing below
+        recent_data = list(workout.data_set.all())  # realize for indexing below
 
-        info: Dict[str, Any] = {
+        info = {
             "recent_data": recent_data,
             "latest_reps": [x.reps or 0 for x in recent_data],
             "latest_weight": [x.weight or 0 for x in recent_data],
@@ -135,7 +135,7 @@ class Exercise(models.Model):
                 - "initial_plot_type": str of preferred plot series ("reps", "weight", or "duration")
                 - "paginator": dict with reversed paging semantics (we page newest → older):
         """
-        raw_data: QuerySet[Workout] = (
+        raw_data = (
             Workout.objects.filter(exercise__id=self.id)
             .annotate(reps=ArrayAgg("data__reps", order_by="-date"))
             .annotate(weight=ArrayAgg("data__weight", order_by="-date"))
@@ -143,11 +143,11 @@ class Exercise(models.Model):
             .order_by("-date")
         )
 
-        page: Page = Paginator(raw_data, count).page(page_number)
-        page_data: List[Workout] = list(reversed(page.object_list))
+        page = Paginator(raw_data, count).page(page_number)
+        page_data = list(reversed(page.object_list))
 
         initial_plot_type = "reps"
-        plot_data: Dict[str, Any] = {}
+        plot_data = {}
         plot_data["reps"] = [x.reps for x in page_data]  # type: ignore[attr-defined]
 
         if any(getattr(x, "weight", None) and x.weight[0] > 0 for x in page_data):  # type: ignore[attr-defined]
@@ -157,8 +157,8 @@ class Exercise(models.Model):
             plot_data["duration"] = [x.duration for x in page_data]  # type: ignore[attr-defined]
             initial_plot_type = "duration"
 
-        labels: List[str] = [x.date.strftime("%b %d") for x in page_data]
-        notes: List[str | None] = [x.note for x in page_data]
+        labels = [x.date.strftime("%b %d") for x in page_data]
+        notes= [x.note for x in page_data]
 
         # Note: has_previous and has_next are reversed because we want to show the last
         #  set of workout data first in the pagination.
@@ -205,7 +205,7 @@ class ExerciseMuscle(models.Model):
         ("secondary", "secondary"),
     ]
 
-    target: models.CharField = models.CharField(
+    target = models.CharField(
         max_length=20,
         choices=TARGETS,
         default="primary",

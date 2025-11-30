@@ -8,7 +8,7 @@ and notes, and fetch paginated plot data for workouts.
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List, Optional, Tuple, TypedDict, cast
+from typing import Any, Dict, TypedDict, cast
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -24,14 +24,6 @@ from fitness.services import get_fitness_summary
 from lib.decorators import validate_post_data
 
 from .models import Data, Exercise, ExerciseUser, Workout
-
-
-class _RelatedExerciseDict(TypedDict, total=False):
-    """Typed dict representing a related exercise payload for templates/JSON."""
-
-    uuid: Any  # UUID-like; kept as Any since model field may be UUID type
-    name: str
-    last_active: str
 
 
 class ExerciseDetailView(LoginRequiredMixin, DetailView):
@@ -62,11 +54,11 @@ class ExerciseDetailView(LoginRequiredMixin, DetailView):
                 - ``title``: A string for the page title.
                 - Keys from ``last_workout`` if available (recent stats).
         """
-        context: Dict[str, Any] = super().get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
 
-        last_workout: Dict[str, Any] = self.object.last_workout(self.request.user)
+        last_workout = self.object.last_workout(self.request.user)
 
-        related_exercises: List[_RelatedExerciseDict] = [
+        related_exercises = [
             {
                 "uuid": x.uuid,
                 "name": x.name,
@@ -76,7 +68,7 @@ class ExerciseDetailView(LoginRequiredMixin, DetailView):
         ]
 
         user = cast(User, self.request.user)
-        active: Optional[ExerciseUser] = ExerciseUser.objects.filter(
+        active = ExerciseUser.objects.filter(
             user=user,
             exercise__id=self.object.id,
         ).first()
@@ -110,9 +102,9 @@ def fitness_add(request: HttpRequest, exercise_uuid: str) -> HttpResponse:
     Returns:
         HttpResponse: Redirects to the fitness summary view when complete.
     """
-    exercise: Exercise = Exercise.objects.get(uuid=exercise_uuid)
+    exercise = Exercise.objects.get(uuid=exercise_uuid)
     user = cast(User, request.user)
-    payload: List[Dict[str, Any]] = json.loads(request.POST["workout-data"])
+    payload = json.loads(request.POST["workout-data"])
 
     with transaction.atomic():
         workout = Workout.objects.create(user=user, exercise=exercise, note=request.POST.get("note", ""))
@@ -150,7 +142,7 @@ def fitness_summary(request: HttpRequest) -> HttpResponse:
         HttpResponse: Rendered template response for the fitness summary page.
     """
     user = cast(User, request.user)
-    exercises: Tuple[List[Any], List[Any]] = get_fitness_summary(user)
+    exercises = get_fitness_summary(user)
 
     return render(
         request,
@@ -180,16 +172,16 @@ def change_active_status(request: HttpRequest) -> JsonResponse:
     Returns:
         Json response with ``info`` payload and status.
     """
-    uuid: str = request.POST["uuid"]
-    remove: str = request.POST.get("remove", "false")
+    uuid = request.POST["uuid"]
+    remove = request.POST.get("remove", "false")
 
     user = cast(User, request.user)
     if remove == "true":
-        eu: ExerciseUser = ExerciseUser.objects.get(user=user, exercise__uuid=uuid)
+        eu = ExerciseUser.objects.get(user=user, exercise__uuid=uuid)
         eu.delete()
-        info: Dict[str, Any] = {}
+        info = {}
     else:
-        exercise: Exercise = Exercise.objects.get(uuid=uuid)
+        exercise = Exercise.objects.get(uuid=uuid)
         eu = ExerciseUser(
             user=user,
             exercise=exercise,
@@ -217,14 +209,14 @@ def edit_note(request: HttpRequest) -> JsonResponse:
     Returns:
         JSON response with operation status.
     """
-    exercise_uuid: str = request.POST["uuid"]
-    note: str = request.POST["note"]
+    exercise_uuid = request.POST["uuid"]
+    note = request.POST["note"]
 
-    exercise: Exercise = Exercise.objects.get(uuid=exercise_uuid)
+    exercise = Exercise.objects.get(uuid=exercise_uuid)
     exercise.note = note
     exercise.save()
 
-    response: Dict[str, str] = {"status": "OK"}
+    response = {"status": "OK"}
     return JsonResponse(response)
 
 
@@ -242,14 +234,14 @@ def get_workout_data(request: HttpRequest) -> JsonResponse:
     Returns:
         Json response with ``workout_data`` payload and status.
     """
-    exercise_uuid: str = request.GET["uuid"]
-    page_number: int = int(request.GET.get("page_number", 1))
+    exercise_uuid = request.GET["uuid"]
+    page_number = int(request.GET.get("page_number", 1))
 
-    exercise: Exercise = Exercise.objects.get(uuid=exercise_uuid)
+    exercise = Exercise.objects.get(uuid=exercise_uuid)
 
-    workout_data: Dict[str, Any] = exercise.get_plot_info(page_number=page_number)
+    workout_data = exercise.get_plot_info(page_number=page_number)
 
-    response: Dict[str, Any] = {"status": "OK", "workout_data": workout_data}
+    response = {"status": "OK", "workout_data": workout_data}
     return JsonResponse(response)
 
 
@@ -269,15 +261,15 @@ def update_schedule(request: HttpRequest) -> JsonResponse:
     Returns:
         JSON response with operation status.
     """
-    uuid: str = request.POST["uuid"]
-    schedule: str = request.POST["schedule"]
+    uuid = request.POST["uuid"]
+    schedule = request.POST["schedule"]
 
     # Convert each string to its corresponding Boolean value
     # "true" should become True, "false" should become False
-    boolean_values: List[bool] = [s.lower() == "true" for s in schedule.split(",")]
+    boolean_values = [s.lower() == "true" for s in schedule.split(",")]
 
     user = cast(User, request.user)
-    eu: ExerciseUser = ExerciseUser.objects.get(user=user, exercise__uuid=uuid)
+    eu = ExerciseUser.objects.get(user=user, exercise__uuid=uuid)
     eu.schedule = boolean_values
     eu.save()
 
@@ -300,11 +292,11 @@ def update_rest_period(request: HttpRequest) -> JsonResponse:
     Returns:
         JSON response with operation status.
     """
-    uuid: str = request.POST["uuid"]
-    rest_period: str = request.POST["rest_period"]
+    uuid = request.POST["uuid"]
+    rest_period = request.POST["rest_period"]
 
     user = cast(User, request.user)
-    eu: ExerciseUser = ExerciseUser.objects.get(user=user, exercise__uuid=uuid)
+    eu = ExerciseUser.objects.get(user=user, exercise__uuid=uuid)
     # Assign as string; Django model field will coerce/validate at save time.
     eu.rest_period = rest_period
     eu.save()

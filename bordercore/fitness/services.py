@@ -22,11 +22,11 @@ OVERDUE_THRESHOLD_DAYS = 6
 def get_fitness_summary(user: User, count_only: bool = False) -> Tuple[List[Exercise], List[Exercise]]:
     """Return active and inactive exercises for a user, annotated with status."""
 
-    newest: QuerySet[ExerciseUser] = ExerciseUser.objects.filter(
+    newest = ExerciseUser.objects.filter(
         exercise=OuterRef("pk"), user=user
     )
 
-    exercises: QuerySet[Exercise] = Exercise.objects.annotate(
+    exercises = Exercise.objects.annotate(
         last_active=Max(
             "workout__data__date",
             filter=Q(workout__user=user) | Q(workout__isnull=True),
@@ -38,17 +38,15 @@ def get_fitness_summary(user: User, count_only: bool = False) -> Tuple[List[Exer
     if not count_only:
         exercises = exercises.prefetch_related("muscle", "muscle__muscle_group")
 
-    active_exercises: List[Exercise] = []
-    inactive_exercises: List[Exercise] = []
-    current_weekday: int = datetime.date.today().weekday()
+    active_exercises = []
+    inactive_exercises = []
+    current_weekday = datetime.date.today().weekday()
     now_date = timezone.localdate()
 
     for e in exercises:
-        last_active: datetime.datetime | None = getattr(e, "last_active", None)
-        is_active_marker: object | None = getattr(e, "is_active", None)
-        schedule_val: List[bool | None] | None = cast(
-            List[bool | None] | None, getattr(e, "schedule", None)
-        )
+        last_active = getattr(e, "last_active", None)
+        is_active_marker = getattr(e, "is_active", None)
+        schedule_val = getattr(e, "schedule", None)
 
         e.overdue = 0  # type: ignore[attr-defined]
 
@@ -79,7 +77,7 @@ def get_fitness_summary(user: User, count_only: bool = False) -> Tuple[List[Exer
 
     active_exercises.sort(key=lambda x: x.overdue, reverse=True)  # type: ignore[attr-defined]
 
-    return active_exercises, inactive_exercises
+    return cast(Tuple[List[Exercise], List[Exercise]], (active_exercises, inactive_exercises))
 
 
 def get_overdue_exercises(user: User, count_only: bool = False) -> Union[int, List[Exercise]]:
@@ -100,7 +98,7 @@ def get_overdue_exercises(user: User, count_only: bool = False) -> Union[int, Li
         int | list[Exercise]: Either a count (when ``count_only`` is ``True``)
         or the list of exercises with ``overdue`` in ``(1, 2)``.
     """
-    overdue_exercises: List[Exercise] = [
+    overdue_exercises = [
         x
         for x in get_fitness_summary(user, count_only)[0]
         if x.overdue in (1, 2)  # type: ignore[attr-defined]
