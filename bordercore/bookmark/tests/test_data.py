@@ -72,7 +72,7 @@ def test_bookmarks_in_db_exist_in_elasticsearch(es):
         found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
         if found["hits"]["total"]["value"] != batch_size:
             missing_uuids = get_missing_bookmark_ids(bookmarks[batch:batch + step], found)
-            uuid_list = "\nuuid:".join(x for x in missing_uuids)
+            uuid_list = "\nuuid:".join(sorted(missing_uuids))
             assert False, f"bookmarks found in the database but not in Elasticsearch, uuid:{uuid_list}"
 
 
@@ -159,7 +159,7 @@ def test_bookmark_tags_match_elasticsearch(es):
         actual_count = found["hits"]["total"]["value"]
 
         assert actual_count == expected_count, \
-            f"Bookmark's tags don't match those found in Elasticsearch: {get_missing_bookmark_ids(bookmarks_with_tags, found)}"
+            f"Bookmark's tags don't match those found in Elasticsearch: {', '.join(sorted(get_missing_bookmark_ids(bookmarks_with_tags, found)))}"
 
 
 def test_elasticsearch_bookmarks_exist_in_db(es):

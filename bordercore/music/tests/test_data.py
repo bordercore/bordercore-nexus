@@ -118,7 +118,7 @@ def test_songs_in_db_exist_in_elasticsearch(es):
         found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
 
         assert found["hits"]["total"]["value"] == batch_size,\
-            "Songs found in the database but not in Elasticsearch: " + get_missing_blob_ids(songs[batch:batch + step_size], found)
+            "Songs found in the database but not in Elasticsearch: " + ", ".join(sorted(get_missing_blob_ids(songs[batch:batch + step_size], found)))
 
 
 def test_songs_in_s3_exist_in_db():

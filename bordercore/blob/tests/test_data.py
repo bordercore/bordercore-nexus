@@ -766,7 +766,7 @@ def test_blob_tags_match_elasticsearch(es):
         actual_count = found["hits"]["total"]["value"]
 
         assert actual_count == expected_count, \
-            f"Blob's tags don't match those found in Elasticsearch: {get_missing_blob_ids(blobs_with_tags, found)}"
+            f"Blob's tags don't match those found in Elasticsearch: {', '.join(sorted(get_missing_blob_ids(blobs_with_tags, found)))}"
 
 
 def test_blobs_have_proper_metadata():
