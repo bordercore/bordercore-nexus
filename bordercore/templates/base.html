@@ -313,13 +313,6 @@
                             }, 100);
                         }
 
-                        onMounted(() => {
-                            if (overdueTasks.length > 0) {
-                                const modal = new Modal("#modalOverdueTasks");
-                                modal.show();
-                            }
-                        })
-
                         const topSearch = ref(null);
 
                         return {
