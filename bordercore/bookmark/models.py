@@ -17,7 +17,6 @@ from urllib.parse import parse_qs, urlparse
 import boto3
 import isodate
 import requests
-from elasticsearch.exceptions import ElasticsearchException, NotFoundError
 
 from django import urls
 from django.apps import apps
@@ -28,7 +27,6 @@ from django.db import models, transaction
 from django.db.models import JSONField
 from django.db.models.signals import m2m_changed
 
-from lib.exceptions import BookmarkSearchDeleteError
 from lib.mixins import TimeStampedModel
 from lib.time_utils import convert_seconds
 from search.services import delete_document, index_document
@@ -149,34 +147,50 @@ class Bookmark(TimeStampedModel):
         recent bookmarks cache, removes it from Elasticsearch, and deletes
         all cover image files from S3.
 
+        Cleanup operations (Elasticsearch and S3) are deferred until after the
+        database transaction commits to ensure consistency. If the transaction
+        rolls back, cleanup operations are not performed.
+
         Args:
             using: Optional database alias.
             keep_parents: Whether to keep parent objects.
 
         Returns:
             Tuple of (number of objects deleted, dictionary with deletion counts).
-
-        Raises:
-            ElasticsearchException: If deletion from Elasticsearch fails.
-                The bookmark will not be deleted from the database in this case.
         """
-        try:
-            delete_document(str(self.uuid))
-        except NotFoundError as exc:
-            # Log and raise a domain-specific error so the view can handle it.
-            error_message = f"Bookmark not found in Elasticsearch"
-            log.exception(
-                "Bookmark %s not found in Elasticsearch",
-                self.uuid,
-            )
-            raise BookmarkSearchDeleteError(error_message) from exc
-
-        self.delete_cover_image()
+        # Save values needed for cleanup before database deletion
+        bookmark_uuid = str(self.uuid)
+        user_id = self.user.id
 
         # After every bookmark mutation, invalidate the cache
-        cache.delete(f"recent_bookmarks_{self.user.id}")
+        cache.delete(f"recent_bookmarks_{user_id}")
 
-        return super().delete(using=using, keep_parents=keep_parents)
+        # Delete from database first
+        result = super().delete(using=using, keep_parents=keep_parents)
+
+        # Cleanup operations that should happen after transaction commits
+        def cleanups() -> None:
+            # Delete from Elasticsearch
+            try:
+                delete_document(bookmark_uuid)
+            except Exception as e:
+                log.error("Failed to delete bookmark %s from Elasticsearch: %s", bookmark_uuid, e)
+
+            # Delete cover images from S3
+            try:
+                s3 = boto3.resource("s3")
+
+                for key in [
+                    f"bookmarks/{bookmark_uuid}.png",
+                    f"bookmarks/{bookmark_uuid}-small.png",
+                    f"bookmarks/{bookmark_uuid}.jpg",
+                ]:
+                    s3.Object(settings.AWS_STORAGE_BUCKET_NAME, key).delete()
+            except Exception as e:
+                log.error("Failed to delete bookmark %s cover images from S3: %s", bookmark_uuid, e)
+
+        transaction.on_commit(cleanups)
+        return result
 
     def delete_tag(self, tag: "Tag") -> None:
         """
@@ -271,24 +285,6 @@ class Bookmark(TimeStampedModel):
                 CacheControl=f"max-age={MAX_AGE}",
                 Metadata={"cover-image": "Yes"}
             )
-
-    def delete_cover_image(self) -> None:
-        """Remove all cover image files for this bookmark from S3.
-
-        This deletes the PNG, small PNG, and JPG thumbnail files associated
-        with this bookmark's UUID from the S3 bucket.
-        """
-
-        s3 = boto3.resource("s3")
-
-        key = f"bookmarks/{self.uuid}.png"
-        s3.Object(settings.AWS_STORAGE_BUCKET_NAME, key).delete()
-
-        key = f"bookmarks/{self.uuid}-small.png"
-        s3.Object(settings.AWS_STORAGE_BUCKET_NAME, key).delete()
-
-        key = f"bookmarks/{self.uuid}.jpg"
-        s3.Object(settings.AWS_STORAGE_BUCKET_NAME, key).delete()
 
     def index_bookmark(self) -> None:
         """Index this bookmark in Elasticsearch."""

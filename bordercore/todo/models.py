@@ -12,11 +12,9 @@ import logging
 import uuid
 from typing import Any, Dict, List, Optional, Type, Union
 
-from elasticsearch.exceptions import NotFoundError
-
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Count, JSONField, Max
 from django.db.models.signals import m2m_changed
 
@@ -139,11 +137,17 @@ class Todo(TimeStampedModel):
             keep_parents: bool = False,
     ) -> tuple[int, dict[str, int]]:
         """Delete the todo and remove it from Elasticsearch."""
-        try:
-            delete_document(self.uuid)
-        except NotFoundError:
-            log.error("Error: todo item not found in Elasticsearch; uuid=%s", self.uuid)
-        return super().delete(using=using, keep_parents=keep_parents)
+        todo_uuid = str(self.uuid)
+        result = super().delete(using=using, keep_parents=keep_parents)
+
+        def cleanup() -> None:
+            try:
+                delete_document(todo_uuid)
+            except Exception as e:
+                log.error("Failed to delete todo %s from Elasticsearch: %s", todo_uuid, e)
+
+        transaction.on_commit(cleanup)
+        return result
 
     def index_todo(self) -> None:
         """Index this todo item in Elasticsearch."""

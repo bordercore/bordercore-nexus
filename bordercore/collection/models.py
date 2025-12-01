@@ -17,13 +17,12 @@ from random import randint
 from typing import TYPE_CHECKING, Any
 
 import boto3
-from botocore.exceptions import ClientError
 
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
-from django.db import models
+from django.db import models, transaction
 from django.db.models import CheckConstraint, F, Q, UniqueConstraint
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
@@ -34,7 +33,7 @@ if TYPE_CHECKING:
     from blob.models import Blob
     from bookmark.models import Bookmark
 
-from lib.exceptions import DuplicateObjectError, S3Error
+from lib.exceptions import DuplicateObjectError
 from lib.mixins import SortOrderMixin, TimeStampedModel
 from tag.models import Tag
 
@@ -153,10 +152,9 @@ class Collection(TimeStampedModel):
     ) -> tuple[int, dict[str, int]]:
         """Delete this collection and its S3 thumbnail.
 
-        Before deletion, removes the collection's cover thumbnail image from S3.
-        Then calls the superclass delete to remove the collection and cascade
-        delete all related CollectionObjects. If S3 deletion fails, raises S3Error
-        and does not delete the Django object.
+        Deletes the collection from the database first, then defers S3 thumbnail
+        cleanup until after the transaction commits. If the transaction rolls back,
+        the S3 cleanup is not performed.
 
         Args:
             using: Database alias (unused).
@@ -164,20 +162,19 @@ class Collection(TimeStampedModel):
 
         Returns:
             A tuple of (number of objects deleted, dict of deletion counts by model).
-
-        Raises:
-            S3Error: If the S3 thumbnail deletion fails.
         """
-        # Delete the collection's thumbnail image in S3
-        try:
-            s3 = boto3.resource("s3")
-            s3.Object(settings.AWS_STORAGE_BUCKET_NAME, f"collections/{self.uuid}.jpg").delete()
-        except ClientError as e:
-            raise S3Error(f"Failed to delete collection thumbnail from S3: {e}") from e
-        except Exception as e:
-            raise S3Error(f"Unexpected error deleting collection thumbnail from S3: {e}") from e
+        collection_uuid = str(self.uuid)
+        result = super().delete(using=using, keep_parents=keep_parents)
 
-        return super().delete(using=using, keep_parents=keep_parents)
+        def cleanup() -> None:
+            try:
+                s3 = boto3.resource("s3")
+                s3.Object(settings.AWS_STORAGE_BUCKET_NAME, f"collections/{collection_uuid}.jpg").delete()
+            except Exception as e:
+                log.error("Failed to delete collection %s thumbnail from S3: %s", collection_uuid, e)
+
+        transaction.on_commit(cleanup)
+        return result
 
     def get_tags(self) -> str:
         """Return a comma-separated string of this collection's tag names.

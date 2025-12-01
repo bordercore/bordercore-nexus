@@ -10,13 +10,14 @@ user's self-reported difficulty rating for a review event.
 
 from __future__ import annotations
 
+import logging
 import uuid
 from datetime import timedelta
 from typing import Any, Iterable, TypedDict, Union, cast
 
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.db import models
+from django.db import models, transaction
 from django.db.models import F, Max, Q, QuerySet
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
@@ -31,6 +32,8 @@ from search.services import delete_document, index_document
 from tag.models import Tag
 
 from .managers import DrillManager
+
+log = logging.getLogger(f"bordercore.{__name__}")
 
 INTERVALS_DEFAULT = [1, 2, 3, 5, 8, 13, 21, 30]
 
@@ -316,10 +319,18 @@ class Question(TimeStampedModel):
             using: Any | None = None,
             keep_parents: bool = False,
     ) -> tuple[int, dict[str, int]]:
-        """Delete this question and remove it from Elasticsearch.
-        """
-        delete_document(str(self.uuid))
-        return super().delete(using=using, keep_parents=keep_parents)
+        """Delete this question and remove it from Elasticsearch."""
+        question_uuid = str(self.uuid)
+        result = super().delete(using=using, keep_parents=keep_parents)
+
+        def cleanup() -> None:
+            try:
+                delete_document(question_uuid)
+            except Exception as e:
+                log.error("Failed to delete question %s from Elasticsearch: %s", question_uuid, e)
+
+        transaction.on_commit(cleanup)
+        return result
 
     def index_question(self) -> None:
         """Index this question in Elasticsearch.

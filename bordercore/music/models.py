@@ -6,6 +6,7 @@ with support for Elasticsearch indexing and AWS S3 storage.
 """
 
 import io
+import logging
 import uuid
 from datetime import timedelta
 from typing import Any, Optional
@@ -31,6 +32,8 @@ from lib.mixins import SortOrderMixin, TimeStampedModel
 from lib.util import remove_non_ascii_characters
 from search.services import delete_document, index_document
 from tag.models import Tag
+
+log = logging.getLogger(f"bordercore.{__name__}")
 
 
 class Artist(TimeStampedModel):
@@ -162,8 +165,17 @@ class Album(TimeStampedModel):
             keep_parents: bool = False,
     ) -> tuple[int, dict[str, int]]:
         """Delete the album and remove it from Elasticsearch."""
-        delete_document(str(self.uuid))
-        return super().delete(using=using, keep_parents=keep_parents)
+        album_uuid = str(self.uuid)
+        result = super().delete(using=using, keep_parents=keep_parents)
+
+        def cleanup() -> None:
+            try:
+                delete_document(album_uuid)
+            except Exception as e:
+                log.error("Failed to delete album %s from Elasticsearch: %s", album_uuid, e)
+
+        transaction.on_commit(cleanup)
+        return result
 
 
 class SongSource(TimeStampedModel):
@@ -241,15 +253,23 @@ class Song(TimeStampedModel):
             keep_parents: bool = False,
     ) -> tuple[int, dict[str, int]]:
         """Delete the song, remove it from Elasticsearch, and delete from S3."""
+        song_uuid = str(self.uuid)
         result = super().delete(using=using, keep_parents=keep_parents)
 
         def cleanups() -> None:
             # Delete from Elasticsearch
-            delete_document(str(self.uuid))
+            try:
+                delete_document(song_uuid)
+            except Exception as e:
+                log.error("Failed to delete song %s from Elasticsearch: %s", song_uuid, e)
+
             # Delete from S3
-            boto3.client("s3").delete_object(
-                Bucket=settings.AWS_BUCKET_NAME_MUSIC, Key=f"songs/{self.uuid}"
-            )
+            try:
+                boto3.client("s3").delete_object(
+                    Bucket=settings.AWS_BUCKET_NAME_MUSIC, Key=f"songs/{song_uuid}"
+                )
+            except Exception as e:
+                log.error("Failed to delete song %s from S3: %s", song_uuid, e)
 
         transaction.on_commit(cleanups)
         return result
