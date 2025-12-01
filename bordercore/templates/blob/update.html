@@ -279,7 +279,8 @@
                                                 ref="mdEditor"
                                                 mode="edit"
                                                 right-toolbar=""
-                                                left-toolbar="undo redo | h bold italic strikethrough quote | ul ol table hr | link image code"
+                                                left-toolbar="undo redo | h bold italic strikethrough quote inlineCode | ul ol table hr | link image code"
+                                                :toolbar="customToolbar"
                                                 v-model="content"
                                             ></v-md-editor>
                                         </div>
@@ -433,6 +434,25 @@
     {{ tags|json_script:"initial-tags"|default:"" }}
     {{ template_list|json_script:"templateList" }}
 
+    <style>
+        /* Custom icon for inline code toolbar item
+         * Note: This style is placed inline in the template instead of _base.scss
+         * because v-md-editor's CSS loads later (via JavaScript) and overrides
+         * styles from the compiled SCSS. Inline styles have higher specificity
+         * and load after v-md-editor's CSS, ensuring this custom icon displays correctly.
+         */
+        .v-md-icon-inline-code::before {
+            content: "" !important;
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 512'%3E%3Cpath fill='%23ffffff' d='M392.8 1.2c-17-4.9-34.7 5-39.6 22l-128 448c-4.9 17 5 34.7 22 39.6s34.7-5 39.6-22l128-448c4.9-17-5-34.7-22-39.6zm80.6 120.1c-12.5 12.5-12.5 32.8 0 45.3L562.7 256l-89.4 89.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l112-112c12.5-12.5 12.5-32.8 0-45.3l-112-112c-12.5-12.5-32.8-12.5-45.3 0zm-306.7 0c-12.5-12.5-32.8-12.5-45.3 0l-112 112c-12.5 12.5-12.5 32.8 0 45.3l112 112c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L77.3 256l89.4-89.4c12.5-12.5 12.5-32.8 0-45.3z'/%3E%3C/svg%3E");
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: contain;
+        }
+    </style>
+
     <script type="text/javascript">
 
         function formatName(match, capture1, capture2) {
@@ -494,6 +514,27 @@
                 const tagsInput = ref(null);
 
                 const template = ref(-1);
+
+                // Custom toolbar configuration for inline code
+                const customToolbar = {
+                    inlineCode: {
+                        title: "Inline Code",
+                        icon: "v-md-icon-inline-code",
+                        action(editor) {
+                            editor.insert((selected) => {
+                                const prefix = "`";
+                                const suffix = "`";
+                                const placeholder = "code";
+                                const content = selected || placeholder;
+
+                                return {
+                                    text: `${prefix}${content}${suffix}`,
+                                    selected: content,
+                                };
+                            });
+                        },
+                    },
+                };
 
                 // Set the initial date format menu values
                 editDateFormatMenu(dateFormat.value);
@@ -787,6 +828,7 @@
                     addMetadata,
                     bookButton,
                     content,
+                    customToolbar,
                     date,
                     dateFormat,
                     dateFormatMenuItems,
