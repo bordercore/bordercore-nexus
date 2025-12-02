@@ -1,10 +1,10 @@
+from elasticsearch.exceptions import NotFoundError
 from feed.models import Feed, FeedItem
 from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from django.contrib import messages
-from elasticsearch.exceptions import NotFoundError
 
 from accounts.models import UserFeed
 from blob.models import Blob

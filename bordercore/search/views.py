@@ -18,7 +18,8 @@ from urllib.parse import unquote, urlparse
 
 import markdown
 from elasticsearch import RequestError
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 
 from django.conf import settings
@@ -1306,6 +1307,7 @@ def search_names_es(user: User, search_term: str, doctypes: list[str]) -> list[d
 
 
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def search_music(request: Request) -> JsonResponse:
     """API endpoint for searching music (songs, artists, albums).
 

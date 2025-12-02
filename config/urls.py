@@ -64,13 +64,14 @@ router.register(r"tagnames", TagNameViewSet, "tagname")
 router.register(r"todos", TodoViewSet, "todo")
 
 urlpatterns += [
-    re_path(r"^api/", include(router.urls)),
+    # Specific API paths must come before the router include
     path("api/feeds/update_feed_list/<uuid:feed_uuid>/", update_feed_list),
     path("api/collections/images/<uuid:collection_uuid>/", get_images),
     path("api/music/mark_song_as_listened_to/<uuid:song_uuid>/", mark_song_as_listened_to, name="mark_song_as_listened_to"),
     path("api/site/stats", site_stats),
-    path("api/search/music", search_music),
+    path("api/search/music/", search_music),
     path("api/extract_text", extract_text),
+    re_path(r"^api/", include(router.urls)),
     path("", include("rest_framework.urls", namespace="rest_framework"))
 ]
 
