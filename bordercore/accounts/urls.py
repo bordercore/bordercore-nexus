@@ -44,4 +44,9 @@ urlpatterns = [
         view=views.pin_note,
         name="pin_note"
     ),
+    path(
+        route="weather/",
+        view=views.get_weather,
+        name="get_weather"
+    ),
 ]

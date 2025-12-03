@@ -416,3 +416,22 @@ def bordercore_logout(request: HttpRequest) -> HttpResponseRedirect:
     """
     logout(request)
     return redirect("accounts:login")
+
+
+@login_required
+def get_weather(request: HttpRequest) -> JsonResponse:
+    """Get the current user's weather data.
+
+    Returns the weather information stored in the user's profile.
+
+    Args:
+        request: The HTTP request.
+
+    Returns:
+        JSON response containing:
+            - weather: The weather data object (or None if not available)
+    """
+    user = cast(User, request.user)
+    weather_data = user.userprofile.weather if hasattr(user, "userprofile") else None
+
+    return JsonResponse({"weather": weather_data})

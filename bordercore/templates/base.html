@@ -288,9 +288,26 @@
                         const overdueTasks = JSON.parse(document.getElementById("overdue_tasks").textContent);
                         const recentSearches = JSON.parse(document.getElementById("recent_searches").textContent);
                         const recentlyViewed = JSON.parse(document.getElementById("recently_viewed").textContent);
-                        const weatherInfo = {% if user.userprofile.weather %}JSON.parse(document.getElementById("weather_info").textContent){% else %}null{% endif %};
+                        const weatherInfo = ref({% if user.userprofile.weather %}JSON.parse(document.getElementById("weather_info").textContent){% else %}null{% endif %});
 
                         const chatBot = ref(null);
+
+                        // Function to fetch updated weather data
+                        async function fetchWeatherData() {
+                            try {
+                                const response = await axios.get("{% url 'accounts:get_weather' %}");
+                                if (response.data && response.data.weather) {
+                                    weatherInfo.value = response.data.weather;
+                                }
+                            } catch (error) {
+                                console.error("Failed to fetch weather data:", error);
+                            }
+                        }
+
+                        // Set up polling to update weather every 10 minutes
+                        onMounted(() => {
+                            setInterval(fetchWeatherData, 600000); // 600000ms = 10 minutes
+                        });
 
                         useEvent("keydown", handleKeyDown, {});
 
