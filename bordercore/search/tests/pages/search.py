@@ -1,6 +1,7 @@
 try:
     from selenium.webdriver.common.by import By
     from selenium.webdriver.support.ui import Select
+    from selenium.webdriver.support.wait import WebDriverWait
 except ModuleNotFoundError:
     # Don't worry if this import doesn't exist in production
     pass
@@ -22,20 +23,26 @@ class SearchPage(Page):
 
     def search_input(self):
         """
-        Find the search form input
+        Find the search form input - wait for Vue to mount
         """
+        wait = WebDriverWait(self.browser, timeout=10)
+        wait.until(lambda driver: driver.find_element(*self.SEARCH_INPUT))
         return self.browser.find_element(*self.SEARCH_INPUT)
 
     def exact_match_select(self):
         """
-        Find the "Exact Match" dropdown
+        Find the "Exact Match" dropdown - wait for Vue to mount
         """
+        wait = WebDriverWait(self.browser, timeout=10)
+        wait.until(lambda driver: driver.find_element(*self.SEARCH_EXACT_MATCH_DROPDOWN))
         return Select(self.browser.find_element(*self.SEARCH_EXACT_MATCH_DROPDOWN))
 
     def submit_button(self):
         """
         Find the form submit button
         """
+        wait = WebDriverWait(self.browser, timeout=10)
+        wait.until(lambda driver: driver.find_element(*self.SUBMIT_BUTTON))
         return self.browser.find_element(*self.SUBMIT_BUTTON)
 
     def search_result_count(self, wait=False):

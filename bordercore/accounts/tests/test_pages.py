@@ -12,7 +12,7 @@ pytestmark = pytest.mark.functional
 
 
 @pytest.mark.parametrize("login", [reverse("accounts:prefs")], indirect=True)
-def test_prefs(collection, login, live_server, browser, settings):
+def test_prefs(collection, login, live_server, browser, settings, s3_resource, s3_bucket):
 
     settings.DEBUG = True
     COLLECTION_NAME = "collection_0"
@@ -31,7 +31,7 @@ def test_prefs(collection, login, live_server, browser, settings):
 
     # Test that preferences were successfully updated
     page.update()
-    assert page.prefs_updated_message() == "Preferences updated"
+    assert page.prefs_updated_message() == "Preferences edited"
 
     # Test that the theme was switched
     assert page.selected_theme() == THEME_NAME

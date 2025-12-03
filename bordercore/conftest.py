@@ -101,7 +101,8 @@ def pytest_configure(config: Config) -> None:
 
 
 BLOCKED_CONTEXT_PROCESSORS = {
-    "context_processors.get_recent_objects"
+    # Note: get_recent_objects uses Django ORM, not ES, so it's safe to run
+    # "context_processors.get_recent_objects"
 }
 
 
@@ -375,18 +376,26 @@ def bookmark(tag, monkeypatch_bookmark):
 @pytest.fixture(scope="session")
 def browser():
 
+    display = None
     if not os.environ.get("DISABLE_HEADLESS_DISPLAY", None):
-        # Set screen resolution to 1366 x 768 like most 15" laptops
-        display = Display(visible=0, size=(1366, 768))
-        display.start()
+        try:
+            # Set screen resolution to 1366 x 768 like most 15" laptops
+            display = Display(visible=0, size=(1366, 768))
+            display.start()
+        except Exception as e:
+            # If Xvfb is not installed or display fails to start, continue without it
+            # The test will run in a visible Firefox window instead
+            print(f"Warning: Could not start virtual display (Xvfb): {e}")
+            print("Running Firefox in visible mode. Set DISABLE_HEADLESS_DISPLAY=1 to suppress this warning.")
+            display = None
 
     service = Service(executable_path="/snap/bin/geckodriver", log_path=GECKO_DRIVER_LOGFILE)
     driver = webdriver.Firefox(service=service)
 
     yield driver
 
-    if not os.environ.get("DISABLE_HEADLESS_DISPLAY", None):
-        # Quit the Xvfb display
+    if display is not None:
+        # Quit the Xvfb display if it was started
         display.stop()
 
     driver.quit()

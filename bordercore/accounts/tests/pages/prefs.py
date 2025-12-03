@@ -1,6 +1,7 @@
 import time
 
 from selenium.webdriver.support.ui import Select
+from selenium.webdriver.support.wait import WebDriverWait
 
 from django.urls import reverse
 
@@ -10,8 +11,10 @@ except ModuleNotFoundError:
     # Don't worry if this import doesn't exist in production
     pass
 
+from test_page import Page
 
-class PrefsPage:
+
+class PrefsPage(Page):
 
     URL = reverse("accounts:prefs")
 
@@ -75,5 +78,8 @@ class PrefsPage:
         """
         Find the success message after updating preference options
         """
+        # Wait for the alert to appear after form submission
+        wait = WebDriverWait(self.browser, timeout=10)
+        wait.until(lambda driver: driver.find_element(*self.PREFS_UPDATED_MESSAGE))
         message = self.browser.find_element(*self.PREFS_UPDATED_MESSAGE)
         return message.text

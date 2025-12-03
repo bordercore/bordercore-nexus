@@ -881,7 +881,7 @@ def get_doctype(match: dict[str, Any]) -> str:
 def get_doctypes_from_request(request: HttpRequest) -> list[str]:
     """Extract document type filters from request parameters.
 
-    Parses the "doctype" GET parameter and handles special cases like
+    Parses the "doctype" or "doc_type" GET parameter and handles special cases like
     "music" which maps to multiple document types.
 
     Args:
@@ -890,7 +890,9 @@ def get_doctypes_from_request(request: HttpRequest) -> list[str]:
     Returns:
         A list of document type strings to filter by.
     """
-    doctype_param = request.GET.get("doctype", "")
+    # Accept both "doctype" and "doc_type" for backwards compatibility
+    # (ObjectSelect.vue sends "doc_type", other places send "doctype")
+    doctype_param = request.GET.get("doctype", "") or request.GET.get("doc_type", "")
     if doctype_param != "":
         doctypes = doctype_param.split(",")
     else:
