@@ -329,5 +329,8 @@ window.TopSearch = TopSearch;
 import TreeMenu from "./vue/common/TreeMenu.vue";
 window.TreeMenu = TreeMenu;
 
+import Weather from "./vue/common/Weather.vue";
+window.Weather = Weather;
+
 import WorkoutGraph from "./vue/fitness/WorkoutGraph.vue";
 window.WorkoutGraph = WorkoutGraph;

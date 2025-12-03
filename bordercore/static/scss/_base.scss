@@ -1423,6 +1423,23 @@ blockquote > p {
   #top-search-bar {
     right: 16rem;
   }
+
+  #weather-display {
+    color: #BA55D3;
+  }
+
+  .user-menu-wrapper {
+    flex-shrink: 0;
+  }
+
+  .user-menu-dropdown {
+    min-width: max-content;
+  }
+
+  .user-greeting {
+    display: inline-block;
+    white-space: nowrap;
+  }
 }
 
 //  Set the z-index to something above 50 to be visible if using

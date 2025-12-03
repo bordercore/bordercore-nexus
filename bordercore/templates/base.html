@@ -58,8 +58,12 @@
                             <div class="col-lg-9 card-grid my-auto text-truncate ps-2" id="top-title">
                                 <span v-if="baseStore.sidebarCollapsed">Bordercore :: {% block title %} {% endblock %}</span>
                             </div>
-
-                            <div class="col-lg-3 my-auto d-flex justify-content-end align-items-center">
+                            <div class="col-lg-3 my-auto d-flex justify-content-end align-items-center flex-nowrap">
+                                {% if user.userprofile.weather and user.userprofile.weather.current and user.userprofile.weather.current.condition and user.userprofile.weather.current.condition.text %}
+                                <div id="weather-display" class="me-3">
+                                    <weather :weather-info="weatherInfo"></weather>
+                                </div>
+                                {% endif %}
                                 <div id="top-search-bar" class="position-absolute">
                                     <top-search
                                         ref="topSearch"
@@ -85,24 +89,26 @@
                                 >
                                 </recent-blobs>
 
-                                <div v-cloak>
+                                <div v-cloak class="user-menu-wrapper">
                                     <drop-down-menu
-                                        class="top-drop-down"
+                                        class="top-drop-down user-menu-dropdown"
                                         :links="userMenuItems"
                                         :initial-hide="false"
                                         :support-hover-target="false"
                                         :show-target="false"
                                     >
                                         <template #icon>
-                                            <span class="align-middle ms-2">
-                                                Hello <strong>{{ user.get_username }}</strong>
-                                            </span>
-                                            {% if request.user|is_in_group:"Admin" %}
-                                                <span class="dropdown-item-extra align-middle ms-2" v-if="failedTestCount > 0">
-                                                    [[ failedTestCount ]]
+                                            <span class="user-greeting">
+                                                <span class="align-middle ms-2">
+                                                    Hello <strong>{{ user.get_username }}</strong>
                                                 </span>
-                                            {% endif %}
-                                            <font-awesome-icon icon="angle-down" class="align-middle ms-2" />
+                                                {% if request.user|is_in_group:"Admin" %}
+                                                    <span class="dropdown-item-extra align-middle ms-2" v-if="failedTestCount > 0">
+                                                        [[ failedTestCount ]]
+                                                    </span>
+                                                {% endif %}
+                                                <font-awesome-icon icon="angle-down" class="align-middle ms-2" />
+                                            </span>
                                         </template>
                                     </drop-down-menu>
                                 </div>
@@ -193,6 +199,9 @@
             {{ overdue_tasks|json_script:"overdue_tasks" }}
             {{ recent_searches|json_script:"recent_searches" }}
             {{ recently_viewed|json_script:"recently_viewed" }}
+            {% if user.userprofile.weather %}
+            {{ user.userprofile.weather|json_script:"weather_info" }}
+            {% endif %}
 
             <script type="text/javascript">
 
@@ -231,6 +240,7 @@
                         OverdueTasks,
                         RecentBlobs,
                         TopSearch,
+                        Weather,
                     },
                     delimiters: ["[[", "]]"],
                     setup() {
@@ -278,6 +288,7 @@
                         const overdueTasks = JSON.parse(document.getElementById("overdue_tasks").textContent);
                         const recentSearches = JSON.parse(document.getElementById("recent_searches").textContent);
                         const recentlyViewed = JSON.parse(document.getElementById("recently_viewed").textContent);
+                        const weatherInfo = {% if user.userprofile.weather %}JSON.parse(document.getElementById("weather_info").textContent){% else %}null{% endif %};
 
                         const chatBot = ref(null);
 
@@ -327,6 +338,7 @@
                             showHelp,
                             openSearchWindow,
                             topSearch,
+                            weatherInfo,
                         }
 
                     }
