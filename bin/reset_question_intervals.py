@@ -28,7 +28,7 @@ import argparse
 import random
 import sys
 from datetime import datetime, timedelta
-from typing import Any, List, Optional, Protocol, Tuple
+from typing import Any, List, Optional, Protocol, Tuple, Union
 
 import django
 from django.apps import apps
@@ -150,12 +150,23 @@ def calculate_new_interval(
         # Never reviewed - give it a small random interval
         days = random.randint(min_interval, max_interval)
     else:
-        # Calculate days overdue and add random component
-        past_due_days = (now - question.last_reviewed).days
-        # Cap the past due component to prevent extremely long intervals
-        capped_past_due = min(past_due_days, max_interval * 2)
+        # Calculate time since last_reviewed
+        time_since_review = now - question.last_reviewed
+        time_since_review_days = time_since_review.days
+
+        # The question is due if interval <= time_since_review
+        # To make it no longer due, we need: new_interval > time_since_review
+        # So we set new_interval = time_since_review + random_component
+        # This ensures the question won't be due again until the new interval elapses
         random_component = random.randint(min_interval, max_interval)
-        days = max(capped_past_due + random_component, min_interval)
+        # Cap the base to prevent extremely long intervals
+        capped_base = min(time_since_review_days, max_interval * 2)
+        days = max(capped_base + random_component, min_interval)
+
+        # Ensure the new interval is always greater than time_since_review
+        # to guarantee the question is no longer due after the update
+        if days <= time_since_review_days:
+            days = time_since_review_days + 1
 
     return timedelta(days=days)
 
@@ -168,30 +179,32 @@ def get_overdue_questions(user: AbstractUser) -> QuerySet[Any]:
 
     Returns:
         QuerySet of Question objects that are either:
-            - Past due (interval <= now - last_reviewed)
+            - Past due (interval <= now - last_reviewed, matching frontend query)
             - Never reviewed (last_reviewed is null)
 
     Note:
-        Results are ordered randomly to avoid pathological batching patterns.
-        Return type is QuerySet[Any] because Django's F expressions make
-        exact typing difficult, but the actual objects conform to QuestionProtocol.
+        This matches the exact query logic used by start_study_session when
+        question_filter == "review". Results are ordered randomly to avoid
+        pathological batching patterns. Return type is QuerySet[Any] because
+        Django's F expressions make exact typing difficult, but the actual
+        objects conform to QuestionProtocol.
     """
 
     Question = apps.get_model("drill", "Question")
 
-    past_due_filter = Q(interval__lte=timezone.now() - F("last_reviewed"))  # type: ignore
-    never_reviewed_filter = Q(last_reviewed__isnull=True)
-
+    # Match the exact query logic used by start_study_session in models.py
+    # when question_filter == "review". This is what the frontend uses.
     return Question.objects.filter(
         user=user,
         is_disabled=False
     ).filter(
-        past_due_filter | never_reviewed_filter
+        Q(interval__lte=timezone.now() - F("last_reviewed"))  # type: ignore
+        | Q(last_reviewed__isnull=True)
     ).order_by("?")
 
 
 def process_questions_bulk(
-    questions: QuerySet[Any],
+    questions: Union[QuerySet[Any], List[Any]],
     now: datetime,
     max_interval: int,
     min_interval: int,
@@ -200,7 +213,7 @@ def process_questions_bulk(
     """Process questions in batches for efficiency.
 
     Args:
-        questions: QuerySet of Question objects to process.
+        questions: QuerySet or list of Question objects to process.
         now: Current datetime for interval calculations.
         max_interval: Maximum number of days for random interval component.
         min_interval: Minimum number of days for any interval.
@@ -307,17 +320,31 @@ def main() -> None:
     print(f"Found {total_questions} questions to process")
     print(f"Using interval range: {args.min_interval} to {args.max_interval} days")
 
+    # Convert queryset to list to ensure we process all questions that were
+    # overdue at query time, avoiding any issues with lazy evaluation or
+    # queryset re-evaluation during processing
+    questions_list = list(questions)
+    actual_count = len(questions_list)
+
+    if actual_count != total_questions:
+        print(f"Warning: Count mismatch - queryset.count()={total_questions}, "
+              f"but list length={actual_count}")
+
     try:
         with transaction.atomic():
             processed, skipped = process_questions_bulk(
-                questions, now, args.max_interval, args.min_interval,
+                questions_list, now, args.max_interval, args.min_interval,
                 dry_run=args.dry_run
             )
 
         print("\nSummary:")
         print(f"  Processed: {processed}")
         print(f"  Skipped: {skipped}")
-        print(f"  Total: {total_questions}")
+        print(f"  Total found: {total_questions}")
+        print(f"  Actual in list: {actual_count}")
+        if processed + skipped != actual_count:
+            print(f"  WARNING: processed + skipped ({processed + skipped}) != "
+                  f"actual count ({actual_count})")
 
         if args.dry_run:
             print("\nNo changes were made (dry run mode)")
