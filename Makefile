@@ -43,9 +43,8 @@ test_unit:
 test_wumpus:
 	python3 $(BORDERCORE_HOME)/../bin/test_runner.py --test wumpus
 
-test_functional: reset_elasticsearch
-# Configure functional tests to use a test instance of Elasticsearch. Don't use production.
-	ELASTICSEARCH_INDEX=$(ELASTICSEARCH_INDEX_TEST) ELASTICSEARCH_ENDPOINT=$(ELASTICSEARCH_ENDPOINT_TEST) \
+test_functional:
+	MOCK_ELASTICSEARCH=1 \
 	python3 $(BORDERCORE_HOME)/../bin/test_runner.py --test functional
 
 test_coverage:
