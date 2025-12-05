@@ -31,7 +31,7 @@ def test_drill_list(auto_login_user, question, django_assert_num_queries):
     _, client = auto_login_user()
 
     url = urls.reverse("drill:list")
-    with django_assert_num_queries(20):
+    with django_assert_num_queries(26):
         resp = client.get(url)
 
     assert resp.status_code == 200

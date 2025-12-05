@@ -9,6 +9,8 @@ import pytest
 from blob.tests.factories import BlobFactory
 from bookmark.tests.factories import BookmarkFactory
 
+pytestmark = pytest.mark.django_db
+
 
 def test_mock_es_returns_recent_items(mock_es_for_node_test, node, bookmark):
     """
