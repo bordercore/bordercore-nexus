@@ -21,16 +21,17 @@
                             </div>
                         </div>
                         <ul id="drill-pinned-tags" class="interior-borders p-2 mb-0 wide-list">
-                            <slick-list
-                                v-model:list="tagList"
+                            <VueDraggable
+                                v-model="tagList"
                                 :distance="3"
-                                helper-class="slicklist-helper"
-                                @sort-end="handleSort"
+                                ghost-class="slicklist-helper"
+                                @end="handleSort"
+                                tag="div"
                             >
-                                <slick-item
+                                <div
                                     v-for="(element, index) in tagList"
                                     :key="element.uuid"
-                                    :index="index"
+                                    class="slicklist-item"
                                 >
                                     <div class="slicklist-list-item-inner">
                                         <li :key="element.name" class="list-group-item px-2 py-1">
@@ -44,8 +45,8 @@
                                             </div>
                                         </li>
                                     </div>
-                                </slick-item>
-                            </slick-list>
+                                </div>
+                            </VueDraggable>
                         </ul>
                     </div>
                     <div class="modal-footer justify-content-start">
@@ -106,7 +107,7 @@
     import DropDownMenu from "/front-end/vue/common/DropDownMenu.vue";
     import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome";
     import SelectValue from "/front-end/vue/common/SelectValue.vue";
-    import {SlickItem, SlickList} from "vue-slicksort";
+    import {VueDraggable} from "vue-draggable-plus";
 
     export default {
         components: {
@@ -114,8 +115,7 @@
             DropDownMenu,
             FontAwesomeIcon,
             SelectValue,
-            SlickItem,
-            SlickList,
+            VueDraggable,
         },
         props: {
             getPinnedTagsUrl: {
@@ -148,7 +148,8 @@
                 if (event.oldIndex === event.newIndex) {
                     return;
                 }
-                const tagName = tagList.value[event.oldIndex].name;
+                // v-model has already updated the array, so the dragged item is now at newIndex
+                const tagName = tagList.value[event.newIndex].name;
 
                 // The backend expects the ordering to begin
                 // with 1, not 0, so add 1.

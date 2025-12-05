@@ -28,16 +28,16 @@
                 <template #content>
                     <hr class="divider">
                     <ul class="list-group list-group-flush interior-borders">
-                        <slick-list
-                            v-model:list="objectList"
+                        <VueDraggable
+                            v-model="objectList"
                             :distance="3"
-                            helper-class="slicklist-helper"
-                            @sort-end="handleSort"
+                            ghost-class="slicklist-helper"
+                            @end="handleSort"
+                            tag="div"
                         >
-                            <slick-item
+                            <div
                                 v-for="(element, index) in objectList"
                                 :key="element.uuid"
-                                :index="index"
                                 class="slicklist-item"
                                 :style="'z-index: ' + (1000 - index)"
                             >
@@ -91,8 +91,8 @@
                                         </div>
                                     </li>
                                 </div>
-                            </slick-item>
-                        </slick-list>
+                            </div>
+                        </VueDraggable>
                         <div v-cloak v-if="objectList.length == 0" :key="1" class="text-muted">
                             No related objects
                         </div>
@@ -108,15 +108,14 @@
     import Card from "/front-end/vue/common/Card.vue";
     import DropDownMenu from "/front-end/vue/common/DropDownMenu.vue";
     import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome";
-    import {SlickList, SlickItem} from "vue-slicksort";
+    import {VueDraggable} from "vue-draggable-plus";
 
     export default {
         components: {
             Card,
             DropDownMenu,
             FontAwesomeIcon,
-            SlickItem,
-            SlickList,
+            VueDraggable,
         },
         props: {
             objectUuid: {
@@ -258,7 +257,8 @@
                 if (event.oldIndex === event.newIndex) {
                     return;
                 }
-                const blobUuid = objectList.value[event.oldIndex].uuid;
+                // v-model has already updated the array, so the dragged item is now at newIndex
+                const blobUuid = objectList.value[event.newIndex].uuid;
                 // The backend expects the ordering to begin with 1, not 0, so add 1.
                 const newPosition = event.newIndex + 1;
 

@@ -1,8 +1,5 @@
-import {DragHandle, SlickList, plugin as Slicksort, SlickItem} from "vue-slicksort";
-window.DragHandle = DragHandle;
-window.SlickList = SlickList;
-window.Slicksort = Slicksort;
-window.SlickItem = SlickItem;
+import {VueDraggable} from "vue-draggable-plus";
+window.VueDraggable = VueDraggable;
 
 import {computed, createApp, h, nextTick, onMounted, onUnmounted, reactive, ref, watch} from "vue";
 window.computed = computed;
@@ -44,9 +41,6 @@ import {useFeedStore} from "./vue/stores/FeedStore.js";
 window.useFeedStore = useFeedStore;
 import {useExerciseStore} from "./vue/stores/ExerciseStore.js";
 window.useExerciseStore = useExerciseStore;
-
-import draggable from "vuedraggable";
-window.draggable = draggable;
 
 import Sortable from "sortablejs";
 window.Sortable = Sortable;

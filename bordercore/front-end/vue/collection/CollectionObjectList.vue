@@ -62,16 +62,16 @@
                     <span v-else class="text-muted">No objects</span>
                 </div>
                 <ul v-else class="drag-target list-group list-group-flush interior-borders">
-                    <slick-list
-                        v-model:list="limitedObjectList"
+                    <VueDraggable
+                        v-model="limitedObjectList"
                         :distance="3"
-                        helper-class="slicklist-helper"
-                        @sort-end="handleSort"
+                        ghost-class="slicklist-helper"
+                        @end="handleSort"
+                        tag="div"
                     >
-                        <slick-item
+                        <div
                             v-for="(element, index) in limitedObjectList"
                             :key="element.uuid"
-                            :index="index"
                             class="slicklist-item"
                         >
                             <div class="slicklist-list-item-inner">
@@ -109,8 +109,8 @@
                                     </div>
                                 </li>
                             </div>
-                        </slick-item>
-                    </slick-list>
+                        </div>
+                    </VueDraggable>
                     <div v-if="objectList.length == 0" v-cloak :key="1" class="text-muted">
                         No objects
                     </div>
@@ -125,7 +125,7 @@
     import Card from "/front-end/vue/common/Card.vue";
     import DropDownMenu from "/front-end/vue/common/DropDownMenu.vue";
     import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome";
-    import {SlickList, SlickItem} from "vue-slicksort";
+    import {VueDraggable} from "vue-draggable-plus";
 
     export default {
         name: "CollectionObjectList",
@@ -133,8 +133,7 @@
             Card,
             DropDownMenu,
             FontAwesomeIcon,
-            SlickItem,
-            SlickList,
+            VueDraggable,
         },
         props: {
             nodeUuid: {
@@ -228,6 +227,10 @@
             function handleObjectDrop(event) {
                 event.currentTarget.querySelector(".drag-target").classList.remove("collection-drag-over");
                 const url = event.dataTransfer.getData("URL");
+                if (!url || url.trim() === "") {
+                    // No URL means this is just a layout reordering drag operation, not a bookmark drop
+                    return;
+                }
                 doPost(
                     props.addNewBookmarkUrl,
                     {
@@ -330,7 +333,8 @@
                 if (event.oldIndex === event.newIndex) {
                     return;
                 }
-                const uuid = objectList.value[event.oldIndex].uuid;
+                // v-model has already updated the array, so the dragged item is now at newIndex
+                const uuid = objectList.value[event.newIndex].uuid;
 
                 // The backend expects the ordering to begin
                 // with 1, not 0, so add 1.

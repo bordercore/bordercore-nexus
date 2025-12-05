@@ -1,15 +1,15 @@
 <template>
     <ul>
-        <slick-list
-            v-model:list="localFeedList"
+        <VueDraggable
+            v-model="localFeedList"
             :distance="3"
-            helper-class="slicklist-helper"
-            @sort-end="handleSort"
+            ghost-class="slicklist-helper"
+            @end="handleSort"
+            tag="div"
         >
-            <slick-item
+            <div
                 v-for="(element, index) in localFeedList"
                 :key="element.uuid"
-                :index="index"
                 class="slicklist-item"
             >
                 <div class="slicklist-list-item-inner">
@@ -20,8 +20,8 @@
                         <small v-if="element.lastResponse !== 'OK'" class="text-danger ms-2">{{ element.lastResponse }}</small>
                     </li>
                 </div>
-            </slick-item>
-        </slick-list>
+            </div>
+        </VueDraggable>
         <div v-if="feedList.length === 0" v-cloak class="text-secondary">
             No feeds found. <a href="#" @click.prevent="handleEditFeed('Edit')">Add a new one here.</a>
         </div>
@@ -31,12 +31,11 @@
 <script>
 
     import {useFeedStore} from "/front-end/vue/stores/FeedStore.js";
-    import {SlickList, SlickItem} from "vue-slicksort";
+    import {VueDraggable} from "vue-draggable-plus";
 
     export default {
         components: {
-            SlickItem,
-            SlickList,
+            VueDraggable,
         },
         props: {
             feedList: {
@@ -74,7 +73,11 @@
             };
 
             function handleSort(event) {
-                const feedId = localFeedList.value[event.oldIndex].id;
+                if (event.oldIndex === event.newIndex) {
+                    return;
+                }
+                // v-model has already updated the array, so the dragged item is now at newIndex
+                const feedId = localFeedList.value[event.newIndex].id;
 
                 // The backend expects the ordering to begin with 1, not 0, so add 1.
                 const newPosition = event.newIndex + 1;

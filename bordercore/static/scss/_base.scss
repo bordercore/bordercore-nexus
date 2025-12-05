@@ -138,11 +138,6 @@ div.drag-target {
   @extend .zoom;
 }
 
-// Override default Sortable classes
-.sortable-drag {
-  background-color: var(--surface5);
-}
-
 .node-draggable {
   background-color: var(--node-color-1) !important;
 }

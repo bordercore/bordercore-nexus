@@ -102,18 +102,17 @@
                     <div class="d-flex ms-2">
                         <div @drop.prevent="handleNewBlob($event)" @dragover.prevent="handleBlobDragOver($event)" @dragleave.prevent="handleBlobDragLeave($event)" @dragenter.prevent>
                             <ul class="text-center list-unstyled collection-sortable">
-                                <slick-list
-                                    v-model:list="blobList"
+                                <vue-draggable
+                                    v-model="blobList"
                                     :distance="3"
-                                    axis="xy"
-                                    helper-class="slicklist-helper"
+                                    ghost-class="slicklist-helper"
                                     class="drag-target d-flex flex-wrap w-100"
-                                    @sort-end="handleSort"
+                                    @end="handleSort"
+                                    tag="div"
                                 >
-                                    <slick-item
+                                    <div
                                         v-for="(element, index) in blobList"
                                         :key="element.uuid"
-                                        :index="index"
                                     >
                                         <div class="slicklist-list-item-inner h-100">
                                             <li :key="element.uuid" class="collection-item list-group-item hoverable cursor-pointer h-100 p-3">
@@ -132,8 +131,8 @@
                                                 </div>
                                             </li>
                                         </div>
-                                    </slick-item>
-                                </slick-list>
+                                    </div>
+                                </vue-draggable>
                             </ul>
                         </div>
                         <h5 v-if="!blobList" class="text-secondary">
@@ -359,8 +358,7 @@
                 DropDownMenu,
                 FontAwesomeIcon,
                 NodeImageModal,
-                SlickItem,
-                SlickList,
+                "vue-draggable": VueDraggable,
                 TagsInput,
             },
             setup() {
@@ -584,6 +582,7 @@
                     if (event.oldIndex === event.newIndex) {
                         return;
                     }
+                    // v-model has already updated the array, so the dragged item is now at newIndex
                     // The backend expects the ordering to begin with 1, not 0, so add 1.
                     const newPosition = event.newIndex + 1;
 
@@ -591,7 +590,7 @@
                         "{% url "collection:sort_objects" %}",
                         {
                             "collection_uuid": "{{ collection.uuid }}",
-                            "object_uuid": blobList.value[event.oldIndex].uuid,
+                            "object_uuid": blobList.value[event.newIndex].uuid,
                             "new_position": newPosition,
                         },
                         () => {},

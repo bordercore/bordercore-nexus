@@ -137,20 +137,20 @@
                 :key="colIndex"
                 class="node-column"
             >
-                <slick-list
-                    v-model:list="layout[colIndex]"
+                <vue-draggable
+                    v-model="layout[colIndex]"
                     :distance="3"
-                    @update:list="handleLayoutChange"
-                    @sort:start="handleSortStart"
-                    axis="xy"
+                    @end="handleLayoutChange"
+                    @start="handleSortStart"
                     group="node_column"
-                    helper-class="slicklist-helper-bare"
+                    ghost-class="slicklist-helper-bare"
+                    :disabled="!editLayout"
+                    tag="div"
                 >
-                    <slick-item
+                    <div
                         v-for="(row, rowIndex) in layout[colIndex]"
                         :key="row.uuid"
-                        :index="rowIndex"
-                        :disabled="!editLayout"
+                        class="slicklist-item"
                     >
                         <div class="slicklist-list-item-inner position-relative" :style="'z-index: ' + (300 - (colIndex*100) - rowIndex)">
                             <div v-if="row.type === 'collection'">
@@ -241,8 +241,8 @@
                                 </node-node>
                             </div>
                         </div>
-                    </slick-item>
-                </slick-list>
+                    </div>
+                </vue-draggable>
             </div>
 
             <collection-object-list-modal
@@ -335,8 +335,7 @@
                 NodeNodeModal,
                 NodeTodoList,
                 ObjectSelect,
-                SlickItem,
-                SlickList,
+                "vue-draggable": VueDraggable,
             },
             setup() {
                 const editLayout = ref(false);
@@ -407,7 +406,7 @@
                 };
 
                 function handleSortStart() {
-                    layoutCache = layout.value;
+                    layoutCache = cloneDeep(layout.value);
                 };
 
                 function handleTodoEdit() {
@@ -617,7 +616,6 @@
                 sortIcon: "caret-up",
             },
         });
-        app.use(Slicksort);
         app.mount("#vue-app");
 
     </script>

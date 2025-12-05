@@ -19,24 +19,25 @@
 
                     <template v-slot:content>
                         <ul class="list-group list-group-flush interior-borders">
-                            <slick-list
-                                v-model:list="pinnedNotes"
+                            <vue-draggable
+                                v-model="pinnedNotes"
                                 :distance="3"
-                                helper-class="slicklist-helper"
-                                @sort-end="handleSort"
+                                ghost-class="slicklist-helper"
+                                @end="handleSort"
+                                tag="div"
                             >
-                                <slick-item
+                                <div
                                     v-for="(element, index) in pinnedNotes"
                                     :key="element.uuid"
-                                    :index="index"
+                                    class="slicklist-item"
                                 >
                                     <div class="slicklist-list-item-inner">
                                         <li class="list-group-item" :data-uuid="element.uuid" :key="element.uuid">
                                             <a :href="element.url">[[ element.name ]]</a>
                                         </li>
                                     </div>
-                                </slick-item>
-                            </slick-list>
+                                </div>
+                            </vue-draggable>
                         </ul>
                         <div v-if="pinnedNotes.length === 0">
                             No notes found to pin.
@@ -168,8 +169,7 @@
                 FontAwesomeIcon,
                 Pagination,
                 SearchNoResult,
-                SlickItem,
-                SlickList,
+                "vue-draggable": VueDraggable,
             },
             setup() {
                 const isSearchResult = {% if request.GET.search %}true{% else %}false{% endif %};
@@ -192,7 +192,8 @@
                     if (event.oldIndex === event.newIndex) {
                         return;
                     }
-                    const noteUuid = pinnedNotes.value[event.oldIndex].uuid;
+                    // v-model has already updated the array, so the dragged item is now at newIndex
+                    const noteUuid = pinnedNotes.value[event.newIndex].uuid;
 
                     // The backend expects the ordering to begin with 1, not 0, so add 1.
                     const newPosition = event.newIndex + 1;

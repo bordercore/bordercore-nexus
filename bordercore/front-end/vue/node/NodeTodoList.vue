@@ -35,16 +35,16 @@
             <template #content>
                 <hr class="divider">
                 <ul id="sort-container-tags" class="list-group list-group-flush interior-borders">
-                    <slick-list
-                        v-model:list="todoList"
+                    <VueDraggable
+                        v-model="todoList"
                         :distance="3"
-                        helper-class="slicklist-helper"
-                        @sort-end="handleSort"
+                        ghost-class="slicklist-helper"
+                        @end="handleSort"
+                        tag="div"
                     >
-                        <slick-item
+                        <div
                             v-for="(element, index) in todoList"
                             :key="element.uuid"
-                            :index="index"
                             class="slicklist-item"
                         >
                             <div class="slicklist-list-item-inner">
@@ -77,8 +77,8 @@
                                     </div>
                                 </li>
                             </div>
-                        </slick-item>
-                    </slick-list>
+                        </div>
+                    </VueDraggable>
                     <div v-if="todoList.length == 0" v-cloak :key="1" class="text-muted">
                         No tasks
                     </div>
@@ -93,15 +93,14 @@
     import Card from "/front-end/vue/common/Card.vue";
     import DropDownMenu from "/front-end/vue/common/DropDownMenu.vue";
     import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome";
-    import {SlickList, SlickItem} from "vue-slicksort";
+    import {VueDraggable} from "vue-draggable-plus";
 
     export default {
         components: {
             Card,
             DropDownMenu,
             FontAwesomeIcon,
-            SlickItem,
-            SlickList,
+            VueDraggable,
         },
         props: {
             nodeUuid: {
@@ -199,7 +198,8 @@
                 if (event.oldIndex === event.newIndex) {
                     return;
                 }
-                const todoUuid = todoList.value[event.oldIndex].uuid;
+                // v-model has already updated the array, so the dragged item is now at newIndex
+                const todoUuid = todoList.value[event.newIndex].uuid;
 
                 // The backend expects the ordering to begin
                 // with 1, not 0, so add 1.

@@ -114,19 +114,19 @@
             <div class="card-grid h-100 ps-0 mt-2">
                 <div id="bookmark-list-container" class="interior-borders scrollable-panel-scrollbar-hover vh-100">
                     <ul class="list-group list-group-flush interior-borders h-100">
-                        <slick-list
-                            v-model:list="bookmarkList"
+                        <vue-draggable
+                            v-model="bookmarkList"
                             :distance="3"
-                            helper-class="slicklist-helper"
-                            @sort-end="handleBookmarkSort"
-                            :use-drag-handle="true"
+                            ghost-class="slicklist-helper"
+                            @end="handleBookmarkSort"
+                            handle=".drag-handle"
+                            :filter="bookmarkStore.selectedTagName === 'Untagged' ? '.no-drag' : undefined"
+                            tag="div"
                         >
-                            <slick-item
+                            <div
                                 v-for="(element, index) in bookmarkList"
                                 :key="element.uuid"
-                                :index="index"
-                                :disabled="bookmarkStore.selectedTagName === 'Untagged'"
-                                class="hover-reveal-target"
+                                :class="['hover-reveal-target', { 'no-drag': bookmarkStore.selectedTagName === 'Untagged' }]"
                             >
                                 <div class="slicklist-list-item-inner">
                                     <li
@@ -141,9 +141,9 @@
                                     >
                                         <div class="d-flex">
                                             <div class="drag-handle d-flex flex-grow-0 flex-shrink-0 align-items-center">
-                                                <drag-handle class="hover-reveal-object d-none">
+                                                <div class="hover-reveal-object d-none">
                                                     <font-awesome-icon icon="bars"></font-awesome-icon>
-                                                </drag-handle>
+                                                </div>
                                             </div>
                                             <div class="date flex-grow-0 flex-shrink-0 me-2 align-top">
                                                 [[ element.created ]]
@@ -182,8 +182,8 @@
                                         </div>
                                     </li>
                                 </div>
-                            </slick-item>
-                        </slick-list>
+                            </div>
+                        </vue-draggable>
                     </ul>
                     <div v-if="bookmarkList.length === 0" v-cloak>
                         <div class="text-center pt-3">
@@ -255,13 +255,11 @@
         const app = createApp({
             name: "BookmarkList",
             components: {
-                DragHandle,
                 DropDownMenu,
                 FontAwesomeIcon,
                 PinnedTags,
                 SelectValue,
-                SlickItem,
-                SlickList,
+                "vue-draggable": VueDraggable,
             },
             delimiters: ["[[", "]]"],
             setup() {
@@ -504,7 +502,8 @@
                     if (bookmarkStore.selectedTagName === "Untagged") {
                         return false;
                     }
-                    const bookmarkUuid = bookmarkList.value[event.oldIndex].uuid;
+                    // v-model has already updated the array, so the dragged item is now at newIndex
+                    const bookmarkUuid = bookmarkList.value[event.newIndex].uuid;
 
                     // The backend expects the ordering to begin with 1, not 0, so add 1.
                     const newPosition = event.newIndex + 1;

@@ -6,18 +6,18 @@
         <hr class="divider">
         <ul v-cloak class="list-group flex-column w-100">
             <div id="tag-list">
-                <slick-list
-                    v-model:list="tags"
+                <VueDraggable
+                    v-model="tags"
                     :distance="3"
-                    helper-class="slicklist-helper"
-                    @sort-end="handleSort"
+                    ghost-class="slicklist-helper"
+                    :filter="'.no-drag'"
+                    @end="handleSort"
+                    tag="div"
                 >
-                    <slick-item
+                    <div
                         v-for="(element, index) in tags"
                         :key="element.uuid"
-                        :index="index"
-                        :disabled="element.name === 'Untagged'"
-                        class="slicklist-item"
+                        :class="['slicklist-item', { 'no-drag': element.name === 'Untagged' }]"
                     >
                         <div class="slicklist-list-item-inner">
                             <li
@@ -41,8 +41,8 @@
                                 </div>
                             </li>
                         </div>
-                    </slick-item>
-                </slick-list>
+                    </div>
+                </VueDraggable>
             </div>
         </ul>
     </div>
@@ -51,12 +51,11 @@
 <script>
 
     import {useBookmarkStore} from "/front-end/vue/stores/BookmarkStore.js";
-    import {SlickList, SlickItem} from "vue-slicksort";
+    import {VueDraggable} from "vue-draggable-plus";
 
     export default {
         components: {
-            SlickItem,
-            SlickList,
+            VueDraggable,
         },
         props: {
             addTagUrl: {
@@ -158,7 +157,8 @@
                 if (event.added) {
                     return;
                 }
-                const tagId = tags.value[event.oldIndex].id;
+                // v-model has already updated the array, so the dragged item is now at newIndex
+                const tagId = tags.value[event.newIndex].id;
 
                 doPost(
                     props.sortTagsUrl,
