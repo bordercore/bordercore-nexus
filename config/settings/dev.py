@@ -31,7 +31,6 @@ INSTALLED_APPS += (
     "debug_toolbar",
     "django_extensions",
     "django_watchfiles",
-    "notebook",
     "nplusone.ext.django",
     "template_timings_panel",
 )
