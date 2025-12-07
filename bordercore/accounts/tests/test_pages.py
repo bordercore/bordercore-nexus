@@ -1,3 +1,5 @@
+import time
+
 import pytest
 
 from django.urls import reverse
@@ -31,7 +33,8 @@ def test_prefs(collection, login, live_server, browser, settings, s3_resource, s
 
     # Test that preferences were successfully updated
     page.update()
-    assert page.prefs_updated_message() == "Preferences edited"
+    time.sleep(1)
+    assert page.prefs_updated_message() == "Success\nPreferences edited"
 
     # Test that the theme was switched
     assert page.selected_theme() == THEME_NAME

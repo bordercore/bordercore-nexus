@@ -105,5 +105,4 @@ class NodeListPage(Page):
         """
         Find the list of search suggestion
         """
-
-        return element.find_elements(*self.SEARCH_SUGGESTION_LIST)
+        return self.find_elements(element, self.SEARCH_SUGGESTION_LIST)

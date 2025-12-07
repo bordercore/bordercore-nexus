@@ -23,7 +23,7 @@ class PrefsPage(Page):
     COLLECTION_ID = (By.ID, "id_homepage_default_collection")
     UPDATE_BUTTON = (By.CSS_SELECTOR, "input[value='Update']")
     THEME_SELECTED = (By.CSS_SELECTOR, "select#id_theme option")
-    PREFS_UPDATED_MESSAGE = (By.CSS_SELECTOR, "div[class='alert alert-success']")
+    PREFS_UPDATED_MESSAGE = (By.CSS_SELECTOR, "div.toast-wrapper.success")
     DEFAULT_COLLECTION_SELECTED = (By.CSS_SELECTOR, "select#id_homepage_default_collection option")
 
     def __init__(self, browser):
