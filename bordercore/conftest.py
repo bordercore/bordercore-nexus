@@ -64,6 +64,14 @@ except ModuleNotFoundError:
     # Don't worry if this import doesn't exist in production
     pass
 
+# Speed up tests by replacing Django's default PBKDF2 password hashing (very slow)
+# with the MD5 hasher. Factories and client.login call set_password, so using the
+# fast hasher removes thousands of PBKDF2 iterations per test and keeps profiles
+# free of _hashlib.pbkdf2_hmac hotspots.
+@pytest.fixture(autouse=True)
+def fast_password_hashers(settings):
+    settings.PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
+
 # Add an extra Elasticsearch field to indicate test data
 settings.ELASTICSEARCH_EXTRA_FIELDS["__test__"] = 1
 
