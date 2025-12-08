@@ -120,7 +120,7 @@
                             ghost-class="slicklist-helper"
                             @end="handleBookmarkSort"
                             handle=".drag-handle"
-                            :filter="bookmarkStore.selectedTagName === 'Untagged' ? '.no-drag' : undefined"
+                            :disabled="bookmarkStore.selectedTagName === 'Untagged'"
                             tag="div"
                         >
                             <div
