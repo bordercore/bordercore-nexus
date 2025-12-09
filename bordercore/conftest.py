@@ -69,7 +69,7 @@ except ModuleNotFoundError:
 # fast hasher removes thousands of PBKDF2 iterations per test and keeps profiles
 # free of _hashlib.pbkdf2_hmac hotspots.
 @pytest.fixture(autouse=True)
-def fast_password_hashers(settings):
+def fast_password_hashers():
     settings.PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 
 # Add an extra Elasticsearch field to indicate test data
