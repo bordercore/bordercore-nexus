@@ -166,6 +166,7 @@ INSTALLED_APPS = (
     "music",
     "pygments",
     "quote",
+    "reminder",
     "rest_framework",
     "rest_framework.authtoken",
     "search",

@@ -53,6 +53,7 @@ jobs:
           bordercore/node/ \
           bordercore/metrics/ \
           bordercore/music/ \
+          bordercore/reminder/ \
           bordercore/search/ \
           bordercore/tag/ \
           bordercore/todo/

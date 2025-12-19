@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Delete Reminder{% endblock %}
+
+{% block content %}
+  <div class="container mt-4">
+    <div class="row">
+      <div class="col-md-6 offset-md-3">
+        <div class="card border-danger">
+          <div class="card-body">
+            <h5 class="card-title text-danger">Delete Reminder?</h5>
+            <p class="card-text">
+              Are you sure you want to delete "<strong>{{ reminder.name }}</strong>"?
+            </p>
+            <p class="text-muted">
+              This action cannot be undone.
+            </p>
+
+            <form method="post" class="d-inline">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-danger">Delete</button>
+            </form>
+            <a href="{% url 'reminder:detail' reminder.uuid %}" class="btn btn-outline-secondary">
+              Cancel
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
