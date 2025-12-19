@@ -128,7 +128,7 @@
             let callback = null;
             let doctypes = ["blob", "book", "bookmark", "document", "note"];
             const recentBlobs = JSON.parse(document.getElementById("recent_blobs").textContent);
-            const recentBookmarks = JSON.parse(document.getElementById("recent_bookmarks").textContent);
+            const recentBookmarks = JSON.parse(document.getElementById("recent-bookmarks").textContent);
             const recentMedia = JSON.parse(document.getElementById("recent_media").textContent);
             let returnArgs = null;
 
