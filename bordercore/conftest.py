@@ -1,6 +1,7 @@
 import datetime
 import getpass
 import hashlib
+import logging
 import os
 import random
 import tempfile
@@ -35,6 +36,10 @@ try:
 except (ModuleNotFoundError, NameError, django.core.exceptions.AppRegistryNotReady):
     # Don't worry if these imports don't exist in production
     pass
+
+# Suppress noisy AWS SDK credential-resolution logs while keeping application logs intact
+logging.getLogger("botocore").setLevel(logging.WARNING)
+logging.getLogger("boto3").setLevel(logging.WARNING)
 
 django.setup()
 
@@ -161,7 +166,8 @@ def mock_es_client():
 
     This fixture patches the `get_elasticsearch_connection` function in the
     `lib.util` module, replacing it with a `MagicMock` instance. The mock client
-    is yielded for use in tests, allowing you to configure return values as needed.
+    is configured to return proper dictionary structures instead of nested MagicMocks
+    to avoid issues when code accesses nested dictionary keys.
 
     If the environment variable `MOCK_ELASTICSEARCH` is not set to "1",
     the fixture yields without patching, and no mocking is applied.
@@ -175,6 +181,15 @@ def mock_es_client():
 
     with patch("lib.util._get_elasticsearch_connection") as mock_get_es:
         mock_client = MagicMock()
+        # Configure search() to return an empty result by default (no hits)
+        # This prevents MagicMock objects from being returned when code accesses
+        # nested dictionary keys like results["hits"]["hits"][0]["_source"]
+        mock_client.search.return_value = {
+            "hits": {
+                "hits": [],
+                "total": {"value": 0}
+            }
+        }
         mock_get_es.return_value = mock_client
         yield mock_client
 
