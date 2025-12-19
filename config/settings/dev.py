@@ -12,7 +12,7 @@ DEBUG = True
 for t in TEMPLATES:
     t["OPTIONS"]["debug"] = True
 
-INTERNAL_IPS = ("127.0.0.1", "10.3.2.2")
+INTERNAL_IPS = ("127.0.0.1", "10.3.2.3")
 
 STATIC_URL = "/static/"
 
