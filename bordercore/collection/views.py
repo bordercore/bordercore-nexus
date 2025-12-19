@@ -3,7 +3,6 @@
 This module contains views for managing collections, collection objects,
 and related operations in the collection system.
 """
-import hashlib
 from io import BytesIO
 from typing import Any, cast
 

@@ -1,5 +1,3 @@
-import json
-
 import pytest
 
 from fitness.models import Exercise, ExerciseMuscle, ExerciseUser, Muscle

@@ -101,7 +101,7 @@ def test_sort_todo_success():
     """Test successful todo reordering."""
     import json
     import uuid
-    from unittest.mock import MagicMock, Mock, patch
+    from unittest.mock import Mock, patch
 
     from django.http import JsonResponse
     from django.test import RequestFactory

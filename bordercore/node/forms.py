@@ -9,10 +9,9 @@ custom widgets. The form optionally captures the current ``HttpRequest``
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from django.forms import ModelForm, Textarea, TextInput
-from django.http import HttpRequest
 
 from node.models import Node
 

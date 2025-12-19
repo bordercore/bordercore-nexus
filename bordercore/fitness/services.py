@@ -12,7 +12,6 @@ from typing import List, Tuple, Union, cast
 
 from django.contrib.auth.models import User
 from django.db.models import F, Max, OuterRef, Q, Subquery
-from django.db.models.query import QuerySet
 from django.utils import timezone
 
 from fitness.models import Exercise, ExerciseUser

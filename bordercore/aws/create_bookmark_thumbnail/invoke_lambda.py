@@ -8,7 +8,6 @@ appropriate S3 event payload and invokes the Lambda function asynchronously.
 import argparse
 import json
 import pprint
-from typing import Any
 from uuid import UUID
 
 import boto3

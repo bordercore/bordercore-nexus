@@ -5,7 +5,7 @@ and tag-related operations in the drill/flashcard system.
 """
 import json
 import random
-from typing import Any, Dict, Optional, cast
+from typing import Any, Dict, cast
 from urllib.parse import unquote
 
 from django import urls

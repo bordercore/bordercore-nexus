@@ -17,7 +17,7 @@ from typing import Any, DefaultDict, Dict, List
 from django.contrib.auth.models import User
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.contrib.postgres.fields.array import ArrayField
-from django.core.paginator import Page, Paginator
+from django.core.paginator import Paginator
 from django.db import models
 from django.db.models import F, Max, QuerySet
 from django.utils import timezone

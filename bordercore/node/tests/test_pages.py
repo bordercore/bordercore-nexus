@@ -1,7 +1,6 @@
 import time
 
 import pytest
-from faker import Factory as FakerFactory
 
 from django.urls import reverse
 
