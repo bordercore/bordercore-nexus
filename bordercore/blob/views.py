@@ -243,6 +243,16 @@ class BlobCreateView(LoginRequiredMixin, FormRequestMixin, CreateView, FormValid
         if "metadata" not in context:
             context["metadata"] = []
 
+        # Check for data from a generic article import
+        imported_data = self.request.session.get("imported_blob_data")
+        if imported_data:
+            if imported_data.get("url"):
+                context["metadata"].append({"name": "Url", "value": imported_data["url"]})
+            if imported_data.get("author"):
+                context["metadata"].append({"name": "Author", "value": imported_data["author"]})
+            # Clear the session data after using it
+            del self.request.session["imported_blob_data"]
+
         if "collection_uuid" in self.request.GET:
             context["collection_info"] = Collection.objects.get(user=user, uuid=self.request.GET["collection_uuid"])
 
@@ -290,6 +300,23 @@ class BlobCreateView(LoginRequiredMixin, FormRequestMixin, CreateView, FormValid
             if co and co.blob:
                 form.initial["date"] = co.blob.date
                 form.initial["name"] = co.blob.name
+
+        # Check for data from a generic article import
+        imported_data = self.request.session.get("imported_blob_data")
+        if imported_data:
+            if imported_data.get("title"):
+                form.initial["name"] = imported_data["title"]
+            if imported_data.get("content"):
+                form.initial["content"] = imported_data["content"]
+            if imported_data.get("date"):
+                # Format date with time component to avoid timezone issues in JavaScript
+                # JavaScript's new Date("YYYY-MM-DD") interprets as UTC, causing day shifts
+                # Using "YYYY-MM-DDT00:00" format ensures it's treated as local time
+                date_str = imported_data["date"]
+                if len(date_str) == 10:  # YYYY-MM-DD format
+                    form.initial["date"] = f"{date_str}T00:00"
+                else:
+                    form.initial["date"] = date_str
 
         return form
 
@@ -509,22 +536,29 @@ class BlobImportView(LoginRequiredMixin, View):
 
         Returns:
             Redirect to the imported blob's detail page on success,
+            redirect to the create blob page if generic extraction was used,
             or render import template with errors on failure.
         """
         url = request.POST.get("url", None)
 
         user = cast(User, request.user)
-        blob: Blob | None = None
+        result: Blob | dict[str, Any] | None = None
         if not url:
             messages.add_message(request, messages.ERROR, "URL is required.")
         else:
             try:
-                blob = import_blob(user, url)
+                result = import_blob(user, url)
             except Exception as e:
                 messages.add_message(request, messages.ERROR, str(e))
 
-        if blob:
-            return HttpResponseRedirect(reverse("blob:detail", kwargs={"uuid": blob.uuid}))
+        if result:
+            if isinstance(result, Blob):
+                return HttpResponseRedirect(reverse("blob:detail", kwargs={"uuid": result.uuid}))
+            elif isinstance(result, dict) and result.get("success"):
+                # Store the extracted data in the session to be used by BlobCreateView
+                request.session["imported_blob_data"] = result
+                return HttpResponseRedirect(reverse("blob:create"))
+
         return render(request, self.template_name, {})
 
 

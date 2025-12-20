@@ -14,14 +14,16 @@ import re
 import urllib.request
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Generator
+from typing import Any, Generator, Union
 from urllib.parse import ParseResult, urlparse
 
 import humanize
 import instaloader
 import requests
+import trafilatura
 from instaloader import Post
 from openai import OpenAI
+from trafilatura import (bare_extraction, extract, extract_metadata, fetch_url)
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -410,21 +412,24 @@ def get_blob_naturalsize(blob_sizes: dict[str, dict[str, Any]], blob: dict[str, 
         blob["content_size"] = humanize.naturalsize(blob_sizes[blob["uuid"]]["size"])
 
 
-def import_blob(user: User, url: str) -> Blob:
+def import_blob(user: User, url: str) -> Union[Blob, dict[str, Any]]:
     """Import a blob from an external URL.
 
     Determines the source domain from the URL and delegates to the
     appropriate import function for Instagram, New York Times, or ArtStation.
+    If the domain is not specifically supported, it falls back to generic
+    article extraction.
 
     Args:
         user: The user importing the blob.
         url: The URL to import from.
 
     Returns:
-        The created Blob instance.
+        The created Blob instance, or a dictionary containing extracted
+        article data if generic extraction was used.
 
     Raises:
-        ValueError: If the domain is not supported for importing.
+        ValueError: If the domain is not supported and generic extraction fails.
     """
 
     parsed_url = urlparse(url)
@@ -443,7 +448,86 @@ def import_blob(user: User, url: str) -> Blob:
         return import_newyorktimes(user, url)
     if domain == "artstation.com":
         return import_artstation(user, parsed_url)
-    raise ValueError(f"Site not supported for importing: <strong>{domain}</strong>")
+
+    # Fallback to generic article extraction
+    extracted_data = extract_article_data(url)
+    if extracted_data["success"]:
+        return extracted_data
+
+    raise ValueError(f"Site not supported for importing: <strong>{domain}</strong>. Generic extraction also failed: {extracted_data.get('error')}")
+
+
+def extract_article_data(url: str) -> dict[str, Any]:
+    """Extract article metadata and content from a URL using trafilatura.
+
+    Args:
+        url: The URL of the article to extract.
+
+    Returns:
+        A dictionary containing:
+            - success: Boolean indicating if extraction was successful.
+            - title: Extracted title (optional).
+            - content: Extracted main text content (optional).
+            - author: Extracted author name (optional).
+            - date: Extracted publication date (optional).
+            - url: Original URL.
+            - error: Error message if success is False.
+    """
+    try:
+        downloaded = fetch_url(url)
+        if not downloaded:
+            return {
+                "success": False,
+                "error": "Failed to download content from URL.",
+                "url": url
+            }
+
+        # Try bare_extraction first for full metadata
+        result = bare_extraction(downloaded, url=url, with_metadata=True)
+
+        if result:
+            extracted_date = result.get("date")
+            # Normalize the date to YYYY-MM-DD format to avoid timezone issues
+            normalized_date = parse_date(extracted_date) if extracted_date else None
+            return {
+                "success": True,
+                "title": result.get("title"),
+                "content": result.get("text"),
+                "author": result.get("author"),
+                "date": normalized_date,
+                "url": url
+            }
+
+        # Fallback to separate extraction
+        content = extract(downloaded, url=url)
+        metadata = extract_metadata(downloaded)
+
+        if not content and not metadata:
+            return {
+                "success": False,
+                "error": "Failed to extract article content or metadata.",
+                "url": url
+            }
+
+        extracted_date = getattr(metadata, "date", None) if metadata else None
+        # Normalize the date to YYYY-MM-DD format to avoid timezone issues
+        normalized_date = parse_date(extracted_date) if extracted_date else None
+
+        return {
+            "success": True,
+            "title": getattr(metadata, "title", None) if metadata else None,
+            "content": content,
+            "author": getattr(metadata, "author", None) if metadata else None,
+            "date": normalized_date,
+            "url": url
+        }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "url": url
+        }
 
 
 def parse_shortcode(shortcode: str) -> str:
@@ -517,6 +601,8 @@ def parse_date(date: str | datetime.datetime) -> str:
 
     Parses a datetime string and returns only the date portion (YYYY-MM-DD).
     If parsing fails, converts the input to a string.
+    For timezone-aware datetime objects, extracts the date component
+    before any timezone conversion to avoid day-shift issues.
 
     Args:
         date: A datetime string or datetime object. Example:
@@ -528,7 +614,15 @@ def parse_date(date: str | datetime.datetime) -> str:
     """
     # Handle datetime objects directly
     if isinstance(date, datetime.datetime):
-        return date.strftime("%Y-%m-%d")
+        # For timezone-aware datetimes, use the date component directly
+        # to avoid timezone conversion issues
+        if date.tzinfo is not None:
+            # Convert to UTC first, then extract date to avoid day shifts
+            utc_date = date.astimezone(datetime.timezone.utc)
+            return utc_date.strftime("%Y-%m-%d")
+        else:
+            # Naive datetime, just extract the date
+            return date.strftime("%Y-%m-%d")
 
     # For strings, try to extract YYYY-MM-DD pattern
     date_str = str(date)
