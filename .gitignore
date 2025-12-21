@@ -1,23 +1,27 @@
+# Python and compiled files
 *.ipynb
 *.pyc
+
+# Editor and IDE
 .#*
-bordercore/static/admin/
-bordercore/static/docs/
-bordercore/static/img/favicons/*
-!bordercore/static/img/favicons/README
-bordercore/static/blobs
-bordercore/static/fonts/*zip
-secrets.json
-secrets.env
+.vscode/
+.cursor/
 .projectile
-node_modules/
 .dir-locals.el
 
-packaged.yaml
-**/.aws-sam/*
+# Secrets
+secrets.json
+secrets.env
+
+# Dependencies
+node_modules/
+
+# Build artifacts and coverage
 **/htmlcov/*
 *.coverage
+packaged.yaml
 
+# AWS Lambda functions
 bordercore/aws/create_embeddings/lib/*
 bordercore/aws/create_thumbnail/ffmpeg-6.0-amd64-static/*
 bordercore/aws/create_thumbnail/ffmpeg-release-amd64-static.tar.xz
@@ -27,7 +31,9 @@ bordercore/aws/index_blobs/ffmpeg-release-amd64-static.tar.xz
 bordercore/aws/index_blobs/lib/*
 bordercore/aws/create_bookmark_thumbnail/lib/*
 bordercore/aws/create_collection_thumbnail/lib/*
+**/.aws-sam/*
 
+# Frontend build
 **/static/dist
 bordercore/webpack-stats.json
 **.min.js
@@ -35,3 +41,11 @@ bordercore/webpack-stats.json
 **.wasm
 **-bundle.js
 **-bundle.js.map
+
+# Static assets
+bordercore/static/admin/
+bordercore/static/docs/
+bordercore/static/img/favicons/*
+!bordercore/static/img/favicons/README
+bordercore/static/blobs
+bordercore/static/fonts/*zip
