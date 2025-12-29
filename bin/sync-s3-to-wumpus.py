@@ -1,5 +1,6 @@
 import argparse
 import datetime
+import logging
 import os
 import pickle
 import re
@@ -10,6 +11,9 @@ import boto3
 
 import django
 from django.conf import settings
+
+# Suppress boto3/botocore INFO logs (e.g., "Found credentials in environment variables")
+logging.getLogger("botocore.credentials").setLevel(logging.WARNING)
 
 bucket_name = settings.AWS_STORAGE_BUCKET_NAME
 
