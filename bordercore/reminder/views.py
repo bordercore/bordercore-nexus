@@ -7,44 +7,43 @@ require authentication and automatically filter to the current user's reminders.
 
 from typing import Any, Dict, cast
 
-from django.contrib.auth.models import User
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.models import User
 from django.db.models.query import QuerySet
 from django.forms import BaseModelForm
-from django.http import JsonResponse, HttpResponse
-from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
+from django.http import HttpResponse, JsonResponse
 from django.urls import reverse, reverse_lazy
 from django.utils import dateformat
+from django.views.generic import (CreateView, DeleteView, DetailView, ListView,
+                                  TemplateView, UpdateView)
 
 from .forms import ReminderForm
 from .models import Reminder
 
 
-class ReminderAppView(LoginRequiredMixin, ListView):
+class ReminderAppView(LoginRequiredMixin, TemplateView):
     """Display the main reminders page.
 
-    This view renders the reminder app shell page, which uses AJAX to load
-    the actual reminder list. The page includes auto-refresh functionality
-    to keep the list current.
+    This view renders the reminder app shell page, which uses React to load
+    and display the reminder list via AJAX. The page includes auto-refresh
+    functionality to keep the list current.
     """
 
-    template_name = "reminder/app.html"
-    model = Reminder
-    context_object_name = "reminders"
-    paginate_by = 20
+    template_name = "reminder/index.html"
 
-    def get_queryset(self) -> QuerySet[Reminder]:
-        """Get reminders for the current user, ordered by next trigger time.
+    def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
+        """Add title to the template context.
+
+        Args:
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            QuerySet of Reminder objects filtered by the logged-in user,
-            ordered by next_trigger_at ascending (soonest first), then by
-            created descending.
+            Context dictionary containing:
+                - title: Page title "Reminders"
         """
-        user = cast(User, self.request.user)
-        return Reminder.objects.filter(user=user).order_by(
-            "next_trigger_at", "-created"
-        )
+        context = super().get_context_data(**kwargs)
+        context["title"] = "Reminders"
+        return context
 
 
 class ReminderDetailView(LoginRequiredMixin, DetailView):
@@ -221,6 +220,7 @@ class ReminderListAjaxView(LoginRequiredMixin, ListView):
             "pagination": {
                 "current_page": page_obj.number if page_obj else 1,
                 "total_pages": page_obj.paginator.num_pages if page_obj else 1,
+                "total_count": page_obj.paginator.count if page_obj else len(reminders_data),
                 "has_previous": page_obj.has_previous() if page_obj else False,
                 "has_next": page_obj.has_next() if page_obj else False,
                 "previous_page_number": page_obj.previous_page_number() if page_obj and page_obj.has_previous() else None,

@@ -1,0 +1,71 @@
+// =============================================================================
+// COMPONENTS: BUTTONS
+// =============================================================================
+// Button styles and button-related components
+
+.button-icon {
+  display: flex;
+  width: 2.5rem;
+  height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--border-radius1);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  
+  &:hover {
+    background-color: var(--hover-bg);
+  }
+}
+
+.close-button {
+  cursor: pointer;
+}
+
+// Bootstrap button overrides
+.btn-close {
+  filter: var(--btn-close-filter);
+}
+
+.btn-primary {
+  border-color: var(--btn-primary-border);
+  background-color: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  
+  &:hover {
+    background-color: var(--btn-primary-hover-bg);
+  }
+}
+
+.btn-secondary {
+  border-color: var(--btn-secondary-border);
+  background-color: var(--btn-secondary-bg);
+  
+  &:hover {
+    background-color: var(--btn-secondary-hover-bg);
+  }
+}
+
+.btn-group {
+  .btn {
+    border-color: var(--border-color);
+    
+    &:not(:first-child) {
+      border-left-width: 1px;
+    }
+    
+    &.active {
+      border-color: var(--btn-active-border);
+      background-color: var(--btn-active-bg);
+    }
+  }
+  
+  @media (width < 992px) {
+    display: flex;
+    flex-wrap: wrap;
+    
+    .btn {
+      flex: 1 0 auto;
+    }
+  }
+}

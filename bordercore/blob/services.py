@@ -20,10 +20,9 @@ from urllib.parse import ParseResult, urlparse
 import humanize
 import instaloader
 import requests
-import trafilatura
 from instaloader import Post
 from openai import OpenAI
-from trafilatura import (bare_extraction, extract, extract_metadata, fetch_url)
+from trafilatura import bare_extraction, extract, extract_metadata, fetch_url
 
 from django.conf import settings
 from django.contrib.auth.models import User

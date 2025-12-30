@@ -1,0 +1,251 @@
+// =============================================================================
+// VENDORS: VUE PLUGINS
+// =============================================================================
+// Third-party Vue component overrides (Multiselect, Datepicker, Sidebar, etc.)
+
+// Vue Multiselect
+.multiselect {
+  border: 1px solid var(--border-color);
+  background-color: var(--surface2);
+  border-radius: var(--border-radius1);
+  color: var(--text1);
+  
+  /* stylelint-disable-next-line selector-class-pattern */
+  .multiselect__tags {
+    padding: 0.5rem;
+    border-color: var(--border-color);
+    background-color: var(--surface2);
+  }
+  
+  /* stylelint-disable-next-line selector-class-pattern */
+  .multiselect__input {
+    background-color: var(--surface2);
+    color: var(--text1);
+  }
+  
+  /* stylelint-disable-next-line selector-class-pattern */
+  .multiselect__single {
+    background-color: var(--surface2);
+    color: var(--text1);
+  }
+  
+  /* stylelint-disable-next-line selector-class-pattern */
+  .multiselect__placeholder {
+    color: var(--text3);
+  }
+  
+  /* stylelint-disable-next-line selector-class-pattern */
+  .multiselect__content-wrapper {
+    border-color: var(--border-color);
+    background-color: var(--surface2);
+    border-radius: var(--border-radius1);
+  }
+  
+  /* stylelint-disable-next-line selector-class-pattern */
+  .multiselect__option {
+    padding: 0.75rem;
+    color: var(--text1);
+    
+    &:hover {
+      background-color: var(--hover-bg);
+    }
+    
+    &--highlight {
+      background-color: var(--selected-bg);
+    }
+    
+    &--selected {
+      background-color: var(--selected-bg);
+      font-weight: 600;
+    }
+  }
+  
+  /* stylelint-disable-next-line selector-class-pattern */
+  .multiselect__tag {
+    padding: 0.25rem 0.5rem;
+    background-color: var(--tag-bg);
+    border-radius: var(--border-radius1);
+    color: var(--tag-text);
+  }
+  
+  /* stylelint-disable-next-line selector-class-pattern */
+  .multiselect__tag-icon {
+    &:hover {
+      background-color: var(--tag-hover-bg);
+    }
+  }
+}
+
+// Vue 3 Datepicker
+/* stylelint-disable-next-line selector-class-pattern */
+.v3dp__datepicker {
+  /* stylelint-disable-next-line selector-class-pattern */
+  .v3dp__input_wrapper {
+    input {
+      padding: 0.5rem 1rem;
+      border: 1px solid var(--border-color);
+      background-color: var(--surface2);
+      border-radius: var(--border-radius1);
+      color: var(--text1);
+    }
+  }
+  
+  /* stylelint-disable-next-line selector-class-pattern */
+  .v3dp__popout {
+    border: 1px solid var(--border-color);
+    background-color: var(--surface2);
+    border-radius: var(--border-radius1);
+    box-shadow: 0 0.5rem 1rem rgb(0 0 0 / 15%);
+  }
+  
+  /* stylelint-disable-next-line selector-class-pattern */
+  .v3dp__heading {
+    background-color: var(--surface3);
+    color: var(--text1);
+  }
+  
+  /* stylelint-disable-next-line selector-class-pattern */
+  .v3dp__elements button {
+    color: var(--text1);
+    
+    &:hover {
+      background-color: var(--hover-bg);
+    }
+    
+    &.selected {
+      background-color: var(--selected-bg);
+    }
+  }
+}
+
+// Vue Slicksort (drag and drop)
+.slicklist-list {
+  .slicklist-item {
+    cursor: grab;
+    
+    &:active {
+      cursor: grabbing;
+    }
+  }
+}
+
+.slicklist-helper {
+  box-shadow: 0 0.5rem 1rem rgb(0 0 0 / 30%);
+  opacity: 0.8;
+}
+
+// Vue Sidebar Menu
+.v-sidebar-menu {
+  background-color: var(--surface2);
+  
+  /* stylelint-disable-next-line selector-class-pattern */
+  .vsm--link {
+    color: var(--text1);
+    
+    &:hover {
+      background-color: var(--hover-bg);
+    }
+    
+    /* stylelint-disable-next-line selector-class-pattern */
+    &.vsm--link_active {
+      background-color: var(--selected-bg);
+    }
+  }
+  
+  /* stylelint-disable-next-line selector-class-pattern */
+  .vsm--icon {
+    color: var(--text2);
+  }
+  
+  /* stylelint-disable-next-line selector-class-pattern */
+  .vsm--dropdown {
+    background-color: var(--surface3);
+  }
+}
+
+// v-md-editor (Markdown editor)
+.v-md-editor {
+  border: 1px solid var(--border-color);
+  background-color: var(--surface2);
+  border-radius: var(--border-radius1);
+  color: var(--text1);
+  
+  /* stylelint-disable-next-line selector-class-pattern */
+  .v-md-editor__toolbar {
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--surface3);
+  }
+  
+  /* stylelint-disable-next-line selector-class-pattern */
+  .v-md-editor__toolbar-item {
+    color: var(--text1);
+    
+    &:hover {
+      background-color: var(--hover-bg);
+    }
+  }
+  
+  /* stylelint-disable-next-line selector-class-pattern */
+  .v-md-editor__editor-wrapper {
+    background-color: var(--surface2);
+  }
+  
+  /* stylelint-disable-next-line selector-class-pattern */
+  .v-md-editor__preview-wrapper {
+    background-color: var(--surface2);
+  }
+  
+  .v-md-textarea-editor {
+    background-color: var(--surface2);
+    color: var(--text1);
+  }
+}
+
+// Floating Vue (tooltips)
+/* stylelint-disable-next-line selector-class-pattern */
+.v-popper__popper {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-color);
+  background-color: var(--surface3);
+  border-radius: var(--border-radius1);
+  box-shadow: 0 0.25rem 0.5rem rgb(0 0 0 / 15%);
+  color: var(--text1);
+  
+  /* stylelint-disable-next-line selector-class-pattern */
+  .v-popper__arrow-container {
+    /* stylelint-disable-next-line selector-class-pattern */
+    .v-popper__arrow-inner {
+      border-color: var(--surface3);
+    }
+    
+    /* stylelint-disable-next-line selector-class-pattern */
+    .v-popper__arrow-outer {
+      border-color: var(--border-color);
+    }
+  }
+}
+
+// Oruga (UI components)
+.o-switch {
+  /* stylelint-disable-next-line selector-class-pattern */
+  .o-switch__check {
+    border-color: var(--border-color);
+    background-color: var(--surface3);
+  }
+  
+  /* stylelint-disable-next-line selector-class-pattern */
+  &.is-checked .o-switch__check {
+    background-color: var(--link-color);
+  }
+}
+
+.o-field {
+  margin-bottom: 1rem;
+  
+  /* stylelint-disable-next-line selector-class-pattern */
+  .o-field__label {
+    margin-bottom: 0.5rem;
+    color: var(--text1);
+    font-weight: 600;
+  }
+}

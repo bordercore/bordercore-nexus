@@ -1,0 +1,17 @@
+{% extends "base_react.html" %}
+{% load vite_tags %}
+
+{% block title %}Reminders{% endblock %}
+
+{% block css %}
+    {% vite_asset "dist/css/bordercore" %}
+{% endblock %}
+
+{% block javascript_bundles %}
+    {{ block.super }}
+    {% vite_asset "dist/js/reminders" %}
+{% endblock %}
+
+{% block content %}
+  <div id="react-root" data-list-ajax-url="{% url 'reminder:list-ajax' %}" data-create-url="{% url 'reminder:create' %}"></div>
+{% endblock %}

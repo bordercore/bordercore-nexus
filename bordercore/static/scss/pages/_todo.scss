@@ -1,0 +1,97 @@
+// =============================================================================
+// PAGES: TODO
+// =============================================================================
+// Todo list, filters sidebar, columns, and task management
+
+.todo-filters-sidebar {
+  padding: 1rem;
+  background-color: var(--surface2);
+  border-radius: var(--border-radius1);
+  
+  .filter-group {
+    margin-bottom: 1.5rem;
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+  
+  .filter-title {
+    margin-bottom: 0.5rem;
+    color: var(--text1);
+    font-weight: 600;
+  }
+  
+  .filter-option {
+    display: block;
+    padding: 0.5rem;
+    border-radius: var(--border-radius1);
+    color: var(--text2);
+    text-decoration: none;
+    transition: background-color 0.2s ease;
+    
+    &:hover {
+      background-color: var(--hover-bg);
+      color: var(--text1);
+    }
+    
+    &.active {
+      background-color: var(--selected-bg);
+      color: var(--text1);
+    }
+  }
+}
+
+.todo-col-name {
+  flex: 2;
+}
+
+.todo-col-due {
+  flex: 1;
+}
+
+.todo-col-priority {
+  flex: 0 0 6rem;
+}
+
+.todo-col-actions {
+  flex: 0 0 8rem;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.todo-item {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-color);
+  margin-bottom: 0.5rem;
+  background-color: var(--surface2);
+  border-radius: var(--border-radius1);
+  transition: background-color 0.2s ease;
+  
+  &:hover {
+    background-color: var(--hover-bg);
+  }
+  
+  &.completed {
+    opacity: 0.6;
+    text-decoration: line-through;
+  }
+  
+  &.overdue {
+    border-left: 4px solid var(--error-color);
+  }
+}
+
+.todo-priority-high {
+  color: var(--error-color);
+}
+
+.todo-priority-medium {
+  color: var(--warning-color);
+}
+
+.todo-priority-low {
+  color: var(--text3);
+}

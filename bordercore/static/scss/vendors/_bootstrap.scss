@@ -1,0 +1,114 @@
+// =============================================================================
+// VENDORS: BOOTSTRAP OVERRIDES
+// =============================================================================
+// Custom Bootstrap component styles and overrides
+
+// Badges
+.badge {
+  padding: 0.35em 0.65em;
+  border-radius: var(--border-radius1);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.badge-primary {
+  background-color: var(--badge-primary-bg);
+  color: var(--badge-primary-text);
+}
+
+.badge-secondary {
+  background-color: var(--badge-secondary-bg);
+  color: var(--badge-secondary-text);
+}
+
+// Alerts
+.alert {
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: var(--border-radius1);
+}
+
+.alert-danger {
+  border-color: var(--error-border);
+  background-color: var(--error-bg);
+  color: var(--error-text);
+}
+
+.alert-info {
+  border-color: var(--info-border);
+  background-color: var(--info-bg);
+  color: var(--info-text);
+}
+
+.alert-success {
+  border-color: var(--success-border);
+  background-color: var(--success-bg);
+  color: var(--success-text);
+}
+
+.alert-warning {
+  border-color: var(--warning-border);
+  background-color: var(--warning-bg);
+  color: var(--warning-text);
+}
+
+// Progress bars
+.progress {
+  height: 1rem;
+  background-color: var(--surface3);
+  border-radius: var(--border-radius1);
+}
+
+.progress-bar {
+  background-color: var(--link-color);
+  border-radius: var(--border-radius1);
+}
+
+// Spinners
+.spinner-border {
+  color: var(--link-color);
+}
+
+// Tooltips
+.tooltip-inner {
+  padding: 0.5rem 0.75rem;
+  background-color: var(--surface3);
+  border-radius: var(--border-radius1);
+  color: var(--text1);
+}
+
+// Accordion
+.accordion-item {
+  border: 1px solid var(--border-color);
+  background-color: var(--surface2);
+  
+  &:first-child {
+    border-top-left-radius: var(--border-radius1);
+    border-top-right-radius: var(--border-radius1);
+  }
+  
+  &:last-child {
+    border-bottom-left-radius: var(--border-radius1);
+    border-bottom-right-radius: var(--border-radius1);
+  }
+}
+
+.accordion-button {
+  background-color: var(--surface2);
+  color: var(--text1);
+  
+  &:not(.collapsed) {
+    background-color: var(--surface3);
+    color: var(--text1);
+  }
+  
+  &:focus {
+    border-color: var(--border-color);
+    box-shadow: none;
+  }
+}
+
+.accordion-body {
+  background-color: var(--surface2);
+  color: var(--text1);
+}

@@ -25,6 +25,21 @@ webpack_ec2: check-env
 	ssh $(EC2_HOST) "sudo chown -R www-data:www-data $(EC2_PATH)"
 	scp ./webpack-stats.json $(EC2_HOST):$(EC2_PATH)../bordercore/bordercore
 
+vite: vite_build vite_ec2
+
+vite_build: check-env
+	cd $(BORDERCORE_HOME)
+	npm run vite:build
+
+vite_ec2: vite_build check-env
+	cd $(BORDERCORE_HOME)
+	rsync -azv --no-times --no-group --delete --exclude=/rest_framework static/vite/ $(EC2_HOST):$(EC2_PATH)vite/
+	ssh $(EC2_HOST) "sudo chown -R www-data:www-data $(EC2_PATH)vite/"
+	ssh $(EC2_HOST) "mkdir -p $(EC2_PATH)../bordercore/bordercore/static/vite/.vite && sudo chown -R www-data:www-data $(EC2_PATH)../bordercore/bordercore/static/vite"
+	scp ./static/vite/.vite/manifest.json $(EC2_HOST):$(EC2_PATH)../bordercore/bordercore/static/vite/.vite/manifest.json
+	# Also copy to fallback location for compatibility
+	scp ./static/vite/.vite/manifest.json $(EC2_HOST):$(EC2_PATH)../bordercore/bordercore/static/vite/manifest.json
+
 check-env:
 ifndef BORDERCORE_HOME
 	$(error BORDERCORE_HOME is undefined)

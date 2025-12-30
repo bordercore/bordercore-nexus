@@ -1,0 +1,271 @@
+// =============================================================================
+// BASE: UTILITIES
+// =============================================================================
+// Helper classes for layout, text, transitions, and common patterns
+
+// Eye candy effects
+:root[eye-candy="True"] {
+  --eye-candy: blur(1.56rem) brightness(170%);
+}
+
+:root[eye-candy="False"] {
+  --eye-candy: none;
+}
+
+// Background glowing sphere
+div.sphere {
+  position: fixed;
+  z-index: -1;
+  width: 25rem;
+  height: 25rem;
+  background: radial-gradient(circle, var(--sphere-gradient-start) 0%, var(--sphere-gradient-end) 100%);
+  border-radius: 50%;
+  filter: var(--eye-candy);
+  pointer-events: none;
+}
+
+// Layout utilities
+.scroll-container {
+  overflow: hidden scroll;
+  width: 100%;
+  height: 100%;
+  scrollbar-gutter: stable;
+}
+
+.extend-block {
+  flex-grow: 1;
+}
+
+.flex-even {
+  flex: 1 1 0;
+}
+
+.flex-grow-last > div:last-child {
+  flex-grow: 1;
+}
+
+.sticky-top {
+  position: sticky;
+  z-index: 1020;
+  top: 0;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  background-color: var(--surface1);
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.hidden {
+  display: none;
+}
+
+// Width utilities
+.w-20 {
+  width: 20%;
+}
+
+.mw-50 {
+  max-width: 50%;
+}
+
+.vh-50 {
+  height: 50vh;
+}
+
+.vh-95 {
+  height: 95vh;
+}
+
+// Text utilities
+.text4 {
+  color: var(--text4);
+}
+
+.text5 {
+  color: var(--text5);
+}
+
+.text-name {
+  font-weight: 600;
+}
+
+.text-value {
+  color: var(--text2);
+}
+
+.text-emphasis {
+  font-weight: 600;
+}
+
+.text-notice {
+  color: var(--text-notice);
+}
+
+.text-small {
+  font-size: 0.875rem;
+}
+
+.text-secondary {
+  color: var(--text2);
+}
+
+.z-index-positive {
+  z-index: 1;
+}
+
+// CSS Transitions
+.slide-fade-enter-active {
+  transition: all 0.3s ease;
+}
+
+.slide-fade-leave-active {
+  transition: all 0.3s cubic-bezier(1.0, 0.5, 0.8, 1.0);
+}
+
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  opacity: 0;
+  transform: translateX(10px);
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s;
+}
+
+.fade-enter,
+.fade-leave-to {
+  opacity: 0;
+}
+
+// Messages
+.message-error {
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background-color: var(--error-bg);
+  border-radius: var(--border-radius1);
+  color: var(--error-text);
+}
+
+.message-info {
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background-color: var(--info-bg);
+  border-radius: var(--border-radius1);
+  color: var(--info-text);
+}
+
+// Drag and drop
+div.drag-target {
+  padding: 2rem;
+  border: 2px dashed var(--border-color);
+  border-radius: var(--border-radius1);
+  text-align: center;
+}
+
+.drag-over {
+  background-color: var(--hover-bg);
+}
+
+.zoomable {
+  cursor: zoom-in;
+}
+
+.node-draggable {
+  cursor: grab;
+}
+
+.dragging {
+  opacity: 0.5;
+}
+
+// Visual effects
+.highlight-box {
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  background-color: var(--highlight-bg);
+  border-radius: var(--border-radius1);
+}
+
+.notice-big {
+  padding: 2rem;
+  margin: 2rem 0;
+  background-color: var(--surface2);
+  border-radius: var(--border-radius1);
+  color: var(--text1);
+  font-size: 1.5rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.circle {
+  display: flex;
+  width: 2.5rem;
+  height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--surface2);
+  border-radius: 50%;
+  color: var(--text1);
+}
+
+.icon-hover {
+  transition: color 0.2s ease;
+  
+  &:hover {
+    color: var(--link-color);
+  }
+}
+
+.glow {
+  &:hover {
+    filter: drop-shadow(0 0 0.5rem var(--glow-color));
+  }
+}
+
+.zoom {
+  transition: transform 0.2s ease;
+  
+  &:hover {
+    transform: scale(1.1);
+  }
+}
+
+.icon-disabled {
+  opacity: 0.4;
+}
+
+// Scrollable panels
+.scrollable-panel-container {
+  overflow: hidden;
+}
+
+.scrollable-panel {
+  overflow: hidden auto;
+}
+
+.scrollable-panel-scrollbar-hover {
+  overflow: hidden;
+  
+  &:hover {
+    overflow-y: auto;
+  }
+  
+  &::-webkit-scrollbar {
+    width: 0.5rem;
+  }
+}
+
+// Fader effect
+.fader::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 3rem;
+  background: linear-gradient(to bottom, transparent, var(--surface1));
+  content: "";
+  pointer-events: none;
+}

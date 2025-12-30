@@ -10,7 +10,7 @@ module.exports = (env, argv) => {
     const devMode = argv.mode == "development";
 
     const entries = {
-        "dist/css/bordercore": ["./static/scss/bordercore.scss"],
+        "dist/css/bordercore": ["./static/scss/bordercore-webpack.scss"],
         "dist/css/vue-sidebar-menu": ["./static/css/vue-sidebar-menu/vue-sidebar-menu.scss"],
     };
     // Exclude JavaScript code if the environment variable WEBPACK_CSS_ONLY is set
@@ -34,14 +34,14 @@ module.exports = (env, argv) => {
             "sqlite3": "commonjs sqlite3",
         },
         plugins: [
-            // Lint my SCSS
-            new StylelintPlugin({
-                // By default compiler.options.output.path is included
-                // in the exclude list, which would mean our 'static'
-                // folder would be skipped. So set it to the empty list.
-                exclude: [],
-                files: "static/scss/**.scss",
-            }),
+            // Lint my SCSS - temporarily disabled due to config conflicts
+            // new StylelintPlugin({
+            //     // By default compiler.options.output.path is included
+            //     // in the exclude list, which would mean our 'static'
+            //     // folder would be skipped. So set it to the empty list.
+            //     exclude: [],
+            //     files: "static/scss/**.scss",
+            // }),
 
             // Remove the boilerplate JS files from chunks of CSS only entries
             new RemoveEmptyScriptsPlugin(),

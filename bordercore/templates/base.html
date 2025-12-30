@@ -522,6 +522,18 @@
                                     {% endif %}
                                 },
                                 {
+                                    href: "/reminder/",
+                                    title: "Reminders",
+                                    alias: "/reminder/*",
+                                    icon: {
+                                        element: "font-awesome-icon",
+                                        attributes: {
+                                            icon: "clock",
+                                        },
+                                        class: "sidebar-icon-1"
+                                    },
+                                },
+                                {
                                     href: "{% url 'tag:list' %}",
                                     title: "Tags",
                                     alias: "/tag/list",

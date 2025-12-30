@@ -1,0 +1,240 @@
+{% load is_in_group %}
+{% load vite_tags %}
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html lang="en" color-mode="{{ user.userprofile.theme }}" eye-candy="{{ user.userprofile.eye_candy }}">
+
+    <head>
+
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="username" content="{{ user.get_username }}" />
+        <title>{{ title|default:"Bordercore" }}</title>
+
+        <style>
+            /* Prevent flash of unstyled content - hide elements immediately before CSS loads */
+            #help-text,
+            .d-none {
+                display: none !important;
+            }
+
+            /* Prevent white background flash - uses CSS variable from theme files */
+            body {
+                background-color: var(--body-bg, #f6f6f8);
+            }
+        </style>
+
+            {% block css %}
+                {% vite_asset "dist/css/bordercore" %}
+            {% endblock %}
+
+            {% block extra_head %}{% endblock %}
+
+    </head>
+
+    <body>
+
+        <div id="react-toast"></div>
+
+        {% if elasticsearch_error %}
+        <div class="site-banner alert alert-danger fs-5" role="alert">
+            <strong>Error connecting to Elasticsearch:</strong> {{ elasticsearch_error }}
+        </div>
+        {% endif %}
+
+        <div class="wrapper {% if request.session.show_sidebar == "false" %}collapsed{% else %}sidebar-transition{% endif %}">
+
+            <div class="container-fluid d-flex flex-column" id="content">
+
+                <div class="row">
+                    <div class="col-lg-12">
+
+                        <div id="top-bar" class="top-bar-container">
+                            <div id="top-title" class="top-title-container">
+                                <span id="top-title-text">{% block title %}{% endblock %}</span>
+                            </div>
+                            <div class="top-bar-right">
+                                <div id="weather-display" class="top-bar-item"></div>
+                                <div id="top-search-bar" class="top-bar-item position-absolute"></div>
+                                <span id="top-search-icon" class="top-bar-item top-search-icon">
+                                    <i class="fa fa-search top-search-target glow"></i>
+                                </span>
+                                <div id="recent-blobs" class="top-bar-item"></div>
+                                <div id="top-bar-icon-placeholder" class="top-bar-item"></div>
+                                <div id="user-menu-wrapper" class="top-bar-item user-menu-wrapper"></div>
+                            </div>
+                        </div>
+
+                        <div id="overdue-tasks"></div>
+
+                        <div id="chat-bot"></div>
+
+                    </div>
+                </div>
+
+                {% block nav %}
+                {% endblock %}
+
+                <div class="row flex-grow-1">
+
+                    <div class="col-lg-12">
+                    {% block content %}
+                    {% endblock %}
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div id="sidebar"></div>
+
+            <div class="modal fade" id="modalHelp" tabindex="-1" role="dialog" aria-labelledby="modalHelpLabel">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h4 class="modal-title" id="modalHelpLabel">
+                                <i class="fa fa-question text-secondary me-2"></i>
+                                Help
+                            </h4>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body" id="modal-body-help">
+                            Help!
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% block javascript %}
+
+            <script type="text/javascript">
+                // Simple UUID generator function for compatibility
+                function generateUUID() {
+                    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                        const r = Math.random() * 16 | 0;
+                        const v = c == 'x' ? r : (r & 0x3 | 0x8);
+                        return v.toString(16);
+                    });
+                }
+
+                // Pass data to React components via window object
+                window.BASE_TEMPLATE_DATA = {
+                    staticUrl: "{{ STATIC_URL }}",
+                    csrfToken: "{{ csrf_token }}",
+                    initialSidebarCollapsed: {% if request.session.show_sidebar == "false" %}true{% else %}false{% endif %},
+                    failedTestCount: {{ failed_test_count }},
+                    title: "{{ title|default:'' }}",
+                    username: "{{ user.get_username }}",
+                    userMenuItems: [
+                        {
+                            id: generateUUID(),
+                            title: "Preferences",
+                            url: "{% url 'accounts:prefs' %}",
+                            icon: "briefcase"
+                        },
+                        {% if request.user|is_in_group:"Admin" %}
+                        {
+                            id: generateUUID(),
+                            title: "Metrics",
+                            url: "{% url 'metrics:list' %}",
+                            icon: "chart-bar",
+                            extra: {{ failed_test_count }}
+                        },
+                        {% endif %}
+                        {
+                            id: generateUUID(),
+                            title: "ChatBot",
+                            url: "#",
+                            icon: "comment",
+                            clickHandler: "handleChatBot"
+                        },
+                        {
+                            id: generateUUID(),
+                            title: "Help",
+                            url: "#",
+                            icon: "question",
+                            clickHandler: "showHelp"
+                        },
+                        {
+                            id: generateUUID(),
+                            title: "Logout",
+                            url: "{% url 'accounts:logout' %}",
+                            icon: "sign-out-alt",
+                        },
+                    ],
+                    topSearchConfig: {
+                        initialSearchFilter: "{{ request.session.top_search_filter }}",
+                        initialSearchUrl: "{% url 'search:search_tags_and_names' %}",
+                        querySearchUrl: "{% url 'search:search' %}",
+                        noteQuerySearchUrl: "{% url 'search:notes' %}",
+                        drillQuerySearchUrl: "{% url 'search:search' %}",
+                        storeInSessionUrl: "{% url "accounts:store_in_session" %}",
+                    },
+                    chatBotConfig: {
+                        blobUuid: "{{ blob.uuid|default:'' }}",
+                        chatUrl: "{% url 'blob:chat' %}",
+                        csrfToken: "{{ csrf_token }}",
+                    },
+                    overdueTasksConfig: {
+                        rescheduleTaskUrl: "{% url 'todo:reschedule_task' %}",
+                        deleteTodoUrl: "{% url 'todo-detail' '00000000-0000-0000-0000-000000000000' %}",
+                    },
+                    recentBlobsConfig: {
+                        blobDetailUrl: "{% url 'blob:detail' '00000000-0000-0000-0000-000000000000' %}",
+                    },
+                    sidebarConfig: {
+                        storeInSessionUrl: "{% url "accounts:store_in_session" %}",
+                        getNewBookmarksCountUrl: "{% url "bookmark:get_new_bookmarks_count" 666 %}",
+                        todoCount: {{ todo_count|default:0 }},
+                        exerciseCount: {{ exercise_count|default:0 }},
+                    },
+                    urls: {
+                        getWeather: "{% url 'accounts:get_weather' %}",
+                    },
+                    initialMessages: {{ json_messages|safe }},
+                };
+            </script>
+
+            {% block javascript_bundles %}
+                {% vite_asset "dist/js/base-react" %}
+            {% endblock %}
+
+            {{ recent_blobs|json_script:"recent_blobs" }}
+            {{ recent_bookmarks|json_script:"recent-bookmarks" }}
+            {{ recent_media|json_script:"recent_media" }}
+            {{ overdue_tasks|json_script:"overdue_tasks" }}
+            {{ recent_searches|json_script:"recent_searches" }}
+            {{ recently_viewed|json_script:"recently_viewed" }}
+            {% if user.userprofile.weather %}
+            {{ user.userprofile.weather|json_script:"weather_info" }}
+            {% endif %}
+
+            <script type="text/javascript">
+                {% if user.userprofile.sidebar_image %}
+                const sidebar = document.getElementById("sidebar");
+                if (sidebar) {
+                    sidebar.style.backgroundImage = "url('https://bordercore-blobs.s3.amazonaws.com/sidebar/{{ user.userprofile.uuid }}/{{ user.userprofile.sidebar_image }}')";
+                }
+                {% endif %}
+
+                {% if user.userprofile.background_image %}
+                const body = document.querySelector("body");
+                if (body) {
+                    body.style.backgroundImage = "url('https://bordercore-blobs.s3.amazonaws.com/background/{{ user.userprofile.uuid }}/{{ user.userprofile.background_image }}')";
+                }
+                {% endif %}
+            </script>
+
+        {% endblock %}
+
+        {% block help %}
+            <div class="d-none" id="help-text">
+                Bordercore is a place to organize all your information.
+            </div>
+        {% endblock %}
+
+    </body>
+
+</html>
+

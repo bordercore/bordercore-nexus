@@ -1,0 +1,93 @@
+// =============================================================================
+// COMPONENTS: FORMS
+// =============================================================================
+// Form inputs, textareas, checkboxes, tags, and form-related components
+
+// Form controls
+input[type="radio"],
+input[type="checkbox"] {
+  margin-right: 0.5rem;
+  cursor: pointer;
+}
+
+.editable-textarea {
+  width: 100%;
+  min-height: 5rem;
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  background-color: var(--surface2);
+  border-radius: var(--border-radius1);
+  color: var(--text1);
+  font-family: inherit;
+  resize: vertical;
+}
+
+.form-error {
+  margin-top: 0.25rem;
+  color: var(--error-text);
+  font-size: 0.875rem;
+}
+
+.form-section {
+  margin-bottom: 1.5rem;
+}
+
+::placeholder {
+  color: var(--text3);
+  opacity: 0.7;
+}
+
+// Tags
+a.tag {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  margin: 0.125rem;
+  background-color: var(--tag-bg);
+  border-radius: var(--border-radius1);
+  color: var(--tag-text);
+  font-size: 0.875rem;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+  
+  &:hover {
+    background-color: var(--tag-hover-bg);
+    text-decoration: none;
+  }
+}
+
+.tag {
+  padding: 0.25rem 0.75rem;
+  background-color: var(--tag-bg);
+  border-radius: var(--border-radius1);
+  color: var(--tag-text);
+  font-size: 0.875rem;
+}
+
+// Input groups
+.input-group-text {
+  border-color: var(--border-color);
+  background-color: var(--surface2);
+  color: var(--text1);
+}
+
+// Object select
+.object-select-suggestion {
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  
+  &:hover {
+    background-color: var(--hover-bg);
+  }
+  
+  &.selected {
+    background-color: var(--selected-bg);
+  }
+}
+
+.object-select-misc-item-below {
+  padding: 0.5rem 1rem;
+  border-top: 1px solid var(--border-color);
+  color: var(--text2);
+  font-size: 0.875rem;
+}

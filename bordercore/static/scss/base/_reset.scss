@@ -1,0 +1,93 @@
+// =============================================================================
+// BASE: RESET & CORE STYLES
+// =============================================================================
+// Base HTML elements, typography, scrollbars, fonts
+
+// Fonts
+@font-face {
+  font-family: Roboto;
+  font-style: normal;
+  font-weight: 400;
+  src: url("../fonts/Roboto-Regular.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: Lato;
+  font-style: normal;
+  font-weight: 400;
+  src: url("../fonts/Lato-Regular.ttf") format("truetype");
+}
+
+// Common HTML elements
+body {
+  // Use CSS variable for body background (defined in theme files)
+  background-color: var(--body-bg);
+  color: var(--text1);
+  font-family: Roboto, sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+}
+
+p {
+  margin-bottom: 1rem;
+}
+
+a {
+  color: var(--link-color);
+  text-decoration: none;
+  transition: color 0.15s ease-in-out;
+
+  &:hover {
+    color: var(--link-hover-color);
+    text-decoration: underline;
+  }
+}
+
+hr {
+  border-color: var(--border-color);
+}
+
+strong {
+  color: var(--text4);
+  font-weight: 700;
+}
+
+em {
+  font-style: italic;
+}
+
+i,
+span {
+  font-style: normal;
+}
+
+// Scrollbars
+::-webkit-scrollbar {
+  width: 0.875rem;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 0.5rem;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+// Vue cloak (hide mustached content before Vue loads)
+[v-cloak] {
+  display: none;
+}

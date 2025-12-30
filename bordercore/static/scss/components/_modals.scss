@@ -1,0 +1,60 @@
+// =============================================================================
+// COMPONENTS: MODALS
+// =============================================================================
+// Modal dialogs, popovers, and overlay components
+
+.modal-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--surface2);
+  border-radius: var(--border-radius1) var(--border-radius1) 0 0;
+  color: var(--text1);
+}
+
+.modal-content {
+  background-color: var(--surface1);
+  color: var(--text1);
+}
+
+// Keep ObjectSelect modals above other layered content
+[id^="modalObjectSelect"] {
+  z-index: 2000;
+}
+
+[id^="modalObjectSelect"] .modal-dialog {
+  z-index: 2001;
+}
+
+// Bootstrap Popovers
+.popover {
+  border-color: var(--border-color);
+  background-color: var(--surface2);
+  color: var(--text1);
+  
+  .popover-header {
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--surface3);
+  }
+  
+  .popover-body {
+    color: var(--text1);
+  }
+}
+
+// Toasts
+.toast-wrapper {
+  position: fixed;
+  z-index: 9999;
+  top: 1rem;
+  right: 1rem;
+}
+
+.toast {
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  margin-bottom: 0.5rem;
+  background-color: var(--surface2);
+  border-radius: var(--border-radius1);
+  box-shadow: 0 0.5rem 1rem rgb(0 0 0 / 15%);
+  color: var(--text1);
+}

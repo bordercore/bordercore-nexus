@@ -1,0 +1,161 @@
+// =============================================================================
+// COMPONENTS: NAVIGATION
+// =============================================================================
+// Dropdowns, menus, tabs, breadcrumbs, pagination, and navigation components
+
+// Dropdowns
+.dropdown-menu {
+  border: 1px solid var(--border-color);
+  background-color: var(--surface2);
+  border-radius: var(--border-radius1);
+  box-shadow: 0 0.5rem 1rem rgb(0 0 0 / 15%);
+}
+
+.dropdown-item {
+  padding: 0.5rem 1rem;
+  color: var(--text1);
+  transition: background-color 0.2s ease;
+  
+  &:hover {
+    background-color: var(--hover-bg);
+    color: var(--text1);
+  }
+  
+  &.active,
+  &:active {
+    background-color: var(--selected-bg);
+  }
+}
+
+.option-icon {
+  margin-right: 0.5rem;
+}
+
+// Pagination
+.pagination {
+  display: flex;
+  gap: 0.5rem;
+  
+  .page-link {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border-color);
+    background-color: var(--surface2);
+    border-radius: var(--border-radius1);
+    color: var(--text1);
+    
+    &:hover {
+      background-color: var(--hover-bg);
+    }
+  }
+  
+  .page-item.active .page-link {
+    border-color: var(--selected-border);
+    background-color: var(--selected-bg);
+  }
+}
+
+.pagination-divider {
+  border-left: 1px solid var(--border-color);
+  margin: 0 0.5rem;
+}
+
+// Breadcrumbs
+.breadcrumb {
+  padding: 0;
+  margin-bottom: 1rem;
+  background-color: transparent;
+  
+  .breadcrumb-item {
+    color: var(--text2);
+    
+    &.active {
+      color: var(--text1);
+    }
+    
+    + .breadcrumb-item::before {
+      color: var(--text3);
+    }
+  }
+}
+
+// Navigation tabs
+.nav-tabs {
+  border-bottom: 1px solid var(--border-color);
+  
+  .nav-link {
+    border: 1px solid transparent;
+    border-radius: var(--border-radius1) var(--border-radius1) 0 0;
+    color: var(--text2);
+    
+    &:hover {
+      border-color: var(--border-color);
+      color: var(--text1);
+    }
+    
+    &.active {
+      border-color: var(--border-color) var(--border-color) transparent;
+      background-color: var(--surface2);
+      color: var(--text1);
+    }
+  }
+}
+
+// Lists
+.list-group-item {
+  border-color: var(--border-color);
+  background-color: var(--surface2);
+  color: var(--text1);
+}
+
+.list-group-item-secondary {
+  background-color: var(--surface3);
+}
+
+.interior-borders {
+  .list-group-item {
+    border-top: none;
+    border-right: none;
+    border-left: none;
+    
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+}
+
+.item-name {
+  font-weight: 600;
+}
+
+.item-value {
+  margin-left: 0.5rem;
+  color: var(--text2);
+}
+
+.list-header-border {
+  border-bottom: 2px solid var(--border-color);
+}
+
+li {
+  &:hover {
+    background-color: var(--hover-bg);
+  }
+}
+
+.list-with-counts {
+  li {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+  
+  .count {
+    color: var(--text3);
+    font-size: 0.875rem;
+  }
+}

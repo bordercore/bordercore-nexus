@@ -1,0 +1,117 @@
+// =============================================================================
+// PAGES: BOOKMARKS
+// =============================================================================
+// Bookmark list, drawer, tags sidebar, and related components
+
+.bookmark-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  .bookmark-item {
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    background-color: var(--surface2);
+    border-radius: var(--border-radius1);
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: var(--hover-bg);
+    }
+  }
+
+  .bookmark-title {
+    margin-bottom: 0.25rem;
+    color: var(--text1);
+    font-weight: 600;
+  }
+
+  .bookmark-url {
+    color: var(--text2);
+    font-size: 0.875rem;
+  }
+
+  .bookmark-tags {
+    display: flex;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+    gap: 0.25rem;
+  }
+}
+
+.bookmark-tags-sidebar {
+  padding: 1rem;
+  background-color: var(--surface2);
+  border-radius: var(--border-radius1);
+
+  .bookmark-tag {
+    display: block;
+    padding: 0.5rem;
+    border-radius: var(--border-radius1);
+    color: var(--text1);
+    text-decoration: none;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: var(--hover-bg);
+    }
+
+    &.active {
+      background-color: var(--selected-bg);
+    }
+  }
+}
+
+// Drawer
+.drawer {
+  position: fixed;
+  z-index: 1050;
+  top: 0;
+  right: 0;
+  width: 30rem;
+  height: 100vh;
+  background-color: var(--surface2);
+  box-shadow: -2px 0 8px rgb(0 0 0 / 15%);
+  overflow-y: auto;
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+
+  &.open {
+    transform: translateX(0);
+  }
+
+  @media (width < 992px) {
+    width: 100%;
+  }
+
+  .drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--surface3);
+  }
+
+  .drawer-body {
+    padding: 1.5rem;
+  }
+}
+
+.drawer-overlay {
+  position: fixed;
+  z-index: 1049;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgb(0 0 0 / 50%);
+  opacity: 0;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  visibility: hidden;
+
+  &.show {
+    opacity: 1;
+    visibility: visible;
+  }
+}

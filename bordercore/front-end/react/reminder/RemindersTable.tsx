@@ -1,0 +1,270 @@
+import React from "react";
+import { createColumnHelper, type ColumnDef } from "@tanstack/react-table";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faEye,
+  faPencilAlt,
+  faTrashAlt,
+  faCheck,
+  faExclamationTriangle,
+  faEllipsisV,
+  faCalendarAlt,
+  faClock,
+  faHistory,
+  faRedo,
+  faSync,
+} from "@fortawesome/free-solid-svg-icons";
+import { useBootstrapTable } from "../common/useBootstrapTable";
+
+export interface Reminder {
+  uuid: string;
+  name: string;
+  note: string;
+  is_active: boolean;
+  interval_value: number;
+  interval_unit_display: string;
+  next_trigger_at: string | null;
+  next_trigger_at_unix: number | null;
+  detail_url: string;
+  update_url: string;
+  delete_url: string;
+}
+
+interface RemindersTableProps {
+  data: Reminder[];
+}
+
+const columnHelper = createColumnHelper<Reminder>();
+
+function escapeHtml(unsafe: string): string {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+// Map interval units to appropriate icons
+function getScheduleIcon(intervalUnit: string): any {
+  const unit = intervalUnit.toLowerCase();
+  if (unit.includes("hour")) return faClock;
+  if (unit.includes("day")) return faClock;
+  if (unit.includes("week")) return faSync;
+  if (unit.includes("month")) return faCalendarAlt;
+  if (unit.includes("year")) return faHistory;
+  return faRedo; // default
+}
+
+export function RemindersTable({ data }: RemindersTableProps) {
+  const columns = React.useMemo<ColumnDef<Reminder>[]>(
+    () => [
+      columnHelper.accessor("name", {
+        header: "Name",
+        cell: (info) => {
+          const reminder = info.row.original;
+          const notePreview = reminder.note
+            ? reminder.note.split(" ").slice(0, 12).join(" ")
+            : null;
+          return (
+            <div className="reminder-name">
+              <a href={reminder.detail_url} className="reminder-name-main">
+                {escapeHtml(reminder.name)}
+              </a>
+              {notePreview && (
+                <span className="reminder-name-note">{escapeHtml(notePreview)}</span>
+              )}
+            </div>
+          );
+        },
+      }),
+      columnHelper.accessor("interval_value", {
+        header: "Schedule",
+        cell: (info) => {
+          const reminder = info.row.original;
+          const pluralUnit = reminder.interval_value !== 1 ? "s" : "";
+          const scheduleText = `Every ${reminder.interval_value} ${reminder.interval_unit_display}${pluralUnit}`;
+          const scheduleIcon = getScheduleIcon(reminder.interval_unit_display);
+          return (
+            <div className="reminder-schedule-badge">
+              <FontAwesomeIcon icon={scheduleIcon} className="schedule-icon" />
+              {scheduleText}
+            </div>
+          );
+        },
+      }),
+      columnHelper.accessor("is_active", {
+        header: "Status",
+        cell: (info) => {
+          const reminder = info.row.original;
+          const currentTime = Math.floor(Date.now() / 1000);
+          const isReady =
+            reminder.next_trigger_at_unix &&
+            reminder.next_trigger_at_unix <= currentTime;
+
+          if (reminder.is_active) {
+            if (isReady) {
+              return (
+                <div className="reminder-status-badge status-ready">
+                  <span className="status-dot"></span>
+                  Ready
+                </div>
+              );
+            }
+            return (
+              <div className="reminder-status-badge status-active">
+                <span className="status-dot"></span>
+                Active
+              </div>
+            );
+          }
+          return (
+            <div className="reminder-status-badge status-inactive">
+              <span className="status-dot"></span>
+              Inactive
+            </div>
+          );
+        },
+      }),
+      columnHelper.accessor("next_trigger_at", {
+        header: "Next Trigger",
+        cell: (info) => {
+          const reminder = info.row.original;
+
+          if (reminder.next_trigger_at) {
+            return (
+              <div className="reminder-next-trigger">
+                <FontAwesomeIcon icon={faCalendarAlt} className="trigger-icon" />
+                <span className="trigger-date">{reminder.next_trigger_at}</span>
+              </div>
+            );
+          }
+          return <span className="text-muted">—</span>;
+        },
+      }),
+      columnHelper.display({
+        id: "actions",
+        header: () => <div className="text-end">Actions</div>,
+        cell: (info) => {
+          const reminder = info.row.original;
+          return (
+            <div className="text-end">
+              <div className="dropdown">
+                <button
+                  className="reminder-actions-button"
+                  type="button"
+                  data-bs-toggle="dropdown"
+                  aria-label="Actions"
+                >
+                  <FontAwesomeIcon icon={faEllipsisV} />
+                </button>
+                <ul className="dropdown-menu dropdown-menu-end">
+                  <li>
+                    <a className="dropdown-item" href={reminder.detail_url}>
+                      <FontAwesomeIcon icon={faEye} className="text-primary me-3" />
+                      View
+                    </a>
+                  </li>
+                  <li>
+                    <a className="dropdown-item" href={reminder.update_url}>
+                      <FontAwesomeIcon icon={faPencilAlt} className="text-primary me-3" />
+                      Edit
+                    </a>
+                  </li>
+                  <li>
+                    <hr className="dropdown-divider" />
+                  </li>
+                  <li>
+                    <a className="dropdown-item text-danger" href={reminder.delete_url}>
+                      <FontAwesomeIcon icon={faTrashAlt} className="text-primary me-3" />
+                      Delete
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          );
+        },
+      }),
+    ],
+    []
+  );
+
+  const { table, getTableClasses, getHeaderClasses } = useBootstrapTable({
+    data,
+    columns,
+    enableSorting: true,
+    enablePagination: false,
+  });
+
+  if (data.length === 0) {
+    return (
+      <div className="reminders-empty-state" role="alert">
+        <h5>No reminders yet.</h5>
+        <p>Create your first reminder to get started.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="reminders-table-container">
+      <div className="overflow-x-auto">
+        <table className="reminders-table">
+          <thead>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <tr key={headerGroup.id}>
+                {headerGroup.headers.map((header) => {
+                  const canSort = header.column.getCanSort();
+                  const isSorted = header.column.getIsSorted();
+                  return (
+                    <th
+                      key={header.id}
+                      className={canSort ? "cursor-pointer" : ""}
+                      onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
+                    >
+                      {header.isPlaceholder ? null : (
+                        <div>
+                          {typeof header.column.columnDef.header === "function"
+                            ? header.column.columnDef.header({
+                                column: header.column,
+                                header: header,
+                                table: table,
+                              } as any)
+                            : header.column.columnDef.header}
+                          {isSorted === "asc" && " ↑"}
+                          {isSorted === "desc" && " ↓"}
+                        </div>
+                      )}
+                    </th>
+                  );
+                })}
+              </tr>
+            ))}
+          </thead>
+          <tbody>
+            {table.getRowModel().rows.map((row) => (
+              <tr key={row.id}>
+                {row.getVisibleCells().map((cell) => (
+                  <td key={cell.id}>
+                    {typeof cell.column.columnDef.cell === "function"
+                      ? cell.column.columnDef.cell({
+                          cell: cell,
+                          column: cell.column,
+                          row: row,
+                          table: table,
+                          getValue: cell.getValue,
+                          renderValue: cell.renderValue,
+                        } as any)
+                      : cell.getValue()}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+export default RemindersTable;

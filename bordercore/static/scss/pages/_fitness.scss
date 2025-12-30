@@ -1,0 +1,78 @@
+// =============================================================================
+// PAGES: FITNESS
+// =============================================================================
+// Exercise tracking, workouts, and fitness-related components
+
+.fitness-col-name {
+  flex: 2;
+}
+
+.fitness-col-sets {
+  flex: 1;
+}
+
+.fitness-col-weight {
+  flex: 1;
+}
+
+.fitness-col-date {
+  flex: 1;
+}
+
+.overdue {
+  color: var(--error-color);
+  font-weight: 600;
+}
+
+#exercise-detail-chart {
+  padding: 1.5rem;
+  margin-top: 1rem;
+  background-color: var(--surface2);
+  border-radius: var(--border-radius1);
+}
+
+.exercise-item {
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  margin-bottom: 0.5rem;
+  background-color: var(--surface2);
+  border-radius: var(--border-radius1);
+  transition: background-color 0.2s ease;
+  
+  &:hover {
+    background-color: var(--hover-bg);
+  }
+  
+  .exercise-name {
+    color: var(--text1);
+    font-weight: 600;
+  }
+  
+  .exercise-stats {
+    margin-top: 0.25rem;
+    color: var(--text2);
+    font-size: 0.875rem;
+  }
+}
+
+.workout-summary {
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background-color: var(--surface3);
+  border-radius: var(--border-radius1);
+  
+  .summary-stat {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    
+    .stat-label {
+      color: var(--text2);
+    }
+    
+    .stat-value {
+      color: var(--text1);
+      font-weight: 600;
+    }
+  }
+}

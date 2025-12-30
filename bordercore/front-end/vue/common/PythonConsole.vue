@@ -50,7 +50,7 @@
             };
 
             function handleStdErr(out) {
-                pythonError = true;
+                pythonError.value = true;
                 output.value = out;
             };
 

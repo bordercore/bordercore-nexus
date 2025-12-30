@@ -1,0 +1,102 @@
+// =============================================================================
+// COMPONENTS: TABLES
+// =============================================================================
+// Table styles including Oruga tables and Bootstrap tables
+
+.is-invisible {
+  visibility: hidden;
+}
+
+// Bootstrap tables - base classes first (lower specificity)
+.table {
+  color: var(--text1);
+
+  thead {
+    border-bottom: 2px solid var(--border-color);
+  }
+
+  td, th {
+    padding: 0.75rem;
+    border-color: var(--border-color);
+  }
+}
+
+.b-table {
+  background-color: var(--surface2);
+  color: var(--text1);
+}
+
+.table-borders {
+  border: 1px solid var(--border-color);
+}
+
+.table-colors {
+  background-color: var(--surface2);
+}
+
+.table-borderless td,
+.table-borderless th {
+  border: none;
+}
+
+.table-responsive {
+  background-color: var(--surface2);
+  border-radius: var(--border-radius1);
+
+  .table {
+    margin-bottom: 0;
+    color: var(--text1);
+  }
+}
+
+// Oruga tables - more specific selectors last
+.o-table {
+  width: 100%;
+  background-color: var(--surface2);
+  border-radius: var(--border-radius1);
+
+  th {
+    padding: 0.75rem;
+    border-bottom: 2px solid var(--border-color);
+    color: var(--text1);
+    font-weight: 600;
+  }
+
+  td {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text1);
+  }
+
+  tr {
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: var(--hover-bg);
+    }
+  }
+
+  &.hoverable-cells {
+    td {
+      transition: background-color 0.2s ease;
+
+      &:hover {
+        background-color: var(--hover-bg);
+      }
+    }
+  }
+}
+
+/* stylelint-disable selector-class-pattern */
+.o-table__tr--selected {
+  background-color: var(--selected-bg);
+}
+
+// Oruga mobile cards
+.o-table__mobile-cards .o-table__mobile-card {
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  margin-bottom: 1rem;
+  background-color: var(--surface2);
+  border-radius: var(--border-radius1);
+}

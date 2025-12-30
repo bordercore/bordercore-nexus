@@ -12,26 +12,51 @@
         "dev-jenkins": "webpack --mode development",
         "dev-analyzer": "ANALYZER=1 webpack --mode development",
         "dev-css": "WEBPACK_CSS_ONLY=1 webpack --mode development",
-        "build": "webpack"
+        "build": "webpack",
+        "vite:dev": "vite",
+        "vite:build": "vite build",
+        "vite:serve": "vite preview --strictPort",
+        "vite:dev-css": "node ./front-end/entries/bordercore-css.js",
+        "format": "prettier --write",
+        "format:check": "prettier --check",
+        "format:react": "prettier --write \"front-end/react/**/*.{ts,tsx,jsx,js}\"",
+        "format:check:react": "prettier --check \"front-end/react/**/*.{ts,tsx,jsx,js}\"",
+        "lint:staged": "lint-staged"
+    },
+    "lint-staged": {
+        "static/scss/**/*.{scss,css}": [
+            "stylelint"
+        ]
     },
     "keywords": [],
     "author": "",
     "license": "ISC",
     "devDependencies": {
+        "@types/react": "^18.2.37",
+        "@types/react-dom": "^18.2.15",
+        "@vitejs/plugin-react": "^4.2.0",
+        "@vitejs/plugin-vue": "^4.1.0",
         "css-loader": "^5.0.0",
         "eslint": "^8.57.1",
         "eslint-config-google": "^0.14.0",
         "eslint-plugin-html": "^6.2.0",
         "eslint-plugin-vue": "^9.33.0",
+        "lint-staged": "^16.2.7",
         "mini-css-extract-plugin": "^1.0.0",
+        "postcss-scss": "^4.0.9",
+        "prettier": "^3.1.0",
         "sass": "^1.27.0",
         "sass-loader": "^10.0.3",
         "style-loader": "^3.3.1",
-        "stylelint": "^13.13.1",
+        "stylelint": "^16.26.1",
         "stylelint-config-idiomatic-order": "^8.1.0",
         "stylelint-config-standard": "^20.0.0",
-        "stylelint-order": "^4.1.0",
-        "stylelint-webpack-plugin": "^2.4.0",
+        "stylelint-config-standard-scss": "^16.0.0",
+        "stylelint-order": "^6.0.4",
+        "stylelint-scss": "^6.13.0",
+        "stylelint-webpack-plugin": "^5.0.0",
+        "typescript": "^5.3.3",
+        "vite": "^5.1.0",
         "vue-eslint-parser": "^9.4.3",
         "vue-loader": "^17.0.1",
         "webpack": "^5.76.0",
@@ -40,11 +65,13 @@
     },
     "dependencies": {
         "@babel/core": "^7.23.2",
-        "@fortawesome/fontawesome-svg-core": "^1.2.31",
-        "@fortawesome/free-brands-svg-icons": "^6.0.0",
-        "@fortawesome/free-solid-svg-icons": "^5.15.0",
+        "@fortawesome/fontawesome-svg-core": "^6.7.2",
+        "@fortawesome/free-brands-svg-icons": "^6.5.1",
+        "@fortawesome/free-solid-svg-icons": "^6.7.2",
+        "@fortawesome/react-fontawesome": "^3.1.1",
         "@fortawesome/vue-fontawesome": "^3.0.2",
         "@kangc/v-md-editor": "^2.3.15",
+        "@tanstack/react-table": "^8.20.5",
         "@oruga-ui/oruga-next": "^0.5.10",
         "@popperjs/core": "^2.11.5",
         "@sqlite.org/sqlite-wasm": "^3.43.1-build1",
@@ -59,6 +86,7 @@
         "hotkeys-js": "^3.8.7",
         "http-status-codes": "^2.2.0",
         "lodash": "^4.17.21",
+        "lottie-react": "^2.4.1",
         "markdown-it": "12.3.2",
         "mathjax-full": "^3.1.2",
         "media-chrome": "^0.16.0",
@@ -68,6 +96,9 @@
         "popper.js": "^1.16.0",
         "prismjs": "^1.29.0",
         "rainbowvis.js": "^1.0.1",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "react-pro-sidebar": "^1.1.0",
         "sortablejs": "^1.15.0",
         "tiny-emitter": "^2.1.0",
         "url-loader": "^4.1.1",
@@ -85,52 +116,5 @@
     "overrides": {
         "glob-parent": "5.1.2",
         "markdown-it": "12.3.2"
-    },
-    "stylelint": {
-        "extends": "stylelint-config-idiomatic-order",
-        "plugins": [
-            "stylelint-order"
-        ],
-        "rules": {
-            "at-rule-no-unknown": null,
-            "block-closing-brace-newline-after": "always",
-            "block-opening-brace-space-before": "always",
-            "declaration-block-semicolon-newline-after": "always",
-            "declaration-block-trailing-semicolon": "always",
-            "declaration-colon-space-after": "always",
-            "indentation": 2,
-            "no-duplicate-selectors": true,
-            "no-irregular-whitespace": true,
-            "no-eol-whitespace": true,
-            "order/order": [
-                "custom-properties",
-                "declarations"
-            ],
-            "property-no-unknown": [
-                true,
-                {
-                    "ignoreProperties": [
-                        "/^-animation$/",
-                        "/^accent-color$/",
-                        "/^webkit-transform$/",
-                        "/^ms-transform$/"
-                    ]
-                }
-            ],
-            "rule-empty-line-before": [
-                "always-multi-line",
-                {
-                    "ignore": [
-                        "after-comment",
-                        "inside-block"
-                    ]
-                }
-            ],
-            "selector-combinator-space-after": "always",
-            "selector-combinator-space-before": "always",
-            "string-quotes": "double",
-            "value-keyword-case": "lower",
-            "value-list-comma-space-after": "always"
-        }
     }
 }

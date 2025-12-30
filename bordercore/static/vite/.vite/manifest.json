@@ -1,0 +1,112 @@
+{
+  "__commonjsHelpers-BosuxZz1.js": {
+    "file": "assets/_commonjsHelpers-BosuxZz1.js",
+    "name": "_commonjsHelpers"
+  },
+  "_client-BJUeJoS6.js": {
+    "file": "assets/client-BJUeJoS6.js",
+    "name": "client",
+    "imports": [
+      "__commonjsHelpers-BosuxZz1.js"
+    ]
+  },
+  "_index-CE51SQw_.js": {
+    "file": "assets/index-CE51SQw_.js",
+    "name": "index",
+    "imports": [
+      "_client-BJUeJoS6.js",
+      "_index-DpFgmjqh.js"
+    ]
+  },
+  "_index-DpFgmjqh.js": {
+    "file": "assets/index-DpFgmjqh.js",
+    "name": "index",
+    "imports": [
+      "__commonjsHelpers-BosuxZz1.js"
+    ]
+  },
+  "_snow-kuY8H-pm.js": {
+    "file": "assets/snow-kuY8H-pm.js",
+    "name": "snow",
+    "imports": [
+      "__commonjsHelpers-BosuxZz1.js"
+    ]
+  },
+  "front-end/entries/base-react.tsx": {
+    "file": "dist/js/base-react-CsQAynM3.js",
+    "name": "dist/js/base-react",
+    "src": "front-end/entries/base-react.tsx",
+    "isEntry": true,
+    "imports": [
+      "_client-BJUeJoS6.js",
+      "_index-CE51SQw_.js",
+      "_index-DpFgmjqh.js",
+      "_snow-kuY8H-pm.js",
+      "__commonjsHelpers-BosuxZz1.js"
+    ]
+  },
+  "front-end/entries/bordercore-css.js": {
+    "file": "dist/css/bordercore-Dw96qvCH.js",
+    "name": "dist/css/bordercore",
+    "src": "front-end/entries/bordercore-css.js",
+    "isEntry": true,
+    "css": [
+      "bordercore-C0PJt2ax.css"
+    ],
+    "assets": [
+      "Roboto-Regular-BHeBnKzs.ttf",
+      "Lato-Regular-BwLIet1C.ttf"
+    ]
+  },
+  "front-end/entries/react-app.tsx": {
+    "file": "dist/js/react-app-M_ZQhubN.js",
+    "name": "dist/js/react-app",
+    "src": "front-end/entries/react-app.tsx",
+    "isEntry": true,
+    "imports": [
+      "_client-BJUeJoS6.js",
+      "__commonjsHelpers-BosuxZz1.js"
+    ]
+  },
+  "front-end/entries/reminders.tsx": {
+    "file": "dist/js/reminders-CHU7qzsw.js",
+    "name": "dist/js/reminders",
+    "src": "front-end/entries/reminders.tsx",
+    "isEntry": true,
+    "imports": [
+      "_client-BJUeJoS6.js",
+      "_index-CE51SQw_.js",
+      "_index-DpFgmjqh.js",
+      "__commonjsHelpers-BosuxZz1.js"
+    ]
+  },
+  "front-end/index.js": {
+    "file": "dist/js/javascript-BbuKRsq7.js",
+    "name": "dist/js/javascript",
+    "src": "front-end/index.js",
+    "isEntry": true,
+    "imports": [
+      "_snow-kuY8H-pm.js",
+      "__commonjsHelpers-BosuxZz1.js",
+      "_index-DpFgmjqh.js"
+    ],
+    "css": [
+      "javascript-HIXiA1tM.css"
+    ],
+    "assets": [
+      "sqlite3-BVm_WiPj.wasm"
+    ]
+  },
+  "node_modules/@sqlite.org/sqlite-wasm/sqlite-wasm/jswasm/sqlite3.wasm": {
+    "file": "sqlite3-BVm_WiPj.wasm",
+    "src": "node_modules/@sqlite.org/sqlite-wasm/sqlite-wasm/jswasm/sqlite3.wasm"
+  },
+  "static/fonts/Lato-Regular.ttf": {
+    "file": "Lato-Regular-BwLIet1C.ttf",
+    "src": "static/fonts/Lato-Regular.ttf"
+  },
+  "static/fonts/Roboto-Regular.ttf": {
+    "file": "Roboto-Regular-BHeBnKzs.ttf",
+    "src": "static/fonts/Roboto-Regular.ttf"
+  }
+}

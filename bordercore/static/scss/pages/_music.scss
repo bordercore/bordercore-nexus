@@ -1,0 +1,142 @@
+// =============================================================================
+// PAGES: MUSIC
+// =============================================================================
+// Music player, albums, playlists, and audio controls
+
+.music-nav {
+  display: flex;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+  
+  .music-nav-item {
+    padding: 0.75rem 1rem;
+    border-bottom: 2px solid transparent;
+    color: var(--text2);
+    text-decoration: none;
+    transition: color 0.2s ease, border-color 0.2s ease;
+    
+    &:hover {
+      color: var(--text1);
+    }
+    
+    &.active {
+      border-bottom-color: var(--link-color);
+      color: var(--text1);
+    }
+  }
+}
+
+#create-album-container {
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  background-color: var(--surface2);
+  border-radius: var(--border-radius1);
+}
+
+.album-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  
+  .album-item {
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    background-color: var(--surface2);
+    border-radius: var(--border-radius1);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    
+    &:hover {
+      background-color: var(--hover-bg);
+    }
+    
+    .album-cover {
+      width: 100%;
+      margin-bottom: 0.5rem;
+      aspect-ratio: 1;
+      border-radius: var(--border-radius1);
+      object-fit: cover;
+    }
+    
+    .album-title {
+      color: var(--text1);
+      font-weight: 600;
+    }
+    
+    .album-artist {
+      color: var(--text2);
+      font-size: 0.875rem;
+    }
+  }
+}
+
+.track-list {
+  .track-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    
+    &:hover {
+      background-color: var(--hover-bg);
+    }
+    
+    &.playing {
+      background-color: var(--selected-bg);
+    }
+    
+    .track-number {
+      width: 2rem;
+      color: var(--text3);
+    }
+    
+    .track-title {
+      flex: 1;
+      color: var(--text1);
+    }
+    
+    .track-duration {
+      color: var(--text2);
+    }
+  }
+}
+
+.audio-player {
+  position: fixed;
+  z-index: 1000;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  border-top: 1px solid var(--border-color);
+  background-color: var(--surface2);
+  gap: 1rem;
+  
+  .player-controls {
+    display: flex;
+    gap: 0.5rem;
+  }
+  
+  .player-info {
+    flex: 1;
+    
+    .player-track-title {
+      color: var(--text1);
+      font-weight: 600;
+    }
+    
+    .player-artist {
+      color: var(--text2);
+      font-size: 0.875rem;
+    }
+  }
+  
+  .player-progress {
+    flex: 2;
+  }
+}

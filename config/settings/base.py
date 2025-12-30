@@ -275,6 +275,11 @@ LOGGING = {
             "handlers": ["bordercore"],
             "level": "INFO",
             "propagate": True,
+        },
+        "bordercore.lib.templatetags.vite_tags": {
+            "handlers": ["bordercore", "file"],
+            "level": "ERROR",
+            "propagate": False,
         }
     }
 }
