@@ -19,6 +19,23 @@ export function OverdueTasks({ taskListInitial, rescheduleTaskUrl, deleteTodoUrl
   const [taskList, setTaskList] = useState<Task[]>(taskListInitial);
   const [message, setMessage] = useState("");
 
+  useEffect(() => {
+    setTaskList(taskListInitial);
+  }, [taskListInitial]);
+
+  useEffect(() => {
+    const modalElement = document.getElementById("modalOverdueTasks");
+    if (modalElement) {
+      const handleHidden = () => {
+        setMessage("");
+      };
+      modalElement.addEventListener("hidden.bs.modal", handleHidden);
+      return () => {
+        modalElement.removeEventListener("hidden.bs.modal", handleHidden);
+      };
+    }
+  }, []);
+
   const handleTaskDelete = (uuid: string) => {
     axios
       .delete(deleteTodoUrl.replace("00000000-0000-0000-0000-000000000000", uuid))
@@ -28,6 +45,7 @@ export function OverdueTasks({ taskListInitial, rescheduleTaskUrl, deleteTodoUrl
       })
       .catch((error) => {
         console.log(error);
+        setMessage("Error deleting task. Please try again.");
       });
   };
 
@@ -51,6 +69,7 @@ export function OverdueTasks({ taskListInitial, rescheduleTaskUrl, deleteTodoUrl
       })
       .catch((error) => {
         console.log(error);
+        setMessage("Error rescheduling task. Please try again.");
       });
   };
 
@@ -128,7 +147,7 @@ export function OverdueTasks({ taskListInitial, rescheduleTaskUrl, deleteTodoUrl
               </div>
               <div className="col-lg-3">
                 <div className="ms-auto">
-                  <button type="button" className="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalOverdueTasks">
+                  <button type="button" className="btn btn-primary" data-bs-dismiss="modal">
                     Dismiss
                   </button>
                 </div>
