@@ -68,13 +68,15 @@ class Command(BaseCommand):
         self.dry_run = options.get("dry_run", False)
         verbosity = int(options.get("verbosity", 1))
 
-        if self.dry_run and verbosity >= 1:
-            self.stdout.write(
-                self.style.WARNING("Running in DRY-RUN mode (no changes will be made)")
-            )
-
         self.find_and_trigger_reminders(verbosity)
-        self.print_summary(verbosity)
+
+        # Only print output if there were reminders to process
+        if self.reminders_due > 0:
+            if self.dry_run and verbosity >= 1:
+                self.stdout.write(
+                    self.style.WARNING("Running in DRY-RUN mode (no changes will be made)")
+                )
+            self.print_summary(verbosity)
 
     def find_and_trigger_reminders(self, verbosity: int) -> None:
         """Find all reminders that are due and trigger them.
@@ -92,7 +94,7 @@ class Command(BaseCommand):
 
         self.reminders_due = due_reminders.count()
 
-        if verbosity >= 1:
+        if self.reminders_due > 0 and verbosity >= 1:
             self.stdout.write(f"Found {self.reminders_due} reminders due for triggering")
 
         for reminder in due_reminders:
