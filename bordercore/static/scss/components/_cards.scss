@@ -1,0 +1,84 @@
+// =============================================================================
+// COMPONENTS: CARDS
+// =============================================================================
+// Modern dashboard-style card component for use across the site
+// Styled to match the dashboard card aesthetic with hover effects
+// Note: Imported after layout to override .card styles
+
+.card.dashboard-card {
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid rgb(103 232 249 / 15%);
+  backdrop-filter: blur(10px);
+  background: rgb(18 25 40 / 80%);
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgb(0 0 0 / 50%);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &::before {
+    position: absolute;
+    z-index: 1;
+    height: 3px;
+    background: linear-gradient(90deg, #67e8f9 0%, #9c42f5 100%);
+    content: "";
+    inset: 0 auto auto 0;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+  }
+
+  &::after {
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgb(103 232 249 / 40%) 0%, transparent 70%);
+    content: "";
+    inset: -50% 0 0 -50%;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+
+  &:hover {
+    border-color: #67e8f9;
+    box-shadow: 0 10px 40px rgb(0 0 0 / 50%), 0 0 30px rgb(103 232 249 / 30%);
+    transform: translateY(-8px);
+  }
+
+  &:hover::before {
+    transform: scaleX(1);
+  }
+
+  &:hover::after {
+    opacity: 0.2;
+  }
+
+  .card-body {
+    position: relative;
+    z-index: 1;
+    padding: 32px 24px;
+  }
+
+  .card-title {
+    margin-bottom: 1.5rem;
+    color: var(--text-primary, #e7ecff);
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  dl {
+    dt {
+      color: var(--text-secondary, #9bb0ff);
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    dd {
+      color: var(--text-primary, #e7ecff);
+      font-size: 0.95rem;
+    }
+  }
+}
+

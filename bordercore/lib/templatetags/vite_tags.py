@@ -81,6 +81,8 @@ def vite_asset(entry_name: str) -> SafeString | str:
         "dist/js/react-app": "front-end/entries/react-app.tsx",
         "dist/js/base-react": "front-end/entries/base-react.tsx",
         "dist/js/reminders": "front-end/entries/reminders.tsx",
+        "dist/js/reminder-detail": "front-end/entries/reminder-detail.tsx",
+        "dist/js/reminder-form": "front-end/entries/reminder-form.tsx",
     }
 
     parts: list[str] = []

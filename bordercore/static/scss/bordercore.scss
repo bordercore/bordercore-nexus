@@ -55,12 +55,16 @@ $table-cell-padding-x: .75rem;
 @import "layout/layout";
 @import "layout/search";
 
+// 4.5. Cards - Must come after layout to override .card styles
+@import "components/cards";
+
 // 5. Pages - App-specific styles
 @import "pages/bookmarks";
 @import "pages/blobs";
 @import "pages/todo";
 @import "pages/fitness";
 @import "pages/music";
+@import "pages/reminders";
 
 // 6. Vendors - Third-party overrides
 @import "vendors/bootstrap";

@@ -5,6 +5,7 @@ including a specialized AJAX view for dynamic list updates. All views
 require authentication and automatically filter to the current user's reminders.
 """
 
+from datetime import datetime
 from typing import Any, Dict, cast
 
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -59,6 +60,23 @@ class ReminderDetailView(LoginRequiredMixin, DetailView):
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
 
+    def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
+        """Add detail-ajax URL to context.
+
+        Args:
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Context dictionary with reminder details URLs.
+        """
+        context = super().get_context_data(**kwargs)
+        reminder = self.get_object()
+        context["title"] = f"{reminder.name} - Reminder"
+        context["detail_ajax_url"] = reverse(
+            "reminder:detail-ajax", kwargs={"uuid": reminder.uuid}
+        )
+        return context
+
     def get_queryset(self) -> QuerySet[Reminder]:
         """Limit queryset to current user's reminders only.
 
@@ -67,6 +85,122 @@ class ReminderDetailView(LoginRequiredMixin, DetailView):
         """
         user = cast(User, self.request.user)
         return Reminder.objects.filter(user=user)
+
+
+class ReminderDetailAjaxView(LoginRequiredMixin, DetailView):
+    """Serve reminder detail as JSON for AJAX requests.
+
+    This view provides a single reminder's data in JSON format, allowing the client
+    to handle rendering.
+    """
+
+    model = Reminder
+    slug_field = "uuid"
+    slug_url_kwarg = "uuid"
+
+    def get_queryset(self) -> QuerySet[Reminder]:
+        """Limit queryset to current user's reminders only.
+
+        Returns:
+            QuerySet filtered to reminders owned by the authenticated user.
+        """
+        user = cast(User, self.request.user)
+        return Reminder.objects.filter(user=user)
+
+    def render_to_response(
+        self, context: Dict[str, Any], **response_kwargs: Any
+    ) -> JsonResponse:
+        """Return reminder data as JSON.
+
+        Args:
+            context: Template context dictionary containing the reminder.
+            **response_kwargs: Additional keyword arguments for the response.
+
+        Returns:
+            JsonResponse containing reminder data.
+        """
+        reminder = context["reminder"]
+
+        def format_time_with_ampm(dt: datetime | None) -> str | None:
+            """Format datetime as 'M d, Y 8pm' or 'M d, Y 3:30am'.
+
+            Args:
+                dt: Datetime object to format, or None.
+
+            Returns:
+                Formatted datetime string with 12-hour format and lowercase am/pm,
+                or None if dt is None.
+            """
+            if not dt:
+                return None
+            formatted = dateformat.format(dt, "M d, Y g:i a")
+            # Remove space before am/pm and remove :00 if on the hour
+            formatted = formatted.replace(" :00 ", " ").replace(" :00", "").replace(" am", "am").replace(" pm", "pm")
+            return formatted
+
+        data = {
+            "uuid": str(reminder.uuid),
+            "name": reminder.name,
+            "note": reminder.note or "",
+            "is_active": reminder.is_active,
+            "interval_value": reminder.interval_value,
+            "interval_unit_display": reminder.get_interval_unit_display().lower(),
+            "next_trigger_at": format_time_with_ampm(reminder.next_trigger_at),
+            "last_triggered_at": format_time_with_ampm(reminder.last_triggered_at),
+            "start_at": format_time_with_ampm(reminder.start_at),
+            "created": format_time_with_ampm(reminder.created),
+            "updated": format_time_with_ampm(reminder.modified),
+            "update_url": reverse("reminder:update", kwargs={"uuid": reminder.uuid}),
+            "delete_url": reverse("reminder:delete", kwargs={"uuid": reminder.uuid}),
+            "app_url": reverse("reminder:app"),
+        }
+        return JsonResponse(data)
+
+
+class ReminderFormAjaxView(LoginRequiredMixin, DetailView):
+    """Serve reminder form data as JSON for AJAX requests (edit mode).
+
+    This view provides a single reminder's data in JSON format for populating
+    the edit form.
+    """
+
+    model = Reminder
+    slug_field = "uuid"
+    slug_url_kwarg = "uuid"
+
+    def get_queryset(self) -> QuerySet[Reminder]:
+        """Limit queryset to current user's reminders only.
+
+        Returns:
+            QuerySet filtered to reminders owned by the authenticated user.
+        """
+        user = cast(User, self.request.user)
+        return Reminder.objects.filter(user=user)
+
+    def render_to_response(
+        self, context: Dict[str, Any], **response_kwargs: Any
+    ) -> JsonResponse:
+        """Return reminder form data as JSON.
+
+        Args:
+            context: Template context dictionary containing the reminder.
+            **response_kwargs: Additional keyword arguments for the response.
+
+        Returns:
+            JsonResponse containing reminder form data.
+        """
+        reminder = context["reminder"]
+        # Format start_at for datetime-local input (ISO format)
+        start_at_iso = reminder.start_at.isoformat() if reminder.start_at else None
+        data = {
+            "name": reminder.name,
+            "note": reminder.note or "",
+            "is_active": reminder.is_active,
+            "start_at": start_at_iso,
+            "interval_value": reminder.interval_value,
+            "interval_unit": reminder.interval_unit,
+        }
+        return JsonResponse(data)
 
 
 class ReminderCreateView(LoginRequiredMixin, CreateView):
@@ -79,8 +213,24 @@ class ReminderCreateView(LoginRequiredMixin, CreateView):
 
     model = Reminder
     form_class = ReminderForm
-    template_name = "reminder/form.html"
+    template_name = "reminder/update.html"
     success_url = reverse_lazy("reminder:app")
+
+    def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
+        """Add form URLs to context.
+
+        Args:
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Context dictionary with form URLs.
+        """
+        context = super().get_context_data(**kwargs)
+        context["title"] = "New Reminder"
+        context["is_edit"] = False
+        context["submit_url"] = reverse("reminder:create")
+        context["cancel_url"] = reverse("reminder:app")
+        return context
 
     def form_valid(self, form: BaseModelForm) -> HttpResponse:
         """Set the user and calculate next_trigger_at before saving.
@@ -89,13 +239,33 @@ class ReminderCreateView(LoginRequiredMixin, CreateView):
             form: The validated form containing reminder data.
 
         Returns:
-            HttpResponse redirecting to the success URL.
+            HttpResponse redirecting to the success URL or JSON response for AJAX.
         """
         form.instance.user = self.request.user
         # Calculate next_trigger_at if start_at is set
         if form.instance.start_at:
             form.instance.next_trigger_at = form.instance.start_at
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        # For AJAX requests, return JSON instead of redirect
+        if self.request.headers.get("X-Requested-With") == "XMLHttpRequest" or self.request.content_type == "application/x-www-form-urlencoded":
+            return JsonResponse({"success": True, "redirect_url": str(self.success_url)})
+        return response
+
+    def form_invalid(self, form: BaseModelForm) -> HttpResponse:
+        """Handle invalid form submission.
+
+        Args:
+            form: The form with validation errors.
+
+        Returns:
+            HttpResponse with form errors, JSON for AJAX requests.
+        """
+        if self.request.headers.get("X-Requested-With") == "XMLHttpRequest" or self.request.content_type == "application/x-www-form-urlencoded":
+            errors: Dict[str, Any] = {}
+            for field, field_errors in form.errors.items():
+                errors[field] = field_errors
+            return JsonResponse({"errors": errors}, status=400)
+        return super().form_invalid(form)
 
 
 class ReminderUpdateView(LoginRequiredMixin, UpdateView):
@@ -108,10 +278,30 @@ class ReminderUpdateView(LoginRequiredMixin, UpdateView):
 
     model = Reminder
     form_class = ReminderForm
-    template_name = "reminder/form.html"
+    template_name = "reminder/update.html"
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
     success_url = reverse_lazy("reminder:app")
+
+    def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
+        """Add form URLs to context.
+
+        Args:
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Context dictionary with form URLs.
+        """
+        context = super().get_context_data(**kwargs)
+        reminder = self.get_object()
+        context["title"] = "Edit Reminder"
+        context["is_edit"] = True
+        context["form_ajax_url"] = reverse(
+            "reminder:form-ajax", kwargs={"uuid": reminder.uuid}
+        )
+        context["submit_url"] = reverse("reminder:update", kwargs={"uuid": reminder.uuid})
+        context["cancel_url"] = reverse("reminder:app")
+        return context
 
     def form_valid(self, form: BaseModelForm) -> HttpResponse:
         """Calculate next_trigger_at if start_at is set and next_trigger_at is empty.
@@ -120,12 +310,32 @@ class ReminderUpdateView(LoginRequiredMixin, UpdateView):
             form: The validated form containing updated reminder data.
 
         Returns:
-            HttpResponse redirecting to the success URL.
+            HttpResponse redirecting to the success URL or JSON response for AJAX.
         """
         # If start_at is set and next_trigger_at is not, calculate it
         if form.instance.start_at and not form.instance.next_trigger_at:
             form.instance.next_trigger_at = form.instance.start_at
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        # For AJAX requests, return JSON instead of redirect
+        if self.request.headers.get("X-Requested-With") == "XMLHttpRequest" or self.request.content_type == "application/x-www-form-urlencoded":
+            return JsonResponse({"success": True, "redirect_url": str(self.success_url)})
+        return response
+
+    def form_invalid(self, form: BaseModelForm) -> HttpResponse:
+        """Handle invalid form submission.
+
+        Args:
+            form: The form with validation errors.
+
+        Returns:
+            HttpResponse with form errors, JSON for AJAX requests.
+        """
+        if self.request.headers.get("X-Requested-With") == "XMLHttpRequest" or self.request.content_type == "application/x-www-form-urlencoded":
+            errors: Dict[str, Any] = {}
+            for field, field_errors in form.errors.items():
+                errors[field] = field_errors
+            return JsonResponse({"errors": errors}, status=400)
+        return super().form_invalid(form)
 
     def get_queryset(self) -> QuerySet[Reminder]:
         """Limit queryset to current user's reminders only.

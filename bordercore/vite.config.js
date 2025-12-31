@@ -40,6 +40,8 @@ module.exports = defineConfig({
         "dist/js/react-app": path.resolve(__dirname, "front-end", "entries", "react-app.tsx"),
         "dist/js/base-react": path.resolve(__dirname, "front-end", "entries", "base-react.tsx"),
         "dist/js/reminders": path.resolve(__dirname, "front-end", "entries", "reminders.tsx"),
+        "dist/js/reminder-detail": path.resolve(__dirname, "front-end", "entries", "reminder-detail.tsx"),
+        "dist/js/reminder-form": path.resolve(__dirname, "front-end", "entries", "reminder-form.tsx"),
       },
       output: {
         entryFileNames: "[name]-[hash].js",

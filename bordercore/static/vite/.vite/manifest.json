@@ -10,48 +10,56 @@
       "__commonjsHelpers-BosuxZz1.js"
     ]
   },
-  "_index-CE51SQw_.js": {
-    "file": "assets/index-CE51SQw_.js",
+  "_index-CmEDfydv.js": {
+    "file": "assets/index-CmEDfydv.js",
     "name": "index",
     "imports": [
       "_client-BJUeJoS6.js",
-      "_index-DpFgmjqh.js"
+      "_index-ICpvs1hJ.js"
     ]
   },
-  "_index-DpFgmjqh.js": {
-    "file": "assets/index-DpFgmjqh.js",
+  "_index-DwvosdYq.js": {
+    "file": "assets/index-DwvosdYq.js",
     "name": "index",
     "imports": [
       "__commonjsHelpers-BosuxZz1.js"
     ]
   },
-  "_snow-kuY8H-pm.js": {
-    "file": "assets/snow-kuY8H-pm.js",
+  "_index-ICpvs1hJ.js": {
+    "file": "assets/index-ICpvs1hJ.js",
+    "name": "index",
+    "imports": [
+      "__commonjsHelpers-BosuxZz1.js"
+    ]
+  },
+  "_snow-D0k0kOes.js": {
+    "file": "assets/snow-D0k0kOes.js",
     "name": "snow",
     "imports": [
       "__commonjsHelpers-BosuxZz1.js"
     ]
   },
   "front-end/entries/base-react.tsx": {
-    "file": "dist/js/base-react-CsQAynM3.js",
+    "file": "dist/js/base-react-CoMkOh6f.js",
     "name": "dist/js/base-react",
     "src": "front-end/entries/base-react.tsx",
     "isEntry": true,
     "imports": [
       "_client-BJUeJoS6.js",
-      "_index-CE51SQw_.js",
-      "_index-DpFgmjqh.js",
-      "_snow-kuY8H-pm.js",
+      "_index-CmEDfydv.js",
+      "_index-ICpvs1hJ.js",
+      "_snow-D0k0kOes.js",
+      "_index-DwvosdYq.js",
       "__commonjsHelpers-BosuxZz1.js"
     ]
   },
   "front-end/entries/bordercore-css.js": {
-    "file": "dist/css/bordercore-Dw96qvCH.js",
+    "file": "dist/css/bordercore-Dx6DeNOP.js",
     "name": "dist/css/bordercore",
     "src": "front-end/entries/bordercore-css.js",
     "isEntry": true,
     "css": [
-      "bordercore-C0PJt2ax.css"
+      "bordercore-B-tiz9cD.css"
     ],
     "assets": [
       "Roboto-Regular-BHeBnKzs.ttf",
@@ -68,27 +76,54 @@
       "__commonjsHelpers-BosuxZz1.js"
     ]
   },
+  "front-end/entries/reminder-detail.tsx": {
+    "file": "dist/js/reminder-detail-Bo1lyQ5y.js",
+    "name": "dist/js/reminder-detail",
+    "src": "front-end/entries/reminder-detail.tsx",
+    "isEntry": true,
+    "imports": [
+      "_client-BJUeJoS6.js",
+      "_index-ICpvs1hJ.js",
+      "_index-CmEDfydv.js",
+      "_index-DwvosdYq.js",
+      "__commonjsHelpers-BosuxZz1.js"
+    ]
+  },
+  "front-end/entries/reminder-form.tsx": {
+    "file": "dist/js/reminder-form-D1u1o_Qm.js",
+    "name": "dist/js/reminder-form",
+    "src": "front-end/entries/reminder-form.tsx",
+    "isEntry": true,
+    "imports": [
+      "_client-BJUeJoS6.js",
+      "_index-ICpvs1hJ.js",
+      "_index-CmEDfydv.js",
+      "__commonjsHelpers-BosuxZz1.js"
+    ]
+  },
   "front-end/entries/reminders.tsx": {
-    "file": "dist/js/reminders-CHU7qzsw.js",
+    "file": "dist/js/reminders-CcN5B81f.js",
     "name": "dist/js/reminders",
     "src": "front-end/entries/reminders.tsx",
     "isEntry": true,
     "imports": [
       "_client-BJUeJoS6.js",
-      "_index-CE51SQw_.js",
-      "_index-DpFgmjqh.js",
+      "_index-CmEDfydv.js",
+      "_index-ICpvs1hJ.js",
+      "_index-DwvosdYq.js",
       "__commonjsHelpers-BosuxZz1.js"
     ]
   },
   "front-end/index.js": {
-    "file": "dist/js/javascript-BbuKRsq7.js",
+    "file": "dist/js/javascript-3xf-lGy9.js",
     "name": "dist/js/javascript",
     "src": "front-end/index.js",
     "isEntry": true,
     "imports": [
-      "_snow-kuY8H-pm.js",
+      "_snow-D0k0kOes.js",
       "__commonjsHelpers-BosuxZz1.js",
-      "_index-DpFgmjqh.js"
+      "_index-ICpvs1hJ.js",
+      "_index-DwvosdYq.js"
     ],
     "css": [
       "javascript-HIXiA1tM.css"

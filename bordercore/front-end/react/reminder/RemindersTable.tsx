@@ -14,7 +14,15 @@ import {
   faRedo,
   faSync,
 } from "@fortawesome/free-solid-svg-icons";
+import MarkdownIt from "markdown-it";
 import { useBootstrapTable } from "../common/useBootstrapTable";
+
+// Initialize markdown-it renderer (matching Vue bundle configuration)
+const markdown = MarkdownIt({
+  html: true,
+  linkify: true,
+  typographer: true,
+});
 
 export interface Reminder {
   uuid: string;
@@ -72,7 +80,10 @@ export function RemindersTable({ data }: RemindersTableProps) {
                 {escapeHtml(reminder.name)}
               </a>
               {notePreview && (
-                <span className="reminder-name-note">{escapeHtml(notePreview)}</span>
+                <span
+                  className="reminder-name-note markdown"
+                  dangerouslySetInnerHTML={{ __html: markdown.render(notePreview) }}
+                />
               )}
             </div>
           );
@@ -161,13 +172,13 @@ export function RemindersTable({ data }: RemindersTableProps) {
                 <ul className="dropdown-menu dropdown-menu-end">
                   <li>
                     <a className="dropdown-item" href={reminder.detail_url}>
-                      <FontAwesomeIcon icon={faEye} className="text-primary me-3" />
+                      <FontAwesomeIcon icon={faEye} className="text-primary me-3" fixedWidth />
                       View
                     </a>
                   </li>
                   <li>
                     <a className="dropdown-item" href={reminder.update_url}>
-                      <FontAwesomeIcon icon={faPencilAlt} className="text-primary me-3" />
+                      <FontAwesomeIcon icon={faPencilAlt} className="text-primary me-3" fixedWidth />
                       Edit
                     </a>
                   </li>
@@ -176,7 +187,7 @@ export function RemindersTable({ data }: RemindersTableProps) {
                   </li>
                   <li>
                     <a className="dropdown-item text-danger" href={reminder.delete_url}>
-                      <FontAwesomeIcon icon={faTrashAlt} className="text-primary me-3" />
+                      <FontAwesomeIcon icon={faTrashAlt} className="text-primary me-3" fixedWidth />
                       Delete
                     </a>
                   </li>

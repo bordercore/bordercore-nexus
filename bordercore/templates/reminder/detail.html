@@ -1,94 +1,17 @@
-{% extends "base.html" %}
+{% extends "base_react.html" %}
+{% load vite_tags %}
 
-{% block title %}{{ reminder.name }} - Reminder{% endblock %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block css %}
+    {% vite_asset "dist/css/bordercore" %}
+{% endblock %}
+
+{% block javascript_bundles %}
+    {{ block.super }}
+    {% vite_asset "dist/js/reminder-detail" %}
+{% endblock %}
 
 {% block content %}
-  <div class="container mt-4">
-    <div class="row mb-4">
-      <div class="col-md-8">
-        <h1>{{ reminder.name }}</h1>
-        {% if reminder.note %}
-          <p class="text-muted">{{ reminder.note }}</p>
-        {% endif %}
-      </div>
-      <div class="col-md-4 text-end">
-        <a href="{% url 'reminder:update' reminder.uuid %}" class="btn btn-secondary">Edit</a>
-        <a href="{% url 'reminder:delete' reminder.uuid %}" class="btn btn-danger">Delete</a>
-        <a href="{% url 'reminder:app' %}" class="btn btn-outline-secondary">Back</a>
-      </div>
-    </div>
-
-    <div class="row">
-      <div class="col-md-6">
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title">Schedule</h5>
-            <dl class="row">
-              <dt class="col-sm-5">Status</dt>
-              <dd class="col-sm-7">
-                {% if reminder.is_active %}
-                  <span class="badge bg-success">Active</span>
-                {% else %}
-                  <span class="badge bg-secondary">Inactive</span>
-                {% endif %}
-              </dd>
-
-              <dt class="col-sm-5">Frequency</dt>
-              <dd class="col-sm-7">
-                Every {{ reminder.interval_value }}
-                {{ reminder.get_interval_unit_display|lower }}{% if reminder.interval_value != 1 %}s{% endif %}
-              </dd>
-
-              <dt class="col-sm-5">Next Trigger</dt>
-              <dd class="col-sm-7">
-                {% if reminder.next_trigger_at %}
-                  {{ reminder.next_trigger_at|date:"M d, Y H:i" }}
-                {% else %}
-                  Not scheduled
-                {% endif %}
-              </dd>
-
-              <dt class="col-sm-5">Last Triggered</dt>
-              <dd class="col-sm-7">
-                {% if reminder.last_triggered_at %}
-                  {{ reminder.last_triggered_at|date:"M d, Y H:i" }}
-                {% else %}
-                  Never
-                {% endif %}
-              </dd>
-
-              <dt class="col-sm-5">Start Date</dt>
-              <dd class="col-sm-7">
-                {% if reminder.start_at %}
-                  {{ reminder.start_at|date:"M d, Y H:i" }}
-                {% else %}
-                  Not set
-                {% endif %}
-              </dd>
-            </dl>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-md-6">
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title">Metadata</h5>
-            <dl class="row">
-              <dt class="col-sm-5">Created</dt>
-              <dd class="col-sm-7">{{ reminder.created|date:"M d, Y H:i" }}</dd>
-
-              <dt class="col-sm-5">Updated</dt>
-              <dd class="col-sm-7">{{ reminder.updated|date:"M d, Y H:i" }}</dd>
-
-              <dt class="col-sm-5">UUID</dt>
-              <dd class="col-sm-7">
-                <code style="font-size: 0.85rem;">{{ reminder.uuid }}</code>
-              </dd>
-            </dl>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+  <div id="react-root" data-detail-ajax-url="{{ detail_ajax_url }}"></div>
 {% endblock %}

@@ -1,0 +1,23 @@
+{% extends "base_react.html" %}
+{% load vite_tags %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block css %}
+    {% vite_asset "dist/css/bordercore" %}
+{% endblock %}
+
+{% block javascript_bundles %}
+    {{ block.super }}
+    {% vite_asset "dist/js/reminder-form" %}
+{% endblock %}
+
+{% block content %}
+  <div
+    id="react-root"
+    data-form-ajax-url="{% if is_edit %}{{ form_ajax_url }}{% endif %}"
+    data-submit-url="{{ submit_url }}"
+    data-cancel-url="{{ cancel_url }}"
+    data-is-edit="{% if is_edit %}true{% else %}false{% endif %}"
+  ></div>
+{% endblock %}
