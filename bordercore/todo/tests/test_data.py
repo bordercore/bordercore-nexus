@@ -100,7 +100,7 @@ def test_todo_tags_match_elasticsearch(es):
 
     # Execute all searches in ONE Elasticsearch request
     if search_requests:
-        results = es.msearch(search_requests)
+        results = es.msearch(body=search_requests)
 
         # Check results (one result per todo)
         for i, task in enumerate(todos_list):
