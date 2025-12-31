@@ -1,0 +1,55 @@
+#!/bin/bash
+# Short pytest wrapper that excludes data_quality and functional tests
+# Usage: pt [-d] [-f] <test_substring>
+#   -d: exclude data_quality tests
+#   -f: exclude functional tests
+#   If no options are passed, no tests are excluded
+# Example: pt test_get_cover_info
+# Example: pt -d test_get_cover_info  # exclude data_quality only
+
+EXCLUDE_DATA_QUALITY=false
+EXCLUDE_FUNCTIONAL=false
+
+while getopts "df" opt; do
+    case $opt in
+        d)
+            EXCLUDE_DATA_QUALITY=true
+            ;;
+        f)
+            EXCLUDE_FUNCTIONAL=true
+            ;;
+        \?)
+            echo "Usage: $0 [-d] [-f] <test_substring>"
+            echo "  -d: exclude data_quality tests"
+            echo "  -f: exclude functional tests"
+            exit 1
+            ;;
+    esac
+done
+
+shift $((OPTIND - 1))
+
+if [ $# -eq 0 ]; then
+    echo "Usage: $0 [-d] [-f] <test_substring>"
+    echo "  -d: exclude data_quality tests"
+    echo "  -f: exclude functional tests"
+    echo "Example: $0 test_get_cover_info"
+    exit 1
+fi
+
+# Build the marker expression
+if [ "$EXCLUDE_DATA_QUALITY" = true ] && [ "$EXCLUDE_FUNCTIONAL" = true ]; then
+    # Both flags passed: exclude both
+    MARKER_EXPR="not data_quality and not functional"
+    pytest -m "$MARKER_EXPR" ~/dev/django/bordercore/bordercore/ -k "$1"
+elif [ "$EXCLUDE_DATA_QUALITY" = true ]; then
+    # Only -d: exclude data_quality only
+    pytest -m "not data_quality" ~/dev/django/bordercore/bordercore/ -k "$1"
+elif [ "$EXCLUDE_FUNCTIONAL" = true ]; then
+    # Only -f: exclude functional only
+    pytest -m "not functional" ~/dev/django/bordercore/bordercore/ -k "$1"
+else
+    # No flags: don't exclude anything
+    pytest ~/dev/django/bordercore/bordercore/ -k "$1"
+fi
+
