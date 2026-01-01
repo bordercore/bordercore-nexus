@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } f
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTimes, faSearch, faBook, faBookmark, faStickyNote, faMusic, faGraduationCap, faHeart } from "@fortawesome/free-solid-svg-icons";
 import SelectValue, { SelectValueHandle } from "../common/SelectValue";
+import { Popover } from "../common/Popover";
 import { boldenOption } from "../../util.js";
 
 interface RecentSearch {
@@ -41,7 +42,10 @@ export const TopSearch = forwardRef<TopSearchHandle, TopSearchProps>(function To
   useImperativeHandle(ref, () => ({
     showSearchWindow: showSearchWindow,
     focusSearch: () => {
-      selectValueRef.current?.focus();
+      setShowSearchWindow(true);
+      setTimeout(() => {
+        selectValueRef.current?.focus();
+      }, 200);
     },
   }));
 
@@ -98,7 +102,7 @@ export const TopSearch = forwardRef<TopSearchHandle, TopSearchProps>(function To
   };
 
   const handleSearch = (selection: any) => {
-    const form = document.querySelector("#top-search form") as HTMLFormElement;
+    const form = document.querySelector("#top-search-form") as HTMLFormElement;
     if (!form) return;
 
     const searchInput = document.getElementById("topSearchValue") as HTMLInputElement;
@@ -164,36 +168,13 @@ export const TopSearch = forwardRef<TopSearchHandle, TopSearchProps>(function To
       }
     };
 
-    const handleClick = (event: MouseEvent) => {
-      const specifiedElement = document.getElementById("top-search");
-      if (!specifiedElement) {
-        return;
-      }
-      const target = event.target as HTMLElement;
-      const isClickInside =
-        specifiedElement.contains(target) ||
-        specifiedElement.contains(target.parentElement as HTMLElement);
-      if (
-        !isClickInside &&
-        !target.classList.contains("fa-search") &&
-        !target.classList.contains("fa-times") &&
-        !target.parentElement?.classList.contains("fa-times") &&
-        !target.parentElement?.classList.contains("fa-search")
-      ) {
-        setShowSearchWindow(false);
-      }
-    };
-
     document.addEventListener("keydown", handleKeyDown);
-    document.addEventListener("click", handleClick);
-
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
-      document.removeEventListener("click", handleClick);
     };
   }, []);
 
-  // Expose showSearchWindow state to parent via effect
+  // Expose showSearchWindow state to parent via custom event
   useEffect(() => {
     const handleOpenSearch = () => {
       setShowSearchWindow(true);
@@ -205,17 +186,38 @@ export const TopSearch = forwardRef<TopSearchHandle, TopSearchProps>(function To
     return () => window.removeEventListener("openSearchWindow", handleOpenSearch);
   }, []);
 
-  if (!showSearchWindow) {
-    return null;
-  }
+  // Focus input when popover opens and reset filter visibility
+  useEffect(() => {
+    if (showSearchWindow) {
+      // Reset showFilter to true when popover opens
+      setShowFilter(true);
+      setTimeout(() => {
+        selectValueRef.current?.focus();
+      }, 100);
+    }
+  }, [showSearchWindow]);
+
+  const trigger = (
+    <span className="top-search-icon">
+      <FontAwesomeIcon className="top-search-target glow" icon={faSearch} />
+    </span>
+  );
 
   return (
-    <div id="top-search" style={{ display: showSearchWindow ? "block" : "none" }}>
-      <form className="form-inline" method="get">
-        <input type="hidden" name="doctype" value={searchFilter} />
-        <div className="form-row">
-          <div className="me-1">
+    <Popover
+      trigger={trigger}
+      open={showSearchWindow}
+      onOpenChange={setShowSearchWindow}
+      placement="bottom-end"
+      offsetDistance={12}
+      className="search-popover-container"
+    >
+      <div id="top-search" className="search-popover-content">
+        <form id="top-search-form" className="form-inline w-100" method="get">
+          <input type="hidden" name="doctype" value={searchFilter} />
+          <div className="search-input-wrapper">
             <SelectValue
+              key={showSearchWindow ? "open" : "closed"}
               id="topSearchValue"
               ref={selectValueRef}
               label="name"
@@ -235,7 +237,7 @@ export const TopSearch = forwardRef<TopSearchHandle, TopSearchProps>(function To
                         <FontAwesomeIcon icon={faHeart} className="text-danger me-1" />
                       )}
                       {option.doctype && (
-                        <em className="top-search-object-type">{option.doctype} - </em>
+                        <em className="search-object-type">{option.doctype} - </em>
                       )}
                       <span className="d-inline" dangerouslySetInnerHTML={{ __html: boldenOption(option.name, search) }} />
                     </div>
@@ -244,66 +246,71 @@ export const TopSearch = forwardRef<TopSearchHandle, TopSearchProps>(function To
               )}
             />
             {searchFilter && (
-              <div id="top-search-filter" className="tag label label-info d-flex align-items-center">
-                <div>{getFilterName(searchFilter)}</div>
-                <div>
-                  <a className="ms-1" href="#" onClick={(e) => {
+              <div className="search-active-filter">
+                <span className="filter-label">{getFilterName(searchFilter)}</span>
+                <button
+                  type="button"
+                  className="filter-remove"
+                  onClick={(e) => {
                     e.preventDefault();
                     removeFilter();
-                  }}>
-                    <FontAwesomeIcon icon={faTimes} className="text-primary" />
-                  </a>
-                </div>
+                  }}
+                >
+                  <FontAwesomeIcon icon={faTimes} />
+                </button>
               </div>
             )}
           </div>
-        </div>
-      </form>
-      {showFilter && (
-        <div id="top-search-filter-options" className="ms-3 mt-2 p-2">
-          <div className="search-splitter">Filter Options</div>
-          <div className="d-flex flex-column">
-            {searchFilterTypes.map((filter) => (
-              <div
-                key={filter.icon.iconName}
-                className={`search-suggestion d-flex ${filter.doctype === searchFilter ? "selected rounded-sm" : ""}`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleFilter(filter.doctype);
-                }}
-                style={{ cursor: "pointer" }}
-              >
-                <div className="top-search-filter-icon d-flex justify-content-center align-items-center">
-                  <FontAwesomeIcon className="me-2" icon={filter.icon} />
-                </div>
-                <div>{filter.name}</div>
+        </form>
+        {showFilter && (
+          <div className="search-filters-panel w-100">
+            <div className="search-section">
+              <div className="search-section-title">Filter Options</div>
+              <div className="search-filter-list">
+                {searchFilterTypes.map((filter) => (
+                  <button
+                    key={filter.icon.iconName}
+                    type="button"
+                    className={`search-filter-item ${filter.doctype === searchFilter ? "active" : ""}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleFilter(filter.doctype);
+                    }}
+                  >
+                    <span className="search-filter-icon">
+                      <FontAwesomeIcon icon={filter.icon} />
+                    </span>
+                    <span className="search-filter-name">{filter.name}</span>
+                  </button>
+                ))}
               </div>
-            ))}
-          </div>
-          <div className="search-splitter">Recent Searches</div>
-          <div className="d-flex flex-column">
-            {recentSearches.map((recentSearch) => (
-              <div
-                key={recentSearch.id}
-                className="search-suggestion d-flex"
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleRecentSearch(recentSearch);
-                }}
-                style={{ cursor: "pointer" }}
-              >
-                <div className="top-search-filter-icon d-flex justify-content-center align-items-center">
-                  <FontAwesomeIcon className="me-2" icon={faSearch} />
-                </div>
-                <div className="text-truncate">{recentSearch.search_text}</div>
+            </div>
+            <div className="search-section">
+              <div className="search-section-title">Recent Searches</div>
+              <div className="search-recent-list">
+                {recentSearches.map((recentSearch) => (
+                  <button
+                    key={recentSearch.id}
+                    type="button"
+                    className="search-recent-item"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleRecentSearch(recentSearch);
+                    }}
+                  >
+                    <span className="search-recent-icon">
+                      <FontAwesomeIcon icon={faSearch} />
+                    </span>
+                    <span className="search-recent-text">{recentSearch.search_text}</span>
+                  </button>
+                ))}
               </div>
-            ))}
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </Popover>
   );
 });
 
 export default TopSearch;
-

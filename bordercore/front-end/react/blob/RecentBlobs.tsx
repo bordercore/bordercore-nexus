@@ -1,7 +1,14 @@
-import React from "react";
+import React, { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faObjectGroup } from "@fortawesome/free-solid-svg-icons";
-import DropDownMenu from "../common/DropDownMenu";
+import {
+  faObjectGroup,
+  faStickyNote,
+  faImage,
+  faVideo,
+  faFile,
+  IconDefinition,
+} from "@fortawesome/free-solid-svg-icons";
+import { Popover } from "../common/Popover";
 
 interface BlobLink {
   uuid: string;
@@ -29,49 +36,84 @@ interface RecentBlobsProps {
 }
 
 export function RecentBlobs({ blobListInfo, blobDetailUrl, recentlyViewed }: RecentBlobsProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Map doctype to FontAwesome icon
+  const getDoctypeIcon = (doctype: string): IconDefinition => {
+    const doctypeLower = doctype.toLowerCase();
+    const iconMap: Record<string, IconDefinition> = {
+      note: faStickyNote,
+      image: faImage,
+      video: faVideo,
+      blob: faFile,
+      node: faFile,
+      bookmark: faFile,
+      collection: faFile,
+      drill: faFile,
+    };
+    return iconMap[doctypeLower] || faFile;
+  };
+
+  const trigger = (
+    <span
+      className="top-search-icon"
+      data-bs-toggle="tooltip"
+      data-placement="bottom"
+      title="Recent Blobs"
+    >
+      <FontAwesomeIcon className="top-search-target glow" icon={faObjectGroup} />
+    </span>
+  );
+
   return (
-    <span className="mx-2" data-bs-toggle="tooltip" data-placement="bottom" title="Recent Blobs">
-      <DropDownMenu
-        showTarget={false}
-        iconSlot={<FontAwesomeIcon className="glow" icon={faObjectGroup} />}
-        dropdownSlot={
-          <div className="recent-blobs px-2">
-            <div className="search-splitter">Recently Viewed</div>
+    <span className="mx-2">
+      <Popover
+        trigger={trigger}
+        placement="bottom-end"
+        offsetDistance={8}
+        className="recent-blobs-popover"
+        open={isOpen}
+        onOpenChange={setIsOpen}
+      >
+        <div className="recent-blobs-content">
+          <div className="recent-blobs-section">
+            <div className="recent-blobs-title">Recently Viewed</div>
             {recentlyViewed.blobList.length > 0 ? (
-              <ul className="interior-borders list-group ps-0">
+              <ul className="recent-blobs-list">
                 {recentlyViewed.blobList.map((link) => (
-                  <li key={link.uuid} className="list-group-item ms-0 px-0">
+                  <li key={link.uuid} className="recent-blobs-item">
                     <a
                       href={link.url}
-                      className="dropdown-item d-flex align-items-center"
+                      className="recent-blobs-link"
                       onClick={link.clickHandler ? (e) => {
                         e.preventDefault();
                         link.clickHandler?.();
-                      } : undefined}
+                        setIsOpen(false);
+                      } : () => setIsOpen(false)}
                     >
-                      <div className={`recent-doctype-${link.doctype.toLowerCase()}`}>{link.doctype}</div>
-                      <div className="text-truncate">{link.name}</div>
+                      <span className={`recent-blobs-doctype doctype-${link.doctype.toLowerCase()}`}>
+                        <FontAwesomeIcon icon={getDoctypeIcon(link.doctype)} />
+                      </span>
+                      <span className="recent-blobs-name">{link.name}</span>
                     </a>
                   </li>
                 ))}
               </ul>
             ) : (
-              <div className="text-warning ms-2 mb-1">
-                <hr className="divider mb-1" />
+              <div className="recent-blobs-empty">
                 Nothing recently viewed
               </div>
             )}
             {blobListInfo.message && (
-              <div className="text-nowrap">
+              <div className="recent-blobs-error">
                 <strong>Elasticsearch Error</strong>: {blobListInfo.message.statusCode}
               </div>
             )}
           </div>
-        }
-      />
+        </div>
+      </Popover>
     </span>
   );
 }
 
 export default RecentBlobs;
-

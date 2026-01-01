@@ -118,6 +118,50 @@
   gap: 1rem;
 }
 
+.top-search-icon {
+  color: #fff;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: all 0.2s ease;
+
+  // Ensure smooth transition for filter effect
+  svg, .glow, i {
+    transition: filter 0.2s ease;
+  }
+
+  &:hover {
+    color: var(--text4);
+    transform: scale(1.1);
+
+    // Apply a more pronounced glow effect on hover
+    svg, .glow, i {
+      filter: drop-shadow(0 0 8px var(--text3)) drop-shadow(0 0 12px var(--text3));
+    }
+  }
+}
+
+#top-search-icon {
+  color: #fff;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: all 0.2s ease;
+
+  // Ensure smooth transition for filter effect
+  svg, .glow, i {
+    transition: filter 0.2s ease;
+  }
+
+  &:hover {
+    color: var(--text4);
+    transform: scale(1.1);
+
+    // Apply a more pronounced glow effect on hover
+    svg, .glow, i {
+      filter: drop-shadow(0 0 8px var(--text3)) drop-shadow(0 0 12px var(--text3));
+    }
+  }
+}
+
 .top-bar-item {
   display: flex;
   align-items: center;
@@ -128,29 +172,11 @@
   }
 
   &#top-search-bar {
-    position: absolute;
-    right: 16rem;
-  }
-
-  &.top-search-icon {
-    color: var(--text3);
-    cursor: pointer;
-    font-size: 1.2rem;
-    transition: transform 0.2s ease;
-
-    &:hover {
-      color: var(--text4);
-      transform: scale(1.1);
-    }
+    margin-left: 0.5rem;
   }
 
   &#recent-blobs {
     margin: 0 0.5rem;
-  }
-
-  &#top-bar-icon-placeholder {
-    width: 2rem;
-    height: 2rem;
   }
 
   &.user-menu-wrapper {

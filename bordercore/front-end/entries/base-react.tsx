@@ -198,7 +198,7 @@ function TopBarContent() {
             <Weather weatherInfo={weatherInfo} />
           </div>
         )}
-        <div id="top-search-bar" className="top-bar-item position-absolute">
+        <div id="top-search-bar" className="top-bar-item">
           <TopSearch
             ref={topSearchRef}
             initialSearchFilter={data.topSearchConfig?.initialSearchFilter || ""}
@@ -210,19 +210,15 @@ function TopBarContent() {
             recentSearches={recentSearches}
           />
         </div>
-        <span id="top-search-icon" className="top-bar-item top-search-icon" onClick={openSearchWindow}>
-          <FontAwesomeIcon className="top-search-target glow" icon={faSearch} />
-        </span>
         {recentBlobs && recentlyViewed && (
-          <div id="recent-blobs" className="top-bar-item">
-            <RecentBlobs
-              blobListInfo={recentBlobs}
-              blobDetailUrl={data.recentBlobsConfig?.blobDetailUrl || ""}
-              recentlyViewed={recentlyViewed}
-            />
-          </div>
+        <div id="rb-popover" className="top-bar-item">
+          <RecentBlobs
+            blobListInfo={recentBlobs}
+            blobDetailUrl={data.recentBlobsConfig?.blobDetailUrl || ""}
+            recentlyViewed={recentlyViewed}
+          />
+        </div>
         )}
-        <div id="top-bar-icon-placeholder" className="top-bar-item"></div>
         <div id="user-menu-wrapper" className="top-bar-item user-menu-wrapper">
           <DropDownMenu
             links={userMenuItems}

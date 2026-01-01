@@ -33,3 +33,6 @@ $table-cell-padding-x: .75rem;
 
 // Import core SCSS
 @import "./base";
+
+// Import popover styles for React components
+@import "components/popovers";

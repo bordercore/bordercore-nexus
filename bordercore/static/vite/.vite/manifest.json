@@ -3,19 +3,19 @@
     "file": "assets/_commonjsHelpers-BosuxZz1.js",
     "name": "_commonjsHelpers"
   },
-  "_client-BJUeJoS6.js": {
-    "file": "assets/client-BJUeJoS6.js",
+  "_client-DmE5VzMo.js": {
+    "file": "assets/client-DmE5VzMo.js",
     "name": "client",
     "imports": [
       "__commonjsHelpers-BosuxZz1.js"
     ]
   },
-  "_index-CmEDfydv.js": {
-    "file": "assets/index-CmEDfydv.js",
+  "_index-CEapPWyR.js": {
+    "file": "assets/index-CEapPWyR.js",
     "name": "index",
     "imports": [
-      "_client-BJUeJoS6.js",
-      "_index-ICpvs1hJ.js"
+      "_client-DmE5VzMo.js",
+      "_index-UAMt4bQy.js"
     ]
   },
   "_index-DwvosdYq.js": {
@@ -25,8 +25,8 @@
       "__commonjsHelpers-BosuxZz1.js"
     ]
   },
-  "_index-ICpvs1hJ.js": {
-    "file": "assets/index-ICpvs1hJ.js",
+  "_index-UAMt4bQy.js": {
+    "file": "assets/index-UAMt4bQy.js",
     "name": "index",
     "imports": [
       "__commonjsHelpers-BosuxZz1.js"
@@ -40,26 +40,26 @@
     ]
   },
   "front-end/entries/base-react.tsx": {
-    "file": "dist/js/base-react-CoMkOh6f.js",
+    "file": "dist/js/base-react-Dywm6_o8.js",
     "name": "dist/js/base-react",
     "src": "front-end/entries/base-react.tsx",
     "isEntry": true,
     "imports": [
-      "_client-BJUeJoS6.js",
-      "_index-CmEDfydv.js",
-      "_index-ICpvs1hJ.js",
+      "_client-DmE5VzMo.js",
+      "_index-CEapPWyR.js",
+      "_index-UAMt4bQy.js",
       "_snow-D0k0kOes.js",
       "_index-DwvosdYq.js",
       "__commonjsHelpers-BosuxZz1.js"
     ]
   },
   "front-end/entries/bordercore-css.js": {
-    "file": "dist/css/bordercore-Dx6DeNOP.js",
+    "file": "dist/css/bordercore-CmGwbebi.js",
     "name": "dist/css/bordercore",
     "src": "front-end/entries/bordercore-css.js",
     "isEntry": true,
     "css": [
-      "bordercore-B-tiz9cD.css"
+      "bordercore-BmzfZdjg.css"
     ],
     "assets": [
       "Roboto-Regular-BHeBnKzs.ttf",
@@ -67,62 +67,62 @@
     ]
   },
   "front-end/entries/react-app.tsx": {
-    "file": "dist/js/react-app-M_ZQhubN.js",
+    "file": "dist/js/react-app-CkZrksD5.js",
     "name": "dist/js/react-app",
     "src": "front-end/entries/react-app.tsx",
     "isEntry": true,
     "imports": [
-      "_client-BJUeJoS6.js",
+      "_client-DmE5VzMo.js",
       "__commonjsHelpers-BosuxZz1.js"
     ]
   },
   "front-end/entries/reminder-detail.tsx": {
-    "file": "dist/js/reminder-detail-Bo1lyQ5y.js",
+    "file": "dist/js/reminder-detail-Bfo4OOn5.js",
     "name": "dist/js/reminder-detail",
     "src": "front-end/entries/reminder-detail.tsx",
     "isEntry": true,
     "imports": [
-      "_client-BJUeJoS6.js",
-      "_index-ICpvs1hJ.js",
-      "_index-CmEDfydv.js",
+      "_client-DmE5VzMo.js",
+      "_index-UAMt4bQy.js",
+      "_index-CEapPWyR.js",
       "_index-DwvosdYq.js",
       "__commonjsHelpers-BosuxZz1.js"
     ]
   },
   "front-end/entries/reminder-form.tsx": {
-    "file": "dist/js/reminder-form-D1u1o_Qm.js",
+    "file": "dist/js/reminder-form-B6eMIhJa.js",
     "name": "dist/js/reminder-form",
     "src": "front-end/entries/reminder-form.tsx",
     "isEntry": true,
     "imports": [
-      "_client-BJUeJoS6.js",
-      "_index-ICpvs1hJ.js",
-      "_index-CmEDfydv.js",
+      "_client-DmE5VzMo.js",
+      "_index-UAMt4bQy.js",
+      "_index-CEapPWyR.js",
       "__commonjsHelpers-BosuxZz1.js"
     ]
   },
   "front-end/entries/reminders.tsx": {
-    "file": "dist/js/reminders-CcN5B81f.js",
+    "file": "dist/js/reminders-Z3W-nQQ1.js",
     "name": "dist/js/reminders",
     "src": "front-end/entries/reminders.tsx",
     "isEntry": true,
     "imports": [
-      "_client-BJUeJoS6.js",
-      "_index-CmEDfydv.js",
-      "_index-ICpvs1hJ.js",
+      "_client-DmE5VzMo.js",
+      "_index-CEapPWyR.js",
+      "_index-UAMt4bQy.js",
       "_index-DwvosdYq.js",
       "__commonjsHelpers-BosuxZz1.js"
     ]
   },
   "front-end/index.js": {
-    "file": "dist/js/javascript-3xf-lGy9.js",
+    "file": "dist/js/javascript-BjaNNKVU.js",
     "name": "dist/js/javascript",
     "src": "front-end/index.js",
     "isEntry": true,
     "imports": [
       "_snow-D0k0kOes.js",
       "__commonjsHelpers-BosuxZz1.js",
-      "_index-ICpvs1hJ.js",
+      "_index-UAMt4bQy.js",
       "_index-DwvosdYq.js"
     ],
     "css": [

@@ -1,6 +1,15 @@
-import React, { ReactNode } from "react";
+import React, { ReactNode, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEllipsisV } from "@fortawesome/free-solid-svg-icons";
+import {
+  faEllipsisV,
+  faBriefcase,
+  faChartBar,
+  faComment,
+  faQuestion,
+  faSignOutAlt,
+  IconDefinition,
+} from "@fortawesome/free-solid-svg-icons";
+import { Popover } from "./Popover";
 
 interface Link {
   id: string;
@@ -28,42 +37,79 @@ export function DropDownMenu({
   iconSlot,
   dropdownSlot,
 }: DropDownMenuProps) {
-  return (
-    <div className="dropdown ms-auto d-flex align-items-center justify-content-center">
-      <div className={`cursor-pointer ${showTarget ? "dropdownmenu" : ""} ${showOnHover ? "d-none" : ""}`}>
-        <div
-          className={`d-flex align-items-center justify-content-center h-100 w-100 ${direction}`}
-          data-bs-toggle="dropdown"
-          data-bs-auto-close="true"
-          data-bs-offset="0,-15"
-        >
-          {iconSlot || <FontAwesomeIcon icon={faEllipsisV} />}
-        </div>
-        <ul className="dropdown-menu">
-          {dropdownSlot ||
-            links.map((link) => (
-              <li key={link.id}>
-                <a
-                  href={link.url}
-                  className="dropdown-item"
-                  onClick={link.clickHandler ? (e) => {
-                    e.preventDefault();
-                    link.clickHandler?.();
-                  } : undefined}
-                >
-                  <span className="me-2">
-                    {link.icon && <FontAwesomeIcon icon={link.icon as any} className="text-primary" />}
-                  </span>
-                  {link.title}
-                  {link.extra && <span className="dropdown-item-extra">{link.extra}</span>}
-                </a>
-              </li>
-            ))}
-        </ul>
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Map icon name strings to FontAwesome icon objects
+  const getIcon = (iconName: string | undefined): IconDefinition | null => {
+    if (!iconName) return null;
+    const iconMap: Record<string, IconDefinition> = {
+      briefcase: faBriefcase,
+      "chart-bar": faChartBar,
+      comment: faComment,
+      question: faQuestion,
+      "sign-out-alt": faSignOutAlt,
+    };
+    return iconMap[iconName] || null;
+  };
+
+  const handleItemClick = (link: Link, e: React.MouseEvent) => {
+    if (link.clickHandler) {
+      e.preventDefault();
+      link.clickHandler();
+    }
+    setIsOpen(false);
+  };
+
+  const trigger = (
+    <div className={`dropdown-trigger ${showTarget ? "dropdownmenu" : ""}`}>
+      <div className="d-flex align-items-center justify-content-center h-100 w-100 cursor-pointer">
+        {iconSlot || <FontAwesomeIcon icon={faEllipsisV} />}
       </div>
+    </div>
+  );
+
+  const dropdownContent = dropdownSlot || (
+    <ul className="dropdown-menu-list">
+      {links.map((link) => {
+        const icon = typeof link.icon === "string" ? getIcon(link.icon) : link.icon;
+        return (
+          <li key={link.id}>
+            <a
+              href={link.url}
+              className="dropdown-menu-item"
+              onClick={(e) => handleItemClick(link, e)}
+            >
+              <span className="dropdown-menu-icon">
+                {icon && <FontAwesomeIcon icon={icon} />}
+              </span>
+              <span className="dropdown-menu-text">{link.title}</span>
+              {link.extra !== undefined && link.extra !== null && Number(link.extra) !== 0 && (
+                <span className="dropdown-menu-extra">{link.extra}</span>
+              )}
+            </a>
+          </li>
+        );
+      })}
+    </ul>
+  );
+
+  return (
+    <div className="dropdown-wrapper">
+      <Popover
+        trigger={trigger}
+        placement={direction === "dropend" ? "bottom-end" : "bottom-start"}
+        openOnHover={showOnHover}
+        offsetDistance={4}
+        className="dropdown-popover"
+        open={isOpen}
+        onOpenChange={setIsOpen}
+      >
+        <div className="dropdown-content">
+          {dropdownContent}
+        </div>
+      </Popover>
     </div>
   );
 }
 
 export default DropDownMenu;
-
