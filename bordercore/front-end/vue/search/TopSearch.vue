@@ -165,6 +165,13 @@
                 selectValue.value.focus();
             }
 
+            function openSearchWindow() {
+                showSearchWindow.value = true;
+                setTimeout(() => {
+                    focusSearch();
+                }, 100);
+            }
+
             function getFilterName(doctype) {
                 const filter = searchFilterTypes.value.filter((x) => {
                     return x.doctype === doctype;
@@ -289,6 +296,7 @@
                 handleSelectOption,
                 onKeyDown,
                 onSearchChange,
+                openSearchWindow,
                 removeFilter,
                 saveSearchFilter,
                 searchFilterTypes,

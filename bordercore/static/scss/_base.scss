@@ -1405,6 +1405,18 @@ blockquote > p {
 // Top Search
 //
 
+#top-search-icon {
+  cursor: pointer;
+}
+
+#top-search-bar {
+  pointer-events: none;
+
+  > * {
+    pointer-events: auto;
+  }
+}
+
 #top-search {
   position: absolute;
   z-index: 1000;

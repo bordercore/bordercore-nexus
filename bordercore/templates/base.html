@@ -64,6 +64,11 @@
                                     <weather :weather-info="weatherInfo"></weather>
                                 </div>
                                 {% endif %}
+
+                                <span id="top-search-icon" @click="openSearchWindow">
+                                    <font-awesome-icon class="top-search-target glow" icon="search" @click.stop="openSearchWindow" />
+                                </span>
+
                                 <div id="top-search-bar" class="position-absolute">
                                     <top-search
                                         ref="topSearch"
@@ -77,10 +82,6 @@
                                     >
                                     </top-search>
                                 </div>
-
-                                <span id="top-search-icon" @click="openSearchWindow">
-                                    <font-awesome-icon class="top-search-target glow" icon="search" />
-                                </span>
 
                                 <recent-blobs
                                     :blob-list-info="recentBlobs"
@@ -333,15 +334,13 @@
                             modal.show();
                         }
 
-                        function openSearchWindow() {
-                            topSearch.value.showSearchWindow = true;
-                            topSearch.value.focusSearch();
-                            setTimeout(() => {
-                                topSearch.value.focusSearch();
-                            }, 100);
-                        }
-
                         const topSearch = ref(null);
+
+                        function openSearchWindow() {
+                            if (topSearch.value && typeof topSearch.value.openSearchWindow === "function") {
+                                topSearch.value.openSearchWindow();
+                            }
+                        }
 
                         return {
                             chatBot,
