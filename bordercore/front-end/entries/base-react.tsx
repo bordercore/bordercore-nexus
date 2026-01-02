@@ -57,31 +57,6 @@ function TopBarContent() {
   const topSearchRef = React.useRef<TopSearchHandle>(null);
   const chatBotRef = React.useRef<ChatBotHandle>(null);
 
-  // Extract title from original HTML element or BASE_TEMPLATE_DATA
-  React.useEffect(() => {
-    // Try to read from original HTML element first (before React replaces it)
-    const originalTitleEl = document.getElementById("top-title-text");
-    if (originalTitleEl && originalTitleEl.textContent) {
-      const titleText = originalTitleEl.textContent.trim();
-      // Check if it has "Bordercore ::" prefix and extract just the title
-      const match = titleText.match(/Bordercore\s*::\s*(.+)/);
-      if (match && match[1]) {
-        setPageTitle(match[1].trim());
-        return;
-      }
-      // Otherwise use the text as-is
-      if (titleText) {
-        setPageTitle(titleText);
-        return;
-      }
-    }
-    // Fallback to BASE_TEMPLATE_DATA
-    const data = window.BASE_TEMPLATE_DATA || {};
-    if (data.title) {
-      setPageTitle(data.title);
-    }
-  }, []);
-
   React.useEffect(() => {
     // Load data from json_script tags
     const recentBlobsEl = document.getElementById("recent_blobs");

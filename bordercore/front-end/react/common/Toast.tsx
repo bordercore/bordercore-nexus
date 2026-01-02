@@ -18,7 +18,6 @@ interface ToastProps {
 
 export function Toast({ initialMessages = [], defaultVariant = "info" }: ToastProps) {
   const [title, setTitle] = useState("");
-  const [additionalTitle, setAdditionalTitle] = useState("");
   const [body, setBody] = useState("Toast Body");
   const [variant, setVariant] = useState<"info" | "danger" | "warning" | "success">(defaultVariant);
   const [delay, setDelay] = useState(5000);
@@ -37,15 +36,12 @@ export function Toast({ initialMessages = [], defaultVariant = "info" }: ToastPr
   };
 
   const showToast = (payload: ToastMessage) => {
-    if (payload.variant !== undefined) {
-      setVariant(payload.variant);
-    } else {
-      setVariant(defaultVariant);
-    }
+    const newVariant = payload.variant !== undefined ? payload.variant : defaultVariant;
+    setVariant(newVariant);
     if (payload.title !== undefined) {
       setTitle(payload.title);
     } else {
-      setTitle(variant.charAt(0).toUpperCase() + variant.slice(1));
+      setTitle(newVariant.charAt(0).toUpperCase() + newVariant.slice(1));
     }
     setBody(payload.body);
     if (payload.autoHide !== undefined && bsToastRef.current) {
@@ -93,7 +89,6 @@ export function Toast({ initialMessages = [], defaultVariant = "info" }: ToastPr
       <div id="liveToast" className="toast hide" role="alert" aria-live="assertive" aria-atomic="true" ref={toastRef}>
         <div className="toast-header">
           <strong className="me-auto" dangerouslySetInnerHTML={{ __html: title }} />
-          <small dangerouslySetInnerHTML={{ __html: additionalTitle }} />
           <button type="button" className="btn-close" data-bs-dismiss="toast" aria-label="Close" />
         </div>
         <div className="toast-body d-flex align-items-top">

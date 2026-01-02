@@ -44,15 +44,6 @@ interface RemindersTableProps {
 
 const columnHelper = createColumnHelper<Reminder>();
 
-function escapeHtml(unsafe: string): string {
-  return unsafe
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
 // Map interval units to appropriate icons
 function getScheduleIcon(intervalUnit: string): any {
   const unit = intervalUnit.toLowerCase();
@@ -77,7 +68,7 @@ export function RemindersTable({ data }: RemindersTableProps) {
           return (
             <div className="reminder-name">
               <a href={reminder.detail_url} className="reminder-name-main">
-                {escapeHtml(reminder.name)}
+                {reminder.name}
               </a>
               {notePreview && (
                 <span
@@ -201,7 +192,7 @@ export function RemindersTable({ data }: RemindersTableProps) {
     []
   );
 
-  const { table, getTableClasses, getHeaderClasses } = useBootstrapTable({
+  const { table } = useBootstrapTable({
     data,
     columns,
     enableSorting: true,

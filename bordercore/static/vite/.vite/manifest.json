@@ -40,7 +40,7 @@
     ]
   },
   "front-end/entries/base-react.tsx": {
-    "file": "dist/js/base-react-BxIxxqqv.js",
+    "file": "dist/js/base-react-CoCnQs-U.js",
     "name": "dist/js/base-react",
     "src": "front-end/entries/base-react.tsx",
     "isEntry": true,
@@ -114,7 +114,7 @@
     ]
   },
   "front-end/entries/reminders.tsx": {
-    "file": "dist/js/reminders-Z3W-nQQ1.js",
+    "file": "dist/js/reminders-CNR5QSNF.js",
     "name": "dist/js/reminders",
     "src": "front-end/entries/reminders.tsx",
     "isEntry": true,
