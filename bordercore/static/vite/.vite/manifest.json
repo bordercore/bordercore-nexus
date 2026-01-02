@@ -40,7 +40,7 @@
     ]
   },
   "front-end/entries/base-react.tsx": {
-    "file": "dist/js/base-react-Dywm6_o8.js",
+    "file": "dist/js/base-react-BxIxxqqv.js",
     "name": "dist/js/base-react",
     "src": "front-end/entries/base-react.tsx",
     "isEntry": true,
@@ -54,12 +54,12 @@
     ]
   },
   "front-end/entries/bordercore-css.js": {
-    "file": "dist/css/bordercore-CmGwbebi.js",
+    "file": "dist/css/bordercore-DDuHh63u.js",
     "name": "dist/css/bordercore",
     "src": "front-end/entries/bordercore-css.js",
     "isEntry": true,
     "css": [
-      "bordercore-BmzfZdjg.css"
+      "bordercore-DQL1EL1e.css"
     ],
     "assets": [
       "Roboto-Regular-BHeBnKzs.ttf",
@@ -127,7 +127,7 @@
     ]
   },
   "front-end/index.js": {
-    "file": "dist/js/javascript-BjaNNKVU.js",
+    "file": "dist/js/javascript-B4ybZI57.js",
     "name": "dist/js/javascript",
     "src": "front-end/index.js",
     "isEntry": true,

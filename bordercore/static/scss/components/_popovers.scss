@@ -361,6 +361,15 @@
   }
 }
 
+.highlighted {
+  background-color: var(--hover-bg);
+  border-radius: var(--border-radius1);
+
+  .search-suggestion {
+    background-color: var(--hover-bg);
+  }
+}
+
 .search-splitter {
   padding: 0.5rem 0.75rem 0.25rem;
   border-bottom: 1px solid var(--border-color);
