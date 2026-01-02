@@ -44,7 +44,6 @@ declare global {
 }
 
 function TopBarContent() {
-  const { sidebarCollapsed } = useBaseStore();
   const data = window.BASE_TEMPLATE_DATA || {};
   const [weatherInfo, setWeatherInfo] = React.useState<any>(null);
   const [recentBlobs, setRecentBlobs] = React.useState<any>(null);
@@ -422,19 +421,6 @@ function SidebarContent() {
         </div>
       }
     />
-  );
-}
-
-function App() {
-  const data = window.BASE_TEMPLATE_DATA || {};
-  const initialCollapsed = data.initialSidebarCollapsed || false;
-
-  return (
-    <BaseStoreProvider initialCollapsed={initialCollapsed}>
-      <Toast initialMessages={data.initialMessages || []} />
-      <TopBarContent />
-      <SidebarContent />
-    </BaseStoreProvider>
   );
 }
 

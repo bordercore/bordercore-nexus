@@ -155,12 +155,6 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
     }
   };
 
-  const handleChatFromEvent = (event: React.KeyboardEvent, content?: string) => {
-    if (event.key === "Enter") {
-      handleChat(content);
-    }
-  };
-
   useEffect(() => {
     if (window.EventBus) {
       const handler = (payload: { content?: string; questionUuid?: string; exerciseUuid?: string }) => {
