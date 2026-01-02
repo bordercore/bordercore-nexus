@@ -76,6 +76,18 @@
       "__commonjsHelpers-BosuxZz1.js"
     ]
   },
+  "front-end/entries/reminder-delete.tsx": {
+    "file": "dist/js/reminder-delete-nQE3t1Er.js",
+    "name": "dist/js/reminder-delete",
+    "src": "front-end/entries/reminder-delete.tsx",
+    "isEntry": true,
+    "imports": [
+      "_client-DmE5VzMo.js",
+      "_index-UAMt4bQy.js",
+      "_index-CEapPWyR.js",
+      "__commonjsHelpers-BosuxZz1.js"
+    ]
+  },
   "front-end/entries/reminder-detail.tsx": {
     "file": "dist/js/reminder-detail-Bfo4OOn5.js",
     "name": "dist/js/reminder-detail",
@@ -90,7 +102,7 @@
     ]
   },
   "front-end/entries/reminder-form.tsx": {
-    "file": "dist/js/reminder-form-B6eMIhJa.js",
+    "file": "dist/js/reminder-form-BDrHsIue.js",
     "name": "dist/js/reminder-form",
     "src": "front-end/entries/reminder-form.tsx",
     "isEntry": true,

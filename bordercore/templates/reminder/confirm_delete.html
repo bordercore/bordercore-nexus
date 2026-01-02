@@ -1,31 +1,22 @@
-{% extends "base.html" %}
+{% extends "base_react.html" %}
+{% load vite_tags %}
 
 {% block title %}Delete Reminder{% endblock %}
 
-{% block content %}
-  <div class="container mt-4">
-    <div class="row">
-      <div class="col-md-6 offset-md-3">
-        <div class="card border-danger">
-          <div class="card-body">
-            <h5 class="card-title text-danger">Delete Reminder?</h5>
-            <p class="card-text">
-              Are you sure you want to delete "<strong>{{ reminder.name }}</strong>"?
-            </p>
-            <p class="text-muted">
-              This action cannot be undone.
-            </p>
+{% block css %}
+    {% vite_asset "dist/css/bordercore" %}
+{% endblock %}
 
-            <form method="post" class="d-inline">
-              {% csrf_token %}
-              <button type="submit" class="btn btn-danger">Delete</button>
-            </form>
-            <a href="{% url 'reminder:detail' reminder.uuid %}" class="btn btn-outline-secondary">
-              Cancel
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+{% block javascript_bundles %}
+    {{ block.super }}
+    {% vite_asset "dist/js/reminder-delete" %}
+{% endblock %}
+
+{% block content %}
+  <div
+    id="react-root"
+    data-reminder-name="{{ reminder.name }}"
+    data-delete-url="{% url 'reminder:delete' reminder.uuid %}"
+    data-cancel-url="{% url 'reminder:detail' reminder.uuid %}"
+  ></div>
 {% endblock %}
