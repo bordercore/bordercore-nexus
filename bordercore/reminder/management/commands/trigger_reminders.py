@@ -200,7 +200,7 @@ Bordercore Reminder Service
             name=reminder.name,
             note=reminder.note or "",
             user=reminder.user,
-            priority=Todo.PRIORITY_CHOICES[1][0],  # Medium priority (2)
+            priority=Todo.PRIORITY_CHOICES[2][0],  # Low priority (3)
         )
 
     def calculate_next_trigger(self, reminder: Reminder, now: datetime) -> datetime:
