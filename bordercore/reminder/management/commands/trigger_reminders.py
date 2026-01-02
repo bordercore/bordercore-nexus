@@ -19,6 +19,7 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from reminder.models import Reminder
+from todo.models import Todo
 
 from django.core.mail import send_mail
 from django.core.management.base import BaseCommand
@@ -116,6 +117,10 @@ class Command(BaseCommand):
             self.send_reminder_notification(reminder)
 
             if not self.dry_run:
+                # Create todo task if create_todo is enabled
+                if reminder.create_todo:
+                    self.create_todo_from_reminder(reminder)
+
                 # Update timestamps only after successful notification
                 reminder.last_triggered_at = now
                 reminder.next_trigger_at = self.calculate_next_trigger(reminder, now)
@@ -184,6 +189,19 @@ Bordercore Reminder Service
             )
         except Exception as e:
             raise Exception(f"Failed to send email to {user_email}: {str(e)}")
+
+    def create_todo_from_reminder(self, reminder: Reminder) -> None:
+        """Create a Todo task from a reminder when it triggers.
+
+        Args:
+            reminder: The Reminder object to create a todo from.
+        """
+        Todo.objects.create(
+            name=reminder.name,
+            note=reminder.note or "",
+            user=reminder.user,
+            priority=Todo.PRIORITY_CHOICES[1][0],  # Medium priority (2)
+        )
 
     def calculate_next_trigger(self, reminder: Reminder, now: datetime) -> datetime:
         """Calculate the next trigger time for a reminder.

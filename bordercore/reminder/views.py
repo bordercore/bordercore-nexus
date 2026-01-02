@@ -196,6 +196,7 @@ class ReminderFormAjaxView(LoginRequiredMixin, DetailView):
             "name": reminder.name,
             "note": reminder.note or "",
             "is_active": reminder.is_active,
+            "create_todo": reminder.create_todo,
             "start_at": start_at_iso,
             "interval_value": reminder.interval_value,
             "interval_unit": reminder.interval_unit,

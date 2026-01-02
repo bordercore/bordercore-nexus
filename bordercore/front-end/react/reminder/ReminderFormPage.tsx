@@ -7,6 +7,7 @@ interface ReminderFormData {
   name: string;
   note: string;
   is_active: boolean;
+  create_todo: boolean;
   start_at: string;
   interval_value: number;
   interval_unit: string;
@@ -16,6 +17,7 @@ interface ReminderFormErrors {
   name?: string[];
   note?: string[];
   is_active?: string[];
+  create_todo?: string[];
   start_at?: string[];
   interval_value?: string[];
   interval_unit?: string[];
@@ -48,6 +50,7 @@ export function ReminderFormPage({
     name: "",
     note: "",
     is_active: true,
+    create_todo: false,
     start_at: "",
     interval_value: 1,
     interval_unit: "day",
@@ -115,6 +118,7 @@ export function ReminderFormPage({
       formDataToSend.append("name", formData.name);
       formDataToSend.append("note", formData.note || "");
       formDataToSend.append("is_active", formData.is_active ? "true" : "false");
+      formDataToSend.append("create_todo", formData.create_todo ? "true" : "false");
       if (formData.start_at) {
         // Convert local datetime to ISO format for backend
         const date = new Date(formData.start_at);
@@ -321,6 +325,32 @@ export function ReminderFormPage({
               )}
             </div>
 
+            <div className="mb-3">
+              <div className="form-check">
+                <input
+                  className={`form-check-input ${errors.create_todo ? "is-invalid" : ""}`}
+                  type="checkbox"
+                  id="create_todo"
+                  name="create_todo"
+                  checked={formData.create_todo}
+                  onChange={handleChange}
+                />
+                <label className="form-check-label" htmlFor="create_todo">
+                  Create Todo Task
+                </label>
+              </div>
+              {errors.create_todo && (
+                <div className="invalid-feedback d-block">
+                  {errors.create_todo.map((error, idx) => (
+                    <div key={idx}>{error}</div>
+                  ))}
+                </div>
+              )}
+              <small className="form-text text-muted">
+                When enabled, a todo task will be automatically created when this reminder triggers.
+              </small>
+            </div>
+
             <div className="d-flex gap-2">
               <button type="submit" className="btn btn-primary" disabled={submitting}>
                 {submitting ? "Saving..." : isEdit ? "Update Reminder" : "Create Reminder"}
@@ -354,6 +384,10 @@ export function ReminderFormPage({
               </p>
               <p>
                 <strong>Active:</strong> Enable or disable this reminder without deleting it.
+              </p>
+              <p>
+                <strong>Create Todo Task:</strong> When enabled, a todo task will be automatically
+                created in your todo list each time this reminder triggers.
               </p>
             </div>
           </div>

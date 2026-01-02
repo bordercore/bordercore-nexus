@@ -32,6 +32,7 @@ class Reminder(TimeStampedModel):
         name: The title/name of the reminder.
         note: Optional free-form text annotation or description.
         is_active: Whether the reminder is currently active and should trigger.
+        create_todo: Whether to automatically create a Todo task when the reminder triggers.
         start_at: Optional datetime indicating when the schedule begins.
             If unset, the scheduler can use the created timestamp.
         interval_value: The numeric value for the interval (e.g., 1, 2, 7).
@@ -59,6 +60,7 @@ class Reminder(TimeStampedModel):
     note = models.TextField(null=True, blank=True)
 
     is_active = models.BooleanField(default=True)
+    create_todo = models.BooleanField(default=False)
 
     # When the schedule begins. If unset, the scheduler can treat created time as the start.
     start_at = models.DateTimeField(null=True, blank=True)
