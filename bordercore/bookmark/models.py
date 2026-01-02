@@ -27,6 +27,7 @@ from django.db import models, transaction
 from django.db.models import JSONField
 from django.db.models.signals import m2m_changed
 
+from lib.constants import S3_CACHE_MAX_AGE_SECONDS
 from lib.mixins import TimeStampedModel
 from lib.time_utils import convert_seconds
 from search.services import delete_document, index_document
@@ -35,7 +36,6 @@ from tag.models import Tag, TagBookmark
 from .managers import BookmarkManager
 
 log = logging.getLogger(f"bordercore.{__name__}")
-MAX_AGE = 2592000
 IMPORTANCE_HIGH = 10
 
 
@@ -282,7 +282,7 @@ class Bookmark(TimeStampedModel):
                 Body=r.content,
                 ContentType="image/jpeg",
                 ACL="public-read",
-                CacheControl=f"max-age={MAX_AGE}",
+                CacheControl=f"max-age={S3_CACHE_MAX_AGE_SECONDS}",
                 Metadata={"cover-image": "Yes"}
             )
 

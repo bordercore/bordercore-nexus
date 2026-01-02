@@ -20,9 +20,8 @@ from django.contrib.sessions.backends.base import SessionBase
 from django.db import models, transaction
 from django.utils import timezone
 
+from lib.constants import USER_AGENT
 from lib.mixins import TimeStampedModel
-
-USER_AGENT: str = "Bordercore/1.0"
 
 log: logging.Logger = logging.getLogger(f"bordercore.{__name__}")
 

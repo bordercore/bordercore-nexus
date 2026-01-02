@@ -11,8 +11,10 @@ from urllib.parse import unquote
 
 import feedparser
 import requests
-from feed.models import USER_AGENT, Feed
+from feed.models import Feed
 from rest_framework.decorators import api_view
+
+from lib.constants import USER_AGENT
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin

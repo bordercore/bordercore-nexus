@@ -14,6 +14,8 @@ import boto3
 import botocore
 import requests
 
+from lib.constants import S3_CACHE_MAX_AGE_SECONDS
+
 logging.getLogger().setLevel(logging.INFO)
 log = logging.getLogger(__name__)
 
@@ -21,8 +23,6 @@ bucket_name = os.environ.get("BUCKET_NAME")
 favicon_key = "django/img/favicons"
 
 s3_resource = boto3.resource("s3")
-
-MAX_AGE = 2592000
 
 
 def get_domain(url: str) -> str:
@@ -98,7 +98,7 @@ def handler(event: dict[str, Any], context: Any) -> None:
                 raise Exception(f"favicon image size is zero for {domain}")
 
             object = s3_resource.Object(bucket_name, f"{favicon_key}/{domain}.ico")
-            object.put(Body=r.content, ACL="public-read", CacheControl=f"max-age={MAX_AGE}")
+            object.put(Body=r.content, ACL="public-read", CacheControl=f"max-age={S3_CACHE_MAX_AGE_SECONDS}")
 
         log.info("Lambda finished")
 

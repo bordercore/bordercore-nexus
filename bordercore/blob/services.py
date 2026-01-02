@@ -38,6 +38,7 @@ from blob.models import Blob, MetaData, RecentlyViewedBlob
 from bookmark.models import Bookmark
 from drill.models import Question
 from fitness.models import Exercise
+from lib.constants import USER_AGENT
 from lib.exceptions import (NodeNotFoundError, ObjectAlreadyRelatedError,
                             RelatedObjectNotFoundError,
                             UnsupportedNodeTypeError)
@@ -540,6 +541,7 @@ def parse_shortcode(shortcode: str) -> str:
         shortcode: A URL string or shortcode identifier. Examples:
             - "https://www.instagram.com/p/CPLicD6K1uv/"
             - "https://www.artstation.com/artwork/CPLicD6K1uv/"
+            - "https://www.artstation.com/projects/1NqYZo"
             - "CPLicD6K1uv"
 
     Returns:
@@ -550,7 +552,8 @@ def parse_shortcode(shortcode: str) -> str:
     """
 
     patterns = [
-        r"^https://www.artstation.com/artwork/([^\/]+)/*",
+        r"^https://www.artstation.com/artwork/([^\/\.]+)",
+        r"^https://www.artstation.com/projects/([^\/\.]+)",
         r"^https://www.instagram.com/\w+/([^\/]+)/*",
         r"^([\w\d]+)$"
     ]
@@ -739,7 +742,8 @@ def import_artstation(user: User, parsed_url: ParseResult) -> Blob:
 
     short_code = parse_shortcode(parsed_url.geturl())
     url = f"https://www.artstation.com/projects/{short_code}.json"
-    result = requests.get(url, timeout=10)
+    headers = {"user-agent": USER_AGENT}
+    result = requests.get(url, headers=headers, timeout=10)
 
     if not result.ok:
         raise ValueError(f"Error importing image: {result.reason}")
@@ -751,7 +755,7 @@ def import_artstation(user: User, parsed_url: ParseResult) -> Blob:
     filename = os.path.basename(urlparse(result["assets"][0]["image_url"]).path)
 
     opener = urllib.request.build_opener()
-    opener.addheaders = [("User-agent", "Bordercore/1.0")]
+    opener.addheaders = [("User-agent", USER_AGENT)]
     urllib.request.install_opener(opener)
 
     temp_file = NamedTemporaryFile(delete=True)
