@@ -59,38 +59,87 @@ export const SelectValue = forwardRef<SelectValueHandle, SelectValueProps>(funct
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Get selectable options (excluding splitters)
   const getSelectableOptions = () => {
     return options.filter((option) => !option.splitter);
   };
 
-  const handleSearchChange = async (query: string) => {
-    setSearch(query);
-    onSearchChange?.(query);
-
-    if (query.length < minLength) {
-      setOptions([]);
-      setIsOpen(false);
-      setHighlightedIndex(-1);
-      return;
+  const performSearch = async (query: string) => {
+    // Cancel any in-flight request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
     }
+
+    // Create new AbortController for this request
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
 
     setIsLoading(true);
     try {
-      const response = await axios.get(`${searchUrl}${query}`);
+      const response = await axios.get(`${searchUrl}${query}`, {
+        signal: abortController.signal,
+      } as any);
       const results = Array.isArray(response.data) ? response.data : [];
       setOptions(results.slice(0, optionsLimit));
       setIsOpen(results.length > 0);
       setHighlightedIndex(-1);
     } catch (error) {
+      // Ignore abort errors (they're expected when canceling)
+      if (
+        axios.isCancel(error) ||
+        (error as any).name === "AbortError" ||
+        (error as any).name === "CanceledError" ||
+        (error as any).code === "ERR_CANCELED"
+      ) {
+        return;
+      }
       console.error("Search error:", error);
       setOptions([]);
       setIsOpen(false);
       setHighlightedIndex(-1);
     } finally {
-      setIsLoading(false);
+      // Only set loading to false if this request wasn't aborted
+      if (!abortController.signal.aborted) {
+        setIsLoading(false);
+      }
     }
+  };
+
+  const handleSearchChange = (query: string) => {
+    setSearch(query);
+    onSearchChange?.(query);
+
+    if (query.length < minLength) {
+      // Cancel any pending request
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+      // Clear debounce timer
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+      setOptions([]);
+      setIsOpen(false);
+      setHighlightedIndex(-1);
+      setIsLoading(false);
+      return;
+    }
+
+    // Clear existing debounce timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Set new debounce timer
+    debounceTimerRef.current = setTimeout(() => {
+      performSearch(query);
+      debounceTimerRef.current = null;
+    }, 300);
   };
 
   const handleSelect = (option: Option) => {
@@ -169,6 +218,20 @@ export const SelectValue = forwardRef<SelectValueHandle, SelectValueProps>(funct
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      // Cancel any in-flight request
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      // Clear any pending debounce timer
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
   }, []);
 
   return (
