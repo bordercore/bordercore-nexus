@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTimes, faSearch, faBook, faBookmark, faStickyNote, faMusic, faGraduationCap, faHeart } from "@fortawesome/free-solid-svg-icons";
+import { faTimes, faSearch, faBook, faBookmark, faStickyNote, faMusic, faGraduationCap, faHeart, faFolder } from "@fortawesome/free-solid-svg-icons";
 import SelectValue, { SelectValueHandle } from "../common/SelectValue";
 import { Popover } from "../common/Popover";
 import { boldenOption } from "../../util.js";
@@ -55,6 +55,7 @@ export const TopSearch = forwardRef<TopSearchHandle, TopSearchProps>(function To
     { name: "Notes", icon: faStickyNote, doctype: "note" },
     { name: "Music", icon: faMusic, doctype: "music" },
     { name: "Drill Questions", icon: faGraduationCap, doctype: "drill" },
+    { name: "Collections", icon: faFolder, doctype: "collection" },
   ];
 
   const searchUrl = `${initialSearchUrl}?doc_type=${searchFilter}&term=`;
@@ -143,6 +144,9 @@ export const TopSearch = forwardRef<TopSearchHandle, TopSearchProps>(function To
     } else if (evt.code === "KeyD" && evt.altKey) {
       evt.preventDefault();
       handleFilter("drill");
+    } else if (evt.code === "KeyC" && evt.altKey) {
+      evt.preventDefault();
+      handleFilter("collection");
     } else if (evt.key === "a" && evt.altKey) {
       evt.preventDefault();
       const topSimpleSuggest = document.getElementById("top-simple-suggest") as HTMLInputElement;
@@ -227,23 +231,35 @@ export const TopSearch = forwardRef<TopSearchHandle, TopSearchProps>(function To
               onSearch={handleSearch}
               onSearchChange={onSearchChange}
               onSelect={handleSelectOption}
-              optionSlot={({ option, search }) => (
-                <>
-                  {option.splitter ? (
-                    <div className="search-splitter">{option.name}</div>
-                  ) : (
-                    <div className="search-suggestion">
-                      {option.important === 10 && (
-                        <FontAwesomeIcon icon={faHeart} className="text-danger me-1" />
-                      )}
-                      {option.doctype && (
-                        <em className="search-object-type">{option.doctype} - </em>
-                      )}
-                      <span className="d-inline" dangerouslySetInnerHTML={{ __html: boldenOption(option.name, search) }} />
-                    </div>
-                  )}
-                </>
-              )}
+              optionSlot={({ option, search }) => {
+                const truncateDescription = (text: string, maxLength: number = 80) => {
+                  if (!text || text.length <= maxLength) return text;
+                  return text.substring(0, maxLength).trim() + "...";
+                };
+
+                return (
+                  <>
+                    {option.splitter ? (
+                      <div className="search-splitter">{option.name}</div>
+                    ) : (
+                      <div className="search-suggestion">
+                        {option.important === 10 && (
+                          <FontAwesomeIcon icon={faHeart} className="text-danger me-1" />
+                        )}
+                        {option.doctype && (
+                          <em className="search-object-type">{option.doctype} - </em>
+                        )}
+                        <span className="d-inline" dangerouslySetInnerHTML={{ __html: boldenOption(option.name, search) }} />
+                        {option.doctype === "Collection" && option.description && (
+                          <div className="text-muted small mt-1">
+                            {truncateDescription(option.description)}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
+                );
+              }}
             />
             {searchFilter && (
               <div className="search-active-filter">

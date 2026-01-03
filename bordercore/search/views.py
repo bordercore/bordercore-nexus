@@ -33,6 +33,7 @@ from django.views.generic.list import ListView
 
 from blob.models import Blob
 from bookmark.models import Bookmark
+from collection.models import Collection
 from lib.embeddings import len_safe_get_embedding
 from lib.time_utils import get_date_from_pattern, get_relative_date
 from lib.util import (favicon_url, get_elasticsearch_connection,
@@ -181,6 +182,9 @@ class SearchListView(LoginRequiredMixin, ListView):
                     size="small"
                 )
 
+            if match["source"]["doctype"] == "collection":
+                match["source"]["cover_url"] = f"{settings.COVER_URL}collections/{match['source']['uuid']}.jpg"
+
             match["tags_json"] = json.dumps(match["source"]["tags"]) \
                 if "tags" in match["source"] \
                    else "[]"
@@ -286,6 +290,7 @@ class SearchListView(LoginRequiredMixin, ListView):
                 "bordercore_id",
                 "date",
                 "date_unixtime",
+                "description",
                 "doctype",
                 "filename",
                 "importance",
@@ -323,6 +328,7 @@ class SearchListView(LoginRequiredMixin, ListView):
                             "metadata.*",
                             "attachment.content",
                             "contents",
+                            "description",
                             "name",
                             "question",
                             "sha1sum",
@@ -770,7 +776,8 @@ def sort_results(matches: list[dict[str, Any]]) -> list[dict[str, Any]]:
         "Bookmark": [],
         "Document": [],
         "Blob": [],
-        "Todo": []
+        "Todo": [],
+        "Collection": []
     }
 
     for match in matches:
@@ -826,6 +833,8 @@ def get_link(doctype: str, match: dict[str, Any]) -> str:
         url = reverse("drill:detail", kwargs={"uuid": match["uuid"]})
     elif doctype == "todo":
         url = reverse("todo:detail", kwargs={"uuid": match["uuid"]})
+    elif doctype == "collection":
+        url = reverse("collection:detail", kwargs={"uuid": match["uuid"]})
 
     return url
 
@@ -1304,6 +1313,9 @@ def search_names_es(user: User, search_term: str, doctypes: list[str]) -> list[d
                     match["_source"].get("url"),
                 )
                 matches[-1]["type"] = "bookmark"
+            if doctype_pretty == "Collection":
+                matches[-1]["cover_url"] = f"{settings.COVER_URL}collections/{match['_source'].get('uuid')}.jpg"
+                matches[-1]["description"] = match["_source"].get("description", "")
 
     return matches
 

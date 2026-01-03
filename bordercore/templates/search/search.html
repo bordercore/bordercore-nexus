@@ -184,6 +184,26 @@
                                     </search-result>
 
                                     <search-result
+                                        v-else-if="match.source.doctype === 'collection'"
+                                        icon="folder"
+                                        :importance="match.source.importance || 1"
+                                        :title="match.source.name"
+                                        :url="match.source.url"
+                                        :tags="JSON.parse(match.tags_json)"
+                                        tag-url="{% url 'search:kb_search_tag_detail' 666 %}"
+                                    >
+                                        <template #image>
+                                            <div class="mx-2">
+                                                <img :src="match.source.cover_url" height="75" width="75" />
+                                            </div>
+                                        </template>
+                                        <template #extra>
+                                            <h5 v-if="match.source.description" class="ms-2" v-html="truncateDescription(match.source.description)">
+                                            </h5>
+                                        </template>
+                                    </search-result>
+
+                                    <search-result
                                         v-else
                                         icon="book"
                                         :importance="match.source.importance || 1"
@@ -268,6 +288,11 @@
                     window.location.search = searchParams;
                 };
 
+                function truncateDescription(text, maxLength = 150) {
+                    if (!text || text.length <= maxLength) return text;
+                    return text.substring(0, maxLength).trim() + "...";
+                }
+
                 onMounted(() => {
                     searchBar.value.focusTermSearch();
                 });
@@ -279,6 +304,7 @@
                     searchBar,
                     searchSemantic,
                     searchTerm,
+                    truncateDescription,
                 };
             },
         });

@@ -35,6 +35,7 @@ if TYPE_CHECKING:
 
 from lib.exceptions import DuplicateObjectError
 from lib.mixins import SortOrderMixin, TimeStampedModel
+from search.services import delete_document, index_document
 from tag.models import Tag
 
 log = logging.getLogger(f"bordercore.{__name__}")
@@ -145,16 +146,65 @@ class Collection(TimeStampedModel):
 
         self.create_collection_thumbnail()
 
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        """Save the collection and optionally re-index in Elasticsearch.
+
+        Args:
+            *args: Variable length argument list.
+            **kwargs: May include 'index_es' to skip indexing (default True).
+        """
+        # Remove any custom parameters before calling the parent class
+        index_es = kwargs.pop("index_es", True)
+
+        super().save(*args, **kwargs)
+
+        # Index the collection in Elasticsearch
+        if index_es:
+            self.index_collection()
+
+    def index_collection(self) -> None:
+        """Index this collection in Elasticsearch."""
+        index_document(self.elasticsearch_document)
+
+    @property
+    def elasticsearch_document(self) -> dict[str, Any]:
+        """Build the dict representation for Elasticsearch indexing.
+
+        Returns:
+            Dictionary containing the collection data formatted for Elasticsearch indexing.
+        """
+        tags = list(self.tags.values_list("name", flat=True))
+
+        return {
+            "_index": settings.ELASTICSEARCH_INDEX,
+            "_id": self.uuid,
+            "_source": {
+                "bordercore_id": self.id,
+                "uuid": self.uuid,
+                "name": self.name,
+                "tags": tags,
+                "description": self.description,
+                "is_favorite": self.is_favorite,
+                "importance": 10 if self.is_favorite else 1,
+                "last_modified": self.modified,
+                "doctype": "collection",
+                "date": {"gte": self.created.strftime("%Y-%m-%d %H:%M:%S"), "lte": self.created.strftime("%Y-%m-%d %H:%M:%S")},
+                "date_unixtime": self.created.strftime("%s"),
+                "user_id": self.user_id,
+                **settings.ELASTICSEARCH_EXTRA_FIELDS
+            }
+        }
+
     def delete(
             self,
             using: Any | None = None,
             keep_parents: bool = False,
     ) -> tuple[int, dict[str, int]]:
-        """Delete this collection and its S3 thumbnail.
+        """Delete this collection, its S3 thumbnail, and remove it from Elasticsearch.
 
         Deletes the collection from the database first, then defers S3 thumbnail
-        cleanup until after the transaction commits. If the transaction rolls back,
-        the S3 cleanup is not performed.
+        cleanup and Elasticsearch deletion until after the transaction commits.
+        If the transaction rolls back, the cleanup is not performed.
 
         Args:
             using: Database alias (unused).
@@ -172,6 +222,10 @@ class Collection(TimeStampedModel):
                 s3.Object(settings.AWS_STORAGE_BUCKET_NAME, f"collections/{collection_uuid}.jpg").delete()
             except Exception as e:
                 log.error("Failed to delete collection %s thumbnail from S3: %s", collection_uuid, e)
+            try:
+                delete_document(collection_uuid)
+            except Exception as e:
+                log.error("Failed to delete collection %s from Elasticsearch: %s", collection_uuid, e)
 
         transaction.on_commit(cleanup)
         return result
