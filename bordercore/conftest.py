@@ -115,8 +115,7 @@ def pytest_configure(config: Config) -> None:
 
 
 BLOCKED_CONTEXT_PROCESSORS = {
-    # Note: get_recent_objects uses Django ORM, not ES, so it's safe to run
-    # "context_processors.get_recent_objects"
+    "context_processors.get_recent_objects"
 }
 
 

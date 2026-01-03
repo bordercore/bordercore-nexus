@@ -7,6 +7,7 @@ frontend consumption.
 """
 
 import json
+import logging
 from typing import Any, cast
 
 from django import urls
@@ -23,6 +24,8 @@ from fitness.services import get_overdue_exercises
 from metrics.models import Metric
 from search.models import RecentSearch
 from todo.models import Todo
+
+logger = logging.getLogger(__name__)
 
 HIGH_PRIORITY = Todo.get_priority_value("High")
 
@@ -110,6 +113,7 @@ def get_recent_objects(request: HttpRequest) -> dict[str, Any]:
         recent_bookmarks = get_recent_bookmarks(request.user)
         recently_viewed_blobs = get_recently_viewed(request.user)
     except Exception as e:
+        logger.exception(f"Error fetching recent objects from Elasticsearch: {e}")
         elasticsearch_error = str(e)
 
     return {
