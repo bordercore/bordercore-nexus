@@ -114,28 +114,17 @@ def pytest_configure(config: Config) -> None:
     settings.WEBPACK_LOADER["DEFAULT"]["LOADER_CLASS"] = "webpack_loader.loaders.FakeWebpackLoader"
 
 
-BLOCKED_CONTEXT_PROCESSORS = {
-    "context_processors.get_recent_objects"
-}
-
-
 @pytest.fixture(autouse=True)
-def no_es_context_processors() -> None:
-    """Remove context processors that hit Elasticsearch for every test.
+def mock_get_recent_blobs() -> Generator[None, None, None]:
+    """Mock get_recent_blobs to avoid hitting Elasticsearch for every test.
 
-    This fixture filters out any blocked context processors from all configured
-    Django template backends.
-
-    Args:
-        settings: The pytest-django settings fixture.
+    This fixture mocks the get_recent_blobs function call to prevent
+    Elasticsearch queries during tests. The mock returns empty results.
     """
-    for tmpl in settings.TEMPLATES:
-        opts = tmpl.setdefault("OPTIONS", {})
-        cps = opts.setdefault("context_processors", [])
-        # Reassign (don’t mutate in-place with remove)
-        opts["context_processors"] = [
-            cp for cp in cps if cp not in BLOCKED_CONTEXT_PROCESSORS
-        ]
+    with patch("blob.services.get_recent_blobs") as mock_get_recent_blobs:
+        # Return empty results to avoid Elasticsearch queries
+        mock_get_recent_blobs.return_value = ([], {})
+        yield
 
 
 @pytest.fixture(autouse=True)
@@ -406,11 +395,10 @@ def browser():
             # Set screen resolution to 1366 x 768 like most 15" laptops
             display = Display(visible=0, size=(1366, 768))
             display.start()
-        except Exception as e:
+        except Exception:
             # If Xvfb is not installed or display fails to start, use Firefox headless mode
             # This allows tests to run in environments without a display (e.g., cron)
-            print(f"Warning: Could not start virtual display (Xvfb): {e}")
-            print("Running Firefox in headless mode. Set DISABLE_HEADLESS_DISPLAY=1 to suppress this warning.")
+            # Silently fall back to headless mode - this is expected behavior
             display = None
             use_headless = True
     else:

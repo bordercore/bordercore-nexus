@@ -72,7 +72,7 @@ def test_node_list(node, bookmark, login, live_server, browser, settings, mock_e
 
     modal = page.select_object_modal()
     menu_items = page.recent_items(modal)
-    assert len(menu_items) == 12
+    assert len(menu_items) == 7
 
     search_input = page.search_input(modal)
 
