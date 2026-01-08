@@ -9,6 +9,7 @@ Run with:
 """
 
 import os
+import subprocess
 import time
 from itertools import cycle
 from typing import Any
@@ -65,6 +66,7 @@ class Dashboard():
             "stats": {"last_update": 0.0, "interval": default_interval},
             "status": {"last_update": 0.0, "interval": default_interval},
             "code_echoes": {"last_update": 0.0, "interval": 600.0},  # 10 minutes
+            "ups": {"last_update": 0.0, "interval": 60.0},  # 60 seconds
         }
 
         # Divide the "screen" in to three parts
@@ -78,8 +80,8 @@ class Dashboard():
             Layout(name="side"),
             Layout(name="left", ratio=2)
         )
-        # Divide the "side" layout in to two
-        self.layout["side"].split(Layout(name="todo"), Layout(name="stats"))
+        # Divide the "side" layout in to three
+        self.layout["side"].split(Layout(name="todo"), Layout(name="stats"), Layout(name="ups"))
         # Divide the "left" layout in to "bookmarks" and "code_echoes"
         self.layout["left"].split(Layout(name="bookmarks"), Layout(name="code_echoes"))
 
@@ -93,6 +95,7 @@ class Dashboard():
 
         self.layout["bookmarks"].update(Panel("Recent bookmarks", title="Bookmarks"))
         self.layout["code_echoes"].update(Panel("", title="Code Echoes"))
+        self.layout["ups"].update(Panel("UPS status loading...", title="UPS Status"))
 
     def _get(self, url: str) -> dict[str, Any]:
         """Make an authenticated GET request to the API.
@@ -207,6 +210,116 @@ class Dashboard():
             title=Text("Site Stats")
         ))
         self.update_timers["stats"]["last_update"] = time.time()
+
+    def update_ups(self) -> None:
+        """Fetches and displays UPS status by running pwrstat command.
+
+        Raises:
+            Exception: If the command execution fails.
+        """
+        try:
+            result = subprocess.run(
+                ["sudo", "pwrstat", "-status"],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            if result.returncode != 0:
+                error_msg = result.stderr.strip() or f"Command failed with return code {result.returncode}"
+                self.layout["ups"].update(Panel(
+                    error_msg,
+                    title=Text("UPS Status")
+                ))
+                self.update_timers["ups"]["last_update"] = time.time()
+                return
+
+            output = result.stdout
+            state = None
+            remaining_runtime = None
+            load = None
+
+            # Parse output line by line
+            for line in output.splitlines():
+                line = line.strip()
+                if line.startswith("State"):
+                    # Extract value after dots (e.g., "State........................ Normal" -> "Normal")
+                    after_label = line.split("State", 1)[1]
+                    # Remove leading dots and whitespace
+                    value = after_label.lstrip(".").strip()
+                    if value:
+                        state = value
+                elif line.startswith("Remaining Runtime"):
+                    # Extract value after dots (e.g., "Remaining Runtime............ 58 min." -> "58 min.")
+                    after_label = line.split("Remaining Runtime", 1)[1]
+                    value = after_label.lstrip(".").strip()
+                    if value:
+                        remaining_runtime = value
+                elif line.startswith("Load"):
+                    # Extract value after dots (e.g., "Load......................... 130 Watt(13 %)" -> "13 %")
+                    after_label = line.split("Load", 1)[1]
+                    value = after_label.lstrip(".").strip()
+                    if value:
+                        # Extract percentage from parentheses (e.g., "130 Watt(13 %)" -> "13 %")
+                        if "(" in value and ")" in value:
+                            start = value.find("(") + 1
+                            end = value.find(")")
+                            if start > 0 and end > start:
+                                load = value[start:end].strip()
+                        else:
+                            load = value
+
+            # Create table similar to stats panel
+            colors = cycle(
+                [
+                    Color.from_rgb(168, 0, 146),
+                    Color.from_rgb(184, 40, 165)
+                ]
+            )
+
+            table = Table(
+                box=box.SIMPLE,
+                style=Style(color=Color.from_rgb(184, 40, 165)),
+                header_style=Style(color=next(colors)),
+            )
+            table.add_column("Name", justify="left", style=Style(color=Color.from_triplet(parse_rgb_hex("ee91e0"))))
+            table.add_column("Value", style=Style(color=Color.from_triplet(parse_rgb_hex("9a488e"))))
+
+            if state:
+                table.add_row("State", state)
+            if remaining_runtime:
+                table.add_row("Runtime", remaining_runtime)
+            if load:
+                table.add_row("Load", load)
+
+            if not state and not remaining_runtime and not load:
+                # If we couldn't parse any fields, show raw output
+                self.layout["ups"].update(Panel(
+                    "Could not parse UPS status\n\n" + output[:200],
+                    title=Text("UPS Status")
+                ))
+            else:
+                self.layout["ups"].update(Panel(
+                    table,
+                    title=Text("UPS Status")
+                ))
+
+        except subprocess.TimeoutExpired:
+            self.layout["ups"].update(Panel(
+                "Command timed out",
+                title=Text("UPS Status")
+            ))
+        except FileNotFoundError:
+            self.layout["ups"].update(Panel(
+                "pwrstat command not found",
+                title=Text("UPS Status")
+            ))
+        except Exception as e:
+            self.layout["ups"].update(Panel(
+                f"Error: {str(e)}",
+                title=Text("UPS Status")
+            ))
+
+        self.update_timers["ups"]["last_update"] = time.time()
 
     def _normalize_language(self, language: str) -> str:
         """Normalize GitHub language names to Pygments lexer names.
@@ -426,6 +539,13 @@ def main() -> None:
             if current_time - dash.update_timers["code_echoes"]["last_update"] >= dash.update_timers["code_echoes"]["interval"]:
                 try:
                     dash.update_code_echoes()
+                except Exception as e:
+                    dash.update_status(str(e), error=True)
+
+            # Check and update ups if its timer has elapsed
+            if current_time - dash.update_timers["ups"]["last_update"] >= dash.update_timers["ups"]["interval"]:
+                try:
+                    dash.update_ups()
                 except Exception as e:
                     dash.update_status(str(e), error=True)
 
