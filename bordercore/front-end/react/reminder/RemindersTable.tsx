@@ -29,10 +29,16 @@ export interface Reminder {
   name: string;
   note: string;
   is_active: boolean;
+  // New schedule fields
+  schedule_type: string;
+  schedule_description: string;
+  // Legacy fields (for backward compatibility)
   interval_value: number;
   interval_unit_display: string;
+  // Timestamps
   next_trigger_at: string | null;
   next_trigger_at_unix: number | null;
+  // URLs
   detail_url: string;
   update_url: string;
   delete_url: string;
@@ -44,14 +50,12 @@ interface RemindersTableProps {
 
 const columnHelper = createColumnHelper<Reminder>();
 
-// Map interval units to appropriate icons
-function getScheduleIcon(intervalUnit: string): any {
-  const unit = intervalUnit.toLowerCase();
-  if (unit.includes("hour")) return faClock;
-  if (unit.includes("day")) return faClock;
-  if (unit.includes("week")) return faSync;
-  if (unit.includes("month")) return faCalendarAlt;
-  if (unit.includes("year")) return faHistory;
+// Map schedule types to appropriate icons
+function getScheduleIcon(scheduleType: string): any {
+  const type = scheduleType.toLowerCase();
+  if (type === "daily") return faClock;
+  if (type === "weekly") return faSync;
+  if (type === "monthly") return faCalendarAlt;
   return faRedo; // default
 }
 
@@ -80,17 +84,15 @@ export function RemindersTable({ data }: RemindersTableProps) {
           );
         },
       }),
-      columnHelper.accessor("interval_value", {
+      columnHelper.accessor("schedule_description", {
         header: "Schedule",
         cell: (info) => {
           const reminder = info.row.original;
-          const pluralUnit = reminder.interval_value !== 1 ? "s" : "";
-          const scheduleText = `Every ${reminder.interval_value} ${reminder.interval_unit_display}${pluralUnit}`;
-          const scheduleIcon = getScheduleIcon(reminder.interval_unit_display);
+          const scheduleIcon = getScheduleIcon(reminder.schedule_type);
           return (
             <div className="reminder-schedule-badge">
               <FontAwesomeIcon icon={scheduleIcon} className="schedule-icon" />
-              {scheduleText}
+              {reminder.schedule_description}
             </div>
           );
         },

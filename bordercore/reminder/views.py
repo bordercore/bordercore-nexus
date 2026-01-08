@@ -14,7 +14,7 @@ from django.db.models.query import QuerySet
 from django.forms import BaseModelForm
 from django.http import HttpResponse, JsonResponse
 from django.urls import reverse, reverse_lazy
-from django.utils import dateformat
+from django.utils import dateformat, timezone
 from django.views.generic import (CreateView, DeleteView, DetailView, ListView,
                                   TemplateView, UpdateView)
 
@@ -133,7 +133,9 @@ class ReminderDetailAjaxView(LoginRequiredMixin, DetailView):
             """
             if not dt:
                 return None
-            formatted = dateformat.format(dt, "M d, Y g:i a")
+            # Convert to local timezone before formatting
+            local_dt = timezone.localtime(dt)
+            formatted = dateformat.format(local_dt, "M d, Y g:i a")
             # Remove space before am/pm and remove :00 if on the hour
             formatted = formatted.replace(" :00 ", " ").replace(" :00", "").replace(" am", "am").replace(" pm", "pm")
             return formatted
@@ -143,13 +145,24 @@ class ReminderDetailAjaxView(LoginRequiredMixin, DetailView):
             "name": reminder.name,
             "note": reminder.note or "",
             "is_active": reminder.is_active,
+            # New schedule fields
+            "schedule_type": reminder.schedule_type,
+            "schedule_type_display": reminder.get_schedule_type_display(),
+            "schedule_description": reminder.get_schedule_description(),
+            "trigger_time": reminder.trigger_time.strftime("%I:%M %p").lstrip("0") if reminder.trigger_time else None,
+            "days_of_week": reminder.days_of_week,
+            "days_of_week_display": reminder.get_days_of_week_display(),
+            "days_of_month": reminder.days_of_month,
+            # Legacy fields (for backward compatibility)
             "interval_value": reminder.interval_value,
             "interval_unit_display": reminder.get_interval_unit_display().lower(),
+            # Timestamps
             "next_trigger_at": format_time_with_ampm(reminder.next_trigger_at),
             "last_triggered_at": format_time_with_ampm(reminder.last_triggered_at),
             "start_at": format_time_with_ampm(reminder.start_at),
             "created": format_time_with_ampm(reminder.created),
             "updated": format_time_with_ampm(reminder.modified),
+            # URLs
             "update_url": reverse("reminder:update", kwargs={"uuid": reminder.uuid}),
             "delete_url": reverse("reminder:delete", kwargs={"uuid": reminder.uuid}),
             "app_url": reverse("reminder:app"),
@@ -192,12 +205,20 @@ class ReminderFormAjaxView(LoginRequiredMixin, DetailView):
         reminder = context["reminder"]
         # Format start_at for datetime-local input (ISO format)
         start_at_iso = reminder.start_at.isoformat() if reminder.start_at else None
+        # Format trigger_time for time input (HH:MM format)
+        trigger_time_str = reminder.trigger_time.strftime("%H:%M") if reminder.trigger_time else ""
         data = {
             "name": reminder.name,
             "note": reminder.note or "",
             "is_active": reminder.is_active,
             "create_todo": reminder.create_todo,
             "start_at": start_at_iso,
+            # New schedule fields
+            "schedule_type": reminder.schedule_type,
+            "trigger_time": trigger_time_str,
+            "days_of_week": reminder.days_of_week,
+            "days_of_month": reminder.days_of_month,
+            # Legacy fields (for backward compatibility)
             "interval_value": reminder.interval_value,
             "interval_unit": reminder.interval_unit,
         }
@@ -243,9 +264,8 @@ class ReminderCreateView(LoginRequiredMixin, CreateView):
             HttpResponse redirecting to the success URL or JSON response for AJAX.
         """
         form.instance.user = self.request.user
-        # Calculate next_trigger_at if start_at is set
-        if form.instance.start_at:
-            form.instance.next_trigger_at = form.instance.start_at
+        # Calculate next_trigger_at based on schedule settings
+        form.instance.next_trigger_at = form.instance.calculate_next_trigger_at()
         response = super().form_valid(form)
         # For AJAX requests, return JSON instead of redirect
         if self.request.headers.get("X-Requested-With") == "XMLHttpRequest" or self.request.content_type == "application/x-www-form-urlencoded":
@@ -273,7 +293,7 @@ class ReminderUpdateView(LoginRequiredMixin, UpdateView):
     """Update an existing reminder.
 
     Allows editing of reminder properties. Automatically recalculates
-    next_trigger_at if start_at is modified and next_trigger_at is not set.
+    next_trigger_at based on the schedule settings.
     Access is limited to the reminder's owner.
     """
 
@@ -305,7 +325,7 @@ class ReminderUpdateView(LoginRequiredMixin, UpdateView):
         return context
 
     def form_valid(self, form: BaseModelForm) -> HttpResponse:
-        """Calculate next_trigger_at if start_at is set and next_trigger_at is empty.
+        """Calculate next_trigger_at based on schedule settings.
 
         Args:
             form: The validated form containing updated reminder data.
@@ -313,9 +333,8 @@ class ReminderUpdateView(LoginRequiredMixin, UpdateView):
         Returns:
             HttpResponse redirecting to the success URL or JSON response for AJAX.
         """
-        # If start_at is set and next_trigger_at is not, calculate it
-        if form.instance.start_at and not form.instance.next_trigger_at:
-            form.instance.next_trigger_at = form.instance.start_at
+        # Always recalculate next_trigger_at based on schedule settings
+        form.instance.next_trigger_at = form.instance.calculate_next_trigger_at()
         response = super().form_valid(form)
         # For AJAX requests, return JSON instead of redirect
         if self.request.headers.get("X-Requested-With") == "XMLHttpRequest" or self.request.content_type == "application/x-www-form-urlencoded":
@@ -414,10 +433,16 @@ class ReminderListAjaxView(LoginRequiredMixin, ListView):
                 "name": reminder.name,
                 "note": reminder.note or "",
                 "is_active": reminder.is_active,
+                # New schedule fields
+                "schedule_type": reminder.schedule_type,
+                "schedule_description": reminder.get_schedule_description(),
+                # Legacy fields (for backward compatibility)
                 "interval_value": reminder.interval_value,
                 "interval_unit_display": reminder.get_interval_unit_display().lower(),
-                "next_trigger_at": dateformat.format(reminder.next_trigger_at, "M d, g:i A") if reminder.next_trigger_at else None,
+                # Timestamps (convert to local timezone before formatting)
+                "next_trigger_at": dateformat.format(timezone.localtime(reminder.next_trigger_at), "M d, g:i A") if reminder.next_trigger_at else None,
                 "next_trigger_at_unix": int(dateformat.format(reminder.next_trigger_at, "U")) if reminder.next_trigger_at else None,
+                # URLs
                 "detail_url": reverse("reminder:detail", kwargs={"uuid": reminder.uuid}),
                 "update_url": reverse("reminder:update", kwargs={"uuid": reminder.uuid}),
                 "delete_url": reverse("reminder:delete", kwargs={"uuid": reminder.uuid}),

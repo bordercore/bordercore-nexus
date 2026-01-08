@@ -9,6 +9,12 @@ interface ReminderFormData {
   is_active: boolean;
   create_todo: boolean;
   start_at: string;
+  // New schedule fields
+  schedule_type: string;
+  trigger_time: string;
+  days_of_week: number[];
+  days_of_month: number[];
+  // Legacy fields (kept for backward compatibility)
   interval_value: number;
   interval_unit: string;
 }
@@ -19,6 +25,12 @@ interface ReminderFormErrors {
   is_active?: string[];
   create_todo?: string[];
   start_at?: string[];
+  schedule_type?: string[];
+  trigger_time?: string[];
+  days_of_week?: string[];
+  days_of_week_input?: string[];
+  days_of_month?: string[];
+  days_of_month_input?: string[];
   interval_value?: string[];
   interval_unit?: string[];
   non_field_errors?: string[];
@@ -32,11 +44,20 @@ interface ReminderFormPageProps {
   csrfToken: string;
 }
 
-const INTERVAL_UNIT_CHOICES = [
-  { value: "hour", label: "Hour" },
-  { value: "day", label: "Day" },
-  { value: "week", label: "Week" },
-  { value: "month", label: "Month" },
+const SCHEDULE_TYPE_CHOICES = [
+  { value: "daily", label: "Daily" },
+  { value: "weekly", label: "Weekly" },
+  { value: "monthly", label: "Monthly" },
+];
+
+const DAYS_OF_WEEK = [
+  { value: 0, label: "Monday", short: "Mon" },
+  { value: 1, label: "Tuesday", short: "Tue" },
+  { value: 2, label: "Wednesday", short: "Wed" },
+  { value: 3, label: "Thursday", short: "Thu" },
+  { value: 4, label: "Friday", short: "Fri" },
+  { value: 5, label: "Saturday", short: "Sat" },
+  { value: 6, label: "Sunday", short: "Sun" },
 ];
 
 export function ReminderFormPage({
@@ -52,6 +73,10 @@ export function ReminderFormPage({
     is_active: true,
     create_todo: false,
     start_at: "",
+    schedule_type: "daily",
+    trigger_time: "09:00",
+    days_of_week: [],
+    days_of_month: [],
     interval_value: 1,
     interval_unit: "day",
   });
@@ -73,6 +98,9 @@ export function ReminderFormPage({
               .slice(0, 16);
             response.data.start_at = localDateTime;
           }
+          // Ensure arrays are initialized
+          response.data.days_of_week = response.data.days_of_week || [];
+          response.data.days_of_month = response.data.days_of_month || [];
           setFormData(response.data);
         } catch (err) {
           console.error("Error fetching form data:", err);
@@ -108,6 +136,44 @@ export function ReminderFormPage({
     }
   };
 
+  const handleDayOfWeekToggle = (day: number) => {
+    setFormData((prev) => {
+      const currentDays = prev.days_of_week || [];
+      const newDays = currentDays.includes(day)
+        ? currentDays.filter((d) => d !== day)
+        : [...currentDays, day].sort((a, b) => a - b);
+      return { ...prev, days_of_week: newDays };
+    });
+
+    // Clear error when user makes a selection
+    if (errors.days_of_week_input) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors.days_of_week_input;
+        return newErrors;
+      });
+    }
+  };
+
+  const handleDayOfMonthToggle = (day: number) => {
+    setFormData((prev) => {
+      const currentDays = prev.days_of_month || [];
+      const newDays = currentDays.includes(day)
+        ? currentDays.filter((d) => d !== day)
+        : [...currentDays, day].sort((a, b) => a - b);
+      return { ...prev, days_of_month: newDays };
+    });
+
+    // Clear error when user makes a selection
+    if (errors.days_of_month_input) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors.days_of_month_input;
+        return newErrors;
+      });
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
@@ -124,6 +190,16 @@ export function ReminderFormPage({
         const date = new Date(formData.start_at);
         formDataToSend.append("start_at", date.toISOString());
       }
+
+      // New schedule fields
+      formDataToSend.append("schedule_type", formData.schedule_type);
+      if (formData.trigger_time) {
+        formDataToSend.append("trigger_time", formData.trigger_time);
+      }
+      formDataToSend.append("days_of_week_input", JSON.stringify(formData.days_of_week || []));
+      formDataToSend.append("days_of_month_input", JSON.stringify(formData.days_of_month || []));
+
+      // Legacy fields (for backward compatibility)
       formDataToSend.append("interval_value", formData.interval_value.toString());
       formDataToSend.append("interval_unit", formData.interval_unit);
 
@@ -170,6 +246,9 @@ export function ReminderFormPage({
       </div>
     );
   }
+
+  // Generate days of month (1-31)
+  const daysOfMonth = Array.from({ length: 31 }, (_, i) => i + 1);
 
   return (
     <div className="container mt-4">
@@ -235,50 +314,123 @@ export function ReminderFormPage({
               )}
             </div>
 
+            {/* Schedule Type */}
             <div className="mb-3">
-              <label htmlFor="interval_value" className="form-label">
-                Repeat Every
+              <label htmlFor="schedule_type" className="form-label">
+                Schedule Type
               </label>
-              <div className="input-group">
-                <input
-                  type="number"
-                  className={`form-control ${errors.interval_value ? "is-invalid" : ""}`}
-                  id="interval_value"
-                  name="interval_value"
-                  min="1"
-                  value={formData.interval_value}
-                  onChange={handleChange}
-                  required
-                />
-                <select
-                  className={`form-control form-select ${errors.interval_unit ? "is-invalid" : ""}`}
-                  id="interval_unit"
-                  name="interval_unit"
-                  value={formData.interval_unit}
-                  onChange={handleChange}
-                >
-                  {INTERVAL_UNIT_CHOICES.map((choice) => (
-                    <option key={choice.value} value={choice.value}>
-                      {choice.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {errors.interval_value && (
+              <select
+                className={`form-control form-select ${errors.schedule_type ? "is-invalid" : ""}`}
+                id="schedule_type"
+                name="schedule_type"
+                value={formData.schedule_type}
+                onChange={handleChange}
+              >
+                {SCHEDULE_TYPE_CHOICES.map((choice) => (
+                  <option key={choice.value} value={choice.value}>
+                    {choice.label}
+                  </option>
+                ))}
+              </select>
+              {errors.schedule_type && (
                 <div className="invalid-feedback d-block">
-                  {errors.interval_value.map((error, idx) => (
-                    <div key={idx}>{error}</div>
-                  ))}
-                </div>
-              )}
-              {errors.interval_unit && (
-                <div className="invalid-feedback d-block">
-                  {errors.interval_unit.map((error, idx) => (
+                  {errors.schedule_type.map((error, idx) => (
                     <div key={idx}>{error}</div>
                   ))}
                 </div>
               )}
             </div>
+
+            {/* Trigger Time - shown for all schedule types */}
+            <div className="mb-3">
+              <label htmlFor="trigger_time" className="form-label">
+                Time
+              </label>
+              <input
+                type="time"
+                className={`form-control ${errors.trigger_time ? "is-invalid" : ""}`}
+                id="trigger_time"
+                name="trigger_time"
+                value={formData.trigger_time}
+                onChange={handleChange}
+              />
+              {errors.trigger_time && (
+                <div className="invalid-feedback d-block">
+                  {errors.trigger_time.map((error, idx) => (
+                    <div key={idx}>{error}</div>
+                  ))}
+                </div>
+              )}
+              <small className="form-text text-muted">What time of day to trigger the reminder.</small>
+            </div>
+
+            {/* Days of Week - shown only for weekly schedule */}
+            {formData.schedule_type === "weekly" && (
+              <div className="mb-3">
+                <label className="form-label">Days of Week</label>
+                <div className="d-flex flex-wrap gap-2">
+                  {DAYS_OF_WEEK.map((day) => (
+                    <button
+                      key={day.value}
+                      type="button"
+                      className={`btn ${
+                        formData.days_of_week?.includes(day.value)
+                          ? "btn-primary"
+                          : "btn-outline-secondary"
+                      }`}
+                      onClick={() => handleDayOfWeekToggle(day.value)}
+                    >
+                      {day.short}
+                    </button>
+                  ))}
+                </div>
+                {(errors.days_of_week_input || errors.days_of_week) && (
+                  <div className="invalid-feedback d-block">
+                    {(errors.days_of_week_input || errors.days_of_week)?.map((error, idx) => (
+                      <div key={idx}>{error}</div>
+                    ))}
+                  </div>
+                )}
+                <small className="form-text text-muted">
+                  Select which days of the week to trigger the reminder.
+                </small>
+              </div>
+            )}
+
+            {/* Days of Month - shown only for monthly schedule */}
+            {formData.schedule_type === "monthly" && (
+              <div className="mb-3">
+                <label className="form-label">Days of Month</label>
+                <div className="d-flex flex-wrap gap-1" style={{ maxWidth: "400px" }}>
+                  {daysOfMonth.map((day) => (
+                    <button
+                      key={day}
+                      type="button"
+                      className={`btn btn-sm ${
+                        formData.days_of_month?.includes(day)
+                          ? "btn-primary"
+                          : "btn-outline-secondary"
+                      }`}
+                      style={{ width: "42px" }}
+                      onClick={() => handleDayOfMonthToggle(day)}
+                    >
+                      {day}
+                    </button>
+                  ))}
+                </div>
+                {(errors.days_of_month_input || errors.days_of_month) && (
+                  <div className="invalid-feedback d-block">
+                    {(errors.days_of_month_input || errors.days_of_month)?.map((error, idx) => (
+                      <div key={idx}>{error}</div>
+                    ))}
+                  </div>
+                )}
+                <small className="form-text text-muted">
+                  Select which days of the month to trigger the reminder. If a month has fewer days,
+                  the reminder will trigger on the last day of the month.
+                </small>
+              </div>
+            )}
 
             <div className="mb-3">
               <label htmlFor="start_at" className="form-label">
@@ -375,8 +527,15 @@ export function ReminderFormPage({
                 <strong>Notes:</strong> Optional details or context about the reminder.
               </p>
               <p>
-                <strong>Frequency:</strong> How often this reminder should repeat (every 1 day,
-                every 2 weeks, etc.).
+                <strong>Schedule Type:</strong> Choose how often the reminder repeats:
+              </p>
+              <ul>
+                <li><strong>Daily:</strong> Triggers every day at the specified time.</li>
+                <li><strong>Weekly:</strong> Triggers on selected days of the week (e.g., every Monday and Wednesday).</li>
+                <li><strong>Monthly:</strong> Triggers on selected days of the month (e.g., the 1st and 15th).</li>
+              </ul>
+              <p>
+                <strong>Time:</strong> What time of day the reminder should trigger.
               </p>
               <p>
                 <strong>Start Date:</strong> When to begin the reminder schedule. If not set,
@@ -398,4 +557,3 @@ export function ReminderFormPage({
 }
 
 export default ReminderFormPage;
-

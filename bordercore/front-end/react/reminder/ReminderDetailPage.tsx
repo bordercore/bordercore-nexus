@@ -16,13 +16,24 @@ interface ReminderDetail {
   name: string;
   note: string;
   is_active: boolean;
+  // New schedule fields
+  schedule_type: string;
+  schedule_type_display: string;
+  schedule_description: string;
+  trigger_time: string | null;
+  days_of_week: number[];
+  days_of_week_display: string[];
+  days_of_month: number[];
+  // Legacy fields (for backward compatibility)
   interval_value: number;
   interval_unit_display: string;
+  // Timestamps
   next_trigger_at: string | null;
   last_triggered_at: string | null;
   start_at: string | null;
   created: string;
   updated: string;
+  // URLs
   update_url: string;
   delete_url: string;
   app_url: string;
@@ -124,11 +135,37 @@ export function ReminderDetailPage({ detailAjaxUrl }: ReminderDetailPageProps) {
                   )}
                 </dd>
 
-                <dt className="col-sm-5 mt-2">Frequency</dt>
+                <dt className="col-sm-5 mt-2">Schedule Type</dt>
                 <dd className="col-sm-7 mt-2">
-                  Every {reminder.interval_value}{" "}
-                  {reminder.interval_unit_display}
-                  {reminder.interval_value !== 1 ? "s" : ""}
+                  {reminder.schedule_type_display}
+                </dd>
+
+                <dt className="col-sm-5 mt-2">Schedule</dt>
+                <dd className="col-sm-7 mt-2">
+                  {reminder.schedule_description}
+                </dd>
+
+                {reminder.schedule_type === "weekly" && reminder.days_of_week_display.length > 0 && (
+                  <>
+                    <dt className="col-sm-5 mt-2">Days</dt>
+                    <dd className="col-sm-7 mt-2">
+                      {reminder.days_of_week_display.join(", ")}
+                    </dd>
+                  </>
+                )}
+
+                {reminder.schedule_type === "monthly" && reminder.days_of_month.length > 0 && (
+                  <>
+                    <dt className="col-sm-5 mt-2">Days of Month</dt>
+                    <dd className="col-sm-7 mt-2">
+                      {reminder.days_of_month.join(", ")}
+                    </dd>
+                  </>
+                )}
+
+                <dt className="col-sm-5 mt-2">Time</dt>
+                <dd className="col-sm-7 mt-2">
+                  {reminder.trigger_time || "Not set"}
                 </dd>
 
                 <dt className="col-sm-5 mt-2">Next Trigger</dt>

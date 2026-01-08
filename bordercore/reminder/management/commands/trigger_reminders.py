@@ -15,7 +15,7 @@ Options:
 
 import logging
 from argparse import ArgumentParser
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any
 
 from reminder.models import Reminder
@@ -123,7 +123,7 @@ class Command(BaseCommand):
 
                 # Update timestamps only after successful notification
                 reminder.last_triggered_at = now
-                reminder.next_trigger_at = self.calculate_next_trigger(reminder, now)
+                reminder.next_trigger_at = reminder.calculate_next_trigger_at(from_datetime=now)
                 reminder.save()
 
             self.reminders_sent += 1
@@ -173,7 +173,7 @@ This is your reminder: {reminder.name}
         if reminder.note:
             body += f"Note: {reminder.note}\n\n"
 
-        body += f"""Repeat interval: Every {reminder.interval_value} {reminder.interval_unit}(s)
+        body += f"""Schedule: {reminder.get_schedule_description()}
 
 ---
 Bordercore Reminder Service
@@ -202,37 +202,6 @@ Bordercore Reminder Service
             user=reminder.user,
             priority=Todo.PRIORITY_CHOICES[2][0],  # Low priority (3)
         )
-
-    def calculate_next_trigger(self, reminder: Reminder, now: datetime) -> datetime:
-        """Calculate the next trigger time for a reminder.
-
-        Uses the interval configuration to determine when the reminder
-        should trigger next.
-
-        Args:
-            reminder: The Reminder object.
-            now: Current datetime.
-
-        Returns:
-            The next trigger datetime.
-        """
-        interval_unit = reminder.interval_unit
-        interval_value = reminder.interval_value
-
-        if interval_unit == Reminder.INTERVAL_UNIT_HOUR:
-            delta = timedelta(hours=interval_value)
-        elif interval_unit == Reminder.INTERVAL_UNIT_DAY:
-            delta = timedelta(days=interval_value)
-        elif interval_unit == Reminder.INTERVAL_UNIT_WEEK:
-            delta = timedelta(weeks=interval_value)
-        elif interval_unit == Reminder.INTERVAL_UNIT_MONTH:
-            # Approximate: use 30 days for month
-            delta = timedelta(days=30 * interval_value)
-        else:
-            # Fallback to daily
-            delta = timedelta(days=1)
-
-        return now + delta
 
     def print_summary(self, verbosity: int) -> None:
         """Print execution summary.
