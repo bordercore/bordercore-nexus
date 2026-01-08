@@ -45,6 +45,8 @@ from django.contrib.auth.models import AbstractUser
 # Configuration
 MAX_NEW_INTERVAL: int = 52
 MIN_NEW_INTERVAL: int = 1
+MIN_FLOOR_DAYS: int = 60
+MULTIPLIER: float = 2.5
 BATCH_SIZE: int = 100
 
 
@@ -76,6 +78,8 @@ def parse_args() -> argparse.Namespace:
             - dry_run (bool): Whether to run in dry-run mode
             - max_interval (int): Maximum random interval to add in days
             - min_interval (int): Minimum interval for never-reviewed questions in days
+            - min_floor (int): Minimum days before any question can be due
+            - multiplier (float): Multiplier for overdue time base calculation
     """
     parser = argparse.ArgumentParser(
         description='Reset overdue spaced-repetition intervals'
@@ -100,6 +104,18 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=MIN_NEW_INTERVAL,
         help=f'Minimum interval for never-reviewed questions (default: {MIN_NEW_INTERVAL})'
+    )
+    parser.add_argument(
+        '--min-floor',
+        type=int,
+        default=MIN_FLOOR_DAYS,
+        help=f'Minimum days before any question can be due (default: {MIN_FLOOR_DAYS})'
+    )
+    parser.add_argument(
+        '--multiplier',
+        type=float,
+        default=MULTIPLIER,
+        help=f'Multiplier for overdue time base calculation (default: {MULTIPLIER})'
     )
     return parser.parse_args()
 
@@ -128,7 +144,9 @@ def calculate_new_interval(
     question: QuestionProtocol,
     now: datetime,
     max_interval: int,
-    min_interval: int
+    min_interval: int,
+    min_floor: int,
+    multiplier: float
 ) -> timedelta:
     """Calculate new interval for a question based on its review history.
 
@@ -137,31 +155,35 @@ def calculate_new_interval(
         now: Current datetime for calculating overdue periods.
         max_interval: Maximum number of days for the random component.
         min_interval: Minimum number of days for any interval.
+        min_floor: Minimum days before any question can be due.
+        multiplier: Multiplier for overdue time base calculation.
 
     Returns:
         New interval to assign to the question.
 
     Note:
-        For never-reviewed questions, assigns a random interval between min_interval
-        and max_interval. For overdue questions, adds random component to overdue
-        days, but caps the overdue component to prevent extremely long intervals.
+        For never-reviewed questions, assigns a random interval with minimum floor.
+        For overdue questions, uses a multiplier approach to push intervals further
+        out while maintaining randomness.
     """
     if not question.last_reviewed:
-        # Never reviewed - give it a small random interval
-        days = random.randint(min_interval, max_interval)
+        # Never reviewed - give it a random interval with minimum floor
+        # Range from min_floor to min_floor + max_interval to ensure it's far enough out
+        days = random.randint(min_floor, min_floor + max_interval)
     else:
         # Calculate time since last_reviewed
         time_since_review = now - question.last_reviewed
         time_since_review_days = time_since_review.days
 
-        # The question is due if interval <= time_since_review
-        # To make it no longer due, we need: new_interval > time_since_review
-        # So we set new_interval = time_since_review + random_component
-        # This ensures the question won't be due again until the new interval elapses
-        random_component = random.randint(min_interval, max_interval)
-        # Cap the base to prevent extremely long intervals
-        capped_base = min(time_since_review_days, max_interval * 2)
-        days = max(capped_base + random_component, min_interval)
+        # Use multiplier to push intervals further out
+        base_days = min(time_since_review_days * multiplier, max_interval * 3)
+        base_days = int(base_days)
+
+        # Add larger random component
+        random_component = random.randint(max_interval, max_interval * 2)
+
+        days = int(base_days + random_component)
+        days = max(days, min_floor)
 
         # Ensure the new interval is always greater than time_since_review
         # to guarantee the question is no longer due after the update
@@ -208,6 +230,8 @@ def process_questions_bulk(
     now: datetime,
     max_interval: int,
     min_interval: int,
+    min_floor: int,
+    multiplier: float,
     dry_run: bool = False
 ) -> Tuple[int, int]:
     """Process questions in batches for efficiency.
@@ -217,6 +241,8 @@ def process_questions_bulk(
         now: Current datetime for interval calculations.
         max_interval: Maximum number of days for random interval component.
         min_interval: Minimum number of days for any interval.
+        min_floor: Minimum days before any question can be due.
+        multiplier: Multiplier for overdue time base calculation.
         dry_run: If True, show what would be changed without making changes.
 
     Returns:
@@ -239,7 +265,7 @@ def process_questions_bulk(
 
         try:
             new_interval = calculate_new_interval(
-                question, now, max_interval, min_interval
+                question, now, max_interval, min_interval, min_floor, multiplier
             )
 
             status = "never reviewed" if not question.last_reviewed else "overdue"
@@ -303,6 +329,17 @@ def main() -> None:
         print("Error: min-interval cannot be greater than max-interval")
         sys.exit(1)
 
+    if args.min_floor < 1:
+        print("Error: min-floor must be at least 1")
+        sys.exit(1)
+
+    if args.multiplier <= 0:
+        print("Error: multiplier must be greater than 0")
+        sys.exit(1)
+
+    # Ensure max_interval is reasonable relative to min_floor for never-reviewed questions
+    # (This is just a warning, not an error, since the algorithm handles it)
+
     user = get_user_or_exit(args.username)
     now = timezone.now()
 
@@ -319,6 +356,7 @@ def main() -> None:
 
     print(f"Found {total_questions} questions to process")
     print(f"Using interval range: {args.min_interval} to {args.max_interval} days")
+    print(f"Minimum floor: {args.min_floor} days, Multiplier: {args.multiplier}")
 
     # Convert queryset to list to ensure we process all questions that were
     # overdue at query time, avoiding any issues with lazy evaluation or
@@ -334,7 +372,7 @@ def main() -> None:
         with transaction.atomic():
             processed, skipped = process_questions_bulk(
                 questions_list, now, args.max_interval, args.min_interval,
-                dry_run=args.dry_run
+                args.min_floor, args.multiplier, dry_run=args.dry_run
             )
 
         print("\nSummary:")
