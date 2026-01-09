@@ -144,9 +144,11 @@
 
                     {% if urls %}
                         <div class="mb-3">
-                            <font-awesome-icon icon="link" class="text-primary me-1"></font-awesome-icon>
                             {% for url in urls %}
-                                <strong><a href="{{ url.url }}">{{ url.domain }}</a></strong>
+                                <div>
+                                    <font-awesome-icon icon="link" class="text-primary me-2"></font-awesome-icon>
+                                    <strong><a href="{{ url.url }}">{{ url.domain }}</a></strong>
+                                </div>
                             {% endfor %}
                         </div>
                     {% endif %}
