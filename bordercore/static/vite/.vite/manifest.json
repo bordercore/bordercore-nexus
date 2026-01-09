@@ -10,19 +10,19 @@
       "__commonjsHelpers-BosuxZz1.js"
     ]
   },
-  "_index-BWeZ3SZe.js": {
-    "file": "assets/index-BWeZ3SZe.js",
-    "name": "index",
-    "imports": [
-      "_client-DmE5VzMo.js",
-      "_index-DkmlBsM5.js"
-    ]
-  },
-  "_index-DkmlBsM5.js": {
-    "file": "assets/index-DkmlBsM5.js",
+  "_index-Bkg5tOVO.js": {
+    "file": "assets/index-Bkg5tOVO.js",
     "name": "index",
     "imports": [
       "__commonjsHelpers-BosuxZz1.js"
+    ]
+  },
+  "_index-CHjo4pBM.js": {
+    "file": "assets/index-CHjo4pBM.js",
+    "name": "index",
+    "imports": [
+      "_client-DmE5VzMo.js",
+      "_index-Bkg5tOVO.js"
     ]
   },
   "_index-DwvosdYq.js": {
@@ -40,14 +40,14 @@
     ]
   },
   "front-end/entries/base-react.tsx": {
-    "file": "dist/js/base-react-DNKaRy-d.js",
+    "file": "dist/js/base-react-Cl0-3huj.js",
     "name": "dist/js/base-react",
     "src": "front-end/entries/base-react.tsx",
     "isEntry": true,
     "imports": [
       "_client-DmE5VzMo.js",
-      "_index-BWeZ3SZe.js",
-      "_index-DkmlBsM5.js",
+      "_index-CHjo4pBM.js",
+      "_index-Bkg5tOVO.js",
       "_snow-D0k0kOes.js",
       "_index-DwvosdYq.js",
       "__commonjsHelpers-BosuxZz1.js"
@@ -77,64 +77,64 @@
     ]
   },
   "front-end/entries/reminder-delete.tsx": {
-    "file": "dist/js/reminder-delete-IGsNA2TY.js",
+    "file": "dist/js/reminder-delete-Be_8zceb.js",
     "name": "dist/js/reminder-delete",
     "src": "front-end/entries/reminder-delete.tsx",
     "isEntry": true,
     "imports": [
       "_client-DmE5VzMo.js",
-      "_index-DkmlBsM5.js",
-      "_index-BWeZ3SZe.js",
+      "_index-Bkg5tOVO.js",
+      "_index-CHjo4pBM.js",
       "__commonjsHelpers-BosuxZz1.js"
     ]
   },
   "front-end/entries/reminder-detail.tsx": {
-    "file": "dist/js/reminder-detail-CpomUxf1.js",
+    "file": "dist/js/reminder-detail-Dxq1q_oD.js",
     "name": "dist/js/reminder-detail",
     "src": "front-end/entries/reminder-detail.tsx",
     "isEntry": true,
     "imports": [
       "_client-DmE5VzMo.js",
-      "_index-DkmlBsM5.js",
-      "_index-BWeZ3SZe.js",
+      "_index-Bkg5tOVO.js",
+      "_index-CHjo4pBM.js",
       "_index-DwvosdYq.js",
       "__commonjsHelpers-BosuxZz1.js"
     ]
   },
   "front-end/entries/reminder-form.tsx": {
-    "file": "dist/js/reminder-form-CYnIsFqe.js",
+    "file": "dist/js/reminder-form-B5SSdGYL.js",
     "name": "dist/js/reminder-form",
     "src": "front-end/entries/reminder-form.tsx",
     "isEntry": true,
     "imports": [
       "_client-DmE5VzMo.js",
-      "_index-DkmlBsM5.js",
-      "_index-BWeZ3SZe.js",
+      "_index-Bkg5tOVO.js",
+      "_index-CHjo4pBM.js",
       "__commonjsHelpers-BosuxZz1.js"
     ]
   },
   "front-end/entries/reminders.tsx": {
-    "file": "dist/js/reminders-x2LUKJux.js",
+    "file": "dist/js/reminders-CW_c1V-t.js",
     "name": "dist/js/reminders",
     "src": "front-end/entries/reminders.tsx",
     "isEntry": true,
     "imports": [
       "_client-DmE5VzMo.js",
-      "_index-BWeZ3SZe.js",
-      "_index-DkmlBsM5.js",
+      "_index-CHjo4pBM.js",
+      "_index-Bkg5tOVO.js",
       "_index-DwvosdYq.js",
       "__commonjsHelpers-BosuxZz1.js"
     ]
   },
   "front-end/index.js": {
-    "file": "dist/js/javascript-BA1o8XBu.js",
+    "file": "dist/js/javascript-BjDMyxpX.js",
     "name": "dist/js/javascript",
     "src": "front-end/index.js",
     "isEntry": true,
     "imports": [
       "_snow-D0k0kOes.js",
       "__commonjsHelpers-BosuxZz1.js",
-      "_index-DkmlBsM5.js",
+      "_index-Bkg5tOVO.js",
       "_index-DwvosdYq.js"
     ],
     "css": [

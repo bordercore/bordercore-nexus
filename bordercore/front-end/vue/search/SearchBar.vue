@@ -7,7 +7,7 @@
                         Term Search
                     </div>
                     <div class="col-auto has-search position-relative px-0">
-                        <font-awesome-icon icon="search" />
+                        <font-awesome-icon icon="magnifying-glass" />
                         <input id="search-bar" ref="searchInput" v-model="searchTerm" name="term_search" placeholder="Search" class="default-input form-control">
                     </div>
                 </div>
@@ -107,7 +107,7 @@
                         Semantic Search
                     </div>
                     <div class="semantic-search col-auto has-search position-relative px-0">
-                        <font-awesome-icon icon="search" />
+                        <font-awesome-icon icon="magnifying-glass" />
                         <input v-model="searchSemantic" name="semantic_search" placeholder="Search" class="default-input form-control">
                     </div>
                 </div>

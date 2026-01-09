@@ -1639,7 +1639,7 @@ blockquote > p {
   //
   //  Set the z-index to something above 50 to be visible if using
   //  with Vue-multiselect, which sets its z-index to this value.
-  svg[data-icon="search"] {
+  svg[data-icon="magnifying-glass"] {
     position: absolute;
     z-index: 100;
     top: 0.75rem;
@@ -1671,7 +1671,7 @@ blockquote > p {
 }
 
 .semantic-search {
-  svg[data-icon="search"] {
+  svg[data-icon="magnifying-glass"] {
     z-index: 98;
   }
 }

@@ -33,7 +33,6 @@ from django.views.generic.list import ListView
 
 from blob.models import Blob
 from bookmark.models import Bookmark
-from collection.models import Collection
 from lib.embeddings import len_safe_get_embedding
 from lib.time_utils import get_date_from_pattern, get_relative_date
 from lib.util import (favicon_url, get_elasticsearch_connection,

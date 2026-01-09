@@ -66,7 +66,7 @@
                 <div class="d-flex flex-column">
                     <div v-for="recentSearch in recentSearches" :key="recentSearch.id" class="search-suggestion d-flex" @click.prevent="handleRecentSearch(recentSearch)">
                         <div class="top-search-filter-icon d-flex justify-content-center align-items-center">
-                            <font-awesome-icon class="me-2" icon="search" />
+                            <font-awesome-icon class="me-2" icon="magnifying-glass" />
                         </div>
                         <div class="text-truncate">
                             {{ recentSearch.search_text }}
@@ -206,11 +206,12 @@
                     return;
                 }
                 const isClickInside = specifiedElement.contains(event.target) || specifiedElement.contains(event.target.parentElement);
+                const topSearchIcon = document.getElementById("top-search-icon");
+                const isClickOnSearchIcon = topSearchIcon && (topSearchIcon.contains(event.target) || topSearchIcon.contains(event.target.parentElement));
                 if (!isClickInside &&
-                    !event.target.classList.contains("fa-search") &&
+                    !isClickOnSearchIcon &&
                     !event.target.classList.contains("fa-times") &&
-                    !event.target.parentElement.classList.contains("fa-times") &&
-                    !event.target.parentElement.classList.contains("fa-search")
+                    !event.target.parentElement.classList.contains("fa-times")
                 ) {
                     showSearchWindow.value = false;
                 }

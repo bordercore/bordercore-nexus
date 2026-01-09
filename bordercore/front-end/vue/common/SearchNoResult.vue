@@ -1,7 +1,7 @@
 <template>
     <div class="notice-big alert d-flex">
         <h3>
-            <font-awesome-icon icon="search" />
+            <font-awesome-icon icon="magnifying-glass" />
         </h3>
         <div class="message ms-2">
             <h3>

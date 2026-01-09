@@ -1,7 +1,7 @@
 <template>
     <div :class="[{ 'has-search': searchIcon }, wrapperClass]">
         <div v-if="searchIcon">
-            <font-awesome-icon icon="search" />
+            <font-awesome-icon icon="magnifying-glass" />
         </div>
         <multiselect
             ref="multiselect"
