@@ -41,7 +41,6 @@ bordercore/static/vite/*.js
 bordercore/static/vite/*.css
 bordercore/static/vite/*.ttf
 bordercore/static/vite/*.wasm
-!bordercore/static/vite/.vite/manifest.json
 bordercore/webpack-stats.json
 **.min.js
 **.min.js.map
