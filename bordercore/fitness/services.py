@@ -51,7 +51,7 @@ def get_fitness_summary(user: User, count_only: bool = False) -> Tuple[List[Exer
 
         if last_active:
             # Calculate days since last activity (date-only comparison)
-            last_date = last_active.date()
+            last_date = timezone.localtime(last_active).date()
             days_since = (now_date - last_date).days
             e.delta_days = days_since  # type: ignore[attr-defined]
 
