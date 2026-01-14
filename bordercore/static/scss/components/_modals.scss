@@ -25,6 +25,15 @@
   z-index: 2001;
 }
 
+// Keep image modals above other layered content
+#node-image-modal {
+  z-index: 2000;
+}
+
+#node-image-modal .modal-dialog {
+  z-index: 2001;
+}
+
 // Bootstrap Popovers
 .popover {
   border-color: var(--border-color);

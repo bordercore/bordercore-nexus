@@ -633,6 +633,15 @@ a.tag {
   z-index: 12001 !important;
 }
 
+// Keep image modals above other layered content
+#node-image-modal {
+  z-index: 12000 !important;
+}
+
+#node-image-modal .modal-dialog {
+  z-index: 12001 !important;
+}
+
 .pagination {
   .page-item.disabled {
     .page-link {

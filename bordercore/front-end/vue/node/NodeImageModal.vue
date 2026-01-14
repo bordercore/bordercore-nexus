@@ -1,5 +1,5 @@
 <template>
-    <div id="nodeImageModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div id="node-image-modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
         <div class="modal-dialog modal-dialog-centered modal-fullscreen" role="document">
             <div class="modal-content">
                 <div class="modal-body">
@@ -25,7 +25,7 @@
             };
 
             onMounted(() => {
-                modal = new Modal("#nodeImageModal");
+                modal = new Modal("#node-image-modal");
             });
 
             return {
