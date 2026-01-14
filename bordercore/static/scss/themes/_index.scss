@@ -1,0 +1,15 @@
+// =============================================================================
+// THEME INDEX
+// =============================================================================
+// Import all theme files here. Each theme defines CSS custom properties
+// scoped to :root[color-mode="<theme-id>"]
+//
+// To add a new theme:
+// 1. Create _theme-<id>.scss in this folder
+// 2. Add @import "theme-<id>" below
+// 3. Add theme to accounts/themes.py THEMES registry
+
+@import "theme-dark";      // Midnight Slate
+@import "theme-light";     // Light
+@import "theme-purple";    // Purple
+@import "theme-cyberpunk"; // Cyberpunk

@@ -11,6 +11,8 @@ except ModuleNotFoundError:
     # Don't worry if this import doesn't exist in production
     pass
 
+from accounts.themes import get_display_name
+
 from test_page import Page
 
 
@@ -39,12 +41,14 @@ class PrefsPage(Page):
         search_input = self.browser.find_element(*self.TITLE)
         return search_input.get_attribute("innerHTML")
 
-    def choose_theme(self, theme_name):
+    def choose_theme(self, theme_css_id):
         """
-        Select the 'Dark' theme
+        Select a theme by its CSS ID (e.g., 'dark').
+        Looks up the display name to select by visible text.
         """
+        display_name = get_display_name(theme_css_id)
         select = Select(self.browser.find_element(*self.THEME_ID))
-        select.select_by_visible_text(theme_name)
+        select.select_by_visible_text(display_name)
 
     def choose_default_collection(self, collection_name):
         """
@@ -54,8 +58,12 @@ class PrefsPage(Page):
         select.select_by_visible_text(collection_name)
 
     def selected_theme(self):
+        """
+        Return the CSS ID (value attribute) of the selected theme option.
+        """
         options = self.browser.find_elements(*self.THEME_SELECTED)
-        return [x for x in options if x.is_selected()][0].text
+        selected_option = [x for x in options if x.is_selected()][0]
+        return selected_option.get_attribute("value")
 
     def selected_default_collection(self):
         # selected_option = self.browser.find_element(*self.DEFAULT_COLLECTION_SELECTED).text

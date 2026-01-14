@@ -6,9 +6,7 @@
 // Vite will use this new modular structure
 
 // Themes (CSS custom properties - must come first)
-@import "theme-dark";
-@import "theme-light";
-@import "theme-purple";
+@import "themes/index";
 
 // Custom Bootstrap Sass variables
 // We use Sass because as of Bootstrap 5.2 there are no CSS property equivalents

@@ -1,43 +1,55 @@
-:root[color-mode="purple"] {
+:root[color-mode="dark"] {
   --brand-hue: 231;
   --brand-saturation: 57%;
   --brand-lightness: 15%;
 
   --text1: #ffffff;
-  --text2: #ffffff;
-  --text3: #ffffff;
-  --text3-transparent: #fffffff0;
+  --text2: hsl(var(--brand-hue), 5%, 65%);
 
-  --text4-hue: 281;
-  --text4-saturation: 62%;
-  --text4-lightness: 82%;
+  // highlight
+  --text3-hue: 164;
+  --text3-saturation: 89%;
+  --text3-lightness: 69%;
+  --text3: hsl(var(--text3-hue), var(--text3-saturation), var(--text3-lightness));
+  --text3-transparent: hsl(var(--text3-hue), var(--text3-saturation), var(--text3-lightness), 0.25);
+
+  --text4-hue: 211;
+  --text4-saturation: 65%;
+  --text4-lightness: 65%;
   --text4: hsl(var(--text4-hue), var(--text4-saturation), var(--text4-lightness));
   --text4-1: hsl(var(--text4-hue), calc(var(--text4-saturation) + 20%), calc(var(--text4-lightness) + 20%));
   --text4-2: hsl(var(--text4-hue), calc(var(--text4-saturation) - 20%), calc(var(--text4-lightness) - 20%));
 
-  --text5: #8ce2ee;
-  --text6: #999999;
+  // "on hover" links
+  --text5: #10ff00;
+
+  --text6: #4591ff;
+  --text7: #98a6d5;
 
   --text-disabled: #333;
-  --text-em: var(--text4);
+  --text-em: #c5e1f5;
   --text-notice: var(--text6);
   --text-error: #ff0000;
 
-  --surface1: #130a16;
-  --surface2: #3e0083;
-  //--surface2: #ab8ed3;
-  --surface3: #1d2218;
-  --surface4: #552662;
-  --surface5: #865dc0;
-  --surface6: #592766;
-
-  --surface1-transparent: #3e0083;
-  // --surface1-transparent: hsl(var(--brand-hue), var(--brand-saturation), var(--brand-lightness), 0);
+  --surface1: #10173c;
+  --surface1-transparent: #10173c00;
 
   // on-hover
+  --surface2: hsl(var(--brand-hue), calc(var(--brand-saturation) + 15%), var(--brand-lightness));
   --surface2-transparent: hsl(var(--brand-hue), calc(var(--brand-saturation) + 15%), var(--brand-lightness), 0);
 
+  --surface3: hsl(var(--brand-hue), calc(var(--brand-saturation) + 25%), calc(var(--brand-lightness) + 10%));
+  --surface4: hsl(var(--brand-hue), calc(var(--brand-saturation) + 35%), calc(var(--brand-lightness) + 15%));
+  --surface5: #3e3e6b;
   --surface5-transparent: #3e3e6b00;
+
+  // Slightly lighter than the background
+  --surface6: #20253e;
+
+  --surface7: #7367f0;
+
+  // Body background color (from mockup)
+  --body-bg: #101622;
 
   // Node colors
   // Increase the HSL lightness by 5% for the tinted properties
@@ -74,20 +86,21 @@
   --drill-progress-circle-partial: var(--text5);
   --drag-color: var(--text3);
   --dropdown-item-extra-color: var(--text2);
-  --fitness-overdue-bg: var(--surface3);
+  --fitness-overdue-bg: var(--surface7);
   --fitness-overdue-color: var(--text1);
   --form-bg: var(--surface5);
   --form-bg-disabled: var(--surface2);
-  --form-bg-focus: var(--surface2);
+  --form-bg-focus: var(--surface6);
   --form-border-color-hover: var(--text3);
-  --form-color: var(--text5);
-  --hover-bg: var(--surface4);
-  --link-color: var(--text5);
+  --form-color: var(--text4);
+  --border-color: var(--surface5);
+  --hover-bg: var(--surface3);
+  --link-color: var(--text3);
   --notice-color: var(--text1);
   --notice-title-color: var(--text1);
-  --search-splitter-bg: var(--surface1);
+  --search-splitter-bg: var(--surface6);
   --search-splitter-color: var(--text6);
-  --selected-bg: var(--surface6);
+  --selected-bg: var(--surface5);
   --selected-color: var(--text1);
   --selected-secondary-color: var(--text4);
   --sidebar-active-bg: var(--surface5);
@@ -102,15 +115,14 @@
   --sidebar-icon-color2: var(--text3);
   --sidebar-icon-color3: var(--text6);
   --title-gradient-end: hsl(204 100% 59%);
-  --title-gradient-start: hsl(273 100% 51%);
+  --title-gradient-start: hsl(98 100% 62%);
   --toggle-button-color-toggled: var(--text4);
   --tooltip-bg: var(--surface3);
-  --tooltip-color: var(--color2);
+  --tooltip-color: var(--color1);
 
   // Override Bootstrap CSS properties
   --bs-body-color: var(--text1);
   --bs-body-bg: var(--surface1);
-  --bs-list-group-border-color: var(--surface3);
   --bs-list-group-color: var(--text3);
   --bs-list-group-item-padding-x: 1.25rem;
   --bs-list-group-item-padding-y: .75rem;
@@ -126,17 +138,25 @@
   --oruga-table-hoverable-background-color: var(--hover-bg);
   --oruga-table-td-border: var(--text1);
 
-  .btn-primary {
-    --bs-btn-active-bg: var(--surface2);
-    --bs-btn-active-border-color: var(--surface1);
-    --bs-btn-border-color: var(--surface2);
-    --bs-btn-hover-border-color: var(--surface5);
-  }
+  // Vue MultiSelect
+  --vms-controls-color: var(--text2);
+  --vms-controls-color-hover: var(--text1);
+  --vms-selected-bg: var(--surface2);
+  --vms-selected-color: var(--text4);
+
+  // Vue 3 Datepicker
+  --vdp-bg-color: var(--surface1);
+  --vdp-heading-hover-color: var(--surface4);
+  --vdp-hover-bg-color: var(--surface3);
+  --vdp-text-color: var(--text1);
+  --vdp-selected-bg-color: var(--surface5);
+
   .list-group {
-    --bs-list-group-border-color: var(--surface6);
+    --bs-list-group-border-color: var(--surface5);
   }
+
   // Media Chrome
   --media-control-background: var(--surface1);
-  --media-background-color: var(--surface1);
+  --media-background-color: var(--surface2);
   --media-icon-color: var(--text1);
 }

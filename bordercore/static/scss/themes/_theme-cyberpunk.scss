@@ -1,82 +1,83 @@
-:root[color-mode="dark"] {
-  --brand-hue: 231;
-  --brand-saturation: 57%;
-  --brand-lightness: 15%;
+:root[color-mode="cyberpunk"] {
+  --brand-hue: 320;
+  --brand-saturation: 100%;
+  --brand-lightness: 10%;
 
   --text1: #ffffff;
-  --text2: hsl(var(--brand-hue), 5%, 65%);
+  --text2: hsl(180, 100%, 70%);
 
-  // highlight
-  --text3-hue: 164;
-  --text3-saturation: 89%;
-  --text3-lightness: 69%;
+  // highlight - neon pink
+  --text3-hue: 320;
+  --text3-saturation: 100%;
+  --text3-lightness: 60%;
   --text3: hsl(var(--text3-hue), var(--text3-saturation), var(--text3-lightness));
   --text3-transparent: hsl(var(--text3-hue), var(--text3-saturation), var(--text3-lightness), 0.25);
 
-  --text4-hue: 211;
-  --text4-saturation: 65%;
-  --text4-lightness: 65%;
+  // secondary accent - electric cyan
+  --text4-hue: 180;
+  --text4-saturation: 100%;
+  --text4-lightness: 50%;
   --text4: hsl(var(--text4-hue), var(--text4-saturation), var(--text4-lightness));
-  --text4-1: hsl(var(--text4-hue), calc(var(--text4-saturation) + 20%), calc(var(--text4-lightness) + 20%));
+  --text4-1: hsl(var(--text4-hue), calc(var(--text4-saturation)), calc(var(--text4-lightness) + 20%));
   --text4-2: hsl(var(--text4-hue), calc(var(--text4-saturation) - 20%), calc(var(--text4-lightness) - 20%));
 
-  // "on hover" links
-  --text5: #10ff00;
+  // "on hover" links - neon green
+  --text5: #39ff14;
 
-  --text6: #4591ff;
-  --text7: #98a6d5;
+  --text6: #ff00ff;
+  --text7: #00ffff;
 
-  --text-disabled: #333;
-  --text-em: #c5e1f5;
+  --text-disabled: #444;
+  --text-em: #ff6ec7;
   --text-notice: var(--text6);
-  --text-error: #ff0000;
+  --text-error: #ff3333;
 
-  --surface1: #10173c;
-  --surface1-transparent: #10173c00;
+  // Dark background with slight purple tint
+  --surface1: #0d0221;
+  --surface1-transparent: #0d022100;
 
-  // on-hover
-  --surface2: hsl(var(--brand-hue), calc(var(--brand-saturation) + 15%), var(--brand-lightness));
-  --surface2-transparent: hsl(var(--brand-hue), calc(var(--brand-saturation) + 15%), var(--brand-lightness), 0);
+  // on-hover - deeper purple
+  --surface2: #1a0533;
+  --surface2-transparent: #1a053300;
 
-  --surface3: hsl(var(--brand-hue), calc(var(--brand-saturation) + 25%), calc(var(--brand-lightness) + 10%));
-  --surface4: hsl(var(--brand-hue), calc(var(--brand-saturation) + 35%), calc(var(--brand-lightness) + 15%));
-  --surface5: #3e3e6b;
-  --surface5-transparent: #3e3e6b00;
+  --surface3: #2d1b4e;
+  --surface4: #3d2066;
+  --surface5: #541675;
+  --surface5-transparent: #54167500;
 
   // Slightly lighter than the background
-  --surface6: #20253e;
+  --surface6: #150430;
 
-  --surface7: #7367f0;
+  --surface7: #ff00ff;
 
-  // Body background color (from mockup)
-  --body-bg: #101622;
+  // Body background color - near black with purple
+  --body-bg: #0a0118;
 
-  // Node colors
-  // Increase the HSL lightness by 5% for the tinted properties
-  --node-color-1: hsl(231 56% 14%);
-  --node-color-1-tinted: hsl(231 56% 19%);
-  --node-color-2: hsl(290 55% 38%);
-  --node-color-2-tinted: hsl(290 55% 43%);
-  --node-color-3: hsl(225, 29%, 41%);
-  --node-color-3-tinted: hsl(225, 29%, 46%);
-  --node-color-4: hsl(206 66% 32%);
-  --node-color-4-tinted: hsl(206 66% 37%);
+  // Node colors - cyberpunk palette
+  --node-color-1: hsl(280 80% 15%);
+  --node-color-1-tinted: hsl(280 80% 20%);
+  --node-color-2: hsl(320 100% 40%);
+  --node-color-2-tinted: hsl(320 100% 45%);
+  --node-color-3: hsl(180 100% 30%);
+  --node-color-3-tinted: hsl(180 100% 35%);
+  --node-color-4: hsl(260 80% 35%);
+  --node-color-4-tinted: hsl(260 80% 40%);
 
   // Chatbot
-  --chatbot-container-bg: #30648a;
+  --chatbot-container-bg: #541675;
 
   // Chart colors
   --chart-title-color: var(--text2);
   --chart-bg: var(--surface5);
   --chart-fill-color: var(--text1);
   --chart-tick-color: var(--text4);
-  --chart-gradient-start: #0000ff; // Avoid leading space before RGB value
-  --chart-gradient-end: #00065e; // Avoid leading space before RGB value
+  --chart-gradient-start: #ff00ff;
+  --chart-gradient-end: #00ffff;
 
-  // Background sphere
-  --sphere-color-1: #fff;
-  --sphere-color-2: #f0f;
-  --sphere-color-3: #0ff;
+  // Background sphere - neon glow
+  --sphere-color-1: #ff00ff;
+  --sphere-color-2: #00ffff;
+  --sphere-color-3: #39ff14;
 
   --blob-file-upload-gradient-start: var(--surface6);
   --blob-file-upload-gradient-end: var(--surface1);
@@ -93,6 +94,7 @@
   --form-bg-focus: var(--surface6);
   --form-border-color-hover: var(--text3);
   --form-color: var(--text4);
+  --border-color: var(--surface5);
   --hover-bg: var(--surface3);
   --link-color: var(--text3);
   --notice-color: var(--text1);
@@ -113,8 +115,8 @@
   --sidebar-icon-color1: var(--text4);
   --sidebar-icon-color2: var(--text3);
   --sidebar-icon-color3: var(--text6);
-  --title-gradient-end: hsl(204 100% 59%);
-  --title-gradient-start: hsl(98 100% 62%);
+  --title-gradient-end: #00ffff;
+  --title-gradient-start: #ff00ff;
   --toggle-button-color-toggled: var(--text4);
   --tooltip-bg: var(--surface3);
   --tooltip-color: var(--color1);
@@ -158,4 +160,24 @@
   --media-control-background: var(--surface1);
   --media-background-color: var(--surface2);
   --media-icon-color: var(--text1);
+
+  // Reminders table container override
+  .reminders-table-container {
+    background-color: var(--surface6);
+  }
+
+  // New Reminder button - neon pink style (toned down)
+  .reminder-new-button {
+    background-color: #c800c8;
+    box-shadow: 0 10px 15px -3px rgb(200 0 200 / 25%), 0 4px 6px -2px rgb(200 0 200 / 10%);
+
+    &:hover {
+      background-color: #db00db;
+      box-shadow: 0 10px 15px -3px rgb(200 0 200 / 35%), 0 4px 6px -2px rgb(200 0 200 / 20%);
+    }
+
+    &:focus {
+      box-shadow: 0 0 0 3px rgb(200 0 200 / 30%), 0 10px 15px -3px rgb(200 0 200 / 25%);
+    }
+  }
 }

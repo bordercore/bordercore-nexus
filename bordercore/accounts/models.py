@@ -18,6 +18,7 @@ from django.db.models import JSONField, UniqueConstraint
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 
+from accounts.themes import DEFAULT_THEME, get_theme_choices
 from blob.models import Blob
 from collection.models import Collection
 from drill.models import INTERVALS_DEFAULT
@@ -66,16 +67,10 @@ class UserProfile(models.Model):
     eye_candy = models.BooleanField(default=False)
     drill_tags_muted = models.ManyToManyField(Tag, related_name="drill_tags_muted")
 
-    THEMES = [
-        ("light", "light"),
-        ("dark", "dark"),
-        ("purple", "purple"),
-    ]
-
     theme = models.CharField(
         max_length=20,
-        choices=THEMES,
-        default="light",
+        choices=get_theme_choices,
+        default=DEFAULT_THEME,
     )
 
     def get_tags(self) -> str:
