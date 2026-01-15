@@ -1,455 +1,51 @@
-{% extends "base.html" %}
+{% extends "base_react.html" %}
+{% load vite_tags %}
 
-{% block title %} Music {% endblock %}
+{% block title %}{{ object.title }} - {{ object.artist.name }}{% endblock %}
 
 {% block nav %}
+<nav class="d-flex mb-3 ms-4">
+    <ul class="breadcrumb mb-0 pt-0 pb-0">
+        <li class="breadcrumb-item">
+            <a href="{% url 'music:list' %}" class="icon-hover glow">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 576 512">
+                    <path d="M575.8 255.5c0 18-15 32.1-32 32.1h-32l.7 160.2c0 2.7-.2 5.4-.5 8.1V472c0 22.1-17.9 40-40 40H456c-1.1 0-2.2 0-3.3-.1c-1.4 .1-2.8 .1-4.2 .1H416 392c-22.1 0-40-17.9-40-40V448 384c0-17.7-14.3-32-32-32H256c-17.7 0-32 14.3-32 32v64 24c0 22.1-17.9 40-40 40H160 128.1c-1.5 0-3-.1-4.5-.2c-1.2 .1-2.4 .2-3.6 .2H104c-22.1 0-40-17.9-40-40V360c0-.9 0-1.9 .1-2.8V287.6H32c-18 0-32-14-32-32.1c0-9 3-17 10-24L266.4 8c7-7 15-8 22-8s15 2 21 7L564.8 231.5c8 7 12 15 11 24z"/>
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'music:artist_detail' object.artist.uuid %}">{{ object.artist.name }}</a>
+        </li>
+        <li class="breadcrumb-item active">{{ object.title }}</li>
+    </ul>
+</nav>
+{% endblock %}
 
-    <div class="d-flex mb-3" id="vue-nav">
-        <div class="music-nav me-auto align-self-center">
-            <ul class="breadcrumb mb-0 pt-0 pb-0" v-cloak>
-                <li class="breadcrumb-item">
-                    <a href="{% url 'music:list' %}"><font-awesome-icon icon="home" class="icon-hover glow"></font-awesome-icon></a>
-                </li>
-                <li class="breadcrumb-item">
-                    <a href="{% url 'music:artist_detail' album.artist.uuid %}">{{ album.artist.name }}</a>
-                </li>
-                <li class="breadcrumb-item active">{{ album.title }}</li>
-            </ul>
-        </div>
-    </div>
-
+{% block javascript_bundles %}
+    {{ block.super }}
+    {% vite_asset "dist/js/album-detail" %}
 {% endblock %}
 
 {% block content %}
-
-    <div class="row g-0 h-100 align-items-start" id="vue-app">
-        <div class="sticky-top col-lg-3 d-flex flex-column">
-
-            <div class="card-grid ms-2 d-flex flex-column align-items-center">
-
-                <img src="{{ IMAGES_URL }}album_artwork/{{ album.uuid }}?cache_buster={{ request.GET.cache_buster }}" class="mw-100" height="400" width="400" />
-
-                {% if album.note %}
-                    <h5 class="mt-3" v-html="getNote('{{ object.note|escapejs }}')"></h5>
-                {% endif %}
-
-                <audio-player
-                    ref="audioPlayer"
-                    :track-list="songList"
-                    song-url="{{ MEDIA_URL_MUSIC }}songs/"
-                    mark-listened-to-url="{% url 'mark_song_as_listened_to' '00000000-0000-0000-0000-000000000000' %}"
-                    @current-song="onCurrentSong"
-                    @is-playing="handleIsPlaying"
-                >
-                </audio-player>
-
-                {% for tag in album.tags.all %}
-                    {% if forloop.first %}
-                        <div class="align-self-start ms-3 mt-3 mb-3">
-                            Tags:
-                    {% endif %}
-                    <span class="tag">{{ tag.name }}</span>
-                    {% if forloop.last %}
-                        </div>
-                    {% endif %}
-                {% endfor %}
-
-            </div>
-
-        </div>
-
-        <div class="col-lg-9 h-100 me-0">
-
-            <div class="card-grid h-100 ms-2">
-
-                <div class="d-flex flex-column h-100 me-2">
-                    <card title="" class="backdrop-filter hover-target me-0">
-                        <template v-slot:content>
-                            <div class="d-flex">
-                                <h1>
-                                    {{ album.title }}
-                                </h1>
-                                <drop-down-menu
-                                    ref="dropDownMenu"
-                                    :show-on-hover="true"
-                                    :links="albumDetailMenuItems"
-                                >
-                                </drop-down-menu>
-                            </div>
-                            <h3>
-                                <a href="{% url 'music:artist_detail' album.artist.uuid %}">{{ album.artist.name }}</a>
-                            </h3>
-
-                            <h6>{{ album.year }}</h6>
-
-                            {% if album.original_release_year != album.year %}
-                                <h5>
-                                    Originally released {{ album.original_release_year }}
-                                </h5>
-                            {% endif %}
-                            <h6 class="text-primary smaller">
-                                <small>{{ playtime }}</small>
-                            </h6>
-                        </template>
-                    </card>
-                    <card title="" id="album-song-list" class="backdrop-filter flex-grow-1 h-100 me-0">
-                        <template v-slot:content>
-                            <o-table
-                                :data="songList"
-                                :default-sort="['year','desc']"
-                                hoverable
-                                ref="table"
-                                :row-class="() => 'song hover-target cursor-pointer'"
-                                @cell-click="onSongClicked"
-                            >
-
-                                <o-table-column
-                                    field="track"
-                                    label="#"
-                                    width="5rem"
-                                    :td-attrs="() => ({ class: 'text-center' })"
-                                    :th-attrs="() => ({ class: 'text-center' })"
-                                    v-slot="props"
-                                >
-                                    <span v-if="selectedSong.uuid === props.row.uuid">
-                                        <img id="isPlaying" src="{{ STATIC_URL }}img/equaliser-animated-green.gif" width="20" height="20" />
-                                    </span>
-                                    <span v-else>[[ props.row.track ]]</span>
-                                </o-table-column>
-
-                                <o-table-column field="title" label="Title" v-slot="props">
-                                    [[ props.row.title ]]
-                                </o-table-column>
-
-                                <o-table-column field="note" label="" sortable v-slot="props">
-                                    <span v-if="props.row.note" v-tooltip="{ content: onShowNote(props.row), html: true }">
-                                        <font-awesome-icon icon="sticky-note" class="glow text-primary"></font-awesome-icon>
-                                    </span>
-                                </o-table-column>
-
-                                <o-table-column field="rating" label="Rating" :th-attrs="()=> ({ class: 'text-end' })"
-                                    v-slot="props">
-                                    <div class="ms-auto">
-                                        <div class="rating-container d-flex" :class="{'d-none': props.row.rating === ''}" @mouseleave="handleRatingMouseLeave">
-                                            <span
-                                                v-for="starCount in Array(5).fill().map((x,i)=>i)"
-                                                :key="starCount"
-                                                class="rating me-1"
-                                                :class="{'rating-star-selected': parseInt(props.row.rating, 10) > starCount}"
-                                                :data-rating="starCount"
-                                                @click="setRating($event, props.row, starCount, '{% url 'music:set_song_rating' %}', songList)"
-                                                @mouseover="handleRatingMouseOver($event, starCount)">
-                                                <font-awesome-icon icon="star"></font-awesome-icon>
-                                            </span>
-                                        </div>
-                                    </div>
-                                </o-table-column>
-
-                                <o-table-column field="length" label="Length" v-slot="props">
-                                    <span>[[ props.row.length ]]</span>
-                                </o-table-column>
-
-                                <o-table-column field="uuid" label="" :td-attrs="() => ({ class: 'col-action text-center align-middle' })" v-slot="props">
-                                    <drop-down-menu :show-on-hover="true">
-                                        <template #dropdown>
-                                            <li>
-                                                <a class="dropdown-item" href="#" @click.prevent="onClickEdit(props.row.uuid)">
-                                                    <font-awesome-icon icon="pencil-alt" class="text-primary me-3"></font-awesome-icon>Edit
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a class="dropdown-item" href="#" @click.prevent="onClickAddToPlaylist(props.row.uuid)">
-                                                    <font-awesome-icon icon="plus" class="text-primary me-3"></font-awesome-icon>Add to playlist
-                                                </a>
-                                            </li>
-                                        </template>
-                                    </drop-down-menu>
-                                </o-table-column>
-                            </o-table>
-
-                        </template>
-                    </card>
-                </div>
-            </div>
-
-        </div>
-
-        <add-to-playlist
-            ref="addToPlaylist"
-            get-playlists-url="{% url 'playlist-list' %}"
-            add-to-playlist-url="{% url 'music:add_to_playlist' %}?query="
-            default-playlist="{{ request.session.music_playlist }}"
-        >
-        </add-to-playlist>
-
-        <form action="{% url 'music:album_update' album.uuid %}" method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-            <div class="modal fade" id="modalEditAlbum" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-                <div class="modal-dialog" role="document">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h4 class="modal-title" id="myModalLabel">Edit Album</h4>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
-                            </button>
-                        </div>
-                        <div class="modal-body">
-
-                            {% for field in form %}
-
-                            {% if field.label == "Tags" %}
-
-                                <div class="row mb-3">
-                                    <label class="col-lg-4 col-form-label fw-bold text-end">Tags</label>
-                                    <div class="col-lg-8">
-                                        <tags-input
-                                            search-url="{% url 'tag:search' %}?query="
-                                        >
-                                        </tags-input>
-                                    </div>
-                                </div>
-
-                            {% elif field.label == "Artist" %}
-
-                                <div class="{% if field.errors %} error{% endif %} row mb-3">
-                                    <label class="col-lg-4 col-form-label fw-bold text-end">Artist</label>
-
-                                    <div class="col-lg-8">
-                                        <select-value
-                                            label="artist"
-                                            id="id_artist"
-                                            name="artist"
-                                            ref="selectValue"
-                                            :initial-value="{'artist': '{{ form.instance.artist.name|escapejs }}'}"
-                                            search-url="{% url 'music:search_artists' %}?term="
-                                            place-holder=""
-                                        >
-                                        </select-value>
-                                    </div>
-                                    {% for error in field.errors %}
-                                        <span class="form-error">{{ error }}</span>
-                                    {% endfor %}
-                                </div>
-
-                            {% elif field.label == "Cover image" %}
-
-                                <div class="row mb-3">
-                                    <label class="col-lg-4 col-form-label fw-bold text-end">Cover Image</label>
-                                    <div class="col-lg-8">
-                                        <div class="input-group">
-                                            <input type="text" name="filename" :value="filename" class="form-control" autocomplete="off" />
-                                            <span class="input-group-append">
-                                                <label class="btn btn-primary">Choose image
-                                                    <input type="file" name="cover_image" hidden accept="image/*" @change="onCoverImageSelect" />
-                                                </label>
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                            {% else %}
-
-                                <div class="{% if field.errors %} error{% endif %} row mb-3">
-                                    <label class="col-lg-4 col-form-label fw-bold text-end">{{ field.label }}</label>
-
-                                    <div class="col-lg-8">
-                                {{ field }}
-                                {% for error in field.errors %}
-                                    <span class="form-error">{{ error }}</span>
-                                {% endfor %}
-                                    </div>
-
-                                </div>
-
-                            {% endif %}
-                            {% endfor %}
-
-                            <div class="row">
-                                <div class="col-lg-12 offset-lg-4">
-                                    <input id="btn-action" class="btn btn-primary" type="submit" name="Go" value="Save" />
-                                </div>
-                            </div>
-
-                        </div>
-
-                    </div>
-                </div>
-            </div>
-        </form>
-
-    </div>
-
-{% endblock %}
-
-{% block javascript %}
-
-    {{ block.super }}
-
-    {{ song_list|json_script:"songList" }}
-    {{ tags|json_script:"initial-tags"|default:"" }}
-
-    <script type="text/javascript" charset="utf-8">
-
-        const navApp = createApp({
-            name: "Nav",
-            components: {
-                FontAwesomeIcon,
-            },
-        });
-        navApp.mount("#vue-nav");
-
-        const app = createApp({
-            name: "SongList",
-            components: {
-                AddToPlaylist,
-                AudioPlayer,
-                Card,
-                DropDownMenu,
-                FloatingVue,
-                FontAwesomeIcon,
-                SelectValue,
-                TagsInput,
-            },
-            delimiters: ["[[", "]]"],
-            setup() {
-                const filename = ref("");
-                const selectedSong = ref({});
-                const albumDetailMenuItems = ref([
-                    {
-                        id: uuidv4(),
-                        title: "Edit",
-                        url: "#",
-                        clickHandler: handleEditAlbum,
-                        icon: "pencil-alt"
-                    },
-                    {
-                        id: uuidv4(),
-                        title: "Album Info",
-                        url: "#",
-                        clickHandler: handleAlbumInfo,
-                        icon: "info",
-                    },
-                    {% if not album.song_set.all %}
-                    {
-                        id: uuidv4(),
-                        title: "Delete Album",
-                        url: "#",
-                        clickHandler: handleDeleteAlbum,
-                        icon: "times"
-                    }
-                    {% endif %}
-                ]);
-                const songList = JSON.parse(document.getElementById("songList").textContent)
-
-                const { handleRatingMouseLeave, handleRatingMouseOver, setRating } = mouseRating();
-
-                const addToPlaylist = ref(null);
-                const audioPlayer = ref(null);
-
-                function onCurrentSong(songNumber) {
-                    if (songNumber === -1) {
-                        selectedSong.value = {};
-                        return;
-                    }
-                    selectedSong.value = songList[songNumber];
-                }
-
-                function handleAlbumInfo() {
-                    EventBus.$emit(
-                        "chat",
-                        {
-                            "content": "Tell me about the album {{ album.title }} by the band or artist {{ album.artist.name }}"
-                        },
-                    );
-                };
-
-                function handleIsPlaying(isPlaying) {
-                    let src = null;
-                    if (isPlaying) {
-                        src = "{{ STATIC_URL }}img/equaliser-animated-green.gif";
-                    } else {
-                        src = "{{ STATIC_URL }}img/equaliser-animated-green-frozen.gif";
-                    }
-
-                    document.getElementById("isPlaying").src = src;
-                };
-
-                function onShowNote(song) {
-                    return markdown.render(song.note);
-                }
-
-                function onSongClicked(row, column, rowIndex, columnIndex) {
-                    // Don't play the song if we've clicked on the
-                    //  'on-hover' menu.
-                    if (column.field !== "uuid" && column.field !== "rating" && column.field !== "note") {
-                        audioPlayer.value.playTrack(row.uuid);
-                        selectedSong.value = row;
-                    }
-                }
-
-                function onClickEdit(uuid) {
-                    window.location="{% url 'music:update' '00000000-0000-0000-0000-000000000000' %}?return_url={{ request.get_full_path }}".replace(/00000000-0000-0000-0000-000000000000/, uuid);
-                }
-
-                function onClickAddToPlaylist(uuid) {
-                    addToPlaylist.value.openModal(uuid);
-                }
-
-                function getNote(note) {
-                    return markdown.render(note);
-                }
-
-                function handleEditAlbum() {
-                    const modal = new Modal("#modalEditAlbum");
-                    modal.show();
-                }
-
-                function handleDeleteAlbum() {
-                    axios.delete("{% url 'album-detail' object.uuid %}")
-                         .then((response) => {
-                             window.location = "{% url 'music:list' %}";
-                         }, (error) => {
-                             console.log(error);
-                         });
-                }
-
-                function onCoverImageSelect(evt) {
-                    filename.value = evt.target.files[0].name;
-                }
-
-                return {
-                    addToPlaylist,
-                    audioPlayer,
-                    getNote,
-                    handleAlbumInfo,
-                    handleDeleteAlbum,
-                    handleRatingMouseLeave,
-                    handleRatingMouseOver,
-                    handleIsPlaying,
-                    handleEditAlbum,
-                    onClickAddToPlaylist,
-                    onClickEdit,
-                    onCoverImageSelect,
-                    onCurrentSong,
-                    onShowNote,
-                    onSongClicked,
-                    setRating,
-                    songList,
-                    selectedSong,
-                    filename,
-                    albumDetailMenuItems,
-                }
-            },
-        });
-        app.use(FloatingVue);
-        app.use(Oruga, {
-            iconComponent: "font-awesome-icon",
-            iconPack: "fa",
-            table: {
-                sortIcon: "caret-up",
-            },
-        });
-        app.mount("#vue-app");
-
-</script>
-
+<div id="react-root"
+     data-album="{{ album_json }}"
+     data-songs="{{ songs_json }}"
+     data-initial-tags="{{ tags_json }}"
+     data-playlists="{{ playlists_json }}"
+     data-set-song-rating-url="{% url 'music:set_song_rating' %}"
+     data-get-playlists-url="{% url 'playlist-list' %}"
+     data-add-to-playlist-url="{% url 'music:add_to_playlist' %}"
+     data-mark-listened-to-url-template="{% url 'mark_song_as_listened_to' '00000000-0000-0000-0000-000000000000' %}"
+     data-update-album-url="{% url 'music:album_update' object.uuid %}"
+     data-search-artists-url="{% url 'music:search_artists' %}"
+     data-search-tags-url="{% url 'tag:search' %}"
+     data-edit-song-url-template="{% url 'music:update' '00000000-0000-0000-0000-000000000000' %}"
+     data-song-media-url="{{ MEDIA_URL_MUSIC }}songs/"
+     data-delete-album-url="{% url 'album-detail' object.uuid %}"
+     data-music-list-url="{% url 'music:list' %}"
+     data-artist-detail-url="{% url 'music:artist_detail' object.artist.uuid %}"
+     data-static-url="{{ STATIC_URL }}"
+     data-csrf-token="{{ csrf_token }}"
+     data-default-playlist="{{ request.session.music_playlist|default:'' }}">
+</div>
 {% endblock %}

@@ -255,6 +255,7 @@ class AlbumDetailView(LoginRequiredMixin, FormRequestMixin, ModelFormMixin, Deta
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
     form_class = AlbumForm
+    template_name = "music/album_detail.html"
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         """Get context data for the album detail view.
@@ -272,6 +273,20 @@ class AlbumDetailView(LoginRequiredMixin, FormRequestMixin, ModelFormMixin, Deta
 
         playtime = self.object.playtime
 
+        # Build a mapping of song UUIDs to their playlist UUIDs
+        song_uuids = [song.uuid for song in s]
+        song_playlists: dict[Any, list[str]] = {}
+        playlist_items = PlaylistItem.objects.filter(
+            song__uuid__in=song_uuids,
+            playlist__user=user,
+            playlist__type="manual"
+        ).values_list("song__uuid", "playlist__uuid")
+
+        for song_uuid, playlist_uuid in playlist_items:
+            if song_uuid not in song_playlists:
+                song_playlists[song_uuid] = []
+            song_playlists[song_uuid].append(str(playlist_uuid))
+
         song_list = []
 
         for song in s:
@@ -279,23 +294,50 @@ class AlbumDetailView(LoginRequiredMixin, FormRequestMixin, ModelFormMixin, Deta
                 self.object.compilation else song.title
             song_list.append(
                 {
-                    "uuid": song.uuid,
+                    "uuid": str(song.uuid),
                     "track": song.track,
                     "raw_title": song.title.replace("/", "FORWARDSLASH"),
                     "title": display_title,
                     "note": song.note or "",
                     "rating": song.rating,
                     "length_seconds": song.length,
-                    "length": convert_seconds(song.length)
+                    "length": convert_seconds(song.length),
+                    "playlists": song_playlists.get(song.uuid, [])
                 }
             )
+
+        tags = [x.name for x in self.object.tags.all()]
+
+        # Serialize album data for React
+        album_data = {
+            "uuid": str(self.object.uuid),
+            "title": self.object.title,
+            "artist_name": self.object.artist.name,
+            "artist_uuid": str(self.object.artist.uuid),
+            "year": self.object.year,
+            "original_release_year": self.object.original_release_year,
+            "playtime": playtime,
+            "cover_url": f"{settings.IMAGES_URL}album_artwork/{self.object.uuid}",
+            "note": self.object.note or "",
+            "tags": tags,
+            "has_songs": s.exists(),
+        }
+
+        # Get manual playlists for the user
+        playlists = Playlist.objects.filter(user=user, type="manual")
+        playlists_data = [{"uuid": str(p.uuid), "name": p.name} for p in playlists]
 
         return {
             **context,
             "song_list": song_list,
-            "tags": [x.name for x in self.object.tags.all()],
+            "tags": tags,
             "playtime": playtime,
-            "title": self.object
+            "title": self.object,
+            # JSON serialized data for React
+            "album_json": json.dumps(album_data),
+            "songs_json": json.dumps(song_list),
+            "tags_json": json.dumps(tags),
+            "playlists_json": json.dumps(playlists_data),
         }
 
     def get_queryset(self) -> QuerySetType[Album]:
@@ -1070,13 +1112,16 @@ def search_playlists(request: HttpRequest) -> JsonResponse:
 @require_POST
 @validate_post_data("playlist_uuid", "song_uuid")
 def add_to_playlist(request: HttpRequest) -> JsonResponse:
-    """Add a song to a playlist.
+    """Toggle a song's membership in a playlist.
+
+    If the song is already on the playlist, remove it.
+    If not, add it.
 
     Args:
         request: The HTTP request object containing playlist and song UUIDs.
 
     Returns:
-        JSON response with operation status and optional warning message.
+        JSON response with operation status and action taken (added/removed).
     """
     playlist_uuid = request.POST.get("playlist_uuid", "").strip()
     song_uuid = request.POST.get("song_uuid", "").strip()
@@ -1084,15 +1129,17 @@ def add_to_playlist(request: HttpRequest) -> JsonResponse:
     playlist = get_object_or_404(Playlist, uuid=playlist_uuid, user=request.user)
     song = get_object_or_404(Song, uuid=song_uuid, user=request.user)
 
-    if PlaylistItem.objects.filter(playlist=playlist, song=song).exists():
+    existing_item = PlaylistItem.objects.filter(playlist=playlist, song=song).first()
 
+    if existing_item:
+        # Song is already on playlist - remove it
+        existing_item.delete()
         response = {
-            "status": "Warning",
-            "message": "That song is already on the playlist."
+            "status": "OK",
+            "action": "removed"
         }
-
     else:
-
+        # Song is not on playlist - add it
         playlistitem = PlaylistItem(playlist=playlist, song=song)
         playlistitem.save()
 
@@ -1101,7 +1148,8 @@ def add_to_playlist(request: HttpRequest) -> JsonResponse:
         request.session["music_playlist"] = playlist_uuid
 
         response = {
-            "status": "OK"
+            "status": "OK",
+            "action": "added"
         }
 
     return JsonResponse(response)

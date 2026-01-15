@@ -43,6 +43,7 @@ module.exports = defineConfig({
         "dist/js/reminder-detail": path.resolve(__dirname, "front-end", "entries", "reminder-detail.tsx"),
         "dist/js/reminder-form": path.resolve(__dirname, "front-end", "entries", "reminder-form.tsx"),
         "dist/js/reminder-delete": path.resolve(__dirname, "front-end", "entries", "reminder-delete.tsx"),
+        "dist/js/album-detail": path.resolve(__dirname, "front-end", "entries", "album-detail.tsx"),
       },
       output: {
         entryFileNames: "[name]-[hash].js",

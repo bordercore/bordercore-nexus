@@ -104,6 +104,37 @@
   }
 }
 
+// Album detail song list
+#album-song-list {
+  margin-bottom: 1rem;
+
+  // Table header styling
+  th {
+    color: var(--text2);
+  }
+
+  // Remove border from last row
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+}
+
+// Star rating in song table
+.rating {
+  color: var(--surface2);
+  transition: color 0.15s ease;
+}
+
+.rating-star-selected {
+  color: var(--surface7);
+}
+
+tr.hover-target:hover {
+  .rating:not(.rating-star-selected) {
+    color: var(--surface4);
+  }
+}
+
 .audio-player {
   position: fixed;
   z-index: 1000;

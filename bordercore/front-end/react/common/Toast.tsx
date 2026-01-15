@@ -57,29 +57,27 @@ export function Toast({ initialMessages = [], defaultVariant = "info" }: ToastPr
 
   useEffect(() => {
     if (toastRef.current) {
-      const toastElement = toastRef.current.querySelector(".toast");
-      if (toastElement) {
-        bsToastRef.current = new BootstrapToast(toastElement, {
-          autohide: autoHide,
-          delay: delay,
+      // toastRef.current IS the toast element, use it directly
+      bsToastRef.current = new BootstrapToast(toastRef.current, {
+        autohide: autoHide,
+        delay: delay,
+      });
+
+      // Listen for toast events from EventBus
+      if (window.EventBus) {
+        const handler = (payload: ToastMessage) => {
+          showToast(payload);
+        };
+        window.EventBus.$on("toast", handler);
+
+        // Show initial messages
+        initialMessages.forEach((message) => {
+          showToast(message);
         });
 
-        // Listen for toast events from EventBus
-        if (window.EventBus) {
-          const handler = (payload: ToastMessage) => {
-            showToast(payload);
-          };
-          window.EventBus.$on("toast", handler);
-
-          // Show initial messages
-          initialMessages.forEach((message) => {
-            showToast(message);
-          });
-
-          return () => {
-            window.EventBus.$off("toast", handler);
-          };
-        }
+        return () => {
+          window.EventBus.$off("toast", handler);
+        };
       }
     }
   }, []);
