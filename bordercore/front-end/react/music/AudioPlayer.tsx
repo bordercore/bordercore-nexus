@@ -1,5 +1,5 @@
 import React from "react";
-import type { Song } from "./types";
+import type { BaseTrack } from "./types";
 
 // Import media-chrome for audio player controls
 import "media-chrome";
@@ -8,7 +8,7 @@ import "media-chrome";
 const MUSIC_LISTEN_TIMEOUT = 10000;
 
 interface AudioPlayerProps {
-  trackList: Song[];
+  trackList: BaseTrack[];
   songUrl: string;
   markListenedToUrl: string;
   csrfToken: string;

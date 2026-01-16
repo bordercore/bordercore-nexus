@@ -155,26 +155,62 @@ class ArtistDetailView(LoginRequiredMixin, DetailView):
         )
 
         # Get all songs by this artist that do appear on compilation album
-        compilation_songs = Album.objects.filter(
+        compilation_albums = Album.objects.filter(
             Q(user=user)
             & Q(song__artist=self.object)
             & ~Q(artist=self.object)
         ).distinct("song__album")
 
-        song_list = []
+        # Build a mapping of song UUIDs to their playlist UUIDs
+        song_uuids = [song.uuid for song in songs]
+        song_playlists: dict[Any, list[str]] = {}
+        playlist_items = PlaylistItem.objects.filter(
+            song__uuid__in=song_uuids,
+            playlist__user=user,
+            playlist__type="manual"
+        ).values_list("song__uuid", "playlist__uuid")
 
+        for song_uuid, playlist_uuid in playlist_items:
+            if song_uuid not in song_playlists:
+                song_playlists[song_uuid] = []
+            song_playlists[song_uuid].append(str(playlist_uuid))
+
+        song_list = []
         for song in songs:
             song_list.append(
                 {
-                    "uuid": song.uuid,
+                    "uuid": str(song.uuid),
                     "year_effective": song.original_year or song.year,
                     "title": song.title,
                     "rating": song.rating,
                     "length": convert_seconds(song.length),
                     "artist": song.artist.name,
-                    "note": re.sub("[\n\r\"]", "", song.note or "")
+                    "note": re.sub("[\n\r\"]", "", song.note or ""),
+                    "playlists": song_playlists.get(song.uuid, [])
                 }
             )
+
+        # Serialize artist data for React
+        artist_data = {
+            "uuid": str(self.object.uuid),
+            "name": self.object.name,
+        }
+
+        # Serialize albums for React
+        albums_data = [
+            {"uuid": str(a.uuid), "title": a.title, "year": a.year}
+            for a in albums
+        ]
+
+        # Serialize compilation albums for React
+        compilation_albums_data = [
+            {"uuid": str(a.uuid), "title": a.title, "year": a.year}
+            for a in compilation_albums
+        ]
+
+        # Get manual playlists for the user
+        playlists = Playlist.objects.filter(user=user, type="manual")
+        playlists_data = [{"uuid": str(p.uuid), "name": p.name} for p in playlists]
 
         return {
             **context,
@@ -182,8 +218,14 @@ class ArtistDetailView(LoginRequiredMixin, DetailView):
             "artist": self.object,
             "album_list": albums,
             "song_list": song_list,
-            "compilation_album_list": compilation_songs,
-            "title": self.object
+            "compilation_album_list": compilation_albums,
+            "title": self.object,
+            # JSON serialized data for React
+            "artist_json": json.dumps(artist_data),
+            "albums_json": json.dumps(albums_data),
+            "compilation_albums_json": json.dumps(compilation_albums_data),
+            "songs_json": json.dumps(song_list),
+            "playlists_json": json.dumps(playlists_data),
         }
 
 

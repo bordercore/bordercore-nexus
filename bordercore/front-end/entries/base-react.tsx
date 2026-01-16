@@ -9,7 +9,6 @@ import DropDownMenu from "../react/common/DropDownMenu";
 import OverdueTasks from "../react/todo/OverdueTasks";
 import ChatBot, { ChatBotHandle } from "../react/blob/ChatBot";
 import SidebarMenu from "../react/common/SidebarMenu";
-import { ProSidebarProvider } from "react-pro-sidebar";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSearch, faAngleDown, faBriefcase, faChartBar, faComment, faQuestion, faSignOutAlt } from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
@@ -474,10 +473,8 @@ if (sidebarContainer) {
   const sidebarRoot = createRoot(sidebarContainer);
   const data = window.BASE_TEMPLATE_DATA || {};
   sidebarRoot.render(
-    <ProSidebarProvider>
-      <BaseStoreProvider initialCollapsed={data.initialSidebarCollapsed || false}>
-        <SidebarContent />
-      </BaseStoreProvider>
-    </ProSidebarProvider>
+    <BaseStoreProvider initialCollapsed={data.initialSidebarCollapsed || false}>
+      <SidebarContent />
+    </BaseStoreProvider>
   );
 }
