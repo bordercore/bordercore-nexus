@@ -4,6 +4,11 @@ export type CardProps = {
   title?: string;
 
   /**
+   * Additional CSS classes to add to the card-body element.
+   */
+  className?: string;
+
+  /**
    * Full replacement for the title area.
    * Mirrors the Vue `title-slot`.
    */
@@ -22,9 +27,11 @@ export type CardProps = {
   children?: React.ReactNode;
 };
 
-export function Card({ title = "Card Title", titleSlot, topRight, children }: CardProps) {
+export function Card({ title = "Card Title", className, titleSlot, topRight, children }: CardProps) {
+  const cardClasses = ["card-body", className].filter(Boolean).join(" ");
+
   return (
-    <div className="card-body">
+    <div className={cardClasses}>
       {titleSlot ??
         (title ? (
           <div className="card-title d-flex">
@@ -33,7 +40,7 @@ export function Card({ title = "Card Title", titleSlot, topRight, children }: Ca
           </div>
         ) : null)}
 
-      <div className="card-content">{children ?? "Insert your content here"}</div>
+      {children ?? "Insert your content here"}
     </div>
   );
 }

@@ -8,7 +8,13 @@
   border-bottom: 1px solid var(--border-color);
   background-color: var(--surface2);
   border-radius: var(--border-radius1) var(--border-radius1) 0 0;
-  color: var(--text1);
+  color: var(--text3);
+  font-size: 1.5rem;
+
+  // The close button for Bootstrap modals
+  .close {
+    color: var(--text1);
+  }
 }
 
 .modal-content {

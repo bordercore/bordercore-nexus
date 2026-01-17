@@ -92,6 +92,49 @@ def music_list(request: HttpRequest) -> HttpResponse:
     # Verify that the user has at least one song in their collection
     collection_is_not_empty = Song.objects.filter(user=user).exists()
 
+    # Serialize data for React
+    random_album_data = None
+    if random_album:
+        random_album_data = {
+            "uuid": str(random_album.uuid),
+            "title": random_album.title,
+            "artist_name": random_album.artist.name,
+            "artist_uuid": str(random_album.artist.uuid),
+            "album_url": reverse("music:album_detail", args=[random_album.uuid]),
+            "artist_url": reverse("music:artist_detail", args=[random_album.artist.uuid]),
+            "artwork_url": f"{settings.IMAGES_URL}album_artwork/{random_album.uuid}",
+        }
+
+    playlists_data = [
+        {
+            "uuid": str(p.uuid),
+            "name": p.name,
+            "num_songs": getattr(p, "num_songs"),
+            "url": reverse("music:playlist_detail", args=[p.uuid]),
+        }
+        for p in playlists
+    ]
+
+    recent_played_songs_data = [
+        {
+            "uuid": str(s.uuid),
+            "title": s.title,
+            "artist_name": s.artist.name,
+            "artist_url": reverse("music:artist_detail", args=[s.artist.uuid]),
+        }
+        for s in recent_songs
+    ]
+
+    # Convert UUIDs to strings for JSON serialization
+    recent_albums_data = [
+        {
+            **album,
+            "uuid": str(album["uuid"]),
+            "artist_uuid": str(album["artist_uuid"]),
+        }
+        for album in recent_albums_list
+    ]
+
     return render(request, "music/index.html",
                   {
                       "cols": ["Date", "artist", "title", "id"],
@@ -101,7 +144,12 @@ def music_list(request: HttpRequest) -> HttpResponse:
                       "random_album": random_album,
                       "playlists": playlists,
                       "title": "Music List",
-                      "collection_is_not_empty": collection_is_not_empty
+                      "collection_is_not_empty": collection_is_not_empty,
+                      # JSON serialized data for React
+                      "random_album_json": json.dumps(random_album_data),
+                      "playlists_json": json.dumps(playlists_data),
+                      "recent_played_songs_json": json.dumps(recent_played_songs_data),
+                      "recent_albums_json": json.dumps(recent_albums_data),
                   })
 
 
@@ -527,6 +575,163 @@ class SongUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView):
             success_url = self.success_url
 
         return HttpResponseRedirect(success_url)
+
+
+class SongFormAjaxView(LoginRequiredMixin, DetailView):
+    """Return song form data as JSON for React form.
+
+    This view provides a single song's data in JSON format for populating
+    the edit form in the React SongEditPage component.
+    """
+
+    model = Song
+    slug_field = "uuid"
+    slug_url_kwarg = "uuid"
+
+    def get_queryset(self) -> QuerySetType[Song]:
+        """Limit queryset to current user's songs only.
+
+        Returns:
+            QuerySet filtered to songs owned by the authenticated user.
+        """
+        user = cast(User, self.request.user)
+        return Song.objects.filter(user=user).prefetch_related("tags")
+
+    def render_to_response(
+        self, context: dict[str, Any], **response_kwargs: Any
+    ) -> JsonResponse:
+        """Return song form data as JSON.
+
+        Args:
+            context: Template context dictionary containing the song.
+            **response_kwargs: Additional keyword arguments for the response.
+
+        Returns:
+            JsonResponse containing song form data.
+        """
+        song = self.object
+        # Get all available song sources
+        source_options = [
+            {"id": s.id, "name": s.name}
+            for s in SongSource.objects.all()
+        ]
+        data = {
+            "uuid": str(song.uuid),
+            "title": song.title,
+            "artist": str(song.artist) if song.artist else "",
+            "track": song.track or "",
+            "year": song.year or "",
+            "original_year": song.original_year or "",
+            "rating": song.rating,
+            "note": song.note or "",
+            "album_name": song.album.title if song.album else "",
+            "compilation": song.album.compilation if song.album else False,
+            "tags": [t.name for t in song.tags.all()],
+            "length": song.length,
+            "length_pretty": convert_seconds(song.length),
+            "last_time_played": song.last_time_played.strftime("%B %d, %Y")
+            if song.last_time_played
+            else "Never",
+            "times_played": song.times_played,
+            "source": song.source.id if song.source else None,
+            "source_options": source_options,
+        }
+        return JsonResponse(data)
+
+
+class SongUpdateReactView(LoginRequiredMixin, FormRequestMixin, UpdateView):
+    """Handle updating song information using React frontend.
+
+    This view serves the React-based song edit page and handles form submissions
+    via AJAX, returning JSON responses.
+    """
+
+    model = Song
+    template_name = "music/song_edit_react.html"
+    form_class = SongForm
+    success_url = reverse_lazy("music:list")
+    slug_field = "uuid"
+    slug_url_kwarg = "uuid"
+
+    def get_queryset(self) -> QuerySetType[Song]:
+        """Limit updates to the current user's songs.
+
+        Returns:
+            QuerySet of Song objects for this user.
+        """
+        user = cast(User, self.request.user)
+        return Song.objects.filter(user=user).prefetch_related("tags")
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        """Get context data for the song update view.
+
+        Args:
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Dictionary containing context data for the template.
+        """
+        user = cast(User, self.request.user)
+        context = super().get_context_data(**kwargs)
+        context["title"] = "Edit Song"
+        context["song"] = self.object
+        context["tag_counts"] = get_song_tags(user)
+        # Serialize tag_counts for React
+        context["tag_counts_json"] = json.dumps(
+            [{"name": t["name"], "count": t["count"]} for t in context["tag_counts"]]
+        )
+        return context
+
+    def form_valid(self, form: SongForm) -> HttpResponse:
+        """Process valid form submission for song update.
+
+        Args:
+            form: The validated song form.
+
+        Returns:
+            JSON response for AJAX requests, HTTP redirect otherwise.
+        """
+        song = form.instance
+        song.tags.set(form.cleaned_data["tags"])
+        self.object = form.save()
+
+        # For AJAX requests, return JSON instead of redirect
+        if (
+            self.request.headers.get("X-Requested-With") == "XMLHttpRequest"
+            or self.request.content_type == "application/x-www-form-urlencoded"
+        ):
+            success_url = self.success_url
+            if "return_url" in self.request.POST and self.request.POST["return_url"]:
+                success_url = self.request.POST["return_url"]
+            return JsonResponse({"success": True, "redirect_url": str(success_url)})
+
+        messages.add_message(self.request, messages.INFO, "Song edited")
+
+        if "return_url" in self.request.POST and self.request.POST["return_url"] != "":
+            success_url = self.request.POST["return_url"]
+        else:
+            success_url = self.success_url
+
+        return HttpResponseRedirect(success_url)
+
+    def form_invalid(self, form: SongForm) -> HttpResponse:
+        """Handle invalid form submission.
+
+        Args:
+            form: The form with validation errors.
+
+        Returns:
+            HttpResponse with form errors, JSON for AJAX requests.
+        """
+        if (
+            self.request.headers.get("X-Requested-With") == "XMLHttpRequest"
+            or self.request.content_type == "application/x-www-form-urlencoded"
+        ):
+            errors: dict[str, Any] = {}
+            for field, field_errors in form.errors.items():
+                errors[field] = list(field_errors)
+            return JsonResponse({"errors": errors}, status=400)
+        return super().form_invalid(form)
 
 
 class SongCreateView(LoginRequiredMixin, FormRequestMixin, CreateView):

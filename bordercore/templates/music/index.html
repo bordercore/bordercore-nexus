@@ -1,310 +1,48 @@
-{% extends "base.html" %}
+{% extends "base_react.html" %}
+{% load vite_tags %}
 
 {% block title %} Music {% endblock %}
 
-{% block content %}
-
-    <div class="row g-0 h-100 mx-2" id="vue-app">
-
-        {% if not collection_is_not_empty %}
-
-            <div class="card-grid ms-2">
-                <h3>
-                    Your music library is empty. Feel free to add a song to begin your collection.
-                </h3>
-                <div>
-                    <a href="{% url 'music:create' %}" class="btn btn-primary" role="button"><font-awesome-icon icon="plus" class="me-2"></font-awesome-icon>New song</a>
-                </div>
-            </div>
-
-        {% else %}
-
-            <div class="flex-grow-last col-lg-3 d-flex flex-column">
-
-            {% if random_album %}
-                <card title="Featured Album" class="flex-grow-0 backdrop-filter">
-                    <template v-slot:content>
-                        <hr class="divider" />
-                        <div class="zoomable">
-                            <a href="{% url 'music:album_detail' random_album.uuid %}">
-                                <img src="{{ IMAGES_URL }}album_artwork/{{ random_album.uuid }}" height="150" width="150" />
-                            </a>
-                        </div>
-                        <div class="mt-1 fw-bold">
-                            {{ random_album.title }}
-                        </div>
-                        <div class="text-light">
-                            <a href="{% url 'music:artist_detail' random_album.artist.uuid %}">
-                                {{ random_album.artist }}
-                            </a>
-                        </div>
-                    </template>
-                </card>
-            {% endif %}
-
-            <card title="" class="flex-grow-0 backdrop-filter hover-target z-index-positive">
-
-                <template v-slot:title-slot>
-                    <div class="d-flex">
-                        <div class="card-title">
-                            Playlists
-                        </div>
-                        <drop-down-menu :show-on-hover="true">
-                            <template #dropdown>
-                                <li>
-                                    <a class="dropdown-item" href="#" @click.prevent="onClickCreate()">
-                                        <font-awesome-icon icon="plus" class="text-primary me-3"></font-awesome-icon>New Playlist
-                                    </a>
-                                </li>
-                            </template>
-                        </drop-down-menu>
-                    </div>
-                </template>
-                <template v-slot:content>
-
-                    <hr class="divider" />
-                    <ul class="list-group interior-borders">
-                        {% for playlist in playlists %}
-                            <li class="list-with-counts d-flex ps-2 py-1 pe-2">
-                                    <a href="{% url 'music:playlist_detail' playlist.uuid %}" class="d-flex w-100">
-                                        <div>
-                                            {{ playlist.name }}
-                                        </div>
-                                        <div class="ms-auto">
-                                            <span class="px-2 badge rounded-pill">{{ playlist.num_songs }}</span>
-                                        </div>
-                                    </a>
-                            </li>
-                        {% endfor %}
-                    </ul>
-                </template>
-
-            </card>
-
-            {% if recent_songs %}
-            <card title="Recently Played Songs" class="backdrop-filter">
-                <template v-slot:content>
-                    <hr class="divider" />
-                    <ul class="list-group interior-borders">
-                        {% for song in recent_songs %}
-                            <li class="list-group-item list-group-item-secondary">
-                                <span class="item-name">{{ song.title}}</span>
-                                <a class="item-value ms-2" href="{% url 'music:artist_detail' song.artist.uuid %}">{{ song.artist.name }}</a>
-                            </li>
-                        {% endfor %}
-                    </ul>
-                </template>
-            </card>
-            {% endif %}
-
-        </div>
-
-        <div class="col-lg-9">
-
-            <card class="backdrop-filter hover-target">
-                <template v-slot:title-slot>
-                    <div class="d-flex">
-                        <div class="card-title">
-                            Recently Added Albums
-                        </div>
-                        <drop-down-menu :show-on-hover="true">
-                            <template #dropdown>
-                                <li>
-                                    <a class="dropdown-item" :href="'{% url 'music:create' %}'">
-                                        <font-awesome-icon icon="plus" class="text-primary me-3"></font-awesome-icon>
-                                        <span>New Song</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" href="{% url 'music:album_list' %}">
-                                        <font-awesome-icon icon="plus" class="text-primary me-3"></font-awesome-icon>Album List
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" href="{% url 'music:create_album' %}">
-                                        <font-awesome-icon icon="plus" class="text-primary me-3"></font-awesome-icon>New Album
-                                    </a>
-                                </li>
-                            </template>
-                        </drop-down-menu>
-                    </div>
-                </template>
-
-                <template v-slot:content>
-                    <div class="d-flex ms-2">
-
-                        <div id="album-list" class="d-flex flex-wrap justify-content-evenly">
-                            <div v-for="album in recentAlbums" class="p-2" data-bs-toggle="tooltip" data-placement="bottom" :title="'Added ' + album.created">
-                                <div class="zoomable">
-                                    <a :href="album.album_url">
-                                        <img :src="album.artwork_url" height="150" width="150" />
-                                    </a>
-                                </div>
-                                <div class="mt-1 fw-bold">
-                                    [[ album.title ]]
-                                </div>
-                                <div class="text-light">
-                                    <a :href="album.artist_url">
-                                        [[ album.artist_name ]]
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-
-                        <h5 v-if="needsPagination()" class="d-flex mb-0 me-1 pt-3">
-                            <div>
-                                <a v-if="paginator.has_previous" href="#" @click.prevent="paginate('prev')">
-                                    <font-awesome-icon icon="chevron-left" class="text-emphasis glow icon-hover" />
-                                </a>
-                                <span v-else>
-                                    <font-awesome-icon icon="chevron-left" class="text-emphasis icon-disabled" />
-                                </span>
-                            </div>
-                            <div>
-                                <a v-if="paginator.has_next" href="#" @click.prevent="paginate('next')" class="ms-1">
-                                    <font-awesome-icon icon="chevron-right" class="text-emphasis glow icon-hover" />
-                                </a>
-                                <span v-else>
-                                    <font-awesome-icon icon="chevron-right" class="text-emphasis icon-disabled" />
-                                </span>
-                            </div>
-                        </h5>
-
-                    </div>
-                </template>
-            </card>
-
-            <card title="Recently Added Songs" class="backdrop-filter">
-                <template v-slot:content>
-                    <hr class="divider" />
-                    <div class="card-grid ms-2">
-
-                        <div>
-                            <o-table
-                                :data="songList"
-                                hoverable
-                                ref="table"
-                            >
-                                <o-table-column field="title" label="Title" v-slot="props">
-                                    <span>[[ props.row.title ]]</span>
-                                    <span class="ps-2 table-note" v-html="props.row.note"></span>
-                                </o-table-column>
-
-                                <o-table-column field="artist" label="Artist" v-slot="props">
-                                    <a :href="props.row.artist_url">[[ props.row.artist ]]</a>
-                                </o-table-column>
-
-                                <o-table-column field="year" label="Year" v-slot="props">
-                                    <span>[[ props.row.year ]]</span>
-                                </o-table-column>
-
-                                <o-table-column field="length" label="Length" :td-attrs="() => ({ class: 'text-center' })"
-                                    :th-attrs="()=> ({ class: 'text-center' })" v-slot="props">
-                                    <span>[[ props.row.length ]]</span>
-                                </o-table-column>
-                            </o-table>
-                        </div>
-
-                    </div>
-                </template>
-            </card>
-
-        </div>
-
-        <form action="{% url 'music:playlist_create' %}" method="post">
-            {% csrf_token %}
-            <playlist-editor
-                tag-search-url="{% url 'tag:search' %}?doctype=song"
-            >
-            </playlist-editor>
-        </form>
-
-    </div>
-
-        {% endif %}
-
+{% block javascript_bundles %}
+    {{ block.super }}
+    {% vite_asset "dist/js/music-dashboard" %}
 {% endblock %}
 
-{% block javascript %}
+{% block content %}
 
-    {{ block.super }}
+    {% if not collection_is_not_empty %}
 
-    {{ recent_albums|json_script:"recent_albums" }}
-    {{ tags|json_script:"initial-tags"|default:"" }}
+        <div class="card-grid ms-2">
+            <h3>
+                Your music library is empty. Feel free to add a song to begin your collection.
+            </h3>
+            <div>
+                <a href="{% url 'music:create' %}" class="btn btn-primary" role="button">
+                    <i class="fa fa-plus me-2"></i>New song
+                </a>
+            </div>
+        </div>
 
-    <script type="text/javascript" charset="utf-8">
+    {% else %}
 
-        const app = createApp({
-            name: "MusicDashboard",
-            components: {
-                Card,
-                PlaylistEditor,
-                DropDownMenu,
-                FontAwesomeIcon,
-                TagsInput,
-            },
-            delimiters: ["[[", "]]"],
-            setup() {
-                const paginator = ref({{ paginator_info| safe }});
-                let recentAlbums = ref(JSON.parse(document.getElementById("recent_albums").textContent));
-                const songList = ref([]);
+        <div id="react-root"
+             data-random-album="{{ random_album_json }}"
+             data-playlists="{{ playlists_json }}"
+             data-recent-played-songs="{{ recent_played_songs_json }}"
+             data-initial-recent-albums="{{ recent_albums_json }}"
+             data-initial-paginator="{{ paginator_info }}"
+             data-collection-is-not-empty="{{ collection_is_not_empty|yesno:'true,false' }}"
+             data-recent-albums-url="{% url 'music:recent_albums' 666 %}"
+             data-recent-songs-url="{% url 'music:recent_songs' %}"
+             data-create-playlist-url="{% url 'music:playlist_create' %}"
+             data-tag-search-url="{% url 'tag:search' %}?doctype=song"
+             data-create-song-url="{% url 'music:create' %}"
+             data-create-album-url="{% url 'music:create_album' %}"
+             data-album-list-url="{% url 'music:album_list' %}"
+             data-images-url="{{ IMAGES_URL }}"
+             data-csrf-token="{{ csrf_token }}">
+        </div>
 
-                function needsPagination() {
-                    return paginator.value.has_previous || paginator.value.has_next;
-                }
-
-                function onClickCreate(evt) {
-                    const modal = new Modal("#modalEditor");
-                    modal.show();
-                    window.setTimeout(() => { document.getElementById("id_name").focus() }, 500);
-                }
-
-                function paginate(direction) {
-                    let pageNumber;
-                    if (direction === "prev") {
-                        pageNumber = paginator.value.previous_page_number;
-                    } else {
-                        pageNumber = paginator.value.next_page_number;
-                    }
-                    doGet(
-                        "{% url "music:recent_albums" 666 %}".replace(/666/, pageNumber),
-                        (response) => {
-                            recentAlbums.value = response.data.album_list;
-                            paginator.value = response.data.paginator;
-                        },
-                        "Error getting recent albums",
-                    );
-                }
-
-                onMounted(() => {
-                    doGet(
-                        "{% url "music:recent_songs" %}",
-                        (response) => {
-                            songList.value = response.data.song_list;
-                        },
-                        "Error getting recent songs",
-                    );
-                });
-
-                return {
-                    needsPagination,
-                    onClickCreate,
-                    paginate,
-                    paginator,
-                    recentAlbums,
-                    songList,
-                }
-            },
-        });
-        app.use(Oruga, {
-            iconComponent: "font-awesome-icon",
-            iconPack: "fa",
-            table: {
-                sortIcon: "caret-up",
-            },
-        });
-        app.mount("#vue-app");
-
-    </script>
+    {% endif %}
 
 {% endblock %}

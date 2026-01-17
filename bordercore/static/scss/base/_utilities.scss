@@ -169,10 +169,6 @@ div.drag-target {
   background-color: var(--hover-bg);
 }
 
-.zoomable {
-  cursor: zoom-in;
-}
-
 .node-draggable {
   cursor: grab;
 }
@@ -225,12 +221,19 @@ div.drag-target {
   }
 }
 
-.zoom {
-  transition: transform 0.2s ease;
-  
+%zoom {
+  transition: transform 1s;
+
   &:hover {
+    filter: drop-shadow(0.12rem 0.12rem 0.62rem var(--text3-transparent)) drop-shadow(-0.12rem -0.12rem 0.62rem var(--text3-transparent));
     transform: scale(1.1);
   }
+}
+
+.zoomable {
+  cursor: zoom-in;
+
+  @extend %zoom;
 }
 
 .icon-disabled {
@@ -256,6 +259,13 @@ div.drag-target {
   &::-webkit-scrollbar {
     width: 0.5rem;
   }
+}
+
+// Divider line
+hr.divider {
+  height: 0.15rem;
+  margin-top: 0.25rem;
+  background-color: var(--surface7);
 }
 
 // Fader effect

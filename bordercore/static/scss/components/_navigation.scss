@@ -27,6 +27,12 @@
   }
 }
 
+.hover-target:hover {
+  .dropdown > div {
+    display: flex !important;
+  }
+}
+
 .option-icon {
   margin-right: 0.5rem;
 }
@@ -108,7 +114,7 @@
 }
 
 .list-group-item-secondary {
-  background-color: var(--surface3);
+  background-color: var(--surface1);
 }
 
 .interior-borders {

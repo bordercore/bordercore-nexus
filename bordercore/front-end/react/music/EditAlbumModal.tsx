@@ -1,14 +1,7 @@
 import React from "react";
 import axios from "axios";
+import { Modal } from "bootstrap";
 import type { Album, Artist } from "./types";
-
-// Bootstrap Modal type
-declare const bootstrap: {
-  Modal: new (element: string | Element) => {
-    show: () => void;
-    hide: () => void;
-  };
-};
 
 interface EditAlbumModalProps {
   album: Album;
@@ -59,7 +52,7 @@ export const EditAlbumModal = React.forwardRef<EditAlbumModalHandle, EditAlbumMo
       setCoverImageFile(null);
 
       if (modalRef.current) {
-        const modal = new bootstrap.Modal(modalRef.current);
+        const modal = new Modal(modalRef.current);
         modal.show();
       }
     }, [album, initialTags]);

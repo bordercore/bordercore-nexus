@@ -4,6 +4,33 @@
 // Form inputs, textareas, checkboxes, tags, and form-related components
 
 // Form controls
+input.form-control,
+textarea.form-control,
+select.form-control {
+  border: 0.06rem solid var(--surface1);
+  background-color: var(--form-bg);
+  color: var(--form-color) !important;
+
+  &:hover {
+    border-color: var(--form-border-color-hover);
+  }
+
+  &:focus {
+    border-color: var(--form-border-color-hover);
+    background-color: var(--form-bg-focus);
+    color: var(--text4);
+  }
+
+  &:disabled {
+    border: none;
+    background-color: var(--form-bg-disabled);
+
+    &:hover {
+      cursor: not-allowed;
+    }
+  }
+}
+
 input[type="radio"],
 input[type="checkbox"] {
   margin-right: 0.5rem;
@@ -30,6 +57,9 @@ input[type="checkbox"] {
 
 .form-section {
   margin-bottom: 1.5rem;
+  color: var(--text3);
+  font-size: larger;
+  font-weight: bold;
 }
 
 ::placeholder {

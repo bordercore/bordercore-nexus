@@ -1,15 +1,8 @@
 import React from "react";
 import axios from "axios";
+import { Modal } from "bootstrap";
 import type { Playlist } from "./types";
 import { EventBus } from "../utils/reactUtils";
-
-// Bootstrap Modal type
-declare const bootstrap: {
-  Modal: new (element: string | Element) => {
-    show: () => void;
-    hide: () => void;
-  };
-};
 
 interface AddToPlaylistModalProps {
   getPlaylistsUrl: string;
@@ -75,7 +68,7 @@ export const AddToPlaylistModal = React.forwardRef<
   const openModal = React.useCallback((songUuidParam: string) => {
     setSongUuid(songUuidParam);
     if (modalRef.current) {
-      const modal = new bootstrap.Modal(modalRef.current);
+      const modal = new Modal(modalRef.current);
       modal.show();
     }
   }, []);
@@ -104,7 +97,7 @@ export const AddToPlaylistModal = React.forwardRef<
 
       // Hide modal on success
       if (modalRef.current) {
-        const modalInstance = bootstrap.Modal.getInstance(modalRef.current);
+        const modalInstance = Modal.getInstance(modalRef.current);
         if (modalInstance) {
           modalInstance.hide();
         }
@@ -182,12 +175,5 @@ export const AddToPlaylistModal = React.forwardRef<
     </div>
   );
 });
-
-// Helper to get Modal instance (Bootstrap 5)
-declare module bootstrap {
-  class Modal {
-    static getInstance(element: Element): Modal | null;
-  }
-}
 
 export default AddToPlaylistModal;

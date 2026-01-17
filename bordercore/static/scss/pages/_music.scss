@@ -3,23 +3,54 @@
 // =============================================================================
 // Music player, albums, playlists, and audio controls
 
+// Music Dashboard
+.music-dashboard {
+  .card-body {
+    position: relative;
+    z-index: 1;
+    flex-grow: 0;
+    padding: 1.25rem;
+    margin: 0 0.5rem 1rem;
+    background-color: var(--surface2);
+    border-radius: 0.4rem;
+    box-shadow: rgb(0 0 0 / 25%) 0 54px 55px, rgb(0 0 0 / 12%) 0 -12px 30px, rgb(0 0 0 / 12%) 0 0.25rem 0.37rem, rgb(0 0 0 / 17%) 0 12px 13px, rgb(0 0 0 / 9%) 0 -0.18rem 0.31rem;
+
+    .card-title {
+      color: var(--text4);
+      font-size: 1.2rem;
+
+      a {
+        color: var(--text4);
+      }
+    }
+  }
+
+  // Backdrop filter support for glass effect
+  @supports (backdrop-filter: blur(1.56rem) brightness(170%)) {
+    .card-body.backdrop-filter {
+      backdrop-filter: var(--eye-candy);
+      background: var(--surface1-transparent);
+    }
+  }
+}
+
 .music-nav {
   display: flex;
   border-bottom: 1px solid var(--border-color);
   margin-bottom: 1.5rem;
   gap: 1rem;
-  
+
   .music-nav-item {
     padding: 0.75rem 1rem;
     border-bottom: 2px solid transparent;
     color: var(--text2);
     text-decoration: none;
     transition: color 0.2s ease, border-color 0.2s ease;
-    
+
     &:hover {
       color: var(--text1);
     }
-    
+
     &.active {
       border-bottom-color: var(--link-color);
       color: var(--text1);
@@ -38,7 +69,7 @@
   display: grid;
   gap: 1rem;
   grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
-  
+
   .album-item {
     padding: 1rem;
     border: 1px solid var(--border-color);
@@ -46,11 +77,11 @@
     border-radius: var(--border-radius1);
     cursor: pointer;
     transition: background-color 0.2s ease;
-    
+
     &:hover {
       background-color: var(--hover-bg);
     }
-    
+
     .album-cover {
       width: 100%;
       margin-bottom: 0.5rem;
@@ -58,12 +89,12 @@
       border-radius: var(--border-radius1);
       object-fit: cover;
     }
-    
+
     .album-title {
       color: var(--text1);
       font-weight: 600;
     }
-    
+
     .album-artist {
       color: var(--text2);
       font-size: 0.875rem;
@@ -79,25 +110,25 @@
     border-bottom: 1px solid var(--border-color);
     cursor: pointer;
     transition: background-color 0.2s ease;
-    
+
     &:hover {
       background-color: var(--hover-bg);
     }
-    
+
     &.playing {
       background-color: var(--selected-bg);
     }
-    
+
     .track-number {
       width: 2rem;
       color: var(--text3);
     }
-    
+
     .track-title {
       flex: 1;
       color: var(--text1);
     }
-    
+
     .track-duration {
       color: var(--text2);
     }
@@ -147,26 +178,26 @@ tr.hover-target:hover {
   border-top: 1px solid var(--border-color);
   background-color: var(--surface2);
   gap: 1rem;
-  
+
   .player-controls {
     display: flex;
     gap: 0.5rem;
   }
-  
+
   .player-info {
     flex: 1;
-    
+
     .player-track-title {
       color: var(--text1);
       font-weight: 600;
     }
-    
+
     .player-artist {
       color: var(--text2);
       font-size: 0.875rem;
     }
   }
-  
+
   .player-progress {
     flex: 2;
   }

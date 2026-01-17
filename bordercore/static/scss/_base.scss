@@ -1317,7 +1317,7 @@ table.b-table th {
   flex-grow: 0;
   padding: 1.25rem;
   margin: 0 0.5rem 1rem 0.5rem;
-  background-color: var(--surface2) !important;
+  background-color: var(--surface1) !important;
   border-radius: 0.4rem;
 
   .side-panel {
@@ -2718,8 +2718,26 @@ media-volume-range {
 
 // Other
 
-#album-list div {
-  width: 12.31rem;
+#album-list.album-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+#album-list.album-grid > div {
+  width: auto;
+}
+
+.pagination-arrows {
+  a {
+    svg {
+      transition: filter 0.2s ease;
+    }
+
+    &:hover svg {
+      filter: drop-shadow(0.12rem 0.12rem 0.62rem var(--text3)) drop-shadow(-0.12rem -0.12rem 0.62rem var(--text3));
+    }
+  }
 }
 
 #album-song-list {
@@ -3282,6 +3300,36 @@ pre[class^="language-"] {
     }
     li:nth-child(7) {
       color: var(--text-disabled);
+    }
+  }
+}
+
+// Music Dashboard
+.music-dashboard {
+  .card-body {
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-color);
+    background: linear-gradient(
+      135deg,
+      var(--surface2) 0%,
+      var(--surface3) 100%
+    );
+
+    .card-title {
+      font-size: 1.3rem;
+      color: var(--text5);
+      font-weight: 600;
+    }
+  }
+
+  // Override for backdrop-filter cards - use semi-transparent gradient
+  @supports (backdrop-filter: blur(1.56rem) brightness(170%)) {
+    .card-body.backdrop-filter {
+      background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.05) 0%,
+        rgba(0, 0, 0, 0.15) 100%
+      ) !important;
     }
   }
 }

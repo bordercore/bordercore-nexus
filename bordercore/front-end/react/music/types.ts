@@ -114,3 +114,81 @@ export interface ArtistDetailProps {
   defaultPlaylist: string;
   hasArtistImage: boolean;
 }
+
+// Music Dashboard Page Types
+
+export interface RecentAlbum {
+  uuid: string;
+  title: string;
+  artist_uuid: string;
+  artist_name: string;
+  created: string;
+  album_url: string;
+  artwork_url: string;
+  artist_url: string;
+}
+
+export interface FeaturedAlbum {
+  uuid: string;
+  title: string;
+  artist_name: string;
+  artist_uuid: string;
+  album_url: string;
+  artist_url: string;
+  artwork_url: string;
+}
+
+export interface PlaylistItem {
+  uuid: string;
+  name: string;
+  num_songs: number;
+  url: string;
+}
+
+export interface RecentPlayedSong {
+  uuid: string;
+  title: string;
+  artist_name: string;
+  artist_url: string;
+}
+
+export interface RecentAddedSong {
+  uuid: string;
+  title: string;
+  artist: string;
+  year: number | null;
+  length: string;
+  note?: string;
+  artist_url: string;
+}
+
+export interface PaginatorInfo {
+  page_number: number;
+  has_next: boolean;
+  has_previous: boolean;
+  next_page_number: number | null;
+  previous_page_number: number | null;
+  count: number;
+}
+
+export interface MusicDashboardUrls {
+  recentAlbums: string;
+  recentSongs: string;
+  createPlaylist: string;
+  tagSearch: string;
+  createSong: string;
+  createAlbum: string;
+  albumList: string;
+}
+
+export interface MusicDashboardProps {
+  randomAlbum: FeaturedAlbum | null;
+  playlists: PlaylistItem[];
+  recentPlayedSongs: RecentPlayedSong[];
+  initialRecentAlbums: RecentAlbum[];
+  initialPaginator: PaginatorInfo;
+  collectionIsNotEmpty: boolean;
+  urls: MusicDashboardUrls;
+  imagesUrl: string;
+  csrfToken: string;
+}

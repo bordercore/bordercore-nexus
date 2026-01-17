@@ -48,6 +48,18 @@
     width: 100%;
     justify-content: flex-start;
   }
+
+  // Hide dropdown trigger by default when inside hover-target, show on hover
+  // Use visibility/opacity instead of display to prevent layout shift
+  .hover-target & {
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  .hover-target:hover & {
+    opacity: 1;
+    visibility: visible;
+  }
 }
 
 .dropdown-trigger {
@@ -55,7 +67,7 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: opacity 0.15s ease;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
 
   &:hover {
     opacity: 0.8;
@@ -64,11 +76,13 @@
   &.dropdownmenu {
     display: flex;
     width: var(--dropdown-height, 2.5rem);
+    min-width: var(--dropdown-height, 2.5rem);
     height: var(--dropdown-height, 2.5rem);
+    min-height: var(--dropdown-height, 2.5rem);
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    transition: background-color 0.15s ease;
+    transition: background-color 0.15s ease, opacity 0.15s ease, visibility 0.15s ease;
 
     &:hover {
       background-color: var(--hover-bg);
