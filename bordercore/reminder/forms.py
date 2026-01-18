@@ -1,7 +1,7 @@
 """Django forms for the reminder application."""
 
 import json
-from typing import Any, Dict, List
+from typing import Any
 
 from django import forms
 from django.core.exceptions import ValidationError
@@ -92,7 +92,7 @@ class ReminderForm(ModelForm):
         self.fields["days_of_week"].required = False
         self.fields["days_of_month"].required = False
 
-    def clean_days_of_week_input(self) -> List[int]:
+    def clean_days_of_week_input(self) -> list[int]:
         """Parse and validate days_of_week_input field.
 
         Returns:
@@ -121,7 +121,7 @@ class ReminderForm(ModelForm):
         except (json.JSONDecodeError, ValueError) as e:
             raise ValidationError(f"Invalid days of week format: {e}")
 
-    def clean_days_of_month_input(self) -> List[int]:
+    def clean_days_of_month_input(self) -> list[int]:
         """Parse and validate days_of_month_input field.
 
         Returns:
@@ -148,9 +148,9 @@ class ReminderForm(ModelForm):
 
             return sorted(set(valid_days))
         except (json.JSONDecodeError, ValueError) as e:
-            raise ValidationError(f"Invalid days of month format: {e}")
+            raise ValidationError(f"Invalid days of month format: {e}"                )
 
-    def clean(self) -> Dict[str, Any]:
+    def clean(self) -> dict[str, Any]:
         """Validate the form based on schedule_type.
 
         Ensures required fields are present for each schedule type:
@@ -158,14 +158,17 @@ class ReminderForm(ModelForm):
         - Weekly: days_of_week required, trigger_time recommended
         - Monthly: days_of_month required, trigger_time recommended
         """
-        cleaned_data = super().clean()
+        cleaned_data: dict[str, Any] | None = super().clean()
+        if cleaned_data is None:
+            return {}
+
         schedule_type = cleaned_data.get("schedule_type")
 
         # Copy parsed days from custom input fields to model fields
         if "days_of_week_input" in cleaned_data:
-            cleaned_data["days_of_week"] = self.cleaned_data.get("days_of_week_input", [])
+            cleaned_data["days_of_week"] = cleaned_data.get("days_of_week_input", [])
         if "days_of_month_input" in cleaned_data:
-            cleaned_data["days_of_month"] = self.cleaned_data.get("days_of_month_input", [])
+            cleaned_data["days_of_month"] = cleaned_data.get("days_of_month_input", [])
 
         # Validate based on schedule type
         if schedule_type == Reminder.SCHEDULE_TYPE_WEEKLY:
