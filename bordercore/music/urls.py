@@ -21,8 +21,13 @@ urlpatterns = [
     ),
     path(
         route="update/<uuid:uuid>/",
-        view=views.SongUpdateView.as_view(),
+        view=views.SongUpdateReactView.as_view(),
         name="update"
+    ),
+    path(
+        route="song_form_ajax/<uuid:uuid>/",
+        view=views.SongFormAjaxView.as_view(),
+        name="song_form_ajax"
     ),
     path(
         route="album_list",

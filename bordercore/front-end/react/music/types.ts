@@ -192,3 +192,54 @@ export interface MusicDashboardProps {
   imagesUrl: string;
   csrfToken: string;
 }
+
+// Playlist Detail Page Types
+
+export interface PlaylistSong extends BaseTrack {
+  uuid: string;
+  title: string;
+  artist: string;
+  year: number | null;
+  length: string;
+  sort_order: number;
+  playlistitem_uuid: string;
+}
+
+export interface PlaylistParameters {
+  tag?: string;
+  start_year?: number;
+  end_year?: number;
+  rating?: number;
+  exclude_recent?: number;
+  exclude_albums?: boolean;
+  sort_by?: string;
+  size?: number;
+}
+
+export interface PlaylistDetail {
+  uuid: string;
+  name: string;
+  note: string;
+  type: "manual" | "smart";
+  parameters: PlaylistParameters;
+}
+
+export interface PlaylistDetailUrls {
+  getPlaylist: string;
+  sortPlaylist: string;
+  deletePlaylistItem: string;
+  deletePlaylist: string;
+  updatePlaylist: string;
+  editSong: string;
+  markListenedTo: string;
+  songMedia: string;
+  musicList: string;
+  tagSearch: string;
+}
+
+export interface PlaylistDetailProps {
+  playlist: PlaylistDetail;
+  urls: PlaylistDetailUrls;
+  staticUrl: string;
+  csrfToken: string;
+}

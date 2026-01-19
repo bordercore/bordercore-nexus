@@ -87,6 +87,8 @@ def vite_asset(entry_name: str) -> SafeString | str:
         "dist/js/album-detail": "front-end/entries/album-detail.tsx",
         "dist/js/artist-detail": "front-end/entries/artist-detail.tsx",
         "dist/js/music-dashboard": "front-end/entries/music-dashboard.tsx",
+        "dist/js/song-edit": "front-end/entries/song-edit.tsx",
+        "dist/js/playlist-detail": "front-end/entries/playlist-detail.tsx",
     }
 
     parts: list[str] = []

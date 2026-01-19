@@ -2675,6 +2675,10 @@ hr.collection-list-divider {
 .media-control-bar {
   width: 100%;
   flex-flow: wrap;
+
+  > * {
+    min-width: 0;
+  }
 }
 
 media-controller {
@@ -2705,8 +2709,20 @@ media-time-range {
 }
 
 media-volume-range {
-  flex-grow: 1;
+  max-width: 200px;
   border-bottom-right-radius: var(--border-radius2);
+}
+
+@media screen and (max-width: 768px) {
+  media-volume-range {
+    max-width: 120px;
+  }
+}
+
+@media screen and (max-width: 576px) {
+  media-volume-range {
+    display: none;
+  }
 }
 
 // Playlist modal

@@ -1,0 +1,21 @@
+{% extends "base_react.html" %}
+{% load vite_tags %}
+
+{% block title %}Edit Song{% endblock %}
+
+{% block javascript_bundles %}
+    {% vite_asset "dist/js/base-react" %}
+    {% vite_asset "dist/js/song-edit" %}
+{% endblock %}
+
+{% block content %}
+    <div id="react-root"
+         data-form-ajax-url="{% url 'music:song_form_ajax' song.uuid %}"
+         data-submit-url="{{ request.path }}"
+         data-cancel-url="{% if request.GET.return_url %}{{ request.GET.return_url }}{% else %}{% url 'music:list' %}{% endif %}"
+         data-artist-search-url="{% url 'music:search_artists' %}"
+         data-tag-search-url="{% url 'tag:search' %}"
+         data-dupe-check-url="{% url 'music:dupe_song_checker' %}"
+         data-tag-suggestions="{{ tag_counts_json }}">
+    </div>
+{% endblock %}

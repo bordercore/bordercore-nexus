@@ -1021,6 +1021,7 @@ class PlaylistDetailView(LoginRequiredMixin, DetailView):
     model = Playlist
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
+    template_name = "music/playlist_detail.html"
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         """Get context data for the playlist detail view.
@@ -1033,12 +1034,17 @@ class PlaylistDetailView(LoginRequiredMixin, DetailView):
         """
         context = super().get_context_data(**kwargs)
 
-        obj_dict = model_to_dict(self.object)
-        obj_dict["uuid"] = str(self.object.uuid)
+        playlist = self.object
+        obj_dict = model_to_dict(playlist)
+        obj_dict["uuid"] = str(playlist.uuid)
+        # Ensure parameters is a dict, not None
+        if obj_dict.get("parameters") is None:
+            obj_dict["parameters"] = {}
 
         return {
             **context,
-            "playlist_json": json.dumps(obj_dict)
+            "playlist": playlist,
+            "playlist_json": json.dumps(obj_dict),
         }
 
 

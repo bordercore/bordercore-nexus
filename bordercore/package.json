@@ -100,6 +100,7 @@
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
         "react-pro-sidebar": "^1.1.0",
+        "react-select": "^5.10.2",
         "sortablejs": "^1.15.0",
         "tiny-emitter": "^2.1.0",
         "url-loader": "^4.1.1",

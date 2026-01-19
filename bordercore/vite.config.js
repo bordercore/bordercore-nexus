@@ -46,10 +46,15 @@ module.exports = defineConfig({
         "dist/js/album-detail": path.resolve(__dirname, "front-end", "entries", "album-detail.tsx"),
         "dist/js/artist-detail": path.resolve(__dirname, "front-end", "entries", "artist-detail.tsx"),
         "dist/js/music-dashboard": path.resolve(__dirname, "front-end", "entries", "music-dashboard.tsx"),
+        "dist/js/song-edit": path.resolve(__dirname, "front-end", "entries", "song-edit.tsx"),
+        "dist/js/playlist-detail": path.resolve(__dirname, "front-end", "entries", "playlist-detail.tsx"),
       },
       output: {
         entryFileNames: "[name]-[hash].js",
         assetFileNames: "[name]-[hash][extname]",
+        manualChunks: {
+          "react-select": ["react-select"],
+        },
       },
     },
   },
