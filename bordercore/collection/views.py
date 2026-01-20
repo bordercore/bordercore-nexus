@@ -90,13 +90,12 @@ class CollectionListView(LoginRequiredMixin, FormRequestMixin, FormMixin, ListVi
 
         context["collection_list"] = [
             {
-                "uuid": c.uuid,
+                "uuid": str(c.uuid),
                 "name": c.name,
                 "url": reverse("collection:detail", kwargs={"uuid": c.uuid}),
                 "num_blobs": c.num_blobs,
                 "cover_url": c.cover_url,
             } for c in self.object_list
-
         ]
         context["cover_url"] = settings.COVER_URL
         context["title"] = "Collection List"
@@ -133,16 +132,14 @@ class CollectionDetailView(LoginRequiredMixin, FormRequestMixin, FormMixin, Deta
 
         Returns:
             Context dictionary containing:
-                - tags: List of tag names associated with the collection
-                - object_tags: List of tags used by objects in the collection
-                  with their blob counts
-                - collection_json: Dictionary representation of the collection
-                  with name and description fields
+                - collection_data: Dictionary representation of the collection
+                - object_tags: List of tags used by objects with counts
+                - initial_tags: List of tag names on the collection
                 - title: Page title
         """
         context = super().get_context_data(**kwargs)
 
-        context["tags"] = list(self.object.tags.values_list("name", flat=True))
+        context["initial_tags"] = list(self.object.tags.values_list("name", flat=True))
 
         # Get a list of all tags used by all objects in this collection,
         #  along with their total counts
@@ -159,7 +156,16 @@ class CollectionDetailView(LoginRequiredMixin, FormRequestMixin, FormMixin, Deta
                 "-blob_count"
             )
         ]
-        context["collection_json"] = model_to_dict(self.object, fields=["name", "description"])
+
+        # Collection data for React
+        context["collection_data"] = {
+            "uuid": str(self.object.uuid),
+            "name": self.object.name,
+            "description": self.object.description or "",
+            "is_favorite": self.object.is_favorite,
+            "modified": self.object.modified.strftime("%B %d, %Y") if self.object.modified else "",
+            "object_count": self.object.collectionobject_set.count(),
+        }
         context["title"] = f"Collection Detail :: {self.object.name}"
 
         return context

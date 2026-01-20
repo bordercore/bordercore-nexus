@@ -1,233 +1,26 @@
-{% extends "base.html" %}
+{% extends "base_react.html" %}
+{% load vite_tags %}
 
-{% block title %} Collections {% endblock %}
+{% block title %}Collection List{% endblock %}
 
-{% block content %}
-
-    <div id="vue-app">
-
-        <div class="row card-grid">
-            <div class="col-lg-12 d-flex align-items-center">
-
-                <h1 class="ms-3">Favorite Collections</h1>
-                <div class="d-flex align-items-center ms-auto">
-                    <Transition name="fade">
-                        <div v-cloak v-if="showFilterInput" id="collection-filter" class="me-3">
-                            <input type="text" class="form-control" size="20" placeholder="Name" @blur="onBlur" @keyup.enter="onFilterEnter">
-                        </div>
-                    </Transition>
-
-                    <div v-if="filter" class="tag d-flex align-items-center me-3">
-                        <div v-cloak>Filter: <strong>[[ filter ]]</strong></div>
-                        <div>
-                            <a class="ms-1" href="#" @click.prevent="onClickRemoveFilter">
-                                <font-awesome-icon icon="times" class="text-primary" />
-                            </a>
-                        </div>
-                    </div>
-
-                    <div class="ms-2 me-5" @click="onFilterClick">
-                        <font-awesome-icon icon="magnifying-glass" class="glow text-emphasis" />
-                    </div>
-
-                    <drop-down-menu class="my-auto">
-                        <template #dropdown v-cloak>
-                            <li>
-                                <a class="dropdown-item" href="#" @click.prevent="onClickCreate">
-                                    <font-awesome-icon icon="plus" class="text-primary me-3"></font-awesome-icon>
-                                        New Collection
-                                </a>
-                            </li>
-                        </template>
-                    </drop-down-menu>
-
-                </div>
-            </div>
-
-            <div class="col-lg-12">
-                <hr class="collection-list-divider" />
-            </div>
-
-            <div class="card-grid ms-3">
-                <div class="d-flex flex-wrap">
-                    <div v-for="collection in getCollectionList()" class="collection-container text-center p-3" @click="onClickCollection(collection.url)">
-                        <div class="position-relative collection mx-auto">
-                            <img :src="collection.cover_url" />
-                            <div class="collection-cover-container position-absolute" v-html="getBlobCount(collection.num_blobs)">
-                            </div>
-                        </div>
-                        <div class="text-truncate" v-cloak>
-                            <a :href="collection.url">[[ collection.name ]]</a>
-                        </div>
-                    </div>
-                    <div v-if="items.length === 0" class="notice-big px-3" v-cloak>
-                        No collections found
-                    </div>
-                </div>
-            </div>
-
-            <div class="card-grid ms-3">
-
-                <form action="{% url 'collection:list' %}" method="post" id="form-collection-edit">
-                {% csrf_token %}
-                    <div class="modal fade" id="modalAdd" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-                        <div class="modal-dialog" role="document">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h4 class="modal-title" id="myModalLabel">
-                                        New Collection
-                                    </h4>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body">
-                    {% for field in form %}
-                        <div class="{% if field.errors %} error{% endif %} row mb-3">
-                            <label class="col-lg-3 col-form-label" for="inputTitle">{{ field.label }}</label>
-
-                            <div class="col-lg-9 d-flex">
-
-                            {% if field.label == "Tags" %}
-
-                                <tags-input
-                                    ref="tagsInput"
-                                    search-url="{% url 'tag:search' %}?query="
-                                >
-                                </tags-input>
-
-                            {% elif field.label == "Is Favorite" %}
-                                <o-switch v-model="isFavorite" name="is_favorite" :native-value="is_favorite"></o-switch>
-                            {% else %}
-
-                                {{ field }}
-                                {% for error in field.errors %}
-                                    <span class="form-error">{{ error }}</span>
-                                {% endfor %}
-
-                            {% endif %}
-
-                            </div>
-
-                        </div>
-                    {% endfor %}
-
-                                </div>
-                                <div class="modal-footer">
-                                    <input id="btn-action" class="btn btn-primary" type="submit" name="Go" value="Create" />
-                                </div>
-
-                            </div>
-                        </div>
-                    </div>
-                </form>
-
-            </div>
-
-        </div>
-
-    </div>
-
+{% block javascript_bundles %}
+    {{ block.super }}
+    {{ collection_list|json_script:"collection-list-data" }}
+    {% vite_asset "dist/js/collection-list" %}
 {% endblock %}
 
-{% block javascript %}
+{% block content %}
+<div id="react-root"
+     data-create-collection-url="{% url 'collection:create' %}"
+     data-tag-search-url="{% url 'tag:search' %}"
+     data-csrf-token="{{ csrf_token }}">
+</div>
+{% endblock %}
 
-    {{ block.super }}
+{% block help %}
+    <div class="d-none" id="help-text">
+*Filter:* Click the search icon to filter collections by name.
 
-    {{ collection_list|json_script:"collection_list" }}
-
-    <script type="text/javascript" charset="utf-8">
-
-        const app = createApp({
-            name: "CollectionList",
-            delimiters: ["[[", "]]"],
-            components: {
-                DropDownMenu,
-                FontAwesomeIcon,
-                TagsInput,
-            },
-            setup() {
-                const filter = ref("");
-                const items = JSON.parse(document.getElementById("collection_list").textContent);
-                const showFilterInput = ref(false);
-                const isFavorite = ref(true);
-
-                const tagsInput = ref(null);
-
-                function getCollectionList() {
-                    if (filter.value) {
-                        const regex = new RegExp(`.*${filter.value}.*`, "i");
-                        return items.filter((x) => !x.name.search(regex));
-                    } else {
-                        return items;
-                    }
-                };
-
-                function onBlur() {
-                    showFilterInput.value = false;
-                };
-
-                function onClickCreate(evt) {
-                    document.getElementById("id_name").value = "";
-                    document.getElementById("id_description").value = "";
-                    document.getElementById("btn-action").value = "Create";
-                    document.getElementById("form-collection-edit").setAttribute("action", "{% url 'collection:create' %}");
-                    const modal = new Modal("#modalAdd");
-                    modal.show();
-                    window.setTimeout(() => {
-                        document.getElementById("id_name").focus();
-                    }, 500);
-                };
-
-                function onClickCollection(url) {
-                    window.location = url;
-                };
-
-                function onClickRemoveFilter() {
-                    filter.value = null;
-                }
-
-                function onFilterClick() {
-                    showFilterInput.value = true;
-                    setTimeout( () => {
-                        const el = document.getElementById("collection-filter");
-                        el.querySelector("input").focus();
-                    }, 100);
-                };
-
-                function getBlobCount(count) {
-                    return count + " " + pluralize("blob", count);
-                };
-
-                function onFilterEnter() {
-                    showFilterInput.value = false;
-                    const el = document.getElementById("collection-filter");
-                    filter.value = el.querySelector("input").value;
-                };
-
-                return {
-                    filter,
-                    getBlobCount,
-                    getCollectionList,
-                    isFavorite,
-                    items,
-                    onBlur,
-                    onClickCollection,
-                    onClickCreate,
-                    onClickRemoveFilter,
-                    onFilterClick,
-                    onFilterEnter,
-                    showFilterInput,
-                    tagsInput,
-                };
-            },
-        });
-        app.use(Oruga, {
-            iconComponent: "font-awesome-icon",
-            iconPack: "fa",
-            table: {
-                sortIcon: "caret-up",
-            },
-        });
-        app.mount("#vue-app");
-
-    </script>
+*Create:* Click the menu icon to create a new collection.
+    </div>
 {% endblock %}

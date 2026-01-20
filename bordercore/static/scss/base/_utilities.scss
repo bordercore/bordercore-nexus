@@ -160,8 +160,6 @@ div.sphere {
 // Drag and drop
 div.drag-target {
   padding: 2rem;
-  border: 2px dashed var(--border-color);
-  border-radius: var(--border-radius1);
   text-align: center;
 }
 
@@ -209,9 +207,17 @@ div.drag-target {
 
 .icon-hover {
   transition: color 0.2s ease;
-  
+
+  svg {
+    transition: filter 0.2s ease;
+  }
+
   &:hover {
     color: var(--link-color);
+
+    svg {
+      filter: drop-shadow(0.12rem 0.12rem 0.62rem var(--text3)) drop-shadow(-0.12rem -0.12rem 0.62rem var(--text3));
+    }
   }
 }
 
@@ -228,6 +234,10 @@ div.drag-target {
     filter: drop-shadow(0.12rem 0.12rem 0.62rem var(--text3-transparent)) drop-shadow(-0.12rem -0.12rem 0.62rem var(--text3-transparent));
     transform: scale(1.1);
   }
+}
+
+.zoom {
+  @extend %zoom;
 }
 
 .zoomable {

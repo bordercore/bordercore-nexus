@@ -388,8 +388,17 @@ span {
 
 .icon-hover {
   color: var(--text3);
+
+  svg {
+    transition: filter 0.2s ease;
+  }
+
   &:hover {
     transform: scale(1.1);
+
+    svg {
+      filter: drop-shadow(0.12rem 0.12rem 0.62rem var(--text3)) drop-shadow(-0.12rem -0.12rem 0.62rem var(--text3));
+    }
   }
 }
 
