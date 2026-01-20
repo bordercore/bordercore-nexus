@@ -56,8 +56,9 @@ def get_s3_song_uuids():
 
 def test_album_songs_have_length_field():
     "Assert that all album songs have a length field"
-    s = Song.objects.filter(length__isnull=True)
-    assert len(s) == 0, f"{len(s)} songs have no length field"
+    s = Song.objects.filter(length__isnull=True).only("uuid")
+    failed_uuids = [str(song.uuid) for song in s]
+    assert len(s) == 0, f"{len(s)} songs have no length field: {failed_uuids}"
 
 
 def test_all_songs_exist_in_s3():
