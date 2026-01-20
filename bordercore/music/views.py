@@ -329,12 +329,30 @@ class AlbumListView(LoginRequiredMixin, ListView):
             artist.album_counts = artist_counts["album_counts"][str(artist.uuid)]
             artist.song_counts = artist_counts["song_counts"][str(artist.uuid)]
 
+        nav = list(string.ascii_lowercase) + ["other"]
+        unique_artist_letters = get_unique_artist_letters(user)
+
+        # JSON serialized data for React
+        artists_data = [
+            {
+                "uuid": str(artist.uuid),
+                "name": artist.name,
+                "album_count": artist.album_counts,
+                "song_count": artist.song_counts,
+            }
+            for artist in self.object_list
+        ]
+
         return {
             **context,
-            "nav": list(string.ascii_lowercase) + ["other"],
+            "nav": nav,
             "title": "Album List",
             "selected_letter": selected_letter,
-            "unique_artist_letters": get_unique_artist_letters(user)
+            "unique_artist_letters": unique_artist_letters,
+            # JSON serialized data for React
+            "artists_json": json.dumps(artists_data),
+            "nav_json": json.dumps(nav),
+            "unique_artist_letters_json": json.dumps(list(unique_artist_letters)),
         }
 
 
@@ -516,7 +534,7 @@ class SongUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView):
     """Handle updating song information and metadata."""
 
     model = Song
-    template_name = "music/create_song.html"
+    template_name = "music/song_edit.html"
     form_class = SongForm
     success_url = reverse_lazy("music:list")
     slug_field = "uuid"
@@ -543,12 +561,18 @@ class SongUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView):
         user = cast(User, self.request.user)
         context = super().get_context_data(**kwargs)
         context["action"] = "Edit"
+        context["title"] = "Edit Song"
+        context["song"] = self.object
         context["artist_name"] = str(self.object.artist)
         context["song_length_pretty"] = convert_seconds(self.object.length)
         context["last_time_played"] = self.object.last_time_played.strftime("%B %d, %Y") \
             if self.object.last_time_played else "Never"
         context["tags"] = [x.name for x in self.object.tags.all()]
         context["tag_counts"] = get_song_tags(user)
+        # Add JSON context for React
+        context["tag_counts_json"] = json.dumps(
+            [{"name": t["name"], "count": t["count"]} for t in context["tag_counts"]]
+        )
         return context
 
     def form_valid(self, form: SongForm) -> HttpResponseRedirect:
@@ -639,101 +663,6 @@ class SongFormAjaxView(LoginRequiredMixin, DetailView):
         return JsonResponse(data)
 
 
-class SongUpdateReactView(LoginRequiredMixin, FormRequestMixin, UpdateView):
-    """Handle updating song information using React frontend.
-
-    This view serves the React-based song edit page and handles form submissions
-    via AJAX, returning JSON responses.
-    """
-
-    model = Song
-    template_name = "music/song_edit_react.html"
-    form_class = SongForm
-    success_url = reverse_lazy("music:list")
-    slug_field = "uuid"
-    slug_url_kwarg = "uuid"
-
-    def get_queryset(self) -> QuerySetType[Song]:
-        """Limit updates to the current user's songs.
-
-        Returns:
-            QuerySet of Song objects for this user.
-        """
-        user = cast(User, self.request.user)
-        return Song.objects.filter(user=user).prefetch_related("tags")
-
-    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        """Get context data for the song update view.
-
-        Args:
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            Dictionary containing context data for the template.
-        """
-        user = cast(User, self.request.user)
-        context = super().get_context_data(**kwargs)
-        context["title"] = "Edit Song"
-        context["song"] = self.object
-        context["tag_counts"] = get_song_tags(user)
-        # Serialize tag_counts for React
-        context["tag_counts_json"] = json.dumps(
-            [{"name": t["name"], "count": t["count"]} for t in context["tag_counts"]]
-        )
-        return context
-
-    def form_valid(self, form: SongForm) -> HttpResponse:
-        """Process valid form submission for song update.
-
-        Args:
-            form: The validated song form.
-
-        Returns:
-            JSON response for AJAX requests, HTTP redirect otherwise.
-        """
-        song = form.instance
-        song.tags.set(form.cleaned_data["tags"])
-        self.object = form.save()
-
-        # For AJAX requests, return JSON instead of redirect
-        if (
-            self.request.headers.get("X-Requested-With") == "XMLHttpRequest"
-            or self.request.content_type == "application/x-www-form-urlencoded"
-        ):
-            success_url = self.success_url
-            if "return_url" in self.request.POST and self.request.POST["return_url"]:
-                success_url = self.request.POST["return_url"]
-            return JsonResponse({"success": True, "redirect_url": str(success_url)})
-
-        messages.add_message(self.request, messages.INFO, "Song edited")
-
-        if "return_url" in self.request.POST and self.request.POST["return_url"] != "":
-            success_url = self.request.POST["return_url"]
-        else:
-            success_url = self.success_url
-
-        return HttpResponseRedirect(success_url)
-
-    def form_invalid(self, form: SongForm) -> HttpResponse:
-        """Handle invalid form submission.
-
-        Args:
-            form: The form with validation errors.
-
-        Returns:
-            HttpResponse with form errors, JSON for AJAX requests.
-        """
-        if (
-            self.request.headers.get("X-Requested-With") == "XMLHttpRequest"
-            or self.request.content_type == "application/x-www-form-urlencoded"
-        ):
-            errors: dict[str, Any] = {}
-            for field, field_errors in form.errors.items():
-                errors[field] = list(field_errors)
-            return JsonResponse({"errors": errors}, status=400)
-        return super().form_invalid(form)
-
-
 class SongCreateView(LoginRequiredMixin, FormRequestMixin, CreateView):
     """Handle creating new songs with file uploads."""
 
@@ -755,6 +684,22 @@ class SongCreateView(LoginRequiredMixin, FormRequestMixin, CreateView):
         context = super().get_context_data(**kwargs)
         context["action"] = "New"
         context["tag_counts"] = get_song_tags(user)
+        # Add JSON context for React
+        context["tag_counts_json"] = json.dumps(
+            [{"name": t["name"], "count": t["count"]} for t in context["tag_counts"]]
+        )
+        source_options = [
+            {"id": s.id, "name": s.name}
+            for s in SongSource.objects.all()
+        ]
+        context["source_options_json"] = json.dumps(source_options)
+        # Get initial source from session
+        song_source_name: str = self.request.session.get("song_source", SongSource.DEFAULT)
+        try:
+            initial_source = SongSource.objects.get(name=song_source_name)
+            context["initial_source_id"] = initial_source.id
+        except SongSource.DoesNotExist:
+            context["initial_source_id"] = ""
         return context
 
     def form_valid(self, form: SongForm) -> HttpResponse:
@@ -986,6 +931,7 @@ class SearchTagListView(LoginRequiredMixin, ListView):
 
         song_list = list(context["object_list"].values("uuid", "title", "artist__name", "year", "length"))
         for song in song_list:
+            song["uuid"] = str(song["uuid"])
             song["length"] = convert_seconds(song["length"])
 
         user = cast(User, self.request.user)
@@ -1000,9 +946,10 @@ class SearchTagListView(LoginRequiredMixin, ListView):
         ).order_by("-year"):
             album_list.append(
                 {
-                    "uuid": match.uuid,
+                    "uuid": str(match.uuid),
                     "title": match.title,
-                    "artist": match.artist,
+                    "artist_name": match.artist.name,
+                    "artist_uuid": str(match.artist.uuid),
                     "year": match.year,
                 }
             )
@@ -1012,6 +959,9 @@ class SearchTagListView(LoginRequiredMixin, ListView):
             "tag_name": self.request.GET["tag"],
             "song_list": song_list,
             "album_list": album_list,
+            # JSON serialized data for React
+            "songs_json": json.dumps(song_list),
+            "albums_json": json.dumps(album_list),
         }
 
 
@@ -1200,10 +1150,17 @@ class CreateAlbumView(LoginRequiredMixin, TemplateView):
             for x in SongSource.objects.all()
         ]
 
+        # Get default source ID from session or use default
+        default_source_name = self.request.session.get("song_source", SongSource.DEFAULT)
+        default_source_id = next(
+            (s["id"] for s in song_sources if s["name"] == default_source_name),
+            song_sources[0]["id"] if song_sources else None
+        )
+
         return {
             **context,
-            "song_source_default": self.request.session.get("song_source", SongSource.DEFAULT),
-            "song_sources": json.dumps({"info": song_sources})
+            "song_sources_json": json.dumps(song_sources),
+            "default_source_id": default_source_id,
         }
 
 

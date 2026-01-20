@@ -1,5 +1,5 @@
-import React, { useRef, useEffect, useCallback } from "react";
-import axios from "axios";  // Still needed for fetching form data and dupe check
+import React, { useRef, useState, useCallback } from "react";
+import axios from "axios";  // Still needed for ID3 extraction and dupe check
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faStar, faMusic, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 import { SelectValue, SelectValueHandle } from "../common/SelectValue";
@@ -21,12 +21,10 @@ interface SongFormData {
   note: string;
   album_name: string;
   compilation: boolean;
+  album_artist: string;
   tags: string[];
   source: number | null;
   length: number | null;
-  length_pretty: string;
-  last_time_played: string;
-  times_played: number;
 }
 
 interface SongFormErrors {
@@ -39,8 +37,10 @@ interface SongFormErrors {
   note?: string[];
   album_name?: string[];
   compilation?: string[];
+  album_artist?: string[];
   tags?: string[];
   source?: string[];
+  song?: string[];
   non_field_errors?: string[];
 }
 
@@ -53,35 +53,45 @@ interface DupeSong {
   album_url?: string;
 }
 
+interface SongInfo {
+  songLength: number | null;
+  songLengthPretty: string | null;
+  songSize: string | null;
+  sampleRate: string | null;
+  bitRate: string | null;
+}
+
 interface TagSuggestion {
   name: string;
   count: number;
 }
 
-interface SongEditPageProps {
-  formAjaxUrl: string;
+interface SongCreatePageProps {
   submitUrl: string;
   cancelUrl: string;
-  returnUrl?: string;
   csrfToken: string;
   tagSearchUrl: string;
   artistSearchUrl: string;
   dupeCheckUrl: string;
+  id3InfoUrl: string;
   tagSuggestions: TagSuggestion[];
+  sourceOptions: SourceOption[];
+  initialSourceId: number | null;
 }
 
-export function SongEditPage({
-  formAjaxUrl,
+export function SongCreatePage({
   submitUrl,
   cancelUrl,
-  returnUrl,
   csrfToken,
   tagSearchUrl,
   artistSearchUrl,
   dupeCheckUrl,
+  id3InfoUrl,
   tagSuggestions,
-}: SongEditPageProps) {
-  const [formData, setFormData] = React.useState<SongFormData>({
+  sourceOptions,
+  initialSourceId,
+}: SongCreatePageProps) {
+  const [formData, setFormData] = useState<SongFormData>({
     title: "",
     artist: "",
     track: "",
@@ -91,58 +101,32 @@ export function SongEditPage({
     note: "",
     album_name: "",
     compilation: false,
+    album_artist: "Various Artists",
     tags: [],
-    source: null,
+    source: initialSourceId,
     length: null,
-    length_pretty: "",
-    last_time_played: "Never",
-    times_played: 0,
   });
-  const [errors, setErrors] = React.useState<SongFormErrors>({});
-  const [loading, setLoading] = React.useState(true);
-  const [submitting, setSubmitting] = React.useState(false);
-  const [dupeSongs, setDupeSongs] = React.useState<DupeSong[]>([]);
-  const [songUuid, setSongUuid] = React.useState<string>("");
-  const [sourceOptions, setSourceOptions] = React.useState<SourceOption[]>([]);
+  const [errors, setErrors] = useState<SongFormErrors>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [dupeSongs, setDupeSongs] = useState<DupeSong[]>([]);
+  const [songInfo, setSongInfo] = useState<SongInfo>({
+    songLength: null,
+    songLengthPretty: null,
+    songSize: null,
+    sampleRate: null,
+    bitRate: null,
+  });
+  const [filename, setFilename] = useState("");
+  const [songFile, setSongFile] = useState<File | null>(null);
+  const [processingFile, setProcessingFile] = useState(false);
 
   // Rating hover state
-  const [hoverRating, setHoverRating] = React.useState<number | null>(null);
+  const [hoverRating, setHoverRating] = useState<number | null>(null);
 
   // Refs for components
   const tagsInputRef = useRef<TagsInputHandle>(null);
   const selectValueRef = useRef<SelectValueHandle>(null);
-
-  // Fetch initial form data
-  useEffect(() => {
-    const fetchFormData = async () => {
-      if (formAjaxUrl) {
-        try {
-          setLoading(true);
-          const response = await axios.get<SongFormData & { uuid?: string; source_options?: SourceOption[] }>(formAjaxUrl);
-          setFormData(response.data);
-          if (response.data.uuid) {
-            setSongUuid(response.data.uuid);
-          }
-          // Set source options
-          if (response.data.source_options) {
-            setSourceOptions(response.data.source_options);
-          }
-          // Set initial tags in TagsInput
-          if (tagsInputRef.current && response.data.tags) {
-            tagsInputRef.current.setTagList(response.data.tags);
-          }
-        } catch (err) {
-          console.error("Error fetching form data:", err);
-        } finally {
-          setLoading(false);
-        }
-      } else {
-        setLoading(false);
-      }
-    };
-
-    fetchFormData();
-  }, [formAjaxUrl]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -195,18 +179,72 @@ export function SongEditPage({
         const response = await axios.get(
           `${dupeCheckUrl}?artist=${encodeURIComponent(artist)}&title=${encodeURIComponent(title)}`
         );
-        let dupes = response.data.dupes || [];
-        // Filter out the current song if we're editing
-        if (songUuid) {
-          dupes = dupes.filter((d: DupeSong) => d.uuid !== songUuid);
-        }
+        const dupes = response.data.dupes || [];
         setDupeSongs(dupes);
       } catch (error) {
         console.error("Error checking for duplicates:", error);
       }
     },
-    [dupeCheckUrl, songUuid]
+    [dupeCheckUrl]
   );
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setFilename(file.name);
+    setSongFile(file);
+    setProcessingFile(true);
+
+    // Upload file to get ID3 info
+    const uploadData = new FormData();
+    uploadData.append("song", file);
+
+    try {
+      const response = await axios.post(id3InfoUrl, uploadData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          "X-CSRFToken": csrfToken,
+        },
+      });
+
+      const data = response.data;
+
+      // Update form fields with ID3 data
+      setFormData((prev) => ({
+        ...prev,
+        title: data.title || prev.title,
+        artist: data.artist || prev.artist,
+        year: data.year || prev.year,
+        track: data.track || prev.track,
+        album_name: data.album_name || prev.album_name,
+        length: data.length || prev.length,
+      }));
+
+      // Update artist select if we got an artist
+      if (data.artist && selectValueRef.current) {
+        selectValueRef.current.setValue(data.artist);
+      }
+
+      // Update song info
+      setSongInfo({
+        songLength: data.length,
+        songLengthPretty: data.length_pretty,
+        songSize: data.filesize,
+        sampleRate: data.sample_rate,
+        bitRate: data.bit_rate,
+      });
+
+      // Check for duplicates after ID3 extraction
+      if (data.artist && data.title) {
+        checkForDuplicates(data.artist, data.title);
+      }
+    } catch (error) {
+      console.error("Error extracting ID3 info:", error);
+    } finally {
+      setProcessingFile(false);
+    }
+  };
 
   const handleTagClick = (tagName: string) => {
     // Check if tag already exists
@@ -246,19 +284,15 @@ export function SongEditPage({
   const displayRating = hoverRating ?? formData.rating ?? 0;
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    // Validate file is selected - if not, prevent submission and show error
+    if (!songFile) {
+      e.preventDefault();
+      setErrors({ song: ["Please select a song file to upload."] });
+      return;
+    }
     // Let the form submit naturally (don't call e.preventDefault())
     // Browser will POST form data and follow the redirect
   };
-
-  if (loading) {
-    return (
-      <div className="container mt-4 text-center">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="row g-0 h-100 music-dashboard">
@@ -267,7 +301,7 @@ export function SongEditPage({
         <div className="w-100">
           {/* Duplicate songs warning */}
           {dupeSongs.length > 0 && (
-            <Card className="backdrop-filter">
+            <Card className="backdrop-filter ms-3">
               <h6 className="text-warning mb-2 text-center">
                 Possible duplicate songs found
               </h6>
@@ -297,21 +331,26 @@ export function SongEditPage({
             </Card>
           )}
 
-          {/* Song Info Card */}
-          {(formData.length != null || formData.last_time_played !== "Never" || formData.times_played > 0) && (
+          {/* Song Info Card - only shown after file is selected */}
+          {songInfo.songLength !== null && (
             <Card title="Song Info" className="backdrop-filter ms-3">
               <ul>
-                {formData.length != null && (
+                <li>
+                  Song Length <span className="ms-1 text-primary">{songInfo.songLengthPretty}</span>
+                </li>
+                {songInfo.songSize && (
                   <li>
-                    Song Length <span className="ms-1 text-primary">{formData.length_pretty}</span>
+                    Song Size <span className="ms-1 text-primary">{songInfo.songSize}</span>
                   </li>
                 )}
-                <li>
-                  Last Played <span className="ms-1 text-primary">{formData.last_time_played}</span>
-                </li>
-                {formData.times_played > 0 && (
+                {songInfo.sampleRate && (
                   <li>
-                    Times Played <span className="ms-1 text-primary">{formData.times_played}</span>
+                    Sample Rate <span className="ms-1 text-primary">{songInfo.sampleRate}</span>
+                  </li>
+                )}
+                {songInfo.bitRate && (
+                  <li>
+                    Bit Rate <span className="ms-1 text-primary">{songInfo.bitRate}</span>
                   </li>
                 )}
               </ul>
@@ -327,6 +366,7 @@ export function SongEditPage({
                   key={tag.name}
                   className="list-with-counts ps-2 py-1 pe-2 d-flex"
                   onClick={() => handleTagClick(tag.name)}
+                  style={{ cursor: "pointer" }}
                 >
                   <div className="text-truncate">{tag.name}</div>
                   <div className="ms-auto me-1">
@@ -336,17 +376,26 @@ export function SongEditPage({
               ))}
             </ul>
           </Card>
+
+          {/* Instructions Card - shown before file is selected */}
+          {songInfo.songLength === null && (
+            <Card className="backdrop-filter ms-3">
+              <div>
+                Choose the local MP3 file containing the song you want to upload. Any embedded{" "}
+                <strong>ID3v2</strong> tags will be scanned and the corresponding form fields will
+                be populated.
+              </div>
+            </Card>
+          )}
         </div>
       </div>
 
       {/* Main form area */}
       <div className="col-lg-8 h-100">
-        <p className="lead offset-lg-3 fw-bold ps-2">Edit Song</p>
+        <p className="lead offset-lg-3 fw-bold ps-2">New Song</p>
 
-        <form id="song-form" action={submitUrl} method="POST" onSubmit={handleSubmit} noValidate>
+        <form id="song-form" action={submitUrl} method="POST" onSubmit={handleSubmit} encType="multipart/form-data" noValidate>
           <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken} />
-          <input type="hidden" name="return_url" value={returnUrl || ""} />
-          <input type="hidden" name="length" value={formData.length || ""} />
           {errors.non_field_errors && (
             <div className="row">
               <div className="col-lg-9 offset-lg-3">
@@ -358,6 +407,37 @@ export function SongEditPage({
               </div>
             </div>
           )}
+
+          {/* File Upload */}
+          <div className={`row mb-3 ${errors.song ? "error" : ""}`}>
+            <label className="col-lg-3 col-form-label fw-bold text-end">File</label>
+            <div className="col-lg-9">
+              <div className="input-group">
+                <input
+                  type="text"
+                  className="form-control"
+                  id="id_filename"
+                  value={filename}
+                  readOnly
+                  autoComplete="off"
+                />
+                <label className="btn btn-primary">
+                  {processingFile ? "Processing..." : "Choose song"}
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    id="id_file"
+                    name="song"
+                    hidden
+                    accept="audio/*"
+                    onChange={handleFileChange}
+                    disabled={processingFile}
+                  />
+                </label>
+              </div>
+              {errors.song && <span className="form-error">{errors.song.join(", ")}</span>}
+            </div>
+          </div>
 
           {/* Title */}
           <div className={`row mb-3 ${errors.title ? "error" : ""}`}>
@@ -373,9 +453,7 @@ export function SongEditPage({
                 onBlur={handleTitleBlur}
                 autoComplete="off"
               />
-              {errors.title && (
-                <span className="form-error">{errors.title.join(", ")}</span>
-              )}
+              {errors.title && <span className="form-error">{errors.title.join(", ")}</span>}
             </div>
           </div>
 
@@ -389,13 +467,10 @@ export function SongEditPage({
                 label="artist"
                 searchUrl={`${artistSearchUrl}?term=`}
                 placeHolder=""
-                initialValue={{ label: formData.artist, artist: formData.artist }}
                 onSelect={handleArtistSelect}
               />
               <input type="hidden" name="artist" value={formData.artist} />
-              {errors.artist && (
-                <span className="form-error">{errors.artist.join(", ")}</span>
-              )}
+              {errors.artist && <span className="form-error">{errors.artist.join(", ")}</span>}
             </div>
           </div>
 
@@ -412,9 +487,7 @@ export function SongEditPage({
                 onChange={handleChange}
                 autoComplete="off"
               />
-              {errors.track && (
-                <span className="form-error">{errors.track.join(", ")}</span>
-              )}
+              {errors.track && <span className="form-error">{errors.track.join(", ")}</span>}
             </div>
           </div>
 
@@ -431,9 +504,7 @@ export function SongEditPage({
                 onChange={handleChange}
                 autoComplete="off"
               />
-              {errors.year && (
-                <span className="form-error">{errors.year.join(", ")}</span>
-              )}
+              {errors.year && <span className="form-error">{errors.year.join(", ")}</span>}
             </div>
           </div>
 
@@ -465,12 +536,10 @@ export function SongEditPage({
                 id="id_tags"
                 name="tags"
                 searchUrl={`${tagSearchUrl}?query=`}
-                initialTags={formData.tags}
+                initialTags={[]}
                 onTagsChanged={handleTagsChanged}
               />
-              {errors.tags && (
-                <span className="form-error">{errors.tags.join(", ")}</span>
-              )}
+              {errors.tags && <span className="form-error">{errors.tags.join(", ")}</span>}
             </div>
           </div>
 
@@ -515,6 +584,27 @@ export function SongEditPage({
             </div>
           </div>
 
+          {/* Album Artist - only shown when compilation is checked */}
+          {formData.compilation && (
+            <div className={`row mb-3 ${errors.album_artist ? "error" : ""}`}>
+              <label className="col-lg-3 col-form-label fw-bold text-end">Album Artist</label>
+              <div className="col-lg-9">
+                <input
+                  type="text"
+                  className={`form-control ${errors.album_artist ? "is-invalid" : ""}`}
+                  id="id_album_artist"
+                  name="album_artist"
+                  value={formData.album_artist}
+                  onChange={handleChange}
+                  autoComplete="off"
+                />
+                {errors.album_artist && (
+                  <span className="form-error">{errors.album_artist.join(", ")}</span>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Rating */}
           <div className="row align-items-center mb-3">
             <label className="col-lg-3 col-form-label fw-bold text-end">Rating</label>
@@ -535,6 +625,9 @@ export function SongEditPage({
             </div>
           </div>
 
+          {/* Hidden input for length */}
+          <input type="hidden" name="length" value={formData.length || ""} />
+
           {/* Note */}
           <div className={`row mb-3 ${errors.note ? "error" : ""}`}>
             <label className="col-lg-3 col-form-label fw-bold text-end">Note</label>
@@ -547,9 +640,7 @@ export function SongEditPage({
                 value={formData.note}
                 onChange={handleChange}
               />
-              {errors.note && (
-                <span className="form-error">{errors.note.join(", ")}</span>
-              )}
+              {errors.note && <span className="form-error">{errors.note.join(", ")}</span>}
             </div>
           </div>
 
@@ -570,20 +661,14 @@ export function SongEditPage({
                   </option>
                 ))}
               </select>
-              {errors.source && (
-                <span className="form-error">{errors.source.join(", ")}</span>
-              )}
+              {errors.source && <span className="form-error">{errors.source.join(", ")}</span>}
             </div>
           </div>
 
           {/* Submit buttons */}
           <div>
             <div className="col-lg-9 offset-lg-3">
-              <button
-                type="submit"
-                className="btn btn-primary ms-2"
-                disabled={submitting}
-              >
+              <button type="submit" className="btn btn-primary ms-2" disabled={submitting}>
                 {submitting ? "Saving..." : "Save"}
               </button>
               <a href={cancelUrl} className="ms-3">
@@ -594,8 +679,28 @@ export function SongEditPage({
           </div>
         </form>
       </div>
+
+      {/* Processing Modal */}
+      {processingFile && (
+        <div
+          className="modal show d-block"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+          tabIndex={-1}
+        >
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-body text-center py-4">
+                <div className="spinner-border text-primary mb-3" role="status">
+                  <span className="visually-hidden">Processing...</span>
+                </div>
+                <p className="mb-0">Processing song file...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-export default SongEditPage;
+export default SongCreatePage;

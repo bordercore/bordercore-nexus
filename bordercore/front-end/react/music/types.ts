@@ -243,3 +243,61 @@ export interface PlaylistDetailProps {
   staticUrl: string;
   csrfToken: string;
 }
+
+// Tag Search Page Types
+
+export interface TagSearchSong extends BaseTrack {
+  uuid: string;
+  title: string;
+  artist__name: string;
+  year: number | null;
+  length: string;
+}
+
+export interface TagSearchAlbum {
+  uuid: string;
+  title: string;
+  artist_name: string;
+  artist_uuid: string;
+  year: number | null;
+}
+
+export interface TagSearchUrls {
+  songMedia: string;
+  markListenedTo: string;
+  albumDetail: string;
+  artistDetail: string;
+  imagesUrl: string;
+  musicList: string;
+}
+
+export interface TagSearchProps {
+  tagName: string;
+  songs: TagSearchSong[];
+  albums: TagSearchAlbum[];
+  urls: TagSearchUrls;
+  staticUrl: string;
+}
+
+// Album List Page Types
+
+export interface AlbumListArtist {
+  uuid: string;
+  name: string;
+  album_count: number;
+  song_count: number;
+}
+
+export interface AlbumListUrls {
+  albumListBase: string;
+  artistDetail: string;
+}
+
+export interface AlbumListProps {
+  artists: AlbumListArtist[];
+  nav: string[];
+  selectedLetter: string;
+  uniqueArtistLetters: string[];
+  urls: AlbumListUrls;
+  imagesUrl: string;
+}

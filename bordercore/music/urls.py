@@ -21,7 +21,7 @@ urlpatterns = [
     ),
     path(
         route="update/<uuid:uuid>/",
-        view=views.SongUpdateReactView.as_view(),
+        view=views.SongUpdateView.as_view(),
         name="update"
     ),
     path(

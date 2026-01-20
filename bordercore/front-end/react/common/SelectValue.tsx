@@ -33,6 +33,7 @@ interface SelectValueProps {
 export interface SelectValueHandle {
   focus: () => void;
   search: string;
+  setValue: (val: string) => void;
 }
 
 export const SelectValue = forwardRef<SelectValueHandle, SelectValueProps>(function SelectValue({
@@ -159,6 +160,9 @@ export const SelectValue = forwardRef<SelectValueHandle, SelectValueProps>(funct
       inputRef.current?.focus();
     },
     search: search,
+    setValue: (val: string) => {
+      setValue({ [label]: val });
+    },
   }));
 
   const handleKeyboardNavigation = (e: React.KeyboardEvent<HTMLInputElement>) => {

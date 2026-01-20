@@ -1,214 +1,40 @@
-{% extends "base.html" %}
+{% extends "base_react.html" %}
+{% load vite_tags %}
 
-{% block title %} Music :: Tag Search {% endblock %}
+{% block title %}Tag: {{ tag_name }} - Music{% endblock %}
 
 {% block nav %}
+<nav class="d-flex justify-content-between align-items-center ms-5">
+    <ul class="breadcrumb mb-0 pt-0 pb-0">
+        <li class="breadcrumb-item mt-1">
+            <a href="{% url 'music:list' %}" class="icon-hover glow d-flex align-items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 576 512">
+                    <path d="M575.8 255.5c0 18-15 32.1-32 32.1h-32l.7 160.2c0 2.7-.2 5.4-.5 8.1V472c0 22.1-17.9 40-40 40H456c-1.1 0-2.2 0-3.3-.1c-1.4 .1-2.8 .1-4.2 .1H416 392c-22.1 0-40-17.9-40-40V448 384c0-17.7-14.3-32-32-32H256c-17.7 0-32 14.3-32 32v64 24c0 22.1-17.9 40-40 40H160 128.1c-1.5 0-3-.1-4.5-.2c-1.2 .1-2.4 .2-3.6 .2H104c-22.1 0-40-17.9-40-40V360c0-.9 0-1.9 .1-2.8V287.6H32c-18 0-32-14-32-32.1c0-9 3-17 10-24L266.4 8c7-7 15-8 22-8s15 2 21 7L564.8 231.5c8 7 12 15 11 24z"/>
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item active">Tag: {{ tag_name }}</li>
+    </ul>
+</nav>
+{% endblock %}
 
-    <div class="d-flex mb-3">
-        <div class="me-auto align-self-center">
-            <ul class="breadcrumb mb-0 pt-0 pb-0">
-                <li class="breadcrumb-item"> <a href="{% url 'music:list' %}">Music</a> </li>
-                <li class="breadcrumb-item active"> Tag: <strong>{{ tag_name }}</strong> </li>
-            </ul>
-        </div>
-    </div>
-
+{% block javascript_bundles %}
+    {{ block.super }}
+    {% vite_asset "dist/js/tag-search" %}
 {% endblock %}
 
 {% block content %}
-
-    <div id="vue-app" class="row g-0 h-100 align-items-start">
-
-        {% if not album_list %}
-            <div v-if="!songList.length" class="col-lg-12">
-                <div class="card-grid ms-2">
-                <search-no-result class="me-3">
-                    <template v-slot:message>
-                        You have no music tagged with <strong>{{ tag_name }}</strong>
-                    </template>
-                </search-no-result>
-                </div>
-            </div>
-        {% endif %}
-
-        <div class="sticky-top col-lg-3 d-flex flex-column h-100">
-
-            <div class="card-grid flex-grow-1 ms-2">
-
-                <audio-player
-                    v-if="songList"
-                    ref="audioPlayer"
-                    :track-list="songList"
-                    song-url="{{ MEDIA_URL_MUSIC }}songs/"
-                    mark-listened-to-url="{% url 'mark_song_as_listened_to' '00000000-0000-0000-0000-000000000000' %}"
-                    @current-song="onCurrentSong"
-                    @is-playing="handleIsPlaying"
-                >
-                </audio-player>
-
-            </div>
-
-        </div>
-
-        <div class="col-lg-9 d-flex flex-column h-100">
-            {% if album_list %}
-                <div class="card-grid ms-2">
-                    <div class="me-3">
-                        <card class="backdrop-filter h-100">
-                            <template v-slot:title-slot>
-                                <h4>
-                                    <strong>
-                                        {{ album_list|length }} album{{ album_list|pluralize }}
-                                    </strong>
-                                </h4>
-                            </template>
-                            <template v-slot:content>
-                                <div class="d-flex flex-wrap">
-                                {% for album in album_list %}
-                                    <div class="collection-container p-3">
-                                        <div class="collection">
-                                            <a href="{% url 'music:album_detail' album.uuid %}">
-                                                <img src="{{ IMAGES_URL }}album_artwork/{{ album.uuid }}" height="150" width="150" /> <br />
-                                            </a>
-                                            <div class="mt-1 fw-bold">
-                                                {{ album.title }}
-                                            </div>
-                                            <div class="text-light">
-                                                <a href="{% url 'music:artist_detail' album.artist.uuid %}">
-                                                    {{ album.artist.name }}
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                {% endfor %}
-                                </div>
-                            </template>
-                        </card>
-                    </div>
-                </div>
-            {% endif %}
-
-            <div class="card-grid h-100 ms-2 pe-0">
-
-                <div v-if="songList" class="h-100 me-3">
-                    <card class="backdrop-filter h-100">
-                        <template v-slot:title-slot>
-                            <h4>
-                                <strong>
-                                    [[ songList.length ]] [[ pluralize("song", songList.length) ]]
-                                </strong>
-                            </h4>
-                        </template>
-
-                        <template v-slot:content>
-
-                            <o-table
-                                :data="songList"
-                                :default-sort="['year', 'desc']"
-                                hoverable
-                                v-model:selected.sync="selectedSong"
-                                @select="handleSongSelect"
-                                ref="table"
-                            >
-
-                                <o-table-column field="title" label="Title" sortable v-slot="props">
-                                    <span v-if="selectedSong.uuid === props.row.uuid" class="me-2">
-                                        <img id="isPlaying" src="{{ STATIC_URL }}img/equaliser-animated-green.gif" width="20" height="20" />
-                                    </span>
-                                    <span>[[ props.row.title ]]</span>
-                                </o-table-column>
-
-                                <o-table-column field="artist__name" label="Artist" sortable v-slot="props">
-                                    <span>[[ props.row.artist__name ]]</span>
-                                </o-table-column>
-
-                                <o-table-column field="year" label="Year" sortable v-slot="props">
-                                    <span>[[ props.row.year ]]</span>
-                                </o-table-column>
-
-                                <o-table-column field="length" label="Length" sortable v-slot="props">
-                                    <span>[[ props.row.length ]]</span>
-                                </o-table-column>
-
-                            </o-table>
-
-                        </template>
-
-                    </card>
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-{% endblock %}
-
-{% block javascript %}
-
-    {{ block.super }}
-
-    {{ song_list|json_script:"songList" }}
-
-    <script type="text/javascript" charset="utf-8">
-
-        const app = createApp({
-            name: "SongList",
-            delimiters: ["[[", "]]"],
-            components: {
-                AudioPlayer,
-                Card,
-                SearchNoResult,
-            },
-            setup() {
-                const selectedSong = ref({});
-
-                const audioPlayer = ref(null);
-
-                function onCurrentSong(songNumber) {
-                    if (songNumber === -1) {
-                        selectedSong.value = {};
-                        return;
-                    }
-                    selectedSong.value = songList[songNumber];
-                };
-
-                function handleIsPlaying(isPlaying) {
-                    let src = null;
-                    if (isPlaying) {
-                        src = "{{ STATIC_URL }}img/equaliser-animated-green.gif";
-                    } else {
-                        src = "{{ STATIC_URL }}img/equaliser-animated-green-frozen.gif";
-                    }
-
-                    document.getElementById("isPlaying").src = src;
-                };
-
-                function handleSongSelect(row) {
-                    audioPlayer.value.playTrack(row.uuid);
-                };
-
-                return {
-                    audioPlayer,
-                    handleIsPlaying,
-                    handleSongSelect,
-                    onCurrentSong,
-                    pluralize,
-                    songList: JSON.parse(document.getElementById("songList").textContent),
-                    selectedSong,
-                };
-            },
-        });
-        app.use(Oruga, {
-            iconComponent: "font-awesome-icon",
-            iconPack: "fa",
-            table: {
-                sortIcon: "caret-up",
-            },
-        });
-        app.mount("#vue-app");
-
-    </script>
-
+<div id="react-root"
+     data-tag-name="{{ tag_name }}"
+     data-songs="{{ songs_json }}"
+     data-albums="{{ albums_json }}"
+     data-song-media-url="{{ MEDIA_URL_MUSIC }}songs/"
+     data-mark-listened-to-url-template="{% url 'mark_song_as_listened_to' '00000000-0000-0000-0000-000000000000' %}"
+     data-album-detail-url-template="{% url 'music:album_detail' '00000000-0000-0000-0000-000000000000' %}"
+     data-artist-detail-url-template="{% url 'music:artist_detail' '00000000-0000-0000-0000-000000000000' %}"
+     data-images-url="{{ IMAGES_URL }}"
+     data-static-url="{{ STATIC_URL }}"
+     data-music-list-url="{% url 'music:list' %}"
+     data-csrf-token="{{ csrf_token }}">
+</div>
 {% endblock %}

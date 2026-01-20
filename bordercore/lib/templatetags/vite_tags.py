@@ -60,6 +60,32 @@ def _load_manifest() -> dict[str, dict[str, Any]]:
     return _MANIFEST_CACHE
 
 
+def _get_source_path(entry_name: str) -> str:
+    """Derive the source file path from a build entry name.
+
+    Converts build output names to source paths using naming conventions:
+    - dist/js/javascript -> front-end/index.js (legacy entry point)
+    - dist/css/* -> front-end/entries/*-css.js
+    - dist/js/* -> front-end/entries/*.tsx
+    """
+    # Special case for legacy main entry point
+    if entry_name == "dist/js/javascript":
+        return "front-end/index.js"
+
+    # CSS entries: dist/css/foo -> front-end/entries/foo-css.js
+    if entry_name.startswith("dist/css/"):
+        name = entry_name.replace("dist/css/", "")
+        return f"front-end/entries/{name}-css.js"
+
+    # JS/React entries: dist/js/foo -> front-end/entries/foo.tsx
+    if entry_name.startswith("dist/js/"):
+        name = entry_name.replace("dist/js/", "")
+        return f"front-end/entries/{name}.tsx"
+
+    # Fallback: return as-is (already a source path)
+    return entry_name
+
+
 @register.simple_tag
 def vite_asset(entry_name: str) -> SafeString | str:
     """Return HTML tags (link/script) for a Vite-built entry from manifest.json.
@@ -74,28 +100,12 @@ def vite_asset(entry_name: str) -> SafeString | str:
     In DEBUG mode, serves from Vite dev server (http://localhost:5173).
     In production, serves from built manifest.json.
     """
-    # Map entry names to source file paths for dev mode
-    entry_to_path = {
-        "dist/js/javascript": "front-end/index.js",
-        "dist/css/bordercore": "front-end/entries/bordercore-css.js",
-        "dist/js/react-app": "front-end/entries/react-app.tsx",
-        "dist/js/base-react": "front-end/entries/base-react.tsx",
-        "dist/js/reminders": "front-end/entries/reminders.tsx",
-        "dist/js/reminder-detail": "front-end/entries/reminder-detail.tsx",
-        "dist/js/reminder-form": "front-end/entries/reminder-form.tsx",
-        "dist/js/reminder-delete": "front-end/entries/reminder-delete.tsx",
-        "dist/js/album-detail": "front-end/entries/album-detail.tsx",
-        "dist/js/artist-detail": "front-end/entries/artist-detail.tsx",
-        "dist/js/music-dashboard": "front-end/entries/music-dashboard.tsx",
-        "dist/js/song-edit": "front-end/entries/song-edit.tsx",
-        "dist/js/playlist-detail": "front-end/entries/playlist-detail.tsx",
-    }
-
     parts: list[str] = []
 
     # In DEBUG mode, serve from Vite dev server
     if settings.DEBUG:
-        source_path = entry_to_path.get(entry_name, entry_name)
+        # Derive source path from entry name using naming conventions
+        source_path = _get_source_path(entry_name)
 
         # Add Vite client for HMR
         parts.append('<script type="module" src="http://localhost:5173/@vite/client"></script>')

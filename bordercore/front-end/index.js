@@ -175,14 +175,8 @@ window.VueMarkdownEditor = VueMarkdownEditor;
 import AddToCollection from "./vue/blob/AddToCollection.vue";
 window.AddToCollection = AddToCollection;
 
-import AddToPlaylist from "./vue/music/AddToPlaylist.vue";
-window.AddToPlaylist = AddToPlaylist;
-
 import AddWorkoutForm from "./vue/fitness/AddWorkoutForm.vue";
 window.AddWorkoutForm = AddWorkoutForm;
-
-import AudioPlayer from "./vue/music/AudioPlayer.vue";
-window.AudioPlayer = AudioPlayer;
 
 import BackReferences from "./vue/common/BackReferences.vue";
 window.BackReferences = BackReferences;
@@ -204,9 +198,6 @@ window.CollectionObjectListModal = CollectionObjectListModal;
 
 import FeedEditorModal from "./vue/feed/FeedEditorModal.vue";
 window.FeedEditorModal = FeedEditorModal;
-
-import PlaylistEditor from "./vue/music/PlaylistEditor.vue";
-window.PlaylistEditor = PlaylistEditor;
 
 import TodoEditor from "./vue/todo/TodoEditor.vue";
 window.TodoEditor = TodoEditor;

@@ -1,57 +1,21 @@
-{% extends "base.html" %}
+{% extends "base_react.html" %}
+{% load vite_tags %}
 
-{% block title %} Artist List {% endblock %}
+{% block title %}Artist List{% endblock %}
 
-{% block nav %}
-
-    <div class="d-flex flex-column ms-3 text-center">
-        <div class="fs-4 w-100">
-            <span class="me-3">
-                <strong>Artist name</strong>
-            </span>
-            {% for letter in nav %}
-                <span class="ms-2">
-                {% if letter in unique_artist_letters %}
-                    {% if letter == selected_letter %}
-                        <strong>{{ letter }}</strong>
-                    {% else %}
-                        <a href="{% url 'music:album_list' %}?letter={{ letter }}">
-                            {{ letter }}
-                        </a>
-                    {% endif %}
-                {% else %}
-                    {{ letter }}
-                {% endif %}
-                </span>
-            {% endfor %}
-        </div>
-        <hr class="divider" />
-    </div>
-
+{% block javascript_bundles %}
+    {{ block.super }}
+    {% vite_asset "dist/js/album-list" %}
 {% endblock %}
 
 {% block content %}
-
-    <div id="vue-app" class="card-grid d-flex ms-3">
-
-        <div class="d-flex flex-wrap justify-content-evenly">
-            {% for artist in artist_list %}
-                <div class="hoverable d-flex flex-column w-25 p-5">
-                    <div>
-                    <a href="{% url 'music:artist_detail' artist.uuid %}">
-                        <img id="artist_image" src="{{ IMAGES_URL }}artist_images/{{ artist.uuid }}" class="mw-100" />
-                    </a>
-                    </div>
-                    <div class="fs-4">
-                        {{ artist.name }}
-                    </div>
-                    <div class="text-value">
-                        Albums: <strong>{{ artist.album_counts }}</strong>, Songs: <strong>{{ artist.song_counts }}</strong>
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
-
-    </div>
-
+<div id="react-root"
+     data-artists="{{ artists_json }}"
+     data-nav="{{ nav_json }}"
+     data-selected-letter="{{ selected_letter }}"
+     data-unique-artist-letters="{{ unique_artist_letters_json }}"
+     data-album-list-base-url="{% url 'music:album_list' %}"
+     data-artist-detail-url-template="{% url 'music:artist_detail' '00000000-0000-0000-0000-000000000000' %}"
+     data-images-url="{{ IMAGES_URL }}">
+</div>
 {% endblock %}

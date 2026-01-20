@@ -47,7 +47,11 @@ module.exports = defineConfig({
         "dist/js/artist-detail": path.resolve(__dirname, "front-end", "entries", "artist-detail.tsx"),
         "dist/js/music-dashboard": path.resolve(__dirname, "front-end", "entries", "music-dashboard.tsx"),
         "dist/js/song-edit": path.resolve(__dirname, "front-end", "entries", "song-edit.tsx"),
+        "dist/js/song-create": path.resolve(__dirname, "front-end", "entries", "song-create.tsx"),
         "dist/js/playlist-detail": path.resolve(__dirname, "front-end", "entries", "playlist-detail.tsx"),
+        "dist/js/tag-search": path.resolve(__dirname, "front-end", "entries", "tag-search.tsx"),
+        "dist/js/album-list": path.resolve(__dirname, "front-end", "entries", "album-list.tsx"),
+        "dist/js/album-create": path.resolve(__dirname, "front-end", "entries", "album-create.tsx"),
       },
       output: {
         entryFileNames: "[name]-[hash].js",
