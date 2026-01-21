@@ -54,6 +54,7 @@ module.exports = defineConfig({
         "dist/js/album-create": path.resolve(__dirname, "front-end", "entries", "album-create.tsx"),
         "dist/js/collection-list": path.resolve(__dirname, "front-end", "entries", "collection-list.tsx"),
         "dist/js/collection-detail": path.resolve(__dirname, "front-end", "entries", "collection-detail.tsx"),
+        "dist/js/todos": path.resolve(__dirname, "front-end", "entries", "todos.tsx"),
       },
       output: {
         entryFileNames: "[name]-[hash].js",

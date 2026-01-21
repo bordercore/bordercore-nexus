@@ -84,7 +84,7 @@ export function doGet(url: string, callback: (response: any) => void, errorMsg =
  * @param {string} successMsg The message to display on success.
  * @param {string} errorMsg The message to display on error.
  */
-export function doPost(url: string, params: Record<string, any>, callback: (response: any) => void, successMsg = "", errorMsg = "") {
+export function doPost(url: string, params: Record<string, any>, callback: (response: any) => void, successMsg = "", errorMsg = ""): void {
   const bodyFormData = new URLSearchParams();
 
   for (const [key, value] of Object.entries(params)) {
@@ -147,3 +147,100 @@ export function doPost(url: string, params: Record<string, any>, callback: (resp
     });
 }
 
+/**
+ * Use axios to perform an HTTP PUT call.
+ * @param {string} url The url to request.
+ * @param {object} params The parameters for the PUT body.
+ * @param {Function} callback An optional callback function.
+ * @param {string} successMsg The message to display on success.
+ * @param {string} errorMsg The message to display on error.
+ */
+export function doPut(url: string, params: Record<string, any>, callback: (response: any) => void, successMsg = "", errorMsg = ""): void {
+  const bodyFormData = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(params)) {
+    bodyFormData.append(key, value as string);
+  }
+
+  // Get CSRF token and manually set header
+  const csrfToken = getCsrfToken();
+
+  const headers: Record<string, string> = {};
+  if (csrfToken) {
+    headers["X-Csrftoken"] = csrfToken;
+  }
+
+  axios(url, {
+    method: "PUT",
+    data: bodyFormData,
+    headers: headers,
+    withCredentials: true,
+  }).then((response) => {
+    if (response.status !== 200) {
+      EventBus.$emit("toast", {
+        title: "Error",
+        body: response.data.message,
+        variant: "danger",
+        autoHide: true,
+      });
+      console.log("Error: ", response.statusText);
+    } else {
+      const body = response.data.message ? response.data.message : successMsg;
+      if (body) {
+        EventBus.$emit("toast", {
+          title: "Success",
+          body: response.data.message ? response.data.message : successMsg,
+          variant: "info",
+        });
+      }
+      callback(response);
+    }
+  })
+    .catch((error) => {
+      EventBus.$emit("toast", {
+        title: "Error",
+        body: error.message,
+        variant: "danger",
+        autoHide: true,
+      });
+      console.error(error);
+    });
+}
+
+/**
+ * Use axios to perform an HTTP DELETE call.
+ * @param {string} url The url to request.
+ * @param {Function} callback An optional callback function.
+ * @param {string} successMsg The message to display on success.
+ */
+export function doDelete(url: string, callback: (response: any) => void, successMsg = ""): void {
+  const csrfToken = getCsrfToken();
+
+  const headers: Record<string, string> = {};
+  if (csrfToken) {
+    headers["X-Csrftoken"] = csrfToken;
+  }
+
+  axios(url, {
+    method: "DELETE",
+    headers: headers,
+    withCredentials: true,
+  }).then((response) => {
+    if (successMsg) {
+      EventBus.$emit("toast", {
+        body: successMsg,
+        variant: "info",
+      });
+    }
+    callback(response);
+  })
+    .catch((error) => {
+      EventBus.$emit("toast", {
+        title: "Error",
+        body: error.response?.data?.message || error.message,
+        variant: "danger",
+        autoHide: true,
+      });
+      console.error(error);
+    });
+}

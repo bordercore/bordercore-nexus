@@ -135,6 +135,25 @@
   }
 }
 
+// Playlist song list table
+.playlist-song-table {
+  // Remove border from last row
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  // Table header styling
+  th {
+    color: var(--text2);
+
+    // Sort icon styling - right justified
+    .sort-icon {
+      color: var(--text2);
+      float: right;
+    }
+  }
+}
+
 // Album detail song list
 #album-song-list {
   margin-bottom: 1rem;

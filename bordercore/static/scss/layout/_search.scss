@@ -104,3 +104,18 @@
   color: var(--text1);
   font-weight: 600;
 }
+
+// Cancel icon inside search input fields
+.search-input-cancel {
+  position: absolute;
+  top: 0;
+  right: 0.6rem;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+
+  svg:hover {
+    color: var(--text1) !important;
+  }
+}

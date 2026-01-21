@@ -121,10 +121,14 @@ class TodoListView(LoginRequiredMixin, ListView):
             current_filter["todo_filter_time"] = None
 
         user = cast(User, self.request.user)
+        tags = Todo.get_todo_counts(user)
+        # Convert tags to JSON format for React: list of {name, count} objects
+        tags_json = json.dumps([{"name": tag["name"], "count": tag["count"]} for tag in tags])
 
         return {
             **context,
-            "tags": Todo.get_todo_counts(user),
+            "tags": tags,
+            "tags_json": tags_json,
             "filter": current_filter,
             "priority_list": json.dumps(Todo.PRIORITY_CHOICES),
             "title": "Todo"

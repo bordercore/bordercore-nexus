@@ -124,6 +124,7 @@
   // Override Bootstrap CSS properties
   --bs-body-color: var(--text1);
   --bs-body-bg: var(--surface1);
+  --bs-list-group-bg: var(--surface2);
   --bs-list-group-color: var(--text3);
   --bs-list-group-item-padding-x: 1.25rem;
   --bs-list-group-item-padding-y: .75rem;
@@ -179,5 +180,10 @@
     &:focus {
       box-shadow: 0 0 0 3px rgb(200 0 200 / 30%), 0 10px 15px -3px rgb(200 0 200 / 25%);
     }
+  }
+
+  // Code samples
+  :not(pre) > code[class*="language-"], pre[class*="language-"] {
+    background: hsl(280 80% 15%);
   }
 }

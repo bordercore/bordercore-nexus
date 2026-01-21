@@ -7,21 +7,31 @@
   padding: 1rem;
   background-color: var(--surface2);
   border-radius: var(--border-radius1);
-  
+
+  .list-with-counts {
+    border-radius: var(--border-radius1);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: var(--hover-bg);
+    }
+  }
+
   .filter-group {
     margin-bottom: 1.5rem;
-    
+
     &:last-child {
       margin-bottom: 0;
     }
   }
-  
+
   .filter-title {
     margin-bottom: 0.5rem;
     color: var(--text1);
     font-weight: 600;
   }
-  
+
   .filter-option {
     display: block;
     padding: 0.5rem;
@@ -29,16 +39,21 @@
     color: var(--text2);
     text-decoration: none;
     transition: background-color 0.2s ease;
-    
+
     &:hover {
       background-color: var(--hover-bg);
       color: var(--text1);
     }
-    
+
     &.active {
       background-color: var(--selected-bg);
       color: var(--text1);
     }
+  }
+
+  // Override selected background to match tags input field
+  .selected {
+    background-color: var(--form-bg) !important;
   }
 }
 
@@ -84,6 +99,25 @@
   }
 }
 
+// Todo table styling to match album song list
+.card-grid .table {
+  // Table header styling to match album page
+  th {
+    color: var(--text2);
+
+    // Sort icon styling to match Oruga table - right justified
+    .sort-icon {
+      color: var(--text2);
+      float: right;
+    }
+  }
+
+  // Remove border from last row
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+}
+
 .todo-priority-high {
   color: var(--error-color);
 }
@@ -94,4 +128,59 @@
 
 .todo-priority-low {
   color: var(--text3);
+}
+
+// Filter value styling in title
+.filter-value {
+  color: var(--surface7);
+  font-weight: 600;
+}
+
+// Drag and drop styles for todo table
+.drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  color: var(--text3);
+  opacity: 0.3;
+
+  &.drag-handle-active {
+    color: var(--link-color);
+    cursor: grab;
+    opacity: 1;
+
+    &:hover {
+      color: var(--text1);
+    }
+
+    &:active {
+      cursor: grabbing;
+    }
+  }
+}
+
+// Row being dragged
+.table tbody tr.dragging {
+  background-color: var(--surface2);
+  opacity: 0.5;
+}
+
+// Drop target indicator
+.table tbody tr.drag-over {
+  border-top: 2px solid var(--link-color);
+
+  td:first-child {
+    position: relative;
+
+    &::before {
+      position: absolute;
+      top: -2px;
+      right: 0;
+      left: 0;
+      height: 2px;
+      background-color: var(--link-color);
+      content: "";
+    }
+  }
 }

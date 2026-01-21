@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPencilAlt, faTrashAlt, faCaretUp, faCaretDown } from "@fortawesome/free-solid-svg-icons";
+import { faPencilAlt, faTrashAlt, faAngleUp, faAngleDown } from "@fortawesome/free-solid-svg-icons";
 import type { PlaylistSong } from "./types";
 import DropDownMenu from "../common/DropDownMenu";
 
@@ -78,8 +78,8 @@ export function PlaylistSongTable({
     if (isManualPlaylist || sortField !== field) return null;
     return (
       <FontAwesomeIcon
-        icon={sortDirection === "asc" ? faCaretUp : faCaretDown}
-        className="ms-1"
+        icon={sortDirection === "asc" ? faAngleUp : faAngleDown}
+        className="ms-1 sort-icon"
       />
     );
   };
@@ -143,7 +143,7 @@ export function PlaylistSongTable({
 
   return (
     <div className="table-responsive">
-      <table className="table table-hover">
+      <table className="table table-hover playlist-song-table">
         <thead>
           <tr>
             {isManualPlaylist && (
