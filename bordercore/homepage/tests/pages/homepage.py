@@ -35,7 +35,7 @@ class HomePage:
     RECENT_BOOKMARKS = (By.CSS_SELECTOR, "ul#recent-bookmarks li")
     PINNED_BOOKMARKS = (By.CSS_SELECTOR, "li[id='pinned-bookmarks']")
     TITLE = (By.TAG_NAME, "title")
-    TODO = (By.CSS_SELECTOR, "ul#important_tasks li")
+    TODO = (By.CSS_SELECTOR, "ul#important-tasks li")
 
     def __init__(self, browser):
         self.browser = browser

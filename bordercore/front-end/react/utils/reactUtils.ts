@@ -48,12 +48,14 @@ function getCsrfToken(): string {
  * @param {string} url The url to request.
  * @param {Function} callback An optional callback function.
  * @param {string} errorMsg The message to display on error.
+ * @param {string} responseType The response type (json, text, or arraybuffer).
  */
-export function doGet(url: string, callback: (response: any) => void, errorMsg = "", responseType: "json" | "text" = "json") {
+export function doGet(url: string, callback: (response: any) => void, errorMsg = "", responseType: "json" | "text" | "arraybuffer" = "json") {
   axios
     .get(url, { responseType: responseType })
     .then((response) => {
-      if (response.data.status && response.data.status !== "OK") {
+      // Skip status check for arraybuffer responses (binary data has no .status property)
+      if (responseType !== "arraybuffer" && response.data.status && response.data.status !== "OK") {
         EventBus.$emit("toast", {
           title: "Error!",
           body: errorMsg,

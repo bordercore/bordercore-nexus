@@ -57,6 +57,9 @@ module.exports = defineConfig({
         "dist/js/todos": path.resolve(__dirname, "front-end", "entries", "todos.tsx"),
         "dist/js/search": path.resolve(__dirname, "front-end", "entries", "search.tsx"),
         "dist/js/tag-detail": path.resolve(__dirname, "front-end", "entries", "tag-detail.tsx"),
+        "dist/js/homepage": path.resolve(__dirname, "front-end", "entries", "homepage.tsx"),
+        "dist/js/gallery": path.resolve(__dirname, "front-end", "entries", "gallery.tsx"),
+        "dist/js/sql": path.resolve(__dirname, "front-end", "entries", "sql.tsx"),
       },
       output: {
         entryFileNames: "[name]-[hash].js",

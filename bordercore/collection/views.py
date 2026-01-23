@@ -17,7 +17,6 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.uploadedfile import UploadedFile
 from django.db.models import Count, Exists, OuterRef, Q, QuerySet
 from django.forms import BaseModelForm
-from django.forms.models import model_to_dict
 from django.http import (HttpRequest, HttpResponse, HttpResponseRedirect,
                          JsonResponse)
 from django.urls import reverse, reverse_lazy

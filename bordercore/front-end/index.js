@@ -293,6 +293,9 @@ import SelectValue from "./vue/common/SelectValue.vue";
 import "vue-multiselect/dist/vue-multiselect.css";
 window.SelectValue = SelectValue;
 
+import TopSearch from "./vue/search/TopSearch.vue";
+window.TopSearch = TopSearch;
+
 import TagsInput from "./vue/common/TagsInput.vue";
 window.TagsInput = TagsInput;
 

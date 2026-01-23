@@ -1,270 +1,38 @@
-{% extends "base.html" %}
+{% extends "base_react.html" %}
 
-{% load favicon %}
+{% load vite_tags %}
 
 {% block title %} Home {% endblock %}
 
 {% block content %}
 
-    <div id="vue-app" class="row h-100 g-0 mx-2">
-
-        <div class="d-flex flex-column col-lg-3">
-
-            <card class="backdrop-filter">
-                <template v-slot:title-slot>
-                    <div class="card-title">
-                        <a href="{% url 'todo:list' %}">Important Tasks</a>
-                    </div>
-                </template>
-                <template v-slot:content>
-                    <ul id="important_tasks" class="list-group interior-borders">
-                        {% for task in tasks %}
-                            <li class="list-group-item list-group-item-secondary">{{ task.name }}
-                                <span class="badge bg-info ms-1">{{ task.parent_category }}</span>
-                                {% for tag in task.tags.all %}
-                                    <span class="tag">{{ tag.name }}</span>
-                                {% endfor %}
-                            </li>
-                        {% empty %}
-                            <li class="list-group-item list-group-item-secondary">All done!</li>
-                        {% endfor %}
-                    </ul>
-                </template>
-            </card>
-
-            <card title="Drill Total Progress" class="backdrop-filter">
-                <template v-slot:title-slot>
-                    <div class="card-title">
-                        <a href="{% url 'drill:list' %}">Drill Total Progress</a>
-                    </div>
-                </template>
-                <template v-slot:content>
-                    <div class="d-flex">
-                        <div class="d-flex justify-content-center align-items-center">
-                            Percentage across all tags of questions not needing review
-                        </div>
-                        <drill-tag-progress
-                            :count={{ drill_total_progress.count }}
-                            :progress={{ drill_total_progress.percentage }}
-                        >
-                        </drill-tag-progress>
-                    </div>
-                </template>
-            </card>
-
-            <card title="Overdue Exercises" class="backdrop-filter">
-                <template v-slot:content>
-                    <ul class="list-group interior-borders">
-                        {% for exercise in overdue_exercises %}
-                            <li class="list-group-item list-group-item-secondary">
-                                <a href="{% url 'fitness:exercise_detail' exercise.uuid %}">{{ exercise.name }}</a>
-                                <span class="item-value">{{ exercise.delta_days }} days</span>
-                            </li>
-                        {% empty %}
-                            <li class="list-group-item list-group-item-secondary">No active exercises.</li>
-                        {% endfor %}
-                    </ul>
-                </template>
-            </card>
-
-            <card title="Daily Bookmarks" class="backdrop-filter">
-                <template v-slot:content>
-                    <ul class="list-group interior-borders">
-                        {% for bookmark in daily_bookmarks %}
-                            <li class="list-group-item list-group-item-secondary {% if bookmark.daily.viewed == 'false' %}fw-bold{% endif %}"><a href="{% url 'bookmark:click' bookmark.uuid %}">{{ bookmark.name }}</a></li>
-                        {% empty %}
-                            <li class="list-group-item list-group-item-secondary">No bookmarks marked as Daily.</li>
-                        {% endfor %}
-                    </ul>
-                </template>
-            </card>
-
-            <card title="Pinned Bookmarks" class="backdrop-filter flex-grow-1">
-                <template v-slot:content>
-                    <ul class="list-group interior-borders">
-                        {% for bookmark in pinned_bookmarks %}
-                            <li id="pinned-bookmarks" class="list-group-item list-group-item-secondary"><a href="{{ bookmark.url }}">{{ bookmark.name }}</a> </li>
-                        {% empty %}
-                            <li class="list-group-item list-group-item-secondary">No pinned bookmarks.</li>
-                        {% endfor %}
-                    </ul>
-                </template>
-            </card>
-
-        </div> <!-- End first column -->
-
-        <div class="col-lg-5 d-flex flex-column">
-
-            <card class="backdrop-filter">
-                <template v-slot:title-slot>
-                    <div class="card-title">
-                        <a href="{% url 'bookmark:overview' %}">Recent Bookmarks</a>
-                    </div>
-                </template>
-                <template v-slot:content>
-                    {% if bookmarks %}
-                        <ul id="recent-bookmarks" class="list-group interior-borders scrollable-panel-scrollbar-hover vh-50">
-                            {% for bookmark in bookmarks %}
-                                <li class="list-group-item text-success d-flex">
-                                    <div>
-                                        {{ bookmark.url|favicon:16|safe }}
-                                    </div>
-                                    <div class="ms-2">
-                                        <a href="{{ bookmark.url }}">{{ bookmark.name }}</a>
-                                    </div>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <li class="list-group-item list-group-item-secondary">
-                            <a class="ms-2" href="{% url 'bookmark:create' %}">Add a bookmark</a>
-                        </li>
-                    {% endif %}
-                </template>
-            </card>
-
-            {% if default_collection %}
-                <card class="backdrop-filter">
-                    <template v-slot:title-slot>
-                        <div class="card-title">
-                            <a href="{% url 'collection:detail' default_collection.uuid %}">{{ default_collection.name }}</a>
-                        </div>
-                    </template>
-                    <template v-slot:content>
-                        <ul class="list-group list-group-horizontal text-center list-unstyled justify-content-center">
-                            <li class="mx-3" v-for="blob in blobList" :key="blob.uuid">
-                                <a :href="blob.url"><img :src="blob.cover_url" /></a>
-                            </li>
-                        </ul>
-                    </template>
-                </card>
-            {% endif %}
-
-            <card title="Recently Played Music" class="backdrop-filter">
-                <template v-slot:content>
-                    <ul class="list-group interior-borders">
-                        {% for song in music %}
-                            <li class="list-group-item list-group-item-secondary">
-                                {{ song.title }}
-                                <a class="item-value ms-2" href="{% url 'music:artist_detail' song.artist.uuid %}">{{ song.artist.name }}</a>
-                            </li>
-                        {% empty %}
-                            <li class="list-group-item list-group-item-secondary">No music listened to.</li>
-                        {% endfor %}
-                    </ul>
-                </template>
-            </card>
-
-            <card title="Quote" class="backdrop-filter flex-grow-1">
-                <template v-slot:content>
-                    <div>
-                        {{ quote.quote }}<br /><strong>{{ quote.source }}</strong>
-                    </div>
-                </template>
-            </card>
-
-        </div> <!-- End second column -->
-
-        <div class="col-lg-4 d-flex flex-column">
-
-            <card title="Calendar" class="backdrop-filter">
-                <template v-slot:content>
-                    <ul class="list-group interior-borders">
-                        <li v-if="waiting" :class="errorClass" class="list-group-item list-group-item-secondary text-success">
-                            [[ message ]]
-                        </li>
-                        <li v-for="event in events" :key="event.count" class="list-group-item list-group-item-secondary">
-                            [[ event.start_pretty ]]: <strong class="item-value text-emphasis">[[ event.summary ]]</strong>
-                        </li>
-                    </ul>
-                </template>
-            </card>
-
-            <card title="Random Image" class="backdrop-filter flex-grow-1">
-                {% if random_image_info %}
-                    <template v-slot:title-slot>
-                        <div class="card-title">
-                            <a href="{% url 'blob:detail' random_image_info.uuid %}">{{ random_image_info.name }}</a>
-                        </div>
-                    </template>
-                {% endif %}
-                <template v-slot:content>
-                    {% if random_image_info %}
-                        <img src="{{ random_image_info.url }}" class="mw-100" data-bs-toggle="modal" data-bs-target="#myModal" />
-                    {% else %}
-                        <a href="{% url 'blob:create' %}">Add a blob</a>
-                    {% endif %}
-                </template>
-            </card>
-
-        </div> <!-- End third column -->
-
-    </div>
-
-    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-        <div class="modal-dialog modal-dialog-centered w-75 mw-100" role="document">
-            <div class="modal-content">
-                <div class="modal-body">
-                    <div>
-                        <img src="{{ random_image_info.url }}" class="w-100"/>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <div id="react-root"
+        data-todo-list-url="{% url 'todo:list' %}"
+        data-drill-list-url="{% url 'drill:list' %}"
+        data-bookmark-overview-url="{% url 'bookmark:overview' %}"
+        data-bookmark-create-url="{% url 'bookmark:create' %}"
+        data-blob-create-url="{% url 'blob:create' %}"
+        data-get-calendar-events-url="{% url 'homepage:get_calendar_events' %}"
+        data-exercise-detail-url-template="{% url 'fitness:exercise_detail' '00000000-0000-0000-0000-000000000000' %}"
+        data-bookmark-click-url-template="{% url 'bookmark:click' '00000000-0000-0000-0000-000000000000' %}"
+        data-artist-detail-url-template="{% url 'music:artist_detail' '00000000-0000-0000-0000-000000000000' %}"
+        data-blob-detail-url-template="{% url 'blob:detail' '00000000-0000-0000-0000-000000000000' %}"
+        data-collection-detail-url-template="{% url 'collection:detail' '00000000-0000-0000-0000-000000000000' %}"
+        data-tasks="{{ tasks_json }}"
+        data-drill-progress="{{ drill_progress_json }}"
+        data-overdue-exercises="{{ overdue_exercises_json }}"
+        data-daily-bookmarks="{{ daily_bookmarks_json }}"
+        data-pinned-bookmarks="{{ pinned_bookmarks_json }}"
+        data-bookmarks="{{ bookmarks_json }}"
+        data-music="{{ music_json }}"
+        data-quote="{{ quote_json }}"
+        data-random-image-info="{{ random_image_info_json }}"
+        data-default-collection="{{ default_collection_json }}"
+    ></div>
 
 {% endblock %}
 
-{% block javascript %}
-
+{% block javascript_bundles %}
     {{ block.super }}
-
-    {{ default_collection.blob_list|json_script:"blobList" }}
-
-    <script type="text/javascript">
-
-        const app = createApp({
-            delimiters: ["[[", "]]"],
-            components: {
-                Card,
-                DrillTagProgress,
-            },
-            setup() {
-                const errorClass = ref("");
-                const events = ref([]);
-                const message = ref("Retrieving...");
-                const waiting = ref(true);
-
-                const blobList = JSON.parse(document.getElementById("blobList").textContent);
-
-                onMounted(() => {
-                    axios.get("{% url 'homepage:get_calendar_events' %}")
-                         .then((response) => {
-                             events.value = response.data;
-
-                             if (response.data.length == 0) {
-                                 message.value = "Your calendar is empty";
-                             } else {
-                                 waiting.value = false;
-                                 message.value = "";
-                             };
-                         }).catch((error) => {
-                             message.value = error;
-                             errorClass.value = "alert alert-danger";
-                         });
-                });
-
-                return {
-                    blobList,
-                    errorClass,
-                    events,
-                    message,
-                    waiting,
-                };
-            },
-        });
-        app.mount("#vue-app");
-
-    </script>
-
+    {% vite_asset "dist/js/homepage" %}
 {% endblock %}

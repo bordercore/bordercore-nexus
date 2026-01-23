@@ -261,11 +261,19 @@ div.drag-target {
 
 .scrollable-panel-scrollbar-hover {
   overflow: hidden;
-  
+
   &:hover {
-    overflow-y: auto;
+    // "overlay" not supported by Firefox; use "auto" (overlay deprecated)
+    @supports not( -moz-appearance:none ) {
+      overflow-y: auto;
+    }
+
+    @supports ( -moz-appearance:none ) {
+      overflow-y: auto;
+      scrollbar-gutter: stable;
+    }
   }
-  
+
   &::-webkit-scrollbar {
     width: 0.5rem;
   }
@@ -288,4 +296,9 @@ hr.divider {
   background: linear-gradient(to bottom, transparent, var(--surface1));
   content: "";
   pointer-events: none;
+}
+
+// Column gutter utility
+.pe-gutter {
+  padding-right: var(--column-gutter) !important;
 }

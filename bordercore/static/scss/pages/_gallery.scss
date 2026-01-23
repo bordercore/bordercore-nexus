@@ -1,0 +1,67 @@
+#gallery {
+  li {
+    padding: 0.62rem;
+    margin: 0.62rem;
+    background-color: var(--surface1);
+  }
+
+  #surfaces {
+    li:nth-child(1) {
+      background-color: var(--surface1);
+    }
+
+    li:nth-child(2) {
+      background-color: var(--surface2);
+    }
+
+    li:nth-child(3) {
+      background-color: var(--surface3);
+    }
+
+    li:nth-child(4) {
+      background-color: var(--surface4);
+    }
+
+    li:nth-child(5) {
+      background-color: var(--surface5);
+    }
+
+    li:nth-child(6) {
+      background-color: var(--surface6);
+    }
+
+    li:nth-child(7) {
+      background-color: var(--surface7);
+    }
+  }
+
+  #texts {
+    li:nth-child(1) {
+      color: var(--text1);
+    }
+
+    li:nth-child(2) {
+      color: var(--text2);
+    }
+
+    li:nth-child(3) {
+      color: var(--text3);
+    }
+
+    li:nth-child(4) {
+      color: var(--text4);
+    }
+
+    li:nth-child(5) {
+      color: var(--text5);
+    }
+
+    li:nth-child(6) {
+      color: var(--text6);
+    }
+
+    li:nth-child(7) {
+      color: var(--text-disabled);
+    }
+  }
+}

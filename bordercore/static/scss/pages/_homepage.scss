@@ -1,0 +1,67 @@
+.homepage {
+  .card-body {
+    flex-grow: 0;
+    padding: 1.25rem;
+    margin: 0 0.5rem 1rem;
+    background-color: var(--surface2);
+    border-radius: 0.4rem;
+  }
+
+  // Backdrop filter support for glass effect (matches _music.scss)
+  @supports (backdrop-filter: blur(1.56rem) brightness(170%)) {
+    .card-body.backdrop-filter {
+      backdrop-filter: var(--eye-candy);
+    }
+  }
+
+  #important-tasks {
+    // Remove border from last list item (matches album song list removing last row border)
+    .list-group-item:last-child {
+      border-bottom: none;
+    }
+  }
+
+  .card-title {
+    color: var(--text4);
+    font-size: 1.2rem;
+
+    a {
+      color: var(--text4);
+    }
+  }
+
+  li.list-group-item-secondary {
+    background-color: var(--surface2);
+  }
+
+  .tag {
+    padding: 0 0.3rem 0.18rem;
+    border: 0.12rem solid var(--surface5);
+    margin: 0 0.12rem;
+    background-color: var(--surface6);
+    border-radius: 1.5rem;
+    color: var(--text4);
+    line-height: 1.5rem;
+    white-space: nowrap;
+
+    &:hover {
+      background-color: var(--text4);
+      color: var(--surface6);
+      text-decoration: none;
+    }
+  }
+
+  .progress-circle {
+    circle.circle-partial {
+      stroke: var(--drill-progress-circle-partial);
+    }
+
+    circle.circle-full {
+      stroke: var(--drill-progress-circle-full);
+    }
+
+    text {
+      fill: var(--text4);
+    }
+  }
+}

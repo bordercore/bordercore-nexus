@@ -71,7 +71,7 @@ export function MusicDashboardPage({
   return (
     <div className="row g-0 h-100 mx-2 music-dashboard">
       {/* Left sidebar */}
-      <div className="flex-grow-last col-lg-3 d-flex flex-column pe-2">
+      <div className="flex-grow-last col-lg-3 d-flex flex-column pe-gutter">
         {randomAlbum && (
           <FeaturedAlbumCard album={randomAlbum} className="flex-grow-0 backdrop-filter" />
         )}

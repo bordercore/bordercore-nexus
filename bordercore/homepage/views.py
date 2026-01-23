@@ -1,3 +1,5 @@
+import json
+
 from botocore.errorfactory import ClientError
 from elasticsearch.exceptions import ConnectionError
 
@@ -19,6 +21,11 @@ from lib.util import get_elasticsearch_connection
 from music.models import Song
 from quote.models import Quote
 from todo.models import Todo
+
+
+def json_for_html_attr(data):
+    """Serialize data to JSON for use in HTML attributes."""
+    return json.dumps(data)
 
 
 @login_required
@@ -71,6 +78,96 @@ def homepage(request):
     default_collection = get_default_collection_blobs(request)
 
     overdue_exercises = get_overdue_exercises(request.user)
+    overdue_exercises_sorted = sorted(overdue_exercises, key=lambda x: x.delta_days, reverse=True)
+    drill_total_progress = Question.objects.total_tag_progress(request.user)
+
+    # Serialize data for React
+    tasks_json = json_for_html_attr([
+        {
+            "uuid": str(task.uuid),
+            "name": task.name,
+            "priority_name": Todo.get_priority_name(task.priority),
+            "tags": [tag.name for tag in task.tags.all()],
+        }
+        for task in tasks
+    ])
+
+    drill_progress_json = json_for_html_attr({
+        "count": drill_total_progress["count"],
+        "percentage": drill_total_progress["percentage"],
+    })
+
+    overdue_exercises_json = json_for_html_attr([
+        {
+            "uuid": str(exercise.uuid),
+            "name": exercise.name,
+            "delta_days": exercise.delta_days,
+        }
+        for exercise in overdue_exercises_sorted
+    ])
+
+    daily_bookmarks_json = json_for_html_attr([
+        {
+            "uuid": str(bookmark.uuid),
+            "name": bookmark.name,
+            "url": bookmark.url,
+            "daily": {"viewed": bookmark.daily.get("viewed", "false")} if bookmark.daily else None,
+        }
+        for bookmark in daily_bookmarks
+    ])
+
+    pinned_bookmarks_json = json_for_html_attr([
+        {
+            "uuid": str(bookmark.uuid),
+            "name": bookmark.name,
+            "url": bookmark.url,
+        }
+        for bookmark in pinned_bookmarks
+    ])
+
+    bookmarks_json = json_for_html_attr([
+        {
+            "uuid": str(bookmark.uuid),
+            "name": bookmark.name,
+            "url": bookmark.url,
+        }
+        for bookmark in bookmarks
+    ])
+
+    music_json = json_for_html_attr([
+        {
+            "title": song.title,
+            "artist": {
+                "uuid": str(song.artist.uuid),
+                "name": song.artist.name,
+            },
+        }
+        for song in music
+    ])
+
+    quote_json = json_for_html_attr({
+        "quote": quote.quote,
+        "source": quote.source,
+    } if quote else None)
+
+    random_image_info_json = json_for_html_attr({
+        "uuid": str(random_image_info["uuid"]),
+        "name": random_image_info["name"],
+        "url": random_image_info["url"],
+    } if random_image_info else None)
+
+    default_collection_json = json_for_html_attr({
+        "uuid": str(default_collection["uuid"]),
+        "name": default_collection["name"],
+        "blob_list": [
+            {
+                "uuid": str(blob["uuid"]),
+                "url": blob.get("url", ""),
+                "cover_url": blob.get("cover_url", ""),
+            }
+            for blob in default_collection.get("blob_list", [])
+        ],
+    } if default_collection else None)
 
     return render(request, "homepage/index.html",
                   {"quote": quote,
@@ -81,8 +178,19 @@ def homepage(request):
                    "random_image_info": random_image_info,
                    "bookmarks": bookmarks,
                    "default_collection": default_collection,
-                   "overdue_exercises": sorted(overdue_exercises, key=lambda x: x.delta_days, reverse=True),
-                   "drill_total_progress": Question.objects.total_tag_progress(request.user),
+                   "overdue_exercises": overdue_exercises_sorted,
+                   "drill_total_progress": drill_total_progress,
+                   # JSON serialized data for React
+                   "tasks_json": tasks_json,
+                   "drill_progress_json": drill_progress_json,
+                   "overdue_exercises_json": overdue_exercises_json,
+                   "daily_bookmarks_json": daily_bookmarks_json,
+                   "pinned_bookmarks_json": pinned_bookmarks_json,
+                   "bookmarks_json": bookmarks_json,
+                   "music_json": music_json,
+                   "quote_json": quote_json,
+                   "random_image_info_json": random_image_info_json,
+                   "default_collection_json": default_collection_json,
                    "title": "Bordercore"})
 
 
