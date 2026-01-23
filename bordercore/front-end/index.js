@@ -286,30 +286,18 @@ window.RelatedObjects = RelatedObjects;
 import RelatedTags from "./vue/common/RelatedTags.vue";
 window.RelatedTags = RelatedTags;
 
-import SearchBar from "./vue/search/SearchBar.vue";
-window.SearchBar = SearchBar;
-
 import SearchNoResult from "./vue/common/SearchNoResult.vue";
 window.SearchNoResult = SearchNoResult;
-
-import SearchResult from "./vue/search/SearchResult.vue";
-window.SearchResult = SearchResult;
 
 import SelectValue from "./vue/common/SelectValue.vue";
 import "vue-multiselect/dist/vue-multiselect.css";
 window.SelectValue = SelectValue;
-
-import TagSearchResult from "./vue/search/TagSearchResult.vue";
-window.TagSearchResult = TagSearchResult;
 
 import TagsInput from "./vue/common/TagsInput.vue";
 window.TagsInput = TagsInput;
 
 import Toast from "./vue/common/Toast.vue";
 window.Toast = Toast;
-
-import TopSearch from "./vue/search/TopSearch.vue";
-window.TopSearch = TopSearch;
 
 import TreeMenu from "./vue/common/TreeMenu.vue";
 window.TreeMenu = TreeMenu;

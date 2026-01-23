@@ -1767,10 +1767,29 @@ blockquote > p {
   }
 
   &.grid {
-    width: 33%;
+    flex: 0 0 33.333%;
+    box-sizing: border-box;
+    min-width: 0;
     border-bottom: 0;
+
     @media screen and (max-width: 1200px) {
-      width: 50%;
+      flex: 0 0 50%;
+    }
+
+    @media screen and (max-width: 768px) {
+      flex: 0 0 100%;
+    }
+
+    // Ensure content doesn't overflow the grid item
+    > div {
+      min-width: 0;
+      max-width: 100%;
+    }
+
+    // Ensure text wraps within grid items
+    a, h4, h5, div {
+      overflow-wrap: break-word;
+      word-wrap: break-word;
     }
   }
 }

@@ -1,162 +1,30 @@
-{% extends "base.html" %}
+{% extends "base_react.html" %}
+{% load vite_tags %}
 
-{% block title %} Search :: Tag Detail {% endblock %}
+{% block title %}Search :: Tag Detail{% endblock %}
 
-{% block content %}
-
-    <div id="vue-app" class="row g-0 h-100 mx-2">
-        <div class="col-lg-3 d-flex flex-column">
-            <div class="card-body flex-grow-1">
-                <div v-cloak v-if="doctypeCounts.length > 0">
-                    <h4 class="text4 border-bottom pb-2">
-                        Doctypes
-                    </h4>
-                    <ul class="nav nav-tabs nav-vertical flex-column">
-                        <li class="nav-item">
-                            <div
-                                :id=`${doctype[0]}-tab`
-                                v-for="doctype in doctypeCounts"
-                                class="list-with-counts ps-2 py-1 pe-1 d-flex"
-                                :class="{'selected active rounded-sm':doctype[0] === selectedDoctype}"
-                                @click.prevent="handleDoctypeSelect(doctype[0])"
-                                data-bs-toggle="tab"
-                                :data-bs-target=`#${doctype[0]}`
-                            >
-                                <div>
-                                    [[ doctype[2] ]]
-                                </div>
-                                <div class="ms-auto">
-                                    <span class="px-2 badge rounded-pill">
-                                        [[ doctype[1] ]]
-                                    </span>
-                                </div>
-                            </div>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-9">
-            <search-bar
-                ref="searchBar"
-                exact-match-initial="{{ request.GET.exact_match }}"
-                search-url="{% url 'tag:search' %}?query="
-                sort-by-initial="{{ request.session.search_sort_by|default:'' }}"
-                :tag-counts="tagCounts"
-                tag-search-url="{% url 'tag:search' %}?query="
-                tags-changed-url="{% url 'search:kb_search_tag_detail' 666 %}"
-                term-search-url="{% url 'search:search' %}"
-            >
-            </search-bar>
-            <div class="tab-content ps-3 h-100 mb-3">
-                <tag-search-result doc-type="blob" :matches="results.blob">
-                </tag-search-result>
-                <tag-search-result doc-type="book" :matches="results.book">
-                </tag-search-result>
-                <tag-search-result doc-type="bookmark" :matches="results.bookmark">
-                </tag-search-result>
-                <tag-search-result doc-type="document" :matches="results.document">
-                </tag-search-result>
-                <tag-search-result doc-type="note" :matches="results.note">
-                </tag-search-result>
-                <tag-search-result doc-type="drill" :matches="results.drill">
-                </tag-search-result>
-                <tag-search-result doc-type="song" :matches="results.song">
-                </tag-search-result>
-                <tag-search-result doc-type="todo" :matches="results.todo">
-                </tag-search-result>
-                <tag-search-result doc-type="album" :matches="results.album">
-                </tag-search-result>
-            </div>
-        </div>
-    </div>
-
+{% block css %}
+    {% vite_asset "dist/css/bordercore" %}
 {% endblock %}
 
-{% block javascript %}
-
+{% block javascript_bundles %}
     {{ block.super }}
+    {% vite_asset "dist/js/tag-detail" %}
+{% endblock %}
+
+{% block content %}
+    <div
+        id="react-root"
+        data-tag-search-url="{% url 'tag:search' %}?query="
+        data-tags-changed-url="{% url 'search:kb_search_tag_detail' 666 %}"
+        data-term-search-url="{% url 'search:search' %}"
+        data-store-in-session-url="{% url 'accounts:store_in_session' %}"
+        data-saved-tab="{{ search_tag_detail_current_tab|default:'' }}"
+    ></div>
 
     {{ doctype_counts|json_script:"doctypeCounts" }}
     {{ tag_counts|json_script:"tagCounts" }}
     {{ results|json_script:"results" }}
-    {{ tag_list|json_script:"initial-tags"|default:"" }}
-
-    <script type="text/javascript">
-
-        const app = createApp({
-            delimiters: ["[[", "]]"],
-            components: {
-                FontAwesomeIcon,
-                SearchBar,
-                TagSearchResult,
-                TagsInput,
-            },
-            setup() {
-                const doctypeCounts = JSON.parse(document.getElementById("doctypeCounts").textContent);
-                const tagCounts = JSON.parse(document.getElementById("tagCounts").textContent);
-                const results = JSON.parse(document.getElementById("results").textContent);
-                const searchBar = ref(null);
-                const selectedDoctype = ref("");
-
-                const doctypeMapping = {
-                    "album": "Albums",
-                    "blob": "Blobs",
-                    "book": "Books",
-                    "drill": "Drill",
-                    "note": "Notes",
-                    "bookmark": "Bookmarks",
-                    "todo": "Todo Items",
-                    "song": "Songs",
-                    "document": "Documents",
-                };
-
-                for (doctype of doctypeCounts) {
-                    doctype[2] = doctypeMapping[doctype[0]]
-                }
-
-                function handleDoctypeSelect(doctype) {
-                    selectedDoctype.value = doctype;
-
-                    doPost(
-                        "{% url "accounts:store_in_session" %}",
-                        {
-                            "search_tag_detail_current_tab": doctype,
-                        },
-                        () => {},
-                    );
-                };
-
-                onMounted(() => {
-                    {% if search_tag_detail_current_tab and search_tag_detail_current_tab in doctypes %}
-                    selectedDoctype.value = "{{ search_tag_detail_current_tab }}";
-                    const triggerFirstTabEl = document.querySelector(`div#${selectedDoctype.value}-tab`);
-                    {% else %}
-                    // If the tab stored in the session doesn't match any current tab categories,
-                    //  select the first tab.
-                    const triggerFirstTabEl = document.querySelector(".nav div:first-child");
-                    {% endif %}
-                    if (triggerFirstTabEl != undefined) {
-                        const tabTrigger = new Tab(triggerFirstTabEl);
-                        tabTrigger.show();
-                    }
-
-                    searchBar.value.focusTagSearch();
-                });
-
-                return {
-                    doctypeCounts,
-                    doctypeMapping,
-                    handleDoctypeSelect,
-                    results,
-                    searchBar,
-                    selectedDoctype,
-                    tagCounts,
-                };
-            },
-        });
-        app.mount("#vue-app");
-
-    </script>
-
+    {{ tag_list|json_script:"initial-tags" }}
+    {{ doctypes|json_script:"doctypes" }}
 {% endblock %}

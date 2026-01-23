@@ -31,18 +31,24 @@
 
 .has-search {
   position: relative;
-  
+
   .search-icon {
     position: absolute;
     top: 50%;
     left: 1rem;
-    color: var(--text3);
+    color: white;
     pointer-events: none;
     transform: translateY(-50%);
   }
-  
-  .search-input {
+
+  .search-input,
+  .form-control {
     padding-left: 2.5rem;
+
+    &::placeholder {
+      color: var(--form-color);
+      opacity: 1;
+    }
   }
 }
 
@@ -70,30 +76,57 @@
   border-bottom: 1px solid var(--border-color);
   cursor: pointer;
   transition: background-color 0.2s ease;
-  
+
   &:hover {
     background-color: var(--hover-bg);
   }
-  
+
   &:last-child {
     border-bottom: none;
   }
-  
+
   .search-result-title {
     margin-bottom: 0.25rem;
     color: var(--text1);
     font-weight: 600;
   }
-  
+
   .search-result-snippet {
     color: var(--text2);
     font-size: 0.875rem;
   }
-  
+
   .search-result-meta {
     margin-top: 0.25rem;
     color: var(--text3);
     font-size: 0.75rem;
+  }
+
+  // Grid layout for search results (used in tag detail page)
+  &.grid {
+    min-width: 0;
+    box-sizing: border-box;
+    flex: 0 0 33.333%;
+    border-bottom: 0;
+
+    @media screen and (width <= 1200px) {
+      flex: 0 0 50%;
+    }
+
+    @media screen and (width <= 768px) {
+      flex: 0 0 100%;
+    }
+
+    // Ensure content doesn't overflow the grid item
+    > div {
+      min-width: 0;
+      max-width: 100%;
+    }
+
+    // Ensure text wraps within grid items
+    a, h4, h5, div {
+      overflow-wrap: break-word;
+    }
   }
 }
 
@@ -103,6 +136,10 @@
   margin: 1rem 0;
   color: var(--text1);
   font-weight: 600;
+}
+
+.tag-search {
+  width: 25rem;
 }
 
 // Cancel icon inside search input fields
