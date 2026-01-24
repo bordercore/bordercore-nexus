@@ -1,172 +1,26 @@
-{% extends "base.html" %}
+{% extends "base_react.html" %}
+{% load vite_tags %}
 
-{% block title %} Feeds {% endblock %}
+{% block title %}Feeds{% endblock %}
 
-{% block content %}
-
-    <div id="vue-app">
-
-        <div class="row g-0 mx-2" v-cloak>
-
-            <div class="col-lg-3 d-flex flex-column flex-grow-last">
-                <feed-info
-                    ref="feedInfo"
-                    @new-feed="handleNewFeed"
-                ></feed-info>
-            </div>
-
-            <div class="col-lg-3 d-flex flex-column">
-                <div class="card-body backdrop-filter">
-                    <div class="d-flex">
-                        <h3>Feed List</h3>
-                    </div>
-                    <hr />
-                    <feed-list
-                        ref="feedListRef"
-                        :feed-list="feedList"
-                        feed-sort-url="{% url 'feed:sort' %}"
-                        store-in-session-url="{% url 'accounts:store_in_session' %}"
-                        @show-feed="showFeed"
-                    >
-                    </feed-list>
-                </div>
-            </div>
-
-            <div class="col-lg-6 d-flex flex-column flex-grow-last">
-                <feed-item-list
-                    ref="feedItemList"
-                    @open-modal="openModal"
-                >
-                </feed-item-list>
-            </div>
-
-            <div id="modalDeleteFeed" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-                <div class="modal-dialog" role="document">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h4 id="myModalLabel" class="modal-title">
-                                Delete Feed
-                            </h4>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
-                            </button>
-                        </div>
-
-                        <div class="modal-body">
-                            <div>
-                                Are you sure you want to delete this feed?
-                            </div>
-
-                            <div class="mt-3">
-                                <input id="btn-action" class="btn btn-primary" type="button" value="Confirm" @click="handleDeleteFeedConfirmation">
-                                <a href="#" data-bs-dismiss="modal" class="ms-3">Cancel</a>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-            </div>
-
-            <feed-editor-modal
-                ref="editFeed"
-                edit-feed-url="{% url 'feed-detail' '00000000-0000-0000-0000-000000000000' %}"
-                new-feed-url="{% url 'feed-list' %}"
-                feed-check-url="{% url 'feed:check_url' 666 %}"
-                @add-feed="handleFeedAdd"
-            >
-            </feed-editor-modal>
-
-        </div>
-
+{% block css %}
+    {% vite_asset "dist/css/bordercore" %}
 {% endblock %}
 
-{% block javascript %}
-
+{% block javascript_bundles %}
     {{ block.super }}
+    {% vite_asset "dist/js/feed" %}
+{% endblock %}
 
-    {{ feed_list|json_script:"feed_list" }}
-    {{ current_feed|json_script:"current_feed" }}
-
-    <script type="text/javascript">
-
-        const app = createApp({
-            name: "FeedDashboard",
-            components: {
-                FeedEditorModal,
-                DropDownMenu,
-                FeedInfo,
-                FeedItemList,
-                FeedList,
-            },
-            setup() {
-                const feedList = JSON.parse(document.getElementById("feed_list").textContent);
-                const feedStore = useFeedStore();
-
-                const feedInfo = ref(null);
-                const feedItemList = ref(null);
-                const feedListRef = ref(null);
-                const editFeed = ref(null);
-
-                function handleDeleteFeedConfirmation() {
-                    axios.delete("{% url 'feed-detail' '00000000-0000-0000-0000-000000000000' %}".replace("00000000-0000-0000-0000-000000000000", feedStore.currentFeed.uuid))
-                        .then((response) => {
-                            EventBus.$emit(
-                                "toast",
-                                {
-                                    "body": "Feed deleted",
-                                },
-                            );
-                            feedListRef.value.deleteFeed(feedStore.currentFeed.uuid);
-                            const modal = Modal.getInstance(document.getElementById("modalDeleteFeed"));
-                            modal.hide();
-                        }, (error) => {
-                            console.log(error);
-                        });
-                };
-
-                function handleFeedAdd(feedInfo) {
-                    feedListRef.value.addFeed(feedInfo);
-                };
-
-                function handleNewFeed() {
-                    feedItemList.value.handleEditFeed(null, "Create");
-                };
-
-                function openModal(action, feedInfo) {
-                    editFeed.value.editModal(action, feedInfo);
-                    const modal = new Modal("#modalEditFeed");
-                    modal.show();
-                }
-
-                function showFeed(feed) {
-                    feedInfo.value.showFeed(feed);
-                    feedItemList.value.showFeed(feed);
-                };
-
-                onMounted(() => {
-                    const currentFeed = JSON.parse(document.getElementById("current_feed").textContent);
-                    feedStore.currentFeed = currentFeed;
-                    nextTick(() => {
-                        showFeed(currentFeed);
-                    });
-                });
-
-                return {
-                    handleDeleteFeedConfirmation,
-                    handleFeedAdd,
-                    handleNewFeed,
-                    feedInfo,
-                    feedItemList,
-                    feedList,
-                    feedListRef,
-                    openModal,
-                    showFeed,
-                    editFeed,
-                };
-            },
-        });
-        app.use(createPinia());
-        app.mount("#vue-app");
-
-    </script>
-
+{% block content %}
+    <div
+        id="react-root"
+        data-feed-sort-url="{% url 'feed:sort' %}"
+        data-store-in-session-url="{% url 'accounts:store_in_session' %}"
+        data-edit-feed-url="{% url 'feed-detail' '00000000-0000-0000-0000-000000000000' %}"
+        data-new-feed-url="{% url 'feed-list' %}"
+        data-feed-check-url="{% url 'feed:check_url' 666 %}"
+        data-feed-list="{{ feed_list }}"
+        data-current-feed="{{ current_feed }}"
+    ></div>
 {% endblock %}

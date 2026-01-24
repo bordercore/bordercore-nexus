@@ -5,6 +5,7 @@ Views for listing, sorting, updating, and validating RSS/Atom feeds.
 from __future__ import annotations
 
 import http.client
+import json
 from http import HTTPStatus
 from typing import Any, Dict, List, TypedDict, cast
 from urllib.parse import unquote
@@ -106,14 +107,14 @@ class FeedListView(LoginRequiredMixin, ListView):
             }
             for feed in self.object_list
         ]
-        context["feed_list"] = feed_list
+        context["feed_list"] = json.dumps(feed_list, default=str)
 
         user = cast(User, self.request.user)
         current_feed_id = Feed.get_current_feed_id(user, self.request.session)
         current_feed = next((x for x in feed_list if x["id"] == current_feed_id), None)
         if current_feed is None and feed_list:
             current_feed = feed_list[0]
-        context["current_feed"] = cast(FeedPayload, current_feed)
+        context["current_feed"] = json.dumps(current_feed, default=str) if current_feed else "null"
 
         return context
 

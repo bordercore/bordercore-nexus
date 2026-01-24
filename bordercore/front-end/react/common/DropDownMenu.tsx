@@ -5,8 +5,10 @@ import {
   faBriefcase,
   faChartBar,
   faComment,
+  faPencilAlt,
   faQuestion,
   faSignOutAlt,
+  faTimes,
   IconDefinition,
 } from "@fortawesome/free-solid-svg-icons";
 import { Popover } from "./Popover";
@@ -46,8 +48,10 @@ export function DropDownMenu({
       briefcase: faBriefcase,
       "chart-bar": faChartBar,
       comment: faComment,
+      "pencil-alt": faPencilAlt,
       question: faQuestion,
       "sign-out-alt": faSignOutAlt,
+      times: faTimes,
     };
     return iconMap[iconName] || null;
   };

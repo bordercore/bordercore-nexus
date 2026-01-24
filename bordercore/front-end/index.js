@@ -37,8 +37,6 @@ import {useBaseStore} from "./vue/stores/BaseStore.js";
 window.useBaseStore = useBaseStore;
 import {useBookmarkStore} from "./vue/stores/BookmarkStore.js";
 window.useBookmarkStore = useBookmarkStore;
-import {useFeedStore} from "./vue/stores/FeedStore.js";
-window.useFeedStore = useFeedStore;
 import {useExerciseStore} from "./vue/stores/ExerciseStore.js";
 window.useExerciseStore = useExerciseStore;
 
@@ -196,9 +194,6 @@ window.CollectionObjectList = CollectionObjectList;
 import CollectionObjectListModal from "./vue/collection/CollectionObjectListModal.vue";
 window.CollectionObjectListModal = CollectionObjectListModal;
 
-import FeedEditorModal from "./vue/feed/FeedEditorModal.vue";
-window.FeedEditorModal = FeedEditorModal;
-
 import TodoEditor from "./vue/todo/TodoEditor.vue";
 window.TodoEditor = TodoEditor;
 
@@ -216,15 +211,6 @@ window.DropDownMenu = DropDownMenu;
 
 import EditableTextArea from "./vue/common/EditableTextArea.vue";
 window.EditableTextArea= EditableTextArea;
-
-import FeedInfo from "./vue/feed/FeedInfo.vue";
-window.FeedInfo = FeedInfo;
-
-import FeedItemList from "./vue/feed/FeedItemList.vue";
-window.FeedItemList = FeedItemList;
-
-import FeedList from "./vue/feed/FeedList.vue";
-window.FeedList = FeedList;
 
 import Schedule from "./vue/fitness/Schedule.vue";
 window.Schedule = Schedule;
