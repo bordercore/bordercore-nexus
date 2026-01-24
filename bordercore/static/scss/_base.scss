@@ -1340,6 +1340,10 @@ table.b-table th {
   }
 }
 
+.side-panel {
+  width: 18.75rem;
+}
+
 @supports (backdrop-filter: blur(1.56rem) brightness(170%)) {
   .backdrop-filter {
     backdrop-filter: var(--eye-candy);
@@ -2877,6 +2881,7 @@ tr.hover-target:hover {
   position: absolute;
   top: 2rem;
   right: .75rem;
+  z-index: 100;
   width: 12.5rem;
   box-shadow: 0.06rem 0.06rem 0.31rem var(--surface4), -0.06rem -0.06rem 0.31rem var(--surface4);
 }
