@@ -107,3 +107,12 @@
   background-color: var(--surface2);
   border-radius: var(--border-radius1);
 }
+
+// Table column width utilities
+.table-col-number {
+  width: 5rem;
+}
+
+.table-col-action {
+  width: 3rem;
+}

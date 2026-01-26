@@ -366,7 +366,7 @@ export function SongCreatePage({
                   key={tag.name}
                   className="list-with-counts ps-2 py-1 pe-2 d-flex"
                   onClick={() => handleTagClick(tag.name)}
-                  style={{ cursor: "pointer" }}
+                  className="cursor-pointer"
                 >
                   <div className="text-truncate">{tag.name}</div>
                   <div className="ms-auto me-1">
@@ -616,7 +616,7 @@ export function SongCreatePage({
                   data-rating={starIndex}
                   onClick={() => handleRatingClick(starIndex)}
                   onMouseOver={() => handleRatingMouseOver(starIndex)}
-                  style={{ cursor: "pointer" }}
+                  className="cursor-pointer"
                 >
                   <FontAwesomeIcon icon={faStar} />
                 </span>
@@ -684,7 +684,7 @@ export function SongCreatePage({
       {processingFile && (
         <div
           className="modal show d-block"
-          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+          className="music-modal-overlay"
           tabIndex={-1}
         >
           <div className="modal-dialog modal-dialog-centered">

@@ -70,7 +70,7 @@ export function StarRating({
           className={`rating me-1 ${displayRating > starIndex ? "rating-star-selected" : ""}`}
           onClick={() => handleClick(starIndex)}
           onMouseOver={() => handleMouseOver(starIndex)}
-          style={{ cursor: isUpdating ? "wait" : "pointer" }}
+          className={isUpdating ? "cursor-wait" : "cursor-pointer"}
         >
           <FontAwesomeIcon icon={faStar} />
         </span>

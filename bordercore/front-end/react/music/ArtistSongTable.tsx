@@ -108,11 +108,11 @@ export function ArtistSongTable({
         <thead>
           <tr>
             <th>Title</th>
-            <th style={{ width: "3rem" }}></th>
+            <th className="table-col-action"></th>
             <th>Year</th>
             <th className="text-end">Rating</th>
             <th>Length</th>
-            <th className="text-center" style={{ width: "3rem" }}></th>
+            <th className="text-center table-col-action"></th>
           </tr>
         </thead>
         <tbody>

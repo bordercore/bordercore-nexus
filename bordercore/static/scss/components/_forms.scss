@@ -78,19 +78,34 @@ a.tag {
   font-size: 0.875rem;
   text-decoration: none;
   transition: background-color 0.2s ease;
-  
+
+  &:link,
+  &:visited {
+    color: var(--text4);
+  }
+
   &:hover {
     background-color: var(--tag-hover-bg);
+    color: var(--surface6);
     text-decoration: none;
   }
 }
 
-.tag {
-  padding: 0.25rem 0.75rem;
-  background-color: var(--tag-bg);
-  border-radius: var(--border-radius1);
-  color: var(--tag-text);
-  font-size: 0.875rem;
+.tag, .ti-input .ti-tag {
+  padding: 0 0.3rem 0.18rem !important;
+  border: 0.12rem solid var(--surface5);
+  margin: 0 0.12rem !important;
+  background-color: var(--surface6) !important;
+  border-radius: 1.5rem !important;
+  color: var(--text4) !important;
+  line-height: 1.5rem;
+  white-space: nowrap;
+
+  &:hover {
+    background-color: var(--text4) !important;
+    color: var(--surface6) !important;
+    text-decoration: none;
+  }
 }
 
 // Input groups
@@ -120,4 +135,32 @@ a.tag {
   border-top: 1px solid var(--border-color);
   color: var(--text2);
   font-size: 0.875rem;
+}
+
+// SelectValue component
+.select-value-wrapper {
+  position: relative;
+}
+
+.select-value-dropdown {
+  display: block;
+  width: 100%;
+}
+
+// Object select modal cover image
+.object-select-cover-image {
+  max-width: 60px;
+  max-height: 60px;
+}
+
+// PythonConsole component
+.python-console-root {
+  // Dynamic height is handled via inline style when needed
+  // This class provides base styling
+}
+
+// Weather component
+.weather-lottie {
+  width: 64px;
+  height: 64px;
 }

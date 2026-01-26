@@ -130,7 +130,7 @@ export function TagListPage({ initialTagInfo, urls }: TagListPageProps) {
             <div
               className="ms-auto d-flex align-items-center"
               onClick={openSearchWindow}
-              style={{ cursor: "pointer" }}
+              className="cursor-pointer"
             >
               <FontAwesomeIcon icon={faMagnifyingGlass} className="glow text-emphasis" />
             </div>

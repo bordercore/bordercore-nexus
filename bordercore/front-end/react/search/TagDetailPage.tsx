@@ -112,7 +112,6 @@ export function TagDetailPage({
                       onClick={() => handleDoctypeSelect(doctype.key)}
                       data-bs-toggle="tab"
                       data-bs-target={`#${doctype.key}`}
-                      style={isSelected ? { backgroundColor: "var(--selected-bg)" } : undefined}
                     >
                       <div className="ps-2">{doctype.displayName}</div>
                       <div className="ms-auto pe-2">

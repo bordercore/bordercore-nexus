@@ -289,7 +289,7 @@ export const EditPlaylistModal = forwardRef<EditPlaylistModalHandle, EditPlaylis
                               className={`rating me-1 ${displayRating > starIndex ? "rating-star-selected" : ""}`}
                               onClick={() => handleRatingClick(starIndex)}
                               onMouseOver={() => setHoverRating(starIndex + 1)}
-                              style={{ cursor: "pointer" }}
+                              className="cursor-pointer"
                             >
                               <FontAwesomeIcon icon={faStar} />
                             </span>

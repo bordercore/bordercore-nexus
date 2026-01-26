@@ -61,20 +61,36 @@ class DrillListView(LoginRequiredMixin, ListView):
                 - favorite_questions_progress: Progress on favorite questions
                 - total_progress: Total tag progress for the user
                 - study_session_progress: Current study session progress
+                - JSON versions of the above for React
         """
         context = super().get_context_data(**kwargs)
 
         user = cast(User, self.request.user)
 
+        tags_last_reviewed = Question.objects.tags_last_reviewed(user)[:20]
+        random_tag = Question.objects.get_random_tag(user)
+        favorite_questions_progress = Question.objects.favorite_questions_progress(user)
+        total_progress = Question.objects.total_tag_progress(user)
+        study_session_progress = Question.get_study_session_progress(self.request.session)
+
+        # Get study session from request for React
+        study_session = self.request.session.get("drill_study_session", None)
+
         return {
             **context,
             "cols": ["tag_name", "question_count", "last_reviewed", "lastreviewed_sort", "id"],
             "title": "Home",
-            "tags_last_reviewed": Question.objects.tags_last_reviewed(user)[:20],
-            "random_tag": Question.objects.get_random_tag(user),
-            "favorite_questions_progress": Question.objects.favorite_questions_progress(user),
-            "total_progress": Question.objects.total_tag_progress(user),
-            "study_session_progress": Question.get_study_session_progress(self.request.session)
+            "tags_last_reviewed": tags_last_reviewed,
+            "random_tag": random_tag,
+            "favorite_questions_progress": favorite_questions_progress,
+            "total_progress": total_progress,
+            "study_session_progress": study_session_progress,
+            # JSON versions for React
+            "study_session_json": json.dumps(study_session) if study_session else "null",
+            "total_progress_json": json.dumps({"count": total_progress["count"], "percentage": total_progress["percentage"]}),
+            "favorite_progress_json": json.dumps({"count": favorite_questions_progress["count"], "percentage": favorite_questions_progress["percentage"]}),
+            "tags_last_reviewed_json": json.dumps([{"name": t.name, "last_reviewed": t.last_reviewed.strftime("%B %d, %Y") if t.last_reviewed else None} for t in tags_last_reviewed]),
+            "featured_tag_json": json.dumps(random_tag) if random_tag else "null",
         }
 
 
@@ -253,20 +269,54 @@ class QuestionDetailView(LoginRequiredMixin, DetailView):
                 - intervals: Question intervals (description only)
                 - reverse_question: Whether to show the question in reverse
                 - sql_db: SQL database information if applicable
+                - JSON versions of the above for React
         """
         context = super().get_context_data(**kwargs)
 
+        tag_info = self.object.get_all_tags_progress()
+        last_response = self.object.get_last_response()
+        intervals = self.object.get_intervals(description_only=True)
+        reverse_question = self.object.is_reversible and random.choice([True, False])
+        sql_db = self.object.sql_db
+        study_session = self.request.session.get("drill_study_session", None)
+        study_session_progress = Question.get_study_session_progress(self.request.session)
+
+        # Build question JSON for React
+        question_json = {
+            "uuid": str(self.object.uuid),
+            "question": self.object.question,
+            "answer": self.object.answer,
+            "lastReviewed": self.object.last_reviewed.strftime("%B %d, %Y") if self.object.last_reviewed else None,
+            "interval": self.object.interval.days,
+            "needsReview": self.object.needs_review,
+            "isFavorite": self.object.is_favorite,
+            "isDisabled": self.object.is_disabled,
+            "isReversible": self.object.is_reversible,
+            "tags": [{"name": tag.name} for tag in self.object.tags.all()],
+        }
+
+        # Build SQL db JSON if present
+        sql_db_json = None
+        if sql_db:
+            sql_db_json = {"blob": {"uuid": str(sql_db.blob.uuid)}}
+
         return {
             **context,
-            "tag_info": self.object.get_all_tags_progress(),
+            "tag_info": tag_info,
             "question": self.object,
             "title": "Drill :: Question Detail",
             "tag_list": ", ".join([x.name for x in self.object.tags.all()]),
-            "study_session_progress": Question.get_study_session_progress(self.request.session),
-            "last_response": self.object.get_last_response(),
-            "intervals": self.object.get_intervals(description_only=True),
-            "reverse_question": self.object.is_reversible and random.choice([True, False]),
-            "sql_db": self.object.sql_db
+            "study_session_progress": study_session_progress,
+            "last_response": last_response,
+            "intervals": intervals,
+            "reverse_question": reverse_question,
+            "sql_db": sql_db,
+            # JSON versions for React
+            "question_json": json.dumps(question_json),
+            "tag_info_json": json.dumps(tag_info),
+            "intervals_json": json.dumps(intervals),
+            "study_session_json": json.dumps(study_session) if study_session else "null",
+            "sql_db_json": json.dumps(sql_db_json) if sql_db_json else "null",
         }
 
 

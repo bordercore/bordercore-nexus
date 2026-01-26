@@ -142,17 +142,17 @@ export function Popover({
     : trigger;
 
   return (
-    <div className="popover-container" style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
+    <div className="popover-container">
       {triggerElement}
       {isMounted && (
         <div
           ref={refs.setFloating}
+          // Dynamic styles from floating-ui library - must remain inline
           style={{
             ...floatingStyles,
             transform: `${floatingStyles.transform || ""} ${transitionStyles.transform || ""}`.trim() || undefined,
             opacity: transitionStyles.opacity,
             ...style,
-            zIndex: 10000,
           }}
           className={`popover-floating ${className}`}
           {...getFloatingProps()}
@@ -161,6 +161,7 @@ export function Popover({
             <div
               ref={arrowRef}
               className="popover-arrow"
+              // Dynamic arrow positioning from floating-ui - must remain inline
               style={{
                 left: middlewareData.arrow?.x,
                 top: middlewareData.arrow?.y,

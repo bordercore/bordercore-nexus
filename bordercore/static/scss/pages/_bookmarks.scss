@@ -115,3 +115,11 @@
     visibility: visible;
   }
 }
+
+// Tag alias table
+.tag-alias-table {
+  th.sortable,
+  th.tag-alias-table-sortable {
+    color: var(--text2);
+  }
+}

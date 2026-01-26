@@ -239,7 +239,7 @@ export const SelectValue = forwardRef<SelectValueHandle, SelectValueProps>(funct
   }, []);
 
   return (
-    <div ref={containerRef} className={`select-value-wrapper ${searchIcon ? "has-search" : ""}`} style={{ position: "relative" }}>
+    <div ref={containerRef} className={`select-value-wrapper ${searchIcon ? "has-search" : ""}`}>
       {searchIcon && <FontAwesomeIcon icon={faSearch} />}
       <input
         ref={inputRef}
@@ -256,7 +256,7 @@ export const SelectValue = forwardRef<SelectValueHandle, SelectValueProps>(funct
         let selectableIndex = -1;
 
         return (
-          <div ref={dropdownRef} className="dropdown-menu show" style={{ display: "block", width: "100%" }}>
+          <div ref={dropdownRef} className="dropdown-menu show select-value-dropdown">
             {options.map((option, index) => {
               if (!option.splitter) {
                 selectableIndex++;
@@ -276,7 +276,7 @@ export const SelectValue = forwardRef<SelectValueHandle, SelectValueProps>(funct
                           handleSelect(option);
                         }
                       }}
-                      style={option.splitter ? {} : { cursor: "pointer" }}
+                      className={option.splitter ? "" : "cursor-pointer"}
                     >
                       {optionSlot({ option, search })}
                     </div>
@@ -291,7 +291,7 @@ export const SelectValue = forwardRef<SelectValueHandle, SelectValueProps>(funct
                         e.stopPropagation();
                         handleSelect(option);
                       }}
-                      style={{ cursor: "pointer" }}
+                      className="cursor-pointer"
                     >
                       {option.important === 10 && (
                         <FontAwesomeIcon icon={faHeart} className="text-danger me-1" />

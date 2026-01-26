@@ -199,7 +199,7 @@ export function ArtistDetailPage({
                     alt={artist.name}
                     data-bs-toggle="modal"
                     data-bs-target="#artistImageModal"
-                    style={{ cursor: "pointer" }}
+                    className="cursor-pointer"
                   />
                 </div>
               )}

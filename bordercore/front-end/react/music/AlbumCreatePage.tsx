@@ -310,7 +310,7 @@ export function AlbumCreatePage({
       {processing && (
         <div
           className="modal show d-block"
-          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+          className="music-modal-overlay"
           tabIndex={-1}
         >
           <div className="modal-dialog modal-dialog-centered">

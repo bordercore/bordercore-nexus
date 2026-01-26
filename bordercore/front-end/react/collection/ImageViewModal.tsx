@@ -57,14 +57,14 @@ export const ImageViewModal = forwardRef<ImageViewModalHandle>(
                 className="btn-close btn-close-white position-absolute top-0 end-0 m-3"
                 data-bs-dismiss="modal"
                 aria-label="Close"
-                style={{ zIndex: 1 }}
+                className="image-view-modal-close"
               />
               {imageUrl && (
                 <img
                   src={imageUrl}
                   alt="Collection image"
                   className="img-fluid"
-                  style={{ maxHeight: "90vh", cursor: "pointer" }}
+                  className="image-view-modal-image"
                   onClick={closeModal}
                 />
               )}

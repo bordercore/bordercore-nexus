@@ -206,13 +206,13 @@ export const EditAlbumModal = React.forwardRef<EditAlbumModalHandle, EditAlbumMo
                       autoComplete="off"
                     />
                     {showArtistSuggestions && artistSuggestions.length > 0 && (
-                      <ul className="list-group position-absolute w-100" style={{ zIndex: 1000 }}>
+                      <ul className="list-group position-absolute w-100 edit-album-dropdown">
                         {artistSuggestions.map((artist) => (
                           <li
                             key={artist.uuid}
                             className="list-group-item list-group-item-action"
                             onClick={() => selectArtist(artist)}
-                            style={{ cursor: "pointer" }}
+                            className="cursor-pointer"
                           >
                             {artist.name}
                           </li>

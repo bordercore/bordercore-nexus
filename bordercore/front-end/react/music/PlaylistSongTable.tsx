@@ -147,7 +147,7 @@ export function PlaylistSongTable({
         <thead>
           <tr>
             {isManualPlaylist && (
-              <th className="text-center" style={{ width: "5rem" }}>#</th>
+              <th className="text-center table-col-number">#</th>
             )}
             <th
               className={getHeaderClass("title")}
@@ -173,7 +173,7 @@ export function PlaylistSongTable({
             >
               Length{renderSortIcon("length")}
             </th>
-            <th className="text-center" style={{ width: "3rem" }}></th>
+            <th className="text-center table-col-action"></th>
           </tr>
         </thead>
         <tbody>

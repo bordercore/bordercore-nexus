@@ -70,14 +70,14 @@ export function TagAliasTable({ data, onDelete }: TagAliasTableProps) {
           <tr>
             <th
               className="cursor-pointer"
-              style={{ color: "var(--text2)" }}
+              className="tag-alias-table-sortable"
               onClick={() => handleSort("tag")}
             >
               Tag{renderSortIcon("tag")}
             </th>
             <th
               className="cursor-pointer"
-              style={{ color: "var(--text2)" }}
+              className="tag-alias-table-sortable"
               onClick={() => handleSort("alias")}
             >
               Alias{renderSortIcon("alias")}

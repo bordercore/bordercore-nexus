@@ -302,3 +302,242 @@ hr.divider {
 .pe-gutter {
   padding-right: var(--column-gutter) !important;
 }
+
+.ps-gutter {
+  padding-left: var(--column-gutter) !important;
+}
+
+.mb-gutter {
+  margin-bottom: var(--column-gutter) !important;
+}
+
+.min-h-0 {
+  min-height: 0;
+}
+
+// Show child element only on hover
+.show-child-on-hover {
+  .show-on-hover {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  &:hover .show-on-hover {
+    opacity: 1;
+  }
+}
+
+// Progress circle (SVG circular progress indicator)
+.progress-circle {
+  circle.circle-partial {
+    stroke: var(--drill-progress-circle-partial);
+    transform: rotate(-90deg);
+    transform-origin: center;
+  }
+
+  circle.circle-full {
+    stroke: var(--drill-progress-circle-full);
+  }
+
+  text {
+    fill: var(--text4);
+  }
+}
+
+// Favorite icon (heart)
+.favorite {
+  color: var(--favorite-color);
+}
+
+// Copy button for code blocks
+// Button appears in upper-right corner on hover
+// Order: base styles first, then less-specific hover, then more-specific parent hover
+.code-block-wrapper {
+  position: relative;
+}
+
+.copy-button {
+  position: absolute;
+  z-index: 2;
+  top: 0.3em;
+  right: 0.2em;
+  padding: 0 0.5em;
+  border: none;
+  background: none;
+  border-radius: 0.5em;
+  color: #cfacd9;
+  font-size: 0.8em;
+  opacity: 0;
+  text-shadow: 0 0 0.12rem #100c0f, 0 0 0.31rem #dc078e33, 0 0 0.62rem var(--text1);
+  transition: opacity 0.3s ease-in-out;
+
+  &:hover {
+    filter: drop-shadow(0.12rem 0.12rem 0.62rem #f071c1) drop-shadow(-0.12rem -0.12rem 0.62rem #f071c1);
+    opacity: 1;
+  }
+
+  &.console {
+    right: 2.3em;
+  }
+}
+
+.code-input:hover > .copy-button,
+.code-block-wrapper:hover > .copy-button,
+pre[class*="language-"]:hover > .copy-button {
+  opacity: 1;
+}
+
+// Drill info card - disable hover effect on list items
+.drill-info-card {
+  li:hover {
+    background-color: transparent !important;
+  }
+}
+
+// Python Console styles
+.code-header {
+  font-size: 1.5rem;
+}
+
+.code-input {
+  position: relative;
+  top: 0;
+  left: 0;
+  display: block;
+  width: calc(100% - 16px);
+  height: 50vh;
+  padding: 8px;
+  margin: 8px;
+  caret-color: darkgrey;
+  font-family: monospace;
+  font-size: 15pt;
+  line-height: 20pt;
+  tab-size: 2;
+  white-space: pre;
+
+  .code-block-wrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+}
+
+// Python Console fill layout: when inside .python-console-root, editor flexes to fill
+.python-console-root {
+  .code-header {
+    flex-shrink: 0;
+  }
+
+  #output-container {
+    flex-shrink: 0;
+  }
+
+  .code-input {
+    height: auto !important;
+    min-height: 0;
+    flex: 1 1 0;
+  }
+}
+
+.code-input textarea,
+.code-input pre,
+.code-input pre * {
+  font-family: inherit !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
+  tab-size: inherit !important;
+}
+
+.code-input textarea,
+.code-input pre {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: auto !important;
+  overflow-wrap: normal;
+  white-space: inherit;
+  word-break: normal;
+  word-spacing: normal;
+}
+
+.code-input textarea {
+  z-index: 1;
+  background: transparent;
+  caret-color: inherit !important;
+  color: transparent;
+  outline: none !important;
+  resize: none;
+}
+
+.code-input pre {
+  z-index: 0;
+}
+
+.code-input textarea,
+.code-input:not(.code-input-pre-element-styled) pre code,
+.code-input.code-input-pre-element-styled pre {
+  width: calc(100% - (var(--padding, 16px) * 2)) !important;
+  height: calc(100% - (var(--padding, 16px) * 2)) !important;
+  padding: var(--padding, 16px) !important;
+  border: 0;
+  margin: 0 !important;
+}
+
+.code-input:not(.code-input-pre-element-styled) pre,
+.code-input.code-input-pre-element-styled pre code {
+  overflow: auto !important;
+  width: 100% !important;
+  height: 100% !important;
+  padding: 0 !important;
+  border: 0 !important;
+  margin: 0 !important;
+}
+
+#code-output {
+  font-family: monospace;
+  font-size: 1.5rem;
+  white-space: pre-wrap;
+}
+
+.python-error {
+  color: #f00;
+}
+
+// Link utilities
+.link-inherit {
+  color: inherit;
+
+  &:hover {
+    color: inherit;
+  }
+}
+
+// Icon clickable style
+.icon-clickable {
+  display: inline-block;
+  cursor: pointer;
+}
+
+// Cursor utilities
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.cursor-wait {
+  cursor: wait;
+}
+
+// Z-index utilities
+.z-index-1 {
+  z-index: 1;
+}
+
+.z-index-1000 {
+  z-index: 1000;
+}
+
+.z-index-10000 {
+  z-index: 10000;
+}

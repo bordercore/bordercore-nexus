@@ -221,3 +221,18 @@ tr.hover-target:hover {
     flex: 2;
   }
 }
+
+// Music modal overlay
+.music-modal-overlay {
+  background-color: rgb(0 0 0 / 50%);
+}
+
+// Recent albums card
+.recent-album-item {
+  width: 12.31rem;
+}
+
+// Edit album modal dropdown
+.edit-album-dropdown {
+  z-index: 1000;
+}

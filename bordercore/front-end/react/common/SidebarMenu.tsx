@@ -286,19 +286,7 @@ export function SidebarMenu({
         })}
       </Menu>
       <div
-        style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "10px",
-          cursor: "pointer",
-          borderTop: "1px solid rgba(255, 255, 255, 0.1)",
-          backgroundColor: "transparent",
-        }}
+        className="sidebar-toggle-button"
         onClick={handleToggleCollapse}
       >
         {toggleIconSlot || <FontAwesomeIcon icon={faArrowsAltH} />}

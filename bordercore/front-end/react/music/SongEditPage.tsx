@@ -526,7 +526,7 @@ export function SongEditPage({
                   data-rating={starIndex}
                   onClick={() => handleRatingClick(starIndex)}
                   onMouseOver={() => handleRatingMouseOver(starIndex)}
-                  style={{ cursor: "pointer" }}
+                  className="cursor-pointer"
                 >
                   <FontAwesomeIcon icon={faStar} />
                 </span>

@@ -226,7 +226,7 @@ export function HomepagePage({
                   return (
                     <li key={bookmark.uuid} className="list-group-item text-success d-flex align-items-start">
                       {faviconUrl && (
-                        <img src={faviconUrl} width="16" height="16" alt="" style={{ marginTop: '0.5rem' }} />
+                        <img src={faviconUrl} width="16" height="16" alt="" className="homepage-favicon" />
                       )}
                       <div className="ms-2">
                         <a href={bookmark.url}>{bookmark.name}</a>
@@ -339,7 +339,7 @@ export function HomepagePage({
       {showModal && randomImageInfo && (
         <div
           className="modal fade show d-block"
-          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+          className="homepage-modal-overlay"
           onClick={() => setShowModal(false)}
         >
           <div className="modal-dialog modal-dialog-centered w-75 mw-100">

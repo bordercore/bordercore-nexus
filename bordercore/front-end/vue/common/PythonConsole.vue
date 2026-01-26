@@ -4,7 +4,7 @@
             Python Console
         </div>
 
-        <div class="code-input code-input_pre-element-styled">
+        <div class="code-input code-input-pre-element-styled">
             <textarea rows="5" spellcheck="false" @input="update" @keydown="checkTab" @scroll="syncScroll" />
 
             <!-- Don't place the 'code' block on a new line to avoid whitespace issues -->
@@ -173,7 +173,7 @@ print(__repl_result)
         white-space: pre;
     }
 
-    .code-input textarea, .code-input:not(.code-input_pre-element-styled) pre code, .code-input.code-input_pre-element-styled pre {
+    .code-input textarea, .code-input:not(.code-input-pre-element-styled) pre code, .code-input.code-input-pre-element-styled pre {
         /* Both elements need the same text and space styling so they are directly on top of each other */
         margin: 0px!important;
         padding: var(--padding, 16px)!important;
@@ -182,7 +182,7 @@ print(__repl_result)
         height: calc(100% - (var(--padding, 16px)*2))!important;
     }
 
-    .code-input:not(.code-input_pre-element-styled) pre, .code-input.code-input_pre-element-styled pre code {
+    .code-input:not(.code-input-pre-element-styled) pre, .code-input.code-input-pre-element-styled pre code {
         margin: 0!important;
         border: 0!important;
         padding: 0!important;

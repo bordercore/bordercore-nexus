@@ -156,3 +156,8 @@
     color: var(--text1) !important;
   }
 }
+
+// Doctype tab selected state
+.doctype-tab.selected {
+  background-color: var(--selected-bg);
+}

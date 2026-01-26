@@ -133,8 +133,7 @@ export function FeedList({
         >
           <div className="slicklist-list-item-inner">
             <li
-              className={`ps-2 ${currentFeed?.id === feed.id ? "selected rounded-sm" : ""}`}
-              style={currentFeed?.id === feed.id ? { backgroundColor: "var(--selected-bg)" } : undefined}
+              className={`feed-item ps-2 ${currentFeed?.id === feed.id ? "selected rounded-sm" : ""}`}
             >
               <a
                 href="#"

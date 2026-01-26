@@ -86,7 +86,7 @@ export function Weather({ weatherInfo }: WeatherProps) {
       data-placement="bottom"
       title={temperatureText}
     >
-      <Lottie animationData={getAnimationData()} style={{ height: 64, width: 64 }} loop={true} />
+      <Lottie animationData={getAnimationData()} className="weather-lottie" loop={true} />
     </div>
   );
 }

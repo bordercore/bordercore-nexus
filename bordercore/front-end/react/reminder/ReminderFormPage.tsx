@@ -401,7 +401,7 @@ export function ReminderFormPage({
             {formData.schedule_type === "monthly" && (
               <div className="mb-3">
                 <label className="form-label">Days of Month</label>
-                <div className="d-flex flex-wrap gap-1" style={{ maxWidth: "400px" }}>
+                <div className="d-flex flex-wrap gap-1 reminder-days-container">
                   {daysOfMonth.map((day) => (
                     <button
                       key={day}
@@ -411,7 +411,7 @@ export function ReminderFormPage({
                           ? "btn-primary"
                           : "btn-outline-secondary"
                       }`}
-                      style={{ width: "42px" }}
+                      className="reminder-day-button"
                       onClick={() => handleDayOfMonthToggle(day)}
                     >
                       {day}

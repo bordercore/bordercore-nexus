@@ -5,7 +5,7 @@
 
 // Base popover container
 .popover-floating {
-  z-index: 1050;
+  z-index: 10000;
   min-width: 12rem;
   border: 1px solid rgb(103 232 249 / 25%);
   backdrop-filter: blur(10px);

@@ -1,435 +1,60 @@
-{% extends "base.html" %}
+{% extends "base_react.html" %}
+{% load vite_tags %}
 
 {% block title %} Drill :: Question {% endblock %}
 
-{% block nav %}
-
-    <div class="d-flex mb-3 me-3" id="vue-nav">
-
-        <div class="me-auto align-self-center">
-            <ul class="breadcrumb mb-0 pt-0 pb-0" v-cloak>
-                <li class="breadcrumb-item">
-                    <a href="{% url 'drill:list' %}">
-                        <font-awesome-icon icon="home" class="icon-hover glow"></font-awesome-icon>
-                    </a>
-                </li>
-                <li class="breadcrumb-item active">
-                    {% include "drill/nav-session.html" %}
-                </li>
-            </ul>
-        </div>
-
-        <div id="icon-list" class="d-flex align-items-center">
-            <font-awesome-icon icon="heart" class="icon-hover glow" :class="favoriteClass" @click="onClickFavorite" data-bs-toggle="tooltip" data-placement="bottom" :title="toolTip"></font-awesome-icon>
-            <font-awesome-icon :icon="['fab', 'python']" class="icon-hover glow ms-3" @click="showPythonConsole" data-bs-toggle="tooltip" data-placement="bottom" title="Open Python Console"></font-awesome-icon>
-            <a href="{% if object.tags.all %}{% url 'drill:add_with_tag' object.tags.all.0 %}{% else %}{% url 'drill:add' %}{% endif %}">
-                <font-awesome-icon icon="plus" class="icon-hover glow ms-3" data-bs-toggle="tooltip" data-placement="bottom" title="New Question"></font-awesome-icon>
-            </a>
-        </div>
-
-    </div>
-
+{% block extra_head %}
+    <script type="text/javascript" id="MathJax-script" async
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+    </script>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.19.1/full/pyodide.js"></script>
+    <style>
+        #content > .row.flex-grow-1 > .col-lg-12 {
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
 
-    <div class="row g-0 h-100 mx-2" id="vue-app">
-
-        <div class="flex-grow-last col-lg-3 d-flex flex-column">
-
-            <div class="card-body backdrop-filter">
-
-                <div class="d-flex">
-                    <div class="flex-grow-1">
-                        <ul class="list-unstyled mb-0">
-                            <li class="d-flex">
-                                <div class="text-name flex-fill fw-bold">Reviewed</div>
-                                <div class="text-value text-end">{{ question.last_reviewed|date:"F j, Y"|default:"Never" }}</div>
-                            </li>
-                            <li class="d-flex">
-                                <div class="text-name flex-fill fw-bold">Last Response</div>
-                                <div class="text-value text-end">{{ last_response.response|default:"N/A"|capfirst }}</div>
-                            </li>
-                            <li class="d-flex">
-                                <div class="text-name flex-fill fw-bold">Interval</div>
-                                <div class="text-value">{{ question.interval.days }} day{{ question.interval.days|pluralize:"s" }}</div>
-                            </li>
-                            <li class="d-flex">
-                                <div class="text-name flex-fill fw-bold">Needs Review</div>
-                                <div class="text-value">{{ question.needs_review }}</div>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-
-            </div>
-
-            <related-objects
-                ref="relatedObjectsList"
-                object-uuid="{{ object.uuid }}"
-                node-type="drill"
-                related-objects-url="{% url 'drill:related_objects' object.uuid %}"
-                new-object-url="{% url 'blob:add_related_object' %}"
-                remove-object-url="{% url 'blob:remove_related_object' %}"
-                sort-related-objects-url="{% url 'blob:sort_related_objects' %}"
-                edit-related-object-note-url="{% url 'blob:update_related_object_note' %}"
-                @open-object-select-modal="openObjectSelectModal"
-            >
-            </related-objects>
-
-            <object-select
-                :has-filter="false"
-                label="_objectSelect"
-                ref="objectSelect"
-                search-object-url="{% url 'search:search_names' %}"
-                title="Select Object"
-                @select-object="selectObject"
-            >
-            </object-select>
-
-            <card title="Tag Progress" class="backdrop-filter">
-                <template #title-slot>
-                    <div class="card-title d-flex align-items-center mb-3">
-                        <font-awesome-icon icon="tags" class="text-primary me-3 mt-1"></font-awesome-icon>
-                        Tag Progress
-                    </div>
-                </template>
-                <template v-slot:content>
-                    <hr class="divider" />
-                    <div class="d-flex flex-column justify-content-center">
-                        {% for tag in tag_info %}
-                            <drill-tag-progress
-                                :count={{ tag.count }}
-                                :progress={{ tag.progress }}
-                            >
-                                <template v-slot:title-slot>
-                                    <span class="text-secondary mt-2 mb-2">{{ tag.name }}</span>
-                                </template>
-                            </drill-tag-progress>
-                        {% endfor %}
-                    </div>
-                </template>
-            </card>
-
-            {% if request.session.drill_study_session.tag %}
-            <related-tags
-                class="mx-2"
-                related-tags-url="{% url 'tag:get_related_tags' %}"
-                doc-type="drill"
-                :initial-tags="['{{ request.session.drill_study_session.tag }}']"
-            >
-            </related-tags>
-            {% endif %}
-
-        </div>
-
-        <div class="col-lg-9">
-
-            <div id="question" class="hover-reveal-target card-body d-none me-2" v-cloak>
-
-                <div class="d-flex">
-                    <h3 class="drill-text table-borders table-colors markdown mw-100 w-100" v-html="reverseQuestion ? getAnswer() : getQuestion()">
-                    </h3>
-                </div>
-
-                 {% if question.tags.all %}
-                    Tags:
-                    {% for tag in question.tags.all %}
-                        <a class="tag" href="{% url 'drill:start_study_session' %}?study_method=tag&tags={{ tag.name }}">{{ tag.name }}</a>
-                    {% endfor %}
-                 {% endif %}
-                 {% if question.is_disabled %}
-                     <span class="question-disabled ms-3">Disabled</span>
-                 {% endif %}
-
-                 <div class="d-flex mt-5">
-                     {% if sql_db %}
-                         <a href="{% url 'homepage:sql' %}?sql_db_uuid={{ sql_db.blob.uuid }}" target="_blank" class="btn btn-primary me-2" role="button">SQL Playground</a>
-                     {% endif %}
-                     <a href="#" class="btn btn-primary" role="button" @click.prevent="setMode('answer')">Show Answer</a>
-                     <a href="{% url 'drill:study' %}" class="btn btn-primary ms-2" role="button">Skip</a>
-                     <div class="dropdown-menu-container dropdown-menu-container-width ms-auto">
-                         <drop-down-menu class="d-none hover-reveal-object" :show-on-hover="false">
-                             <template #dropdown>
-                                 <li>
-                                     <a class="dropdown-item" href="{% url 'drill:update' question.uuid %}?return_url={{ request.get_full_path }}">
-                                         <span>
-                                             <font-awesome-icon icon="pencil-alt" class="text-primary me-3" />
-                                         </span>
-                                        Edit
-                                     </a>
-                                 </li>
-                                 <li>
-                                     <a class="dropdown-item" href="#" @click="handleAskChatbot">
-                                         <span>
-                                             <font-awesome-icon icon="comment" class="text-primary me-3" />
-                                         </span>
-                                        Ask ChatBot
-                                     </a>
-                                 </li>
-                             </template>
-                         </drop-down-menu>
-                     </div>
-                 </div>
-                 <transition name="fade">
-                     <div v-if="mode === 'answer'" v-cloak>
-                         <div>
-                             <hr class="divider mt-3" />
-                             <h3 class="drill-text table-borders table-colors markdown" v-html="reverseQuestion ? getQuestion() : getAnswer()">
-                             </h3>
-
-                            <div class="d-flex mt-5">
-                                <div>
-                                    <a href="{% url 'drill:record_response' question.uuid 'good' %}" class="btn btn-primary" role="button"
-                                        @mouseover="onMouseOverResponse('good')" @mouseout="onMouseOutResponse">Good</a>
-                                    <a href="{% url 'drill:record_response' question.uuid 'hard' %}" class="btn btn-primary ms-2" role="button"
-                                        @mouseover="onMouseOverResponse('hard')" @mouseout="onMouseOutResponse">Hard</a>
-                                    <a href=" {% url 'drill:record_response' question.uuid 'easy' %}" class="btn btn-primary ms-2" role="button"
-                                        @mouseover="onMouseOverResponse('easy')" @mouseout="onMouseOutResponse">Easy</a>
-                                    <a href=" {% url 'drill:record_response' question.uuid 'reset' %}" class="btn btn-primary ms-2" role="button"
-                                        @mouseover="onMouseOverResponse('reset')" @mouseout="onMouseOutResponse">Reset</a>
-                                    <a href="{% url 'drill:study' %}" class="btn btn-primary ms-2" role="button">Skip</a>
-                                </div>
-                                <div class="text-primary ms-auto align-self-end" v-html="intervalString">
-                                </div>
-                            </div>
-                            </div>
-                     </div>
-                 </transition>
-
-            </div>
-
-            <div class="card-body me-2" :class="{'d-none': !showPythonConsole}" v-cloak>
-                <python-console
-                    ref="pythonConsole"
-                >
-                </python-console>
-            </div>
-
-        </div>
+    <div id="react-root" class="flex-grow-1 d-flex flex-column min-h-0"
+        data-drill-list-url="{% url 'drill:list' %}"
+        data-drill-add-url="{% url 'drill:add' %}"
+        data-drill-add-with-tag-url="{% if object.tags.all %}{% url 'drill:add_with_tag' object.tags.all.0 %}{% else %}{% url 'drill:add' %}{% endif %}"
+        data-drill-update-url="{% url 'drill:update' question.uuid %}"
+        data-drill-study-url="{% url 'drill:study' %}"
+        data-record-response-good-url="{% url 'drill:record_response' question.uuid 'good' %}"
+        data-record-response-hard-url="{% url 'drill:record_response' question.uuid 'hard' %}"
+        data-record-response-easy-url="{% url 'drill:record_response' question.uuid 'easy' %}"
+        data-record-response-reset-url="{% url 'drill:record_response' question.uuid 'reset' %}"
+        data-is-favorite-mutate-url="{% url 'drill:is_favorite_mutate' %}"
+        data-related-objects-url="{% url 'drill:related_objects' object.uuid %}"
+        data-new-object-url="{% url 'blob:add_related_object' %}"
+        data-remove-object-url="{% url 'blob:remove_related_object' %}"
+        data-sort-related-objects-url="{% url 'blob:sort_related_objects' %}"
+        data-edit-related-object-note-url="{% url 'blob:update_related_object_note' %}"
+        data-search-names-url="{% url 'search:search_names' %}"
+        data-get-related-tags-url="{% url 'tag:get_related_tags' %}"
+        data-sql-playground-url="{% url 'homepage:sql' %}"
+        data-start-study-session-url="{% url 'drill:start_study_session' %}"
+        data-current-path="{{ request.get_full_path }}"
+        data-question="{{ question_json }}"
+        data-last-response="{{ last_response.response|default:'' }}"
+        data-tag-info="{{ tag_info_json }}"
+        data-intervals="{{ intervals_json }}"
+        data-reverse-question="{{ reverse_question|yesno:'true,false' }}"
+        data-study-session-progress="{{ study_session_progress|default:0 }}"
+        data-study-session="{{ study_session_json|default:'null' }}"
+        data-sql-db="{{ sql_db_json|default:'null' }}"
+    >
     </div>
 
 {% endblock %}
 
-{% block javascript %}
-
+{% block javascript_bundles %}
     {{ block.super }}
-
-    <script type="text/javascript" id="MathJax-script" async
-        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
-    </script>
-
-    <script src="https://cdn.jsdelivr.net/pyodide/v0.19.1/full/pyodide.js"></script>
-
-    {{ intervals|json_script:"intervals" }}
-
-    <script type="text/javascript">
-
-        window.MathJax = {
-            tex: {
-                inlineMath: [["\\(", "\\)"], ["$$", "$$"]],
-                displayMath: [["\\[", "\\]"]],
-                processEscapes: true,
-                processEnvironments: true,
-            },
-        };
-
-        const navApp = createApp({
-            name: "Nav",
-            components: {
-                FontAwesomeIcon,
-            },
-            setup() {
-                const isFavorite = ref({{ question.is_favorite|yesno:"true,false" }});
-
-                function onClickFavorite(evt) {
-                    isFavorite.value = !isFavorite.value;
-                    nextTick(() => {
-                        animateCSS(evt.currentTarget, "heartBeat");
-                    });
-                    doPost(
-                        "{% url "drill:is_favorite_mutate" %}",
-                        {
-                            "question_uuid": "{{ question.uuid }}",
-                            "mutation": isFavorite.value ? "add" : "delete",
-                        },
-                        (response) => {},
-                        "",
-                    );
-                };
-
-                function showPythonConsole() {
-                    EventBus.$emit("show-python-console");
-                };
-
-                const favoriteClass = computed(() => {
-                    return isFavorite.value ? "favorite" : "";
-                });
-
-                const toolTip = computed(() => {
-                    return isFavorite.value ? "Remove this as a favorite" : "Add this as a favorite";
-                });
-
-                return {
-                    isFavorite,
-                    favoriteClass,
-                    onClickFavorite,
-                    showPythonConsole,
-                    toolTip,
-                };
-            },
-        });
-        navApp.mount("#vue-nav");
-
-        const app = createApp({
-            name: "Question",
-            components: {
-                Card,
-                DrillTagProgress,
-                DropDownMenu,
-                FontAwesomeIcon,
-                ObjectSelect,
-                PythonConsole,
-                RelatedObjects,
-                RelatedTags,
-            },
-            setup() {
-                const intervalString = ref("");
-                const intervals = JSON.parse(document.getElementById("intervals").textContent);
-                const mode = ref("question");
-                const reverseQuestion = {{ reverse_question|yesno:"true,false" }};
-
-                const objectSelect = ref(null);
-                const pythonConsole = ref(null);
-                const relatedObjectsList = ref(null);
-                const showPythonConsole = ref(false);
-
-                function handleAskChatbot() {
-                    EventBus.$emit("chat", {"questionUuid": "{{ question.uuid }}"});
-                };
-
-                function onMouseOutResponse(response) {
-                    intervalString.value = "";
-                };
-
-                function onMouseOverResponse(response) {
-                    intervalString.value = intervals[response]["description"];
-                };
-
-                function openObjectSelectModal() {
-                    objectSelect.value.openModal();
-                };
-
-                function setMode(modeParam) {
-                    mode.value = modeParam;
-                    nextTick(() => {
-                        MathJax.typeset();
-                        Prism.highlightAll();
-                    });
-                };
-
-                function getQuestion() {
-                    return markdown.render("{{ question.question|escapejs }}");
-                };
-
-                function getAnswer() {
-                    return markdown.render("{{ question.answer|escapejs }}");
-                };
-
-                function selectObject(bcObject) {
-                    relatedObjectsList.value.newObject(bcObject);
-                };
-
-                onMounted(() => {
-                    EventBus.$on("show-python-console", () => {
-                        showPythonConsole.value = true;
-                        pythonConsole.value.initialize();
-                    });
-
-                    hotkeys.filter = function (event) {
-                        // By default hotkeys filters form elements. Eliminate that
-                        // filter so we can capture ctrl-return events from
-                        // the Python console textarea.
-                        return true;
-                    };
-
-                    hotkeys("ctrl+return,right,space,e,g,h,r", function(event, handler) {
-                        // Ignore event if the user is typing in an "INPUT" element
-                        if (document.activeElement.tagName === "INPUT") {
-                            return;
-                        }
-                        if (event.target.parentElement.classList.contains("code-input")) {
-                            if (handler.key === "ctrl+return") {
-                                pythonConsole.value.evaluatePython();
-                            }
-                            return;
-                        }
-                        switch (handler.key) {
-                            case "right":
-                                window.location = "{% url "drill:study" %}";
-                                break;
-                            case "space":
-                                setMode("answer");
-                                break;
-                            case "e":
-                                if (mode.value === "answer") {
-                                    window.location = "{% url 'drill:record_response' question.uuid 'easy' %}";
-                                }
-                                break;
-                            case "g":
-                                if (mode.value === "answer") {
-                                    window.location = "{% url 'drill:record_response' question.uuid 'good' %}";
-                                }
-                                break;
-                            case "h":
-                                if (mode.value === "answer") {
-                                    window.location = "{% url 'drill:record_response' question.uuid 'hard' %}";
-                                }
-                                break;
-                            case "r":
-                                if (mode.value === "answer") {
-                                    window.location = "{% url 'drill:record_response' question.uuid 'again' %}";
-                                }
-                                break;
-                        }
-                    });
-
-                    // Reveal the question after a short delay to avoid layout shift caused by markdown rendered as HTML
-                    setTimeout(() => {
-                        document.getElementById("question").classList.remove("d-none");
-                    }, 10);
-                });
-
-                return {
-                    getAnswer,
-                    getQuestion,
-                    handleAskChatbot,
-                    intervalString,
-                    mode,
-                    objectSelect,
-                    onMouseOutResponse,
-                    onMouseOverResponse,
-                    openObjectSelectModal,
-                    pythonConsole,
-                    relatedObjectsList,
-                    reverseQuestion,
-                    selectObject,
-                    setMode,
-                    showPythonConsole,
-                };
-            },
-        });
-        app.use(Oruga, {
-            iconComponent: "font-awesome-icon",
-            iconPack: "fa",
-            table: {
-                sortIcon: "caret-up",
-            },
-        });
-        app.mount("#vue-app");
-
-    </script>
-
+    {% vite_asset "dist/js/drill-question" %}
 {% endblock %}
 
 {% block help %}

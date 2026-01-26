@@ -53,7 +53,6 @@ function TopBarContent() {
   const [pageTitle, setPageTitle] = React.useState<string>(data.title || "");
   const username = data.username || "User";
   const topSearchRef = React.useRef<TopSearchHandle>(null);
-  const chatBotRef = React.useRef<ChatBotHandle>(null);
 
   React.useEffect(() => {
     // Load data from json_script tags
@@ -103,7 +102,7 @@ function TopBarContent() {
   React.useEffect(() => {
     // Handle keyboard shortcuts
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "c" && event.altKey && chatBotRef.current) {
+      if (event.key === "c" && event.altKey) {
         // Toggle chatbot
         EventBus.$emit("chat", {});
       }
@@ -217,15 +216,21 @@ function TopBarContent() {
           deleteTodoUrl={data.overdueTasksConfig?.deleteTodoUrl || ""}
         />
       </div>
-      <div id="chat-bot">
-        <ChatBot
-          ref={chatBotRef}
-          blobUuid={data.chatBotConfig?.blobUuid || ""}
-          chatUrl={data.chatBotConfig?.chatUrl || ""}
-          csrfToken={data.chatBotConfig?.csrfToken || ""}
-        />
-      </div>
     </>
+  );
+}
+
+function ChatBotContent() {
+  const data = window.BASE_TEMPLATE_DATA || {};
+  const chatBotRef = React.useRef<ChatBotHandle>(null);
+
+  return (
+    <ChatBot
+      ref={chatBotRef}
+      blobUuid={data.chatBotConfig?.blobUuid || ""}
+      chatUrl={data.chatBotConfig?.chatUrl || ""}
+      csrfToken={data.chatBotConfig?.csrfToken || ""}
+    />
   );
 }
 
@@ -477,4 +482,10 @@ if (sidebarContainer) {
       <SidebarContent />
     </BaseStoreProvider>
   );
+}
+
+const chatBotContainer = document.getElementById("chat-bot");
+if (chatBotContainer) {
+  const chatBotRoot = createRoot(chatBotContainer);
+  chatBotRoot.render(<ChatBotContent />);
 }

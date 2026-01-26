@@ -208,49 +208,60 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
     return null;
   }
 
+  const handleClose = () => {
+    setShow(false);
+  };
+
+  // Render #chatbot directly - it has position:fixed in CSS so it overlays at bottom
+  // The outer wrapper div was causing layout issues by being in document flow
   return (
-    <div className="flex-column align-items-center px-3">
-      <div id="chatbot" className="d-flex flex-column align-items-center px-3">
-        <div className="chatbot-container w-75 p-3">
-          <div className="chatbot-messages d-flex flex-column-reverse mb-3">
-            <div>
-              {filteredChatHistory.map((message) => (
-                <div key={message.id} className={`chatbot-${message.role} d-flex px-3 mb-2`}>
-                  <div className={message.role === "user" ? "fw-bold me-2" : "fw-bold me-2"}>
-                    {message.role === "user" ? "You" : "AI"}
-                  </div>
-                  <div dangerouslySetInnerHTML={{ __html: getMarkdown(message.content) }} />
+    <div id="chatbot" className="d-flex flex-column align-items-center px-3">
+      <div className="chatbot-container w-75 p-3 position-relative">
+        <button
+          type="button"
+          className="btn-close chatbot-close-btn"
+          aria-label="Close"
+          onClick={handleClose}
+        />
+        <div className="chatbot-messages d-flex flex-column-reverse mb-3">
+          <div>
+            {filteredChatHistory.map((message) => (
+              <div key={message.id} className={`chatbot-${message.role} d-flex px-3 mb-2`}>
+                <div className="fw-bold me-2">
+                  {message.role === "user" ? "You" : "AI"}
                 </div>
-              ))}
-              {isWaiting && <div className="chatbot-waiting ms-3">Waiting...</div>}
-            </div>
+                {/* Content is from AI responses and user's own messages, rendered with markdown-it */}
+                <div dangerouslySetInnerHTML={{ __html: getMarkdown(message.content) }} />
+              </div>
+            ))}
+            {isWaiting && <div className="chatbot-waiting ms-3">Waiting...</div>}
           </div>
-          <div className="d-flex">
-            <input
-              type="text"
-              className="form-control me-2"
-              placeholder="Send a message"
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  handleChat();
-                }
-              }}
-            />
-            <select
-              className="chatbot-mode form-control me-2"
-              value={mode}
-              onChange={(e) => setMode(e.target.value)}
-            >
-              {chatOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.name}
-                </option>
-              ))}
-            </select>
-          </div>
+        </div>
+        <div className="d-flex">
+          <input
+            type="text"
+            className="form-control me-2"
+            placeholder="Send a message"
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleChat();
+              }
+            }}
+          />
+          <select
+            className="chatbot-mode form-control me-2"
+            value={mode}
+            onChange={(e) => setMode(e.target.value)}
+          >
+            {chatOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.name}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
     </div>

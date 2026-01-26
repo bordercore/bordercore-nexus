@@ -1,325 +1,36 @@
-{% extends "base.html" %}
+{% extends "base_react.html" %}
+{% load vite_tags %}
 
 {% block title %} Drill :: {{ title }} {% endblock %}
 
 {% block content %}
 
-    <div id="vue-app" class="row g-0 h-100 mx-2">
-
-        <div class="col-lg-3 d-flex flex-column">
-
-            <div class="card-body backdrop-filter flex-grow-1">
-
-                <div>
-                    Click the <strong>Study</strong> button to start a study session or select a <strong>tag</strong> on the right to drill on a specific category.
-                </div>
-
-                <div class="mt-3">
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal-study">Study</button>
-                </div>
-
-                {% if request.session.drill_study_session %}
-                    <hr />
-
-                    <span>
-                        <a href="{% url 'drill:resume' %}" type="button" class="btn btn-primary">Resume</a> study session.
-                    </span>
-                        <div class="text-secondary mt-3">
-                            <small>
-                            {% if request.session.drill_study_session.type == "all" %}
-                                Currently studying <strong>all questions</strong>.
-                            {% elif request.session.drill_study_session.type == "favorites" %}
-                                Currently studying your <strong>favorite questions</strong>.
-                            {% elif request.session.drill_study_session.type == "tag" %}Currently studying tag{% if "," in request.session.drill_study_session.tag %}s{% endif %} <strong>{{ request.session.drill_study_session.tag }}</strong>.
-                            {% elif request.session.drill_study_session.type == "random" %}
-                                Currently studying random questions.
-                            {% elif request.session.drill_study_session.type == "search" %}
-                                Currently studying questions that match search <strong>{{ request.session.drill_study_session.search_term }}</strong>.
-                            {% endif %}
-                                <br />
-                                <strong>{{ study_session_progress }}</strong> out of <strong>{{ request.session.drill_study_session.list|length }}</strong> questions completed.
-                            </small>
-                        </div>
-                {% endif %}
-
-                <hr />
-
-                <div v-cloak>
-                    <a href="{% url 'drill:add' %}" class="btn btn-primary" role="button"><font-awesome-icon icon="plus" class="me-2"></font-awesome-icon>New Question</a>
-                </div>
-
-            </div>
-
-        </div>
-
-        <div class="col-lg-3 d-flex flex-column">
-
-            <card title="Total Progress" class="backdrop-filter">
-                <template v-slot:content>
-                    <hr class="divider" />
-                    <div class="d-flex">
-                        <div class="d-flex justify-content-center align-items-center">
-                            Percentage of all questions not needing review
-                        </div>
-                        <drill-tag-progress
-                            :count={{ total_progress.count }}
-                            :progress={{ total_progress.percentage }}
-                        >
-                        </drill-tag-progress>
-                    </div>
-                </template>
-            </card>
-
-            <card title="Favorites Progress" class="backdrop-filter flex-grow-1">
-                <template v-slot:content>
-                    <hr class="divider" />
-                    <div class="d-flex">
-                        <div class="d-flex justify-content-center align-items-center">
-                            Percentage of favorite questions not needing review
-                        </div>
-                        <drill-tag-progress
-                            :count={{ favorite_questions_progress.count }}
-                            :progress={{ favorite_questions_progress.percentage }}
-                        >
-                        </drill-tag-progress>
-                    </div>
-                </template>
-            </card>
-
-        </div>
-
-        <div class="col-lg-3 d-flex flex-column">
-
-            <card title="Tags needing review" class="backdrop-filter flex-grow-1">
-
-                <template v-slot:content>
-                    <hr class="divider" />
-                    <ul class="list-unstyled">
-                        <li class="d-flex text-primary px-2 py-1">
-                            <div class="flex-fill fw-bold">Tag</div>
-                            <div class="fw-bold">Last Reviewed</div>
-                        </li>
-                        <hr class="divider my-1" />
-                        {% for tag in tags_last_reviewed %}
-                            <li class="d-flex px-2">
-                                <div class="item-name flex-fill">
-                                    <a href="{% url 'drill:start_study_session' %}?study_method=tag&tags={{ tag.name }}">{{ tag.name }}</a>
-                                </div>
-                                <div class="item-value text-end">
-                                    {{ tag.last_reviewed|date:"F j, Y"|default:"Never" }}
-                                </div>
-                            </li>
-                         {% empty %}
-                            <div class="text-success text-center">Nothing to learn</div>
-                        {% endfor %}
-                    </ul>
-                </template>
-
-            </card>
-        </div>
-
-        <div class="col-lg-3 d-flex flex-column">
-            <drill-pinned-tags
-                get-pinned-tags-url="{% url 'drill:get_pinned_tags' %}"
-                pin-tag-url="{% url 'drill:pin_tag' %}"
-                unpin-tag-url="{% url 'drill:unpin_tag' %}"
-                sort-pinned-tags-url="{% url 'drill:sort_pinned_tags' %}"
-                tag-search-url="{% url 'tag:search' %}"
-            >
-            </drill-pinned-tags>
-            <card class="backdrop-filter">
-                <template v-slot:title-slot>
-                    <div class="d-flex">
-                        <div v-if="showFeaturedTagInput" class="me-3 mb-0">
-                            <select-value
-                                ref="selectValueFeaturedTag"
-                                search-url="{% url 'tag:search' %}?doctype=drill&query="
-                                place-holder="Tag"
-                                @select="selectFeaturedTag"
-                                @close="showFeaturedTagInput = false"
-                                :bolden-options="true"
-                            >
-                            </select-value>
-                        </div>
-                        <h5 v-else class="lh-base mb-0">
-                            <span class="card-title">Featured Tag:</span> <a :href="featuredTag.url">[[ featuredTag.name ]]</a>
-                        </h5>
-                        <div class="ms-auto" @click="onTagSearch">
-                            <font-awesome-icon icon="magnifying-glass" class="glow text-emphasis" />
-                        </div>
-                    </div>
-                </template>
-                <template v-slot:content>
-                    <hr class="divider" />
-                    <div class="d-flex">
-                        <div class="flex-grow-1 d-flex justify-content-center align-items-center">
-                            <ul class="list-unstyled">
-                                <li>Last Reviewed <br/> <strong>[[ featuredTag.last_reviewed ]]</strong></li>
-                            </ul>
-                        </div>
-                        <drill-tag-progress
-                            :count=featuredTag.count
-                            :progress=featuredTag.progress
-                        >
-                        </drill-tag-progress>
-                    </div>
-                </template>
-            </card>
-            <drill-disabled-tags
-                get-disabled-tags-url="{% url 'drill:get_disabled_tags' %}"
-                disable-tag-url="{% url 'drill:disable_tag' %}"
-                enable-tag-url="{% url 'drill:enable_tag' %}"
-                tag-search-url="{% url 'tag:search' %}"
-            >
-            </drill-disabled-tags>
-        </div>
-
-        <div class="modal fade" id="modal-study" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h4 class="modal-title" id="myModalLabel">Start Study Session</h4>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form action="{% url 'drill:start_study_session' %}">
-                        <h5>
-                            Choose your study method
-                            <hr />
-                        </h5>
-                        <div class="form-check d-flex align-items-center mt-3">
-                            <input id="id_studymethod_all" name="study_method" class="form-check-input" type="radio" value="all" v-model="studyMethod">
-                            <label class="form-check-label ms-2" for="id_studymethod_all">
-                                All questions
-                            </label>
-                        </div>
-                        <div class="form-check d-flex align-items-center mt-3">
-                            <input id="id_studymethod_favorites" name="study_method" class="form-check-input" type="radio" value="favorites" v-model="studyMethod">
-                            <label class="form-check-label ms-2" for="id_studymethod_favorites">
-                                Favorite questions
-                            </label>
-                        </div>
-                        <div class="form-check d-flex align-items-center mt-3">
-                            <input id="id_studymethod_recent" name="study_method" class="form-check-input" type="radio" value="recent" v-model="studyMethod">
-                            <label class="form-check-label ms-2 d-flex align-items-center" for="id_studymethod_recent">
-                                <div class="text-nowrap me-3">Recent questions</div>
-                                <select name="interval" class="form-control form-select" :disabled="studyMethod !== 'recent'">
-                                    <option value="1">Past Day</option>
-                                    <option value="3">Past 3 Days</option>
-                                    <option value="7">Past Week</option>
-                                    <option value="14">Past Two Weeks</option>
-                                    <option value="21">Past Three Weeks</option>
-                                    <option value="30">Past Month</option>
-                                    <option value="60">Past Two Months</option>
-                                    <option value="90">Past Three Months</option>
-                                </select>
-                            </label>
-                        </div>
-                        <div class="form-check d-flex align-items-center mt-3">
-                            <input id="id_studymethod_tag" name="study_method" class="form-check-input" type="radio" value="tag" v-model="studyMethod">
-                            <label class="form-check-label ms-2 d-flex align-items-center" for="id_studymethod_tag">
-                                <div class="me-4">Tag</div>
-                            </label>
-                            <tags-input
-                                class-list=""
-                                search-url="{% url 'tag:search' %}?doctype=drill&query="
-                                name="tags"
-                                id="tag-name"
-                                place-holder="Tag name"
-                                :disabled="studyMethod !== 'tag'"
-                            ></tags-input>
-                        </div>
-                        <div class="form-check d-flex align-items-center mt-3">
-                            <input id="id_studymethod_random" name="study_method" class="form-check-input" type="radio" value="random" v-model="studyMethod">
-                            <label class="form-check-label ms-2 d-flex align-items-center" for="id_studymethod_random">
-                                <div class="text-nowrap me-3">Random questions, count of</div>
-                                <select name="count" class="form-control form-select" :disabled="studyMethod !== 'random'">
-                                    <option value="5">5</option>
-                                    <option value="10">10</option>
-                                    <option value="20">20</option>
-                                    <option value="100">100</option>
-                                </select>
-                            </label>
-                        </div>
-                        <div class="form-check d-flex align-items-center mt-3">
-                            <input id="id_studymethod_keyword" name="study_method" class="form-check-input" type="radio" value="keyword" v-model="studyMethod">
-                            <label class="form-check-label ms-2 d-flex align-items-center" for="id_studymethod_keyword">
-                                <div class="me-3">Questions matching keyword</div>
-                                <input class="form-control" name="keyword" id="search-term" placeholder="Keyword" autocomplete="off" :disabled="studyMethod !== 'keyword'" />
-                            </label>
-                        </div>
-                        <hr />
-                        <div class="d-flex align-items-center my-3">
-                            <div class="me-3">
-                                Filter
-                            </div>
-                            <select name="filter" class="form-control form-select">
-                                <option value="review" selected>Questions needing review</option>
-                                <option value="all">All questions</option>
-                            </select>
-                        </div>
-                        <input type="submit" class="btn btn-primary mt-2" value="Study" />
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div id="react-root"
+        data-title="{{ title }}"
+        data-drill-list-url="{% url 'drill:list' %}"
+        data-drill-add-url="{% url 'drill:add' %}"
+        data-start-study-session-url="{% url 'drill:start_study_session' %}"
+        data-resume-url="{% url 'drill:resume' %}"
+        data-get-pinned-tags-url="{% url 'drill:get_pinned_tags' %}"
+        data-pin-tag-url="{% url 'drill:pin_tag' %}"
+        data-unpin-tag-url="{% url 'drill:unpin_tag' %}"
+        data-sort-pinned-tags-url="{% url 'drill:sort_pinned_tags' %}"
+        data-get-disabled-tags-url="{% url 'drill:get_disabled_tags' %}"
+        data-disable-tag-url="{% url 'drill:disable_tag' %}"
+        data-enable-tag-url="{% url 'drill:enable_tag' %}"
+        data-tag-search-url="{% url 'tag:search' %}"
+        data-study-session="{{ study_session_json|default:'null' }}"
+        data-study-session-progress="{{ study_session_progress|default:0 }}"
+        data-total-progress="{{ total_progress_json }}"
+        data-favorite-progress="{{ favorite_progress_json }}"
+        data-tags-last-reviewed="{{ tags_last_reviewed_json }}"
+        data-featured-tag="{{ featured_tag_json }}"
+    >
     </div>
 
 {% endblock %}
 
-{% block javascript %}
-
+{% block javascript_bundles %}
     {{ block.super }}
-
-    {{ random_tag|json_script:"featuredTag" }}
-    {{ tags|json_script:"initial-tags"|default:"" }}
-
-    <script type="text/javascript" charset="utf-8">
-
-        const app = createApp({
-            name: "DrillDashboard",
-            delimiters: ["[[", "]]"],
-            components: {
-                Card,
-                DrillDisabledTags,
-                DrillPinnedTags,
-                DrillTagProgress,
-                FontAwesomeIcon,
-                SelectValue,
-                TagsInput,
-            },
-            setup() {
-                const featuredTag = JSON.parse(document.getElementById("featuredTag").textContent);
-                const showFeaturedTagInput = ref(false);
-                const studyMethod = ref("all");
-
-                const selectValueFeaturedTag = ref(null);
-
-                function onTagSearch() {
-                    showFeaturedTagInput.value = true;
-                    setTimeout( () => {
-                        selectValueFeaturedTag.value.focus();
-                    }, 500);
-                };
-
-                function selectFeaturedTag(tagInfo) {
-                    showFeaturedTagInput.value = false;
-                    featuredTag = tagInfo.info;
-                };
-
-                return {
-                    featuredTag,
-                    onTagSearch,
-                    selectFeaturedTag,
-                    selectValueFeaturedTag,
-                    showFeaturedTagInput,
-                    studyMethod,
-                };
-            },
-        });
-        app.mount("#vue-app");
-
-    </script>
-
+    {% vite_asset "dist/js/drill-list" %}
 {% endblock %}

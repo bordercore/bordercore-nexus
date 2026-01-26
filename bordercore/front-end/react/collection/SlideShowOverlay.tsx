@@ -74,7 +74,7 @@ export function SlideShowOverlay({
           src={imageUrl}
           alt="Slideshow"
           onClick={onNext}
-          style={{ cursor: "pointer" }}
+          className="cursor-pointer"
         />
       ) : (
         <video

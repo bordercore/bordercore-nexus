@@ -2122,41 +2122,6 @@ div #dateapp {
   }
 }
 
-#chatbot {
-  position: fixed;
-  z-index: 1000;
-  bottom: 1rem;
-  width: 100%;
-
-  .chatbot-container {
-    background-color: var(--chatbot-container-bg);
-    border-radius: var(--border-radius1);
-    line-height: 1.75rem;
-  }
-
-  .chatbot-messages {
-    overflow: scroll;
-    height: 40rem;
-    background-color: var(--surface6);
-  }
-
-  .chatbot-mode {
-    width: 10rem;
-  };
-
-  .chatbot-user {
-    color: var(--text1);
-  }
-
-  .chatbot-assistant {
-    color: var(--text4);
-  }
-
-  .chatbot-waiting {
-    color: var(--text3);
-  }
-}
-
 //
 // Bookshelf
 //
@@ -2519,6 +2484,8 @@ div #dateapp {
 .progress-circle {
   circle.circle-partial {
     stroke: var(--drill-progress-circle-partial);
+    transform: rotate(-90deg);
+    transform-origin: center;
   }
 
   circle.circle-full {
@@ -3243,10 +3210,15 @@ textarea.sql-input {
 
 // Copy button for code
 .code-input,
-pre[class^="language-"] {
-  &:hover .copy-button {
+pre[class*="language-"],
+.code-block-wrapper {
+  &:hover > .copy-button {
     opacity: 1;
   }
+}
+
+.code-block-wrapper {
+  position: relative;
 }
 
 .copy-button {

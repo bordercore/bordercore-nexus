@@ -70,7 +70,7 @@ export function RecentAlbumsCard({
             <div
               key={album.uuid}
               className="p-2"
-              style={{ width: "12.31rem" }}
+              className="recent-album-item"
               data-bs-toggle="tooltip"
               data-placement="bottom"
               title={`Added ${album.created}`}
