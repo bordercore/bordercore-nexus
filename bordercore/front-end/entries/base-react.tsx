@@ -267,7 +267,7 @@ function SidebarContent() {
         icon: { element: "font-awesome-icon", attributes: { icon: "search" }, class: "sidebar-icon-2" },
       },
       {
-        href: "/bookmark/overview",
+        href: "/bookmark/overview/",
         title: "Bookmarks",
         alias: "/bookmark/*",
         icon: { element: "font-awesome-icon", attributes: { icon: "bookmark" }, class: "sidebar-icon-3" },
@@ -329,9 +329,9 @@ function SidebarContent() {
         icon: { element: "font-awesome-icon", attributes: { icon: "clock" }, class: "sidebar-icon-1" },
       },
       {
-        href: "/tag/list",
+        href: "/tag/list/",
         title: "Tags",
-        alias: "/tag/list",
+        alias: "/tag/list/",
         icon: { element: "font-awesome-icon", attributes: { icon: "tags" }, class: "sidebar-icon-1" },
       },
       {
