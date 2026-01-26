@@ -1,9 +1,9 @@
-{% extends "base.html" %}
+{% extends "base_react.html" %}
+{% load vite_tags %}
 
-{% block title %} {{ object.name }} {% endblock %}
+{% block title %}{{ object.name }}{% endblock %}
 
 {% block nav %}
-
     <div class="d-flex mb-3">
         <div class="me-auto align-self-center">
             <ul class="breadcrumb mb-0 pt-0 pb-0">
@@ -16,205 +16,35 @@
             </ul>
         </div>
     </div>
-
 {% endblock %}
 
 {% block content %}
-
-    {% csrf_token %}
-    <div id="vue-app" class="row g-0 h-100 mx-2">
-        <div class="col-lg-3 d-flex flex-column">
-            <schedule
-                change-active-status-url="{% url 'fitness:change_active_status' %}"
-                exercise-name="{{ object.name }}"
-                edit-schedule-url="{% url 'fitness:update_schedule' %}"
-            >
-            </schedule>
-           <last-workout
-                date="{{ recent_data.0.date|date:" N j, Y" }}"
-                :description="description"
-                exercise-uuid="{{ object.uuid }}"
-                :duration="JSON.parse('{{ latest_duration }}')"
-                :weight="JSON.parse('{{ latest_weight }}')"
-                :reps="JSON.parse('{{ latest_reps }}')"
-                :interval="{{ delta_days|default:7 }}"
-                :initial-note="note"
-                edit-note-url="{% url 'fitness:edit_note' %}">
-            </last-workout>
-            <div id="modalTimer" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-                <div class="modal-dialog modal-sm" role="document">
-                    <div class="modal-content">
-                        <div class="modal-body d-flex align-items-center">
-                            <h4 class="mb-0">Timer done!</h4>
-                            <input type="button" class="btn btn-primary ms-auto" value="Close" data-bs-dismiss="modal" aria-label="Close" />
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-9 d-flex flex-column">
-            <workout-graph
-                date="{% now " Y - m - d" %}"
-                get-workout-data-url="{% url 'fitness:get_workout_data' %}?uuid={{ object.uuid }}&page_number=">
-           </workout-graph>
-           <div class="d-flex h-100">
-               <add-workout-form
-                   :csrf-token="csrfToken"
-                   initial-weight="{% if recent_data %}{{ latest_weight|first|default:0 }}{% else %}0{% endif %}"
-                   initial-reps="{% if recent_data %}{{ latest_reps|first|default:0 }}{% else %}0{% endif %}"
-                   initial-duration="{% if recent_data %}{{ latest_duration|first|default:0 }}{% else %}0{% endif %}"
-                   add-workout-url="{% url 'fitness:add' exercise.uuid %}"
-                   :has-weight="'{{ object.has_weight }}' == 'True'"
-                   :has-duration="'{{ object.has_duration }}' == 'True'"
-               >
-               </add-workout-form>
-               <div class="d-flex flex-column w-50">
-                   <card title="" id="muscles-targeted" class="me-2 backdrop-filter">
-                       <template #content>
-                           <div class="d-flex">
-                               <div class="card-title text-primary">
-                                   Muscles Targeted:
-                                   <ul>
-                                       {% for muscle in object.get_targeted_muscles.primary %}
-                                           <li>
-                                               <span class="item-name">{{ muscle }}</span>
-                                               <span class="item-value small text-muted">PRIMARY</span>
-                                           </li>
-                                       {% endfor %}
-                                       {% for muscle in object.get_targeted_muscles.secondary %}
-                                           <li>
-                                               <span class="item-name">{{ muscle }}</span>
-                                               <span class="item-value small text-muted">SECONDARY</span>
-                                           </li>
-                                       {% endfor %}
-                                   </ul>
-                               </div>
-                           </div>
-                       </template>
-                   </card>
-                   <card title="Rest between sets" class="backdrop-filter flex-grow-1">
-                       <template #content>
-                           <hr class="filter" />
-                           <div class="d-flex">
-                               <div class="card-title">
-                                   <div class="d-flex align-items-center my-2">
-                                       <label class="w-50">Minutes</label>
-                                       <input class="form-control w-50 ms-3" type="text" size="3" v-model="restPeriod" autocomplete="off" />
-                                       <input class="btn btn-primary ms-3" type="button" value="Change" @click="handleChangeRestPeriod" />
-                                   </div>
-                                   <div class="d-flex mt-3">
-                                       <input class="btn btn-primary" type="button" value="Start Timer" @click="handleStartTimer" />
-                                       <div id="timer" class="ms-3"></div>
-                                   </div>
-                               </div>
-                           </div>
-                       </template>
-                   </card>
-               </div>
-           </div>
-        </div>
-    </div>
-
+    <div id="react-root"
+        data-change-active-status-url="{% url 'fitness:change_active_status' %}"
+        data-edit-note-url="{% url 'fitness:edit_note' %}"
+        data-get-workout-data-url="{% url 'fitness:get_workout_data' %}?uuid={{ object.uuid }}&page_number="
+        data-update-schedule-url="{% url 'fitness:update_schedule' %}"
+        data-update-rest-period-url="{% url 'fitness:update_rest_period' %}"
+        data-add-workout-url="{% url 'fitness:add' object.uuid %}"
+        data-exercise-uuid="{{ object.uuid }}"
+        data-exercise-name="{{ object.name }}"
+        data-has-weight="{{ object.has_weight|yesno:'true,false' }}"
+        data-has-duration="{{ object.has_duration|yesno:'true,false' }}"
+        data-csrf-token="{{ csrf_token }}"
+        data-activity-info="{{ activity_info_json }}"
+        data-related-exercises="{{ related_exercises_json }}"
+        data-targeted-muscles="{{ targeted_muscles_json }}"
+        data-last-workout-date="{{ last_workout_date }}"
+        data-description="{{ description_escaped }}"
+        data-note="{{ object.note|escapejs }}"
+        data-delta-days="{{ delta_days|default:7 }}"
+        data-latest-weight="{{ latest_weight_json }}"
+        data-latest-reps="{{ latest_reps_json }}"
+        data-latest-duration="{{ latest_duration_json }}"
+    ></div>
 {% endblock %}
 
-{% block javascript %}
-
+{% block javascript_bundles %}
     {{ block.super }}
-
-    {{ activity_info|json_script:"activity_info" }}
-    {{ plot_info|json_script:"plotInfo" }}
-    {{ plot_info.notes|json_script:"plotDataNotes" }}
-    {{ related_exercises|json_script:"related_exercises" }}
-
-    <script type="text/javascript" charset="utf-8">
-
-        const appLeft = createApp({
-            name: "ExerciseDetail",
-            components: {
-                AddWorkoutForm,
-                Card,
-                DropDownMenu,
-                FontAwesomeIcon,
-                Schedule,
-                LastWorkout,
-                WorkoutGraph,
-            },
-            setup() {
-                const activityInfo = JSON.parse(document.getElementById("activity_info").textContent);
-                const description = markdown.render("{{ object.description|default:"No description"|escapejs }}");
-                const note = "{{ object.note|escapejs }}";
-                const plotDataNotes = JSON.parse(document.getElementById("plotDataNotes").textContent);
-                const plotInfo = JSON.parse(document.getElementById("plotInfo").textContent);
-                const relatedExercises = JSON.parse(document.getElementById("related_exercises").textContent);
-                const restPeriod = ref({% if activity_info %}{{ activity_info.0.rest_period|default:3 }}{% else %} null{% endif %});
-                const schedule = ref(null);
-
-                const exerciseStore = useExerciseStore();
-                exerciseStore.uuid = "{{ object.uuid }}";
-                exerciseStore.relatedExercises = relatedExercises;
-                exerciseStore.activityInfo = activityInfo;
-
-                const csrfToken = document.querySelector("[name=csrfmiddlewaretoken]").value;
-
-                function handleChangeRestPeriod() {
-                    doPost(
-                        "{% url "fitness:update_rest_period" %}",
-                        {
-                            "uuid": "{{ object.uuid }}",
-                            "rest_period": restPeriod.value,
-                        }
-                        ,
-                        () => {},
-                        "Rest period changed",
-                    );
-                };
-
-                function handleStartTimer() {
-                    const currentDate = new Date();
-                    const timer = new Date(currentDate.getTime() + restPeriod.value * 60000);
-                    const timeinterval = setInterval(() => {
-                        const total = Date.parse(timer) - Date.parse(new Date());
-                        const seconds = Math.floor((total / 1000) % 60);
-                        const minutes = Math.floor((total / 1000 / 60) % 60);
-
-                        if (minutes < 1) {
-                            document.getElementById("timer").innerHTML = `<strong>${seconds}</strong> seconds`;
-                        } else {
-                            document.getElementById("timer").innerHTML = `<strong>${minutes}</strong> ${pluralize("minute", minutes)} <strong>${seconds}</strong> seconds`;
-                        }
-
-                        if (total <= 0) {
-                            clearInterval(timeinterval);
-                            document.getElementById("timer").innerHTML = "Done";
-                            const modal = new Modal("#modalTimer");
-                            modal.show();
-                        }
-                    }, 1000);
-                };
-
-                return {
-                    csrfToken,
-                    description,
-                    schedule,
-                    note,
-                    handleChangeRestPeriod,
-                    handleStartTimer,
-                    plotDataNotes,
-                    plotInfo,
-                    restPeriod,
-                };
-            },
-        });
-        appLeft.use(Oruga, {
-            iconComponent: "font-awesome-icon",
-            iconPack: "fa",
-            table: {
-                sortIcon: "caret-up",
-            },
-        });
-        appLeft.use(createPinia());
-        appLeft.mount("#vue-app");
-
-    </script>
-
+    {% vite_asset "dist/js/fitness-exercise-detail" %}
 {% endblock %}

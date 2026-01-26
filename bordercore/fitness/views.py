@@ -60,7 +60,7 @@ class ExerciseDetailView(LoginRequiredMixin, DetailView):
 
         related_exercises = [
             {
-                "uuid": x.uuid,
+                "uuid": str(x.uuid),
                 "name": x.name,
                 "last_active": x.last_active.strftime("%Y-%m-%d") if x.last_active else "Never",
             }
@@ -73,7 +73,30 @@ class ExerciseDetailView(LoginRequiredMixin, DetailView):
             exercise__id=self.object.id,
         ).first()
 
-        context["activity_info"] = (active.activity_info() if active else {"schedule": [False] * 7})
+        activity_info = active.activity_info() if active else {"schedule": [False] * 7}
+
+        # Get targeted muscles (convert Muscle objects to strings)
+        targeted_muscles_raw = self.object.get_targeted_muscles()
+        targeted_muscles = {
+            "primary": [str(m) for m in targeted_muscles_raw.get("primary", [])],
+            "secondary": [str(m) for m in targeted_muscles_raw.get("secondary", [])],
+        }
+
+        # Prepare JSON data for React
+        context["activity_info_json"] = json.dumps(activity_info)
+        context["related_exercises_json"] = json.dumps(related_exercises)
+        context["targeted_muscles_json"] = json.dumps(targeted_muscles)
+
+        # Last workout data for React
+        recent_data = last_workout.get("recent_data", [])
+        context["last_workout_date"] = (
+            recent_data[0].date.strftime("%b %d, %Y") if recent_data else ""
+        )
+        context["description_escaped"] = self.object.description or "No description"
+        context["delta_days"] = last_workout.get("delta_days", 7)
+        context["latest_weight_json"] = json.dumps(last_workout.get("latest_weight", [0]))
+        context["latest_reps_json"] = json.dumps(last_workout.get("latest_reps", [0]))
+        context["latest_duration_json"] = json.dumps(last_workout.get("latest_duration", [0]))
 
         # Merge and return final context.
         return {
@@ -142,14 +165,41 @@ def fitness_summary(request: HttpRequest) -> HttpResponse:
         HttpResponse: Rendered template response for the fitness summary page.
     """
     user = cast(User, request.user)
-    exercises = get_fitness_summary(user)
+    active_exercises, inactive_exercises = get_fitness_summary(user)
+
+    def serialize_exercise(e: Exercise, include_schedule: bool = False) -> dict:
+        """Serialize an exercise for JSON."""
+        from django.urls import reverse
+
+        data = {
+            "exercise_url": reverse("fitness:exercise_detail", args=[e.uuid]),
+            "exercise": e.name,
+            "muscle_group": str(e.muscle.all()[0].muscle_group) if e.muscle.exists() else "",
+            "last_active": e.last_active.strftime("%Y-%m-%d") if e.last_active else None,
+            "last_active_unixtime": str(int(e.last_active.timestamp())) if e.last_active else "0",
+            "delta_days": e.delta_days if hasattr(e, "delta_days") else None,
+            "overdue": e.overdue if hasattr(e, "overdue") else 0,
+        }
+        if include_schedule:
+            data["schedule_days"] = e.schedule_days if hasattr(e, "schedule_days") else ""
+            data["frequency"] = (
+                f"{e.frequency.days} day{'s' if e.frequency.days != 1 else ''}"
+                if hasattr(e, "frequency") and e.frequency
+                else ""
+            )
+        return data
+
+    active_exercises_json = json.dumps(
+        [serialize_exercise(e, include_schedule=True) for e in active_exercises]
+    )
+    inactive_exercises_json = json.dumps([serialize_exercise(e) for e in inactive_exercises])
 
     return render(
         request,
         "fitness/summary.html",
         {
-            "active_exercises": exercises[0],
-            "inactive_exercises": exercises[1],
+            "active_exercises_json": active_exercises_json,
+            "inactive_exercises_json": inactive_exercises_json,
             "title": "Fitness Summary",
         },
     )

@@ -3,6 +3,14 @@
 // =============================================================================
 // Exercise tracking, workouts, and fitness-related components
 
+.fitness-col-new-workout-data {
+  width: 6rem;
+}
+
+#fitness-schedule-d-o-t-w {
+  width: 7em;
+}
+
 .fitness-col-name {
   flex: 2;
 }
@@ -22,6 +30,67 @@
 .overdue {
   color: var(--error-color);
   font-weight: 600;
+}
+
+// Fitness summary table row highlighting
+.table {
+  tr.selected {
+    td {
+      background-color: var(--selected-bg);
+      color: var(--selected-color);
+    }
+
+    a {
+      color: var(--selected-color);
+    }
+  }
+
+  tr.overdue {
+    td {
+      background-color: var(--fitness-overdue-bg);
+      color: var(--fitness-overdue-color);
+    }
+
+    a {
+      color: var(--fitness-overdue-color);
+    }
+  }
+}
+
+// Increase font size for panel titles
+#muscles-targeted .card-title,
+#exercise-detail .card-title.text-primary {
+  font-size: 1.25rem;
+}
+
+// Style editable textarea in description card
+.editable-textarea {
+  border: none;
+
+  textarea {
+    background-color: var(--surface5);
+    color: var(--text1);
+  }
+}
+
+// Style hr in description panel and workout form
+#description hr,
+#form-workout + .row hr {
+  height: 1px;
+  border-color: transparent;
+  background-color: var(--surface3);
+  opacity: 1;
+}
+
+// Workout data table styling to match todo list
+#form-workout + .row .table {
+  th {
+    color: var(--text2);
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
 }
 
 #exercise-detail-chart {

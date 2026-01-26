@@ -14,6 +14,11 @@ export type CardProps = {
   cardClassName?: string;
 
   /**
+   * ID attribute for the outer card wrapper element.
+   */
+  id?: string;
+
+  /**
    * Full replacement for the title area.
    * Mirrors the Vue `title-slot`.
    */
@@ -32,12 +37,12 @@ export type CardProps = {
   children?: React.ReactNode;
 };
 
-export function Card({ title = "Card Title", className, cardClassName, titleSlot, topRight, children }: CardProps) {
+export function Card({ title = "Card Title", className, cardClassName, id, titleSlot, topRight, children }: CardProps) {
   const cardClasses = ["card-body", className].filter(Boolean).join(" ");
   const outerCardClasses = ["card", cardClassName].filter(Boolean).join(" ");
 
   return (
-    <div className={outerCardClasses}>
+    <div className={outerCardClasses} id={id}>
       <div className={cardClasses}>
         {titleSlot ??
           (title ? (
