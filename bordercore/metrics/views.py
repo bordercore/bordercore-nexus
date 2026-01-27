@@ -3,12 +3,14 @@
 This module contains views for displaying and managing metrics tracking,
 including test results, coverage reports, and other periodic measurements.
 """
+import json
 from typing import Any, cast
 
 from django.contrib.auth.mixins import (LoginRequiredMixin,
                                         PermissionRequiredMixin)
 from django.contrib.auth.models import User
 from django.db.models import QuerySet
+from django.template.defaultfilters import linebreaksbr
 from django.utils import timezone
 from django.views.generic.list import ListView
 
@@ -73,6 +75,7 @@ class MetricListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
                 - wumpus: Wumpus test metric (if available)
                 - coverage: Test coverage metric (if available)
                 - coverage_repot: Coverage report metric (if available)
+                - test_results_json: JSON string of all test results for React
         """
         context = super().get_context_data(**kwargs)
 
@@ -92,4 +95,59 @@ class MetricListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
                 if metric.name == Metric.COVERAGE_METRIC_NAME:
                     metric.latest_result["line_rate"] = int(round(float(metric.latest_result["line_rate"]) * 100, 0))  # type: ignore[attr-defined]
 
+        # Build JSON data for React component
+        test_results = self._build_test_results_json(context)
+        context["test_results_json"] = json.dumps(test_results)
+
         return context
+
+    def _build_test_results_json(self, context: dict[str, Any]) -> dict[str, Any]:
+        """Build JSON-serializable test results for React component.
+
+        Args:
+            context: The view context containing metric objects.
+
+        Returns:
+            Dictionary of test results ready for JSON serialization.
+        """
+        def build_standard_result(metric: Metric | None) -> dict[str, Any]:
+            if not metric or not metric.latest_result:  # type: ignore[attr-defined]
+                return {
+                    "test_count": "0",
+                    "test_errors": "0",
+                    "test_failures": "0",
+                    "test_overdue": False,
+                    "test_time_elapsed": "",
+                    "test_runtime": "",
+                    "test_output": "",
+                }
+            return {
+                "test_count": str(metric.latest_result.get("test_count", "0")),  # type: ignore[attr-defined]
+                "test_errors": str(metric.latest_result.get("test_errors", "0")),  # type: ignore[attr-defined]
+                "test_failures": str(metric.latest_result.get("test_failures", "0")),  # type: ignore[attr-defined]
+                "test_overdue": getattr(metric, "overdue", False),
+                "test_time_elapsed": str(metric.latest_result.get("test_time_elapsed", "")),  # type: ignore[attr-defined]
+                "test_runtime": metric.created.strftime("%b %d, %Y, %I:%M %p") if metric.created else "",  # type: ignore[attr-defined]
+                "test_output": linebreaksbr(metric.latest_result.get("test_output", "")),  # type: ignore[attr-defined]
+            }
+
+        def build_coverage_result(metric: Metric | None) -> dict[str, Any]:
+            if not metric or not metric.latest_result:  # type: ignore[attr-defined]
+                return {
+                    "line_rate": 0,
+                    "test_overdue": False,
+                    "test_runtime": "",
+                }
+            return {
+                "line_rate": metric.latest_result.get("line_rate", 0),  # type: ignore[attr-defined]
+                "test_overdue": getattr(metric, "overdue", False),
+                "test_runtime": metric.created.strftime("%b %d, %Y, %I:%M %p") if metric.created else "",  # type: ignore[attr-defined]
+            }
+
+        return {
+            "unit": build_standard_result(context.get("unit")),
+            "functional": build_standard_result(context.get("functional")),
+            "data": build_standard_result(context.get("data")),
+            "wumpus": build_standard_result(context.get("wumpus")),
+            "coverage": build_coverage_result(context.get("coverage")),
+        }

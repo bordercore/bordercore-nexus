@@ -163,7 +163,7 @@ export function LastWorkout({
       <li>
         <a className="dropdown-item" href="#" onClick={(e) => { e.preventDefault(); handleAskChatbot(); }}>
           <FontAwesomeIcon icon={faComment} className="text-primary me-3" />
-          Ask ChatBot
+          Ask AI
         </a>
       </li>
     </ul>

@@ -455,7 +455,7 @@ export function DrillQuestionPage({
             onClick={handleAskChatbot}
             data-bs-toggle="tooltip"
             data-placement="bottom"
-            title="Ask ChatBot"
+            title="Ask AI"
           />
           <a href={addQuestionUrl} className="link-inherit">
             <FontAwesomeIcon
