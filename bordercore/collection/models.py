@@ -342,6 +342,9 @@ class Collection(TimeStampedModel):
 
         if random_order:
             queryset = queryset.order_by("?")
+        else:
+            # Explicitly order by sort_order to ensure consistent ordering
+            queryset = queryset.order_by("sort_order")
 
         paginator = Paginator(queryset, limit)
         page = paginator.page(page_number)

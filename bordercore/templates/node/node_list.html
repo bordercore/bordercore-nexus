@@ -1,117 +1,20 @@
-{% extends "base.html" %}
-
-{% load dict_get %}
-
-{% load favicon %}
+{% extends "base_react.html" %}
+{% load vite_tags %}
 
 {% block title %} Node List {% endblock %}
 
 {% block content %}
 
-    <div id="vue-app" class="card-grid d-flex ms-3">
-
-        <div class="d-flex flex-row flex-wrap">
-        {% for node in node_list %}
-
-            <div class="w-50">
-                <h4>
-                    <a href="{% url "node:detail" node.uuid %}" data-name="{{  node.name }}">
-                        {{ node.name }}
-                    </a>
-                    <div class="node-list-stats ps-2 pt-1 text-primary">
-                        <ul class="list-unstyled">
-                            <li>Last modified: <span class="text-emphasis">{{ node.modified|date:"M d, Y" }}</span></li>
-                            <li>Collection count: <span class="text-emphasis">{{ node.collection_count }}</span></li>
-                            <li>Todo count: <span class="text-emphasis">{{ node.todo_count }}</span></li>
-                        </ul>
-                    </div>
-                </h4>
-            </div>
-
-        {% endfor %}
-        </div>
-
-        <div class="me-2">
-            <drop-down-menu>
-                <template #dropdown>
-                    <li>
-                        <a class="dropdown-item" href="#" @click.prevent="onClickCreate">
-                            <font-awesome-icon icon="plus" class="text-primary me-3"></font-awesome-icon>
-                            <span>New Node</span>
-                        </a>
-                    </li>
-                </template>
-            </drop-down-menu>
-        </div>
-
+    <div id="react-root"
+        data-create-url="{% url 'node:create' %}"
+    >
     </div>
-
-    <div class="card-grid ms-3">
-
-        <form action="{% url 'node:create' %}" method="post" id="form-node-create">
-            {% csrf_token %}
-            <div class="modal fade" id="modalAdd" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-                <div class="modal-dialog" role="document">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h4 class="modal-title" id="myModalLabel">
-                                New Node
-                            </h4>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            {% for field in form %}
-                                <div class="{% if field.errors %} error{% endif %} row mb-3">
-                                    <label class="col-lg-3 col-form-label" for="inputTitle">{{ field.label }}</label>
-                                    <div class="col-lg-9">
-                                        {{ field }}
-                                            {% for error in field.errors %}
-                                                <span class="form-error">{{ error }}</span>
-                                            {% endfor %}
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        </div>
-                        <div class="modal-footer">
-                            <input id="btn-action" class="btn btn-primary" type="submit" name="Go" value="Create" />
-                        </div>
-
-                    </div>
-                </div>
-            </div>
-        </form>
-
-        </div>
+    {{ node_list_data|json_script:"node-list-data" }}
+    {{ form_fields_data|json_script:"form-fields-data" }}
 
 {% endblock %}
 
-{% block javascript %}
-
+{% block javascript_bundles %}
     {{ block.super }}
-
-    <script type="text/javascript" charset="utf-8">
-
-        const app = createApp({
-            components: {
-                FontAwesomeIcon,
-                DropDownMenu,
-            },
-            setup() {
-                function onClickCreate(evt) {
-                    const modal = new Modal("#modalAdd");
-                    modal.show();
-                    window.setTimeout(() => {
-                        document.getElementById("id_name").focus();
-                    }, 500);
-                };
-
-                return {
-                    onClickCreate,
-                };
-            },
-        });
-        app.mount("#vue-app");
-
-    </script>
-
+    {% vite_asset "dist/js/node-list" %}
 {% endblock %}

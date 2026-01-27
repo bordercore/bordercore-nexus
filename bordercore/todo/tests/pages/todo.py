@@ -1,5 +1,6 @@
 try:
     from selenium.webdriver.common.by import By
+    import time
 except ModuleNotFoundError:
     # Don't worry if this import doesn't exist in production
     pass
@@ -8,10 +9,10 @@ except ModuleNotFoundError:
 class TodoPage:
 
     TITLE = (By.TAG_NAME, "title")
-    TODO_ELEMENTS = (By.XPATH, "//div[@id='vue-app']//table/tbody/tr")
-    FIRST_TASK = (By.CSS_SELECTOR, "div#vue-app table tbody tr td:nth-child(2)")
-    NO_TASKS = (By.CSS_SELECTOR, "div#vue-app table tbody tr td")
-    PRIORITY_COLUMN = (By.CSS_SELECTOR, "div#vue-app table thead tr th:nth-child(3)")
+    TODO_ELEMENTS = (By.XPATH, "//div[@id='react-root']//table/tbody/tr")
+    FIRST_TASK = (By.CSS_SELECTOR, "div#react-root table tbody tr td:nth-child(2)")
+    NO_TASKS = (By.CSS_SELECTOR, "div#react-root .text-center.p-3")
+    PRIORITY_COLUMN = (By.CSS_SELECTOR, "div#react-root table thead tr th:nth-child(3)")
     LOW_PRIORITY_FILTER = (By.CSS_SELECTOR, "div[data-priority='3']")
 
     def __init__(self, browser):
@@ -26,9 +27,15 @@ class TodoPage:
 
     def todo_count(self):
         """
-        Find all todo tasks bookmarks
+        Find all todo tasks bookmarks.
+        Returns 1 if "No tasks found" message is present, otherwise returns count of table rows.
         """
         todo_elements = self.browser.find_elements(*self.TODO_ELEMENTS)
+        if len(todo_elements) == 0:
+            # Check if "No tasks found" message is present
+            no_tasks_elements = self.browser.find_elements(*self.NO_TASKS)
+            if len(no_tasks_elements) > 0 and "No tasks found" in no_tasks_elements[0].text:
+                return 1
         return len(todo_elements)
 
     def todo_task_text(self):
@@ -55,6 +62,11 @@ class TodoPage:
 
     def low_priority_filter(self):
         """
+        Find the low priority filter element and scroll it into view to avoid click interception
         """
         todo_element = self.browser.find_elements(*self.LOW_PRIORITY_FILTER)
-        return todo_element[0]
+        element = todo_element[0]
+        # Scroll into view to avoid click interception
+        self.browser.execute_script("arguments[0].scrollIntoView(true);", element)
+        time.sleep(0.5)  # Brief wait for scroll
+        return element

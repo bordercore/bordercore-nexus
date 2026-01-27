@@ -51,6 +51,7 @@
 
   // Hide dropdown trigger by default when inside hover-target, show on hover
   // Use visibility/opacity instead of display to prevent layout shift
+  // Note: hover-reveal-target is for other content (.hover-reveal-content), not dropdowns
   .hover-target & {
     opacity: 0;
     visibility: hidden;

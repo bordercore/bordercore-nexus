@@ -1,0 +1,130 @@
+// =============================================================================
+// PAGES: NODE
+// =============================================================================
+// Styles specific to the node list and detail pages
+
+.node-list-stats {
+  font-size: 0.75rem;
+
+  li {
+    color: rgb(var(--bs-primary-rgb));
+  }
+}
+
+.node-name {
+  color: var(--text4);
+}
+
+.node-note {
+  font-size: 0.87rem;
+}
+
+.node-object-note {
+  color: var(--text4);
+  font-size: 0.87rem;
+}
+
+.node-column {
+  min-width: 0;
+  flex: 1;
+  padding: 0 0.5rem;
+}
+
+// Node color swatches for note color picker
+.node-color {
+  height: 2rem;
+  border-radius: 0.25rem;
+
+  &:hover {
+    cursor: pointer;
+  }
+}
+
+.node-color-1 {
+  background-color: var(--node-color-1) !important;
+  transition: 0.3s ease;
+
+  &:hover {
+    background-color: var(--node-color-1-tinted) !important;
+  }
+}
+
+.node-color-2 {
+  background-color: var(--node-color-2) !important;
+  transition: 0.3s ease;
+
+  &:hover {
+    background-color: var(--node-color-2-tinted) !important;
+  }
+}
+
+.node-color-3 {
+  background-color: var(--node-color-3) !important;
+  transition: 0.3s ease;
+
+  &:hover {
+    background-color: var(--node-color-3-tinted) !important;
+  }
+}
+
+.node-color-4 {
+  background-color: var(--node-color-4) !important;
+  transition: 0.3s ease;
+
+  &:hover {
+    background-color: var(--node-color-4-tinted) !important;
+  }
+}
+
+// Make list items transparent inside node color cards so they inherit the card background
+.node-color-1,
+.node-color-2,
+.node-color-3,
+.node-color-4 {
+  .list-group-item {
+    background: none;
+  }
+}
+
+// Drag and drop styles for collection items and todo tasks
+.slicklist-item {
+  position: relative;
+  z-index: 1;
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
+
+  &.dragging {
+    background-color: var(--surface5);
+    opacity: 0.5;
+  }
+}
+
+.slicklist-list-item-inner {
+  transition: background 0.2s, transform 0.2s;
+}
+
+// Edit layout mode for node detail page
+.edit-layout-mode {
+  .draggable-item {
+    cursor: grab;
+
+    &:active {
+      cursor: grabbing;
+    }
+
+    &.dragging {
+      opacity: 0.5;
+    }
+  }
+}
+
+// Drop position indicator
+.drop-indicator {
+  height: 3px;
+  margin-bottom: var(--gutter);
+  background-color: var(--link-color);
+  border-radius: 2px;
+}

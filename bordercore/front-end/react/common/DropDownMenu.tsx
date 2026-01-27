@@ -1,4 +1,4 @@
-import React, { ReactNode, useState } from "react";
+import React, { ReactNode, useState, forwardRef, useImperativeHandle } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faEllipsisV,
@@ -31,15 +31,27 @@ interface DropDownMenuProps {
   dropdownSlot?: ReactNode;
 }
 
-export function DropDownMenu({
-  links = [],
-  direction = "dropend",
-  showTarget = true,
-  showOnHover = false,
-  iconSlot,
-  dropdownSlot,
-}: DropDownMenuProps) {
+export interface DropDownMenuHandle {
+  close: () => void;
+}
+
+export const DropDownMenu = forwardRef<DropDownMenuHandle, DropDownMenuProps>(
+  function DropDownMenu(
+    {
+      links = [],
+      direction = "dropend",
+      showTarget = true,
+      showOnHover = false,
+      iconSlot,
+      dropdownSlot,
+    },
+    ref
+  ) {
   const [isOpen, setIsOpen] = useState(false);
+
+  useImperativeHandle(ref, () => ({
+    close: () => setIsOpen(false),
+  }));
 
   // Map icon name strings to FontAwesome icon objects
   const getIcon = (iconName: string | undefined): IconDefinition | null => {
@@ -114,6 +126,6 @@ export function DropDownMenu({
       </Popover>
     </div>
   );
-}
+});
 
 export default DropDownMenu;

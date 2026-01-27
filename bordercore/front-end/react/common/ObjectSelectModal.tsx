@@ -21,11 +21,11 @@ interface ObjectSelectModalProps {
   id?: string;
   title?: string;
   searchObjectUrl: string;
-  onSelectObject: (object: ObjectOption) => void;
+  onSelectObject?: (object: ObjectOption) => void;
 }
 
 export interface ObjectSelectModalHandle {
-  open: () => void;
+  open: (callback?: (object: ObjectOption) => void) => void;
   close: () => void;
 }
 
@@ -42,6 +42,7 @@ export const ObjectSelectModal = React.forwardRef<ObjectSelectModalHandle, Objec
     const modalRef = useRef<HTMLDivElement>(null);
     const modalInstanceRef = useRef<Modal | null>(null);
     const selectValueRef = useRef<SelectValueHandle>(null);
+    const onSelectCallbackRef = useRef<((object: ObjectOption) => void) | null>(null);
 
     useEffect(() => {
       if (modalRef.current && !modalInstanceRef.current) {
@@ -98,7 +99,8 @@ export const ObjectSelectModal = React.forwardRef<ObjectSelectModalHandle, Objec
       setOptions(initialOptions);
     }, []);
 
-    const openModal = useCallback(() => {
+    const openModal = useCallback((callback?: (object: ObjectOption) => void) => {
+      onSelectCallbackRef.current = callback || null;
       if (modalInstanceRef.current) {
         modalInstanceRef.current.show();
         loadInitialOptions();
@@ -109,6 +111,10 @@ export const ObjectSelectModal = React.forwardRef<ObjectSelectModalHandle, Objec
     }, [loadInitialOptions]);
 
     const closeModal = useCallback(() => {
+      // Blur focused element before hiding to avoid aria-hidden accessibility warning
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
       if (modalInstanceRef.current) {
         modalInstanceRef.current.hide();
       }
@@ -123,7 +129,12 @@ export const ObjectSelectModal = React.forwardRef<ObjectSelectModalHandle, Objec
       (selection: ObjectOption) => {
         if (selection.splitter) return;
 
-        onSelectObject(selection);
+        // Use callback from open() if provided, otherwise use prop
+        if (onSelectCallbackRef.current) {
+          onSelectCallbackRef.current(selection);
+        } else if (onSelectObject) {
+          onSelectObject(selection);
+        }
         closeModal();
       },
       [onSelectObject, closeModal]

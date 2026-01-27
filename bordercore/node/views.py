@@ -67,6 +67,32 @@ class NodeListView(LoginRequiredMixin, ListView, FormMixin):
         """
         context = super().get_context_data(**kwargs)
         context["title"] = "Node List"
+
+        # Serialize node list for React (json_script handles JSON encoding)
+        context["node_list_data"] = [
+            {
+                "uuid": str(node.uuid),
+                "name": node.name,
+                "modified": node.modified.isoformat() if node.modified else "",
+                "collection_count": node.collection_count,
+                "todo_count": node.todo_count,
+            }
+            for node in context["object_list"]
+        ]
+
+        # Serialize form fields for React (json_script handles JSON encoding)
+        form = context["form"]
+        context["form_fields_data"] = [
+            {
+                "name": field.name,
+                "label": field.label,
+                "type": "textarea" if "Textarea" in str(type(field.field.widget)) else "text",
+                "required": field.field.required,
+                "maxLength": getattr(field.field, "max_length", None),
+            }
+            for field in form
+        ]
+
         return context
 
 
@@ -98,13 +124,17 @@ class NodeDetailView(LoginRequiredMixin, DetailView):
             Dictionary containing context data for the template.
         """
         context = super().get_context_data(**kwargs)
-        context["priority_list"] = json.dumps(Todo.PRIORITY_CHOICES)
+        # json_script handles JSON encoding, so pass Python objects directly
+        context["priority_list_data"] = Todo.PRIORITY_CHOICES
 
         user = cast(User, self.request.user)
         RecentlyViewedBlob.add(user, node=self.object)
 
         self.object.populate_names()
         self.object.populate_image_info()
+
+        # json_script handles JSON encoding, so pass Python objects directly
+        context["layout_data"] = self.object.layout
 
         return context
 

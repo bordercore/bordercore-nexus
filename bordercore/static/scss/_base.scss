@@ -2370,6 +2370,14 @@ div #dateapp {
 
 .node-list-stats {
   font-size: 0.75rem;
+
+  li {
+    color: rgba(var(--bs-primary-rgb), 1);
+  }
+
+  .text-emphasis {
+    color: var(--text1);
+  }
 }
 
 .node-name {

@@ -91,6 +91,7 @@ export function TodoFiltersSidebar({
           {priorityOptions.map((option) => (
             <div
               key={option[0]}
+              data-priority={option[0]}
               className={`list-with-counts ps-2 py-1 pe-1 d-flex ${getPriorityClass(option[0])}`}
               onClick={() => handlePriorityClick(option[0])}
             >
