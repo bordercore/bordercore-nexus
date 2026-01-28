@@ -116,10 +116,186 @@
   }
 }
 
+// Pinned tags sidebar
+.bookmark-pinned-tags {
+  .card-title-large {
+    color: var(--text4);
+    font-size: 1.5rem;
+  }
+
+  .list-with-counts {
+    cursor: pointer;
+    transition: background-color 0.1s ease;
+
+    &:hover {
+      background-color: var(--hover-bg);
+    }
+
+    &.selected {
+      background-color: var(--form-bg);
+    }
+  }
+}
+
 // Tag alias table
 .tag-alias-table {
   th.sortable,
   th.tag-alias-table-sortable {
     color: var(--text2);
+  }
+}
+
+// Bookmark table (React version)
+.bookmark-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  thead {
+    // Hide header visually but keep for accessibility
+    &.visually-hidden {
+      position: absolute;
+      overflow: hidden;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      border: 0;
+      margin: -1px;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+  }
+
+  .drag-handle-cell {
+    width: 30px;
+    color: var(--text3);
+    cursor: grab;
+
+    &:active {
+      cursor: grabbing;
+    }
+
+    // Hide by default, show on row hover
+    .hover-reveal-object {
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+  }
+
+  tbody {
+    .bookmark-row {
+      position: relative;
+      border-bottom: 1px solid var(--border-color);
+      transition: background-color 0.15s ease;
+
+      &:hover {
+        background-color: var(--hover-bg);
+      }
+
+      &.selected {
+        background-color: var(--selected-bg);
+      }
+
+      &.no-drag {
+        .drag-handle-cell {
+          cursor: default;
+        }
+      }
+    }
+  }
+
+  .bookmark-row:hover .drag-handle-cell .hover-reveal-object {
+    opacity: 1;
+  }
+
+  .date-cell {
+    width: 85px;
+    color: var(--text2);
+    font-size: 0.875rem;
+    vertical-align: top;
+    white-space: nowrap;
+  }
+
+  .thumbnail-cell {
+    width: 130px;
+    padding-right: 0.5rem;
+
+    img {
+      border-radius: var(--border-radius1);
+      object-fit: cover;
+    }
+  }
+
+  .favicon-cell {
+    width: 24px;
+    padding-top: 0.85rem;
+    padding-right: 0.5rem;
+    vertical-align: top;
+
+    img {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  .content-cell {
+    vertical-align: top;
+
+    a:not(.tag) {
+      color: var(--link-color);
+      text-decoration-color: transparent;
+      text-underline-offset: 0.25rem;
+
+      &:hover {
+        color: var(--text4);
+      }
+    }
+
+    .tag {
+      color: var(--text2);
+      font-size: 0.8rem;
+
+      &:hover {
+        color: var(--text1);
+      }
+    }
+
+    .table-note {
+      margin-top: 0.25rem;
+      color: var(--text2);
+      font-size: 0.875rem;
+
+      p {
+        margin-bottom: 0;
+      }
+    }
+  }
+
+  .actions-cell {
+    width: 40px;
+    text-align: right;
+    vertical-align: top;
+
+    // Hide trigger by default, show on row hover
+    .dropdown-trigger {
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+
+    // Left-align dropdown items
+    .dropdown-menu-list {
+      text-align: left;
+    }
+  }
+
+  .bookmark-row:hover .actions-cell .dropdown-trigger {
+    opacity: 1;
+  }
+
+  // YouTube duration tooltip
+  .yt-hover-target {
+    position: absolute;
+    right: 0.5rem;
+    bottom: 0.25rem;
+    font-size: 0.75rem;
   }
 }

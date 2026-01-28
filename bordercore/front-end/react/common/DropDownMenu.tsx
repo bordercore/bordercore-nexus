@@ -29,6 +29,7 @@ interface DropDownMenuProps {
   showOnHover?: boolean;
   iconSlot?: ReactNode;
   dropdownSlot?: ReactNode;
+  allowFlip?: boolean;
 }
 
 export interface DropDownMenuHandle {
@@ -44,6 +45,7 @@ export const DropDownMenu = forwardRef<DropDownMenuHandle, DropDownMenuProps>(
       showOnHover = false,
       iconSlot,
       dropdownSlot,
+      allowFlip = true,
     },
     ref
   ) {
@@ -119,6 +121,7 @@ export const DropDownMenu = forwardRef<DropDownMenuHandle, DropDownMenuProps>(
         className="dropdown-popover"
         open={isOpen}
         onOpenChange={setIsOpen}
+        allowFlip={allowFlip}
       >
         <div className="dropdown-content">
           {dropdownContent}

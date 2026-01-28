@@ -267,7 +267,7 @@ function SidebarContent() {
         icon: { element: "font-awesome-icon", attributes: { icon: "search" }, class: "sidebar-icon-2" },
       },
       {
-        href: "/bookmark/overview/",
+        href: "/bookmark/",
         title: "Bookmarks",
         alias: "/bookmark/*",
         icon: { element: "font-awesome-icon", attributes: { icon: "bookmark" }, class: "sidebar-icon-3" },

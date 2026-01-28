@@ -41,6 +41,8 @@ export interface PopoverProps {
   showArrow?: boolean;
   /** Custom styles for the popover */
   style?: React.CSSProperties;
+  /** Whether to allow flipping to opposite side when space is limited */
+  allowFlip?: boolean;
 }
 
 export function Popover({
@@ -56,6 +58,7 @@ export function Popover({
   onOpenChange,
   showArrow = false,
   style,
+  allowFlip = true,
 }: PopoverProps) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(initialOpen);
 
@@ -91,10 +94,10 @@ export function Popover({
     strategy: "absolute",
     middleware: [
       getOffset(),
-      flip({
+      ...(allowFlip ? [flip({
         fallbackAxisSideDirection: "end",
         padding: 8,
-      }),
+      })] : []),
       shift({ padding: 8 }),
     ],
     whileElementsMounted: (reference, floating, update) => 

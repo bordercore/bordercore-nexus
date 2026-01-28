@@ -1,236 +1,52 @@
-{% extends "base.html" %}
-
+{% extends "base_react.html" %}
+{% load vite_tags %}
 {% load favicon %}
 
 {% block title %} Bookmarks {% endblock %}
 
 {% block content %}
 
-    <div class="row g-0 h-100" id="vue-app">
-
-        <div class="flex-grow-last col-lg-3 d-flex flex-column ps-2">
-
-            {% if object %}
-            <div class="card-body p-3">
-                <div class="d-flex justify-content-center">
-                    <img src="{{ object.thumbnail_url }}?foo=bar" class="mw-100" />
-                </div>
-            </div>
-            {% endif %}
-
-            <related-tags
-                ref="relatedTags"
-                related-tags-url="{% url 'tag:get_related_tags' %}"
-                @click-tag="onClickTag"
-            >
-            </related-tags>
-
-            <back-references
-                v-if="backReferences.length > 0"
-                :back-references="backReferences"
-            >
-            </back-references>
-
-            <div v-if="relatedNodes.length > 0" class="d-flex">
-                <card title="Related Nodes" class="backdrop-filter w-100">
-                    <template v-slot:content>
-                        <ul class="list-group interior-borders cursor-pointer">
-                            <li v-for="node in relatedNodes" class="hoverable px-0 list-group-item list-group-item-secondary text-primary">
-                                <div class="d-flex align-items-center ps-3">
-                                    <div class="d-flex w-100">
-                                        <a :href="node.url">[[ node.name ]]</a>
-                                    </div>
-                                </div>
-                            </li>
-                        </ul>
-                    </template>
-                </card>
-            </div>
-
-        </div>
-
-        <div class="col-lg-9 d-flex flex-grow-last">
-            <div class="card-body">
-                <p class="lead offset-lg-2">
-                    {{ form.instance.url|favicon|safe }} {{ form.instance.name|default:"New Bookmark" }}
-                </p>
-
-                <form id="bookmark-form" action="{{ request.path }}" method="post">
-
-                    {% csrf_token %}
-
-                    {% for field in form %}
-
-                        <div class="{% if field.errors %}message-error {% endif %}row mb-3">
-                            <label class="fw-bold col-lg-2 col-form-label text-end">
-                                {{ field.label }}
-                            </label>
-                            <div class="col-lg-7 d-flex align-items-center">
-                                {% if field.label == "Tags" %}
-                                    <tags-input
-                                        ref="tagsInput"
-                                        search-url="{% url 'tag:search' %}?query="
-                                        @tags-changed="onTagsChanged"
-                                    >
-                                    </tags-input>
-                                {% elif field.label == "Url" %}
-                                    <input
-                                        type="url"
-                                        name="url"
-                                        value="{{ field.value|default:'' }}"
-                                        class="form-control"
-                                        required
-                                        id="id_url"
-                                        {% if action == "Create" %}
-                                            @blur="onBlur"
-                                        {% endif %}
-                                        autocomplete="off"
-                                    />
-                                {% elif field.label == "Important" %}
-                                    <o-switch v-model="importance" name="importance" value="{{ field.value }}"></o-switch>
-                                {% elif field.label == "Is pinned" %}
-                                    <o-switch v-model="isPinned" name="is_pinned" value="{{ field.value }}" :native-value="is_pinned"></o-switch>
-                                {% elif field.label == "Daily" %}
-                                    <o-switch v-model="daily" name="daily" value="{{ field.value }}" :native-value="daily"></o-switch>
-                                {% else %}
-                                    {{ field }}
-                                {% endif %}
-                            </div>
-                        </div>
-                        <div class="row">
-                            {% for error in field.errors %}
-                                <div class="form-error-bookmarks col-lg-7 offset-lg-2 mb-3">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-
-                    {% endfor %}
-
-                    <div>
-                        <div class="col-lg-7 offset-lg-2">
-                            <input class="btn btn-primary" type="submit" name="Go" value="Save" />
-                            {% if form.instance.id %}
-                                <input class="btn btn-secondary ms-3" type="button" name="Go" value="Delete" @click="onClickDelete" />
-                            {% endif %}
-                            <a href="{% url 'bookmark:overview' %}" class="ms-3">Cancel</a>
-                        </div>
-                    </div>
-
-                </form>
-
-            </div>
-
-        </div>
-
+    <div id="react-root"
+        {% if bookmark.uuid %}data-uuid="{{ bookmark.uuid }}"{% endif %}
+        data-action="{{ action }}"
+        data-form-action="{{ request.path }}"
+        data-csrf-token="{{ csrf_token }}"
+        {% if object.thumbnail_url %}data-thumbnail-url="{{ object.thumbnail_url }}"{% endif %}
+        data-favicon-html="{{ form.instance.url|favicon|default:'' }}"
+        data-bookmark-name="{{ form.instance.name|default:'New Bookmark' }}"
+        data-initial-importance="{{ form.importance.value|yesno:'true,false' }}"
+        data-initial-is-pinned="{{ form.is_pinned.value|yesno:'true,false' }}"
+        data-initial-daily="{{ form.daily.value|default:'0' }}"
+        data-tag-search-url="{% url 'tag:search' %}"
+        data-related-tags-url="{% url 'tag:get_related_tags' %}"
+        data-get-title-from-url-url="{% url 'bookmark:get_title_from_url' %}"
+        data-delete-bookmark-url="{% url 'bookmark:delete' '00000000-0000-0000-0000-000000000000' %}"
+        data-bookmark-overview-url="{% url 'bookmark:overview' %}"
+    >
     </div>
+
+    {{ back_references|json_script:"backReferences" }}
+    {{ tags|json_script:"initial-tags" }}
+    {{ related_nodes|json_script:"related_nodes" }}
+
+    <script id="formFields" type="application/json">
+    [
+        {% for field in form %}
+        {
+            "name": "{{ field.name }}",
+            "label": "{{ field.label }}",
+            "value": "{{ field.value|default:''|escapejs }}",
+            "type": "{% if field.name == 'url' %}url{% elif field.name == 'note' %}textarea{% else %}text{% endif %}",
+            "required": {% if field.field.required %}true{% else %}false{% endif %},
+            "errors": [{% for error in field.errors %}"{{ error|escapejs }}"{% if not forloop.last %}, {% endif %}{% endfor %}]
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ]
+    </script>
 
 {% endblock %}
 
-{% block javascript %}
-
+{% block javascript_bundles %}
     {{ block.super }}
-
-    {{ back_references|json_script:"backReferences" }}
-    {{ tags|json_script:"initial-tags"|default:"" }}
-    {{ related_blobs|json_script:"related_blobs" }}
-    {{ related_nodes|json_script:"related_nodes" }}
-
-    <script type="text/javascript">
-
-        const app = createApp({
-            name: "BookmarkUpdate",
-            components: {
-                BackReferences,
-                Card,
-                FontAwesomeIcon,
-                RelatedTags,
-                TagsInput,
-            },
-            delimiters: ["[[", "]]"],
-            setup() {
-                {% if bookmark.uuid %}
-                const uuid = "{{ bookmark.uuid }}";
-                {% endif %}
-                const daily = ref({{ form.daily.value }});
-                const importance = ref({{ form.importance.value|yesno:"true,false" }});
-                const isPinned = ref({{ form.is_pinned.value|yesno:"true,false" }});
-                const backReferences = JSON.parse(document.getElementById("backReferences").textContent);
-                const relatedBlobs = ref(JSON.parse(document.getElementById("related_blobs").textContent));
-                const relatedNodes = ref(JSON.parse(document.getElementById("related_nodes").textContent));
-
-                const relatedTags = ref(null);
-                const tagsInput = ref(null);
-
-                function onClickDelete() {
-                    const formEl = document.getElementById("bookmark-form");
-                    formEl.setAttribute("action", "{% url 'bookmark:delete' '00000000-0000-0000-0000-000000000000' %}".replace("00000000-0000-0000-0000-000000000000", uuid));
-                    formEl.submit();
-                }
-
-                function onClickTag(tag) {
-                    tagsInput.value.addTag(tag);
-                }
-
-                function onBlur(evt) {
-                    // If the name has already been filled-in, abort
-                    const name = document.getElementById("id_name");
-                    if (name.value) {
-                        return;
-                    }
-
-                    let url = document.getElementById("id_url").value;
-                    if (!url) {
-                        return;
-                    }
-
-                    url = encodeURIComponent(url).replace(/%/g, "%25");
-
-                    doGet(
-                        "{% url "bookmark:get_title_from_url" %}?url=" + url,
-                        (response) => {
-                            name.value = response.data.title;
-                        },
-                        "Error getting title from url",
-                    );
-                }
-
-                function onClick(url) {
-                    window.location = url;
-                }
-
-                function onTagsChanged(tags) {
-                    relatedTags.value.setTags(tags);
-                }
-
-                return {
-                    backReferences,
-                    daily,
-                    importance,
-                    isPinned,
-                    relatedBlobs,
-                    relatedNodes,
-                    relatedTags,
-                    onClickDelete,
-                    onClickTag,
-                    onBlur,
-                    onClick,
-                    onTagsChanged,
-                    tagsInput,
-                    {% if bookmark.uuid %}
-                    uuid,
-                    {% endif %}
-                };
-            },
-        });
-
-        app.use(Oruga, {
-            iconComponent: "font-awesome-icon",
-            iconPack: "fa",
-            table: {
-                sortIcon: "caret-up",
-            },
-        });
-        app.mount("#vue-app");
-
-</script>
-
+    {% vite_asset "dist/js/bookmark-form" %}
 {% endblock %}

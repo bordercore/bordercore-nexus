@@ -1285,20 +1285,19 @@ def search_names_es(user: User, search_term: str, doctypes: list[str]) -> list[d
                 )
             else:
                 date = ""
-            matches.append(
-                {
-                    "name": name,
-                    "date": date,
-                    "doctype": doctype_pretty,
-                    "note": match["_source"].get("note", ""),
-                    "uuid": match["_source"].get("uuid"),
-                    "id": match["_source"].get("uuid"),
-                    "important": match["_source"].get("importance"),
-                    "url": match["_source"].get("url", None),
-                    "link": get_link(doctype_pretty.lower(), match["_source"]),
-                    "score": match["_score"]
-                }
-            )
+            match_dict = {
+                "name": name,
+                "date": date,
+                "doctype": doctype_pretty,
+                "note": match["_source"].get("note", ""),
+                "uuid": match["_source"].get("uuid"),
+                "id": match["_source"].get("uuid"),
+                "important": match["_source"].get("importance"),
+                "url": match["_source"].get("url", None),
+                "link": get_link(doctype_pretty.lower(), match["_source"]),
+                "score": match["_score"]
+            }
+            matches.append(match_dict)
             if doctype_pretty in ["Blob", "Book", "Document"]:
                 matches[-1]["cover_url"] = Blob.get_cover_url_static(
                     match["_source"].get("uuid"),

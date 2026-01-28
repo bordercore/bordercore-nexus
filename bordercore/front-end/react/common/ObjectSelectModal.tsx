@@ -148,8 +148,7 @@ export const ObjectSelectModal = React.forwardRef<ObjectSelectModalHandle, Objec
 
         return (
           <div
-            className="object-select-suggestion d-flex dropdown-item"
-            className="cursor-pointer"
+            className="object-select-suggestion d-flex dropdown-item cursor-pointer"
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();

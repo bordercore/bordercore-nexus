@@ -69,6 +69,8 @@ module.exports = defineConfig({
         "dist/js/metric-list": path.resolve(__dirname, "front-end", "entries", "metric-list.tsx"),
         "dist/js/node-list": path.resolve(__dirname, "front-end", "entries", "node-list.tsx"),
         "dist/js/node-detail": path.resolve(__dirname, "front-end", "entries", "node-detail.tsx"),
+        "dist/js/bookmark-list": path.resolve(__dirname, "front-end", "entries", "bookmark-list.tsx"),
+        "dist/js/bookmark-form": path.resolve(__dirname, "front-end", "entries", "bookmark-form.tsx"),
       },
       output: {
         entryFileNames: "[name]-[hash].js",

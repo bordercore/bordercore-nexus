@@ -150,6 +150,7 @@ class BookmarkUpdateView(FormRequestMixin, BookmarkFormValidMixin, UpdateView):
         """
         context = super().get_context_data(**kwargs)
         context["action"] = "Edit"
+        context["bookmark"] = self.object
         context["tags"] = [x.name for x in self.object.tags.all()]
         context["back_references"] = Blob.back_references(self.object.uuid)
         context["related_nodes"] = self.object.related_nodes()
@@ -180,6 +181,9 @@ class BookmarkCreateView(LoginRequiredMixin, FormRequestMixin, BookmarkFormValid
         """
         context = super().get_context_data(**kwargs)
         context["action"] = "Create"
+        context["tags"] = []
+        context["back_references"] = []
+        context["related_nodes"] = []
         return context
 
 

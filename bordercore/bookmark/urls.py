@@ -45,7 +45,7 @@ urlpatterns = [
         name="snarf"
     ),
     path(
-        route="overview/",
+        route="",
         view=views.overview,
         name="overview"
     ),

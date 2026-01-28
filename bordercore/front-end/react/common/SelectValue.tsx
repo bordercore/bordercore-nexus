@@ -240,7 +240,7 @@ export const SelectValue = forwardRef<SelectValueHandle, SelectValueProps>(funct
 
   return (
     <div ref={containerRef} className={`select-value-wrapper ${searchIcon ? "has-search" : ""}`}>
-      {searchIcon && <FontAwesomeIcon icon={faSearch} />}
+      {searchIcon && <FontAwesomeIcon icon={faSearch} className="search-icon" />}
       <input
         ref={inputRef}
         type="text"
