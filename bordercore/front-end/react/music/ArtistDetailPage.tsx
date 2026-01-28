@@ -195,11 +195,10 @@ export function ArtistDetailPage({
                 >
                   <img
                     src={`${artistImageUrl}?t=${artistImageKey}`}
-                    className="mw-100"
+                    className="mw-100 h-auto cursor-pointer"
                     alt={artist.name}
                     data-bs-toggle="modal"
                     data-bs-target="#artistImageModal"
-                    className="cursor-pointer"
                   />
                 </div>
               )}

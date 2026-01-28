@@ -268,7 +268,7 @@ export const SelectValue = forwardRef<SelectValueHandle, SelectValueProps>(funct
                   {optionSlot ? (
                     <div
                       data-option-index={option.splitter ? -1 : selectableIndex}
-                      className={isHighlighted ? "highlighted" : ""}
+                      className={[isHighlighted && "highlighted", !option.splitter && "cursor-pointer"].filter(Boolean).join(" ")}
                       onClick={(e) => {
                         if (!option.splitter) {
                           e.preventDefault();
@@ -276,7 +276,6 @@ export const SelectValue = forwardRef<SelectValueHandle, SelectValueProps>(funct
                           handleSelect(option);
                         }
                       }}
-                      className={option.splitter ? "" : "cursor-pointer"}
                     >
                       {optionSlot({ option, search })}
                     </div>
@@ -285,13 +284,12 @@ export const SelectValue = forwardRef<SelectValueHandle, SelectValueProps>(funct
                   ) : (
                     <div
                       data-option-index={selectableIndex}
-                      className={`search-suggestion dropdown-item ${isHighlighted ? "highlighted" : ""}`}
+                      className={`search-suggestion dropdown-item cursor-pointer ${isHighlighted ? "highlighted" : ""}`.trim()}
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
                         handleSelect(option);
                       }}
-                      className="cursor-pointer"
                     >
                       {option.important === 10 && (
                         <FontAwesomeIcon icon={faHeart} className="text-danger me-1" />

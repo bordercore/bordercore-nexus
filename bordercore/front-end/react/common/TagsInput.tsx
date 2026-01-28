@@ -168,7 +168,7 @@ export const TagsInput = forwardRef<TagsInputHandle, TagsInputProps>(function Ta
   const isSearchable = !maxTags || selectedTags.length < maxTags;
 
   return (
-    <div className="tags-input-wrapper w-100">
+    <div className="tags-input-wrapper w-100" id={id}>
       <AsyncCreatableSelect
         ref={selectRef}
         isMulti
@@ -268,7 +268,7 @@ export const TagsInput = forwardRef<TagsInputHandle, TagsInputProps>(function Ta
         }}
       />
       {/* Hidden input for form submission */}
-      <input type="hidden" id={id} name={name} value={tagsCommaSeparated} />
+      <input type="hidden" name={name} value={tagsCommaSeparated} />
     </div>
   );
 });
