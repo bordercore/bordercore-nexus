@@ -82,6 +82,7 @@ function SortableItem({
   return (
     <div
       ref={setNodeRef}
+      {/* must remain inline - dnd-kit requires dynamic transform/transition */}
       style={style}
       className={`slicklist-item ${isDragging ? "dragging" : ""}`}
     >

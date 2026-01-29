@@ -1,219 +1,46 @@
-{% extends "base.html" %}
+{% extends "base_react.html" %}
+{% load vite_tags %}
 
 {% block title %} Preferences {% endblock %}
 
 {% block content %}
 
-    <div id="vue-app" class="row g-0 h-100 mx-2">
+    <div id="react-root"
+        data-form-action="{{ request.path }}"
+        data-csrf-token="{{ csrf_token }}"
+        data-tag-search-url="{% url 'tag:search' %}?doctype=drill&query="
+        data-password-url="{% url 'accounts:password' %}"
+        data-auth-token="{{ user.auth_token|default:'' }}"
+        data-groups="{{ groups }}"
+        data-sidebar-image="{{ object.sidebar_image|default:'' }}"
+        data-background-image="{{ object.background_image|default:'' }}"
+        data-eye-candy="{{ form.eye_candy.value|yesno:'true,false' }}"
+        data-instagram-username="{{ instagram_username|default:'' }}"
+        data-instagram-password="{{ instagram_password|default:'' }}"
+    ></div>
 
-        <div class="col-lg-3 d-flex flex-column">
-            <div class="card-body">
-                <div class="d-flex flex-column mt-3">
-                    <div class="d-flex align-items-center me-2 pt-1">
-                        <div class="circle me-3 mb-2">
-                            <font-awesome-icon icon="info"></font-awesome-icon>
-                        </div>
-                        <h6 class="text-secondary">Preferences change</h6>
-                    </div>
-                    <div>
-                        Change various aspects of your Bordercore experience.
-                    </div>
-                </div>
-            </div>
-        </div>
+    {{ drill_tags_muted|json_script:"initial-tags" }}
 
-        <div class="col-lg-9">
-
-            <div class="card-grid ms-3 me-3">
-
-                <ul class="nav nav-tabs justify-content-center mb-2" id="v-pills-tab" role="tablist" aria-orientation="horizontal">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="#" role="tab" aria-controls="v-pills-main" aria-selected="true">Main</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'accounts:password' %}" role="tab" aria-controls="v-pills-password" aria-selected="false">Password</a>
-                    </li>
-                </ul>
-
-                {% if message %}
-                    <div class="alert alert-success">{{ message }}</div>
-                {% endif %}
-
-                <form enctype="multipart/form-data" id="prefs-form" action="{{ request.path }}" method="post">
-                    {% csrf_token %}
-
-                    <div class="row mb-3">
-                        <label class="fw-bold col-lg-3 col-form-label text-end">API Token</label>
-                        <div class="col-lg-7 align-self-center">{{ user.auth_token|default:"None" }}</div>
-                    </div>
-
-                    {% if user.groups.all %}
-                        <div class="row mb-3">
-                            <label class="fw-bold col-lg-3 col-form-label text-end">Groups</label>
-                            <div class="col-lg-7 align-self-center">{{ groups }}</div>
-                        </div>
-                    {% endif %}
-
-                    {% for field in form %}
-                        {% if field.label == "Background image" %}
-                            <div>
-                                <div class="row mb-3">
-                                    <label class="fw-bold col-lg-3 col-form-label text-end">Background Image</label>
-                                    <div class="col-lg-7">
-                                        <div class="input-group">
-                                            <input type="text" name="background_image" :value=background_image_filename class="form-control" id="id_background_image" autocomplete="off" />
-                                            <span class="input-group-append">
-                                                <label class="btn btn-primary">Choose image
-                                                    <input type="file" name="background_image_file" hidden accept="image/*" @change="onChangeBackgroundImage" />
-                                                </label>
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row form-inline mb-3" v-show="background_image_filename !== ''" v-cloak>
-                                    <div class="col-lg-3 offset-lg-3">
-                                        <div class="form-check d-flex align-items-center ps-0">
-                                            <o-switch v-model="deleteBackground" name="delete_background" :native-value="deleteBackground">
-                                            </o-switch>
-                                            <label class="form-check-label fw-bold ms-2">Delete</label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        {% elif field.label == "Sidebar image" %}
-                            <div>
-                                <div class="row mb-3">
-                                    <label class="fw-bold col-lg-3 col-form-label text-end">Sidebar Image</label>
-                                    <div class="col-lg-7">
-                                        <div class="input-group">
-                                            <input type="text" name="sidebar_image" :value=filename class="form-control" id="id_sidebar_image" autocomplete="off" />
-                                            <span class="input-group-append">
-                                                <label class="btn btn-primary">Choose image
-                                                    <input type="file" name="sidebar_image_file" hidden accept="image/*" @change="onChangeSidebarImage" />
-                                                </label>
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row form-inline mb-3" v-show="filename !== ''" v-cloak>
-                                    <div class="col-lg-3 offset-lg-3">
-                                        <div class="form-check ps-0">
-                                            <o-switch v-model="deleteSidebar" name="delete_sidebar" :native-value="deleteSidebar" />
-                                            <label class="form-check-label fw-bold ms-2">Delete</label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        {% elif field.label == "Drill tags muted" %}
-                            <div class="row mb-3">
-                                <label class="fw-bold col-lg-3 col-form-label text-end">Drill Muted Tags</label>
-                                <div class="col-lg-7 d-flex">
-                                    <tags-input ref="tagsInput" name="drill_tags_muted" search-url="{% url 'tag:search' %}?doctype=drill&query=" @tags-changed="onTagsChanged">
-                                    </tags-input>
-                                </div>
-                            </div>
-                        {% elif field.label == "Eye candy" %}
-                            <div class="row mb-3">
-                                <label class="fw-bold col-lg-3 col-form-label text-end" for="eye_candy">Eye Candy</label>
-                                <div class="col-lg-7 d-flex">
-                                    <o-switch v-model="eyeCandy" name="eye_candy" :native-value="eye_candy" id="eye_candy" />
-                                </div>
-                            </div>
-                        {% else %}
-                            <div class="{% if field.errors %} error{% endif %} row mb-3">
-                                <label class="fw-bold col-lg-3 col-sm-2 col-form-label text-end">{{ field.label }}</label>
-                                <div class="col-lg-7">
-                            {% if field.name == "instagram_credentials" %}
-                                <div class="d-flex">
-                                    <input type="text" name="instagram_username" value="{{ instagram_username }}" class="form-control me-2" placeholder="Username" autocomplete="off">
-                                    <input type="password" name="instagram_password" value="{{ instagram_password }}" class="form-control ms-2" placeholder="Password" autocomplete="off">
-                                </div>
-                            {% else %}
-                                {{ field }}
-                            {% endif %}
-
-                           {% for error in field.errors %}
-                               <span class="form-error">{{ error }}</span>
-                           {% endfor %}
-
-                                </div>
-                            </div>
-
-                        {% endif %}
-
-                    {% endfor %}
-
-                    <div class="row mb-3">
-                        <div class="col-lg-1 offset-lg-3">
-                            <input class="btn btn-primary me-1" type="submit" name="Go" value="Update">
-                        </div>
-                    </div>
-
-                </form>
-
-            </div>
-
-        </div>
-
-    </div>
+    <script id="formFields" type="application/json">
+    [
+        {% for field in form %}
+        {
+            "name": "{{ field.name }}",
+            "label": "{{ field.label }}",
+            "value": "{{ field.value|default:''|escapejs }}",
+            "type": "{% if field.name == 'google_calendar' %}textarea{% else %}text{% endif %}",
+            "widget": "{{ field.field.widget.input_type|default:'text' }}",
+            "required": {% if field.field.required %}true{% else %}false{% endif %},
+            "choices": [{% for choice in field.field.choices %}["{{ choice.0|escapejs }}", "{{ choice.1|escapejs }}"]{% if not forloop.last %}, {% endif %}{% endfor %}],
+            "errors": [{% for error in field.errors %}"{{ error|escapejs }}"{% if not forloop.last %}, {% endif %}{% endfor %}]
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ]
+    </script>
 
 {% endblock %}
 
-{% block javascript %}
-
+{% block javascript_bundles %}
     {{ block.super }}
-
-    {{ drill_tags_muted|json_script:"initial-tags"|default:"" }}
-
-    <script type="text/javascript">
-
-        const app = createApp({
-            components: {
-                FontAwesomeIcon,
-                TagsInput,
-            },
-            setup() {
-                const deleteBackground = ref(false);
-                const filename = ref("{{ object.sidebar_image|default:"" }}");
-                const background_image_filename = ref("{{ object.background_image|default:"" }}");
-                const deleteSidebar = ref(false);
-                const eyeCandy = ref({{ form.eye_candy.value|yesno:"true,false" }});
-
-                useEvent("click", onSelectTheme, {id: "id_theme"});
-
-                function onChangeBackgroundImage(event) {
-                    background_image_filename.value = event.target.files[0].name;
-                };
-
-                function onChangeSidebarImage(event) {
-                    filename.value = event.target.files[0].name;
-                };
-
-                function onSelectTheme(event) {
-                    const theme = event.target.value;
-                    document.documentElement.setAttribute("color-mode", theme);
-                };
-
-                return {
-                    background_image_filename,
-                    deleteBackground,
-                    deleteSidebar,
-                    eyeCandy,
-                    filename,
-                    onChangeBackgroundImage,
-                    onChangeSidebarImage,
-                };
-            },
-        });
-        app.use(Oruga, {
-            iconComponent: "font-awesome-icon",
-            iconPack: "fa",
-            table: {
-                sortIcon: "caret-up",
-            },
-        });
-        app.mount("#vue-app");
-
-    </script>
-
+    {% vite_asset "dist/js/prefs" %}
 {% endblock %}

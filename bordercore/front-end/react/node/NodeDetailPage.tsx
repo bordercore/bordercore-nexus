@@ -753,6 +753,7 @@ export default function NodeDetailPage({
         </nav>
         <span
           className="text-primary me-4 text-nowrap"
+          // must remain inline
           style={{ opacity: editLayout ? 1 : 0 }}
         >
           Edit Layout
