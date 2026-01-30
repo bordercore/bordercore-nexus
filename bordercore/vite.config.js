@@ -79,6 +79,7 @@ module.exports = defineConfig({
         "dist/js/blob-detail": path.resolve(__dirname, "front-end", "entries", "blob-detail.tsx"),
         "dist/js/blob-import": path.resolve(__dirname, "front-end", "entries", "blob-import.tsx"),
         "dist/js/blob-update": path.resolve(__dirname, "front-end", "entries", "blob-update.tsx"),
+        "dist/js/login": path.resolve(__dirname, "front-end", "entries", "login.tsx"),
       },
       output: {
         entryFileNames: "[name]-[hash].js",

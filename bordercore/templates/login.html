@@ -1,82 +1,22 @@
-{% load render_bundle from webpack_loader %}
+{% load vite_tags %}
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html class="h-100" color-mode="dark">
     <head>
         <meta charset="utf-8" />
         <title>Bordercore :: Login</title>
-        {% if debug %}
-            <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}dist/css/bordercore.css" />
-        {% else %}
-            {% render_bundle "dist/css/bordercore" %}
-        {% endif %}
+        {% vite_asset "dist/css/bordercore" %}
     </head>
     <body class="login-body h-100">
-        <div id="vue-app" class="container d-flex justify-content-center align-items-center h-100">
-            <div class="animated-gradient-box jumbotron p-5 text-white bg-dark rounded-3">
-                <div class="position-relative h-100 w-100">
-                    {% if message %}
-                        <p class="alert alert-danger">{{ message }}</p>
-                    {% endif %}
-                    <form action="{% url 'accounts:login' %}" method="post" class="position-absolute w-75 mx-auto">
-                    {% csrf_token %}
-                        <div class="row mb-3 align-items-center">
-                            <label class="form-label col-lg-3 text-end" for="username">Username</label>
-                            <div class="col-lg-9">
-                                <div class="input-group">
-                                    <span class="input-group-text">
-                                        <font-awesome-icon icon="user"></font-awesome-icon>
-                                    </span>
-                                    <input class="form-control" type="text" name="username" value="{% firstof request.POST.username request.COOKIES.bordercore_username %}" id="username" placeholder="Username">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row mb-3 align-items-center">
-                            <label class="form-label col-lg-3 text-end" for="password">Password</label>
-                            <div class="col-lg-9">
-                                <div class="input-group">
-                                    <span class="input-group-text">
-                                        <font-awesome-icon icon="lock"></font-awesome-icon>
-                                    </span>
-                                    <input class="form-control" type="password" name="password" id="password" placeholder="Password">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row mb-4">
-                            <label class="col-form-label col-lg-3"></label>
-                            <div class="col-auto input-group justify-content-end">
-                                <button type="submit" class="btn btn-lg btn-primary">
-                                    Sign in
-                                </button>
-                            </div>
-                        </div>
-                        <hr />
-                        <div id="login-quote" class="row mb-3">
-                            <small>
-                                <em>
-                                    A lone cyberpunk solo navigating the shadowy digital byways against the pulsating neon backdrop of data streams and code, searching for order and meaning.
-                                </em>
-                            </small>
-                        </div>
-                        <input type="hidden" name="next" value="{% firstof next '/' %}" />
-                    </form>
-                </div>
-            </div>
-        </div>
-        {% if debug %}
-            <script type="text/javascript" src="{{ STATIC_URL }}dist/js/javascript-bundle.js"></script>
-        {% else %}
-            {% render_bundle "dist/js/javascript" %}
-        {% endif %}
-        <script>
-
-            const app = createApp({
-                components: {
-                    FontAwesomeIcon,
-                },
-            });
-            app.mount("#vue-app");
-
-        </script>
+        <div
+            id="react-root"
+            class="h-100"
+            data-message="{{ message|default:'' }}"
+            data-initial-username="{% firstof request.POST.username request.COOKIES.bordercore_username '' %}"
+            data-login-url="{% url 'accounts:login' %}"
+            data-next-url="{% firstof next '/' %}"
+            data-csrf-token="{{ csrf_token }}"
+        ></div>
+        {% vite_asset "dist/js/login" %}
     </body>
 </html>
