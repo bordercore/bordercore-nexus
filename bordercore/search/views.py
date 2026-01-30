@@ -461,14 +461,27 @@ class NoteListView(SearchListView):
         Returns:
             Context dictionary with note-specific data:
                 - pinned_notes: List of pinned notes (when no search)
+                - pinned_notes_json: JSON serialized pinned notes for React
                 - paginator: JSON-encoded pagination data
                 - Other fields from parent class
         """
         context = super().get_context_data(**kwargs)
+        context["title"] = "Notes"
 
         if "search" not in self.request.GET:
             user = cast(User, self.request.user)
-            context["pinned_notes"] = user.userprofile.pinned_notes.all().only("file", "name", "uuid").order_by("usernote__sort_order")
+            pinned_notes = user.userprofile.pinned_notes.all().only("file", "name", "uuid").order_by("usernote__sort_order")
+            context["pinned_notes"] = pinned_notes
+            context["pinned_notes_json"] = [
+                {
+                    "uuid": str(note.uuid),
+                    "name": note.name,
+                    "url": reverse("blob:detail", kwargs={"uuid": note.uuid}),
+                }
+                for note in pinned_notes
+            ]
+        else:
+            context["pinned_notes_json"] = []
 
         if "results" in context:
             page = int(self.request.GET.get("page", 1))

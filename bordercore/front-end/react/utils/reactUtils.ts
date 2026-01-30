@@ -11,12 +11,8 @@ export const EventBus = {
 };
 
 // Configure axios to use CSRF token from cookies (matching Vue bundle behavior)
-// NOTE: We're manually setting CSRF headers in doPost, so we should NOT use axios defaults
-// to avoid double-adding the token. Axios defaults would add X-CSRFToken (from xsrfHeaderName),
-// but we're manually adding X-Csrftoken, which could cause issues.
-// Let's disable axios defaults for CSRF to avoid conflicts:
-// axios.defaults.xsrfCookieName = "csrftoken";
-// axios.defaults.xsrfHeaderName = "X-CSRFToken"; // Django's default CSRF header name
+axios.defaults.xsrfCookieName = "csrftoken";
+axios.defaults.xsrfHeaderName = "X-CSRFToken";
 axios.defaults.withCredentials = true; // Ensure cookies are sent
 
 // Helper function to get CSRF token from cookies or BASE_TEMPLATE_DATA
@@ -89,17 +85,21 @@ export function doGet(url: string, callback: (response: any) => void, errorMsg =
 export function doPost(url: string, params: Record<string, any>, callback: (response: any) => void, successMsg = "", errorMsg = ""): void {
   const bodyFormData = new URLSearchParams();
 
+  // Get CSRF token first so we can add it to form data
+  const csrfToken = getCsrfToken();
+
+  // Add CSRF token to form data as fallback (Django accepts both header and form field)
+  if (csrfToken) {
+    bodyFormData.append("csrfmiddlewaretoken", csrfToken);
+  }
+
   for (const [key, value] of Object.entries(params)) {
     bodyFormData.append(key, value as string);
   }
 
-  // Get CSRF token and manually set header
-  // Note: Django accepts both X-CSRFToken and X-Csrftoken (case-insensitive)
-  const csrfToken = getCsrfToken();
-  
   const headers: Record<string, string> = {};
   if (csrfToken) {
-    // Use X-Csrftoken to match ChatBot component convention
+    // Also set header (Django accepts both X-CSRFToken and X-Csrftoken, case-insensitive)
     headers["X-Csrftoken"] = csrfToken;
   }
   
@@ -160,12 +160,17 @@ export function doPost(url: string, params: Record<string, any>, callback: (resp
 export function doPut(url: string, params: Record<string, any>, callback: (response: any) => void, successMsg = "", errorMsg = ""): void {
   const bodyFormData = new URLSearchParams();
 
+  // Get CSRF token first so we can add it to form data
+  const csrfToken = getCsrfToken();
+
+  // Add CSRF token to form data as fallback
+  if (csrfToken) {
+    bodyFormData.append("csrfmiddlewaretoken", csrfToken);
+  }
+
   for (const [key, value] of Object.entries(params)) {
     bodyFormData.append(key, value as string);
   }
-
-  // Get CSRF token and manually set header
-  const csrfToken = getCsrfToken();
 
   const headers: Record<string, string> = {};
   if (csrfToken) {

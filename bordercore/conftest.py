@@ -426,9 +426,10 @@ def browser():
 
 @pytest.fixture()
 def login(auto_login_user, live_server, browser, settings, request):
-
     settings.DEBUG = True
     os.environ["DISABLE_DEBUG_TOOLBAR"] = "1"
+    # Use built Vite assets so React apps load from live_server (no dev server needed)
+    settings.VITE_USE_MANIFEST = True
 
     auto_login_user()
 

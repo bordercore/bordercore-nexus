@@ -98,9 +98,9 @@ function SortableBookmarkRow({
     viewType === "normal";
 
   return (
+    /* must remain inline - dnd-kit requires dynamic transform/transition */
     <tr
       ref={setNodeRef}
-      {/* must remain inline - dnd-kit requires dynamic transform/transition */}
       style={style}
       data-uuid={bookmark.uuid}
       className={`hover-reveal-target bookmark-row ${

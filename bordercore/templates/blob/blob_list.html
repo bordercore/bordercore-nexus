@@ -1,198 +1,26 @@
-{% extends "base.html" %}
+{% extends "base_react.html" %}
+{% load vite_tags %}
 
-{% load dict_get %}
+{% block title %}Recent Blobs{% endblock %}
 
-{% block title %} Recent Blobs {% endblock %}
-
-{% block content %}
-
-    <div id="vue-app">
-
-        <div class="row card-grid">
-            <div class="col-lg-12 d-flex">
-
-                <h1>Recent Blobs</h1>
-
-                <div class="me-2 ms-auto">
-                    <drop-down-menu>
-                        <template #dropdown>
-                            <li>
-                                <a class="dropdown-item" :href="'{% url 'blob:create' %}'">
-                                    <font-awesome-icon icon="plus" class="text-primary me-3"></font-awesome-icon>
-                                    <span>New Blob</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" :href="'{% url 'blob:import' %}'">
-                                    <font-awesome-icon icon="file-import" class="text-primary me-3"></font-awesome-icon>
-                                    <span>Import Blob</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" :href="'{% url 'blob:bookshelf' %}'">
-                                    <font-awesome-icon icon="book-open" class="text-primary me-3"></font-awesome-icon>
-                                    <span>Bookshelf</span>
-                                </a>
-                            </li>
-                        </template>
-                    </drop-down-menu>
-                </div>
-
-            </div>
-        </div>
-
-        <ul class="nav nav-tabs mx-3">
-            <li v-for="nav in visibleNav" class="nav-item px-5" @click="onClickNav(nav)">
-                <a class="nav-link" data-bs-toggle="tab" href="#" v-cloak>
-                    [[ nav ]]
-                    <span class="badge rounded-pill align-middle ms-2" v-html="doctypeCount(nav)"></span>
-                </a>
-            </li>
-        </ul>
-
-        <div class="d-flex flex-row flex-wrap ms-3">
-            <div v-for="blob in recentBlobs.blobList" class="blob-list float-start mb-2 p-3 w-25" @click="onClickBlob(blob.url)" :data-doctype="blob.doctype">
-
-                <div class="d-flex flex-column h-100">
-
-                    <h5 class="text-center mb-2" v-cloak>
-                        <a :href="blob.url" class="text-primary">[[ blob.name ]]</a>
-                    </h5>
-
-                    <a v-if="blob.cover_url" :href="blob.url"><img class="w-100" :src="blob.cover_url" /></a>
-
-                    <div v-if="blob.doctype === 'note' || blob.doctype === 'document'" class="blob-content" v-html="getContent(blob)"></div>
-
-                    <div class="blob-info d-flex justify-content-between mt-auto">
-                        <div class="text-primary me-auto" v-cloak>[[ getDeltaDays(blob.delta_days) ]]</div>
-                        <div class="text-center" v-cloak>
-                            <span v-if="blob.content_size !== '0 Bytes'">Size: <span class="text-primary">[[ blob.content_size ]]</span></span>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-            <h3 v-if="message" class="text-danger mt-3" v-cloak>
-                Elasticsearch Error: [[ message.statusCode ]]
-            </h3>
-
-        </div>
-
-    </div>
-
-
+{% block javascript_bundles %}
+    {{ block.super }}
+    {{ recent_blobs|json_script:"blob-list-data" }}
+    {% vite_asset "dist/js/blob-list" %}
 {% endblock %}
 
-{% block javascript %}
+{% block content %}
+<div id="react-root"
+     data-create-blob-url="{% url 'blob:create' %}"
+     data-import-blob-url="{% url 'blob:import' %}"
+     data-bookshelf-url="{% url 'blob:bookshelf' %}">
+</div>
+{% endblock %}
 
-    {{ block.super }}
+{% block help %}
+    <div class="d-none" id="help-text">
+*Filter:* Use the tabs to filter blobs by type.
 
-    <script type="text/javascript">
-
-        const app = createApp({
-            name: "BlobList",
-            delimiters: ["[[", "]]"],
-            components: {
-                DropDownMenu,
-                FontAwesomeIcon,
-            },
-            setup() {
-                const message = ref("");
-                const navAll = ref([
-                    "All",
-                    "Notes",
-                    "Images",
-                    "Documents",
-                    "Blobs",
-                ]);
-                const navCurrent = ref("All");
-                const recentBlobs = ref(JSON.parse(document.getElementById("recent_blobs").textContent));
-
-                function getContent(blob) {
-                    return markdown.render(blob.content||"");
-                };
-
-                function getNormalizedDoctype(doctype) {
-                    doctype = doctype.toLowerCase();
-
-                    // Remove the trailing 's'
-                    if (doctype !== "All") {
-                        doctype = doctype.substring(0, doctype.length - 1);
-                    }
-                    return doctype;
-                };
-
-                function doctypeCount(doctype) {
-                    return recentBlobs.value.docTypes[getNormalizedDoctype(doctype)];
-                };
-
-                function getDeltaDays(delta) {
-                    if (delta === 0) {
-                        return "Today";
-                    } else {
-                        return delta + " " + pluralize("day", delta) + " ago";
-                    }
-                };
-
-                function onClickBlob(url) {
-                    window.location = url;
-                };
-
-                function onClickNav(doctype) {
-                    navCurrent.value = doctype;
-
-                    // Show everything
-                    let objects = document.querySelectorAll("div.blob-list[data-doctype]");
-                    objects.forEach(function(object) {
-                        object.classList.remove("d-none");
-                    });
-
-                    if (doctype === "All") {
-                        return;
-                    }
-
-                    doctype = getNormalizedDoctype(doctype);
-
-                    objects = document.querySelectorAll(`div.blob-list:not([data-doctype = ${doctype}])`);
-
-                    objects.forEach(function(object) {
-                        object.classList.add("d-none");
-                    });
-                };
-
-                const visibleNav = computed(() => {
-                    return navAll.value.filter( (x) => x === "All" || doctypeCount(x) > 0);
-                });
-
-                onMounted(() => {
-                    document.querySelectorAll(".blob-content :is(h1, h2, h3, h4, h5, h6)").forEach((el) => {
-                        const style = window.getComputedStyle(el, null).getPropertyValue("font-size");
-                        const fontSize = parseFloat(style);
-                        // The 0.35 factor is based on scaling <h6> tags to 4px
-                        el.style.fontSize = 0.35 * fontSize + "px";
-                    });
-
-                    // Select the first tab ("All") by default
-                    document.querySelector(".nav li a").classList.add("active");
-                });
-
-                return {
-                    doctypeCount,
-                    getContent,
-                    getDeltaDays,
-                    getNormalizedDoctype,
-                    message,
-                    onClickBlob,
-                    onClickNav,
-                    navAll,
-                    navCurrent,
-                    recentBlobs,
-                    visibleNav,
-                };
-            },
-        });
-        app.mount("#vue-app");
-
-    </script>
-
+*Create:* Click the menu icon to create a new blob or import one.
+    </div>
 {% endblock %}

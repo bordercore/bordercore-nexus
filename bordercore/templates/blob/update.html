@@ -1,15 +1,89 @@
-{% extends "base.html" %}
+{% extends "base_react.html" %}
+{% load vite_tags %}
 
 {% block extra_head %}
-    <link rel="stylesheet" href="{{ STATIC_URL }}css/easymde.min.css">
+    <style>
+        /* Markdown editor styles - matching Vue v-md-editor */
+        .markdown-editor {
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--surface1);
+            border-radius: 0.25rem;
+            background-color: var(--form-bg);
+            color: var(--text1);
+        }
+        .markdown-editor.drag-over {
+            border-color: var(--form-border-color-hover);
+        }
+        .markdown-editor:focus-within {
+            border-color: var(--form-border-color-hover);
+        }
+        .markdown-toolbar {
+            flex-shrink: 0;
+            background-color: var(--form-bg);
+        }
+        .markdown-toolbar-item {
+            padding: 0.5rem 0.625rem;
+            border: none;
+            background: transparent;
+            color: var(--text1);
+            cursor: pointer;
+        }
+        .markdown-toolbar-item:hover {
+            color: var(--form-bg);
+            background-color: var(--text1);
+        }
+        .toolbar-divider {
+            width: 1px;
+            height: 20px;
+            margin: 0 0.25rem;
+            background: var(--border-color);
+        }
+        .markdown-textarea {
+            border: none;
+            border-radius: 0 0 0.25rem 0.25rem;
+            background-color: var(--form-bg);
+            color: var(--text1);
+            height: 50vh;
+            resize: vertical;
+        }
+        .markdown-textarea:focus {
+            background-color: var(--form-bg-focus);
+            caret-color: var(--text4);
+            color: var(--text4);
+            box-shadow: none;
+        }
+        /* Date input fixed width */
+        .date-input {
+            width: 6rem;
+            flex: none;
+            color-scheme: dark;
+        }
+        /* Icon button styles */
+        .icon-button .icon-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        .icon-button .icon-circle.active {
+            border-color: var(--accent);
+            background: var(--surface2);
+        }
+        .icon-button:hover .icon-circle {
+            border-color: var(--accent);
+        }
+    </style>
 {% endblock %}
 
 {% block title %} {{ title }} {% endblock %}
 
 {% block nav %}
-
     {% if object %}
-
         <div class="d-flex mb-3">
             <div class="me-auto align-self-center">
                 <ul class="breadcrumb mb-0 pt-0 pb-0">
@@ -18,856 +92,71 @@
                 </ul>
             </div>
         </div>
-
     {% endif %}
-
 {% endblock %}
 
 {% block content %}
-
     {% include "common/processing.html" %}
 
-    <div id="vue-app" class="scrollable-panel-container row g-0 h-100 mx-2">
-
-        <div class="scrollable-panel flex-grow-last col-lg-3 d-flex flex-column h-100">
-            <div
-                class="card-body backdrop-filter flex-grow-1"
-            >
-                {% if object and object.sha1sum %}
-                    <div
-                        @drop.prevent="onImageDrop($event)"
-                        @dragover.prevent="isDragOver.coverImage = true"
-                        @dragenter.prevent
-                        @dragleave.prevent="isDragOver.coverImage = false"
-                        @drop="isDragOver.coverImage = false"
-                        class="drag-target"
-                        :class="{'drag-over': isDragOver.coverImage}"
-                    >
-                        <img id="coverImage" src="{{ cover_url }}" width="400" class="mw-100 mb-3" />
-                    </div>
-                {% endif %}
-
-                <div id="blob-options" class="d-flex mt-2">
-                    <icon-button
-                        label="Important"
-                        icon="heart"
-                        :initial-enabled="{% if form.importance.value == 10 %}true{% else %}false{% endif %}"
-                        form-name="importance"
-                        @enable-option="editFormValue"
-                    >
-                    </icon-button>
-                    <icon-button
-                        label="Note"
-                        icon="sticky-note"
-                        :initial-enabled="{% if form.is_note.value == True %}true{% else %}false{% endif %}"
-                        form-name="is_note"
-                        @enable-option="editFormValue"
-                    >
-                    </icon-button>
-                    <icon-button
-                        ref="bookButton"
-                        label="Book"
-                        icon="book"
-                        :initial-enabled="{% if is_book == True %}true{% else %}false{% endif %}"
-                        form-name="is_book"
-                        @enable-option="editFormValue"
-                    >
-                    </icon-button>
-                    <icon-button
-                        label="Math"
-                        icon="square-root-alt"
-                        :initial-enabled="{% if form.math_support.value == True %}true{% else %}false{% endif %}"
-                        form-name="math_support"
-                        @enable-option="editFormValue"
-                    >
-                    </icon-button>
-                </div>
-
-                <hr class="divider w-100" />
-
-                <div class="d-flex flex-column">
-                    <div>
-                        <input type="button" class="btn btn-secondary" value="Cleanup Filename" @click="onClickCleanupFilename" />
-                    </div>
-                    <div class="mt-3">
-                        <input type="button" class="btn btn-secondary" value="Upper Case First" @click="onClickUppercaseFirst" />
-                    </div>
-                    {% if not blob %}
-                    <div class="mt-3">
-                        <select v-model="template" class="form-control" @change="getTemplate">
-                            <option value="-1">Use Template</option>
-                            <option v-for="template in templateList" :value="template.uuid">[[ template.name ]]</option>
-                        </select>
-                    </div>
-                    {% endif %}
-                </div>
-
-                {% if collection_info %}
-
-                    <div>
-                        <br />
-                        Adding to collection <strong><a href="{% url 'collection:detail' collection_info.uuid %}">{{ collection_info.name }}</a></strong>
-                    </div>
-
-                {% endif %}
-
-                {% if linked_blob %}
-                    <div id="linked-blob" class="highlight-box d-flex align-items-center mt-5">
-                        {% if linked_blob.thumbnail_url %}
-                            <img src="{{ linked_blob.thumbnail_url }}" />
-                        {% endif %}
-                        <h5 class="d-flex justify-content-center ms-2 w-100">
-                            <div>
-                            Linking to <a href="{% url 'blob:detail' linked_blob.uuid %}">{{ linked_blob.name|default:"Blob" }}</a>
-                            </div>
-                        </h5>
-                    </div>
-                {% endif %}
-
-                {% if linked_collection %}
-                    <h6 class="my-3">Linking to a collection with these blobs:</h6>
-                    <ul class="list-group">
-                    {% for so in linked_collection.collectionobject_set.all %}
-                        <li class="list-group-item">
-                            <a href="{% url 'blob:detail' so.blob.uuid %}">{{ so.blob.name|default:"No Name" }}</a>
-                        </li>
-                    {% endfor %}
-                    </ul>
-                {% endif %}
-
-            </div>
-
-            <transition name="fade">
-                <div v-show="showRelatedTags">
-                    <related-tags
-                        ref="relatedTags"
-                        class="backdrop-filter"
-                        related-tags-url="{% url 'tag:get_related_tags' %}"
-                        @click-tag="onClickTag"
-                    >
-                    </related-tags>
-                </div>
-            </transition>
-
-        </div>
-
-        <div class="scroll-container col-lg-9 h-100 overflow-auto">
-
-            <div class="card-grid ms-2">
-
-                <ul class="nav nav-tabs justify-content-center mb-2" role="tablist" aria-orientation="horizontal">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="#" role="tab" data-bs-toggle="tab" data-bs-target="#section-main"
-                            aria-controls="v-pills-main" aria-selected="true">
-                            Main
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" role="tab" data-bs-toggle="tab" data-bs-target="#section-file"
-                            aria-controls="v-pills-file" aria-selected="true">
-                            File
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" role="tab" data-bs-toggle="tab" data-bs-target="#section-metadata"
-                            aria-controls="v-pills-metadata" aria-selected="false">
-                            Metadata
-                        </a>
-                    </li>
-                    {% if object.is_pdf %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" role="tab" data-bs-toggle="tab" data-bs-target="#section-cover-image"
-                            aria-controls="v-pills-cover-image" aria-selected="false">
-                            Cover Image
-                        </a>
-                    </li>
-                    {% endif %}
-                </ul>
-
-                {% if form.errors %}
-                    <div class="col-lg-10 offset-lg-2 ps-1">
-                    {% for field,error in form.errors.items %}
-                        <div class="message-error card-body ms-0 p-3">
-                            <strong class="text-white">
-                                Errors
-                            </strong>
-                            {{ error }}
-                        </div>
-                    {% endfor %}
-                    </div>
-                {% endif %}
-
-                <form id="form-blob" action="{{ request.path }}" method="post" enctype="multipart/form-data" class="me-2" v-cloak>
-
-                    <div class="tab-content row pt-4">
-
-                        <div id="section-main" class="tab-pane col-lg-12 fade show active">
-
-                            <input type="hidden" name="importance" value="{% if form.importance.value == 10 %}on{% endif %}" />
-                            <input type="hidden" name="is_note" value="{% if form.is_note.value %}on{% endif %}" />
-                            <input type="hidden" name="is_book" value="{% if is_book %}on{% endif %}" />
-                            <input type="hidden" name="math_support" value="{% if form.math_support.value %}on{% endif %}" />
-
-
-                            <input type="hidden" name="metadata" :value="metadataJson" />
-
-                            {% if linked_blob %}
-                                <input type="hidden" name="linked_blob_uuid" value="{{ linked_blob.uuid }}" />
-                            {% endif %}
-
-                            {% if linked_collection %}
-                                <input type="hidden" name="linked_collection" value="{{ linked_collection.uuid }}" />
-                            {% endif %}
-
-                            {% if collection_info %}
-                                <input type="hidden" name="collection_uuid" value="{{ collection_info.uuid }}" />
-                            {% endif %}
-
-                            {% for field in form.visible_fields %}
-
-                                {% if field.label != "File" and field.label != "Filename" and field.name != "is_note" and field.name != "math_support" and field.name != "importance" %}
-
-                                    <div class="{% if field.errors %}error {% endif %}row mb-3">
-                                        <label class="fw-bold col-lg-2 col-sm-2 col-form-label text-end" for="id_{{ field.name }}">{{ field.label }}</label>
-
-                                    {% if field.label == "Date" %}
-
-                                        <div class="col-lg-8">
-                                            <div class="input-group">
-                                                <div v-if="dateFormat === 'standard'">
-                                                    <Datepicker
-                                                        :typeable="true"
-                                                        v-model="date"
-                                                        input-format="yyyy-MM-dd"
-                                                        name="date"
-                                                        id="id_date"
-                                                        class="form-control"
-                                                    >
-                                                        <span slot="afterDateInput">
-                                                            <div class="input-group-text h-100">
-                                                                <font-awesome-icon icon="calendar-alt"></font-awesome-icon>
-                                                            </div>
-                                                        </span>
-                                                    </Datepicker>
-                                                </div>
-                                                <div v-else>
-                                                    <input id="id_date" v-model="date" class="form-control" type="number" name="date" size="4" placeholder="" autocomplete="off">
-                                                </div>
-                                                <div class="ms-1">
-                                                    <drop-down-menu
-                                                        ref="dropDownMenu"
-                                                        :links="dateFormatMenuItems"
-                                                        :initial-hide="false"
-                                                        class="calendar-date-format-menu d-flex align-items-center justify-content-center"
-                                                    >
-                                                    </drop-down-menu>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                    {% elif field.label == "Content" %}
-
-                                        <div
-                                            class="v-md-editor-tall col-lg-10 col-sm-10 align-self-center"
-                                            :class="{'drag-over': isDragOver.contentFile}"
-                                            @dragover.prevent="isDragOver.contentFile = true"
-                                            @dragleave.prevent="isDragOver.contentFile = false"
-                                            @drop="isDragOver.contentFile = false"
-                                            @drop.prevent="handleLinkDrop"
-                                        >
-                                            <v-md-editor
-                                                ref="mdEditor"
-                                                mode="edit"
-                                                right-toolbar=""
-                                                left-toolbar="undo redo | h bold italic strikethrough quote inlineCode | ul ol table hr | link image code"
-                                                :toolbar="customToolbar"
-                                                v-model="content"
-                                            ></v-md-editor>
-                                        </div>
-
-                                    {% elif field.label == "Tags" %}
-
-                                        <div class="col-lg-10 col-sm-10">
-                                            <tags-input
-                                                ref="tagsInput"
-                                                search-url="{% url 'tag:search' %}?query="
-                                                @tags-changed="onTagsChanged"
-                                                @close="showRelatedTags = false"
-                                                @open="showRelatedTags = true"
-                                            >
-                                            </tags-input>
-                                        </div>
-
-                                    {% else %}
-                                        <div class="col-lg-10 col-sm-10 align-self-center">
-                                            {{ field }}
-                                        </div>
-                                {% endif %}
-
-                                    </div>
-
-                                {% endif %}
-
-                            {% endfor %}
-
-                            <div class="col-lg-10 offset-lg-2 d-flex">
-                                <button type="button" class="btn btn-primary" @click="submitForm">
-                                    Save
-                                </button>
-                            </div>
-
-                        </div>
-
-                        <div id="section-file" class="tab-pane col-lg-12 fade">
-                            <div
-                                class="drag-target d-flex flex-column align-items-center"
-                                @drop.prevent="onFileDrop($event.dataTransfer.files[0])"
-                                @dragover.prevent="isDragOver.fileFile = true"
-                                @dragenter.prevent
-                                @dragleave.prevent="isDragOver.fileFile = false"
-                                @drop="isDragOver.fileFile = false"
-                                :class="{'drag-over': isDragOver.fileFile}"
-                            >
-                                <h3 id="file-upload" class="d-flex flex-column align-items-center">
-
-                                    <div>
-                                        Drag & Drop your file here
-                                    </div>
-                                    <div id="text-divider" class="mt-3">
-                                        OR
-                                    </div>
-                                    <label class="btn btn-primary mt-3">Choose file
-                                        <input type="file" name="file" id="id_file" hidden @change="onFileDrop($event.target.files[0])" />
-                                    </label>
-                                    <div v-if="fileName" id="filename" class="d-flex align-items-center mt-3">
-                                        <div>File:</div>
-                                        <div class="ms-2">
-                                            <input type="text" name="filename" v-model="fileName" class="form-control" id="id_filename" autocomplete="off" />
-                                        </div>
-                                    </div>
-                                </h3>
-                            </div>
-                        </div>
-
-                        <div id="section-metadata" class="tab-pane col-lg-12 fade">
-                            <div>
-                                <div class="row mb-3">
-                                    <div class="col-lg-2 col-sm-2">
-                                        <select-value
-                                            id="metadata_name"
-                                            ref="selectValue"
-                                            search-url="{% url 'blob:metadata_name_search' %}?query="
-                                            place-holder="Name"
-                                            @select="selectMetadataName"
-                                        >
-                                        </select-value>
-                                    </div>
-                                    <div class="col-lg-10 col-sm-10">
-                                        <div class="input-group">
-                                            <input type="text" id="id_value" class="form-control" placeholder="Value" autocomplete="off" @keydown.enter.prevent="addMetadata" />
-                                            <button id="blob-metadata-button" class="btn btn-success" type="button" @click="addMetadata">
-                                                <span>
-                                                    <font-awesome-icon icon="plus" class="metadata-icon" />
-                                                </span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div>
-                                    <div v-for="(m, index) in metadata">
-                                        <div class="row mb-3 ">
-                                            <label class="fw-bold col-lg-2 col-sm-2 col-form-label text-end">[[ m.name ]]</label>
-                                            <div class="col-lg-10 col-sm-10">
-                                                <div class="input-group">
-                                                    <input type="text" v-model="m.value" class="form-control" autocomplete="off" />
-                                                    <button id="blob-metadata-button" class="btn btn-danger btn-remove" type="button" @click="deleteMetadata(index)">
-                                                        <span>
-                                                            <font-awesome-icon icon="times" class="metadata-icon" />
-                                                        </span>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-lg-10 offset-lg-2 d-flex">
-                                <button type="button" class="btn btn-primary" @click="submitForm">
-                                    Save
-                                </button>
-                            </div>
-
-                        </div>
-
-                        <div id="section-cover-image" class="tab-pane col-lg-12 fade">
-                            <div class="d-flex align-items-center">
-                                <div class="w-50">
-                                    Specify the PDF page number from which to extract the cover image. This usually takes a few seconds to refresh.
-                                </div>
-                                <div class="mb-3 d-flex">
-                                    <label class="fw-bold col-form-label text-end">Page Number</label>
-                                    <div class="d-flex ms-3">
-                                        <input type="number" min="1" value="{{ object.data.pdf_page_number|default:1 }}" size="3" class="form-control" autocomplete="off" id="id_page_number" />
-                                        <button type="button" class="btn btn-primary ms-3" @click="handleEditPageNumber">
-                                            Edit
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                </form>
-
-            </div>
-        </div>
-    </div>
-
-{% endblock %}
-
-{% block javascript %}
-
-    {{ block.super }}
+    <div
+        id="react-root"
+        data-blob-uuid="{{ object.uuid|default:'' }}"
+        data-blob-sha1sum="{{ object.sha1sum|default:'' }}"
+        data-is-pdf="{{ object.is_pdf|yesno:'true,false'|default:'false' }}"
+        data-pdf-page-number="{{ object.data.pdf_page_number|default:1 }}"
+        data-cover-url="{{ cover_url|default:'' }}"
+        data-date-format="{{ date_format|default:'standard' }}"
+        data-is-book="{{ is_book|yesno:'true,false'|default:'false' }}"
+        data-csrf-token="{{ csrf_token }}"
+        data-submit-url="{{ request.path }}"
+        data-tag-search-url="{% url 'tag:search' %}?query="
+        data-related-tags-url="{% url 'tag:get_related_tags' %}"
+        data-metadata-name-search-url="{% url 'blob:metadata_name_search' %}?query="
+        data-get-template-url="{% url 'blob:get_template' %}"
+        data-update-cover-image-url="{% url 'blob:update_cover_image' %}"
+        data-update-page-number-url="{% url 'blob:update_page_number' %}"
+        data-parse-date-url="{% url 'blob:parse_date' '666' %}"
+        data-blob-detail-url="{% url 'blob:detail' '00000000-0000-0000-0000-000000000000' %}"
+    ></div>
 
     {{ metadata|json_script:"metadata" }}
-    {{ tags|json_script:"initial-tags"|default:"" }}
+    {{ tags|json_script:"initial-tags" }}
     {{ template_list|json_script:"templateList" }}
-
-    <style>
-        /* Custom icon for inline code toolbar item
-         * Note: This style is placed inline in the template instead of _base.scss
-         * because v-md-editor's CSS loads later (via JavaScript) and overrides
-         * styles from the compiled SCSS. Inline styles have higher specificity
-         * and load after v-md-editor's CSS, ensuring this custom icon displays correctly.
-         */
-        .v-md-icon-inline-code::before {
-            content: "" !important;
-            display: inline-block;
-            width: 14px;
-            height: 14px;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 512'%3E%3Cpath fill='%23ffffff' d='M392.8 1.2c-17-4.9-34.7 5-39.6 22l-128 448c-4.9 17 5 34.7 22 39.6s34.7-5 39.6-22l128-448c4.9-17-5-34.7-22-39.6zm80.6 120.1c-12.5 12.5-12.5 32.8 0 45.3L562.7 256l-89.4 89.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l112-112c12.5-12.5 12.5-32.8 0-45.3l-112-112c-12.5-12.5-32.8-12.5-45.3 0zm-306.7 0c-12.5-12.5-32.8-12.5-45.3 0l-112 112c-12.5 12.5-12.5 32.8 0 45.3l112 112c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L77.3 256l89.4-89.4c12.5-12.5 12.5-32.8 0-45.3z'/%3E%3C/svg%3E");
-            background-position: center;
-            background-repeat: no-repeat;
-            background-size: contain;
-        }
-    </style>
-
-    <script type="text/javascript">
-
-        function formatName(match, capture1, capture2) {
-            return capture2 ? capture1 + capture2.toUpperCase() : match.toUpperCase();
-        }
-
-        const app = createApp({
-            name: "BlobEdit",
-            delimiters: ["[[", "]]"],
-            components: {
-                Datepicker,
-                DropDownMenu,
-                FontAwesomeIcon,
-                IconButton,
-                RelatedTags,
-                SelectValue,
-                TagsInput,
-            },
-            setup() {
-                const content = ref("");
-                {% if date_format == "year" %}
-                const date = ref("{{ form.date.value }}")
-                {% else %}
-                const date = ref(new Date("{{ form.date.value }}"));
-                {% endif %}
-                const dateFormat = ref("{{ date_format|default:'standard' }}");
-                const dateFormatMenuItems = ref([
-                    {
-                        id: uuidv4(),
-                        title: "Date Format: Standard",
-                        format: "standard",
-                        icon: "check",
-                        url: "#",
-                        clickHandler: onClickDateFormatStandard,
-                    },
-                    {
-                        id: uuidv4(),
-                        title: "Date Format: Year",
-                        format: "year",
-                        icon: undefined,
-                        url: "#",
-                        clickHandler: onClickDateFormatYear,
-                    },
-                ]);
-                const fileName = ref("{{ form.filename.value|default:""|escapejs }}");
-                const fileObject = ref();
-                const isDragOver = reactive({content: false, coverImage: false, file: false, note: false});
-                const showRelatedTags = ref(false);
-                const metadata = ref(JSON.parse(document.getElementById("metadata").textContent));
-                const metadataJson = computed(() => {
-                    return JSON.stringify(metadata.value);
-                });
-                const templateList = JSON.parse(document.getElementById("templateList").textContent);
-
-                const bookButton = ref(null);
-                const mdEditor = ref(null);
-                const relatedTags = ref(null);
-                const selectValue = ref(null);
-                const tagsInput = ref(null);
-
-                const template = ref(-1);
-
-                // Custom toolbar configuration for inline code
-                const customToolbar = {
-                    inlineCode: {
-                        title: "Inline Code",
-                        icon: "v-md-icon-inline-code",
-                        action(editor) {
-                            editor.insert((selected) => {
-                                const prefix = "`";
-                                const suffix = "`";
-                                const placeholder = "code";
-                                const content = selected || placeholder;
-
-                                return {
-                                    text: `${prefix}${content}${suffix}`,
-                                    selected: content,
-                                };
-                            });
-                        },
-                    },
-                };
-
-                // Set the initial date format menu values
-                editDateFormatMenu(dateFormat.value);
-
-                function addMetadata(payload) {
-                    nameEl = document.getElementById("metadata_name");
-                    valueEl = document.getElementById("id_value");
-
-                    if (nameEl.value == "" || valueEl.value == "") {
-                        selectValue.value.focus();
-                        return;
-                    }
-
-                    payload = {
-                        name: nameEl.value,
-                        value: valueEl.value,
-                    };
-
-                    nameEl.value = "";
-                    valueEl.value = "";
-
-                    metadata.value.unshift(payload);
-
-                    // Clear the autocomplete and give it focus so that more metadata can be added
-                    selectValue.value.clearOptions();
-                    window.setTimeout(() => {
-                        selectValue.value.focus();
-                    }, 300);
-                };
-
-                function deleteMetadata(index) {
-                    metadata.value.splice(index, 1)
-                };
-
-                function onClickTag(tag) {
-                    tagsInput.value.addTag(tag);
-                };
-
-                function getCoverImage() {
-                    // Add a datetime to bust the cache
-                    const url = new URL(document.getElementById("coverImage").src);
-                    url.searchParams.set("nocache", new Date().getTime());
-                    document.getElementById("coverImage").src = url;
-                };
-
-                function getTemplate() {
-                    doGet(
-                        "{% url 'blob:get_template' %}?uuid=" + template.value,
-                        (response) => {
-                            template.value = "-1";
-
-                            // Reset everything first
-                            tagsInput.value.clearOptions();
-                            mdEditor.value.clear();
-                            bookButton.value.setValue(false);
-
-                            if (response.data.template.tags) {
-                                for (const tag of response.data.template.tags) {
-                                    tagsInput.value.addTag(tag);
-                                }
-                            }
-                            if (response.data.template.content) {
-                                mdEditor.value.insert(() => {
-                                    return {
-                                        text: response.data.template.content,
-                                        selected: "",
-                                    };
-                                });
-                            }
-                            if (response.data.template.is_book) {
-                                bookButton.value.setValue(true);
-                            }
-                        },
-                        "Error getting template",
-                    );
-                };
-
-                function handleLinkDrop(event) {
-                    if (event.target.id === "id_note") {
-                        // The "Note" field
-                        const link = `[link](${event.dataTransfer.getData("URL")})`;
-                        event.target.value = `${event.target.value}${link}`;
-                        const index = event.target.value.indexOf(link);
-                        event.target.setSelectionRange(index + 1, index + 5);
-                    } else {
-                        // Assume it's the "Content" field
-                        mdEditor.value.insert(() => {
-                            return {
-                                text: `[link](${event.dataTransfer.getData("URL")})`,
-                                selected: "link",
-                            };
-                        });
-                    }
-                };
-
-                function onClickCleanupFilename(evt) {
-                    const name = document.getElementById("id_name").value;
-                    if (name) {
-                        const fileNameEl = document.getElementById("id_filename");
-                        const fileName = fileNameEl.value;
-                        const match = /(.*)(\..*?)$/.exec(fileName);
-                        if (match) {
-                            fileNameEl.value = name + match[2];
-                            fileNameEl.classList.add("highlight-changed-field");
-                            setTimeout(() => {
-                                fileNameEl.classList.add("color-transition");
-                            }, 2000);
-                        }
-                    }
-                };
-
-                function onClickDateFormatStandard() {
-                    dateFormat.value = "standard";
-                    date.value = new Date(`${date.value}T00:00`)
-                };
-
-                function onClickDateFormatYear() {
-                    dateFormat.value = "year";
-                    const newDate = new Date(date.value);
-                    date.value = newDate.getFullYear();
-                };
-
-                function onClickUppercaseFirst(evt) {
-                    // Transforms 'JERRELL SCHIVERS' to 'Jerrell Schivers'
-                    const nameEl = document.getElementById("id_value");
-                    nameEl.value = nameEl.value.toLowerCase().replace(/(\s+)(.)|^(.)/g, formatName);
-                    nameEl.classList.add("highlight-changed-field");
-                    setTimeout(() => {
-                        nameEl.classList.add("color-transition");
-                    }, 2000);
-                };
-
-                function onFileDrop(fileObjectParam) {
-                    if (fileObjectParam) {
-                        fileObject.value = fileObjectParam;
-                        fileName.value = fileObject.value.name;
-                    }
-                };
-
-                function onImageDrop(evt) {
-                    const image = evt.dataTransfer.files[0];
-                    if (image.type.indexOf("image/") >= 0) {
-                        uploadCoverImage(image);
-                    }
-                };
-
-                function onPasteDate(evt) {
-                    const clipText = encodeURIComponent(evt.clipboardData.getData("Text").trim());
-
-                    axios.get("{% url "blob:parse_date" 666 %}".replace(/666/, clipText))
-                         .then(response => {
-                             const payLoad = response.data;
-                             if (payLoad.output_date == "") {
-                                 const errorString = "Invalid date format";
-                                 console.error(errorString + " :" + payLoad.error);
-                                 EventBus.$emit(
-                                     "toast",
-                                     {
-                                         "title": "Error",
-                                         "body": errorString,
-                                         "variant": "danger"
-                                     },
-                                 );
-                             } else {
-                                 date.value = new Date(payLoad.output_date);
-                             }
-                         })
-                };
-
-                function onTagsChanged(tags) {
-                    relatedTags.value.setTags(tags);
-                };
-
-                function handleEditPageNumber() {
-                    const pageNumber = document.getElementById("id_page_number").value;
-
-                    doPost(
-                        "{% url 'blob:update_page_number' %}",
-                        {
-                            "blob_uuid": "{{ object.uuid }}",
-                            "page_number": pageNumber,
-                        },
-                        (response) => {
-                            // Try four times to update the cover image, since
-                            //  it could take some time for the AWS lambda to run
-                            for (const timeout of [1000, 3000, 6000, 9000]) {
-                                setTimeout(() => {
-                                    getCoverImage();
-                                }, timeout);
-                            }
-                        },
-                    );
-                };
-
-                function selectMetadataName() {
-                    // After a metadata name is selected, focus the value field
-                    nextTick(() => {
-                        document.getElementById("id_value").focus();
-                    });
-                };
-
-                function submitForm() {
-
-                    const modal = new Modal("#modalProcessing");
-                    modal.show();
-
-                    // Add the 'name' attribute and contents to the internal
-                    // textarea used by v-md-editor, which will then
-                    // be submitted with the rest of the form.
-                    const textarea = document.querySelector(".v-md-textarea-editor textarea");
-                    textarea.setAttribute("name", "content");
-                    textarea.setAttribute("value", content.value);
-
-                    const formElement = document.getElementById("form-blob");
-                    const formData = new FormData(formElement);
-                    if (fileObject.value) {
-                        formData.append("file", fileObject.value);
-                        formData.append("file_modified", Math.round(fileObject.value.lastModified/1000));
-                    }
-                    axios.post("{{ request.path }}", formData, {
-                        headers: {
-                            "Content-Type": "multipart/form-data",
-                        },
-                    }).then((response) => {
-                        window.location = "{% url 'blob:detail' '00000000-0000-0000-0000-000000000000' %}".replace("00000000-0000-0000-0000-000000000000", response.data.uuid);
-                    }).catch( (error) => {
-                        setTimeout(() => {
-                            modal.hide();
-                        }, 500);
-                        const errors = [];
-                        for (var key in error.response.data) {
-                            errors.push(error.response.data[key][0]);
-                        }
-                        EventBus.$emit(
-                            "toast",
-                            {
-                                "body": errors.join("<br />"),
-                                "variant": "danger",
-                                "autoHide": false,
-                            },
-                        );
-                    });
-                };
-
-                function editDateFormatMenu(dateFormat) {
-                    dateFormatMenuItems.value.forEach(function (item) {
-                        item.icon = item.format === dateFormat ? "check" : undefined;
-                    });
-                };
-
-                function editFormValue(property, value) {
-                    if (property === "important") {
-                        document.getElementById("form-blob").elements[property].value = 10;
-                    } else {
-                        // Simulate a form checkbox value
-                        document.getElementById("form-blob").elements[property].value = value ? "on" : "";
-                    }
-                };
-
-                function uploadCoverImage(image) {
-                    const formData = new FormData();
-                    formData.append("blob_uuid", "{{ object.uuid }}");
-                    formData.append("image", image);
-
-                    axios.post("{% url "blob:update_cover_image" %}", formData, {
-                        headers: {
-                            "Content-Type": "multipart/form-data"
-                        }
-                    }).then(response => {
-                        const coverImage = document.getElementById("coverImage");
-                        coverImage.src = coverImage.src + "?" + new Date().getTime();
-                    });
-                };
-
-                watch(dateFormat, (newFormat) => {
-                    editDateFormatMenu(newFormat);
-                })
-
-                useEvent("paste", onPasteDate, {id: "id_date"});
-
-                onMounted(() => {
-                    mdEditor.value.insert((selected) => {
-                        return {
-                            text: "{{ form.content.value|default:""|escapejs }}",
-                            selected: "",
-                        };
-                    });
-                });
-
-                return {
-                    addMetadata,
-                    bookButton,
-                    content,
-                    customToolbar,
-                    date,
-                    dateFormat,
-                    dateFormatMenuItems,
-                    deleteMetadata,
-                    fileName,
-                    fileObject,
-                    handleLinkDrop,
-                    getCoverImage,
-                    getTemplate,
-                    isDragOver,
-                    mdEditor,
-                    metadata,
-                    metadataJson,
-                    onClickCleanupFilename,
-                    onClickDateFormatStandard,
-                    onClickDateFormatYear,
-                    onClickUppercaseFirst,
-                    onClickTag,
-                    onFileDrop,
-                    onImageDrop,
-                    onPasteDate,
-                    onTagsChanged,
-                    handleEditPageNumber,
-                    selectMetadataName,
-                    selectValue,
-                    showRelatedTags,
-                    submitForm,
-                    editFormValue,
-                    relatedTags,
-                    tagsInput,
-                    template,
-                    templateList,
-                    uploadCoverImage,
-                };
-            },
-        });
-        app.use(VueMarkdownEditor);
-        app.mount("#vue-app");
-
+    {% if linked_blob %}
+    {{ linked_blob|json_script:"linked-blob" }}
+    {% endif %}
+    {% if linked_collection %}
+    <script type="application/json" id="linked-collection">
+    {
+        "uuid": "{{ linked_collection.uuid }}",
+        "blobs": [
+            {% for so in linked_collection.collectionobject_set.all %}
+            {"uuid": "{{ so.blob.uuid }}", "name": "{{ so.blob.name|default:'No Name'|escapejs }}"}{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ]
+    }
     </script>
+    {% endif %}
+    {% if collection_info %}
+    <script type="application/json" id="collection-info">
+    {"uuid": "{{ collection_info.uuid }}", "name": "{{ collection_info.name|escapejs }}"}
+    </script>
+    {% endif %}
+    <script type="application/json" id="form-data">
+    {
+        "name": "{{ form.name.value|default:''|escapejs }}",
+        "date": "{{ form.date.value|default:''|escapejs }}",
+        "content": "{{ form.content.value|default:''|escapejs }}",
+        "note": "{{ form.note.value|default:''|escapejs }}",
+        "filename": "{{ form.filename.value|default:''|escapejs }}",
+        "importance": {% if form.importance.value == 10 %}true{% else %}false{% endif %},
+        "is_note": {% if form.is_note.value %}true{% else %}false{% endif %},
+        "math_support": {% if form.math_support.value %}true{% else %}false{% endif %}
+    }
+    </script>
+{% endblock %}
 
+{% block javascript_bundles %}
+    {{ block.super }}
+    {% vite_asset "dist/js/blob-update" %}
 {% endblock %}

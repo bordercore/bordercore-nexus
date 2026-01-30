@@ -3,7 +3,8 @@
 // =============================================================================
 // File viewer, tree menu, file upload, slideshow, and notes
 
-.blob-list {
+// Blob list grid (used for blob picker/selection views)
+.blob-list-grid {
   display: grid;
   gap: 1rem;
   grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
@@ -26,6 +27,7 @@
   }
 }
 
+// Base blob content (less specific; must come before .blob-list .blob-content)
 .blob-content {
   padding: 1.5rem;
   background-color: var(--surface2);
@@ -36,6 +38,59 @@
     background-color: var(--surface1);
     border-radius: var(--border-radius1);
     overflow-x: auto;
+  }
+}
+
+// Note content base (less specific p; must come before .blob-list .blob-content p)
+.note-content {
+  padding: 1.5rem;
+  background-color: var(--surface2);
+  border-radius: var(--border-radius1);
+
+  h1, h2, h3, h4, h5, h6 {
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  p {
+    margin-bottom: 1rem;
+  }
+
+  code {
+    padding: 0.125rem 0.25rem;
+    background-color: var(--surface1);
+    border-radius: 0.25rem;
+  }
+
+  blockquote {
+    padding-left: 1rem;
+    border-left: 4px solid var(--border-color);
+    margin: 1rem 0;
+    color: var(--text2);
+  }
+}
+
+// Blob list cards (used on Recent Blobs page)
+.blob-list {
+  cursor: pointer;
+
+  .blob-content {
+    overflow: hidden;
+    height: 18.75rem;
+    font-size: 0.25rem;
+    line-height: 1rem;
+
+    p {
+      margin-bottom: 0.5rem;
+    }
+  }
+
+  .blob-info {
+    font-size: 0.6rem;
+  }
+
+  &:hover {
+    background-color: var(--hover-bg);
   }
 }
 
@@ -138,12 +193,58 @@
   }
 }
 
+// Blob detail page
+$blob-detail-gutter: 1rem;
+
+.blob-detail-page {
+  .col-lg-3 {
+    .card,
+    .card-body {
+      position: relative;
+    }
+
+    .card {
+      margin-bottom: $blob-detail-gutter;
+    }
+  }
+
+  .blob-metadata-card {
+    z-index: 100;
+  }
+
+  .blob-detail-dropdown {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+  }
+
+  .collections-dropdown {
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+
+  .hover-reveal-target:hover .collections-dropdown {
+    opacity: 1;
+  }
+}
+
+.blob-detail-cover-image,
+.blob-detail-cover-image-with-content {
+  img.blob-detail-cover-img-hidden {
+    display: none;
+  }
+}
+
 .blob-detail-cover-image {
-  width: 100%;
-  max-height: 30rem;
   margin-bottom: 1rem;
-  border-radius: var(--border-radius1);
-  object-fit: cover;
+  text-align: center;
+
+  img {
+    max-width: 100%;
+    max-height: 85vh;
+    border-radius: var(--border-radius1);
+    object-fit: contain;
+  }
 }
 
 .recent-blobs {
@@ -172,6 +273,14 @@
 }
 
 // Notes
+$note-list-gutter: 1rem;
+
+.note-list-page {
+  .col-lg-9 {
+    padding-left: $note-list-gutter;
+  }
+}
+
 .note-search-result {
   padding: 1rem;
   border-bottom: 1px solid var(--border-color);
@@ -183,38 +292,14 @@
   }
 }
 
-.note-content {
-  padding: 1.5rem;
-  background-color: var(--surface2);
-  border-radius: var(--border-radius1);
-
-  h1, h2, h3, h4, h5, h6 {
-    margin-top: 1.5rem;
-    margin-bottom: 0.75rem;
-  }
-
-  p {
-    margin-bottom: 1rem;
-  }
-
-  code {
-    padding: 0.125rem 0.25rem;
-    background-color: var(--surface1);
-    border-radius: 0.25rem;
-  }
-
-  blockquote {
-    padding-left: 1rem;
-    border-left: 4px solid var(--border-color);
-    margin: 1rem 0;
-    color: var(--text2);
-  }
+.note-content-truncated {
+  overflow: hidden;
+  max-height: 31.25rem; // 500px
 }
 
 .expanded-note {
+  max-height: none;
   padding: 1.5rem;
-  border: 1px solid var(--border-color);
   margin-top: 1rem;
   background-color: var(--surface2);
-  border-radius: var(--border-radius1);
 }

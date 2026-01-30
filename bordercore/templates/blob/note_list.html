@@ -1,139 +1,19 @@
-{% extends "base.html" %}
+{% extends "base_react.html" %}
+{% load vite_tags %}
 
 {% block title %} Notes {% endblock %}
 
 {% block content %}
 
-    <div id="vue-app" class="scrollable-panel-container row g-0 mx-2">
-
-        <div class="col-lg-3 h-100">
-
-            <div v-if="pinnedNotes.length > 0" class="d-flex flex-column h-100">
-                <card title="Pinned Notes" class="flex-grow-1">
-
-                    <template v-slot:title-slot>
-                        <div class="h3">
-                            Pinned Notes
-                        </div>
-                    </template>
-
-                    <template v-slot:content>
-                        <ul class="list-group list-group-flush interior-borders">
-                            <vue-draggable
-                                v-model="pinnedNotes"
-                                :distance="3"
-                                ghost-class="slicklist-helper"
-                                @end="handleSort"
-                                tag="div"
-                            >
-                                <div
-                                    v-for="(element, index) in pinnedNotes"
-                                    :key="element.uuid"
-                                    class="slicklist-item"
-                                >
-                                    <div class="slicklist-list-item-inner">
-                                        <li class="list-group-item" :data-uuid="element.uuid" :key="element.uuid">
-                                            <a :href="element.url">[[ element.name ]]</a>
-                                        </li>
-                                    </div>
-                                </div>
-                            </vue-draggable>
-                        </ul>
-                        <div v-if="pinnedNotes.length === 0">
-                            No notes found to pin.
-                        </div>
-                    </template>
-
-                </card>
-            </div>
-
-            <div v-cloak>
-                <div v-if="'{{ request.GET.search }}'" class="scrollable-panel-scrollbar-hover card-body d-flex flex-column h-100">
-                    <div class="h3">
-                        {{ count }} Note{{ count|pluralize:"s" }} Found
-                    </div>
-                    <div class="d-flex flex-column">
-                        <ul class="note-search-result list-unstyled" v-cloak>
-                            <li v-for="note in results" class="px-2 py-3 d-flex flex-column" :class="{'selected': note.source.uuid === selectedNoteUuid}" @click="selectedNoteUuid = note.source.uuid">
-                                <h4 class="text-primary fw-bold">
-                                    [[ note.source.name || "Note" ]]
-                                </h4>
-                                <div class="search-result-date mb-1">
-                                    [[ note.source.date ]]
-                                </div>
-                                <div class="position-relative">
-                                    <div v-html="getContent(note.source.contents, 400)" class="fader note-content">
-                                    </div>
-                                </div>
-                                <div class="mt-2">
-                                    <span v-for="tag in note.source.tags" :key="tag" class="me-2">
-                                        <a class="tag" :href="'{% url 'search:notes' %}?tagsearch=' + tag">[[ tag ]]</a>
-                                    </span>
-                                </div>
-                            </li>
-                        </ul>
-                        <div class="d-flex justify-content-center">
-                            <pagination :paginator="JSON.parse('{{ paginator|escapejs }}')">
-                            </pagination>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-9 h-100 scrollable-panel d-flex flex-column">
-
-            <div v-for="(note, index) in results" :class="{'d-none': isSearchResult && note.source.uuid !== selectedNoteUuid}" class="position-relative">
-                <card :title="note.source.name" class="me-0">
-                    <template v-slot:title-slot>
-                        <div v-if="index === 0" class="position-absolute end-0" v-cloak>
-                            <a class="btn btn-primary ms-2 me-4" href="{% url 'blob:create' %}?is_note=true">New note</a>
-                        </div>
-
-                        <h2>
-                            <a :href="'{% url 'blob:detail' '00000000-0000-0000-0000-000000000000' %}'.replace(/00000000-0000-0000-0000-000000000000/, note.source.uuid)">
-                                [[ note.source.name ]]
-                            </a>
-                        </h2>
-                    </template>
-                    <template v-slot:content>
-                        <div class="blob-content table-borders">
-
-                            <h6 class="text-primary" v-html="note.source.date">
-                            </h6>
-
-                            <div>
-                                <div class="position-relative">
-                                    <div :class="{ 'note-content-truncated': !isSearchResult, 'fader': !note.isExpanded && !isSearchResult, 'expanded-note': note.isExpanded }" class="mt-3" v-html="getContent(note.source.contents)" ref="noteElements">
-                                    </div>
-                                </div>
-                                <div v-if="!note.isExpanded" class="text-center" ref="expander">
-                                    <a class="text-primary" href="#" @click="note.isExpanded = true">—Expand—</a>
-                                </div>
-                            </div>
-                            <span v-for="tag in note.source.tags" class="me-2">
-                                <a class="tag" :href="'{% url 'search:notes' %}?tagsearch=' + tag">[[ tag ]]</a>
-                            </span>
-                        </div>
-
-                    </template>
-                </card>
-            </div>
-
-            <div v-if="results.length === 0" class="card-grid" v-cloak>
-                <search-no-result>
-                    <template v-slot:message>
-                        No notes found matching search criteria.
-                    </template>
-                </search-no-result>
-
-                <a class="btn btn-primary ms-2 me-4 float-end me-3" href="{% url 'blob:create' %}?is_note=true">Add note</a>
-            </div>
-
-        </div>
-
+    <div id="react-root"
+         data-count="{{ count|default:0 }}"
+         data-is-search-result="{% if request.GET.search %}true{% else %}false{% endif %}"
+         data-notes-search-url="{% url 'search:notes' %}"
+         data-create-note-url="{% url 'blob:create' %}?is_note=true"
+         data-note-detail-url="{% url 'blob:detail' '00000000-0000-0000-0000-000000000000' %}"
+         data-sort-pinned-notes-url="{% url 'accounts:sort_pinned_notes' %}"
+         class="scrollable-panel-container row g-0 mx-2">
     </div>
-
 
 {% endblock %}
 
@@ -142,13 +22,14 @@
     {{ block.super }}
 
     {{ results|json_script:"results" }}
+    {{ pinned_notes_json|json_script:"pinned-notes" }}
+    {{ paginator|json_script:"paginator" }}
 
     <script type="text/javascript" id="MathJax-script" async
         src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
     </script>
 
     <script type="text/javascript">
-
         window.MathJax = {
             tex: {
                 inlineMath: [["\\(", "\\)"], ["$$", "$$"]],
@@ -157,103 +38,11 @@
                 processEnvironments: true,
             },
         };
-
-        // Should match CSS class "note-content"
-        const NOTE_MAX_HEIGHT = 500;
-
-        const app = createApp({
-            name: "NotesList",
-            delimiters: ["[[", "]]"],
-            components: {
-                Card,
-                FontAwesomeIcon,
-                Pagination,
-                SearchNoResult,
-                "vue-draggable": VueDraggable,
-            },
-            setup() {
-                const isSearchResult = {% if request.GET.search %}true{% else %}false{% endif %};
-                const results = ref(JSON.parse(document.getElementById("results").textContent));
-                const selectedNoteUuid = ref("{{ results.0.source.uuid }}");
-                const pinnedNotes = ref([
-                    {% for note in pinned_notes %}
-                    {
-                        url: "{% url 'blob:detail' '00000000-0000-0000-0000-000000000000' %}".replace(/00000000-0000-0000-0000-000000000000/, "{{ note.uuid }}"),
-                        uuid: "{{ note.uuid }}",
-                        name: "{{ note.name }}",
-                    },
-                    {% endfor %}
-                ]);
-
-                const expander = ref(null);
-                const noteElements = ref(null);
-
-                function handleSort(event) {
-                    if (event.oldIndex === event.newIndex) {
-                        return;
-                    }
-                    // v-model has already updated the array, so the dragged item is now at newIndex
-                    const noteUuid = pinnedNotes.value[event.newIndex].uuid;
-
-                    // The backend expects the ordering to begin with 1, not 0, so add 1.
-                    const newPosition = event.newIndex + 1;
-
-                    const bodyFormData = new URLSearchParams();
-                    bodyFormData.append("note_uuid", noteUuid);
-                    bodyFormData.append("new_position", newPosition);
-
-                    axios("{% url "accounts:sort_pinned_notes" %}", {
-                        method: "POST",
-                        data: bodyFormData,
-                    }).catch((error) => {
-                        EventBus.$emit(
-                            "toast",
-                            {
-                                "title": "Error",
-                                "body": error,
-                                "variant": "danger",
-                                "autoHide": false,
-                            },
-                        );
-                        console.error("Error:", error);
-                    });
-                };
-
-                function getContent(content, limit) {
-                    if (!content) {
-                        return "";
-                    }
-                    if (limit) {
-                        content = content.substring(0, 400) || "";
-                    }
-                    return markdown.render(content);
-                };
-
-                onMounted(() => {
-                    if (!noteElements.value) {
-                        return;
-                    }
-                    for (const [index, element] of noteElements.value.entries()) {
-                        if (element.clientHeight < NOTE_MAX_HEIGHT || isSearchResult) {
-                            results.value[index].isExpanded = true;
-                        }
-                    }
-                });
-
-                return {
-                    expander,
-                    getContent,
-                    handleSort,
-                    isSearchResult,
-                    noteElements,
-                    pinnedNotes,
-                    results,
-                    selectedNoteUuid,
-                };
-            },
-        });
-        app.mount("#vue-app");
-
     </script>
 
+{% endblock %}
+
+{% block javascript_bundles %}
+    {{ block.super }}
+    {% vite_asset "dist/js/note-list" %}
 {% endblock %}

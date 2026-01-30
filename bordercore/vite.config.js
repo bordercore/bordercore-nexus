@@ -73,6 +73,12 @@ module.exports = defineConfig({
         "dist/js/bookmark-form": path.resolve(__dirname, "front-end", "entries", "bookmark-form.tsx"),
         "dist/js/prefs": path.resolve(__dirname, "front-end", "entries", "prefs.tsx"),
         "dist/js/prefs-password": path.resolve(__dirname, "front-end", "entries", "prefs-password.tsx"),
+        "dist/js/blob-list": path.resolve(__dirname, "front-end", "entries", "blob-list.tsx"),
+        "dist/js/bookshelf": path.resolve(__dirname, "front-end", "entries", "bookshelf.tsx"),
+        "dist/js/note-list": path.resolve(__dirname, "front-end", "entries", "note-list.tsx"),
+        "dist/js/blob-detail": path.resolve(__dirname, "front-end", "entries", "blob-detail.tsx"),
+        "dist/js/blob-import": path.resolve(__dirname, "front-end", "entries", "blob-import.tsx"),
+        "dist/js/blob-update": path.resolve(__dirname, "front-end", "entries", "blob-update.tsx"),
       },
       output: {
         entryFileNames: "[name]-[hash].js",

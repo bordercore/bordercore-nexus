@@ -329,20 +329,18 @@ def get_books(user: User, tag: str | None = None, search: str | None = None) -> 
     if search:
         search_object["query"]["bool"]["must"].append(
             {
-                "multi_match": {
-                    "query": search,
-                    "fields": [
-                        "metadata.*",
-                        "name",
-                        "title",
+                "bool": {
+                    "should": [
+                        {"wildcard": {"name": {"value": f"*{search.lower()}*"}}},
+                        {"wildcard": {"title": {"value": f"*{search.lower()}*"}}},
                     ],
-                    "operator": "OR",
+                    "minimum_should_match": 1
                 }
             }
         )
         search_object["size"] = 1000
 
-    return es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
+    return es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)
 
 
 def get_blob_sizes(blob_list: QuerySet[Blob]) -> dict[str, dict[str, Any]]:

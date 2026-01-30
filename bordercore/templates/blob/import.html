@@ -1,140 +1,23 @@
-{% extends "base.html" %}
+{% extends "base_react.html" %}
+{% load vite_tags %}
 
 {% block title %} Blob :: Import {% endblock %}
 
 {% block content %}
 
-    <div class="row g-0 h-100 mx-2">
+    <div
+        id="react-root"
+        data-static-url="{{ STATIC_URL }}"
+        data-import-url="{% url 'blob:import' %}"
+        data-csrf-token="{{ csrf_token }}"
+        data-initial-url="{{ request.POST.url }}"
+    ></div>
 
-        <div class="col-lg-3 d-flex flex-column">
-
-            <div class="left-panel-gradient card-body d-flex flex-column backdrop-filter">
-                <h5>
-                    Import blobs from external sites
-                </h5>
-                <hr class="divider" />
-                <div>
-                    Sites supported
-                    <ul class="list-unstyled p-2">
-                        <li class="d-flex align-items-center p-2">
-                            <div class="sites-supported-icon-container">
-                                <img src="{{ STATIC_URL }}img/instagram.ico" width="38" height="38" />
-                            </div>
-                            <strong class="ms-2">Instagram</strong>
-                        </li>
-                        <li class="d-flex align-items-center p-2">
-                            <div class="sites-supported-icon-container">
-                                <img src="{{ STATIC_URL }}img/artstation.ico" width="38" height="38" />
-                            </div>
-                            <strong class="ms-2">Artstation</strong>
-                        </li>
-                        <li class="d-flex align-items-start p-2">
-                            <div class="sites-supported-icon-container">
-                                <img src="{{ STATIC_URL }}img/nytimes.ico" width="38" height="38" />
-                            </div>
-                            <div class="d-flex flex-column ms-2">
-                                <strong>New York Times</strong>
-                                <div class="text-small text-secondary">metadata only</div>
-                            </div>
-                        </li>
-                        <li class="d-flex align-items-center p-2">
-                            <div class="sites-supported-icon-container">
-                                <svg width="38" height="38" viewBox="0 0 24 24" fill="#6c757d" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
-                                </svg>
-                            </div>
-                            <strong class="ms-2">Generic Article</strong>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-
-        </div>
-
-        <div class="col-lg-9" id="vue-app">
-
-            {% for message in messages %}
-                <div class="message-{{ message.tags }} card-body ms-3 p-3">
-                    <font-awesome-icon class="me-1" icon="exclamation-triangle"></font-awesome-icon>
-                    {{ message }}
-                </div>
-            {% endfor %}
-
-            <div class="card-body backdrop-filter">
-
-                <div class="d-flex align-items-center">
-                    <div id="blob-import-icon" class="me-3">
-                        <img height="80" width="80" src="{{ STATIC_URL }}img/website.jpg" />
-                    </div>
-
-                    <div class="w-100">
-
-                        <form @submit.prevent id="import-blob-form" method="post" action="{% url 'blob:import' %}">
-                                {% csrf_token %}
-
-                            <div class="row">
-                                <h3 class="col-lg-12 mb-4">
-                                    Enter the url representing the blob you'd like to import.
-                                </h3>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-lg-12">
-                                    <input class="form-control" name="url" value="{{ request.POST.url }}" type="text" placeholder="Url" autocomplete="off" />
-                                    <div class="d-flex mt-3">
-                                        <button type="submit" class="btn btn-primary" @click="checkEmpty()">Import</button>
-                                        <div :class="{'d-none': !isProcessing}" class="spinner-border ms-3 text-secondary" role="status">
-                                            <span class="sr-only">Loading...</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </form>
-
-                    </div>
-
-            </div>
-
-        </div>
-
-    </div>
+    <script id="messages-data" type="application/json">{{ json_messages|safe }}</script>
 
 {% endblock %}
 
-{% block javascript %}
-
+{% block javascript_bundles %}
     {{ block.super }}
-
-    <script type="text/javascript" charset="utf-8">
-
-        const app = createApp({
-            name: "RightPanel",
-            components: {
-                FontAwesomeIcon,
-            },
-            setup() {
-                const isProcessing = ref(false);
-
-                function checkEmpty() {
-                    const url = document.getElementsByName("url")[0].value;
-                    if (url !== "") {
-                        isProcessing.value = true;
-                        document.getElementById("import-blob-form").submit();
-                    };
-                };
-
-                onMounted(() => {
-                    document.getElementsByName("url")[0].focus();
-                });
-
-                return {
-                    checkEmpty,
-                    isProcessing,
-                };
-            },
-        });
-        app.mount("#vue-app");
-
-    </script>
-
+    {% vite_asset "dist/js/blob-import" %}
 {% endblock %}

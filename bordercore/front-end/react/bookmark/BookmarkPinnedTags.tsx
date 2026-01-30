@@ -76,9 +76,9 @@ function SortableTagItem({
   };
 
   return (
+    /* must remain inline - dnd-kit requires dynamic transform/transition */
     <div
       ref={setNodeRef}
-      {/* must remain inline - dnd-kit requires dynamic transform/transition */}
       style={style}
       className={`slicklist-item ${isUntagged ? "no-drag" : ""}`}
     >

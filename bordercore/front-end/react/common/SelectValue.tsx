@@ -34,6 +34,7 @@ export interface SelectValueHandle {
   focus: () => void;
   search: string;
   setValue: (val: string) => void;
+  clear: () => void;
 }
 
 export const SelectValue = forwardRef<SelectValueHandle, SelectValueProps>(function SelectValue({
@@ -146,7 +147,8 @@ export const SelectValue = forwardRef<SelectValueHandle, SelectValueProps>(funct
   const handleSelect = (option: Option) => {
     setValue(option);
     setIsOpen(false);
-    setSearch("");
+    // Show the selected value in the input
+    setSearch(option[label] || option.name || "");
     setHighlightedIndex(-1);
     onSelect?.(option);
     // Only call onSearch for term searches (when there's no link)
@@ -162,6 +164,10 @@ export const SelectValue = forwardRef<SelectValueHandle, SelectValueProps>(funct
     search: search,
     setValue: (val: string) => {
       setValue({ [label]: val });
+    },
+    clear: () => {
+      setValue(null);
+      setSearch("");
     },
   }));
 
@@ -306,7 +312,7 @@ export const SelectValue = forwardRef<SelectValueHandle, SelectValueProps>(funct
           </div>
         );
       })()}
-      {id && <input id={id} type="hidden" name="search" value={value?.[label] || search} />}
+      {id && <input id={id} type="hidden" name="search" value={value?.[label] || value?.name || search} />}
     </div>
   );
 });

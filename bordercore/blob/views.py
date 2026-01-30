@@ -243,6 +243,9 @@ class BlobCreateView(LoginRequiredMixin, FormRequestMixin, CreateView, FormValid
         if "metadata" not in context:
             context["metadata"] = []
 
+        if "tags" not in context:
+            context["tags"] = []
+
         # Check for data from a generic article import
         imported_data = self.request.session.get("imported_blob_data")
         if imported_data:
@@ -413,6 +416,90 @@ class BlobDetailView(LoginRequiredMixin, DetailView):
 
         context["name"] = self.object.get_name(remove_edition_string=True)
 
+        # JSON serialization for React
+        context["blob_json"] = {
+            "uuid": str(self.object.uuid),
+            "name": self.object.name,
+            "editionString": self.object.edition_string or "",
+            "subtitle": context["metadata"].get("Subtitle", ""),
+            "author": context["metadata"].get("Author", ""),
+            "date": context["date"] or "",
+            "note": self.object.note or "",
+            "content": self.object.content or "",
+            "sha1sum": self.object.sha1sum or "",
+            "isNote": self.object.is_note,
+            "isVideo": self.object.is_video,
+            "isImage": self.object.is_image,
+            "isPdf": self.object.is_pdf,
+            "mathSupport": self.object.math_support,
+            "hasBeenModified": self.object.has_been_modified,
+            "modified": self.object.modified.strftime("%B %j, %Y") if self.object.has_been_modified else "",
+            "coverUrl": self.object.get_cover_url() + "?nodefault=1" if self.object.sha1sum else "",
+            "fileUrl": f"{settings.MEDIA_URL}blobs/{self.object.url}" if self.object.sha1sum else "",
+            "tags": [
+                {
+                    "name": tag.name,
+                    "url": reverse("search:kb_search_tag_detail", kwargs={"taglist": tag.name}),
+                }
+                for tag in self.object.tags.all()
+            ],
+        }
+
+        context["urls_json"] = {
+            "edit": reverse("blob:update", kwargs={"uuid": self.object.uuid}),
+            "clone": reverse("blob:clone", kwargs={"uuid": self.object.uuid}),
+            "create": reverse("blob:create"),
+            "list": reverse("blob:list"),
+            "delete": reverse("blob-detail", kwargs={"uuid": self.object.uuid}),
+            "getElasticsearchInfo": reverse("blob:get_elasticsearch_info", kwargs={"uuid": self.object.uuid}),
+            "relatedObjects": reverse("blob:related_objects", kwargs={"uuid": self.object.uuid}),
+            "addRelatedObject": reverse("blob:add_related_object"),
+            "removeRelatedObject": reverse("blob:remove_related_object"),
+            "sortRelatedObjects": reverse("blob:sort_related_objects"),
+            "editRelatedObjectNote": reverse("blob:update_related_object_note"),
+            "collectionSearch": reverse("collection:search"),
+            "addToCollection": reverse("collection:add_object"),
+            "createCollection": reverse("collection-list"),
+            "pinNote": reverse("accounts:pin_note"),
+            "searchNames": reverse("search:search_names"),
+            "kbSearchTagDetail": reverse("search:kb_search_tag_detail", kwargs={"taglist": "PLACEHOLDER"}),
+            "awsUrl": context.get("aws_url", ""),
+            "sqlPlayground": reverse("homepage:sql"),
+        }
+
+        context["blob_urls"] = context["urls"]
+
+        # Transform collection_list to camelCase for React
+        context["collection_list"] = [
+            {
+                "uuid": str(c["uuid"]),
+                "name": c["name"],
+                "url": c["url"],
+                "coverUrl": c["cover_url"],
+                "numObjects": c["num_objects"],
+                "note": c.get("note", ""),
+            }
+            for c in self.object.collections
+        ]
+
+        context["elasticsearch_info_json"] = {
+            "contentType": context.get("elasticsearch_info", {}).get("content_type", ""),
+            "size": context.get("elasticsearch_info", {}).get("size", ""),
+            "numPages": context.get("elasticsearch_info", {}).get("num_pages"),
+            "duration": context.get("elasticsearch_info", {}).get("duration", ""),
+        } if context.get("elasticsearch_info") else None
+
+        context["tree_json"] = context["tree"]
+
+        context["node_list_json"] = [
+            {
+                "uuid": str(node.uuid),
+                "name": node.name,
+                "url": reverse("node:detail", kwargs={"uuid": node.uuid}),
+            }
+            for node in context["node_list"]
+        ]
+
         return context
 
     def get_queryset(self) -> QuerySet[Blob]:
@@ -474,6 +561,7 @@ class BlobUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView, FormValid
         context["action"] = "Edit"
         context["title"] = self.object.get_name(remove_edition_string=True)
         context["tags"] = [x.name for x in self.object.tags.all()]
+        context["template_list"] = []  # Templates only used for new blobs
 
         return context
 

@@ -50,6 +50,7 @@
 
   .collection-item-delete {
     position: absolute;
+    z-index: 10;
     top: 0.35rem;
     right: 0.35rem;
     display: none;

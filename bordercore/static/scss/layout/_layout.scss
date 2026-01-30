@@ -236,13 +236,40 @@
   align-items: center;
   justify-content: center;
   background-color: var(--surface1);
+  background-image: url("/static/img/header_cyber.jpg");
+  background-size: cover;
 }
 
 .jumbotron {
+  width: 37.5rem;
+  height: 43.75rem;
   padding: 2rem;
+  border: 0.12rem solid var(--text1);
   background-color: var(--surface2);
-  border-radius: var(--border-radius1);
+  border-radius: 1.5rem;
+  opacity: 0.9;
   text-align: center;
+
+  .input-group-text {
+    background-color: var(--text4);
+  }
+
+  > div {
+    background-image: url("/static/img/bordercore-logo-login.png");
+    background-position: center -90px;
+    background-repeat: no-repeat;
+    background-size: 32rem 32rem;
+  }
+
+  form {
+    top: 18.75rem;
+    right: 4rem;
+  }
+
+  hr {
+    border-color: var(--text2);
+    opacity: 0.5;
+  }
 }
 
 .response-code {
@@ -253,11 +280,37 @@
 }
 
 #login-quote {
-  padding-top: 2rem;
-  border-top: 1px solid var(--border-color);
-  margin-top: 2rem;
-  color: var(--text2);
-  font-style: italic;
+  margin-right: auto;
+  margin-left: auto;
+  text-align: center;
+
+  small {
+    color: var(--text2);
+  }
+}
+
+// Animated gradient border box (used on login page)
+@property --angle {
+  inherits: false;
+  initial-value: 0deg;
+  syntax: "<angle>";
+}
+
+.animated-gradient-box {
+  border: 3px solid #0000;
+  animation: 8s rotate linear infinite;
+  background: linear-gradient(#131219, #131219) padding-box, linear-gradient(
+    var(--angle),
+    #070707,
+    #687aff
+  ) border-box;
+  border-radius: 12px;
+}
+
+@keyframes rotate {
+  to {
+    --angle: 360deg;
+  }
 }
 
 // Sidebar

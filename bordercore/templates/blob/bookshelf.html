@@ -1,130 +1,24 @@
-{% extends "base.html" %}
+{% extends "base_react.html" %}
+{% load vite_tags %}
 
 {% block title %} Bookshelf {% endblock %}
 
 {% block content %}
 
-    <div id="vue-app" class="row g-0 h-100 m-2">
-        <div class="col-lg-3 d-flex flex-column">
-            <div class="card-body backdrop-filter d-flex align-items-center">
-                <div>
-                    <span class="book_count">{{ total_count }}</span>
-                </div>
-                <div class="ms-2">
-                    books in collection
-                </div>
-            </div>
-            <card title="Tag List" class="backdrop-filter flex-grow-1">
-                <template v-slot:content>
-                    <hr class="divider">
-                    <ul v-cloak class="list-group flex-column w-100">
-                        <li
-                            v-for="tag in tagList"
-                            class="list-with-counts rounded d-flex ps-2 py-1 pr-1"
-                            @click="handleTagClick(tag.name)"
-                        >
-                            <div class="ps-2 text-truncate">
-                                [[ tag.name ]]
-                            </div>
-                            <div class="ms-auto pe-2">
-                                <span class="px-2 badge rounded-pill">
-                                    [[ tag.count ]]
-                                </span>
-                            </div>
-                        </li>
-                    </ul>
-                </template>
-            </card>
-        </div>
-        <div class="col-lg-9 d-flex flex-column">
-            <div class="has-search position-relative ms-2 me-0 mb-3">
-                <form action="{{ request.path }}" method="get">
-                    <font-awesome-icon icon="magnifying-glass"/>
-                    </font-awesome-icon>
-                    <input v-model="searchTerm" type="text" name="search" class="form-control w-100" placeholder="Search">
-                </form>
-            </div>
-            <card class="backdrop-filter h-100">
-                <template v-slot:title-slot>
-                    <div class="card-title d-flex">
-                        <div>
-                        {% if request.GET.search %}
-                            Search Result
-                        {% elif request.GET.tag %}
-                            Books with tag <strong class="text-info">{{ request.GET.tag }}</strong>
-                        {% else %}
-                            Recent Books
-                        {% endif %}
-                        </div>
-                        <div v-if="{{ request.GET.search|yesno:"true,false" }} || {{ request.GET.tag|yesno:"true,false" }}" class="d-flex ms-auto">
-                            <small>
-                                <a href="{% url 'blob:bookshelf' %}" class="text-secondary">Clear</a>
-                            </small>
-                        </div>
-                    </div>
-                </template>
-                <template v-slot:content>
-                    <hr class="divider mb-5" />
-                    <ul class="d-flex flex-wrap text-center list-unstyled collection-sortable">
-                        <li v-for="book in books" :key="book.uuid" class="mx-3">
-                            <div class="zoom d-flex flex-column justify-content-top h-100 mb-4">
-                                <div>
-                                    <a :href="book.url">
-                                        <img :src="book.cover_url" />
-                                    </a>
-                                </div>
-                                <div class="collection-item-name lh-sm mt-1" v-tooltip="{delay: 1000, content: book.name}">
-                                    <a :href="book.url">[[ book.name || "No Title" ]]</a>
-                                </div>
-                            </div>
-                        </li>
-                        <div v-if="!books.length">
-                            Nothing found
-                        </div>
-                    </ul>
-                </template>
-            </card>
-        </div>
+    <div id="react-root"
+        data-total-count="{{ total_count }}"
+        data-search-term="{{ request.GET.search|default:'' }}"
+        data-selected-tag="{{ request.GET.tag|default:'' }}"
+        data-clear-url="{% url 'blob:bookshelf' %}"
+    >
     </div>
-
-{% endblock %}
-
-{% block javascript %}
-
-    {{ block.super }}
 
     {{ object_list|json_script:"books" }}
     {{ tag_list|json_script:"tag_list" }}
 
-    <script type="text/javascript">
+{% endblock %}
 
-        const app = createApp({
-            name: "Bookshelf",
-            delimiters: ["[[", "]]"],
-            components: {
-                Card,
-                FontAwesomeIcon,
-            },
-            setup() {
-                const books = JSON.parse(document.getElementById("books").textContent);
-                const tagList = JSON.parse(document.getElementById("tag_list").textContent);
-                const searchTerm = ref("");
-
-                function handleTagClick(tag) {
-                    window.location = `?tag=${tag}`;
-                };
-
-                return {
-                    books,
-                    handleTagClick,
-                    searchTerm,
-                    tagList,
-                };
-            },
-        });
-        app.use(FloatingVue);
-        app.mount("#vue-app");
-
-    </script>
-
+{% block javascript_bundles %}
+    {{ block.super }}
+    {% vite_asset "dist/js/bookshelf" %}
 {% endblock %}
