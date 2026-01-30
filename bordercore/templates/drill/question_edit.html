@@ -1,321 +1,117 @@
-{% extends "base.html" %}
+{% extends "base_react.html" %}
+{% load vite_tags %}
+
+{% block extra_head %}
+    <style>
+        /* Markdown editor styles for drill question edit */
+        .markdown-editor {
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--surface1);
+            border-radius: 0.25rem;
+            background-color: var(--form-bg);
+            color: var(--text1);
+        }
+        .markdown-editor.drag-over {
+            border-color: var(--form-border-color-hover);
+        }
+        .markdown-editor:focus-within {
+            border-color: var(--form-border-color-hover);
+        }
+        .markdown-toolbar {
+            flex-shrink: 0;
+            background-color: var(--form-bg);
+        }
+        .markdown-toolbar-item {
+            padding: 0.5rem 0.625rem;
+            border: none;
+            background: transparent;
+            color: var(--text1);
+            cursor: pointer;
+        }
+        .markdown-toolbar-item:hover {
+            color: var(--form-bg);
+            background-color: var(--text1);
+        }
+        .toolbar-divider {
+            width: 1px;
+            height: 20px;
+            margin: 0 0.25rem;
+            background: var(--border-color);
+        }
+        .markdown-textarea {
+            flex-grow: 1;
+            border: none;
+            border-radius: 0 0 0.25rem 0.25rem;
+            background-color: var(--form-bg);
+            color: var(--text1);
+            min-height: 200px;
+            resize: vertical;
+        }
+        .markdown-textarea:focus {
+            background-color: var(--form-bg-focus);
+            caret-color: var(--text4);
+            color: var(--text4);
+            box-shadow: none;
+        }
+        /* Card title styles matching Pinned Tags */
+        .card-title,
+        .card-title-large {
+            color: var(--text4);
+            font-size: 1.5rem;
+        }
+    </style>
+{% endblock %}
 
 {% block title %} Drill {% endblock %}
 
 {% block nav %}
-
     <div class="me-auto align-self-center mb-3">
         <ul class="breadcrumb mb-0 pt-0 pb-0">
             <li class="breadcrumb-item"> <a href="{% url 'drill:list' %}">Drill</a> </li>
             <li class="breadcrumb-item active">{{ action }} Question</li>
         </ul>
     </div>
-
 {% endblock %}
 
 {% block content %}
+    <div
+        id="react-root"
+        data-initial-question="{{ object.question|default:form.question.value|default_if_none:''|escapejs }}"
+        data-initial-answer="{{ object.answer|default:form.answer.value|default_if_none:''|escapejs }}"
+        data-is-reversible="{{ form.is_reversible.value|yesno:'true,false' }}"
+        data-object-uuid="{{ object.uuid|default:'' }}"
+        data-action="{{ action }}"
+        data-csrf-token="{{ csrf_token }}"
+        data-submit-url="{{ request.path }}"
+        data-delete-url="{% if object.uuid %}{% url 'drill:delete' object.uuid %}{% endif %}"
+        data-cancel-url="{% if request.GET.return_url %}{{ request.GET.return_url }}{% else %}{% url 'drill:list' %}{% endif %}"
+        data-return-url="{% firstof request.GET.return_url request.POST.return_url '' %}"
+        data-tag-search-url="{% url 'tag:search' %}?query="
+        data-related-objects-url="{% url 'drill:related_objects' '00000000-0000-0000-0000-000000000000' %}"
+        data-new-object-url="{% url 'blob:add_related_object' %}"
+        data-remove-object-url="{% url 'blob:remove_related_object' %}"
+        data-sort-related-objects-url="{% url 'blob:sort_related_objects' %}"
+        data-edit-related-object-note-url="{% url 'blob:update_related_object_note' %}"
+        data-search-names-url="{% url 'search:search_names' %}"
+    ></div>
 
-    <div class="row g-0 h-100 mx-2" id="vue-app" @keyup="onKeyUp">
+    {{ tags|json_script:"initial-tags" }}
 
-        <div class="flex-grow-last col-lg-3 d-flex flex-column">
-
-            <related-objects
-                ref="relatedObjectsList"
-                object-uuid="{{ object.uuid }}"
-                node-type="drill"
-                related-objects-url="{% url 'drill:related_objects' '00000000-0000-0000-0000-000000000000' %}"
-                new-object-url="{% url 'blob:add_related_object' %}"
-                remove-object-url="{% url 'blob:remove_related_object' %}"
-                edit-related-object-note-url="{% url 'blob:update_related_object_note' %}"
-                :is-new={% if object.uuid %}false{% else %}true{% endif %}
-                @open-object-select-modal="openObjectSelectModal"
-            >
-            </related-objects>
-
-            <object-select
-                :has-filter="false"
-                label="_objectSelect"
-                ref="objectSelect"
-                search-object-url="{% url 'search:search_names' %}"
-                title="Select Object"
-                @select-object="selectObject"
-            >
-            </object-select>
-
-            <card title="Recent Tags" class="backdrop-filter">
-                <template v-slot:content>
-                    <hr class="divider" />
-                    <ul class="list-group interior-borders">
-                        {% for tag in recent_tags %}
-                            <li class="list-with-counts ps-2 py-1 pe-1 d-flex" @click.prevent="onClickTag('{{ tag.name }}')">
-                                <div class="text-truncate">
-                                    {{ tag.name }}
-                                </div>
-                            </li>
-                        {% endfor %}
-                    </ul>
-                </template>
-            </card>
-
-        </div>
-
-        <div class="col-lg-9">
-
-            <form @submit.prevent id="question-form" action="{{ request.path }}" method="post" class="d-flex flex-column h-100">
-                <input type="hidden" name="related-objects" />
-                <input type="hidden" name="return_url" value="{% firstof request.GET.return_url request.POST.return_url %}" />
-
-                {% csrf_token %}
-
-                <div class="{% if form.question.errors %}error {% endif %}row flex-grow-1 mb-3">
-                    <label class="fw-bold col-lg-2 col-form-label text-end" for="inputTitle">
-                        Question
-                    </label>
-                    <div class="col-lg-9 h-100">
-                        <v-md-editor
-                            ref="mdEditorQuestion"
-                            mode="edit"
-                            right-toolbar=""
-                            left-toolbar="undo redo | h bold italic strikethrough quote inlineCode | ul ol table hr | link image code"
-                            :toolbar="customToolbar"
-                            v-model="question"
-                        >
-                        </v-md-editor>
-                        {% for error in form.question.errors %}
-                            <span class="form-error">{{ error }}</span>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                <div class="{% if form.answer.errors %}error {% endif %}row flex-grow-1 mb-3">
-                    <label class="fw-bold col-lg-2 col-form-label text-end" for="inputTitle">
-                        Answer
-                    </label>
-                    <div class="col-lg-9 h-100">
-                        <v-md-editor
-                            ref="mdEditorAnswer"
-                            mode="edit"
-                            right-toolbar=""
-                            left-toolbar="undo redo | h bold italic strikethrough quote inlineCode | ul ol table hr | link image code"
-                            :toolbar="customToolbar"
-                            v-model="answer"
-                        >
-                        </v-md-editor>
-                        {% for error in form.answer.errors %}
-                            <span class="form-error">{{ error }}</span>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                <div class="{% if forms.tags.errors %}error {% endif %}row mb-3">
-                    <label class="fw-bold col-lg-2 col-form-label text-end" for="inputTitle">Tags</label>
-                    <div class="col-lg-9">
-                        <tags-input id="id_tags" ref="tagsInput" search-url="{% url 'tag:search' %}?query=">
-                        </tags-input>
-                        {% for error in form.tags.errors %}
-                            <span class="form-error">Error: {{ error }}</span>
-                            {% endfor %}
-                    </div>
-                </div>
-
-                <div class="row mb-3">
-                    <label class="fw-bold col-lg-2 col-form-label text-end" for="inputTitle">Reversible</label>
-                    <div class="col-lg-9 d-flex">
-                        <o-switch v-model="isReversible" name="is_reversible" :native-value="is_reversible" />
-                    </div>
-                </div>
-
-                <div>
-                    <div class="col-lg-9 offset-lg-2" id="button-wrapper">
-                        <input class="btn btn-primary ms-1" type="submit" name="Go" value="Save" @click="onClickEdit" />
-                        <input v-if="enableDeleteButton" @click="onClickDelete" class="btn btn-secondary ms-3" type="submit" name="Go" value="Delete" />
-                        <a class="ms-3"
-                           href="{% if request.GET.return_url %}{{ request.GET.return_url }}{% else %}{% url 'drill:list' %}{% endif %}">Cancel</a>
-                    </div>
-                </div>
-
-            </form>
-
-        </div>
-
-{% endblock %}
-
-{% block javascript %}
-
-    {{ block.super }}
-
-    {{ tags|json_script:"initial-tags"|default:"" }}
-
-    <style>
-        /* Custom icon for inline code toolbar item
-         * Note: This style is placed inline in the template instead of _base.scss
-         * because v-md-editor's CSS loads later (via JavaScript) and overrides
-         * styles from the compiled SCSS. Inline styles have higher specificity
-         * and load after v-md-editor's CSS, ensuring this custom icon displays correctly.
-         */
-        .v-md-icon-inline-code::before {
-            content: "" !important;
-            display: inline-block;
-            width: 14px;
-            height: 14px;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 512'%3E%3Cpath fill='%23ffffff' d='M392.8 1.2c-17-4.9-34.7 5-39.6 22l-128 448c-4.9 17 5 34.7 22 39.6s34.7-5 39.6-22l128-448c4.9-17-5-34.7-22-39.6zm80.6 120.1c-12.5 12.5-12.5 32.8 0 45.3L562.7 256l-89.4 89.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l112-112c12.5-12.5 12.5-32.8 0-45.3l-112-112c-12.5-12.5-32.8-12.5-45.3 0zm-306.7 0c-12.5-12.5-32.8-12.5-45.3 0l-112 112c-12.5 12.5-12.5 32.8 0 45.3l112 112c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L77.3 256l89.4-89.4c12.5-12.5 12.5-32.8 0-45.3z'/%3E%3C/svg%3E");
-            background-position: center;
-            background-repeat: no-repeat;
-            background-size: contain;
-        }
-    </style>
-
-    <script type="text/javascript">
-
-        const app = createApp({
-            name: "EditQuestion",
-            components: {
-                Card,
-                ObjectSelect,
-                RelatedObjects,
-                TagsInput,
-            },
-            setup() {
-                const enableDeleteButton = ref({% if object.uuid %} true{% else %}false{% endif %});
-                const newQuestion = ref({% if action == "Add" %} true{% else %} false{% endif %});
-                const answer = ref("{{ object.answer|default:form.answer.value|default_if_none:""|escapejs }}");
-                const question = ref("{{ object.question|default:form.question.value|default_if_none:""|escapejs }}");
-                const isReversible = ref({{ form.is_reversible.value|yesno:"true,false" }});
-
-                const mdEditorAnswer = ref(null);
-                const mdEditorQuestion = ref(null);
-                const objectSelect = ref(null);
-                const relatedObjectsList = ref(null);
-                const tagsInput = ref(null);
-
-                // Custom toolbar configuration for inline code
-                const customToolbar = {
-                    inlineCode: {
-                        title: "Inline Code",
-                        icon: "v-md-icon-inline-code",
-                        action(editor) {
-                            editor.insert((selected) => {
-                                const prefix = "`";
-                                const suffix = "`";
-                                const placeholder = "code";
-                                const content = selected || placeholder;
-
-                                return {
-                                    text: `${prefix}${content}${suffix}`,
-                                    selected: content,
-                                };
-                            });
-                        },
-                    },
-                };
-
-                function openObjectSelectModal() {
-                    objectSelect.value.openModal();
-                };
-
-                function onKeyUp(evt) {
-                    if (evt.key !== "Tab") {
-                        return;
-                    }
-                    if (evt.srcElement == mdEditorQuestion.$el.querySelector("textarea")) {
-                        mdEditorAnswer.$el.querySelector("textarea").focus();
-                    } else if (evt.srcElement == mdEditorAnswer.$el.querySelector("textarea")) {
-                        if (evt.shiftKey) {
-                            mdEditorQuestion.$el.querySelector("textarea").focus();
-                        } else {
-                            document.querySelector("#id_tags input").focus();
-                        }
-                    } else if (evt.srcElement == document.querySelector("#id_tags li")) {
-                        if (evt.shiftKey) {
-                            mdEditorAnswer.$el.querySelector("textarea").focus();
-                        }
-                    }
-                };
-
-                function onClickEdit() {
-                    const form = document.getElementById("question-form");
-
-                    objectInfo = [];
-                    relatedObjectsList.value.objectList.forEach((x) => {
-                        objectInfo.push(
-                            {
-                                "uuid": x.uuid,
-                                "note": x.note
-                            }
-                        );
-                    });
-                    form.elements["related-objects"].value = JSON.stringify(objectInfo);
-
-                    // Add the 'name' attribute and contents to the internal
-                    // textarea used by v-md-editor, which will then
-                    // be submitted with the rest of the form.
-                    const questionEl = mdEditorQuestion.value.$el.querySelector("textarea");
-                    questionEl.setAttribute("name", "question");
-                    questionEl.setAttribute("value", question);
-
-                    // Add the 'name' attribute and contents to the internal
-                    // textarea used by v-md-editor, which will then
-                    // be submitted with the rest of the form.
-                    const answerEl = mdEditorAnswer.value.$el.querySelector("textarea");
-                    answerEl.setAttribute("name", "answer");
-                    answerEl.setAttribute("value", answer);
-
-                    form.submit();
-                };
-
-                {% if object.uuid %}
-                function onClickDelete() {
-                    const form = document.getElementById("question-form");
-                    form.action = "{% url 'drill:delete' object.uuid %}";
-                    form.submit();
-                };
-                {% endif %}
-
-                function onClickTag(tagName) {
-                    const tagList = document.getElementsByName("tags")[0].value.split(",");
-                    // Ignore if we've already added this tag
-                    if (tagList.includes(tagName)) {
-                        return;
-                    }
-                    tagsInput.value.addTag(tagName);
-                };
-
-                function selectObject(bcObject) {
-                    relatedObjectsList.value.newObject(bcObject);
-                };
-
-                return {
-                    answer,
-                    customToolbar,
-                    enableDeleteButton,
-                    isReversible,
-                    mdEditorAnswer,
-                    mdEditorQuestion,
-                    newQuestion,
-                    objectSelect,
-                    openObjectSelectModal,
-                    {% if object.uuid %}
-                    onClickDelete,
-                    {% endif %}
-                    onClickEdit,
-                    onClickTag,
-                    question,
-                    relatedObjectsList,
-                    selectObject,
-                    tagsInput,
-                };
-            },
-        });
-        app.use(Oruga, {
-            iconComponent: "font-awesome-icon",
-            iconPack: "fa",
-            table: {
-                sortIcon: "caret-up",
-            },
-        });
-        app.use(VueMarkdownEditor);
-        app.mount("#vue-app");
-
+    <script type="application/json" id="recent-tags">
+    [{% for tag in recent_tags %}{"name": "{{ tag.name|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}]
     </script>
 
+    <script type="application/json" id="form-errors">
+    {
+        {% if form.question.errors %}"question": [{% for error in form.question.errors %}"{{ error|escapejs }}"{% if not forloop.last %},{% endif %}{% endfor %}],{% endif %}
+        {% if form.answer.errors %}"answer": [{% for error in form.answer.errors %}"{{ error|escapejs }}"{% if not forloop.last %},{% endif %}{% endfor %}],{% endif %}
+        {% if form.tags.errors %}"tags": [{% for error in form.tags.errors %}"{{ error|escapejs }}"{% if not forloop.last %},{% endif %}{% endfor %}]{% endif %}
+    }
+    </script>
+{% endblock %}
+
+{% block javascript_bundles %}
+    {{ block.super }}
+    {% vite_asset "dist/js/drill-question-edit" %}
 {% endblock %}
