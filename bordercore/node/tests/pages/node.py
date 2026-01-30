@@ -41,10 +41,10 @@ class NodeListPage(Page):
 
     def collection_menu(self):
         """
-        Find the collection menu
+        Find the collection menu (waits for React to render the node detail layout).
         """
 
-        return self.find_element(self.browser, self.COLLECTION_MENU)
+        return self.find_element(self.browser, self.COLLECTION_MENU, wait=True)
 
     def dropdown_menu_container(self, element):
         """
