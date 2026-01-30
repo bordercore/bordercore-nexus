@@ -1,3 +1,4 @@
+import json
 import string
 
 from book.models import Book
@@ -31,8 +32,9 @@ class BookListView(LoginRequiredMixin, ListView):
                 "year": myobject.year,
             })
 
-        context["alphabet"] = string.ascii_uppercase
+        context["alphabet"] = list(string.ascii_uppercase)
+        context["alphabet_json"] = json.dumps(list(string.ascii_uppercase))
         context["selected_letter"] = self.selected_letter
         context["cols"] = ["title", "author", "year"]
-        context["info"] = info
+        context["info"] = json.dumps(info)
         return context

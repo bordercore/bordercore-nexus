@@ -1,11 +1,8 @@
 {% extends "base.html" %}
 
-{% load favicon %}
-
 {% block title %} Server Error {% endblock %}
 
 {% block content %}
-
     <div class="mt-5 text-center">
         <div class="response-code">500</div>
         <h2>Oops</h2>
@@ -15,13 +12,5 @@
         </div>
 
         <a href="{% url 'homepage:homepage' %}" type="button" class="mt-5 btn btn-primary">Back to the homepage</a>
-
     </div>
-
-{% endblock %}
-
-{% block javascript %}
-
-    {{ block.super }}
-
 {% endblock %}

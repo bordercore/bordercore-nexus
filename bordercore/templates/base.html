@@ -1,5 +1,5 @@
 {% load is_in_group %}
-{% load render_bundle from webpack_loader %}
+{% load vite_tags %}
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html lang="en" color-mode="{{ user.userprofile.theme }}" eye-candy="{{ user.userprofile.eye_candy }}">
@@ -8,37 +8,33 @@
 
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="username" content="{{ user.get_username }}" />
         <title>{{ title|default:"Bordercore" }}</title>
 
-        {% if debug %}
-            <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}dist/css/bordercore.css" />
-        {% else %}
-            {% render_bundle "dist/css/bordercore" %}
-        {% endif %}
-
-        {% block extra_head %}{% endblock %}
-
         <style>
-            /* div[class="row"] {
-               outline: 1px dotted rgba(0, 0, 0, 0.25);
-               }
+            /* Prevent flash of unstyled content - hide elements immediately before CSS loads */
+            #help-text,
+            .d-none {
+                display: none !important;
+            }
 
-               div[class^="col-"] {
-               background-color: rgba(255, 0, 0, 0.2);
-               outline: 1px dotted rgba(0, 0, 0, 0.5);
-               } */
+            /* Prevent white background flash - uses CSS variable from theme files */
+            body {
+                background-color: var(--body-bg, #f6f6f8);
+            }
         </style>
+
+            {% block css %}
+                {% vite_asset "dist/css/bordercore" %}
+            {% endblock %}
+
+            {% block extra_head %}{% endblock %}
 
     </head>
 
     <body>
 
-        <div id="vue-toast">
-            <toast
-                :initial-messages="initialMessages"
-            >
-            </toast>
-        </div>
+        <div id="react-toast"></div>
 
         {% if elasticsearch_error %}
         <div class="site-banner alert alert-danger fs-5" role="alert">
@@ -53,88 +49,24 @@
                 <div class="row">
                     <div class="col-lg-12">
 
-                        <div id="top-bar" class="row">
-
-                            <div class="col-lg-9 card-grid my-auto text-truncate ps-2" id="top-title">
-                                <span v-if="baseStore.sidebarCollapsed">Bordercore :: {% block title %} {% endblock %}</span>
+                        <div id="top-bar" class="top-bar-container">
+                            <div id="top-title" class="top-title-container">
+                                <span id="top-title-text">{% block title %}{% endblock %}</span>
                             </div>
-                            <div class="col-lg-3 my-auto d-flex justify-content-end align-items-center flex-nowrap">
-                                {% if user.userprofile.weather and user.userprofile.weather.current and user.userprofile.weather.current.condition and user.userprofile.weather.current.condition.text %}
-                                <div id="weather-display" class="me-3">
-                                    <weather :weather-info="weatherInfo"></weather>
-                                </div>
-                                {% endif %}
-
-                                <span id="top-search-icon" @click="openSearchWindow">
-                                    <font-awesome-icon class="top-search-target glow" icon="magnifying-glass" @click.stop="openSearchWindow" />
+                            <div class="top-bar-right">
+                                <div id="weather-display" class="top-bar-item"></div>
+                                <div id="top-search-bar" class="top-bar-item position-absolute"></div>
+                                <span id="top-search-icon" class="top-bar-item top-search-icon">
+                                    <i class="fa fa-search top-search-target glow"></i>
                                 </span>
-
-                                <div id="top-search-bar" class="position-absolute">
-                                    <top-search
-                                        ref="topSearch"
-                                        initial-search-filter="{{ request.session.top_search_filter }}"
-                                        initial-search-url="{% url 'search:search_tags_and_names' %}"
-                                        query-search-url="{% url 'search:search' %}"
-                                        note-query-search-url="{% url 'search:notes' %}"
-                                        drill-query-search-url="{% url 'search:search' %}"
-                                        store-in-session-url="{% url "accounts:store_in_session" %}"
-                                        :recent-searches="recentSearches"
-                                    >
-                                    </top-search>
-                                </div>
-
-                                <recent-blobs
-                                    :blob-list-info="recentBlobs"
-                                    :recently-viewed="recentlyViewed"
-                                    blob-detail-url="{% url 'blob:detail' '00000000-0000-0000-0000-000000000000' %}"
-                                >
-                                </recent-blobs>
-
-                                <div v-cloak class="user-menu-wrapper">
-                                    <drop-down-menu
-                                        class="top-drop-down user-menu-dropdown"
-                                        :links="userMenuItems"
-                                        :initial-hide="false"
-                                        :support-hover-target="false"
-                                        :show-target="false"
-                                    >
-                                        <template #icon>
-                                            <span class="user-greeting">
-                                                <span class="align-middle ms-2">
-                                                    Hello <strong>{{ user.get_username }}</strong>
-                                                </span>
-                                                {% if request.user|is_in_group:"Admin" %}
-                                                    <span class="dropdown-item-extra align-middle ms-2" v-if="failedTestCount > 0">
-                                                        [[ failedTestCount ]]
-                                                    </span>
-                                                {% endif %}
-                                                <font-awesome-icon icon="angle-down" class="align-middle ms-2" />
-                                            </span>
-                                        </template>
-                                    </drop-down-menu>
-                                </div>
-
+                                <div id="recent-blobs" class="top-bar-item"></div>
+                                <div id="user-menu-wrapper" class="top-bar-item user-menu-wrapper"></div>
                             </div>
-
-                            <overdue-tasks
-                                :task-list-prop="overdueTasks"
-                                reschedule-task-url="{% url 'todo:reschedule_task' %}"
-                                delete-todo-url="{% url 'todo-detail' '00000000-0000-0000-0000-000000000000' %}"
-                            >
-                            </overdue-tasks>
-
-                            <chat-bot
-                                ref="chatBot"
-                                blob-uuid="{{ blob.uuid }}"
-                                chat-url="{% url 'blob:chat' %}"
-                                csrf-token="{{ csrf_token }}"
-                            >
-                            </chat-bot>
-
                         </div>
 
-                    </div>
+                        <div id="overdue-tasks"></div>
 
+                    </div>
                 </div>
 
                 {% block nav %}
@@ -151,29 +83,14 @@
 
             </div>
 
-            <div id="sidebar">
-                <sidebar-menu @update:collapsed="onToggleCollapse" @item-click="onItemClick" :menu="menu"
-                              :collapsed="baseStore.sidebarCollapsed">
-                    <template #header>
-                        <div v-if="baseStore.sidebarCollapsed" class="d-flex justify-content-center">
-                            <img class="mt-2" src="{{ STATIC_URL }}img/bordercore-logo.jpg" width="64" height="64" />
-                        </div>
-                    </template>
-                    <template #toggle-icon>
-                        <font-awesome-icon icon="arrows-alt-h"></font-awesome-icon>
-                    </template>
-                    <template #dropdown-icon>
-                        <font-awesome-icon icon="angle-right"></font-awesome-icon>
-                    </template>
-                </sidebar-menu>
-            </div>
+            <div id="sidebar"></div>
 
             <div class="modal fade" id="modalHelp" tabindex="-1" role="dialog" aria-labelledby="modalHelpLabel">
                 <div class="modal-dialog" role="document">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h4 class="modal-title" id="modalHelpLabel">
-                                <font-awesome-icon icon="question" class="text-secondary me-2"></font-awesome-icon>
+                                <i class="fa fa-question text-secondary me-2"></i>
                                 Help
                             </h4>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -188,11 +105,97 @@
 
         {% block javascript %}
 
-            {% if debug %}
-                <script type="text/javascript" src="{{ STATIC_URL }}dist/js/javascript-bundle.js"></script>
-            {% else %}
-                {% render_bundle "dist/js/javascript" %}
-            {% endif %}
+            <script type="text/javascript">
+                // Simple UUID generator function for compatibility
+                function generateUUID() {
+                    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                        const r = Math.random() * 16 | 0;
+                        const v = c == 'x' ? r : (r & 0x3 | 0x8);
+                        return v.toString(16);
+                    });
+                }
+
+                // Pass data to React components via window object
+                window.BASE_TEMPLATE_DATA = {
+                    staticUrl: "{{ STATIC_URL }}",
+                    csrfToken: "{{ csrf_token }}",
+                    initialSidebarCollapsed: {% if request.session.show_sidebar == "false" %}true{% else %}false{% endif %},
+                    failedTestCount: {{ failed_test_count }},
+                    title: "{{ title|default:'' }}",
+                    username: "{{ user.get_username }}",
+                    userMenuItems: [
+                        {
+                            id: generateUUID(),
+                            title: "Preferences",
+                            url: "{% url 'accounts:prefs' %}",
+                            icon: "briefcase"
+                        },
+                        {% if request.user|is_in_group:"Admin" %}
+                        {
+                            id: generateUUID(),
+                            title: "Metrics",
+                            url: "{% url 'metrics:list' %}",
+                            icon: "chart-bar",
+                            extra: {{ failed_test_count }}
+                        },
+                        {% endif %}
+                        {
+                            id: generateUUID(),
+                            title: "ChatBot",
+                            url: "#",
+                            icon: "comment",
+                            clickHandler: "handleChatBot"
+                        },
+                        {
+                            id: generateUUID(),
+                            title: "Help",
+                            url: "#",
+                            icon: "question",
+                            clickHandler: "showHelp"
+                        },
+                        {
+                            id: generateUUID(),
+                            title: "Logout",
+                            url: "{% url 'accounts:logout' %}",
+                            icon: "sign-out-alt",
+                        },
+                    ],
+                    topSearchConfig: {
+                        initialSearchFilter: "{{ request.session.top_search_filter }}",
+                        initialSearchUrl: "{% url 'search:search_tags_and_names' %}",
+                        querySearchUrl: "{% url 'search:search' %}",
+                        noteQuerySearchUrl: "{% url 'search:notes' %}",
+                        drillQuerySearchUrl: "{% url 'search:search' %}",
+                        storeInSessionUrl: "{% url "accounts:store_in_session" %}",
+                    },
+                    chatBotConfig: {
+                        blobUuid: "{{ blob.uuid|default:'' }}",
+                        chatUrl: "{% url 'blob:chat' %}",
+                        csrfToken: "{{ csrf_token }}",
+                    },
+                    overdueTasksConfig: {
+                        rescheduleTaskUrl: "{% url 'todo:reschedule_task' %}",
+                        deleteTodoUrl: "{% url 'todo-detail' '00000000-0000-0000-0000-000000000000' %}",
+                    },
+                    recentBlobsConfig: {
+                        blobDetailUrl: "{% url 'blob:detail' '00000000-0000-0000-0000-000000000000' %}",
+                    },
+                    sidebarConfig: {
+                        storeInSessionUrl: "{% url "accounts:store_in_session" %}",
+                        getNewBookmarksCountUrl: "{% url "bookmark:get_new_bookmarks_count" 666 %}",
+                        todoCount: {{ todo_count|default:0 }},
+                        exerciseCount: {{ exercise_count|default:0 }},
+                    },
+                    urls: {
+                        getWeather: "{% url 'accounts:get_weather' %}",
+                    },
+                    initialMessages: {{ json_messages|safe }},
+                };
+            </script>
+
+            {% block javascript_bundles %}
+                {% vite_asset "dist/js/base-react" %}
+            {% endblock %}
 
             {{ recent_blobs|json_script:"recent_blobs" }}
             {{ recent_bookmarks|json_script:"recent-bookmarks" }}
@@ -205,418 +208,19 @@
             {% endif %}
 
             <script type="text/javascript">
-
                 {% if user.userprofile.sidebar_image %}
                 const sidebar = document.getElementById("sidebar");
-                sidebar.style.backgroundImage = "url('https://bordercore-blobs.s3.amazonaws.com/sidebar/{{ user.userprofile.uuid }}/{{ user.userprofile.sidebar_image }}')";
+                if (sidebar) {
+                    sidebar.style.backgroundImage = "url('https://bordercore-blobs.s3.amazonaws.com/sidebar/{{ user.userprofile.uuid }}/{{ user.userprofile.sidebar_image }}')";
+                }
                 {% endif %}
 
                 {% if user.userprofile.background_image %}
                 const body = document.querySelector("body");
-                body.style.backgroundImage = "url('https://bordercore-blobs.s3.amazonaws.com/background/{{ user.userprofile.uuid }}/{{ user.userprofile.background_image }}')";
+                if (body) {
+                    body.style.backgroundImage = "url('https://bordercore-blobs.s3.amazonaws.com/background/{{ user.userprofile.uuid }}/{{ user.userprofile.background_image }}')";
+                }
                 {% endif %}
-
-                const appToast = createApp({
-                    name: "Toasts",
-                    components: {
-                        FontAwesomeIcon,
-                        Toast,
-                    },
-                    setup() {
-                        const initialMessages = JSON.parse('{{ json_messages|escapejs }}');
-
-                        return {
-                            initialMessages
-                        };
-                    }
-                });
-                appToast.mount("#vue-toast");
-
-                const appTopBar = createApp({
-                    name: "Top Bar",
-                    components: {
-                        ChatBot,
-                        DropDownMenu,
-                        FontAwesomeIcon,
-                        OverdueTasks,
-                        RecentBlobs,
-                        TopSearch,
-                        Weather,
-                    },
-                    delimiters: ["[[", "]]"],
-                    setup() {
-                        const baseStore = useBaseStore();
-                        baseStore.sidebarCollapsed = {% if request.session.show_sidebar == "false" %}true{% else %}false{% endif %};
-                        const failedTestCount = ref({{ failed_test_count }});
-                        const userMenuItems = ref([
-                            {
-                                id: uuidv4(),
-                                title: "Preferences",
-                                url: "{% url 'accounts:prefs' %}",
-                                icon: "briefcase"
-                            },
-                            {% if request.user|is_in_group:"Admin" %}
-                            {
-                                id: uuidv4(),
-                                title: "Metrics",
-                                url: "{% url 'metrics:list' %}",
-                                icon: "chart-bar",
-                                extra: {{ failed_test_count }}
-                            },
-                            {% endif %}
-                            {
-                                id: uuidv4(),
-                                title: "AI",
-                                url: "#",
-                                icon: "comment",
-                                clickHandler: handleChatBot
-                            },
-                            {
-                                id: uuidv4(),
-                                title: "Help",
-                                url: "#",
-                                icon: "question",
-                                clickHandler: showHelp
-                            },
-                            {
-                                id: uuidv4(),
-                                title: "Logout",
-                                url: "{% url 'accounts:logout' %}",
-                                icon: "sign-out-alt",
-                            },
-                        ]);
-                        const recentBlobs = JSON.parse(document.getElementById("recent_blobs").textContent);
-                        const overdueTasks = JSON.parse(document.getElementById("overdue_tasks").textContent);
-                        const recentSearches = JSON.parse(document.getElementById("recent_searches").textContent);
-                        const recentlyViewed = JSON.parse(document.getElementById("recently_viewed").textContent);
-                        const weatherInfo = ref({% if user.userprofile.weather %}JSON.parse(document.getElementById("weather_info").textContent){% else %}null{% endif %});
-
-                        const chatBot = ref(null);
-
-                        // Function to fetch updated weather data
-                        async function fetchWeatherData() {
-                            try {
-                                const response = await axios.get("{% url 'accounts:get_weather' %}");
-                                if (response.data && response.data.weather) {
-                                    weatherInfo.value = response.data.weather;
-                                }
-                            } catch (error) {
-                                console.error("Failed to fetch weather data:", error);
-                            }
-                        }
-
-                        // Set up polling to update weather every 10 minutes
-                        onMounted(() => {
-                            setInterval(fetchWeatherData, 600000); // 600000ms = 10 minutes
-                        });
-
-                        useEvent("keydown", handleKeyDown, {});
-
-                        function handleChatBot() {
-                            chatBot.value.show = !chatBot.value.show;
-                            if (chatBot.value.show) {
-                                nextTick(() => {
-                                    document.querySelector("#chatbot input").focus();
-                                });
-                            }
-                        };
-
-                        function handleKeyDown(event) {
-                            if (event.key === "c" && event.altKey) {
-                                handleChatBot();
-                            }
-                        };
-
-                        function showHelp(evt) {
-                            const helpText = document.getElementById("help-text").innerHTML;
-                            document.getElementById("modal-body-help").innerHTML = markdown.render(helpText);
-                            const modal = new Modal("#modalHelp");
-                            modal.show();
-                        }
-
-                        const topSearch = ref(null);
-
-                        function openSearchWindow() {
-                            if (topSearch.value && typeof topSearch.value.openSearchWindow === "function") {
-                                topSearch.value.openSearchWindow();
-                            }
-                        }
-
-                        return {
-                            chatBot,
-                            failedTestCount,
-                            baseStore,
-                            userMenuItems,
-                            recentBlobs,
-                            recentlyViewed,
-                            overdueTasks,
-                            recentSearches,
-                            showHelp,
-                            openSearchWindow,
-                            topSearch,
-                            weatherInfo,
-                        }
-
-                    }
-                });
-                appTopBar.use(createPinia());
-                appTopBar.mount("#top-bar");
-
-                const appSideBar = createApp({
-                    name: "Sidebar",
-                    components: {
-                        SidebarMenu,
-                    },
-                    setup() {
-                        const currentTime = new Date().getTime()
-                        const baseStore = useBaseStore();
-
-                        onMounted(() => {
-                            window.setInterval(getUntaggedBookmarkCount, 60000);
-
-                            const ps = new PerfectScrollbar(".vsm--scroll-wrapper");
-                            // Save this so that we can update the scrollbar when expanding items in the sidebar
-                            baseStore.ps = ps;
-                        })
-
-                        const menu = [
-                            {
-                                href: "{% url 'homepage:homepage' %}",
-                                title: "Home",
-                                class: "first-item",
-                                icon: {
-                                    element: "font-awesome-icon",
-                                    attributes: {
-                                        icon: "home",
-                                    },
-                                    class: "fa-xs sidebar-icon-1"
-                                }
-                            },
-                            {
-                                href: "{% url 'search:search' %}",
-                                title: "Search",
-                                alias: "/search/search*",
-                                icon: {
-                                    element: "font-awesome-icon",
-                                    attributes: {
-                                        icon: "magnifying-glass",
-                                    },
-                                    class: "sidebar-icon-2"
-                                }
-                            },
-                            {
-                                href: "{% url 'bookmark:overview' %}",
-                                title: "Bookmarks",
-                                alias: "/bookmark/*",
-                                icon: {
-                                    element: "font-awesome-icon",
-                                    attributes: {
-                                        icon: "bookmark",
-                                    },
-                                        class: "sidebar-icon-3"
-                                    },
-                                    badge: {
-                                        text: "",
-                                        class: ""
-                                    }
-                                },
-                                {
-                                    href: "{% url 'node:list' %}",
-                                    title: "Nodes",
-                                    alias: "/node/*",
-                                    icon: {
-                                        element: "font-awesome-icon",
-                                        attributes: {
-                                            icon: "box",
-                                        },
-                                        class: "sidebar-icon-1"
-                                    }
-                                },
-                                {
-                                    href: "{% url 'collection:list' %}",
-                                    title: "Collections",
-                                    alias: "/collection/*",
-                                    icon: {
-                                        element: "font-awesome-icon",
-                                        attributes: {
-                                            icon: "grip-horizontal",
-                                        },
-                                        class: "sidebar-icon-2"
-                                    }
-                                },
-                                {
-                                    href: "{% url 'feed:list' %}",
-                                    title: "Feeds",
-                                    icon: {
-                                        element: "font-awesome-icon",
-                                        attributes: {
-                                            icon: "newspaper",
-                                        },
-                                        class: "sidebar-icon-3"
-                                    }
-                                },
-                                {
-                                    href: "{% url 'search:notes' %}",
-                                    title: "Notes",
-                                    icon: {
-                                        element: "font-awesome-icon",
-                                        attributes: {
-                                            icon: "sticky-note",
-                                        },
-                                        class: "sidebar-icon-1"
-                                    }
-                                },
-                                {
-                                    href: "{% url 'blob:list' %}",
-                                    title: "Blobs",
-                                    alias: "/blob/list",
-                                    icon: {
-                                        element: "font-awesome-icon",
-                                        attributes: {
-                                            icon: "copy",
-                                        },
-                                        class: "sidebar-icon-2"
-                                    },
-                                },
-                                {
-                                    href: "{% url 'drill:list' %}",
-                                    title: "Drill",
-                                    alias: "/drill/*",
-                                    icon: {
-                                        element: "font-awesome-icon",
-                                        attributes: {
-                                            icon: "graduation-cap",
-                                        },
-                                        class: "sidebar-icon-3"
-                                    }
-                                },
-                                {
-                                    href: "{% url 'music:list' %}",
-                                    title: "Music",
-                                    alias: ["/music/artist/*", "/music/album/*", "/music/tag/*"],
-                                    icon: {
-                                        element: "font-awesome-icon",
-                                        attributes: {
-                                            icon: "music"
-                                        },
-                                        class: "sidebar-icon-1"
-                                    }
-                                },
-                                {
-                                    href: "{% url 'todo:list' %}",
-                                    title: "Todo",
-                                    alias: "/todo/*",
-                                    icon: {
-                                        element: "font-awesome-icon",
-                                        attributes: {
-                                            icon: "tasks",
-                                        },
-                                        class: "sidebar-icon-3"
-                                    },
-                                    {% if todo_count %}
-                                    badge: {
-                                        text: {{ todo_count|default:0 }},
-                                        class: "vsm--badge_default"
-                                    }
-                                    {% endif %}
-                                },
-                                {
-                                    href: "/reminder/",
-                                    title: "Reminders",
-                                    alias: "/reminder/*",
-                                    icon: {
-                                        element: "font-awesome-icon",
-                                        attributes: {
-                                            icon: "clock",
-                                        },
-                                        class: "sidebar-icon-1"
-                                    },
-                                },
-                                {
-                                    href: "{% url 'tag:list' %}",
-                                    title: "Tags",
-                                    alias: "/tag/list",
-                                    icon: {
-                                        element: "font-awesome-icon",
-                                        attributes: {
-                                            icon: "tags",
-                                        },
-                                        class: "sidebar-icon-1"
-                                    },
-                                },
-                                {
-                                    href: "{% url 'fitness:summary' %}",
-                                    title: "Fitness",
-                                    alias: "/fitness/*",
-                                    icon: {
-                                        element: "font-awesome-icon",
-                                        attributes: {
-                                            icon: "running",
-                                        },
-                                        class: "sidebar-icon-2"
-                                    },
-                                    {% if exercise_count %}
-                                    badge: {
-                                        text: {{ exercise_count|default:0 }},
-                                        class: "vsm--badge_default"
-                                    }
-                                    {% endif %}
-                                },
-                        ];
-
-                        function getUntaggedBookmarkCount() {
-                            doGet(
-                                "{% url "bookmark:get_new_bookmarks_count" 666 %}".replace(/666/, currentTime),
-                                (response) => {
-                                    const count = response.data.count;
-                                    const item = menu.find(item => item.title === "Bookmarks");
-                                    item.badge.text = count;
-                                    item.badge.class = count === 0 ? "d-none" : "vsm--badge_default";
-                                },
-                                "Error getting new bookmarks count"
-                            );
-                        };
-
-                        function onItemClick(event, item, node) {
-                            baseStore.ps.update();
-                        };
-
-                        function onToggleCollapse(collapsed) {
-                            baseStore.sidebarCollapsed = !baseStore.sidebarCollapsed;
-                            const wrapper = document.querySelector(".wrapper");
-                            if (collapsed) {
-                                wrapper.classList.add("collapsed");
-                            } else {
-                                wrapper.classList.remove("collapsed");
-                            }
-
-                            doPost(
-                                "{% url "accounts:store_in_session" %}",
-                                {
-                                    "show_sidebar": !collapsed
-                                },
-                                () => {},
-                            );
-                        };
-
-                        return {
-                            baseStore,
-                            menu,
-                            onItemClick,
-                            onToggleCollapse,
-                        }
-                    },
-                });
-                appSideBar.component("font-awesome-icon", FontAwesomeIcon);
-                appSideBar.component("RouterLink", RouterLink);
-                appSideBar.mount("#sidebar");
-
-                const appHelp = createApp({
-                    name: "Help Modal"
-                });
-                appHelp.component("font-awesome-icon", FontAwesomeIcon);
-                appHelp.mount("#modalHelp");
-
             </script>
 
         {% endblock %}
@@ -627,6 +231,9 @@
             </div>
         {% endblock %}
 
+        <div id="chat-bot"></div>
+
     </body>
 
 </html>
+

@@ -15,16 +15,9 @@ axios.defaults.xsrfCookieName = "csrftoken";
 axios.defaults.xsrfHeaderName = "X-CSRFToken";
 axios.defaults.withCredentials = true; // Ensure cookies are sent
 
-// Helper function to get CSRF token from cookies or BASE_TEMPLATE_DATA
+// Helper function to get CSRF token from cookie
+// Django validates the header token against the cookie token, so we must use the cookie value
 function getCsrfToken(): string {
-  // First try to get from BASE_TEMPLATE_DATA (set by Django template)
-  if (typeof window !== "undefined" && (window as any).BASE_TEMPLATE_DATA?.csrfToken) {
-    const token = (window as any).BASE_TEMPLATE_DATA.csrfToken;
-    if (token && token.trim() !== "") {
-      return token.trim();
-    }
-  }
-  // Fallback: try to get from cookies using a more robust cookie parser
   const name = "csrftoken";
   if (typeof document !== "undefined" && document.cookie) {
     const value = `; ${document.cookie}`;
@@ -100,7 +93,7 @@ export function doPost(url: string, params: Record<string, any>, callback: (resp
   const headers: Record<string, string> = {};
   if (csrfToken) {
     // Also set header (Django accepts both X-CSRFToken and X-Csrftoken, case-insensitive)
-    headers["X-Csrftoken"] = csrfToken;
+    headers["X-CSRFToken"] = csrfToken;
   }
   
   // Match Vue version: use axios() directly, ensure credentials are sent
@@ -174,7 +167,7 @@ export function doPut(url: string, params: Record<string, any>, callback: (respo
 
   const headers: Record<string, string> = {};
   if (csrfToken) {
-    headers["X-Csrftoken"] = csrfToken;
+    headers["X-CSRFToken"] = csrfToken;
   }
 
   axios(url, {
@@ -223,13 +216,20 @@ export function doPut(url: string, params: Record<string, any>, callback: (respo
 export function doDelete(url: string, callback: (response: any) => void, successMsg = ""): void {
   const csrfToken = getCsrfToken();
 
+  // Create form data with CSRF token
+  const bodyFormData = new URLSearchParams();
+  if (csrfToken) {
+    bodyFormData.append("csrfmiddlewaretoken", csrfToken);
+  }
+
   const headers: Record<string, string> = {};
   if (csrfToken) {
-    headers["X-Csrftoken"] = csrfToken;
+    headers["X-CSRFToken"] = csrfToken;
   }
 
   axios(url, {
     method: "DELETE",
+    data: bodyFormData,
     headers: headers,
     withCredentials: true,
   }).then((response) => {

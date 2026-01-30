@@ -1,58 +1,25 @@
 {% extends "base.html" %}
+{% load vite_tags %}
 
 {% block title %} Books {% endblock %}
 
-{% block extra_head %}
-    <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/datatables.min.css" />
-{% endblock %}
-
 {% block content %}
+    <div
+        id="react-root"
+        data-selected-letter="{{ selected_letter }}"
+        data-base-url="{% url 'book_list' '' %}"
+    ></div>
 
-<ul class="nav nav-pills">
-    {% for letter in alphabet %}
-        <li{% if letter == selected_letter %} class="active"{% endif %}><a href="{% url 'book_list' letter %}">{{ letter }}</a></li>
-    {% endfor %}
-</ul>
-
-<br />
-
-{% include "common/datatable.html" with data=info cols=cols id="book_list" %}
-
-{% endblock %}
-
-
-{% block javascript %}
-
-    {{ block.super }}
-
-    <script type="text/javascript" src="{{ STATIC_URL }}js/datatables.min.js"></script>
-
-    <script type="text/javascript" charset="utf-8">
-
-        var oTable;
-
-        $(document).ready(function() {
-
-            {% if messages %}
-            {% for message in messages %}
-            $('#feedback').fadeIn(1000).html('{{ message }}');
-            setTimeout( function() {
-                $('#feedback').fadeOut(1000);
-            }, 3000);
-            {% endfor %}
-            {% endif %}
-
-            oTable = $('#book_list').dataTable( {
-                "bInfo": false,
-                "bPaginate": false,
-                "aaSorting": [[0, 'asc']],
-                "bFilter": true,
-                "bLengthChange": false,
-                "bSearchable": false,
-            } );
-
-        });
-
+    <script type="application/json" id="books-data">
+    {{ info|safe }}
     </script>
 
+    <script type="application/json" id="alphabet-data">
+    {{ alphabet_json|safe }}
+    </script>
+{% endblock %}
+
+{% block javascript_bundles %}
+    {{ block.super }}
+    {% vite_asset "dist/js/book-list" %}
 {% endblock %}

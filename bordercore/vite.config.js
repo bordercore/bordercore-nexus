@@ -1,6 +1,5 @@
 const path = require("path");
 const { defineConfig } = require("vite");
-const vue = require("@vitejs/plugin-vue");
 const react = require("@vitejs/plugin-react");
 
 // Determine if we're in production mode
@@ -8,12 +7,8 @@ const isProduction = process.env.NODE_ENV === "production";
 
 module.exports = defineConfig({
   plugins: [
-    vue({
-      include: /\.vue$/,
-    }),
     react({
       include: /\.(jsx|tsx)$/,
-      exclude: /node_modules|\.vue$/,
     }),
   ],
   // Base path: use /static/vite/ for production, / for dev
@@ -35,9 +30,7 @@ module.exports = defineConfig({
     manifest: true,
     rollupOptions: {
       input: {
-        "dist/js/javascript": path.resolve(__dirname, "front-end", "index.js"),
         "dist/css/bordercore": path.resolve(__dirname, "front-end", "entries", "bordercore-css.js"),
-        "dist/js/react-app": path.resolve(__dirname, "front-end", "entries", "react-app.tsx"),
         "dist/js/base-react": path.resolve(__dirname, "front-end", "entries", "base-react.tsx"),
         "dist/js/reminders": path.resolve(__dirname, "front-end", "entries", "reminders.tsx"),
         "dist/js/reminder-detail": path.resolve(__dirname, "front-end", "entries", "reminder-detail.tsx"),
@@ -81,6 +74,7 @@ module.exports = defineConfig({
         "dist/js/blob-import": path.resolve(__dirname, "front-end", "entries", "blob-import.tsx"),
         "dist/js/blob-update": path.resolve(__dirname, "front-end", "entries", "blob-update.tsx"),
         "dist/js/login": path.resolve(__dirname, "front-end", "entries", "login.tsx"),
+        "dist/js/book-list": path.resolve(__dirname, "front-end", "entries", "book-list.tsx"),
       },
       output: {
         entryFileNames: "[name]-[hash].js",
@@ -90,14 +84,5 @@ module.exports = defineConfig({
         },
       },
     },
-  },
-  resolve: {
-    alias: {
-      vue: "vue/dist/vue.esm-bundler.js",
-    },
-  },
-  define: {
-    __VUE_OPTIONS_API__: true,
-    __VUE_PROD_DEVTOOLS__: false,
   },
 });
