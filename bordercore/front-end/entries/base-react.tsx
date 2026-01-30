@@ -329,9 +329,9 @@ function SidebarContent() {
         icon: { element: "font-awesome-icon", attributes: { icon: "clock" }, class: "sidebar-icon-1" },
       },
       {
-        href: "/tag/list/",
+        href: "/tag/list",
         title: "Tags",
-        alias: "/tag/list/",
+        alias: "/tag/list",
         icon: { element: "font-awesome-icon", attributes: { icon: "tags" }, class: "sidebar-icon-1" },
       },
       {

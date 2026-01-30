@@ -102,8 +102,9 @@ def vite_asset(entry_name: str) -> SafeString | str:
     """
     parts: list[str] = []
 
-    # In DEBUG mode, serve from Vite dev server
-    if settings.DEBUG:
+    # In DEBUG mode, serve from Vite dev server (unless tests request manifest)
+    use_manifest = getattr(settings, "VITE_USE_MANIFEST", False)
+    if settings.DEBUG and not use_manifest:
         # Derive source path from entry name using naming conventions
         source_path = _get_source_path(entry_name)
 
