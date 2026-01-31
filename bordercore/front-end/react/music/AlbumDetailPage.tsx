@@ -217,24 +217,22 @@ export function AlbumDetailPage({
               </div>
             </div>
 
-            {/* Song table card */}
-            <div className="card backdrop-filter flex-grow-1 me-0 mt-3 mb-3" id="album-song-list">
-              <div className="card-body">
-                <SongTable
-                  songs={songs}
-                  currentSongUuid={currentSongUuid}
-                  isPlaying={isPlaying}
-                  staticUrl={staticUrl}
-                  setSongRatingUrl={urls.setSongRating}
-                  editSongUrlTemplate={urls.editSong}
-                  addToPlaylistUrl={urls.addToPlaylist}
-                  csrfToken={csrfToken}
-                  playlists={playlists}
-                  onSongClick={handleSongClick}
-                  onRatingChange={handleRatingChange}
-                  onPlaylistToggle={handlePlaylistToggle}
-                />
-              </div>
+            {/* Song table */}
+            <div className="flex-grow-1 me-0 mt-3 mb-3" id="album-song-list">
+              <SongTable
+                songs={songs}
+                currentSongUuid={currentSongUuid}
+                isPlaying={isPlaying}
+                staticUrl={staticUrl}
+                setSongRatingUrl={urls.setSongRating}
+                editSongUrlTemplate={urls.editSong}
+                addToPlaylistUrl={urls.addToPlaylist}
+                csrfToken={csrfToken}
+                playlists={playlists}
+                onSongClick={handleSongClick}
+                onRatingChange={handleRatingChange}
+                onPlaylistToggle={handlePlaylistToggle}
+              />
             </div>
           </div>
         </div>

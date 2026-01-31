@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTrashAlt, faAngleUp, faAngleDown } from "@fortawesome/free-solid-svg-icons";
+import { faTrashAlt } from "@fortawesome/free-solid-svg-icons";
 import { DropDownMenu } from "../common/DropDownMenu";
 import type { TagAlias } from "./types";
 
@@ -51,12 +51,7 @@ export function TagAliasTable({ data, onDelete }: TagAliasTableProps) {
 
   const renderSortIcon = (field: SortField) => {
     if (sortField !== field) return null;
-    return (
-      <FontAwesomeIcon
-        icon={sortDirection === "asc" ? faAngleUp : faAngleDown}
-        className="ms-1 sort-icon"
-      />
-    );
+    return sortDirection === "asc" ? " ↑" : " ↓";
   };
 
   if (data.length === 0) {
@@ -64,20 +59,18 @@ export function TagAliasTable({ data, onDelete }: TagAliasTableProps) {
   }
 
   return (
-    <div className="table-responsive">
-      <table className="table table-hover">
+    <div className="tag-alias-table-container">
+      <table className="tag-alias-table">
         <thead>
           <tr>
             <th
               className="cursor-pointer"
-              className="tag-alias-table-sortable"
               onClick={() => handleSort("tag")}
             >
               Tag{renderSortIcon("tag")}
             </th>
             <th
               className="cursor-pointer"
-              className="tag-alias-table-sortable"
               onClick={() => handleSort("alias")}
             >
               Alias{renderSortIcon("alias")}

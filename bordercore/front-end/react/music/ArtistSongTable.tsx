@@ -103,8 +103,8 @@ export function ArtistSongTable({
     : `${staticUrl}img/equaliser-animated-green-frozen.gif`;
 
   return (
-    <div className="table-responsive">
-      <table className="table table-hover">
+    <div className="song-table-container">
+      <table className="song-table">
         <thead>
           <tr>
             <th>Title</th>

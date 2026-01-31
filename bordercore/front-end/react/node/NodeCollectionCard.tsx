@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faSplotch,
@@ -72,18 +72,22 @@ function SortableItem({
     isDragging,
   } = useSortable({ id: element.uuid });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-    zIndex: isDragging ? 1000 : 1,
+  const nodeRef = useRef<HTMLDivElement | null>(null);
+  const setRef = (el: HTMLDivElement | null) => {
+    setNodeRef(el);
+    nodeRef.current = el;
   };
 
+  useLayoutEffect(() => {
+    const el = nodeRef.current;
+    if (!el) return;
+    el.style.transform = CSS.Transform.toString(transform);
+    el.style.transition = transition;
+  }, [transform, transition]);
+
   return (
-    /* must remain inline - dnd-kit requires dynamic transform/transition */
     <div
-      ref={setNodeRef}
-      style={style}
+      ref={setRef}
       className={`slicklist-item ${isDragging ? "dragging" : ""}`}
     >
       <div className="slicklist-list-item-inner">

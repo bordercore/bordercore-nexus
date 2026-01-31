@@ -169,10 +169,22 @@ export const SelectValue = forwardRef<SelectValueHandle, SelectValueProps>(funct
       setValue(null);
       setSearch("");
     },
-  }));
+  }), [search, label]);
 
   const handleKeyboardNavigation = (e: React.KeyboardEvent<HTMLInputElement>) => {
     const selectableOptions = getSelectableOptions();
+
+    // Handle Enter key first - should always work regardless of dropdown state
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (highlightedIndex >= 0 && highlightedIndex < selectableOptions.length) {
+        handleSelect(selectableOptions[highlightedIndex]);
+      } else if (search) {
+        onSearch?.(search);
+      }
+      return;
+    }
+
     if (selectableOptions.length === 0) {
       onKeyDown?.(e);
       return;
@@ -202,13 +214,6 @@ export const SelectValue = forwardRef<SelectValueHandle, SelectValueProps>(funct
           highlightedElement.scrollIntoView({ block: "nearest", behavior: "smooth" });
         }
       }, 0);
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      if (highlightedIndex >= 0 && highlightedIndex < selectableOptions.length) {
-        handleSelect(selectableOptions[highlightedIndex]);
-      } else if (value) {
-        onSearch?.(value);
-      }
     } else {
       onKeyDown?.(e);
     }

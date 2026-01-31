@@ -76,7 +76,7 @@ export function BookListPage({
   };
 
   return (
-    <div>
+    <div className="book-list-page">
       {/* Alphabet Navigation */}
       <ul className="nav nav-pills mb-3">
         {alphabet.map((letter) => (
@@ -95,11 +95,10 @@ export function BookListPage({
       <div className="mb-3">
         <input
           type="text"
-          className="form-control"
+          className="form-control book-list-search-input"
           placeholder="Search books..."
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          style={{ maxWidth: "300px" }}
         />
       </div>
 
@@ -111,20 +110,20 @@ export function BookListPage({
           <thead>
             <tr>
               <th
+                className="sortable-header"
                 onClick={() => handleSort("title")}
-                style={{ cursor: "pointer" }}
               >
                 Title{getSortIndicator("title")}
               </th>
               <th
+                className="sortable-header"
                 onClick={() => handleSort("author")}
-                style={{ cursor: "pointer" }}
               >
                 Author{getSortIndicator("author")}
               </th>
               <th
+                className="sortable-header"
                 onClick={() => handleSort("year")}
-                style={{ cursor: "pointer" }}
               >
                 Year{getSortIndicator("year")}
               </th>

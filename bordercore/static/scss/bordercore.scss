@@ -54,6 +54,7 @@ $table-cell-padding-x: .75rem;
 @import "components/cards";
 
 // 5. Pages - App-specific styles
+@import "pages/book";
 @import "pages/bookmarks";
 @import "pages/blobs";
 @import "pages/collections";
@@ -65,6 +66,7 @@ $table-cell-padding-x: .75rem;
 @import "pages/homepage";
 @import "pages/feed";
 @import "pages/sql";
+@import "pages/tags";
 @import "pages/gallery";
 
 // 6. Vendors - Third-party overrides

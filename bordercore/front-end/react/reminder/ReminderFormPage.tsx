@@ -181,6 +181,7 @@ export function ReminderFormPage({
 
     try {
       const formDataToSend = new URLSearchParams();
+      formDataToSend.append("csrfmiddlewaretoken", csrfToken);
       formDataToSend.append("name", formData.name);
       formDataToSend.append("note", formData.note || "");
       formDataToSend.append("is_active", formData.is_active ? "true" : "false");
@@ -205,7 +206,7 @@ export function ReminderFormPage({
 
       const response = await axios.post(submitUrl, formDataToSend, {
         headers: {
-          "X-Csrftoken": csrfToken,
+          "X-CSRFToken": csrfToken,
           "Content-Type": "application/x-www-form-urlencoded",
         },
         withCredentials: true,
@@ -406,12 +407,11 @@ export function ReminderFormPage({
                     <button
                       key={day}
                       type="button"
-                      className={`btn btn-sm ${
+                      className={`btn ${
                         formData.days_of_month?.includes(day)
                           ? "btn-primary"
                           : "btn-outline-secondary"
                       }`}
-                      className="reminder-day-button"
                       onClick={() => handleDayOfMonthToggle(day)}
                     >
                       {day}

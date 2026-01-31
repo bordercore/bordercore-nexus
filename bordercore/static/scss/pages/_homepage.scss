@@ -1,8 +1,13 @@
 .homepage {
+  // Add gap between cards in each column
+  > .row > .d-flex.flex-column {
+    gap: var(--column-gutter);
+  }
+
   .card-body {
     flex-grow: 0;
     padding: 1.25rem;
-    margin: 0 0.5rem 1rem;
+    margin: 0;
     background-color: var(--surface2);
     border-radius: 0.4rem;
   }

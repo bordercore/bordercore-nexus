@@ -67,7 +67,7 @@ export function FitnessSummaryPage({ activeExercises, inactiveExercises }: Fitne
 
   const getSortIcon = (field: SortField) => {
     if (sortField !== field) return null;
-    return sortDirection === "asc" ? " \u25B2" : " \u25BC";
+    return sortDirection === "asc" ? " ↑" : " ↓";
   };
 
   return (
@@ -75,96 +75,100 @@ export function FitnessSummaryPage({ activeExercises, inactiveExercises }: Fitne
       <div className="me-3">
         <h1>Active Exercises</h1>
 
-        <table className="table table-hover">
-          <thead>
-            <tr>
-              <th>Exercise</th>
-              <th className="text-center">Muscle Group</th>
-              <th className="text-center">Schedule</th>
-              <th className="text-center">Last Workout</th>
-            </tr>
-          </thead>
-          <tbody>
-            {activeExercises.map((row) => (
-              <tr key={row.exercise_url} className={getRowClass(row)}>
-                <td>
-                  <a href={row.exercise_url}>{row.exercise}</a>
-                  {row.overdue === 2 && <span className="text-warning ms-3">OVERDUE</span>}
-                </td>
-                <td className="fitness-col-muscle-group text-center">{row.muscle_group}</td>
-                <td className="fitness-col-schedule text-center">{row.schedule_days}</td>
-                <td>
-                  {row.last_active ? (
-                    <div className="d-flex">
-                      <div className="text-nowrap me-3">{getFormattedDate(row.last_active)}</div>
-                      <div className="text-nowrap ms-auto">{getFrequency(row)}</div>
-                    </div>
-                  ) : (
-                    <div>Never</div>
-                  )}
-                </td>
-              </tr>
-            ))}
-            {activeExercises.length === 0 && (
+        <div className="fitness-table-container">
+          <table className="fitness-table">
+            <thead>
               <tr>
-                <td colSpan={4} className="text-center">
-                  No active exercises
-                </td>
+                <th>Exercise</th>
+                <th className="text-center">Muscle Group</th>
+                <th className="text-center">Schedule</th>
+                <th className="text-center">Last Workout</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {activeExercises.map((row) => (
+                <tr key={row.exercise_url} className={getRowClass(row)}>
+                  <td>
+                    <a href={row.exercise_url}>{row.exercise}</a>
+                    {row.overdue === 2 && <span className="text-warning ms-3">OVERDUE</span>}
+                  </td>
+                  <td className="fitness-col-muscle-group text-center">{row.muscle_group}</td>
+                  <td className="fitness-col-schedule text-center">{row.schedule_days}</td>
+                  <td>
+                    {row.last_active ? (
+                      <div className="d-flex">
+                        <div className="text-nowrap me-3">{getFormattedDate(row.last_active)}</div>
+                        <div className="text-nowrap ms-auto">{getFrequency(row)}</div>
+                      </div>
+                    ) : (
+                      <div>Never</div>
+                    )}
+                  </td>
+                </tr>
+              ))}
+              {activeExercises.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="text-center">
+                    No active exercises
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
 
         <h1 className="mt-3">Inactive Exercises</h1>
 
-        <table className="table table-hover">
-          <thead>
-            <tr>
-              <th className="cursor-pointer" onClick={() => handleSort("exercise")}>
-                Exercise{getSortIcon("exercise")}
-              </th>
-              <th
-                className="text-center cursor-pointer"
-                onClick={() => handleSort("muscle_group")}
-              >
-                Muscle Group{getSortIcon("muscle_group")}
-              </th>
-              <th
-                className="text-center cursor-pointer"
-                onClick={() => handleSort("last_active")}
-              >
-                Last Workout{getSortIcon("last_active")}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedInactiveExercises.map((row) => (
-              <tr key={row.exercise_url}>
-                <td>
-                  <a href={row.exercise_url}>{row.exercise}</a>
-                </td>
-                <td className="text-center">{row.muscle_group}</td>
-                <td>
-                  {row.last_active ? (
-                    <div className="d-flex">
-                      <div className="text-nowrap me-3">{row.last_active}</div>
-                      <div className="text-nowrap ms-auto">{getFrequency(row)}</div>
-                    </div>
-                  ) : (
-                    <div>Never</div>
-                  )}
-                </td>
-              </tr>
-            ))}
-            {sortedInactiveExercises.length === 0 && (
+        <div className="fitness-table-container">
+          <table className="fitness-table">
+            <thead>
               <tr>
-                <td colSpan={3} className="text-center">
-                  No inactive exercises
-                </td>
+                <th className="cursor-pointer" onClick={() => handleSort("exercise")}>
+                  Exercise{getSortIcon("exercise")}
+                </th>
+                <th
+                  className="text-center cursor-pointer"
+                  onClick={() => handleSort("muscle_group")}
+                >
+                  Muscle Group{getSortIcon("muscle_group")}
+                </th>
+                <th
+                  className="text-center cursor-pointer"
+                  onClick={() => handleSort("last_active")}
+                >
+                  Last Workout{getSortIcon("last_active")}
+                </th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {sortedInactiveExercises.map((row) => (
+                <tr key={row.exercise_url}>
+                  <td>
+                    <a href={row.exercise_url}>{row.exercise}</a>
+                  </td>
+                  <td className="text-center">{row.muscle_group}</td>
+                  <td>
+                    {row.last_active ? (
+                      <div className="d-flex">
+                        <div className="text-nowrap me-3">{row.last_active}</div>
+                        <div className="text-nowrap ms-auto">{getFrequency(row)}</div>
+                      </div>
+                    ) : (
+                      <div>Never</div>
+                    )}
+                  </td>
+                </tr>
+              ))}
+              {sortedInactiveExercises.length === 0 && (
+                <tr>
+                  <td colSpan={3} className="text-center">
+                    No inactive exercises
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useLayoutEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBars,
@@ -74,11 +74,18 @@ function SortableBookmarkRow({
     disabled: dragDisabled,
   });
 
-  const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
+  const nodeRef = useRef<HTMLTableRowElement | null>(null);
+  const setRef = (el: HTMLTableRowElement | null) => {
+    setNodeRef(el);
+    nodeRef.current = el;
   };
+
+  useLayoutEffect(() => {
+    const el = nodeRef.current;
+    if (!el) return;
+    el.style.transform = CSS.Transform.toString(transform);
+    el.style.transition = transition;
+  }, [transform, transition]);
 
   // Filter out the currently selected tag from display
   const filteredTags = bookmark.tags.filter((tag) => tag !== selectedTagName);
@@ -98,14 +105,12 @@ function SortableBookmarkRow({
     viewType === "normal";
 
   return (
-    /* must remain inline - dnd-kit requires dynamic transform/transition */
     <tr
-      ref={setNodeRef}
-      style={style}
+      ref={setRef}
       data-uuid={bookmark.uuid}
       className={`hover-reveal-target bookmark-row ${
         selectedBookmarkUuid === bookmark.uuid ? "selected" : ""
-      } ${dragDisabled ? "no-drag" : ""}`}
+      } ${isDragging ? "dragging" : ""} ${dragDisabled ? "no-drag" : ""}`}
       onClick={() => onClickBookmark(bookmark.uuid)}
       draggable={!dragDisabled}
       onDragStart={handleDragStart}

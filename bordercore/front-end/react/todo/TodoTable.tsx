@@ -7,8 +7,6 @@ import {
   faArrowUp,
   faPencilAlt,
   faTrashAlt,
-  faAngleUp,
-  faAngleDown,
 } from "@fortawesome/free-solid-svg-icons";
 import MarkdownIt from "markdown-it";
 import type { Todo, SortState } from "./types";
@@ -109,12 +107,7 @@ export function TodoTable({
 
   const renderSortIcon = (field: SortField) => {
     if (sortField !== field) return null;
-    return (
-      <FontAwesomeIcon
-        icon={sortDirection === "asc" ? faAngleUp : faAngleDown}
-        className="ms-1 sort-icon"
-      />
-    );
+    return sortDirection === "asc" ? " ↑" : " ↓";
   };
 
   // Drag and drop handlers - using drag handle approach
@@ -172,8 +165,8 @@ export function TodoTable({
   }
 
   return (
-    <div className="table-responsive">
-      <table className="table table-hover">
+    <div className="todo-table-container">
+      <table className="todo-table">
         <thead>
           <tr>
             <th

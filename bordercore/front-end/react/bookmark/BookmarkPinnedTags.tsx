@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef, useLayoutEffect } from "react";
 import {
   DndContext,
   closestCenter,
@@ -51,11 +51,18 @@ function SortableTagItem({
     disabled: isUntagged,
   });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
+  const nodeRef = useRef<HTMLDivElement | null>(null);
+  const setRef = (el: HTMLDivElement | null) => {
+    setNodeRef(el);
+    nodeRef.current = el;
   };
+
+  useLayoutEffect(() => {
+    const el = nodeRef.current;
+    if (!el) return;
+    el.style.transform = CSS.Transform.toString(transform);
+    el.style.transition = transition;
+  }, [transform, transition]);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -76,11 +83,9 @@ function SortableTagItem({
   };
 
   return (
-    /* must remain inline - dnd-kit requires dynamic transform/transition */
     <div
-      ref={setNodeRef}
-      style={style}
-      className={`slicklist-item ${isUntagged ? "no-drag" : ""}`}
+      ref={setRef}
+      className={`slicklist-item ${isDragging ? "dragging" : ""} ${isUntagged ? "no-drag" : ""}`}
     >
       <div className="slicklist-list-item-inner">
         <li

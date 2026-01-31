@@ -245,26 +245,24 @@ export function ArtistDetailPage({
 
             {/* Songs list */}
             {songCount > 0 && (
-              <div className="card backdrop-filter hover-target me-0 mb-3" id="album-song-list">
-                <div className="card-body">
-                  <h4 className="fw-bold">
-                    {songCount} song{songCount !== 1 ? "s" : ""}
-                  </h4>
-                  <ArtistSongTable
-                    songs={songs}
-                    currentSongUuid={currentSongUuid}
-                    isPlaying={isPlaying}
-                    staticUrl={staticUrl}
-                    setSongRatingUrl={urls.setSongRating}
-                    editSongUrlTemplate={urls.editSong}
-                    addToPlaylistUrl={urls.addToPlaylist}
-                    csrfToken={csrfToken}
-                    playlists={playlists}
-                    onSongClick={handleSongClick}
-                    onRatingChange={handleRatingChange}
-                    onPlaylistToggle={handlePlaylistToggle}
-                  />
-                </div>
+              <div className="me-0 mb-3" id="album-song-list">
+                <h4 className="fw-bold mb-3">
+                  {songCount} song{songCount !== 1 ? "s" : ""}
+                </h4>
+                <ArtistSongTable
+                  songs={songs}
+                  currentSongUuid={currentSongUuid}
+                  isPlaying={isPlaying}
+                  staticUrl={staticUrl}
+                  setSongRatingUrl={urls.setSongRating}
+                  editSongUrlTemplate={urls.editSong}
+                  addToPlaylistUrl={urls.addToPlaylist}
+                  csrfToken={csrfToken}
+                  playlists={playlists}
+                  onSongClick={handleSongClick}
+                  onRatingChange={handleRatingChange}
+                  onPlaylistToggle={handlePlaylistToggle}
+                />
               </div>
             )}
           </div>

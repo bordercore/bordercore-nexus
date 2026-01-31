@@ -4,9 +4,16 @@
 // Todo list, filters sidebar, columns, and task management
 
 .todo-filters-sidebar {
+  position: relative;
+  z-index: 1;
   padding: 1rem;
   background-color: var(--surface2);
   border-radius: var(--border-radius1);
+
+  // Ensure sticky-top doesn't interfere with main navbar overlay
+  .sticky-top {
+    z-index: 1;
+  }
 
   .list-with-counts {
     border-radius: var(--border-radius1);
@@ -99,22 +106,59 @@
   }
 }
 
-// Todo table styling to match album song list
-.card-grid .table {
-  // Table header styling to match album page
-  th {
-    color: var(--text2);
+// Todo table container - matches reminders table styling
+.todo-table-container {
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  background-color: var(--surface2);
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 5%);
+}
 
-    // Sort icon styling to match Oruga table - right justified
-    .sort-icon {
-      color: var(--text2);
-      float: right;
+.todo-table {
+  width: 100%;
+  margin-bottom: 0;
+  border-collapse: collapse;
+  text-align: left;
+
+  thead {
+    tr {
+      border-bottom: 1px solid var(--border-color);
+      background-color: var(--surface3);
+
+      th {
+        padding: 1rem;
+        border: none;
+        color: var(--text6);
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
     }
   }
 
-  // Remove border from last row
-  tbody tr:last-child td {
-    border-bottom: none;
+  tbody {
+    tr {
+      border-bottom: 1px solid var(--border-color);
+      background-color: transparent;
+      transition: background-color 0.15s ease;
+
+      &:hover {
+        background-color: var(--hover-bg);
+      }
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      td {
+        padding: 1rem;
+        border: none;
+        background-color: transparent;
+        color: var(--text1);
+      }
+    }
   }
 }
 
@@ -161,13 +205,13 @@
 }
 
 // Row being dragged
-.table tbody tr.dragging {
+.todo-table tbody tr.dragging {
   background-color: var(--surface2);
   opacity: 0.5;
 }
 
 // Drop target indicator
-.table tbody tr.drag-over {
+.todo-table tbody tr.drag-over {
   border-top: 2px solid var(--link-color);
 
   td:first-child {

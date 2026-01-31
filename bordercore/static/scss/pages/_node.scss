@@ -97,6 +97,7 @@
   }
 
   &.dragging {
+    z-index: 1000;
     background-color: var(--surface5);
     opacity: 0.5;
   }
