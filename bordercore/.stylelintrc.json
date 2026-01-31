@@ -10,8 +10,7 @@
   ],
   "ignoreFiles": [
     "**/themes/**",
-    "**/theme-*",
-    "**/_base.scss"
+    "**/theme-*"
   ],
   "rules": {
     "order/order": [

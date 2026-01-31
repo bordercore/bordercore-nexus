@@ -13,18 +13,6 @@ install:
 
 .ONESHELL:
 .SILENT:
-webpack: webpack_build webpack_ec2
-
-webpack_build: check-env
-	cd $(BORDERCORE_HOME)
-	npm run build
-
-webpack_ec2: check-env
-	cd $(BORDERCORE_HOME)
-	rsync -azv --no-times --no-group --delete --exclude=/rest_framework static/ $(EC2_HOST):$(EC2_PATH)
-	ssh $(EC2_HOST) "sudo chown -R www-data:www-data $(EC2_PATH)"
-	scp ./webpack-stats.json $(EC2_HOST):$(EC2_PATH)../bordercore/bordercore
-
 vite: vite_build vite_ec2
 
 vite_build: check-env

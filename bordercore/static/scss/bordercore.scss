@@ -2,8 +2,6 @@
 // BORDERCORE SCSS - MODULAR STRUCTURE
 // =============================================================================
 // This file imports all SCSS partials in the correct order
-// Webpack will continue to use _base.scss (unchanged)
-// Vite will use this new modular structure
 
 // Themes (CSS custom properties - must come first)
 @import "themes/index";
@@ -25,9 +23,6 @@ $table-cell-padding-x: .75rem;
 
 // Import CSS for vue-sidebar-menu
 @import "../css/vue-sidebar-menu/vue-sidebar-menu";
-
-// Import CSS for Floating Vue tooltip
-@import "../../node_modules/floating-vue/dist/style.css";
 
 // =============================================================================
 // MODULAR SCSS IMPORTS
