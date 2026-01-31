@@ -218,20 +218,41 @@ def get_recently_viewed(user: User) -> list[dict[str, Any]]:
             - name: Item name
             - uuid: Item UUID
     """
+    # Query optimization: Each RecentlyViewedBlob row has EITHER a blob OR a node
+    # (never both). Using a single query with select_related("blob", "node") would
+    # JOIN both tables for all rows, but we only use one relation per row:
+    #   - Blob rows: we access x.blob but never x.node
+    #   - Node rows: we access x.node but never x.blob
+    #
+    # This triggers nplusone's "unnecessary eager load" warning and wastes DB work.
+    # Instead, we run two targeted queries - one for blob rows (JOINing only blob),
+    # one for node rows (JOINing only node) - then merge in Python. For a small
+    # list (max 20 items per RecentlyViewedBlob.MAX_SIZE), two simple queries are
+    # more efficient than one query with unnecessary JOINs.
 
-    objects = RecentlyViewedBlob.objects.filter(
-        Q(blob__user=user) | Q(node__user=user)
-    ).order_by(
-        "-created"
+    blob_rows = RecentlyViewedBlob.objects.filter(
+        blob__user=user
     ).select_related(
-        "blob",
-        "node"
+        "blob"
     ).prefetch_related(
         "blob__metadata"
     )
 
+    node_rows = RecentlyViewedBlob.objects.filter(
+        node__user=user
+    ).select_related(
+        "node"
+    )
+
+    # Merge and sort by created (most recent first)
+    all_rows = sorted(
+        list(blob_rows) + list(node_rows),
+        key=lambda x: x.created,
+        reverse=True
+    )
+
     object_list = []
-    for x in objects:
+    for x in all_rows:
         if x.blob:
             object_list.append(
                 {
