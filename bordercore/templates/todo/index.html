@@ -24,7 +24,7 @@
         data-store-in-session-url="{% url 'accounts:store_in_session' %}"
         data-priority-list="{{ priority_list }}"
         data-tags="{{ tags_json }}"
-        data-default-sort="{{ request.session.todo_sort|default:'{"field":"sort_order","direction":"asc"}' }}"
+        data-default-sort="{{ request.session.todo_sort|default:'{&quot;field&quot;:&quot;sort_order&quot;,&quot;direction&quot;:&quot;asc&quot;}' }}"
         data-filter-tag="{{ filter.todo_filter_tag|default:'' }}"
         data-filter-priority="{{ filter.todo_filter_priority|default:'' }}"
         data-filter-time="{{ filter.todo_filter_time|default:'' }}"

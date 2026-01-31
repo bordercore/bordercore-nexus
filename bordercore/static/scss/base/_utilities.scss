@@ -50,7 +50,6 @@ div.sphere {
   top: 0;
   padding-top: 0.5rem;
   padding-bottom: 0.5rem;
-  background-color: var(--surface1);
 }
 
 [hidden] {
@@ -314,6 +313,10 @@ hr.divider {
 
 .me-gutter {
   margin-right: var(--column-gutter) !important;
+}
+
+.ms-gutter {
+  margin-left: var(--column-gutter) !important;
 }
 
 .min-h-0 {

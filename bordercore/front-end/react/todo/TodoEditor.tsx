@@ -6,6 +6,7 @@ import React, {
   useImperativeHandle,
   useCallback,
 } from "react";
+import { flushSync } from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCalendarAlt, faTrashAlt } from "@fortawesome/free-solid-svg-icons";
 import { Modal } from "bootstrap";
@@ -58,6 +59,7 @@ export const TodoEditor = forwardRef<TodoEditorHandle, TodoEditorProps>(
       priority: 2,
       tags: [],
     });
+    const [tagsKey, setTagsKey] = useState(0);
 
     const modalRef = useRef<Modal | null>(null);
     const tagsInputRef = useRef<TagsInputHandle>(null);
@@ -152,17 +154,24 @@ export const TodoEditor = forwardRef<TodoEditorHandle, TodoEditorProps>(
 
     const openModal = useCallback(
       (actionParam: "Edit" | "Create", todoInfoParam?: TodoInfo) => {
-        setAction(actionParam);
-        if (todoInfoParam) {
-          setTodoInfo(todoInfoParam);
-        }
+        flushSync(() => {
+          setAction(actionParam);
+          if (todoInfoParam) {
+            setTodoInfo(todoInfoParam);
+          }
+          setTagsKey((prev) => prev + 1);
+        });
         modalRef.current?.show();
         setTimeout(() => {
+          // Set tags after component has re-rendered
+          if (todoInfoParam?.tags) {
+            tagsInputRef.current?.setTagList(todoInfoParam.tags);
+          }
           const input = document.querySelector(
             "#modalEditTodo input"
           ) as HTMLInputElement;
           input?.focus();
-        }, 500);
+        }, 100);
       },
       []
     );
@@ -346,6 +355,7 @@ export const TodoEditor = forwardRef<TodoEditorHandle, TodoEditorProps>(
                       </label>
                       <div className="col-lg-9">
                         <TagsInput
+                          key={tagsKey}
                           ref={tagsInputRef}
                           searchUrl={tagSearchUrl}
                           initialTags={todoInfo.tags || []}

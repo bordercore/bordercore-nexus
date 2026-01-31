@@ -1,0 +1,106 @@
+// =============================================================================
+// VENDORS: REACT PLUGINS
+// =============================================================================
+// Third-party React component overrides (react-select, etc.)
+// react-select uses BEM-style class names (e.g. .react-select__control) which
+// don't conform to kebab-case; disable selector-class-pattern for this file.
+/* stylelint-disable selector-class-pattern */
+
+// React Select
+.react-select-container {
+  .react-select__control {
+    border: 1px solid var(--border-color);
+    background-color: var(--form-bg);
+    border-radius: var(--border-radius1);
+
+    &:hover {
+      border-color: var(--accent);
+    }
+
+    &--is-focused {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent);
+    }
+  }
+
+  .react-select__value-container {
+    padding: 0.25rem 0.5rem;
+  }
+
+  .react-select__input-container {
+    color: var(--text1);
+  }
+
+  .react-select__placeholder {
+    color: var(--text3);
+  }
+
+  .react-select__single-value {
+    color: var(--text1);
+  }
+
+  .react-select__multi-value {
+    padding-top: 0.15rem;
+    padding-bottom: 0.15rem;
+    padding-left: 0.5rem;
+    border: 0.06rem solid var(--form-bg);
+    margin-right: 0.37rem;
+    margin-bottom: 0;
+    background-color: var(--vms-selected-bg);
+    border-radius: 0.375rem;
+  }
+
+  .react-select__multi-value__label {
+    padding: 0;
+    color: var(--vms-selected-color);
+  }
+
+  .react-select__multi-value__remove {
+    color: var(--vms-selected-color);
+    cursor: pointer;
+
+    &:hover {
+      background-color: var(--hover-bg);
+      color: var(--vms-selected-color);
+    }
+  }
+
+  .react-select__menu {
+    z-index: 1050;
+    border: 1px solid var(--border-color);
+    background-color: var(--surface2);
+    border-radius: var(--border-radius1);
+  }
+
+  .react-select__menu-list {
+    padding: 0;
+  }
+
+  .react-select__option {
+    padding: 0.75rem;
+    color: var(--text1);
+    cursor: pointer;
+
+    &:hover,
+    &--is-focused {
+      background-color: var(--hover-bg);
+    }
+
+    &--is-selected {
+      background-color: var(--selected-bg);
+    }
+  }
+
+  .react-select__indicator-separator {
+    display: none;
+  }
+
+  .react-select__dropdown-indicator,
+  .react-select__clear-indicator {
+    color: var(--text2);
+
+    &:hover {
+      color: var(--text1);
+    }
+  }
+}

@@ -256,7 +256,6 @@ export function TodoListPage({
       due_date: todo.due_date ? new Date(todo.due_date) : undefined,
     };
     editTodoRef.current?.openModal("Edit", todoInfo);
-    editTodoRef.current?.setTags(todo.tags);
   }, []);
 
   const handleDelete = useCallback((todo: Todo) => {
@@ -319,8 +318,8 @@ export function TodoListPage({
       />
 
       <div className="col-lg-9">
-        <div className="card-grid ms-2">
-          <div className="d-flex justify-content-between">
+        <div className="card-grid ms-gutter">
+          <div className="d-flex justify-content-between mb-2">
             {/* Filters button for mobile */}
             <button
               type="button"
@@ -333,7 +332,7 @@ export function TodoListPage({
             </button>
 
             <form className="form-inline" role="form" onSubmit={(e) => e.preventDefault()}>
-              <div className="position-relative ms-2">
+              <div className="position-relative">
                 <input
                   type="text"
                   value={filterSearch}

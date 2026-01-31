@@ -1,16 +1,14 @@
 import React, {
   useState,
   useRef,
+  useEffect,
   forwardRef,
   useImperativeHandle,
   useCallback,
 } from "react";
 import AsyncCreatableSelect from "react-select/async-creatable";
-import makeAnimated from "react-select/animated";
 import type { MultiValue, ActionMeta } from "react-select";
 import axios from "axios";
-
-const animatedComponents = makeAnimated();
 
 interface TagOption {
   label: string;
@@ -60,6 +58,14 @@ export const TagsInput = forwardRef<TagsInputHandle, TagsInputProps>(function Ta
   );
 
   const selectRef = useRef<any>(null);
+
+  // Sync selectedTags when initialTags prop changes
+  // Use JSON.stringify to compare by value, not reference
+  const initialTagsJson = JSON.stringify(initialTags);
+  useEffect(() => {
+    const tags = JSON.parse(initialTagsJson) as string[];
+    setSelectedTags(tags.map((t) => ({ label: t, value: t })));
+  }, [initialTagsJson]);
 
   // Computed: comma-separated tags for hidden input
   const tagsCommaSeparated = selectedTags.map((t) => t.label).join(",");
@@ -182,7 +188,6 @@ export const TagsInput = forwardRef<TagsInputHandle, TagsInputProps>(function Ta
         isDisabled={disabled}
         isSearchable={isSearchable}
         placeholder={placeholder}
-        components={animatedComponents}
         noOptionsMessage={({ inputValue }) =>
           inputValue.length < minLength
             ? `Type at least ${minLength} characters to search`
@@ -191,81 +196,6 @@ export const TagsInput = forwardRef<TagsInputHandle, TagsInputProps>(function Ta
         formatCreateLabel={(inputValue) => `Create "${inputValue}"`}
         classNamePrefix="react-select"
         className="react-select-container"
-        styles={{
-          control: (base, state) => ({
-            ...base,
-            backgroundColor: "var(--form-bg)",
-            borderColor: state.isFocused ? "var(--accent)" : "var(--surface1)",
-            boxShadow: state.isFocused ? "0 0 0 1px var(--accent)" : "none",
-            "&:hover": {
-              borderColor: "var(--accent)",
-            },
-          }),
-          menu: (base) => ({
-            ...base,
-            backgroundColor: "var(--surface2)",
-            border: "1px solid var(--border-color)",
-            zIndex: 1050,
-          }),
-          option: (base, state) => ({
-            ...base,
-            backgroundColor: state.isFocused
-              ? "var(--hover-bg)"
-              : "transparent",
-            color: "var(--text1)",
-            cursor: "pointer",
-            "&:active": {
-              backgroundColor: "var(--hover-bg)",
-            },
-          }),
-          multiValue: (base) => ({
-            ...base,
-            backgroundColor: "var(--surface2)",
-            borderRadius: "4px",
-          }),
-          multiValueLabel: (base) => ({
-            ...base,
-            color: "white",
-            padding: "2px 6px",
-          }),
-          multiValueRemove: (base) => ({
-            ...base,
-            color: "white",
-            "&:hover": {
-              backgroundColor: "rgba(255,255,255,0.2)",
-              color: "white",
-            },
-          }),
-          input: (base) => ({
-            ...base,
-            color: "var(--text1)",
-          }),
-          placeholder: (base) => ({
-            ...base,
-            color: "var(--text2)",
-          }),
-          singleValue: (base) => ({
-            ...base,
-            color: "var(--text1)",
-          }),
-          indicatorSeparator: () => ({
-            display: "none",
-          }),
-          dropdownIndicator: (base) => ({
-            ...base,
-            color: "var(--text2)",
-            "&:hover": {
-              color: "var(--text1)",
-            },
-          }),
-          clearIndicator: (base) => ({
-            ...base,
-            color: "var(--text2)",
-            "&:hover": {
-              color: "var(--text1)",
-            },
-          }),
-        }}
       />
       {/* Hidden input for form submission */}
       <input type="hidden" name={name} value={tagsCommaSeparated} />
