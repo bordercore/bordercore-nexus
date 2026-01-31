@@ -254,11 +254,33 @@ def test_blob_detail(auto_login_user, resolved_blob):
 
     soup = BeautifulSoup(resp.content, "html.parser")
 
-    url = [x.value for x in resolved_blob[0].metadata.all() if x.name == "Url"][0]
-    assert soup.select("strong a")[0].findAll(text=True)[0] == urlparse(url).netloc
+    blob = resolved_blob[0]
+    url_values = [x.value for x in blob.metadata.all() if x.name == "Url"]
+    assert url_values, (
+        f"Blob has no Url metadata (has: {[m.name for m in blob.metadata.all()]}). "
+        "Fixtures must add Url metadata for this test."
+    )
+    url = url_values[0]
+    expected_domain = urlparse(url).netloc
 
-    author = [x.value for x in resolved_blob[0].metadata.all() if x.name == "Author"][0]
-    assert author in [x for sublist in soup.select("span") for x in sublist]
+    author_values = [x.value for x in blob.metadata.all() if x.name == "Author"]
+    assert author_values, (
+        f"Blob has no Author metadata (has: {[m.name for m in blob.metadata.all()]}). "
+        "Fixtures must add Author metadata for this test."
+    )
+    author = author_values[0]
+
+    # Blob detail is rendered by React; assert on embedded JSON data
+    blob_data_script = soup.find("script", id="blob-data", type="application/json")
+    assert blob_data_script is not None, "Page must include blob-data JSON for React"
+    blob_data = json.loads(blob_data_script.string)
+    assert blob_data["author"] == author
+
+    blob_urls_script = soup.find("script", id="blob-urls", type="application/json")
+    assert blob_urls_script is not None, "Page must include blob-urls JSON for React"
+    blob_urls = json.loads(blob_urls_script.string)
+    domains = [u["domain"] for u in blob_urls]
+    assert expected_domain in domains
 
 
 def test_clone(monkeypatch_blob, auto_login_user):

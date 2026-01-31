@@ -321,6 +321,12 @@ def _create_blob(file_contents=None, **file_info):
         name="Author",
         value=faker.text(max_nb_chars=40),
     )
+    MetaData.objects.create(
+        user=blob.user,
+        blob=blob,
+        name="Url",
+        value=faker.url(),
+    )
 
     if not file_contents:
         # If we weren't given the blob contents, generate some randomly.
@@ -359,6 +365,12 @@ def blob_text_factory(db, s3_resource, s3_bucket):
             blob=blob,
             name="Author",
             value=faker.text(max_nb_chars=40),
+        )
+        MetaData.objects.create(
+            user=blob.user,
+            blob=blob,
+            name="Url",
+            value=faker.url(),
         )
 
         BlobFactory.index_blob(blob)
