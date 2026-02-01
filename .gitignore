@@ -36,12 +36,7 @@ bordercore/aws/create_collection_thumbnail/lib/*
 # Frontend build
 **/static/dist
 **/static/vite/dist
-bordercore/static/vite/assets/
-bordercore/static/vite/.vite/
-bordercore/static/vite/*.js
-bordercore/static/vite/*.css
-bordercore/static/vite/*.ttf
-bordercore/static/vite/*.wasm
+bordercore/static/vite/*
 bordercore/webpack-stats.json
 **.min.js
 **.min.js.map
