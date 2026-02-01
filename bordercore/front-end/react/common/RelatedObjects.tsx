@@ -8,6 +8,23 @@ import React, {
 } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBookmark, faPlus, faTrashAlt, faPencilAlt } from "@fortawesome/free-solid-svg-icons";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import Card from "./Card";
 import DropDownMenu from "./DropDownMenu";
 import { doGet, doPost } from "../utils/reactUtils";
@@ -61,9 +78,14 @@ export const RelatedObjects = forwardRef<RelatedObjectsHandle, RelatedObjectsPro
   ) {
     const [objectList, setObjectList] = useState<RelatedObject[]>([]);
     const [dataLoading, setDataLoading] = useState(true);
-    const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
-    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
     const inputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
+
+    const sensors = useSensors(
+      useSensor(PointerSensor),
+      useSensor(KeyboardSensor, {
+        coordinateGetter: sortableKeyboardCoordinates,
+      })
+    );
 
     const getRelatedObjects = useCallback(() => {
       doGet(
@@ -144,61 +166,30 @@ export const RelatedObjects = forwardRef<RelatedObjectsHandle, RelatedObjectsPro
       }
     }, []);
 
-    // Drag and drop handlers
-    const handleDragStart = useCallback((e: React.DragEvent<HTMLDivElement>, index: number) => {
-      e.dataTransfer.effectAllowed = "move";
-      e.dataTransfer.setData("text/plain", index.toString());
-      setDraggingIndex(index);
-    }, []);
+    const handleDragEnd = useCallback(
+      (event: DragEndEvent) => {
+        const { active, over } = event;
 
-    const handleDragEnd = useCallback(() => {
-      setDraggingIndex(null);
-      setDragOverIndex(null);
-    }, []);
+        if (over && active.id !== over.id) {
+          const oldIndex = objectList.findIndex(item => item.uuid === active.id);
+          const newIndex = objectList.findIndex(item => item.uuid === over.id);
 
-    const handleDragOver = useCallback(
-      (e: React.DragEvent<HTMLDivElement>, index: number) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = "move";
-        if (draggingIndex !== index) {
-          setDragOverIndex(index);
-        }
-      },
-      [draggingIndex]
-    );
-
-    const handleDragLeave = useCallback(() => {
-      setDragOverIndex(null);
-    }, []);
-
-    const handleDrop = useCallback(
-      (e: React.DragEvent<HTMLDivElement>, dropIndex: number) => {
-        e.preventDefault();
-        const dragIndex = parseInt(e.dataTransfer.getData("text/plain"), 10);
-
-        if (!isNaN(dragIndex) && dragIndex !== dropIndex) {
-          const newList = [...objectList];
-          const [draggedItem] = newList.splice(dragIndex, 1);
-          newList.splice(dropIndex, 0, draggedItem);
-
+          const newList = arrayMove(objectList, oldIndex, newIndex);
           setObjectList(newList);
 
-          const newPosition = dropIndex + 1;
+          const newPosition = newIndex + 1;
 
           doPost(
             sortRelatedObjectsUrl,
             {
               node_uuid: objectUuid,
-              object_uuid: draggedItem.uuid,
+              object_uuid: active.id as string,
               new_position: newPosition,
               node_type: nodeType,
             },
             () => {}
           );
         }
-
-        setDraggingIndex(null);
-        setDragOverIndex(null);
       },
       [objectList, sortRelatedObjectsUrl, objectUuid, nodeType]
     );
@@ -254,123 +245,30 @@ export const RelatedObjects = forwardRef<RelatedObjectsHandle, RelatedObjectsPro
         ) : objectList.length === 0 ? (
           <div className="text-muted">No related objects</div>
         ) : (
-          <ul className="list-group list-group-flush interior-borders mb-0">
-            {objectList.map((element, index) => (
-              <div
-                key={element.uuid}
-                className={`slicklist-item show-child-on-hover ${
-                  draggingIndex === index ? "dragging" : ""
-                } ${dragOverIndex === index ? "drag-over" : ""}`}
-                draggable
-                onDragStart={e => handleDragStart(e, index)}
-                onDragEnd={handleDragEnd}
-                onDragOver={e => handleDragOver(e, index)}
-                onDragLeave={handleDragLeave}
-                onDrop={e => handleDrop(e, index)}
-                // Dynamic z-index based on drag index - must remain inline
-                style={{ zIndex: 1000 - index }}
-              >
-                <div className="slicklist-list-item-inner">
-                  <li className="list-group-item list-group-item-secondary px-0">
-                    <div className="dropdown-height d-flex align-items-start">
-                      <div className="d-flex flex-column flex-grow-1">
-                        {element.type === "bookmark" && element.cover_url && (
-                          <div className="pe-2">
-                            <img src={element.cover_url} width="120" height="67" alt="" />
-                          </div>
-                        )}
-                        {element.type === "blob" && element.cover_url && (
-                          <div className="pe-2">
-                            <img src={element.cover_url} alt="" />
-                          </div>
-                        )}
-                        <div>
-                          <a href={element.url}>{element.name}</a>
-                        </div>
-                        {!element.noteIsEditable ? (
-                          <div
-                            className="node-object-note text-muted small cursor-pointer"
-                            onClick={() => toggleNoteEditable(element.uuid, true)}
-                          >
-                            {element.note}
-                          </div>
-                        ) : (
-                          <div>
-                            <input
-                              ref={el => {
-                                inputRefs.current[element.uuid] = el;
-                              }}
-                              type="text"
-                              className="form-control form-control-sm"
-                              defaultValue={element.note || ""}
-                              placeholder=""
-                              autoComplete="off"
-                              onBlur={e => handleEditNote(element, e.target.value)}
-                              onKeyDown={e => {
-                                if (e.key === "Enter") {
-                                  handleEditNote(element, (e.target as HTMLInputElement).value);
-                                }
-                              }}
-                            />
-                          </div>
-                        )}
-                      </div>
-                      <div className="show-on-hover">
-                        <DropDownMenu
-                          showOnHover={true}
-                          dropdownSlot={
-                            <ul className="dropdown-menu-list">
-                              <li key="remove">
-                                <a
-                                  className="dropdown-item"
-                                  href="#"
-                                  onClick={e => {
-                                    e.preventDefault();
-                                    handleRemoveObject(element);
-                                  }}
-                                >
-                                  <FontAwesomeIcon
-                                    icon={faTrashAlt}
-                                    className="text-primary me-3"
-                                  />
-                                  Remove
-                                </a>
-                              </li>
-                              <li key="edit">
-                                <a className="dropdown-item" href={element.edit_url}>
-                                  <FontAwesomeIcon
-                                    icon={faPencilAlt}
-                                    className="text-primary me-3"
-                                  />
-                                  Edit {element.type}
-                                </a>
-                              </li>
-                              <li key="note">
-                                <a
-                                  className="dropdown-item"
-                                  href="#"
-                                  onClick={e => {
-                                    e.preventDefault();
-                                    toggleNoteEditable(element.uuid, true);
-                                  }}
-                                >
-                                  <FontAwesomeIcon
-                                    icon={element.note ? faPencilAlt : faPlus}
-                                    className="text-primary me-3"
-                                  />
-                                  {element.note ? "Edit" : "New"} note
-                                </a>
-                              </li>
-                            </ul>
-                          }
-                        />
-                      </div>
-                    </div>
-                  </li>
-                </div>
-              </div>
-            ))}
-          </ul>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={objectList.map(item => item.uuid)}
+              strategy={verticalListSortingStrategy}
+            >
+              <ul className="list-group list-group-flush interior-borders mb-0">
+                {objectList.map((element, index) => (
+                  <SortableRelatedObject
+                    key={element.uuid}
+                    element={element}
+                    index={index}
+                    inputRefs={inputRefs}
+                    handleRemoveObject={handleRemoveObject}
+                    handleEditNote={handleEditNote}
+                    toggleNoteEditable={toggleNoteEditable}
+                  />
+                ))}
+              </ul>
+            </SortableContext>
+          </DndContext>
         )}
       </Card>
     );
@@ -378,3 +276,135 @@ export const RelatedObjects = forwardRef<RelatedObjectsHandle, RelatedObjectsPro
 );
 
 export default RelatedObjects;
+
+interface SortableRelatedObjectProps {
+  element: RelatedObject;
+  index: number;
+  inputRefs: React.MutableRefObject<{ [key: string]: HTMLInputElement | null }>;
+  handleRemoveObject: (bcObject: RelatedObject) => void;
+  handleEditNote: (bcObject: RelatedObject, note: string) => void;
+  toggleNoteEditable: (uuid: string, editable: boolean) => void;
+}
+
+function SortableRelatedObject({
+  element,
+  index,
+  inputRefs,
+  handleRemoveObject,
+  handleEditNote,
+  toggleNoteEditable,
+}: SortableRelatedObjectProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: element.uuid,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 1001 : 1000 - index,
+    position: "relative" as const,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`slicklist-item show-child-on-hover ${isDragging ? "dragging" : ""}`}
+      {...attributes}
+      {...listeners}
+    >
+      <div className="slicklist-list-item-inner">
+        <li className="list-group-item list-group-item-secondary px-0">
+          <div className="dropdown-height d-flex align-items-start">
+            <div className="d-flex flex-column flex-grow-1">
+              {element.type === "bookmark" && element.cover_url && (
+                <div className="pe-2">
+                  <img src={element.cover_url} width="120" height="67" alt="" />
+                </div>
+              )}
+              {element.type === "blob" && element.cover_url && (
+                <div className="pe-2">
+                  <img src={element.cover_url} alt="" />
+                </div>
+              )}
+              <div>
+                <a href={element.url}>{element.name}</a>
+              </div>
+              {!element.noteIsEditable ? (
+                <div
+                  className="node-object-note text-muted small cursor-pointer"
+                  onClick={() => toggleNoteEditable(element.uuid, true)}
+                >
+                  {element.note}
+                </div>
+              ) : (
+                <div onPointerDown={e => e.stopPropagation()}>
+                  <input
+                    ref={el => {
+                      inputRefs.current[element.uuid] = el;
+                    }}
+                    type="text"
+                    className="form-control form-control-sm"
+                    defaultValue={element.note || ""}
+                    placeholder=""
+                    autoComplete="off"
+                    onBlur={e => handleEditNote(element, e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === "Enter") {
+                        handleEditNote(element, (e.target as HTMLInputElement).value);
+                      }
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+            <div className="show-on-hover" onPointerDown={e => e.stopPropagation()}>
+              <DropDownMenu
+                showOnHover={true}
+                dropdownSlot={
+                  <ul className="dropdown-menu-list">
+                    <li key="remove">
+                      <a
+                        className="dropdown-item"
+                        href="#"
+                        onClick={e => {
+                          e.preventDefault();
+                          handleRemoveObject(element);
+                        }}
+                      >
+                        <FontAwesomeIcon icon={faTrashAlt} className="text-primary me-3" />
+                        Remove
+                      </a>
+                    </li>
+                    <li key="edit">
+                      <a className="dropdown-item" href={element.edit_url}>
+                        <FontAwesomeIcon icon={faPencilAlt} className="text-primary me-3" />
+                        Edit {element.type}
+                      </a>
+                    </li>
+                    <li key="note">
+                      <a
+                        className="dropdown-item"
+                        href="#"
+                        onClick={e => {
+                          e.preventDefault();
+                          toggleNoteEditable(element.uuid, true);
+                        }}
+                      >
+                        <FontAwesomeIcon
+                          icon={element.note ? faPencilAlt : faPlus}
+                          className="text-primary me-3"
+                        />
+                        {element.note ? "Edit" : "New"} note
+                      </a>
+                    </li>
+                  </ul>
+                }
+              />
+            </div>
+          </div>
+        </li>
+      </div>
+    </div>
+  );
+}

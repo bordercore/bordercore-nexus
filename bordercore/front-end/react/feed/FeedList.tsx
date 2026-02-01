@@ -1,4 +1,21 @@
 import React, { useState, useCallback, useEffect } from "react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { doPost } from "../utils/reactUtils";
 import type { Feed } from "./types";
 
@@ -22,8 +39,13 @@ export function FeedList({
   onReorder,
 }: FeedListProps) {
   const [localFeedList, setLocalFeedList] = useState<Feed[]>(feedList);
-  const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   // Sync local list when prop changes (e.g., after add/delete)
   useEffect(() => {
@@ -45,48 +67,21 @@ export function FeedList({
     [storeInSessionUrl, onShowFeed]
   );
 
-  const handleDragStart = useCallback((e: React.DragEvent<HTMLDivElement>, index: number) => {
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", index.toString());
-    setDraggingIndex(index);
-  }, []);
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
 
-  const handleDragEnd = useCallback(() => {
-    setDraggingIndex(null);
-    setDragOverIndex(null);
-  }, []);
+      if (over && active.id !== over.id) {
+        const oldIndex = localFeedList.findIndex(item => item.uuid === active.id);
+        const newIndex = localFeedList.findIndex(item => item.uuid === over.id);
 
-  const handleDragOver = useCallback(
-    (e: React.DragEvent<HTMLDivElement>, index: number) => {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = "move";
-      if (draggingIndex !== index) {
-        setDragOverIndex(index);
-      }
-    },
-    [draggingIndex]
-  );
-
-  const handleDragLeave = useCallback(() => {
-    setDragOverIndex(null);
-  }, []);
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent<HTMLDivElement>, dropIndex: number) => {
-      e.preventDefault();
-      const dragIndex = parseInt(e.dataTransfer.getData("text/plain"), 10);
-
-      if (!isNaN(dragIndex) && dragIndex !== dropIndex) {
-        // Reorder the list locally for immediate visual feedback
-        const newList = [...localFeedList];
-        const [draggedItem] = newList.splice(dragIndex, 1);
-        newList.splice(dropIndex, 0, draggedItem);
-
+        const newList = arrayMove(localFeedList, oldIndex, newIndex);
         setLocalFeedList(newList);
         onReorder(newList);
 
+        const draggedItem = localFeedList[oldIndex];
         // Position is 1-indexed for the backend
-        const newPosition = dropIndex + 1;
+        const newPosition = newIndex + 1;
 
         doPost(
           feedSortUrl,
@@ -97,9 +92,6 @@ export function FeedList({
           () => {}
         );
       }
-
-      setDraggingIndex(null);
-      setDragOverIndex(null);
     },
     [localFeedList, feedSortUrl, onReorder]
   );
@@ -122,41 +114,73 @@ export function FeedList({
   }
 
   return (
-    <ul>
-      {localFeedList.map((feed, index) => (
-        <div
-          key={feed.uuid}
-          className={`slicklist-item ${dragOverIndex === index ? "drag-over" : ""} ${draggingIndex === index ? "dragging" : ""}`}
-          draggable
-          onDragStart={e => handleDragStart(e, index)}
-          onDragEnd={handleDragEnd}
-          onDragOver={e => handleDragOver(e, index)}
-          onDragLeave={handleDragLeave}
-          onDrop={e => handleDrop(e, index)}
-        >
-          <div className="slicklist-list-item-inner">
-            <li
-              className={`feed-item ps-2 ${currentFeed?.id === feed.id ? "selected rounded-sm" : ""}`}
-            >
-              <a
-                href="#"
-                data-id={feed.id}
-                onClick={e => {
-                  e.preventDefault();
-                  handleClick(feed);
-                }}
-              >
-                {feed.name}
-              </a>
-              {feed.lastResponse !== "OK" && (
-                <small className="text-danger ms-2">{feed.lastResponse}</small>
-              )}
-            </li>
-          </div>
-        </div>
-      ))}
-    </ul>
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <SortableContext
+        items={localFeedList.map(feed => feed.uuid)}
+        strategy={verticalListSortingStrategy}
+      >
+        <ul>
+          {localFeedList.map(feed => (
+            <SortableFeedItem
+              key={feed.uuid}
+              feed={feed}
+              currentFeed={currentFeed}
+              handleClick={handleClick}
+            />
+          ))}
+        </ul>
+      </SortableContext>
+    </DndContext>
   );
 }
 
 export default FeedList;
+
+interface SortableFeedItemProps {
+  feed: Feed;
+  currentFeed: Feed | null;
+  handleClick: (feed: Feed) => void;
+}
+
+function SortableFeedItem({ feed, currentFeed, handleClick }: SortableFeedItemProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: feed.uuid,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 1 : 0,
+    position: "relative" as const,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`slicklist-item ${isDragging ? "dragging" : ""}`}
+      {...attributes}
+      {...listeners}
+    >
+      <div className="slicklist-list-item-inner">
+        <li
+          className={`feed-item ps-2 ${currentFeed?.id === feed.id ? "selected rounded-sm" : ""}`}
+        >
+          <a
+            href="#"
+            data-id={feed.id}
+            onClick={e => {
+              e.preventDefault();
+              handleClick(feed);
+            }}
+          >
+            {feed.name}
+          </a>
+          {feed.lastResponse !== "OK" && (
+            <small className="text-danger ms-2">{feed.lastResponse}</small>
+          )}
+        </li>
+      </div>
+    </div>
+  );
+}

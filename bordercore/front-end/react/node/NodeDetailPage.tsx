@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faPlus,
@@ -12,6 +12,25 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { Modal } from "bootstrap";
 import cloneDeep from "lodash/cloneDeep";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  DragOverEvent,
+  DragStartEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { DropDownMenu, DropDownMenuHandle } from "../common/DropDownMenu";
 import { doPost } from "../utils/reactUtils";
 import { TodoEditor, TodoEditorHandle } from "../todo/TodoEditor";
@@ -106,8 +125,13 @@ export default function NodeDetailPage({
   const [nodeName, setNodeName] = useState(initialNodeName);
   const [editLayout, setEditLayout] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
-  const [draggingItem, setDraggingItem] = useState<{ col: number; row: number } | null>(null);
-  const [dragOverTarget, setDragOverTarget] = useState<{ col: number; row: number } | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   // Modal states
   const [imageModalState, setImageModalState] = useState({ isOpen: false, imageUrl: "" });
@@ -171,67 +195,27 @@ export default function NodeDetailPage({
     );
   };
 
-  // Drag handlers for layout items
-  const handleDragStart = (e: React.DragEvent, colIndex: number, rowIndex: number) => {
-    if (!editLayout) return;
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", JSON.stringify({ col: colIndex, row: rowIndex }));
-    setDraggingItem({ col: colIndex, row: rowIndex });
-  };
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
 
-  const handleDragOver = (e: React.DragEvent, colIndex: number, rowIndex: number) => {
-    if (!editLayout) return;
-    e.preventDefault();
-    e.stopPropagation();
-    e.dataTransfer.dropEffect = "move";
-    setDragOverTarget({ col: colIndex, row: rowIndex });
-  };
+      if (over && active.id !== over.id) {
+        const activeId = active.id as string;
+        const overId = over.id as string;
 
-  const handleDragLeave = (e: React.DragEvent) => {
-    if (!editLayout) return;
-    // Only clear if leaving to outside (not to a child element)
-    const relatedTarget = e.relatedTarget as Node | null;
-    if (!e.currentTarget.contains(relatedTarget)) {
-      setDragOverTarget(null);
-    }
-  };
+        const [activeCol, activeRow] = activeId.split("-").map(Number);
+        const [overCol, overRow] = overId.split("-").map(Number);
 
-  const handleDrop = (e: React.DragEvent, targetCol: number, targetRow: number) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!editLayout || !draggingItem) return;
+        const newLayout = cloneDeep(layout);
+        const [item] = newLayout[activeCol].splice(activeRow, 1);
+        newLayout[overCol].splice(overRow, 0, item);
 
-    const { col: sourceCol, row: sourceRow } = draggingItem;
-
-    // Skip if dropping in the same position
-    if (sourceCol === targetCol && (sourceRow === targetRow || sourceRow === targetRow - 1)) {
-      setDraggingItem(null);
-      setDragOverTarget(null);
-      return;
-    }
-
-    const newLayout = cloneDeep(layout);
-    const [item] = newLayout[sourceCol].splice(sourceRow, 1);
-
-    // Adjust target index when moving down within the same column
-    // because removing the source item shifts subsequent indices
-    let adjustedTargetRow = targetRow;
-    if (sourceCol === targetCol && sourceRow < targetRow) {
-      adjustedTargetRow = targetRow - 1;
-    }
-
-    newLayout[targetCol].splice(adjustedTargetRow, 0, item);
-
-    setLayout(newLayout);
-    syncLayout(newLayout);
-    setDraggingItem(null);
-    setDragOverTarget(null);
-  };
-
-  const handleDragEnd = () => {
-    setDraggingItem(null);
-    setDragOverTarget(null);
-  };
+        setLayout(newLayout);
+        syncLayout(newLayout);
+      }
+    },
+    [layout, syncLayout]
+  );
 
   // Node name editing
   const handleNodeNameSave = () => {
@@ -754,44 +738,28 @@ export default function NodeDetailPage({
       </div>
 
       {/* 3-column layout */}
-      <div className="row px-3">
-        {layout.map((column, colIndex) => (
-          <div
-            key={colIndex}
-            className={`col-lg-4 ${editLayout ? "edit-layout-mode" : ""}`}
-            onDragOver={e => handleDragOver(e, colIndex, 0)}
-            onDragLeave={handleDragLeave}
-            onDrop={e => handleDrop(e, colIndex, 0)}
-          >
-            {/* Drop indicator at top of column */}
-            {dragOverTarget?.col === colIndex && dragOverTarget?.row === 0 && (
-              <div className="drop-indicator" />
-            )}
-            {column.map((item, rowIndex) => (
-              <React.Fragment key={`${colIndex}-${rowIndex}`}>
-                {/* Drop indicator before this item (when hovering on this item) */}
-                {dragOverTarget?.col === colIndex &&
-                  dragOverTarget?.row === rowIndex &&
-                  rowIndex > 0 && <div className="drop-indicator" />}
-                <div
-                  className={`mb-gutter ${editLayout ? "draggable-item" : ""} ${
-                    draggingItem?.col === colIndex && draggingItem?.row === rowIndex
-                      ? "dragging"
-                      : ""
-                  }`}
-                  draggable={editLayout}
-                  onDragStart={e => handleDragStart(e, colIndex, rowIndex)}
-                  onDragOver={e => handleDragOver(e, colIndex, rowIndex)}
-                  onDrop={e => handleDrop(e, colIndex, rowIndex)}
-                  onDragEnd={handleDragEnd}
-                >
-                  {renderLayoutItem(item, colIndex, rowIndex)}
-                </div>
-              </React.Fragment>
-            ))}
-          </div>
-        ))}
-      </div>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <div className="row px-3">
+          {layout.map((column, colIndex) => (
+            <div key={colIndex} className={`col-lg-4 ${editLayout ? "edit-layout-mode" : ""}`}>
+              <SortableContext
+                items={column.map((_, rowIndex) => `${colIndex}-${rowIndex}`)}
+                strategy={verticalListSortingStrategy}
+              >
+                {column.map((item, rowIndex) => (
+                  <SortableLayoutItem
+                    key={`${colIndex}-${rowIndex}`}
+                    id={`${colIndex}-${rowIndex}`}
+                    editLayout={editLayout}
+                  >
+                    {renderLayoutItem(item, colIndex, rowIndex)}
+                  </SortableLayoutItem>
+                ))}
+              </SortableContext>
+            </div>
+          ))}
+        </div>
+      </DndContext>
 
       {/* Modals */}
       <NodeImageModal
@@ -879,6 +847,37 @@ export default function NodeDetailPage({
       />
 
       <ObjectSelectModal ref={objectSelectModalRef} searchObjectUrl={urls.searchNames} />
+    </div>
+  );
+}
+
+interface SortableLayoutItemProps {
+  id: string;
+  editLayout: boolean;
+  children: React.ReactNode;
+}
+
+function SortableLayoutItem({ id, editLayout, children }: SortableLayoutItemProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id,
+    disabled: !editLayout,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 1 : 0,
+    position: "relative" as const,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`mb-gutter ${editLayout ? "draggable-item" : ""} ${isDragging ? "dragging" : ""}`}
+      {...(editLayout ? { ...attributes, ...listeners } : {})}
+    >
+      {children}
     </div>
   );
 }

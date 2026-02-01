@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useLayoutEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBars, faPencilAlt, faTrashAlt } from "@fortawesome/free-solid-svg-icons";
 import {
@@ -63,18 +63,12 @@ function SortableBookmarkRow({
     disabled: dragDisabled,
   });
 
-  const nodeRef = useRef<HTMLTableRowElement | null>(null);
-  const setRef = (el: HTMLTableRowElement | null) => {
-    setNodeRef(el);
-    nodeRef.current = el;
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 1000 : undefined,
+    position: isDragging ? ("relative" as const) : undefined,
   };
-
-  useLayoutEffect(() => {
-    const el = nodeRef.current;
-    if (!el) return;
-    el.style.transform = CSS.Transform.toString(transform);
-    el.style.transition = transition;
-  }, [transform, transition]);
 
   // Filter out the currently selected tag from display
   const filteredTags = bookmark.tags.filter(tag => tag !== selectedTagName);
@@ -94,7 +88,8 @@ function SortableBookmarkRow({
 
   return (
     <tr
-      ref={setRef}
+      ref={setNodeRef}
+      style={style}
       data-uuid={bookmark.uuid}
       className={`hover-reveal-target bookmark-row ${
         selectedBookmarkUuid === bookmark.uuid ? "selected" : ""

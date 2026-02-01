@@ -2,6 +2,23 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Modal } from "bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTimesCircle, faEllipsisV, faPencilAlt } from "@fortawesome/free-solid-svg-icons";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import Card from "../common/Card";
 import DropDownMenu from "../common/DropDownMenu";
 import SelectValue, { SelectValueHandle } from "../common/SelectValue";
@@ -32,8 +49,13 @@ export function DrillPinnedTags({
 }: DrillPinnedTagsProps) {
   const [dataLoading, setDataLoading] = useState(true);
   const [tagList, setTagList] = useState<PinnedTag[]>([]);
-  const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const selectValueRef = useRef<SelectValueHandle>(null);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -60,61 +82,28 @@ export function DrillPinnedTags({
     }
   }, []);
 
-  // Drag and drop handlers
-  const handleDragStart = useCallback((e: React.DragEvent<HTMLDivElement>, index: number) => {
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", index.toString());
-    setDraggingIndex(index);
-  }, []);
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
 
-  const handleDragEnd = useCallback(() => {
-    setDraggingIndex(null);
-    setDragOverIndex(null);
-  }, []);
+      if (over && active.id !== over.id) {
+        const oldIndex = tagList.findIndex(item => item.name === active.id);
+        const newIndex = tagList.findIndex(item => item.name === over.id);
 
-  const handleDragOver = useCallback(
-    (e: React.DragEvent<HTMLDivElement>, index: number) => {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = "move";
-      if (draggingIndex !== index) {
-        setDragOverIndex(index);
-      }
-    },
-    [draggingIndex]
-  );
-
-  const handleDragLeave = useCallback(() => {
-    setDragOverIndex(null);
-  }, []);
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent<HTMLDivElement>, dropIndex: number) => {
-      e.preventDefault();
-      const dragIndex = parseInt(e.dataTransfer.getData("text/plain"), 10);
-
-      if (!isNaN(dragIndex) && dragIndex !== dropIndex) {
-        // Reorder the list locally for immediate visual feedback
-        const newList = [...tagList];
-        const [draggedItem] = newList.splice(dragIndex, 1);
-        newList.splice(dropIndex, 0, draggedItem);
-
+        const newList = arrayMove(tagList, oldIndex, newIndex);
         setTagList(newList);
 
-        // The backend expects the ordering to begin with 1, not 0
-        const newPosition = dropIndex + 1;
+        const newPosition = newIndex + 1;
 
         doPost(
           sortPinnedTagsUrl,
           {
-            tag_name: draggedItem.name,
+            tag_name: active.id as string,
             new_position: newPosition,
           },
           () => {}
         );
       }
-
-      setDraggingIndex(null);
-      setDragOverIndex(null);
     },
     [tagList, sortPinnedTagsUrl]
   );
@@ -205,37 +194,26 @@ export function DrillPinnedTags({
                   />
                 </div>
               </div>
-              <ul id="drill-pinned-tags" className="interior-borders p-2 mb-0 wide-list">
-                {tagList.map((element, index) => (
-                  <div
-                    key={element.name}
-                    className={`slicklist-item show-child-on-hover ${
-                      draggingIndex === index ? "dragging" : ""
-                    } ${dragOverIndex === index ? "drag-over" : ""}`}
-                    draggable
-                    onDragStart={e => handleDragStart(e, index)}
-                    onDragEnd={handleDragEnd}
-                    onDragOver={e => handleDragOver(e, index)}
-                    onDragLeave={handleDragLeave}
-                    onDrop={e => handleDrop(e, index)}
-                  >
-                    <div className="slicklist-list-item-inner">
-                      <li className="list-group-item px-2 py-1">
-                        <div className="d-flex">
-                          <div>{element.name}</div>
-                          <div className="ms-auto my-auto show-on-hover">
-                            <FontAwesomeIcon
-                              icon={faTimesCircle}
-                              className="list-delete cursor-pointer"
-                              onClick={() => handleTagDelete(element.name)}
-                            />
-                          </div>
-                        </div>
-                      </li>
-                    </div>
-                  </div>
-                ))}
-              </ul>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={tagList.map(item => item.name)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <ul id="drill-pinned-tags" className="interior-borders p-2 mb-0 wide-list">
+                    {tagList.map((element, index) => (
+                      <SortablePinnedTag
+                        key={element.name}
+                        element={element}
+                        onDelete={handleTagDelete}
+                      />
+                    ))}
+                  </ul>
+                </SortableContext>
+              </DndContext>
             </div>
             <div className="modal-footer justify-content-start">
               <input
@@ -289,3 +267,46 @@ export function DrillPinnedTags({
 }
 
 export default DrillPinnedTags;
+
+interface SortablePinnedTagProps {
+  element: PinnedTag;
+  onDelete: (tagName: string) => void;
+}
+
+function SortablePinnedTag({ element, onDelete }: SortablePinnedTagProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: element.name,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 1 : 0,
+    position: "relative" as const,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`slicklist-item show-child-on-hover ${isDragging ? "dragging" : ""}`}
+      {...attributes}
+      {...listeners}
+    >
+      <div className="slicklist-list-item-inner">
+        <li className="list-group-item px-2 py-1">
+          <div className="d-flex">
+            <div>{element.name}</div>
+            <div className="ms-auto my-auto show-on-hover" onPointerDown={e => e.stopPropagation()}>
+              <FontAwesomeIcon
+                icon={faTimesCircle}
+                className="list-delete cursor-pointer"
+                onClick={() => onDelete(element.name)}
+              />
+            </div>
+          </div>
+        </li>
+      </div>
+    </div>
+  );
+}

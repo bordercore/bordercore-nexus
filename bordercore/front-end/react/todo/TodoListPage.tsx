@@ -2,6 +2,21 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBars, faTimes, faPlus } from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import type { Todo, Tag, PriorityOption, TimeOption, SortState, TodoListResponse } from "./types";
 import TodoFiltersSidebar from "./TodoFiltersSidebar";
 import TodoTable from "./TodoTable";
@@ -51,6 +66,13 @@ export function TodoListPage({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [priorityOptions, setPriorityOptions] = useState<PriorityOption[]>([]);
   const [timeOptions, setTimeOptions] = useState<TimeOption[]>([]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const filterCacheRef = useRef<{ priority: string; tag: string; time: string } | null>(null);
   const editTodoRef = useRef<TodoEditorHandle>(null);
@@ -247,30 +269,31 @@ export function TodoListPage({
     [storeInSessionUrl]
   );
 
-  const handleDrop = useCallback(
-    (todoUuid: string, position: number) => {
-      if (!isSortable) {
-        EventBus.$emit("toast", {
-          title: "Error",
-          body: "Sorting is only supported if only a tag filter is applied",
-          variant: "danger",
-        });
-        return;
-      }
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
 
-      doPost(
-        sortUrl,
-        {
-          todo_uuid: todoUuid,
-          position: position.toString(),
-          tag: filterTag,
-        },
-        () => {
-          getTodoList();
-        }
-      );
+      if (over && active.id !== over.id) {
+        const oldIndex = items.findIndex(item => item.uuid === active.id);
+        const newIndex = items.findIndex(item => item.uuid === over.id);
+
+        const newItems = arrayMove(items, oldIndex, newIndex);
+        setItems(newItems);
+
+        doPost(
+          sortUrl,
+          {
+            todo_uuid: active.id as string,
+            position: (newIndex + 1).toString(),
+            tag: filterTag,
+          },
+          () => {
+            getTodoList();
+          }
+        );
+      }
     },
-    [isSortable, filterTag, sortUrl, getTodoList]
+    [items, filterTag, sortUrl, getTodoList]
   );
 
   const handleMoveToTop = useCallback(
@@ -435,16 +458,26 @@ export function TodoListPage({
             </div>
           </div>
 
-          <TodoTable
-            items={items}
-            defaultSort={defaultSort}
-            isSortable={isSortable}
-            onSort={handleSort}
-            onDrop={handleDrop}
-            onMoveToTop={handleMoveToTop}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={items.map(item => item.uuid)}
+              strategy={verticalListSortingStrategy}
+            >
+              <TodoTable
+                items={items}
+                defaultSort={defaultSort}
+                isSortable={isSortable}
+                onSort={handleSort}
+                onMoveToTop={handleMoveToTop}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+              />
+            </SortableContext>
+          </DndContext>
         </div>
       </div>
 

@@ -1,6 +1,23 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPencilAlt, faTrashAlt, faAngleUp, faAngleDown } from "@fortawesome/free-solid-svg-icons";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import type { PlaylistSong } from "./types";
 import DropDownMenu from "../common/DropDownMenu";
 
@@ -30,18 +47,47 @@ export function PlaylistSongTable({
   onRemoveSong,
   onReorder,
 }: PlaylistSongTableProps) {
-  const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [localSongs, setLocalSongs] = useState<PlaylistSong[]>(songs);
   const [sortField, setSortField] = useState<SortField | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+
+  useEffect(() => {
+    setLocalSongs(songs);
+  }, [songs]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+
+      if (over && active.id !== over.id) {
+        const oldIndex = localSongs.findIndex(item => item.playlistitem_uuid === active.id);
+        const newIndex = localSongs.findIndex(item => item.playlistitem_uuid === over.id);
+
+        const newList = arrayMove(localSongs, oldIndex, newIndex);
+        setLocalSongs(newList);
+
+        const song = localSongs[oldIndex];
+        // Position is 1-indexed
+        onReorder(song.playlistitem_uuid, newIndex + 1);
+      }
+    },
+    [localSongs, onReorder]
+  );
 
   // Sort songs for non-manual playlists
   const sortedSongs = useMemo(() => {
     if (isManualPlaylist || !sortField) {
-      return songs;
+      return localSongs;
     }
 
-    return [...songs].sort((a, b) => {
+    return [...localSongs].sort((a, b) => {
       let aVal: string | number | null = a[sortField];
       let bVal: string | number | null = b[sortField];
 
@@ -59,7 +105,7 @@ export function PlaylistSongTable({
 
       return sortDirection === "asc" ? comparison : -comparison;
     });
-  }, [songs, sortField, sortDirection, isManualPlaylist]);
+  }, [localSongs, sortField, sortDirection, isManualPlaylist]);
 
   const handleSort = (field: SortField) => {
     if (isManualPlaylist) return;
@@ -104,43 +150,6 @@ export function PlaylistSongTable({
     ? `${staticUrl}img/equaliser-animated-green.gif`
     : `${staticUrl}img/equaliser-animated-green-frozen.gif`;
 
-  // Drag and drop handlers for manual playlists
-  const handleDragStart = useCallback((e: React.DragEvent<HTMLTableRowElement>, index: number) => {
-    e.currentTarget.classList.add("dragging");
-    setDraggingIndex(index);
-    e.dataTransfer.effectAllowed = "move";
-  }, []);
-
-  const handleDragEnd = useCallback((e: React.DragEvent<HTMLTableRowElement>) => {
-    e.currentTarget.classList.remove("dragging");
-    setDraggingIndex(null);
-    setDragOverIndex(null);
-  }, []);
-
-  const handleDragOver = useCallback((e: React.DragEvent<HTMLTableRowElement>, index: number) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-    setDragOverIndex(index);
-  }, []);
-
-  const handleDragLeave = useCallback(() => {
-    setDragOverIndex(null);
-  }, []);
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent<HTMLTableRowElement>, dropIndex: number) => {
-      e.preventDefault();
-      if (draggingIndex !== null && draggingIndex !== dropIndex) {
-        const song = songs[draggingIndex];
-        // Position is 1-indexed
-        onReorder(song.playlistitem_uuid, dropIndex + 1);
-      }
-      setDraggingIndex(null);
-      setDragOverIndex(null);
-    },
-    [draggingIndex, songs, onReorder]
-  );
-
   // Helper to get header class for sortable columns
   const getHeaderClass = (field: SortField, baseClass: string = "") => {
     if (isManualPlaylist) return baseClass;
@@ -149,127 +158,165 @@ export function PlaylistSongTable({
 
   return (
     <div className="table-responsive">
-      <table className="table table-hover playlist-song-table">
-        <thead>
-          <tr>
-            {isManualPlaylist && <th className="text-center table-col-number">#</th>}
-            <th className={getHeaderClass("title")} onClick={() => handleSort("title")}>
-              Title{renderSortIcon("title")}
-            </th>
-            <th className={getHeaderClass("artist")} onClick={() => handleSort("artist")}>
-              Artist{renderSortIcon("artist")}
-            </th>
-            <th
-              className={getHeaderClass("year", "text-center")}
-              onClick={() => handleSort("year")}
-            >
-              Year{renderSortIcon("year")}
-            </th>
-            <th
-              className={getHeaderClass("length", "text-center")}
-              onClick={() => handleSort("length")}
-            >
-              Length{renderSortIcon("length")}
-            </th>
-            <th className="text-center table-col-action"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {sortedSongs.length === 0 ? (
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <table className="table table-hover playlist-song-table">
+          <thead>
             <tr>
-              <td colSpan={isManualPlaylist ? 6 : 5} className="text-center">
-                No songs in the playlist
-              </td>
-            </tr>
-          ) : (
-            sortedSongs.map((song, index) => (
-              <tr
-                key={song.playlistitem_uuid}
-                className={`song hover-target cursor-pointer ${dragOverIndex === index ? "drag-over" : ""}`}
-                draggable={isManualPlaylist}
-                onDragStart={isManualPlaylist ? e => handleDragStart(e, index) : undefined}
-                onDragEnd={isManualPlaylist ? handleDragEnd : undefined}
-                onDragOver={isManualPlaylist ? e => handleDragOver(e, index) : undefined}
-                onDragLeave={isManualPlaylist ? handleDragLeave : undefined}
-                onDrop={isManualPlaylist ? e => handleDrop(e, index) : undefined}
+              {isManualPlaylist && <th className="text-center table-col-number">#</th>}
+              <th className={getHeaderClass("title")} onClick={() => handleSort("title")}>
+                Title{renderSortIcon("title")}
+              </th>
+              <th className={getHeaderClass("artist")} onClick={() => handleSort("artist")}>
+                Artist{renderSortIcon("artist")}
+              </th>
+              <th
+                className={getHeaderClass("year", "text-center")}
+                onClick={() => handleSort("year")}
               >
-                {isManualPlaylist && (
-                  <td
-                    className="text-center align-middle cursor-grab"
-                    onClick={() => handleRowClick(song, "sort_order")}
-                  >
-                    {currentSongUuid === song.uuid ? (
-                      <img
-                        id="isPlaying"
-                        src={equalizerImage}
-                        width={20}
-                        height={20}
-                        alt="Playing"
-                      />
-                    ) : (
-                      song.sort_order
-                    )}
-                  </td>
-                )}
-                <td className="align-middle" onClick={() => handleRowClick(song, "title")}>
-                  {song.title}
-                </td>
-                <td
-                  className="align-middle cursor-grab"
-                  onClick={() => handleRowClick(song, "artist")}
-                >
-                  {song.artist}
-                </td>
-                <td
-                  className="text-center align-middle cursor-grab"
-                  onClick={() => handleRowClick(song, "year")}
-                >
-                  {song.year}
-                </td>
-                <td
-                  className="text-center align-middle cursor-grab"
-                  onClick={() => handleRowClick(song, "length")}
-                >
-                  {song.length}
-                </td>
-                <td
-                  className="col-action text-center align-middle"
-                  onClick={e => e.stopPropagation()}
-                >
-                  <DropDownMenu
-                    showOnHover={true}
-                    dropdownSlot={
-                      <ul className="dropdown-menu-list">
-                        <li>
-                          <button
-                            className="dropdown-menu-item"
-                            onClick={() => onRemoveSong(song.playlistitem_uuid)}
-                          >
-                            <span className="dropdown-menu-icon">
-                              <FontAwesomeIcon icon={faTrashAlt} />
-                            </span>
-                            <span className="dropdown-menu-text">Remove from playlist</span>
-                          </button>
-                        </li>
-                        <li>
-                          <a className="dropdown-menu-item" href={getEditUrl(song.uuid)}>
-                            <span className="dropdown-menu-icon">
-                              <FontAwesomeIcon icon={faPencilAlt} />
-                            </span>
-                            <span className="dropdown-menu-text">Edit</span>
-                          </a>
-                        </li>
-                      </ul>
-                    }
-                  />
+                Year{renderSortIcon("year")}
+              </th>
+              <th
+                className={getHeaderClass("length", "text-center")}
+                onClick={() => handleSort("length")}
+              >
+                Length{renderSortIcon("length")}
+              </th>
+              <th className="text-center table-col-action"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {sortedSongs.length === 0 ? (
+              <tr>
+                <td colSpan={isManualPlaylist ? 6 : 5} className="text-center">
+                  No songs in the playlist
                 </td>
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+            ) : (
+              <SortableContext
+                items={sortedSongs.map(song => song.playlistitem_uuid)}
+                strategy={verticalListSortingStrategy}
+              >
+                {sortedSongs.map((song, index) => (
+                  <SortableSongRow
+                    key={song.playlistitem_uuid}
+                    song={song}
+                    index={index}
+                    isManualPlaylist={isManualPlaylist}
+                    currentSongUuid={currentSongUuid}
+                    equalizerImage={equalizerImage}
+                    handleRowClick={handleRowClick}
+                    onRemoveSong={onRemoveSong}
+                    getEditUrl={getEditUrl}
+                  />
+                ))}
+              </SortableContext>
+            )}
+          </tbody>
+        </table>
+      </DndContext>
     </div>
   );
 }
 
 export default PlaylistSongTable;
+
+interface SortableSongRowProps {
+  song: PlaylistSong;
+  index: number;
+  isManualPlaylist: boolean;
+  currentSongUuid: string | null;
+  equalizerImage: string;
+  handleRowClick: (song: PlaylistSong, columnField: string) => void;
+  onRemoveSong: (playlistItemUuid: string) => void;
+  getEditUrl: (songUuid: string) => string;
+}
+
+function SortableSongRow({
+  song,
+  isManualPlaylist,
+  currentSongUuid,
+  equalizerImage,
+  handleRowClick,
+  onRemoveSong,
+  getEditUrl,
+}: SortableSongRowProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: song.playlistitem_uuid,
+    disabled: !isManualPlaylist,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 1000 : undefined,
+    position: isDragging ? ("relative" as const) : undefined,
+  };
+
+  return (
+    <tr
+      ref={setNodeRef}
+      style={style}
+      className={`song hover-target cursor-pointer ${isDragging ? "dragging" : ""}`}
+      {...(isManualPlaylist ? { ...attributes, ...listeners } : {})}
+    >
+      {isManualPlaylist && (
+        <td
+          className="text-center align-middle cursor-grab"
+          onClick={() => handleRowClick(song, "sort_order")}
+        >
+          {currentSongUuid === song.uuid ? (
+            <img id="isPlaying" src={equalizerImage} width={20} height={20} alt="Playing" />
+          ) : (
+            song.sort_order
+          )}
+        </td>
+      )}
+      <td className="align-middle" onClick={() => handleRowClick(song, "title")}>
+        {song.title}
+      </td>
+      <td className="align-middle cursor-grab" onClick={() => handleRowClick(song, "artist")}>
+        {song.artist}
+      </td>
+      <td
+        className="text-center align-middle cursor-grab"
+        onClick={() => handleRowClick(song, "year")}
+      >
+        {song.year}
+      </td>
+      <td
+        className="text-center align-middle cursor-grab"
+        onClick={() => handleRowClick(song, "length")}
+      >
+        {song.length}
+      </td>
+      <td className="col-action text-center align-middle" onClick={e => e.stopPropagation()}>
+        <DropDownMenu
+          showOnHover={true}
+          dropdownSlot={
+            <ul className="dropdown-menu-list">
+              <li>
+                <button
+                  className="dropdown-menu-item"
+                  onClick={() => onRemoveSong(song.playlistitem_uuid)}
+                >
+                  <span className="dropdown-menu-icon">
+                    <FontAwesomeIcon icon={faTrashAlt} />
+                  </span>
+                  <span className="dropdown-menu-text">Remove from playlist</span>
+                </button>
+              </li>
+              <li>
+                <a className="dropdown-menu-item" href={getEditUrl(song.uuid)}>
+                  <span className="dropdown-menu-icon">
+                    <FontAwesomeIcon icon={faPencilAlt} />
+                  </span>
+                  <span className="dropdown-menu-text">Edit</span>
+                </a>
+              </li>
+            </ul>
+          }
+        />
+      </td>
+    </tr>
+  );
+}
