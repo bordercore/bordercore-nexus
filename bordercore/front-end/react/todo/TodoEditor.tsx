@@ -56,16 +56,32 @@ export const TodoEditor = forwardRef<TodoEditorHandle, TodoEditorProps>(function
   const tagsInputRef = useRef<TagsInputHandle>(null);
   const dueDateInputRef = useRef<HTMLInputElement>(null);
   const noteTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
+  // Store pending tags to set after modal is shown
+  const pendingTagsRef = useRef<string[] | null>(null);
 
   // Initialize modal on mount
   useEffect(() => {
     const modalElement = document.getElementById("modalEditTodo");
     if (modalElement) {
       modalRef.current = new Modal(modalElement);
+
+      // Focus name input when modal is fully shown
+      const handleShown = () => {
+        if (pendingTagsRef.current) {
+          tagsInputRef.current?.setTagList(pendingTagsRef.current);
+          pendingTagsRef.current = null;
+        }
+        nameInputRef.current?.focus();
+      };
+      modalElement.addEventListener("shown.bs.modal", handleShown);
+
+      return () => {
+        modalElement.removeEventListener("shown.bs.modal", handleShown);
+        modalRef.current?.dispose();
+      };
     }
-    return () => {
-      modalRef.current?.dispose();
-    };
   }, []);
 
   const handleLinkDrop = useCallback((event: React.DragEvent<HTMLDivElement>) => {
@@ -145,15 +161,9 @@ export const TodoEditor = forwardRef<TodoEditorHandle, TodoEditorProps>(function
       }
       setTagsKey(prev => prev + 1);
     });
+    // Store tags to set after modal is shown
+    pendingTagsRef.current = todoInfoParam?.tags || null;
     modalRef.current?.show();
-    setTimeout(() => {
-      // Set tags after component has re-rendered
-      if (todoInfoParam?.tags) {
-        tagsInputRef.current?.setTagList(todoInfoParam.tags);
-      }
-      const input = document.querySelector("#modalEditTodo input") as HTMLInputElement;
-      input?.focus();
-    }, 100);
   }, []);
 
   const setTags = useCallback((tagList: string[]) => {
@@ -235,6 +245,7 @@ export const TodoEditor = forwardRef<TodoEditorHandle, TodoEditorProps>(function
                     </label>
                     <div className="col-lg-9">
                       <input
+                        ref={nameInputRef}
                         id="id_name"
                         type="text"
                         name="name"

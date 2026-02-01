@@ -351,6 +351,13 @@ export function TodoListPage({
     }
   };
 
+  // When search input is cleared while a search is active, restore previous filters
+  useEffect(() => {
+    if (filterSearch === "" && currentSearchFilter !== "") {
+      removeSearchFilter();
+    }
+  }, [filterSearch, currentSearchFilter, removeSearchFilter]);
+
   return (
     <div className="row g-0 h-100 mx-2">
       <TodoFiltersSidebar
