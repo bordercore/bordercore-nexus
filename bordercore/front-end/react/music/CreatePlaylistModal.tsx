@@ -119,7 +119,7 @@ export const CreatePlaylistModal = React.forwardRef<
                     type="text"
                     name="name"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={e => setName(e.target.value)}
                     autoComplete="off"
                     maxLength={200}
                     required
@@ -136,7 +136,7 @@ export const CreatePlaylistModal = React.forwardRef<
                     id="id_note"
                     name="note"
                     value={note}
-                    onChange={(e) => setNote(e.target.value)}
+                    onChange={e => setNote(e.target.value)}
                     cols={40}
                     rows={3}
                     className="form-control"
@@ -192,7 +192,7 @@ export const CreatePlaylistModal = React.forwardRef<
                         type="text"
                         name="tag"
                         value={tag}
-                        onChange={(e) => setTag(e.target.value)}
+                        onChange={e => setTag(e.target.value)}
                         placeholder="Tag name"
                         className="form-control"
                         autoComplete="off"
@@ -200,15 +200,13 @@ export const CreatePlaylistModal = React.forwardRef<
                     </div>
                   </div>
                   <div className="row mt-3">
-                    <label className="col-lg-4 from-check-label text-nowrap">
-                      Time Period
-                    </label>
+                    <label className="col-lg-4 from-check-label text-nowrap">Time Period</label>
                     <div className="col-lg-8 d-flex">
                       <input
                         type="number"
                         name="start_year"
                         value={startYear}
-                        onChange={(e) => setStartYear(e.target.value)}
+                        onChange={e => setStartYear(e.target.value)}
                         className="form-control me-1"
                         size={4}
                         placeholder="Start Year"
@@ -218,7 +216,7 @@ export const CreatePlaylistModal = React.forwardRef<
                         type="number"
                         name="end_year"
                         value={endYear}
-                        onChange={(e) => setEndYear(e.target.value)}
+                        onChange={e => setEndYear(e.target.value)}
                         className="form-control ms-1"
                         size={4}
                         placeholder="End Year"
@@ -233,13 +231,12 @@ export const CreatePlaylistModal = React.forwardRef<
                         className="rating-container d-flex"
                         onMouseLeave={() => setHoverRating(null)}
                       >
-                        {[0, 1, 2, 3, 4].map((starIndex) => (
+                        {[0, 1, 2, 3, 4].map(starIndex => (
                           <span
                             key={starIndex}
-                            className={`rating me-1 ${displayRating > starIndex ? "rating-star-selected" : ""}`}
+                            className={`rating me-1 cursor-pointer ${displayRating > starIndex ? "rating-star-selected" : ""}`}
                             onClick={() => handleRatingClick(starIndex)}
                             onMouseOver={() => setHoverRating(starIndex + 1)}
-                            className="cursor-pointer"
                           >
                             <FontAwesomeIcon icon={faStar} />
                           </span>
@@ -249,17 +246,15 @@ export const CreatePlaylistModal = React.forwardRef<
                     </div>
                   </div>
                   <div className="row mt-3">
-                    <label className="col-lg-4 col-form-label">
-                      Exclude Recent Listens
-                    </label>
+                    <label className="col-lg-4 col-form-label">Exclude Recent Listens</label>
                     <div className="col-lg-8">
                       <select
                         name="exclude_recent"
                         value={excludeRecent}
-                        onChange={(e) => setExcludeRecent(e.target.value)}
+                        onChange={e => setExcludeRecent(e.target.value)}
                         className="form-control form-select"
                       >
-                        {excludeRecentOptions.map((option) => (
+                        {excludeRecentOptions.map(option => (
                           <option key={option.value} value={option.value}>
                             {option.display}
                           </option>
@@ -276,7 +271,7 @@ export const CreatePlaylistModal = React.forwardRef<
                           name="exclude_albums"
                           className="form-check-input"
                           checked={excludeAlbums}
-                          onChange={(e) => setExcludeAlbums(e.target.checked)}
+                          onChange={e => setExcludeAlbums(e.target.checked)}
                           value="true"
                         />
                       </div>
@@ -288,7 +283,7 @@ export const CreatePlaylistModal = React.forwardRef<
                       <select
                         name="sort_by"
                         value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value)}
+                        onChange={e => setSortBy(e.target.value)}
                         className="form-control form-select"
                       >
                         <option value="recent">Recently Added</option>
@@ -302,10 +297,10 @@ export const CreatePlaylistModal = React.forwardRef<
                       <select
                         name="size"
                         value={size}
-                        onChange={(e) => setSize(e.target.value)}
+                        onChange={e => setSize(e.target.value)}
                         className="form-control form-select"
                       >
-                        {sizeOptions.map((option) => (
+                        {sizeOptions.map(option => (
                           <option key={option.value} value={option.value}>
                             {option.display}
                           </option>

@@ -3,7 +3,13 @@ import { createPortal } from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPencilAlt, faInfo } from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
-import type { ArtistSong, ArtistDetail, ArtistDetailAlbum, ArtistDetailUrls, Playlist } from "./types";
+import type {
+  ArtistSong,
+  ArtistDetail,
+  ArtistDetailAlbum,
+  ArtistDetailUrls,
+  Playlist,
+} from "./types";
 import ArtistSongTable from "./ArtistSongTable";
 import AlbumGrid from "./AlbumGrid";
 import AudioPlayer, { type AudioPlayerHandle } from "./AudioPlayer";
@@ -73,21 +79,23 @@ export function ArtistDetailPage({
   };
 
   const handleRatingChange = (songUuid: string, newRating: number | null) => {
-    setSongs((prevSongs) =>
-      prevSongs.map((song) =>
-        song.uuid === songUuid ? { ...song, rating: newRating } : song
-      )
+    setSongs(prevSongs =>
+      prevSongs.map(song => (song.uuid === songUuid ? { ...song, rating: newRating } : song))
     );
   };
 
-  const handlePlaylistToggle = (songUuid: string, playlistUuid: string, action: "added" | "removed") => {
-    setSongs((prevSongs) =>
-      prevSongs.map((song) => {
+  const handlePlaylistToggle = (
+    songUuid: string,
+    playlistUuid: string,
+    action: "added" | "removed"
+  ) => {
+    setSongs(prevSongs =>
+      prevSongs.map(song => {
         if (song.uuid !== songUuid) return song;
         if (action === "added") {
           return { ...song, playlists: [...song.playlists, playlistUuid] };
         } else {
-          return { ...song, playlists: song.playlists.filter((p) => p !== playlistUuid) };
+          return { ...song, playlists: song.playlists.filter(p => p !== playlistUuid) };
         }
       })
     );

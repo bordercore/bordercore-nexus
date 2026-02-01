@@ -70,20 +70,13 @@ export function SlideShowOverlay({
     <div id="overlay" className="slideshow-overlay">
       {contentType === "Image" ? (
         <img
-          className="slide-show"
+          className="slide-show cursor-pointer"
           src={imageUrl}
           alt="Slideshow"
           onClick={onNext}
-          className="cursor-pointer"
         />
       ) : (
-        <video
-          ref={videoRef}
-          className="slide-show"
-          controls
-          autoPlay
-          muted
-        >
+        <video ref={videoRef} className="slide-show" controls autoPlay muted>
           <source src={imageUrl} type="video/mp4" />
         </video>
       )}

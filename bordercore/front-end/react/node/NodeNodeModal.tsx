@@ -60,7 +60,9 @@ export default function NodeNodeModal({
         modalInstanceRef.current.show();
         // Focus the search input after modal opens
         setTimeout(() => {
-          const input = modalRef.current?.querySelector("#modalSelectNode input") as HTMLInputElement;
+          const input = modalRef.current?.querySelector(
+            "#modalSelectNode input"
+          ) as HTMLInputElement;
           if (input && action === "Add") {
             input.focus();
           }
@@ -128,14 +130,14 @@ export default function NodeNodeModal({
                     id="inputRotate"
                     className="form-control form-select"
                     value={options.rotate}
-                    onChange={(e) =>
-                      setOptions((prev) => ({
+                    onChange={e =>
+                      setOptions(prev => ({
                         ...prev,
                         rotate: parseInt(e.target.value, 10),
                       }))
                     }
                   >
-                    {ROTATE_OPTIONS.map((opt) => (
+                    {ROTATE_OPTIONS.map(opt => (
                       <option key={opt.value} value={opt.value}>
                         {opt.display}
                       </option>
@@ -146,12 +148,7 @@ export default function NodeNodeModal({
             </div>
           </div>
           <div className="modal-footer">
-            <input
-              className="btn btn-primary"
-              type="button"
-              value="Save"
-              onClick={handleSave}
-            />
+            <input className="btn btn-primary" type="button" value="Save" onClick={handleSave} />
           </div>
         </div>
       </div>

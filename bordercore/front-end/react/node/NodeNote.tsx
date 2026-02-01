@@ -58,7 +58,7 @@ export default function NodeNote({
   const getNote = () => {
     doGet(
       noteUrl,
-      (response) => {
+      response => {
         setNote(response.data);
         setNoteContents(response.data.content || "");
       },
@@ -89,7 +89,7 @@ export default function NodeNote({
         color: data.color.toString(),
       },
       () => {
-        setNodeNote((prev) => ({ ...prev, color: data.color, name: data.name }));
+        setNodeNote(prev => ({ ...prev, color: data.color, name: data.name }));
       },
       "",
       ""
@@ -126,7 +126,7 @@ export default function NodeNote({
         node_uuid: nodeUuid,
         note_uuid: note?.uuid || nodeNote.uuid,
       },
-      (response) => {
+      response => {
         onEditLayout(response.data.layout);
       },
       "Note deleted"
@@ -147,7 +147,7 @@ export default function NodeNote({
         <a
           href="#"
           className="dropdown-menu-item"
-          onClick={(e) => {
+          onClick={e => {
             e.preventDefault();
             handleNoteEdit();
           }}
@@ -162,7 +162,7 @@ export default function NodeNote({
         <a
           href="#"
           className="dropdown-menu-item"
-          onClick={(e) => {
+          onClick={e => {
             e.preventDefault();
             handleOpenNoteMetadataModal();
           }}
@@ -177,7 +177,7 @@ export default function NodeNote({
         <a
           href="#"
           className="dropdown-menu-item"
-          onClick={(e) => {
+          onClick={e => {
             e.preventDefault();
             handleNoteDelete();
           }}
@@ -203,21 +203,16 @@ export default function NodeNote({
               ref={nameInputRef}
               className="form-control w-100"
               value={nodeNote.name}
-              onChange={(e) =>
-                setNodeNote((prev) => ({ ...prev, name: e.target.value }))
-              }
+              onChange={e => setNodeNote(prev => ({ ...prev, name: e.target.value }))}
               onBlur={handleNameBlur}
-              onKeyDown={(e) => {
+              onKeyDown={e => {
                 if (e.key === "Enter") {
                   handleNameBlur();
                 }
               }}
             />
           ) : (
-            <span
-              onDoubleClick={handleNameDoubleClick}
-              className="cursor-pointer"
-            >
+            <span onDoubleClick={handleNameDoubleClick} className="cursor-pointer">
               {nodeNote.name}
             </span>
           )}
@@ -244,18 +239,13 @@ export default function NodeNote({
               ref={contentTextareaRef}
               className="form-control"
               value={noteContents}
-              onChange={(e) => setNoteContents(e.target.value)}
+              onChange={e => setNoteContents(e.target.value)}
               onBlur={handleContentBlur}
               rows={5}
             />
           ) : (
-            <div
-              onClick={() => setIsEditingContent(true)}
-              className="cursor-pointer"
-            >
-              {noteContents || (
-                <span className="text-muted">No content</span>
-              )}
+            <div onClick={() => setIsEditingContent(true)} className="cursor-pointer">
+              {noteContents || <span className="text-muted">No content</span>}
             </div>
           )}
         </div>

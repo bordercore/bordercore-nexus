@@ -41,9 +41,7 @@ export function BlobDetailCover({ coverUrl, fullSize = true }: BlobDetailCoverPr
     modalInstance.current?.show();
   }, []);
 
-  const imageClass = fullSize
-    ? "blob-detail-cover-image"
-    : "blob-detail-cover-image-with-content";
+  const imageClass = fullSize ? "blob-detail-cover-image" : "blob-detail-cover-image-with-content";
 
   return (
     <div className={imageClass}>

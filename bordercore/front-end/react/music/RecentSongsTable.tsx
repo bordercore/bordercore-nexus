@@ -30,7 +30,7 @@ export function RecentSongsTable({ songs }: RecentSongsTableProps) {
           </tr>
         </thead>
         <tbody>
-          {songs.map((song) => (
+          {songs.map(song => (
             <tr key={song.uuid} className="song hover-target">
               <td className="align-middle">
                 <span>{song.title}</span>

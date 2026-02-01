@@ -31,7 +31,7 @@ export function DoctypeSidebar({
           <>
             <h4 className="border-bottom pb-2">Blob Type</h4>
             <ul className="list-unstyled">
-              {aggregations.map((doctype) => (
+              {aggregations.map(doctype => (
                 <li
                   key={doctype.doctype}
                   className={`list-with-counts rounded d-flex ps-2 py-1 pe-1 ${
@@ -49,11 +49,11 @@ export function DoctypeSidebar({
           </>
         ) : (
           <>
-            Choose <strong>term search</strong> to search for objects which contain exact
-            words or phrases.
+            Choose <strong>term search</strong> to search for objects which contain exact words or
+            phrases.
             <hr className="divider my-3" />
-            Choose <strong>tag search</strong> to search for objects associated with a
-            given tag or tags.
+            Choose <strong>tag search</strong> to search for objects associated with a given tag or
+            tags.
           </>
         )}
       </div>

@@ -151,8 +151,7 @@ export default function NodeDetailPage({
   const dropdownMenuRef = useRef<DropDownMenuHandle>(null);
 
   // Helper function to replace UUID placeholder in URLs
-  const replaceUuid = (url: string, uuid: string) =>
-    url.replace(UUID_PLACEHOLDER, uuid);
+  const replaceUuid = (url: string, uuid: string) => url.replace(UUID_PLACEHOLDER, uuid);
 
   // Layout change handler
   const handleEditLayout = (newLayoutJson: string) => {
@@ -277,7 +276,7 @@ export default function NodeDetailPage({
         rotate: settings.rotate.toString(),
         limit: settings.limit?.toString() || "",
       },
-      (response) => {
+      response => {
         handleEditLayout(response.data.layout);
       },
       "Collection added"
@@ -301,7 +300,7 @@ export default function NodeDetailPage({
         note_name: data.name,
         color: data.color.toString(),
       },
-      (response) => {
+      response => {
         handleEditLayout(response.data.layout);
       },
       "Note added"
@@ -314,7 +313,7 @@ export default function NodeDetailPage({
       {
         node_uuid: nodeUuid,
       },
-      (response) => {
+      response => {
         handleEditLayout(response.data.layout);
       },
       "Todo list added"
@@ -322,14 +321,14 @@ export default function NodeDetailPage({
   };
 
   const handleAddImage = () => {
-    objectSelectModalRef.current?.open((selectedObject) => {
+    objectSelectModalRef.current?.open(selectedObject => {
       doPost(
         urls.addImage,
         {
           node_uuid: nodeUuid,
           image_uuid: selectedObject.uuid,
         },
-        (response) => {
+        response => {
           handleEditLayout(response.data.layout);
         },
         "Image added"
@@ -358,7 +357,7 @@ export default function NodeDetailPage({
         node_uuid: nodeUuid,
         options: JSON.stringify(options),
       },
-      (response) => {
+      response => {
         handleEditLayout(response.data.layout);
       },
       "Quote added"
@@ -382,7 +381,7 @@ export default function NodeDetailPage({
         node_uuid: selectedNodeUuid,
         options: JSON.stringify(options),
       },
-      (response) => {
+      response => {
         handleEditLayout(response.data.layout);
       },
       "Node added"
@@ -396,25 +395,22 @@ export default function NodeDetailPage({
 
   const handleTodoAdd = (uuid: string) => {
     // Add todo to node and refresh todo list
-    todoListRefs.current.forEach((ref) => {
+    todoListRefs.current.forEach(ref => {
       ref.addNodeTodo(uuid);
     });
   };
 
   const handleTodoEdit = () => {
     // Refresh todo list after edit
-    todoListRefs.current.forEach((ref) => {
+    todoListRefs.current.forEach(ref => {
       ref.getTodoList();
     });
   };
 
   // Object select modal handlers
-  const handleOpenObjectSelectModal = (
-    callback: () => void,
-    data: { collectionUuid: string }
-  ) => {
+  const handleOpenObjectSelectModal = (callback: () => void, data: { collectionUuid: string }) => {
     setObjectSelectModalData({ callback, collectionUuid: data.collectionUuid });
-    objectSelectModalRef.current?.open((selectedObject) => {
+    objectSelectModalRef.current?.open(selectedObject => {
       // Backend expects blob_uuid or bookmark_uuid based on object type
       const doctype = (selectedObject.doctype || "").toLowerCase();
       const postData: Record<string, string> = {
@@ -465,9 +461,7 @@ export default function NodeDetailPage({
               })
             }
             onOpenObjectSelectModal={handleOpenObjectSelectModal}
-            onOpenImageModal={(imageUrl) =>
-              setImageModalState({ isOpen: true, imageUrl })
-            }
+            onOpenImageModal={imageUrl => setImageModalState({ isOpen: true, imageUrl })}
             onEditLayout={handleEditLayout}
           />
         );
@@ -501,7 +495,7 @@ export default function NodeDetailPage({
         return (
           <NodeTodoList
             key={key}
-            ref={(ref) => {
+            ref={ref => {
               if (ref) todoListRefs.current.set(key, ref);
             }}
             nodeUuid={nodeUuid}
@@ -527,9 +521,7 @@ export default function NodeDetailPage({
             imageUrl={img.image_url}
             imageDetailUrl={replaceUuid(urls.blobDetailTemplate, img.image_uuid)}
             removeComponentUrl={urls.removeComponent}
-            onOpenImageModal={(imageUrl) =>
-              setImageModalState({ isOpen: true, imageUrl })
-            }
+            onOpenImageModal={imageUrl => setImageModalState({ isOpen: true, imageUrl })}
             onEditLayout={handleEditLayout}
           />
         );
@@ -596,7 +588,7 @@ export default function NodeDetailPage({
         <a
           href="#"
           className="dropdown-menu-item"
-          onClick={(e) => {
+          onClick={e => {
             e.preventDefault();
             setIsEditingName(true);
           }}
@@ -611,7 +603,7 @@ export default function NodeDetailPage({
         <a
           href="#"
           className="dropdown-menu-item"
-          onClick={(e) => {
+          onClick={e => {
             e.preventDefault();
             handleAddCollection();
           }}
@@ -626,7 +618,7 @@ export default function NodeDetailPage({
         <a
           href="#"
           className="dropdown-menu-item"
-          onClick={(e) => {
+          onClick={e => {
             e.preventDefault();
             handleAddNote();
           }}
@@ -641,7 +633,7 @@ export default function NodeDetailPage({
         <a
           href="#"
           className="dropdown-menu-item"
-          onClick={(e) => {
+          onClick={e => {
             e.preventDefault();
             handleAddImage();
           }}
@@ -656,7 +648,7 @@ export default function NodeDetailPage({
         <a
           href="#"
           className="dropdown-menu-item"
-          onClick={(e) => {
+          onClick={e => {
             e.preventDefault();
             handleAddQuote();
           }}
@@ -671,7 +663,7 @@ export default function NodeDetailPage({
         <a
           href="#"
           className="dropdown-menu-item"
-          onClick={(e) => {
+          onClick={e => {
             e.preventDefault();
             handleAddTodoList();
           }}
@@ -686,7 +678,7 @@ export default function NodeDetailPage({
         <a
           href="#"
           className="dropdown-menu-item"
-          onClick={(e) => {
+          onClick={e => {
             e.preventDefault();
             handleAddNode();
           }}
@@ -701,7 +693,7 @@ export default function NodeDetailPage({
         <a
           href="#"
           className="dropdown-menu-item"
-          onClick={(e) => {
+          onClick={e => {
             e.preventDefault();
             setEditLayout(!editLayout);
             dropdownMenuRef.current?.close();
@@ -733,9 +725,9 @@ export default function NodeDetailPage({
                   type="text"
                   className="form-control form-control-sm d-inline-block w-auto"
                   value={nodeName}
-                  onChange={(e) => setNodeName(e.target.value)}
+                  onChange={e => setNodeName(e.target.value)}
                   onBlur={handleNodeNameSave}
-                  onKeyDown={(e) => {
+                  onKeyDown={e => {
                     if (e.key === "Enter") handleNodeNameSave();
                   }}
                   autoFocus
@@ -767,9 +759,9 @@ export default function NodeDetailPage({
           <div
             key={colIndex}
             className={`col-lg-4 ${editLayout ? "edit-layout-mode" : ""}`}
-            onDragOver={(e) => handleDragOver(e, colIndex, 0)}
+            onDragOver={e => handleDragOver(e, colIndex, 0)}
             onDragLeave={handleDragLeave}
-            onDrop={(e) => handleDrop(e, colIndex, 0)}
+            onDrop={e => handleDrop(e, colIndex, 0)}
           >
             {/* Drop indicator at top of column */}
             {dragOverTarget?.col === colIndex && dragOverTarget?.row === 0 && (
@@ -778,21 +770,19 @@ export default function NodeDetailPage({
             {column.map((item, rowIndex) => (
               <React.Fragment key={`${colIndex}-${rowIndex}`}>
                 {/* Drop indicator before this item (when hovering on this item) */}
-                {dragOverTarget?.col === colIndex && dragOverTarget?.row === rowIndex && rowIndex > 0 && (
-                  <div className="drop-indicator" />
-                )}
+                {dragOverTarget?.col === colIndex &&
+                  dragOverTarget?.row === rowIndex &&
+                  rowIndex > 0 && <div className="drop-indicator" />}
                 <div
-                  className={`mb-gutter ${
-                    editLayout ? "draggable-item" : ""
-                  } ${
+                  className={`mb-gutter ${editLayout ? "draggable-item" : ""} ${
                     draggingItem?.col === colIndex && draggingItem?.row === rowIndex
                       ? "dragging"
                       : ""
                   }`}
                   draggable={editLayout}
-                  onDragStart={(e) => handleDragStart(e, colIndex, rowIndex)}
-                  onDragOver={(e) => handleDragOver(e, colIndex, rowIndex)}
-                  onDrop={(e) => handleDrop(e, colIndex, rowIndex)}
+                  onDragStart={e => handleDragStart(e, colIndex, rowIndex)}
+                  onDragOver={e => handleDragOver(e, colIndex, rowIndex)}
+                  onDrop={e => handleDrop(e, colIndex, rowIndex)}
                   onDragEnd={handleDragEnd}
                 >
                   {renderLayoutItem(item, colIndex, rowIndex)}
@@ -814,20 +804,20 @@ export default function NodeDetailPage({
         isOpen={noteModalState.isOpen}
         action={noteModalState.action}
         data={noteModalState.data}
-        onSave={(data) => {
+        onSave={data => {
           if (noteModalState.callback) {
             noteModalState.callback(data);
           }
-          setNoteModalState((prev) => ({ ...prev, isOpen: false }));
+          setNoteModalState(prev => ({ ...prev, isOpen: false }));
           setNoteColorPreview(null);
         }}
-        onColorChange={(color) => {
+        onColorChange={color => {
           if (noteModalState.data?.uuid) {
             setNoteColorPreview({ uuid: noteModalState.data.uuid, color });
           }
         }}
         onClose={() => {
-          setNoteModalState((prev) => ({ ...prev, isOpen: false }));
+          setNoteModalState(prev => ({ ...prev, isOpen: false }));
           setNoteColorPreview(null);
         }}
       />
@@ -838,14 +828,14 @@ export default function NodeDetailPage({
         nodeUuid={nodeUuid}
         addQuoteUrl={urls.addQuote}
         data={quoteModalState.data}
-        onSave={(options) => {
+        onSave={options => {
           if (quoteModalState.callback) {
             quoteModalState.callback(options);
           }
-          setQuoteModalState((prev) => ({ ...prev, isOpen: false }));
+          setQuoteModalState(prev => ({ ...prev, isOpen: false }));
         }}
         onAddQuote={handleQuoteAdd}
-        onClose={() => setQuoteModalState((prev) => ({ ...prev, isOpen: false }))}
+        onClose={() => setQuoteModalState(prev => ({ ...prev, isOpen: false }))}
       />
 
       <NodeNodeModal
@@ -853,14 +843,14 @@ export default function NodeDetailPage({
         action={nodeModalState.action}
         searchUrl={`${urls.nodeSearch}?query=`}
         data={nodeModalState.data}
-        onSave={(options) => {
+        onSave={options => {
           if (nodeModalState.callback) {
             nodeModalState.callback(options);
           }
-          setNodeModalState((prev) => ({ ...prev, isOpen: false }));
+          setNodeModalState(prev => ({ ...prev, isOpen: false }));
         }}
         onSelectNode={handleNodeSelect}
-        onClose={() => setNodeModalState((prev) => ({ ...prev, isOpen: false }))}
+        onClose={() => setNodeModalState(prev => ({ ...prev, isOpen: false }))}
       />
 
       <NodeCollectionModal
@@ -868,14 +858,14 @@ export default function NodeDetailPage({
         action={collectionModalState.action}
         searchUrl={urls.collectionSearchUrl}
         data={collectionModalState.data}
-        onSave={(settings) => {
+        onSave={settings => {
           if (collectionModalState.callback) {
             collectionModalState.callback(settings);
           }
-          setCollectionModalState((prev) => ({ ...prev, isOpen: false }));
+          setCollectionModalState(prev => ({ ...prev, isOpen: false }));
         }}
         onAddCollection={handleCollectionAdd}
-        onClose={() => setCollectionModalState((prev) => ({ ...prev, isOpen: false }))}
+        onClose={() => setCollectionModalState(prev => ({ ...prev, isOpen: false }))}
       />
 
       <TodoEditor
@@ -888,10 +878,7 @@ export default function NodeDetailPage({
         onEdit={handleTodoEdit}
       />
 
-      <ObjectSelectModal
-        ref={objectSelectModalRef}
-        searchObjectUrl={urls.searchNames}
-      />
+      <ObjectSelectModal ref={objectSelectModalRef} searchObjectUrl={urls.searchNames} />
     </div>
   );
 }

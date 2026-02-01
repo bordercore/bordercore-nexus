@@ -1,6 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Modal } from "bootstrap";
-import { NODE_COLORS, ROTATE_OPTIONS, FORMAT_OPTIONS, type NodeColor, type QuoteOptions } from "./types";
+import {
+  NODE_COLORS,
+  ROTATE_OPTIONS,
+  FORMAT_OPTIONS,
+  type NodeColor,
+  type QuoteOptions,
+} from "./types";
 
 interface NodeQuoteModalProps {
   isOpen: boolean;
@@ -102,11 +108,11 @@ export default function NodeQuoteModal({
               </label>
               <div className="col-lg-9">
                 <div className="d-flex">
-                  {NODE_COLORS.map((c) => (
+                  {NODE_COLORS.map(c => (
                     <div
                       key={c}
                       className={`${getColorClass(c)} flex-grow-1 mx-2 cursor-pointer`}
-                      onClick={() => setOptions((prev) => ({ ...prev, color: c }))}
+                      onClick={() => setOptions(prev => ({ ...prev, color: c }))}
                     />
                   ))}
                 </div>
@@ -122,14 +128,14 @@ export default function NodeQuoteModal({
                     id="inputRotate"
                     className="form-control form-select"
                     value={options.rotate}
-                    onChange={(e) =>
-                      setOptions((prev) => ({
+                    onChange={e =>
+                      setOptions(prev => ({
                         ...prev,
                         rotate: parseInt(e.target.value, 10),
                       }))
                     }
                   >
-                    {ROTATE_OPTIONS.map((opt) => (
+                    {ROTATE_OPTIONS.map(opt => (
                       <option key={opt.value} value={opt.value}>
                         {opt.display}
                       </option>
@@ -141,8 +147,8 @@ export default function NodeQuoteModal({
                       id="favoritesOnly"
                       className="form-check-input"
                       checked={options.favorites_only}
-                      onChange={(e) =>
-                        setOptions((prev) => ({
+                      onChange={e =>
+                        setOptions(prev => ({
                           ...prev,
                           favorites_only: e.target.checked,
                         }))
@@ -165,14 +171,14 @@ export default function NodeQuoteModal({
                     id="inputFormat"
                     className="form-control form-select"
                     value={options.format}
-                    onChange={(e) =>
-                      setOptions((prev) => ({
+                    onChange={e =>
+                      setOptions(prev => ({
                         ...prev,
                         format: e.target.value as "standard" | "minimal",
                       }))
                     }
                   >
-                    {FORMAT_OPTIONS.map((opt) => (
+                    {FORMAT_OPTIONS.map(opt => (
                       <option key={opt.value} value={opt.value}>
                         {opt.display}
                       </option>
@@ -183,12 +189,7 @@ export default function NodeQuoteModal({
             </div>
           </div>
           <div className="modal-footer">
-            <input
-              className="btn btn-primary"
-              type="button"
-              value="Save"
-              onClick={handleSave}
-            />
+            <input className="btn btn-primary" type="button" value="Save" onClick={handleSave} />
           </div>
         </div>
       </div>

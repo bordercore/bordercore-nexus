@@ -1,4 +1,11 @@
-import React, { useState, useRef, cloneElement, isValidElement, ReactNode, ReactElement } from "react";
+import React, {
+  useState,
+  useRef,
+  cloneElement,
+  isValidElement,
+  ReactNode,
+  ReactElement,
+} from "react";
 import {
   useFloating,
   autoUpdate,
@@ -94,13 +101,17 @@ export function Popover({
     strategy: "absolute",
     middleware: [
       getOffset(),
-      ...(allowFlip ? [flip({
-        fallbackAxisSideDirection: "end",
-        padding: 8,
-      })] : []),
+      ...(allowFlip
+        ? [
+            flip({
+              fallbackAxisSideDirection: "end",
+              padding: 8,
+            }),
+          ]
+        : []),
       shift({ padding: 8 }),
     ],
-    whileElementsMounted: (reference, floating, update) => 
+    whileElementsMounted: (reference, floating, update) =>
       autoUpdate(reference, floating, update, { elementResize: false, layoutShift: false }),
   });
 
@@ -129,12 +140,7 @@ export function Popover({
   const dismiss = useDismiss(context);
   const role = useRole(context);
 
-  const { getReferenceProps, getFloatingProps } = useInteractions([
-    click,
-    hover,
-    dismiss,
-    role,
-  ]);
+  const { getReferenceProps, getFloatingProps } = useInteractions([click, hover, dismiss, role]);
 
   // Clone trigger element and attach ref and props
   const triggerElement = isValidElement(trigger)
@@ -153,7 +159,9 @@ export function Popover({
           // Dynamic styles from floating-ui library - must remain inline
           style={{
             ...floatingStyles,
-            transform: `${floatingStyles.transform || ""} ${transitionStyles.transform || ""}`.trim() || undefined,
+            transform:
+              `${floatingStyles.transform || ""} ${transitionStyles.transform || ""}`.trim() ||
+              undefined,
             opacity: transitionStyles.opacity,
             ...style,
           }}

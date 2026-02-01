@@ -37,7 +37,10 @@ export function Pagination({ paginator }: PaginationProps) {
       <nav className="mb-5 navigation">
         <ul className="pagination justify-content-center">
           <li className={`page-item ${!hasPrevious ? "disabled" : ""}`}>
-            <a className="page-link" href={hasPrevious ? pageLink(paginator.previous_page_number!) : "#"}>
+            <a
+              className="page-link"
+              href={hasPrevious ? pageLink(paginator.previous_page_number!) : "#"}
+            >
               <FontAwesomeIcon icon={faChevronLeft} className="text-emphasis" />
             </a>
           </li>
@@ -45,7 +48,7 @@ export function Pagination({ paginator }: PaginationProps) {
             <div className="w-100 h-75" />
           </li>
 
-          {paginator.range.map((page) => (
+          {paginator.range.map(page => (
             <li
               key={page}
               className={`page-item ${paginator.page_number === page ? "disabled" : ""}`}

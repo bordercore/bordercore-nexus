@@ -38,16 +38,19 @@ export function TagAliasTable({ data, onDelete }: TagAliasTableProps) {
     });
   }, [data, sortField, sortDirection]);
 
-  const handleSort = useCallback((field: SortField) => {
-    let newDirection: "asc" | "desc";
-    if (sortField === field) {
-      newDirection = sortDirection === "asc" ? "desc" : "asc";
-    } else {
-      newDirection = "asc";
-    }
-    setSortField(field);
-    setSortDirection(newDirection);
-  }, [sortField, sortDirection]);
+  const handleSort = useCallback(
+    (field: SortField) => {
+      let newDirection: "asc" | "desc";
+      if (sortField === field) {
+        newDirection = sortDirection === "asc" ? "desc" : "asc";
+      } else {
+        newDirection = "asc";
+      }
+      setSortField(field);
+      setSortDirection(newDirection);
+    },
+    [sortField, sortDirection]
+  );
 
   const renderSortIcon = (field: SortField) => {
     if (sortField !== field) return null;
@@ -63,23 +66,17 @@ export function TagAliasTable({ data, onDelete }: TagAliasTableProps) {
       <table className="tag-alias-table">
         <thead>
           <tr>
-            <th
-              className="cursor-pointer"
-              onClick={() => handleSort("tag")}
-            >
+            <th className="cursor-pointer" onClick={() => handleSort("tag")}>
               Tag{renderSortIcon("tag")}
             </th>
-            <th
-              className="cursor-pointer"
-              onClick={() => handleSort("alias")}
-            >
+            <th className="cursor-pointer" onClick={() => handleSort("alias")}>
               Alias{renderSortIcon("alias")}
             </th>
             <th className="col-action"></th>
           </tr>
         </thead>
         <tbody>
-          {sortedData.map((alias) => (
+          {sortedData.map(alias => (
             <tr key={alias.uuid} className="hover-target">
               <td>{alias.tag.name}</td>
               <td>{alias.name}</td>
@@ -92,7 +89,7 @@ export function TagAliasTable({ data, onDelete }: TagAliasTableProps) {
                         <a
                           href="#"
                           className="dropdown-menu-item"
-                          onClick={(e) => {
+                          onClick={e => {
                             e.preventDefault();
                             onDelete(alias.uuid);
                           }}

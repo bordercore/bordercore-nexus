@@ -49,11 +49,14 @@ export function SearchPage({
     searchBarRef.current?.focusTermSearch();
   }, []);
 
-  const handleDoctypeSelect = useCallback((selectedDoctype: string) => {
-    const searchParams = new URLSearchParams(window.location.search);
-    searchParams.set("doctype", selectedDoctype === currentDoctype ? "" : selectedDoctype);
-    window.location.search = searchParams.toString();
-  }, [currentDoctype]);
+  const handleDoctypeSelect = useCallback(
+    (selectedDoctype: string) => {
+      const searchParams = new URLSearchParams(window.location.search);
+      searchParams.set("doctype", selectedDoctype === currentDoctype ? "" : selectedDoctype);
+      window.location.search = searchParams.toString();
+    },
+    [currentDoctype]
+  );
 
   const truncateDescription = useCallback((text: string, maxLength = 150) => {
     if (!text || text.length <= maxLength) return text;
@@ -63,8 +66,7 @@ export function SearchPage({
   const hasResults = results.length > 0;
 
   // Note: dangerouslySetInnerHTML is used throughout this component for highlighted
-  // search terms and other backend-generated HTML. This matches the Vue version's
-  // use of v-html. All content is from the trusted backend.
+  // search terms and other backend-generated HTML. All content is from the trusted backend.
 
   return (
     <div className="row g-0 h-100 mx-2">
@@ -272,12 +274,7 @@ export function SearchPage({
                                 imageSlot={
                                   source.cover_url && (
                                     <div className="mx-2">
-                                      <img
-                                        src={source.cover_url}
-                                        height="75"
-                                        width="75"
-                                        alt=""
-                                      />
+                                      <img src={source.cover_url} height="75" width="75" alt="" />
                                     </div>
                                   )
                                 }
@@ -292,9 +289,16 @@ export function SearchPage({
                             )}
 
                             {/* Default: book, blob, or unknown doctype */}
-                            {!["drill", "todo", "bookmark", "note", "document", "song", "album", "collection"].includes(
-                              source.doctype
-                            ) && (
+                            {![
+                              "drill",
+                              "todo",
+                              "bookmark",
+                              "note",
+                              "document",
+                              "song",
+                              "album",
+                              "collection",
+                            ].includes(source.doctype) && (
                               <SearchResult
                                 icon="book"
                                 importance={source.importance || 1}

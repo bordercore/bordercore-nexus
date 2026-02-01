@@ -8,11 +8,7 @@ interface PasswordChangePageProps {
   prefsUrl: string;
 }
 
-export function PasswordChangePage({
-  formAction,
-  csrfToken,
-  prefsUrl,
-}: PasswordChangePageProps) {
+export function PasswordChangePage({ formAction, csrfToken, prefsUrl }: PasswordChangePageProps) {
   return (
     <div className="row g-0 h-100 mx-2">
       {/* Left sidebar with info */}
@@ -26,8 +22,8 @@ export function PasswordChangePage({
               <h6 className="text-secondary">Password change</h6>
             </div>
             <div>
-              <span>Change your password</span> by first verifying your existing
-              password, then entering your new password with confirmation.
+              <span>Change your password</span> by first verifying your existing password, then
+              entering your new password with confirmation.
             </div>
           </div>
         </div>
@@ -69,17 +65,10 @@ export function PasswordChangePage({
 
           {/* Password change form */}
           <form encType="multipart/form-data" action={formAction} method="post">
-            <input
-              type="hidden"
-              name="csrfmiddlewaretoken"
-              value={csrfToken}
-            />
+            <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken} />
 
             <div className="row mb-3">
-              <label
-                className="fw-bold col-lg-3 col-form-label text-end"
-                htmlFor="id_old_password"
-              >
+              <label className="fw-bold col-lg-3 col-form-label text-end" htmlFor="id_old_password">
                 Old Password
               </label>
               <div className="col-lg-6">

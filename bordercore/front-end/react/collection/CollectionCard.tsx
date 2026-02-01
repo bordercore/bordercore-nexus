@@ -20,9 +20,7 @@ export function CollectionCard({ collection, onClick }: CollectionCardProps) {
     >
       <div className="position-relative collection mx-auto">
         <img src={collection.cover_url} alt={collection.name} />
-        <div className="collection-cover-container position-absolute">
-          {blobCountText}
-        </div>
+        <div className="collection-cover-container position-absolute">{blobCountText}</div>
       </div>
       <div className="text-truncate">
         <a href={collection.url}>{collection.name}</a>

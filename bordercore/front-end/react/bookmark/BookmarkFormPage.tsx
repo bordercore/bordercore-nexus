@@ -90,7 +90,7 @@ export function BookmarkFormPage({
 
       doGet(
         `${urls.getTitleFromUrl}?url=${encodedUrl}`,
-        (response) => {
+        response => {
           if (nameInput && response.data.title) {
             nameInput.value = response.data.title;
           }
@@ -142,23 +142,11 @@ export function BookmarkFormPage({
     }
 
     if (field.name === "importance") {
-      return (
-        <ToggleSwitch
-          name="importance"
-          checked={importance}
-          onChange={setImportance}
-        />
-      );
+      return <ToggleSwitch name="importance" checked={importance} onChange={setImportance} />;
     }
 
     if (field.name === "is_pinned") {
-      return (
-        <ToggleSwitch
-          name="is_pinned"
-          checked={isPinned}
-          onChange={setIsPinned}
-        />
-      );
+      return <ToggleSwitch name="is_pinned" checked={isPinned} onChange={setIsPinned} />;
     }
 
     if (field.name === "daily") {
@@ -166,7 +154,7 @@ export function BookmarkFormPage({
         <ToggleSwitch
           name="daily"
           checked={daily === 1}
-          onChange={(checked) => setDaily(checked ? 1 : 0)}
+          onChange={checked => setDaily(checked ? 1 : 0)}
         />
       );
     }
@@ -218,16 +206,14 @@ export function BookmarkFormPage({
         />
 
         {/* Back References */}
-        {backReferences.length > 0 && (
-          <BackReferences backReferences={backReferences} />
-        )}
+        {backReferences.length > 0 && <BackReferences backReferences={backReferences} />}
 
         {/* Related Nodes */}
         {relatedNodes.length > 0 && (
           <div className="d-flex">
             <Card title="Related Nodes" className="backdrop-filter w-100">
               <ul className="list-group interior-borders cursor-pointer">
-                {relatedNodes.map((node) => (
+                {relatedNodes.map(node => (
                   <li
                     key={node.uuid}
                     className="hoverable px-0 list-group-item list-group-item-secondary text-primary"
@@ -250,42 +236,27 @@ export function BookmarkFormPage({
         <div className="card-body">
           <p className="lead offset-lg-2">
             {/* faviconHtml is trusted server-rendered HTML from the app's own database */}
-            {faviconHtml && (
-              <span dangerouslySetInnerHTML={{ __html: faviconHtml }} />
-            )}{" "}
+            {faviconHtml && <span dangerouslySetInnerHTML={{ __html: faviconHtml }} />}{" "}
             {bookmarkName || "New Bookmark"}
           </p>
 
           <form id="bookmark-form" action={formAction} method="post">
-            <input
-              type="hidden"
-              name="csrfmiddlewaretoken"
-              value={csrfToken}
-            />
+            <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken} />
 
-            {fields.map((field) => (
+            {fields.map(field => (
               <React.Fragment key={field.name}>
                 <div
                   className={`${
-                    field.errors && field.errors.length > 0
-                      ? "message-error "
-                      : ""
+                    field.errors && field.errors.length > 0 ? "message-error " : ""
                   }row mb-3`}
                 >
-                  <label className="fw-bold col-lg-2 col-form-label text-end">
-                    {field.label}
-                  </label>
-                  <div className="col-lg-7 d-flex align-items-center">
-                    {renderField(field)}
-                  </div>
+                  <label className="fw-bold col-lg-2 col-form-label text-end">{field.label}</label>
+                  <div className="col-lg-7 d-flex align-items-center">{renderField(field)}</div>
                 </div>
                 {field.errors && field.errors.length > 0 && (
                   <div className="row">
                     {field.errors.map((error, idx) => (
-                      <div
-                        key={idx}
-                        className="form-error-bookmarks col-lg-7 offset-lg-2 mb-3"
-                      >
+                      <div key={idx} className="form-error-bookmarks col-lg-7 offset-lg-2 mb-3">
                         {error}
                       </div>
                     ))}
@@ -296,12 +267,7 @@ export function BookmarkFormPage({
 
             <div>
               <div className="col-lg-7 offset-lg-2">
-                <input
-                  className="btn btn-primary"
-                  type="submit"
-                  name="Go"
-                  value="Save"
-                />
+                <input className="btn btn-primary" type="submit" name="Go" value="Save" />
                 {uuid && (
                   <input
                     className="btn btn-secondary ms-3"

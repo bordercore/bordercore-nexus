@@ -26,9 +26,7 @@ export function FileUploadField({
   return (
     <>
       <div className="row mb-3">
-        <label className="fw-bold col-lg-3 col-form-label text-end">
-          {label}
-        </label>
+        <label className="fw-bold col-lg-3 col-form-label text-end">{label}</label>
         <div className="col-lg-7">
           <div className="input-group">
             <input
@@ -60,11 +58,7 @@ export function FileUploadField({
         <div className="row form-inline mb-3">
           <div className="col-lg-3 offset-lg-3">
             <div className="form-check d-flex align-items-center ps-0">
-              <ToggleSwitch
-                name={deleteName}
-                checked={deleteChecked}
-                onChange={setDeleteChecked}
-              />
+              <ToggleSwitch name={deleteName} checked={deleteChecked} onChange={setDeleteChecked} />
               <label className="form-check-label fw-bold ms-2">Delete</label>
             </div>
           </div>

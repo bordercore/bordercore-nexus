@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import MarkdownIt from "markdown-it";
 
-// Initialize markdown-it renderer (matching Vue bundle configuration)
+// Initialize markdown-it renderer
 const markdown = MarkdownIt({
   html: true,
   linkify: true,
@@ -24,7 +24,10 @@ export interface ChatBotHandle {
   show: boolean;
 }
 
-export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot({ blobUuid = "", chatUrl, csrfToken }, ref) {
+export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
+  { blobUuid = "", chatUrl, csrfToken },
+  ref
+) {
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([
     {
       id: 1,
@@ -47,7 +50,7 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
     ...(blobUuid ? [{ name: "Query Blob", value: "blob" }] : []),
   ];
 
-  const filteredChatHistory = chatHistory.filter((x) => x.role !== "system");
+  const filteredChatHistory = chatHistory.filter(x => x.role !== "system");
 
   const getMarkdown = (content: string) => {
     return markdown.render(content);
@@ -75,7 +78,7 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
         content: content || prompt,
         role: "user",
       };
-      setChatHistory((prev) => [...prev, newMessage]);
+      setChatHistory(prev => [...prev, newMessage]);
       setPrompt("");
       id = chatHistory.length + 2;
       payload = {
@@ -110,7 +113,7 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
         method: "POST",
         headers: {
           "X-Csrftoken": csrfToken,
-          "Responsetype": "stream",
+          Responsetype: "stream",
         },
         body: formData,
       });
@@ -131,7 +134,7 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
         content: "",
         role: "assistant",
       };
-      setChatHistory((prev) => [...prev, assistantMessage]);
+      setChatHistory(prev => [...prev, assistantMessage]);
 
       while (true) {
         const { done, value } = await reader.read();
@@ -141,7 +144,7 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
 
         setIsWaiting(false);
         const newContent = decoder.decode(value, { stream: true });
-        setChatHistory((prev) => {
+        setChatHistory(prev => {
           const updated = [...prev];
           const lastMessage = updated[updated.length - 1];
           if (lastMessage && lastMessage.role === "assistant") {
@@ -157,7 +160,11 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
 
   useEffect(() => {
     if (window.EventBus) {
-      const handler = (payload: { content?: string; questionUuid?: string; exerciseUuid?: string }) => {
+      const handler = (payload: {
+        content?: string;
+        questionUuid?: string;
+        exerciseUuid?: string;
+      }) => {
         setShow(true);
         handleChat(payload.content, payload.questionUuid, payload.exerciseUuid);
       };
@@ -172,12 +179,12 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
   useEffect(() => {
     if ((window as any).hotkeys) {
       const hotkeys = (window as any).hotkeys;
-      hotkeys.filter = function(event: KeyboardEvent) {
+      hotkeys.filter = function (event: KeyboardEvent) {
         return true;
       };
 
       const handler = (event: KeyboardEvent, handler: any) => {
-        const index = chatOptions.findIndex((obj) => obj.value === mode);
+        const index = chatOptions.findIndex(obj => obj.value === mode);
         switch (handler.key) {
           case "down":
             if (index + 1 === chatOptions.length) {
@@ -225,11 +232,9 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
         />
         <div className="chatbot-messages d-flex flex-column-reverse mb-3">
           <div>
-            {filteredChatHistory.map((message) => (
+            {filteredChatHistory.map(message => (
               <div key={message.id} className={`chatbot-${message.role} d-flex px-3 mb-2`}>
-                <div className="fw-bold me-2">
-                  {message.role === "user" ? "You" : "AI"}
-                </div>
+                <div className="fw-bold me-2">{message.role === "user" ? "You" : "AI"}</div>
                 {/* Content is from AI responses and user's own messages, rendered with markdown-it */}
                 <div dangerouslySetInnerHTML={{ __html: getMarkdown(message.content) }} />
               </div>
@@ -243,8 +248,8 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
             className="form-control me-2"
             placeholder="Send a message"
             value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            onKeyDown={(e) => {
+            onChange={e => setPrompt(e.target.value)}
+            onKeyDown={e => {
               if (e.key === "Enter") {
                 e.preventDefault();
                 handleChat();
@@ -254,9 +259,9 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
           <select
             className="chatbot-mode form-control me-2"
             value={mode}
-            onChange={(e) => setMode(e.target.value)}
+            onChange={e => setMode(e.target.value)}
           >
-            {chatOptions.map((option) => (
+            {chatOptions.map(option => (
               <option key={option.value} value={option.value}>
                 {option.name}
               </option>
@@ -269,4 +274,3 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
 });
 
 export default ChatBot;
-

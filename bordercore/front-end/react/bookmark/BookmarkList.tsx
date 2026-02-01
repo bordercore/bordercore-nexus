@@ -1,10 +1,6 @@
 import React, { useState, useMemo, useRef, useLayoutEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faBars,
-  faPencilAlt,
-  faTrashAlt,
-} from "@fortawesome/free-solid-svg-icons";
+import { faBars, faPencilAlt, faTrashAlt } from "@fortawesome/free-solid-svg-icons";
 import {
   DndContext,
   closestCenter,
@@ -30,7 +26,7 @@ import type { Bookmark, ViewType } from "./types";
 // Unescape HTML entities in bookmark names
 function unescapeHtml(html: string): string {
   const el = document.createElement("div");
-  return html.replace(/&[#0-9a-z]+;/gi, (enc) => {
+  return html.replace(/&[#0-9a-z]+;/gi, enc => {
     el.innerHTML = enc;
     return el.innerText;
   });
@@ -62,14 +58,7 @@ function SortableBookmarkRow({
   const [showYtDuration, setShowYtDuration] = useState(false);
   const markdown = useMemo(() => markdownit(), []);
 
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: bookmark.uuid,
     disabled: dragDisabled,
   });
@@ -88,7 +77,7 @@ function SortableBookmarkRow({
   }, [transform, transition]);
 
   // Filter out the currently selected tag from display
-  const filteredTags = bookmark.tags.filter((tag) => tag !== selectedTagName);
+  const filteredTags = bookmark.tags.filter(tag => tag !== selectedTagName);
 
   const getNote = (note: string): string => {
     return markdown.render(note);
@@ -101,8 +90,7 @@ function SortableBookmarkRow({
   };
 
   const isYouTubeVideo =
-    bookmark.url.startsWith("https://www.youtube.com/watch") &&
-    viewType === "normal";
+    bookmark.url.startsWith("https://www.youtube.com/watch") && viewType === "normal";
 
   return (
     <tr
@@ -118,10 +106,7 @@ function SortableBookmarkRow({
       onMouseLeave={() => setShowYtDuration(false)}
     >
       {/* Drag handle */}
-      <td
-        className="drag-handle-cell"
-        {...(dragDisabled ? {} : { ...attributes, ...listeners })}
-      >
+      <td className="drag-handle-cell" {...(dragDisabled ? {} : { ...attributes, ...listeners })}>
         <div className="hover-reveal-object">
           <FontAwesomeIcon icon={faBars} />
         </div>
@@ -134,12 +119,7 @@ function SortableBookmarkRow({
       {viewType !== "compact" && (
         <td className="thumbnail-cell">
           {bookmark.thumbnail_url && (
-            <img
-              width="120"
-              height="67"
-              src={bookmark.thumbnail_url}
-              alt=""
-            />
+            <img width="120" height="67" src={bookmark.thumbnail_url} alt="" />
           )}
         </td>
       )}
@@ -161,15 +141,15 @@ function SortableBookmarkRow({
             id={bookmark.linkId}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
           >
             {unescapeHtml(bookmark.name)}
           </a>
-          {filteredTags.map((tag) => (
+          {filteredTags.map(tag => (
             <a
               key={tag}
               className="tag ms-2 d-inline-block"
-              onClick={(e) => {
+              onClick={e => {
                 e.preventDefault();
                 e.stopPropagation();
                 onClickTag(tag);
@@ -205,16 +185,13 @@ function SortableBookmarkRow({
                 <a
                   className="dropdown-item"
                   href="#"
-                  onClick={(e) => {
+                  onClick={e => {
                     e.preventDefault();
                     e.stopPropagation();
                     onEditBookmark(bookmark.uuid);
                   }}
                 >
-                  <FontAwesomeIcon
-                    icon={faPencilAlt}
-                    className="text-primary me-3"
-                  />
+                  <FontAwesomeIcon icon={faPencilAlt} className="text-primary me-3" />
                   Edit
                 </a>
               </li>
@@ -222,16 +199,13 @@ function SortableBookmarkRow({
                 <a
                   className="dropdown-item"
                   href="#"
-                  onClick={(e) => {
+                  onClick={e => {
                     e.preventDefault();
                     e.stopPropagation();
                     onDeleteBookmark(bookmark.uuid);
                   }}
                 >
-                  <FontAwesomeIcon
-                    icon={faTrashAlt}
-                    className="text-primary me-3"
-                  />
+                  <FontAwesomeIcon icon={faTrashAlt} className="text-primary me-3" />
                   Delete
                 </a>
               </li>
@@ -289,8 +263,8 @@ export function BookmarkList({
     if (!over || active.id === over.id) return;
     if (selectedTagName === "Untagged") return;
 
-    const oldIndex = bookmarks.findIndex((item) => item.uuid === active.id);
-    const newIndex = bookmarks.findIndex((item) => item.uuid === over.id);
+    const oldIndex = bookmarks.findIndex(item => item.uuid === active.id);
+    const newIndex = bookmarks.findIndex(item => item.uuid === over.id);
 
     if (oldIndex !== -1 && newIndex !== -1) {
       const newList = arrayMove(bookmarks, oldIndex, newIndex);
@@ -313,15 +287,8 @@ export function BookmarkList({
   };
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragEnd={handleDragEnd}
-    >
-      <div
-        id="bookmark-list-container"
-        className="scrollable-panel-scrollbar-hover vh-100"
-      >
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <div id="bookmark-list-container" className="scrollable-panel-scrollbar-hover vh-100">
         <table className="table bookmark-table">
           <thead className="visually-hidden">
             <tr>
@@ -335,10 +302,10 @@ export function BookmarkList({
           </thead>
           <tbody>
             <SortableContext
-              items={bookmarks.map((b) => b.uuid)}
+              items={bookmarks.map(b => b.uuid)}
               strategy={verticalListSortingStrategy}
             >
-              {bookmarks.map((bookmark) => (
+              {bookmarks.map(bookmark => (
                 <SortableBookmarkRow
                   key={bookmark.uuid}
                   bookmark={bookmark}
@@ -355,9 +322,7 @@ export function BookmarkList({
             </SortableContext>
           </tbody>
         </table>
-        {bookmarks.length === 0 && (
-          <div className="text-center pt-3">No bookmarks found.</div>
-        )}
+        {bookmarks.length === 0 && <div className="text-center pt-3">No bookmarks found.</div>}
       </div>
     </DndContext>
   );

@@ -48,7 +48,7 @@ def test_todo_no_fixtures(login, live_server, browser, settings):
 
     page = TodoPage(browser)
 
-    # Wait for the Vue front-end to load
+    # Wait for the React front-end to load
     time.sleep(1)
 
     assert page.title_value() == "Todo"

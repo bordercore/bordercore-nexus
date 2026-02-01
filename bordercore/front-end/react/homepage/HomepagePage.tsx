@@ -114,10 +114,10 @@ export function HomepagePage({
           >
             <ul id="important-tasks" className="list-group interior-borders">
               {tasks.length > 0 ? (
-                tasks.map((task) => (
+                tasks.map(task => (
                   <li key={task.uuid} className="list-group-item list-group-item-secondary">
                     {task.name}
-                    {task.tags.map((tag) => (
+                    {task.tags.map(tag => (
                       <span key={tag} className="tag">
                         {tag}
                       </span>
@@ -151,7 +151,7 @@ export function HomepagePage({
           <Card title="Overdue Exercises" className="backdrop-filter">
             <ul className="list-group interior-borders">
               {overdueExercises.length > 0 ? (
-                overdueExercises.map((exercise) => (
+                overdueExercises.map(exercise => (
                   <li key={exercise.uuid} className="list-group-item list-group-item-secondary">
                     <a href={getExerciseDetailUrl(exercise.uuid)}>{exercise.name}</a>
                     <span className="item-value">{exercise.delta_days} days</span>
@@ -167,7 +167,7 @@ export function HomepagePage({
           <Card title="Daily Bookmarks" className="backdrop-filter">
             <ul className="list-group interior-borders">
               {dailyBookmarks.length > 0 ? (
-                dailyBookmarks.map((bookmark) => (
+                dailyBookmarks.map(bookmark => (
                   <li
                     key={bookmark.uuid}
                     className={`list-group-item list-group-item-secondary ${
@@ -189,7 +189,7 @@ export function HomepagePage({
           <Card title="Pinned Bookmarks" className="backdrop-filter flex-grow-1">
             <ul className="list-group interior-borders">
               {pinnedBookmarks.length > 0 ? (
-                pinnedBookmarks.map((bookmark) => (
+                pinnedBookmarks.map(bookmark => (
                   <li
                     key={bookmark.uuid}
                     id="pinned-bookmarks"
@@ -221,12 +221,21 @@ export function HomepagePage({
                 id="recent-bookmarks"
                 className="list-group interior-borders scrollable-panel-scrollbar-hover vh-50"
               >
-                {bookmarks.map((bookmark) => {
+                {bookmarks.map(bookmark => {
                   const faviconUrl = getFaviconUrl(bookmark.url);
                   return (
-                    <li key={bookmark.uuid} className="list-group-item text-success d-flex align-items-start">
+                    <li
+                      key={bookmark.uuid}
+                      className="list-group-item text-success d-flex align-items-start"
+                    >
                       {faviconUrl && (
-                        <img src={faviconUrl} width="16" height="16" alt="" className="homepage-favicon" />
+                        <img
+                          src={faviconUrl}
+                          width="16"
+                          height="16"
+                          alt=""
+                          className="homepage-favicon"
+                        />
                       )}
                       <div className="ms-2">
                         <a href={bookmark.url}>{bookmark.name}</a>
@@ -275,10 +284,7 @@ export function HomepagePage({
                 music.map((song, index) => (
                   <li key={index} className="list-group-item list-group-item-secondary">
                     {song.title}
-                    <a
-                      className="item-value ms-2"
-                      href={getArtistDetailUrl(song.artist.uuid)}
-                    >
+                    <a className="item-value ms-2" href={getArtistDetailUrl(song.artist.uuid)}>
                       {song.artist.name}
                     </a>
                   </li>
@@ -338,8 +344,7 @@ export function HomepagePage({
       {/* Image Modal */}
       {showModal && randomImageInfo && (
         <div
-          className="modal fade show d-block"
-          className="homepage-modal-overlay"
+          className="modal fade show d-block homepage-modal-overlay"
           onClick={() => setShowModal(false)}
         >
           <div className="modal-dialog modal-dialog-centered w-75 mw-100">

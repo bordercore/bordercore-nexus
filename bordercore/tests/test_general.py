@@ -18,11 +18,10 @@ def test_html():
     and temporary attributes.
     """
 
-    # Collect all the templates used by Django or Vue
+    # Collect all the templates used by Django or React
     template_list = []
     dir_list = [
         settings.TEMPLATES[0]["DIRS"],
-        [f"{os.environ['BORDERCORE_HOME']}/front-end/vue"],
         [f"{os.environ['BORDERCORE_HOME']}/front-end/react"]
     ]
 
@@ -55,7 +54,7 @@ def test_html():
                 assert not re.search(r"_className=", line), f"Found a tag with attribute name '_className' in React component {template} at line {i+1}"
 
         else:
-            # HTML templates (Django or Vue)
+            # HTML templates (Django)
             with open(template, "r") as file:
                 page = file.read().replace("\n", "")
 

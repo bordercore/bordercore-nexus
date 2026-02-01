@@ -91,7 +91,10 @@ export default function NodeCollectionModal({
   const handleSave = () => {
     const settingsToSave = {
       ...settings,
-      uuid: settings.collection_type === "permanent" ? selectedCollectionUuid || settings.uuid : undefined,
+      uuid:
+        settings.collection_type === "permanent"
+          ? selectedCollectionUuid || settings.uuid
+          : undefined,
     };
 
     if (action === "Add") {
@@ -138,7 +141,7 @@ export default function NodeCollectionModal({
                         name="type"
                         checked={settings.collection_type === "ad-hoc"}
                         onChange={() =>
-                          setSettings((prev) => ({
+                          setSettings(prev => ({
                             ...prev,
                             collection_type: "ad-hoc",
                           }))
@@ -160,7 +163,7 @@ export default function NodeCollectionModal({
                         name="type"
                         checked={settings.collection_type === "permanent"}
                         onChange={() =>
-                          setSettings((prev) => ({
+                          setSettings(prev => ({
                             ...prev,
                             collection_type: "permanent",
                           }))
@@ -222,10 +225,8 @@ export default function NodeCollectionModal({
                     maxLength={200}
                     placeholder="Name"
                     value={settings.name}
-                    onChange={(e) =>
-                      setSettings((prev) => ({ ...prev, name: e.target.value }))
-                    }
-                    onKeyDown={(e) => {
+                    onChange={e => setSettings(prev => ({ ...prev, name: e.target.value }))}
+                    onKeyDown={e => {
                       if (e.key === "Enter") handleSave();
                     }}
                   />
@@ -242,14 +243,14 @@ export default function NodeCollectionModal({
                   id="inputDisplay"
                   className="form-control form-select"
                   value={settings.display}
-                  onChange={(e) =>
-                    setSettings((prev) => ({
+                  onChange={e =>
+                    setSettings(prev => ({
                       ...prev,
                       display: e.target.value as "list" | "individual",
                     }))
                   }
                 >
-                  {DISPLAY_OPTIONS.map((opt) => (
+                  {DISPLAY_OPTIONS.map(opt => (
                     <option key={opt.value} value={opt.value}>
                       {opt.display}
                     </option>
@@ -268,14 +269,14 @@ export default function NodeCollectionModal({
                     id="inputRotate"
                     className="form-control form-select"
                     value={settings.rotate}
-                    onChange={(e) =>
-                      setSettings((prev) => ({
+                    onChange={e =>
+                      setSettings(prev => ({
                         ...prev,
                         rotate: parseInt(e.target.value, 10),
                       }))
                     }
                   >
-                    {ROTATE_OPTIONS.map((opt) => (
+                    {ROTATE_OPTIONS.map(opt => (
                       <option key={opt.value} value={opt.value}>
                         {opt.display}
                       </option>
@@ -297,13 +298,13 @@ export default function NodeCollectionModal({
                     min={1}
                     max={data?.objectCount || undefined}
                     value={settings.limit ?? ""}
-                    onChange={(e) =>
-                      setSettings((prev) => ({
+                    onChange={e =>
+                      setSettings(prev => ({
                         ...prev,
                         limit: e.target.value ? parseInt(e.target.value, 10) : null,
                       }))
                     }
-                    onKeyDown={(e) => {
+                    onKeyDown={e => {
                       if (e.key === "Enter") handleSave();
                     }}
                   />
@@ -321,8 +322,8 @@ export default function NodeCollectionModal({
                   type="checkbox"
                   className="form-check-input"
                   checked={settings.random_order}
-                  onChange={(e) =>
-                    setSettings((prev) => ({
+                  onChange={e =>
+                    setSettings(prev => ({
                       ...prev,
                       random_order: e.target.checked,
                     }))
@@ -332,12 +333,7 @@ export default function NodeCollectionModal({
             </div>
           </div>
           <div className="modal-footer">
-            <input
-              className="btn btn-primary"
-              type="button"
-              value="Save"
-              onClick={handleSave}
-            />
+            <input className="btn btn-primary" type="button" value="Save" onClick={handleSave} />
           </div>
         </div>
       </div>

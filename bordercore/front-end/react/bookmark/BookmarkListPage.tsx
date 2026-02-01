@@ -1,11 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faTags,
-  faTimes,
-  faThumbTack,
-  faPlus,
-} from "@fortawesome/free-solid-svg-icons";
+import { faTags, faTimes, faThumbTack, faPlus } from "@fortawesome/free-solid-svg-icons";
 import hotkeys from "hotkeys-js";
 import { SelectValue, SelectValueHandle } from "../common/SelectValue";
 import { DropDownMenu } from "../common/DropDownMenu";
@@ -57,17 +52,12 @@ export function BookmarkListPage({
     next_page_number: null,
     range: [],
   });
-  const [selectedBookmarkUuid, setSelectedBookmarkUuid] = useState<
-    string | null
-  >(null);
+  const [selectedBookmarkUuid, setSelectedBookmarkUuid] = useState<string | null>(null);
   const [viewType, setViewType] = useState<ViewType>(initialViewType);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [pinnedTags, setPinnedTags] = useState<PinnedTag[]>(() => {
     // Add "Untagged" as the first item
-    return [
-      { id: -1, name: "Untagged", bookmark_count: untaggedCount },
-      ...initialPinnedTags,
-    ];
+    return [{ id: -1, name: "Untagged", bookmark_count: untaggedCount }, ...initialPinnedTags];
   });
 
   const selectValueRef = useRef<SelectValueHandle>(null);
@@ -125,9 +115,7 @@ export function BookmarkListPage({
           break;
         case "o":
           if (selectedBookmarkUuid) {
-            const bookmark = bookmarkList.find(
-              (b) => b.uuid === selectedBookmarkUuid
-            );
+            const bookmark = bookmarkList.find(b => b.uuid === selectedBookmarkUuid);
             if (bookmark) {
               window.open(bookmark.url, "_blank");
               handleDeleteBookmark(bookmark.uuid);
@@ -155,9 +143,7 @@ export function BookmarkListPage({
 
   const getNextBookmark = useCallback((): string | null => {
     if (!selectedBookmarkUuid) return null;
-    const index = bookmarkList.findIndex(
-      (e) => e.uuid === selectedBookmarkUuid
-    );
+    const index = bookmarkList.findIndex(e => e.uuid === selectedBookmarkUuid);
     if (index < bookmarkList.length - 1) {
       return bookmarkList[index + 1].uuid;
     }
@@ -166,9 +152,7 @@ export function BookmarkListPage({
 
   const getPreviousBookmark = useCallback((): string | null => {
     if (!selectedBookmarkUuid) return null;
-    const index = bookmarkList.findIndex(
-      (e) => e.uuid === selectedBookmarkUuid
-    );
+    const index = bookmarkList.findIndex(e => e.uuid === selectedBookmarkUuid);
     if (index > 0) {
       return bookmarkList[index - 1].uuid;
     }
@@ -190,17 +174,14 @@ export function BookmarkListPage({
       if (searchTag !== null) {
         url = urls.getBookmarksByTag.replace("666", encodeURIComponent(searchTag));
       } else if (searchTermParam !== null) {
-        url = urls.getBookmarksByKeyword.replace(
-          "666",
-          encodeURIComponent(searchTermParam)
-        );
+        url = urls.getBookmarksByKeyword.replace("666", encodeURIComponent(searchTermParam));
       } else {
         url = urls.getBookmarksByPage.replace("666", pageNumber.toString());
       }
 
       doGet(
         url,
-        (response) => {
+        response => {
           // For bookmarks which share the same date, only show the
           // date for the first one, to reduce UI clutter.
           const bookmarks: Bookmark[] = [];
@@ -294,10 +275,7 @@ export function BookmarkListPage({
 
   const handleDeleteBookmark = useCallback(
     (uuid: string) => {
-      const deleteUrl = urls.bookmarkDetail.replace(
-        "00000000-0000-0000-0000-000000000000",
-        uuid
-      );
+      const deleteUrl = urls.bookmarkDetail.replace("00000000-0000-0000-0000-000000000000", uuid);
 
       doDelete(
         deleteUrl,
@@ -339,23 +317,18 @@ export function BookmarkListPage({
   const switchViewType = useCallback(
     (type: ViewType) => {
       setViewType(type);
-      doPost(
-        urls.storeInSession,
-        { bookmark_view_type: type },
-        () => {}
-      );
+      doPost(urls.storeInSession, { bookmark_view_type: type }, () => {});
     },
     [urls]
   );
 
   const toggleDrawer = useCallback(() => {
-    setDrawerOpen((prev) => !prev);
+    setDrawerOpen(prev => !prev);
   }, []);
 
-  const tagIsSelected =
-    selectedTagName !== null && selectedTagName !== "Untagged";
+  const tagIsSelected = selectedTagName !== null && selectedTagName !== "Untagged";
 
-  const isPinned = pinnedTags.some((t) => t.name === selectedTagName);
+  const isPinned = pinnedTags.some(t => t.name === selectedTagName);
 
   const handleTogglePinStatus = useCallback(() => {
     const formAction = isPinned ? urls.unpinTag : urls.pinTag;
@@ -369,9 +342,8 @@ export function BookmarkListPage({
     const csrfInput = document.createElement("input");
     csrfInput.type = "hidden";
     csrfInput.name = "csrfmiddlewaretoken";
-    const csrfToken = document.querySelector<HTMLInputElement>(
-      'input[name="csrfmiddlewaretoken"]'
-    )?.value || "";
+    const csrfToken =
+      document.querySelector<HTMLInputElement>('input[name="csrfmiddlewaretoken"]')?.value || "";
     csrfInput.value = csrfToken;
     form.appendChild(csrfInput);
 
@@ -389,12 +361,7 @@ export function BookmarkListPage({
   return (
     <div id="bookmark-list-page" className="row g-0 h-100 mx-2">
       {/* Tags drawer overlay (for mobile) */}
-      {drawerOpen && (
-        <div
-          className="bookmark-tags-drawer-overlay"
-          onClick={toggleDrawer}
-        />
-      )}
+      {drawerOpen && <div className="bookmark-tags-drawer-overlay" onClick={toggleDrawer} />}
 
       {/* Tags section - hidden on small screens, shown in drawer */}
       <div
@@ -433,20 +400,14 @@ export function BookmarkListPage({
                   className="form-inline"
                   role="form"
                   method="get"
-                  onSubmit={(e) => e.preventDefault()}
+                  onSubmit={e => e.preventDefault()}
                 >
                   <input
                     type="hidden"
                     name="csrfmiddlewaretoken"
-                    value={
-                      (window as any).BASE_TEMPLATE_DATA?.csrfToken || ""
-                    }
+                    value={(window as any).BASE_TEMPLATE_DATA?.csrfToken || ""}
                   />
-                  <input
-                    value={selectedTagName || ""}
-                    type="hidden"
-                    name="tag"
-                  />
+                  <input value={selectedTagName || ""} type="hidden" name="tag" />
                   <div className="position-relative">
                     <SelectValue
                       ref={selectValueRef}
@@ -462,18 +423,14 @@ export function BookmarkListPage({
                 <div className="btn-group ms-3" role="group" aria-label="List View">
                   <button
                     type="button"
-                    className={`btn btn-primary ${
-                      viewType === "normal" ? "active" : ""
-                    }`}
+                    className={`btn btn-primary ${viewType === "normal" ? "active" : ""}`}
                     onClick={() => switchViewType("normal")}
                   >
                     Normal
                   </button>
                   <button
                     type="button"
-                    className={`btn btn-primary ${
-                      viewType === "compact" ? "active" : ""
-                    }`}
+                    className={`btn btn-primary ${viewType === "compact" ? "active" : ""}`}
                     onClick={() => switchViewType("compact")}
                   >
                     Compact
@@ -488,25 +445,19 @@ export function BookmarkListPage({
                             <a
                               className="dropdown-item"
                               href="#"
-                              onClick={(e) => {
+                              onClick={e => {
                                 e.preventDefault();
                                 handleTogglePinStatus();
                               }}
                             >
-                              <FontAwesomeIcon
-                                icon={faThumbTack}
-                                className="text-primary me-3"
-                              />
+                              <FontAwesomeIcon icon={faThumbTack} className="text-primary me-3" />
                               {isPinned ? "Unpin" : "Pin"}
                             </a>
                           </li>
                         )}
                         <li>
                           <a className="dropdown-item" href={urls.bookmarkCreate}>
-                            <FontAwesomeIcon
-                              icon={faPlus}
-                              className="text-primary me-3"
-                            />
+                            <FontAwesomeIcon icon={faPlus} className="text-primary me-3" />
                             New Bookmark
                           </a>
                         </li>
@@ -519,10 +470,7 @@ export function BookmarkListPage({
             <div>
               <div className="d-flex mt-1 ms-3">
                 {tagIsSelected && (
-                  <div
-                    id="bookmark-search-filter"
-                    className="tag d-flex align-items-center"
-                  >
+                  <div id="bookmark-search-filter" className="tag d-flex align-items-center">
                     <div>
                       Tag: <strong>{selectedTagName}</strong>
                     </div>
@@ -530,7 +478,7 @@ export function BookmarkListPage({
                       <a
                         className="ms-1"
                         href="#"
-                        onClick={(e) => {
+                        onClick={e => {
                           e.preventDefault();
                           removeFilter();
                         }}
@@ -553,7 +501,7 @@ export function BookmarkListPage({
                       <a
                         className="ms-1"
                         href="#"
-                        onClick={(e) => {
+                        onClick={e => {
                           e.preventDefault();
                           removeFilter();
                         }}

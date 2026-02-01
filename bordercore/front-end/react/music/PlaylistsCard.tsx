@@ -20,26 +20,26 @@ export function PlaylistsCard({ playlists, onClickCreate, className }: Playlists
           <div className="card-title">Playlists</div>
           <div className="ms-auto">
             <DropDownMenu
-            showOnHover={true}
-            dropdownSlot={
-              <ul className="dropdown-menu-list">
-                <li>
-                  <a
-                    className="dropdown-menu-item"
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      onClickCreate();
-                    }}
-                  >
-                    <span className="dropdown-menu-icon">
-                      <FontAwesomeIcon icon={faPlus} className="text-primary" />
-                    </span>
-                    <span className="dropdown-menu-text">New Playlist</span>
-                  </a>
-                </li>
-              </ul>
-            }
+              showOnHover={true}
+              dropdownSlot={
+                <ul className="dropdown-menu-list">
+                  <li>
+                    <a
+                      className="dropdown-menu-item"
+                      href="#"
+                      onClick={e => {
+                        e.preventDefault();
+                        onClickCreate();
+                      }}
+                    >
+                      <span className="dropdown-menu-icon">
+                        <FontAwesomeIcon icon={faPlus} className="text-primary" />
+                      </span>
+                      <span className="dropdown-menu-text">New Playlist</span>
+                    </a>
+                  </li>
+                </ul>
+              }
             />
           </div>
         </div>
@@ -47,7 +47,7 @@ export function PlaylistsCard({ playlists, onClickCreate, className }: Playlists
     >
       <hr className="divider" />
       <ul className="list-group interior-borders">
-        {playlists.map((playlist) => (
+        {playlists.map(playlist => (
           <li key={playlist.uuid} className="list-with-counts d-flex ps-2 py-1 pe-2">
             <a href={playlist.url} className="d-flex w-100">
               <div>{playlist.name}</div>

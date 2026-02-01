@@ -20,24 +20,29 @@ export type CardProps = {
 
   /**
    * Full replacement for the title area.
-   * Mirrors the Vue `title-slot`.
    */
   titleSlot?: React.ReactNode;
 
   /**
    * Content shown on the right side of the default title row.
-   * Mirrors the Vue `top-right` slot.
    */
   topRight?: React.ReactNode;
 
   /**
    * Card body content.
-   * Mirrors the Vue `content` slot.
    */
   children?: React.ReactNode;
 };
 
-export function Card({ title = "Card Title", className, cardClassName, id, titleSlot, topRight, children }: CardProps) {
+export function Card({
+  title = "Card Title",
+  className,
+  cardClassName,
+  id,
+  titleSlot,
+  topRight,
+  children,
+}: CardProps) {
   const cardClasses = ["card-body", className].filter(Boolean).join(" ");
   const outerCardClasses = ["card", cardClassName].filter(Boolean).join(" ");
 

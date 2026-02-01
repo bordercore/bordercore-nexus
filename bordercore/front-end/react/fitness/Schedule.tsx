@@ -37,7 +37,9 @@ export function Schedule({
   onActivityInfoChange,
 }: ScheduleProps) {
   const [isActive, setIsActive] = useState(!!activityInfo.started);
-  const [schedule, setSchedule] = useState<boolean[]>(activityInfo.schedule || [false, false, false, false, false, false, false]);
+  const [schedule, setSchedule] = useState<boolean[]>(
+    activityInfo.schedule || [false, false, false, false, false, false, false]
+  );
 
   const switchExerciseModalRef = useRef<HTMLDivElement>(null);
   const changeScheduleModalRef = useRef<HTMLDivElement>(null);
@@ -131,18 +133,22 @@ export function Schedule({
         uuid: exerciseUuid,
         remove: isActive ? "true" : "false",
       },
-      (response) => {
+      response => {
         setIsActive(!isActive);
-        onActivityInfoChange(response.data.info || { schedule: [false, false, false, false, false, false, false] });
+        onActivityInfoChange(
+          response.data.info || { schedule: [false, false, false, false, false, false, false] }
+        );
         if (response.data.info) {
-          setSchedule(response.data.info.schedule || [false, false, false, false, false, false, false]);
+          setSchedule(
+            response.data.info.schedule || [false, false, false, false, false, false, false]
+          );
         }
       }
     );
   }
 
   function handleScheduleToggle(index: number) {
-    setSchedule((prev) => {
+    setSchedule(prev => {
       const newSchedule = [...prev];
       newSchedule[index] = !newSchedule[index];
       return newSchedule;
@@ -152,13 +158,27 @@ export function Schedule({
   const dropdownContent = (
     <ul className="dropdown-menu-list">
       <li>
-        <a className="dropdown-item" href="#" onClick={(e) => { e.preventDefault(); openSwitchExerciseModal(); }}>
+        <a
+          className="dropdown-item"
+          href="#"
+          onClick={e => {
+            e.preventDefault();
+            openSwitchExerciseModal();
+          }}
+        >
           <FontAwesomeIcon icon={faExchangeAlt} className="text-primary me-3" />
           Switch Exercise
         </a>
       </li>
       <li>
-        <a className="dropdown-item" href="#" onClick={(e) => { e.preventDefault(); openChangeScheduleModal(); }}>
+        <a
+          className="dropdown-item"
+          href="#"
+          onClick={e => {
+            e.preventDefault();
+            openChangeScheduleModal();
+          }}
+        >
           <FontAwesomeIcon icon={faCalendarAlt} className="text-primary me-3" />
           Change Schedule
         </a>
@@ -183,13 +203,18 @@ export function Schedule({
               <h4 id="myModalLabel" className="modal-title">
                 Switch Exercise
               </h4>
-              <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close" />
+              <button
+                type="button"
+                className="btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+              />
             </div>
             <div className="modal-body">
               <div className="mb-3 text-primary">
                 <small>
-                  Selecting an exercise from the list below will make it <em>active</em> and make the
-                  exercise <strong>{exerciseName}</strong> <em>inactive</em>.
+                  Selecting an exercise from the list below will make it <em>active</em> and make
+                  the exercise <strong>{exerciseName}</strong> <em>inactive</em>.
                 </small>
               </div>
               <table className="table table-hover">
@@ -207,7 +232,7 @@ export function Schedule({
                       </td>
                     </tr>
                   ) : (
-                    relatedExercises.map((exercise) => (
+                    relatedExercises.map(exercise => (
                       <tr
                         key={exercise.uuid}
                         className="cursor-pointer"
@@ -240,7 +265,12 @@ export function Schedule({
               <h4 id="myModalLabel" className="modal-title">
                 Change Exercise Schedule
               </h4>
-              <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close" />
+              <button
+                type="button"
+                className="btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+              />
             </div>
             <div className="modal-body">
               <div className="d-flex">
@@ -277,7 +307,10 @@ export function Schedule({
 
       {/* Schedule Card */}
       <div className={isActive ? "hover-target" : ""}>
-        <Card cardClassName="z-index-positive flex-grow-0 position-relative backdrop-filter" title="">
+        <Card
+          cardClassName="z-index-positive flex-grow-0 position-relative backdrop-filter"
+          title=""
+        >
           <div className="d-flex flex-column">
             {isActive ? (
               <div className="mb-2 d-flex flex-column">

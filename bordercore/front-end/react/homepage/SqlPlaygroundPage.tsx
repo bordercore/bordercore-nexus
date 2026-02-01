@@ -10,7 +10,10 @@ import type { TableInfo, SqlOutput } from "./types";
 // Declare the global sqlite3InitModule
 declare global {
   interface Window {
-    sqlite3InitModule: (config: { print: (...args: any[]) => void; printErr: (...args: any[]) => void }) => Promise<any>;
+    sqlite3InitModule: (config: {
+      print: (...args: any[]) => void;
+      printErr: (...args: any[]) => void;
+    }) => Promise<any>;
   }
 }
 
@@ -62,7 +65,7 @@ export function SqlPlaygroundPage({ sqlDbUrl }: SqlPlaygroundPageProps) {
   const getTableData = useCallback(() => {
     if (!dbRef.current) return;
 
-    setTables((prevTables) => {
+    setTables(prevTables => {
       const updatedTables = { ...prevTables };
 
       for (const tableName in updatedTables) {
@@ -120,7 +123,7 @@ export function SqlPlaygroundPage({ sqlDbUrl }: SqlPlaygroundPageProps) {
       if (sqlDbUrl) {
         doGet(
           sqlDbUrl,
-          (response) => {
+          response => {
             loadDatabase(response.data);
           },
           "Error getting database",
@@ -231,7 +234,7 @@ export function SqlPlaygroundPage({ sqlDbUrl }: SqlPlaygroundPageProps) {
                       <a
                         className="dropdown-item"
                         href="#"
-                        onClick={(e) => {
+                        onClick={e => {
                           e.preventDefault();
                           handleImportDB();
                         }}
@@ -249,24 +252,14 @@ export function SqlPlaygroundPage({ sqlDbUrl }: SqlPlaygroundPageProps) {
       >
         <textarea
           value={sql}
-          onChange={(e) => setSql(e.target.value)}
+          onChange={e => setSql(e.target.value)}
           className="sql-input mt-2 p-3 w-100"
           rows={3}
           placeholder="Your SQL Here..."
           onKeyDown={handleKeyDown}
         />
-        <input
-          className="btn btn-primary"
-          type="button"
-          value="Run"
-          onClick={handleRunSQL}
-        />
-        <input
-          type="file"
-          ref={fileInputRef}
-          className="d-none"
-          onChange={handleFileChange}
-        />
+        <input className="btn btn-primary" type="button" value="Run" onClick={handleRunSQL} />
+        <input type="file" ref={fileInputRef} className="d-none" onChange={handleFileChange} />
       </Card>
 
       {error && (

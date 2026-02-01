@@ -16,7 +16,7 @@ export function CalendarCard({ getCalendarEventsUrl }: CalendarCardProps) {
   useEffect(() => {
     doGet(
       getCalendarEventsUrl,
-      (response) => {
+      response => {
         const data = response.data;
         setEvents(data);
 
@@ -39,9 +39,10 @@ export function CalendarCard({ getCalendarEventsUrl }: CalendarCardProps) {
             {message}
           </li>
         )}
-        {events.map((event) => (
+        {events.map(event => (
           <li key={event.count} className="list-group-item list-group-item-secondary">
-            {event.start_pretty}: <strong className="item-value text-emphasis">{event.summary}</strong>
+            {event.start_pretty}:{" "}
+            <strong className="item-value text-emphasis">{event.summary}</strong>
           </li>
         ))}
       </ul>

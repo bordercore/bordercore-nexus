@@ -14,10 +14,7 @@ interface NodeQuoteProps {
   getAndSetQuoteUrl: string;
   removeComponentUrl: string;
   editQuoteUrl: string;
-  onOpenQuoteEditModal: (
-    callback: (options: QuoteOptions) => void,
-    data: QuoteOptions
-  ) => void;
+  onOpenQuoteEditModal: (callback: (options: QuoteOptions) => void, data: QuoteOptions) => void;
   onEditLayout: (layout: string) => void;
 }
 
@@ -57,7 +54,7 @@ export default function NodeQuote({
 
       switch (e.key.toLowerCase()) {
         case "m":
-          setQuoteOptions((prev) => ({
+          setQuoteOptions(prev => ({
             ...prev,
             format: prev.format === "minimal" ? "standard" : "minimal",
           }));
@@ -78,7 +75,7 @@ export default function NodeQuote({
   const getQuote = () => {
     doGet(
       getQuoteUrl,
-      (response) => {
+      response => {
         setQuote(response.data);
       },
       "Error getting quote"
@@ -92,7 +89,7 @@ export default function NodeQuote({
         node_uuid: nodeUuid,
         favorites_only: quoteOptions.favorites_only ? "true" : "false",
       },
-      (response) => {
+      response => {
         setQuote(response.data.quote);
       }
     );
@@ -105,7 +102,7 @@ export default function NodeQuote({
         node_uuid: nodeUuid,
         uuid: uuid,
       },
-      (response) => {
+      response => {
         onEditLayout(response.data.layout);
       },
       "Quote removed"
@@ -120,7 +117,7 @@ export default function NodeQuote({
         uuid: uuid,
         options: JSON.stringify(options),
       },
-      (response) => {
+      response => {
         setQuoteOptions(options);
         setTimer();
         onEditLayout(response.data.layout);
@@ -141,9 +138,12 @@ export default function NodeQuote({
       clearInterval(rotateIntervalRef.current);
     }
 
-    rotateIntervalRef.current = setInterval(() => {
-      getRandomQuote();
-    }, quoteOptions.rotate * 1000 * 60);
+    rotateIntervalRef.current = setInterval(
+      () => {
+        getRandomQuote();
+      },
+      quoteOptions.rotate * 1000 * 60
+    );
   };
 
   const cardClass = `backdrop-filter node-color-${quoteOptions.color}`;
@@ -154,7 +154,7 @@ export default function NodeQuote({
         <a
           href="#"
           className="dropdown-menu-item"
-          onClick={(e) => {
+          onClick={e => {
             e.preventDefault();
             handleOpenQuoteModal();
           }}
@@ -169,7 +169,7 @@ export default function NodeQuote({
         <a
           href="#"
           className="dropdown-menu-item"
-          onClick={(e) => {
+          onClick={e => {
             e.preventDefault();
             handleQuoteRemove();
           }}

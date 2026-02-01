@@ -43,8 +43,8 @@ export const AddToPlaylistModal = React.forwardRef<
         const response = await axios.get<PlaylistResponse>(getPlaylistsUrl);
         // Filter to only manual playlists
         const manualPlaylists = response.data.results
-          .filter((p) => p.type === "manual")
-          .map((p) => ({
+          .filter(p => p.type === "manual")
+          .map(p => ({
             uuid: p.uuid,
             title: p.name,
             playlist_type: p.type,
@@ -52,7 +52,7 @@ export const AddToPlaylistModal = React.forwardRef<
         setPlaylists(manualPlaylists);
 
         // Set default playlist if provided and exists
-        if (defaultPlaylist && manualPlaylists.some((p) => p.uuid === defaultPlaylist)) {
+        if (defaultPlaylist && manualPlaylists.some(p => p.uuid === defaultPlaylist)) {
           setSelectedPlaylist(defaultPlaylist);
         } else if (manualPlaylists.length > 0) {
           setSelectedPlaylist(manualPlaylists[0].uuid);
@@ -149,9 +149,9 @@ export const AddToPlaylistModal = React.forwardRef<
               <select
                 className="form-control ms-3"
                 value={selectedPlaylist}
-                onChange={(e) => setSelectedPlaylist(e.target.value)}
+                onChange={e => setSelectedPlaylist(e.target.value)}
               >
-                {playlists.map((playlist) => (
+                {playlists.map(playlist => (
                   <option key={playlist.uuid} value={playlist.uuid}>
                     {playlist.title}
                   </option>

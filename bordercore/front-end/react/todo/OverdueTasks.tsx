@@ -15,7 +15,11 @@ interface OverdueTasksProps {
   deleteTodoUrl: string;
 }
 
-export function OverdueTasks({ taskListInitial, rescheduleTaskUrl, deleteTodoUrl }: OverdueTasksProps) {
+export function OverdueTasks({
+  taskListInitial,
+  rescheduleTaskUrl,
+  deleteTodoUrl,
+}: OverdueTasksProps) {
   const [taskList, setTaskList] = useState<Task[]>(taskListInitial);
   const [message, setMessage] = useState("");
 
@@ -43,14 +47,14 @@ export function OverdueTasks({ taskListInitial, rescheduleTaskUrl, deleteTodoUrl
         setMessage("Task deleted.");
         removeTaskFromList(uuid);
       })
-      .catch((error) => {
+      .catch(error => {
         console.log(error);
         setMessage("Error deleting task. Please try again.");
       });
   };
 
   const removeTaskFromList = (uuid: string) => {
-    setTaskList((prev) => prev.filter((task) => task.uuid !== uuid));
+    setTaskList(prev => prev.filter(task => task.uuid !== uuid));
   };
 
   const rescheduleTask = (uuid: string) => {
@@ -67,25 +71,36 @@ export function OverdueTasks({ taskListInitial, rescheduleTaskUrl, deleteTodoUrl
         setMessage("Task rescheduled.");
         removeTaskFromList(uuid);
       })
-      .catch((error) => {
+      .catch(error => {
         console.log(error);
         setMessage("Error rescheduling task. Please try again.");
       });
   };
 
   return (
-    <div id="modalOverdueTasks" className="modal fade" tabIndex={-1} role="dialog" aria-labelledby="myModalLabel">
+    <div
+      id="modalOverdueTasks"
+      className="modal fade"
+      tabIndex={-1}
+      role="dialog"
+      aria-labelledby="myModalLabel"
+    >
       <div className="modal-dialog" role="document">
         <div className="modal-content">
           <div className="modal-header">
             <h4 id="myModalLabel" className="modal-title">
               Overdue Tasks
             </h4>
-            <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close" />
+            <button
+              type="button"
+              className="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            />
           </div>
           <div className="modal-body">
             <div>
-              {taskList.map((task) => (
+              {taskList.map(task => (
                 <div key={task.uuid} className="hoverable row m-2">
                   <div className="col-lg-9 d-flex my-2">
                     <div>
@@ -93,7 +108,7 @@ export function OverdueTasks({ taskListInitial, rescheduleTaskUrl, deleteTodoUrl
                     </div>
                     <div>
                       {task.name}
-                      {task.tags.map((tag) => (
+                      {task.tags.map(tag => (
                         <span key={tag} className="tag ms-2">
                           {tag}
                         </span>
@@ -101,10 +116,14 @@ export function OverdueTasks({ taskListInitial, rescheduleTaskUrl, deleteTodoUrl
                     </div>
                   </div>
                   <div className="col-lg-3 my-2 d-flex justify-content-center">
-                    <a className="glow" href="#" onClick={(e) => {
-                      e.preventDefault();
-                      rescheduleTask(task.uuid);
-                    }}>
+                    <a
+                      className="glow"
+                      href="#"
+                      onClick={e => {
+                        e.preventDefault();
+                        rescheduleTask(task.uuid);
+                      }}
+                    >
                       <FontAwesomeIcon
                         icon={faCalendarAlt}
                         className="text-secondary me-3"
@@ -112,10 +131,14 @@ export function OverdueTasks({ taskListInitial, rescheduleTaskUrl, deleteTodoUrl
                         title="Reschedule Task"
                       />
                     </a>
-                    <a className="glow" href="#" onClick={(e) => {
-                      e.preventDefault();
-                      handleTaskDelete(task.uuid);
-                    }}>
+                    <a
+                      className="glow"
+                      href="#"
+                      onClick={e => {
+                        e.preventDefault();
+                        handleTaskDelete(task.uuid);
+                      }}
+                    >
                       <FontAwesomeIcon
                         icon={faTrashAlt}
                         className="text-secondary ms-3"
@@ -161,4 +184,3 @@ export function OverdueTasks({ taskListInitial, rescheduleTaskUrl, deleteTodoUrl
 }
 
 export default OverdueTasks;
-

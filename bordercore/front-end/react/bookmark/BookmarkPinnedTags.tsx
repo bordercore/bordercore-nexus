@@ -39,14 +39,7 @@ function SortableTagItem({
   const isUntagged = tag.name === "Untagged";
   const [isDragOver, setIsDragOver] = useState(false);
 
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: tag.id.toString(),
     disabled: isUntagged,
   });
@@ -103,9 +96,7 @@ function SortableTagItem({
           <div className="ps-2 text-truncate">{tag.name}</div>
           {tag.bookmark_count !== undefined && tag.bookmark_count > 0 && (
             <div className="ms-auto pe-2">
-              <span className="px-2 badge rounded-pill">
-                {tag.bookmark_count}
-              </span>
+              <span className="px-2 badge rounded-pill">{tag.bookmark_count}</span>
             </div>
           )}
         </li>
@@ -150,12 +141,8 @@ export function BookmarkPinnedTags({
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      const oldIndex = tags.findIndex(
-        (item) => item.id.toString() === active.id
-      );
-      const newIndex = tags.findIndex(
-        (item) => item.id.toString() === over.id
-      );
+      const oldIndex = tags.findIndex(item => item.id.toString() === active.id);
+      const newIndex = tags.findIndex(item => item.id.toString() === over.id);
 
       if (oldIndex !== -1 && newIndex !== -1) {
         const newList = arrayMove(tags, oldIndex, newIndex);
@@ -239,10 +226,10 @@ export function BookmarkPinnedTags({
             onDragEnd={handleDragEnd}
           >
             <SortableContext
-              items={tags.map((t) => t.id.toString())}
+              items={tags.map(t => t.id.toString())}
               strategy={verticalListSortingStrategy}
             >
-              {tags.map((tag) => (
+              {tags.map(tag => (
                 <SortableTagItem
                   key={tag.id}
                   tag={tag}

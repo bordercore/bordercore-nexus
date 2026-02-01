@@ -36,19 +36,18 @@ export interface DropDownMenuHandle {
   close: () => void;
 }
 
-export const DropDownMenu = forwardRef<DropDownMenuHandle, DropDownMenuProps>(
-  function DropDownMenu(
-    {
-      links = [],
-      direction = "dropend",
-      showTarget = true,
-      showOnHover = false,
-      iconSlot,
-      dropdownSlot,
-      allowFlip = true,
-    },
-    ref
-  ) {
+export const DropDownMenu = forwardRef<DropDownMenuHandle, DropDownMenuProps>(function DropDownMenu(
+  {
+    links = [],
+    direction = "dropend",
+    showTarget = true,
+    showOnHover = false,
+    iconSlot,
+    dropdownSlot,
+    allowFlip = true,
+  },
+  ref
+) {
   const [isOpen, setIsOpen] = useState(false);
 
   useImperativeHandle(ref, () => ({
@@ -88,18 +87,16 @@ export const DropDownMenu = forwardRef<DropDownMenuHandle, DropDownMenuProps>(
 
   const dropdownContent = dropdownSlot || (
     <ul className="dropdown-menu-list">
-      {links.map((link) => {
+      {links.map(link => {
         const icon = typeof link.icon === "string" ? getIcon(link.icon) : link.icon;
         return (
           <li key={link.id}>
             <a
               href={link.url}
               className="dropdown-menu-item"
-              onClick={(e) => handleItemClick(link, e)}
+              onClick={e => handleItemClick(link, e)}
             >
-              <span className="dropdown-menu-icon">
-                {icon && <FontAwesomeIcon icon={icon} />}
-              </span>
+              <span className="dropdown-menu-icon">{icon && <FontAwesomeIcon icon={icon} />}</span>
               <span className="dropdown-menu-text">{link.title}</span>
               {link.extra !== undefined && link.extra !== null && Number(link.extra) !== 0 && (
                 <span className="dropdown-menu-extra">{link.extra}</span>
@@ -123,9 +120,7 @@ export const DropDownMenu = forwardRef<DropDownMenuHandle, DropDownMenuProps>(
         onOpenChange={setIsOpen}
         allowFlip={allowFlip}
       >
-        <div className="dropdown-content">
-          {dropdownContent}
-        </div>
+        <div className="dropdown-content">{dropdownContent}</div>
       </Popover>
     </div>
   );

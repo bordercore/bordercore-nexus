@@ -1,15 +1,6 @@
-import React, {
-  useState,
-  useRef,
-  useCallback,
-  useEffect,
-} from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faPlus,
-  faTimes,
-  faCheck,
-} from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faTimes, faCheck } from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
 import { Modal } from "bootstrap";
 
@@ -221,7 +212,7 @@ export function BlobUpdatePage({
 
     doGet(
       `${urls.getTemplate}?uuid=${selectedTemplate}`,
-      (response) => {
+      response => {
         setSelectedTemplate("-1");
 
         // Reset everything first
@@ -260,7 +251,7 @@ export function BlobUpdatePage({
   const handleImageDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
-      setIsDragOver((prev) => ({ ...prev, coverImage: false }));
+      setIsDragOver(prev => ({ ...prev, coverImage: false }));
 
       const image = e.dataTransfer.files[0];
       if (image && image.type.indexOf("image/") >= 0 && blobUuid) {
@@ -297,19 +288,17 @@ export function BlobUpdatePage({
     (e: React.ClipboardEvent) => {
       const clipText = encodeURIComponent(e.clipboardData.getData("Text").trim());
 
-      axios
-        .get(urls.parseDate.replace("666", clipText))
-        .then((response) => {
-          if (response.data.output_date === "") {
-            EventBus.$emit("toast", {
-              title: "Error",
-              body: "Invalid date format",
-              variant: "danger",
-            });
-          } else {
-            setDate(response.data.output_date);
-          }
-        });
+      axios.get(urls.parseDate.replace("666", clipText)).then(response => {
+        if (response.data.output_date === "") {
+          EventBus.$emit("toast", {
+            title: "Error",
+            body: "Invalid date format",
+            variant: "danger",
+          });
+        } else {
+          setDate(response.data.output_date);
+        }
+      });
     },
     [urls.parseDate]
   );
@@ -324,10 +313,7 @@ export function BlobUpdatePage({
       return;
     }
 
-    setMetadata((prev) => [
-      { name: nameEl.value, value: valueEl.value },
-      ...prev,
-    ]);
+    setMetadata(prev => [{ name: nameEl.value, value: valueEl.value }, ...prev]);
 
     selectValueRef.current?.clear();
     valueEl.value = "";
@@ -339,35 +325,26 @@ export function BlobUpdatePage({
 
   // Delete metadata
   const handleDeleteMetadata = useCallback((index: number) => {
-    setMetadata((prev) => prev.filter((_, i) => i !== index));
+    setMetadata(prev => prev.filter((_, i) => i !== index));
   }, []);
 
   // Update metadata value
-  const handleMetadataValueChange = useCallback(
-    (index: number, value: string) => {
-      setMetadata((prev) =>
-        prev.map((m, i) => (i === index ? { ...m, value } : m))
-      );
-    },
-    []
-  );
+  const handleMetadataValueChange = useCallback((index: number, value: string) => {
+    setMetadata(prev => prev.map((m, i) => (i === index ? { ...m, value } : m)));
+  }, []);
 
   // Handle edit page number
   const handleEditPageNumber = useCallback(() => {
     if (!blobUuid) return;
 
-    doPost(
-      urls.updatePageNumber,
-      { blob_uuid: blobUuid, page_number: pageNumber },
-      () => {
-        // Try to refresh cover image multiple times
-        for (const timeout of [1000, 3000, 6000, 9000]) {
-          setTimeout(() => {
-            setCurrentCoverUrl(currentCoverUrl + "?" + new Date().getTime());
-          }, timeout);
-        }
+    doPost(urls.updatePageNumber, { blob_uuid: blobUuid, page_number: pageNumber }, () => {
+      // Try to refresh cover image multiple times
+      for (const timeout of [1000, 3000, 6000, 9000]) {
+        setTimeout(() => {
+          setCurrentCoverUrl(currentCoverUrl + "?" + new Date().getTime());
+        }, timeout);
       }
-    );
+    });
   }, [blobUuid, pageNumber, urls.updatePageNumber, currentCoverUrl]);
 
   // Submit form
@@ -412,13 +389,13 @@ export function BlobUpdatePage({
       .post(urls.submit, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       })
-      .then((response) => {
+      .then(response => {
         window.location.href = urls.blobDetail.replace(
           "00000000-0000-0000-0000-000000000000",
           response.data.uuid
         );
       })
-      .catch((error) => {
+      .catch(error => {
         // Hide modal
         const modalEl = document.getElementById("modalProcessing");
         if (modalEl) {
@@ -476,14 +453,14 @@ export function BlobUpdatePage({
             <div
               className={`drag-target ${isDragOver.coverImage ? "drag-over" : ""}`}
               onDrop={handleImageDrop}
-              onDragOver={(e) => {
+              onDragOver={e => {
                 e.preventDefault();
-                setIsDragOver((prev) => ({ ...prev, coverImage: true }));
+                setIsDragOver(prev => ({ ...prev, coverImage: true }));
               }}
-              onDragEnter={(e) => e.preventDefault()}
-              onDragLeave={(e) => {
+              onDragEnter={e => e.preventDefault()}
+              onDragLeave={e => {
                 e.preventDefault();
-                setIsDragOver((prev) => ({ ...prev, coverImage: false }));
+                setIsDragOver(prev => ({ ...prev, coverImage: false }));
               }}
             >
               <img
@@ -555,7 +532,7 @@ export function BlobUpdatePage({
                 <select
                   className="form-control"
                   value={selectedTemplate}
-                  onChange={(e) => {
+                  onChange={e => {
                     setSelectedTemplate(e.target.value);
                     if (e.target.value !== "-1") {
                       handleGetTemplate();
@@ -563,7 +540,7 @@ export function BlobUpdatePage({
                   }}
                 >
                   <option value="-1">Use Template</option>
-                  {templateList.map((t) => (
+                  {templateList.map(t => (
                     <option key={t.uuid} value={t.uuid}>
                       {t.name}
                     </option>
@@ -578,28 +555,18 @@ export function BlobUpdatePage({
             <div className="mt-4">
               Adding to collection{" "}
               <strong>
-                <a href={`/collection/${collectionInfo.uuid}/`}>
-                  {collectionInfo.name}
-                </a>
+                <a href={`/collection/${collectionInfo.uuid}/`}>{collectionInfo.name}</a>
               </strong>
             </div>
           )}
 
           {/* Linked Blob */}
           {linkedBlob && (
-            <div
-              id="linked-blob"
-              className="highlight-box d-flex align-items-center mt-5"
-            >
-              {linkedBlob.thumbnail_url && (
-                <img src={linkedBlob.thumbnail_url} alt="" />
-              )}
+            <div id="linked-blob" className="highlight-box d-flex align-items-center mt-5">
+              {linkedBlob.thumbnail_url && <img src={linkedBlob.thumbnail_url} alt="" />}
               <h5 className="d-flex justify-content-center ms-2 w-100">
                 <div>
-                  Linking to{" "}
-                  <a href={`/blob/${linkedBlob.uuid}/`}>
-                    {linkedBlob.name || "Blob"}
-                  </a>
+                  Linking to <a href={`/blob/${linkedBlob.uuid}/`}>{linkedBlob.name || "Blob"}</a>
                 </div>
               </h5>
             </div>
@@ -610,7 +577,7 @@ export function BlobUpdatePage({
             <>
               <h6 className="my-3">Linking to a collection with these blobs:</h6>
               <ul className="list-group">
-                {linkedCollection.blobs.map((blob) => (
+                {linkedCollection.blobs.map(blob => (
                   <li key={blob.uuid} className="list-group-item">
                     <a href={`/blob/${blob.uuid}/`}>{blob.name || "No Name"}</a>
                   </li>
@@ -634,15 +601,12 @@ export function BlobUpdatePage({
       <div className="col-lg-9">
         <div className="card-grid ms-2">
           {/* Tabs */}
-          <ul
-            className="nav nav-tabs justify-content-center mb-2"
-            role="tablist"
-          >
+          <ul className="nav nav-tabs justify-content-center mb-2" role="tablist">
             <li className="nav-item">
               <a
                 className={`nav-link ${activeTab === "main" ? "active" : ""}`}
                 href="#"
-                onClick={(e) => {
+                onClick={e => {
                   e.preventDefault();
                   setActiveTab("main");
                 }}
@@ -654,7 +618,7 @@ export function BlobUpdatePage({
               <a
                 className={`nav-link ${activeTab === "file" ? "active" : ""}`}
                 href="#"
-                onClick={(e) => {
+                onClick={e => {
                   e.preventDefault();
                   setActiveTab("file");
                 }}
@@ -666,7 +630,7 @@ export function BlobUpdatePage({
               <a
                 className={`nav-link ${activeTab === "metadata" ? "active" : ""}`}
                 href="#"
-                onClick={(e) => {
+                onClick={e => {
                   e.preventDefault();
                   setActiveTab("metadata");
                 }}
@@ -679,7 +643,7 @@ export function BlobUpdatePage({
                 <a
                   className={`nav-link ${activeTab === "cover" ? "active" : ""}`}
                   href="#"
-                  onClick={(e) => {
+                  onClick={e => {
                     e.preventDefault();
                     setActiveTab("cover");
                   }}
@@ -693,16 +657,10 @@ export function BlobUpdatePage({
           {/* Tab Content */}
           <div className="tab-content row pt-4">
             {/* Main Tab */}
-            <div
-              className={`tab-pane col-lg-12 ${
-                activeTab === "main" ? "show active" : "fade"
-              }`}
-            >
+            <div className={`tab-pane col-lg-12 ${activeTab === "main" ? "show active" : "fade"}`}>
               {/* Name */}
               <div className="row mb-3">
-                <label className="fw-bold col-lg-2 col-form-label text-end">
-                  Name
-                </label>
+                <label className="fw-bold col-lg-2 col-form-label text-end">Name</label>
                 <div className="col-lg-10">
                   <input
                     type="text"
@@ -710,7 +668,7 @@ export function BlobUpdatePage({
                     name="name"
                     className="form-control"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={e => setName(e.target.value)}
                     autoComplete="off"
                   />
                 </div>
@@ -718,9 +676,7 @@ export function BlobUpdatePage({
 
               {/* Date */}
               <div className="row mb-3">
-                <label className="fw-bold col-lg-2 col-form-label text-end">
-                  Date
-                </label>
+                <label className="fw-bold col-lg-2 col-form-label text-end">Date</label>
                 <div className="col-lg-3">
                   <div className="input-group">
                     <input
@@ -729,7 +685,7 @@ export function BlobUpdatePage({
                       name="date"
                       className="form-control date-input"
                       value={date}
-                      onChange={(e) => setDate(e.target.value)}
+                      onChange={e => setDate(e.target.value)}
                       onPaste={dateFormat === "standard" ? handleDatePaste : undefined}
                       placeholder={dateFormat === "year" ? "Year" : undefined}
                       autoComplete="off"
@@ -747,25 +703,19 @@ export function BlobUpdatePage({
 
               {/* Content */}
               <div className="row mb-3">
-                <label className="fw-bold col-lg-2 col-form-label text-end">
-                  Content
-                </label>
-                <div
-                  className={`col-lg-10 ${
-                    isDragOver.contentFile ? "drag-over" : ""
-                  }`}
-                >
+                <label className="fw-bold col-lg-2 col-form-label text-end">Content</label>
+                <div className={`col-lg-10 ${isDragOver.contentFile ? "drag-over" : ""}`}>
                   <MarkdownEditor
                     ref={mdEditorRef}
                     initialContent=""
                     onDrop={handleLinkDrop}
-                    onDragOver={(e) => {
+                    onDragOver={e => {
                       e.preventDefault();
-                      setIsDragOver((prev) => ({ ...prev, contentFile: true }));
+                      setIsDragOver(prev => ({ ...prev, contentFile: true }));
                     }}
-                    onDragLeave={(e) => {
+                    onDragLeave={e => {
                       e.preventDefault();
-                      setIsDragOver((prev) => ({ ...prev, contentFile: false }));
+                      setIsDragOver(prev => ({ ...prev, contentFile: false }));
                     }}
                     isDragOver={isDragOver.contentFile}
                   />
@@ -774,9 +724,7 @@ export function BlobUpdatePage({
 
               {/* Tags */}
               <div className="row mb-3">
-                <label className="fw-bold col-lg-2 col-form-label text-end">
-                  Tags
-                </label>
+                <label className="fw-bold col-lg-2 col-form-label text-end">Tags</label>
                 <div className="col-lg-10">
                   <TagsInput
                     ref={tagsInputRef}
@@ -790,9 +738,7 @@ export function BlobUpdatePage({
 
               {/* Note */}
               <div className="row mb-3">
-                <label className="fw-bold col-lg-2 col-form-label text-end">
-                  Note
-                </label>
+                <label className="fw-bold col-lg-2 col-form-label text-end">Note</label>
                 <div className="col-lg-10">
                   <textarea
                     id="id_note"
@@ -800,46 +746,38 @@ export function BlobUpdatePage({
                     className="form-control"
                     rows={3}
                     value={note}
-                    onChange={(e) => setNote(e.target.value)}
+                    onChange={e => setNote(e.target.value)}
                   />
                 </div>
               </div>
 
               {/* Save Button */}
               <div className="col-lg-10 offset-lg-2 d-flex">
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={handleSubmit}
-                >
+                <button type="button" className="btn btn-primary" onClick={handleSubmit}>
                   Save
                 </button>
               </div>
             </div>
 
             {/* File Tab */}
-            <div
-              className={`tab-pane col-lg-12 ${
-                activeTab === "file" ? "show active" : "fade"
-              }`}
-            >
+            <div className={`tab-pane col-lg-12 ${activeTab === "file" ? "show active" : "fade"}`}>
               <div
                 className={`drag-target d-flex flex-column align-items-center ${
                   isDragOver.fileFile ? "drag-over" : ""
                 }`}
-                onDrop={(e) => {
+                onDrop={e => {
                   e.preventDefault();
-                  setIsDragOver((prev) => ({ ...prev, fileFile: false }));
+                  setIsDragOver(prev => ({ ...prev, fileFile: false }));
                   handleFileDrop(e.dataTransfer.files[0]);
                 }}
-                onDragOver={(e) => {
+                onDragOver={e => {
                   e.preventDefault();
-                  setIsDragOver((prev) => ({ ...prev, fileFile: true }));
+                  setIsDragOver(prev => ({ ...prev, fileFile: true }));
                 }}
-                onDragEnter={(e) => e.preventDefault()}
-                onDragLeave={(e) => {
+                onDragEnter={e => e.preventDefault()}
+                onDragLeave={e => {
                   e.preventDefault();
-                  setIsDragOver((prev) => ({ ...prev, fileFile: false }));
+                  setIsDragOver(prev => ({ ...prev, fileFile: false }));
                 }}
               >
                 <h3 id="file-upload" className="d-flex flex-column align-items-center">
@@ -854,7 +792,7 @@ export function BlobUpdatePage({
                       name="file"
                       id="id_file"
                       hidden
-                      onChange={(e) => handleFileDrop(e.target.files?.[0] || null)}
+                      onChange={e => handleFileDrop(e.target.files?.[0] || null)}
                     />
                   </label>
                   {fileName && (
@@ -865,7 +803,7 @@ export function BlobUpdatePage({
                           type="text"
                           name="filename"
                           value={fileName}
-                          onChange={(e) => setFileName(e.target.value)}
+                          onChange={e => setFileName(e.target.value)}
                           className="form-control"
                           id="id_filename"
                           autoComplete="off"
@@ -879,9 +817,7 @@ export function BlobUpdatePage({
 
             {/* Metadata Tab */}
             <div
-              className={`tab-pane col-lg-12 ${
-                activeTab === "metadata" ? "show active" : "fade"
-              }`}
+              className={`tab-pane col-lg-12 ${activeTab === "metadata" ? "show active" : "fade"}`}
             >
               {/* Add Metadata */}
               <div className="row mb-3">
@@ -907,7 +843,7 @@ export function BlobUpdatePage({
                       className="form-control"
                       placeholder="Value"
                       autoComplete="off"
-                      onKeyDown={(e) => {
+                      onKeyDown={e => {
                         if (e.key === "Enter") {
                           e.preventDefault();
                           handleAddMetadata();
@@ -929,17 +865,13 @@ export function BlobUpdatePage({
               {/* Metadata List */}
               {metadata.map((m, index) => (
                 <div key={index} className="row mb-3">
-                  <label className="fw-bold col-lg-2 col-form-label text-end">
-                    {m.name}
-                  </label>
+                  <label className="fw-bold col-lg-2 col-form-label text-end">{m.name}</label>
                   <div className="col-lg-10">
                     <div className="input-group">
                       <input
                         type="text"
                         value={m.value}
-                        onChange={(e) =>
-                          handleMetadataValueChange(index, e.target.value)
-                        }
+                        onChange={e => handleMetadataValueChange(index, e.target.value)}
                         className="form-control"
                         autoComplete="off"
                       />
@@ -957,11 +889,7 @@ export function BlobUpdatePage({
 
               {/* Save Button */}
               <div className="col-lg-10 offset-lg-2 d-flex">
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={handleSubmit}
-                >
+                <button type="button" className="btn btn-primary" onClick={handleSubmit}>
                   Save
                 </button>
               </div>
@@ -970,25 +898,21 @@ export function BlobUpdatePage({
             {/* Cover Image Tab (PDF only) */}
             {isPdf && (
               <div
-                className={`tab-pane col-lg-12 ${
-                  activeTab === "cover" ? "show active" : "fade"
-                }`}
+                className={`tab-pane col-lg-12 ${activeTab === "cover" ? "show active" : "fade"}`}
               >
                 <div className="d-flex align-items-center">
                   <div className="w-50">
-                    Specify the PDF page number from which to extract the cover
-                    image. This usually takes a few seconds to refresh.
+                    Specify the PDF page number from which to extract the cover image. This usually
+                    takes a few seconds to refresh.
                   </div>
                   <div className="mb-3 d-flex">
-                    <label className="fw-bold col-form-label text-end">
-                      Page Number
-                    </label>
+                    <label className="fw-bold col-form-label text-end">Page Number</label>
                     <div className="d-flex ms-3">
                       <input
                         type="number"
                         min="1"
                         value={pageNumber}
-                        onChange={(e) => setPageNumber(Number(e.target.value))}
+                        onChange={e => setPageNumber(Number(e.target.value))}
                         size={3}
                         className="form-control"
                         autoComplete="off"

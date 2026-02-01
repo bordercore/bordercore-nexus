@@ -33,7 +33,7 @@ export default function NodeImage({
         node_uuid: nodeUuid,
         uuid: uuid,
       },
-      (response) => {
+      response => {
         onEditLayout(response.data.layout);
       },
       "Image removed"
@@ -63,7 +63,7 @@ export default function NodeImage({
         <a
           href="#"
           className="dropdown-menu-item"
-          onClick={(e) => {
+          onClick={e => {
             e.preventDefault();
             handleRemoveImage();
           }}

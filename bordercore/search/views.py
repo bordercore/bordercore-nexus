@@ -912,7 +912,7 @@ def get_doctypes_from_request(request: HttpRequest) -> list[str]:
         A list of document type strings to filter by.
     """
     # Accept both "doctype" and "doc_type" for backwards compatibility
-    # (ObjectSelect.vue sends "doc_type", other places send "doctype")
+    # (ObjectSelectModal sends "doc_type", other places send "doctype")
     doctype_param = request.GET.get("doctype", "") or request.GET.get("doc_type", "")
     if doctype_param != "":
         doctypes = doctype_param.split(",")

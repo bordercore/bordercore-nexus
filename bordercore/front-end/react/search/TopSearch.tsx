@@ -1,6 +1,16 @@
 import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTimes, faSearch, faBook, faBookmark, faStickyNote, faMusic, faGraduationCap, faHeart, faFolder } from "@fortawesome/free-solid-svg-icons";
+import {
+  faTimes,
+  faSearch,
+  faBook,
+  faBookmark,
+  faStickyNote,
+  faMusic,
+  faGraduationCap,
+  faHeart,
+  faFolder,
+} from "@fortawesome/free-solid-svg-icons";
 import SelectValue, { SelectValueHandle } from "../common/SelectValue";
 import { Popover } from "../common/Popover";
 import { boldenOption } from "../../util.js";
@@ -25,15 +35,18 @@ export interface TopSearchHandle {
   focusSearch: () => void;
 }
 
-export const TopSearch = forwardRef<TopSearchHandle, TopSearchProps>(function TopSearch({
-  initialSearchFilter = "",
-  initialSearchUrl = "",
-  querySearchUrl = "",
-  noteQuerySearchUrl = "",
-  drillQuerySearchUrl = "",
-  storeInSessionUrl = "",
-  recentSearches = [],
-}: TopSearchProps, ref) {
+export const TopSearch = forwardRef<TopSearchHandle, TopSearchProps>(function TopSearch(
+  {
+    initialSearchFilter = "",
+    initialSearchUrl = "",
+    querySearchUrl = "",
+    noteQuerySearchUrl = "",
+    drillQuerySearchUrl = "",
+    storeInSessionUrl = "",
+    recentSearches = [],
+  }: TopSearchProps,
+  ref
+) {
   const [showFilter, setShowFilter] = useState(true);
   const [showSearchWindow, setShowSearchWindow] = useState(false);
   const [searchFilter, setSearchFilter] = useState(initialSearchFilter);
@@ -61,7 +74,7 @@ export const TopSearch = forwardRef<TopSearchHandle, TopSearchProps>(function To
   const searchUrl = `${initialSearchUrl}?doc_type=${searchFilter}&term=`;
 
   const getFilterName = (doctype: string) => {
-    const filter = searchFilterTypes.find((x) => x.doctype === doctype);
+    const filter = searchFilterTypes.find(x => x.doctype === doctype);
     return filter ? filter.name : "";
   };
 
@@ -88,11 +101,7 @@ export const TopSearch = forwardRef<TopSearchHandle, TopSearchProps>(function To
 
   const saveSearchFilter = (filter: string) => {
     if (storeInSessionUrl && (window as any).doPost) {
-      (window as any).doPost(
-        storeInSessionUrl,
-        { top_search_filter: filter },
-        () => {},
-      );
+      (window as any).doPost(storeInSessionUrl, { top_search_filter: filter }, () => {});
     }
   };
 
@@ -249,7 +258,10 @@ export const TopSearch = forwardRef<TopSearchHandle, TopSearchProps>(function To
                         {option.doctype && (
                           <em className="search-object-type">{option.doctype} - </em>
                         )}
-                        <span className="d-inline" dangerouslySetInnerHTML={{ __html: boldenOption(option.name, search) }} />
+                        <span
+                          className="d-inline"
+                          dangerouslySetInnerHTML={{ __html: boldenOption(option.name, search) }}
+                        />
                         {option.doctype === "Collection" && option.description && (
                           <div className="text-muted small mt-1">
                             {truncateDescription(option.description)}
@@ -267,7 +279,7 @@ export const TopSearch = forwardRef<TopSearchHandle, TopSearchProps>(function To
                 <button
                   type="button"
                   className="filter-remove"
-                  onClick={(e) => {
+                  onClick={e => {
                     e.preventDefault();
                     removeFilter();
                   }}
@@ -283,12 +295,12 @@ export const TopSearch = forwardRef<TopSearchHandle, TopSearchProps>(function To
             <div className="search-section">
               <div className="search-section-title">Filter Options</div>
               <div className="search-filter-list">
-                {searchFilterTypes.map((filter) => (
+                {searchFilterTypes.map(filter => (
                   <button
                     key={filter.icon.iconName}
                     type="button"
                     className={`search-filter-item ${filter.doctype === searchFilter ? "active" : ""}`}
-                    onClick={(e) => {
+                    onClick={e => {
                       e.preventDefault();
                       handleFilter(filter.doctype);
                     }}
@@ -304,12 +316,12 @@ export const TopSearch = forwardRef<TopSearchHandle, TopSearchProps>(function To
             <div className="search-section">
               <div className="search-section-title">Recent Searches</div>
               <div className="search-recent-list">
-                {recentSearches.map((recentSearch) => (
+                {recentSearches.map(recentSearch => (
                   <button
                     key={recentSearch.id}
                     type="button"
                     className="search-recent-item"
-                    onClick={(e) => {
+                    onClick={e => {
                       e.preventDefault();
                       handleRecentSearch(recentSearch);
                     }}

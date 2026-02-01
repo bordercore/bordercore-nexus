@@ -7,11 +7,7 @@ interface NodeImageModalProps {
   onClose: () => void;
 }
 
-export default function NodeImageModal({
-  isOpen,
-  imageUrl,
-  onClose,
-}: NodeImageModalProps) {
+export default function NodeImageModal({ isOpen, imageUrl, onClose }: NodeImageModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const modalInstanceRef = useRef<Modal | null>(null);
 

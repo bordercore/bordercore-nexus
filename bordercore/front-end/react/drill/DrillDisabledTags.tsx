@@ -58,26 +58,18 @@ export function DrillDisabledTags({
 
   const handleTagDisable = useCallback(
     (tag: string) => {
-      doPost(
-        disableTagUrl,
-        { tag },
-        () => {
-          getTagList();
-        }
-      );
+      doPost(disableTagUrl, { tag }, () => {
+        getTagList();
+      });
     },
     [disableTagUrl, getTagList]
   );
 
   const handleTagEnable = useCallback(
     (tagName: string) => {
-      doPost(
-        enableTagUrl,
-        { tag: tagName },
-        () => {
-          getTagList();
-        }
-      );
+      doPost(enableTagUrl, { tag: tagName }, () => {
+        getTagList();
+      });
     },
     [enableTagUrl, getTagList]
   );
@@ -108,7 +100,14 @@ export function DrillDisabledTags({
           dropdownSlot={
             <ul className="dropdown-menu-list">
               <li key="manage">
-                <a className="dropdown-item" href="#" onClick={(e) => { e.preventDefault(); openModal(); }}>
+                <a
+                  className="dropdown-item"
+                  href="#"
+                  onClick={e => {
+                    e.preventDefault();
+                    openModal();
+                  }}
+                >
                   <FontAwesomeIcon icon={faPencilAlt} className="text-primary me-3" />
                   Manage
                 </a>
@@ -123,24 +122,14 @@ export function DrillDisabledTags({
   return (
     <div className="d-flex flex-grow-1">
       {/* Modal for managing disabled tags */}
-      <div
-        ref={modalRef}
-        id="modalDisabledTags"
-        className="modal fade"
-        tabIndex={-1}
-        role="dialog"
-      >
+      <div ref={modalRef} id="modalDisabledTags" className="modal fade" tabIndex={-1} role="dialog">
         <div className="modal-dialog" role="document">
           <div className="modal-content">
             <div className="modal-header">
               <h4 id="myModalLabel" className="modal-title">
                 Disabled Tags
               </h4>
-              <button
-                type="button"
-                className="close-button btn-close"
-                data-bs-dismiss="modal"
-              />
+              <button type="button" className="close-button btn-close" data-bs-dismiss="modal" />
             </div>
             <div className="modal-body">
               <div className="form-row align-items-center">
@@ -153,21 +142,17 @@ export function DrillDisabledTags({
                   />
                 </div>
               </div>
-              <ul
-                id="drill-pinned-tags"
-                className="interior-borders p-2 mb-0 wide-list"
-              >
+              <ul id="drill-pinned-tags" className="interior-borders p-2 mb-0 wide-list">
                 <div className="slicklist-list-item-inner">
-                  {tagList.map((tag) => (
+                  {tagList.map(tag => (
                     <li key={tag.name} className="list-group-item px-2 py-1">
                       <div className="d-flex">
                         <div>{tag.name}</div>
                         <div className="ms-auto my-auto">
                           <FontAwesomeIcon
                             icon={faTimesCircle}
-                            className="list-delete"
+                            className="list-delete cursor-pointer"
                             onClick={() => handleTagEnable(tag.name)}
-                            className="cursor-pointer"
                           />
                         </div>
                       </div>
@@ -199,7 +184,7 @@ export function DrillDisabledTags({
           <div className="text-secondary">Data Loading...</div>
         ) : (
           <ul className="list-unstyled">
-            {tagList.map((tag) => (
+            {tagList.map(tag => (
               <li key={tag.name} className="d-flex px-2">
                 <div className="item-name flex-fill">
                   <a href={`${tag.url}?filter=review`}>{tag.name}</a>
@@ -209,7 +194,13 @@ export function DrillDisabledTags({
             ))}
             {tagList.length === 0 && (
               <li key="add-tag">
-                <a href="#" onClick={(e) => { e.preventDefault(); openModal(); }}>
+                <a
+                  href="#"
+                  onClick={e => {
+                    e.preventDefault();
+                    openModal();
+                  }}
+                >
                   Add a tag
                 </a>
               </li>

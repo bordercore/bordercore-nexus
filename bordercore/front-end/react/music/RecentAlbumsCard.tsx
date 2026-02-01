@@ -30,35 +30,35 @@ export function RecentAlbumsCard({
           <div className="card-title">Recently Added Albums</div>
           <div className="ms-auto">
             <DropDownMenu
-            showOnHover={true}
-            dropdownSlot={
-              <ul className="dropdown-menu-list">
-                <li>
-                  <a className="dropdown-menu-item" href={urls.createSong}>
-                    <span className="dropdown-menu-icon">
-                      <FontAwesomeIcon icon={faPlus} className="text-primary" />
-                    </span>
-                    <span className="dropdown-menu-text">New Song</span>
-                  </a>
-                </li>
-                <li>
-                  <a className="dropdown-menu-item" href={urls.albumList}>
-                    <span className="dropdown-menu-icon">
-                      <FontAwesomeIcon icon={faPlus} className="text-primary" />
-                    </span>
-                    <span className="dropdown-menu-text">Album List</span>
-                  </a>
-                </li>
-                <li>
-                  <a className="dropdown-menu-item" href={urls.createAlbum}>
-                    <span className="dropdown-menu-icon">
-                      <FontAwesomeIcon icon={faPlus} className="text-primary" />
-                    </span>
-                    <span className="dropdown-menu-text">New Album</span>
-                  </a>
-                </li>
-              </ul>
-            }
+              showOnHover={true}
+              dropdownSlot={
+                <ul className="dropdown-menu-list">
+                  <li>
+                    <a className="dropdown-menu-item" href={urls.createSong}>
+                      <span className="dropdown-menu-icon">
+                        <FontAwesomeIcon icon={faPlus} className="text-primary" />
+                      </span>
+                      <span className="dropdown-menu-text">New Song</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a className="dropdown-menu-item" href={urls.albumList}>
+                      <span className="dropdown-menu-icon">
+                        <FontAwesomeIcon icon={faPlus} className="text-primary" />
+                      </span>
+                      <span className="dropdown-menu-text">Album List</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a className="dropdown-menu-item" href={urls.createAlbum}>
+                      <span className="dropdown-menu-icon">
+                        <FontAwesomeIcon icon={faPlus} className="text-primary" />
+                      </span>
+                      <span className="dropdown-menu-text">New Album</span>
+                    </a>
+                  </li>
+                </ul>
+              }
             />
           </div>
         </div>
@@ -66,11 +66,10 @@ export function RecentAlbumsCard({
     >
       <div className="d-flex ms-2">
         <div id="album-list" className="album-grid flex-grow-1">
-          {albums.map((album) => (
+          {albums.map(album => (
             <div
               key={album.uuid}
-              className="p-2"
-              className="recent-album-item"
+              className="p-2 recent-album-item"
               data-bs-toggle="tooltip"
               data-placement="bottom"
               title={`Added ${album.created}`}
@@ -94,22 +93,16 @@ export function RecentAlbumsCard({
               {paginator.has_previous ? (
                 <a
                   href="#"
-                  onClick={(e) => {
+                  onClick={e => {
                     e.preventDefault();
                     onPaginate("prev");
                   }}
                 >
-                  <FontAwesomeIcon
-                    icon={faChevronLeft}
-                    className="text-emphasis"
-                  />
+                  <FontAwesomeIcon icon={faChevronLeft} className="text-emphasis" />
                 </a>
               ) : (
                 <span>
-                  <FontAwesomeIcon
-                    icon={faChevronLeft}
-                    className="text-emphasis icon-disabled"
-                  />
+                  <FontAwesomeIcon icon={faChevronLeft} className="text-emphasis icon-disabled" />
                 </span>
               )}
             </div>
@@ -118,22 +111,16 @@ export function RecentAlbumsCard({
                 <a
                   href="#"
                   className="ms-1"
-                  onClick={(e) => {
+                  onClick={e => {
                     e.preventDefault();
                     onPaginate("next");
                   }}
                 >
-                  <FontAwesomeIcon
-                    icon={faChevronRight}
-                    className="text-emphasis"
-                  />
+                  <FontAwesomeIcon icon={faChevronRight} className="text-emphasis" />
                 </a>
               ) : (
                 <span>
-                  <FontAwesomeIcon
-                    icon={faChevronRight}
-                    className="text-emphasis icon-disabled"
-                  />
+                  <FontAwesomeIcon icon={faChevronRight} className="text-emphasis icon-disabled" />
                 </span>
               )}
             </div>

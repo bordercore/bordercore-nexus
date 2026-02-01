@@ -26,7 +26,7 @@ export function CollectionsCard({ collections, onAddToCollection }: CollectionsC
         <a
           className="dropdown-item"
           href="#"
-          onClick={(e) => {
+          onClick={e => {
             e.preventDefault();
             onAddToCollection?.();
           }}
@@ -52,7 +52,7 @@ export function CollectionsCard({ collections, onAddToCollection }: CollectionsC
 
   return (
     <Card cardClassName="backdrop-filter hover-reveal-target" titleSlot={titleSlot}>
-      {collections.map((collection) => (
+      {collections.map(collection => (
         <div key={collection.uuid} className="d-flex flex-column">
           <hr className="divider" />
           <div className="d-flex flex-column align-items-center">

@@ -29,7 +29,7 @@ function LetterNavigation({
         <span className="me-3">
           <strong>Artist name</strong>
         </span>
-        {nav.map((letter) => {
+        {nav.map(letter => {
           const hasArtists = uniqueArtistLetters.includes(letter);
           const isSelected = letter === selectedLetter;
 
@@ -73,8 +73,7 @@ function ArtistCard({ artist, imagesUrl, artistDetailUrl }: ArtistCardProps) {
       </div>
       <div className="fs-4">{artist.name}</div>
       <div className="text-value">
-        Albums: <strong>{artist.album_count}</strong>, Songs:{" "}
-        <strong>{artist.song_count}</strong>
+        Albums: <strong>{artist.album_count}</strong>, Songs: <strong>{artist.song_count}</strong>
       </div>
     </div>
   );
@@ -89,10 +88,7 @@ export function AlbumListPage({
   imagesUrl,
 }: AlbumListPageProps) {
   const getArtistDetailUrl = (artistUuid: string) => {
-    return urls.artistDetail.replace(
-      /00000000-0000-0000-0000-000000000000/,
-      artistUuid
-    );
+    return urls.artistDetail.replace(/00000000-0000-0000-0000-000000000000/, artistUuid);
   };
 
   return (
@@ -106,7 +102,7 @@ export function AlbumListPage({
 
       <div className="card-grid d-flex ms-3">
         <div className="d-flex flex-wrap justify-content-evenly">
-          {artists.map((artist) => (
+          {artists.map(artist => (
             <ArtistCard
               key={artist.uuid}
               artist={artist}

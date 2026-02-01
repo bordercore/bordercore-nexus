@@ -77,9 +77,8 @@ export function LoginPage({
             <div id="login-quote" className="row mb-3">
               <small>
                 <em>
-                  A lone cyberpunk solo navigating the shadowy digital byways against the
-                  pulsating neon backdrop of data streams and code, searching for order and
-                  meaning.
+                  A lone cyberpunk solo navigating the shadowy digital byways against the pulsating
+                  neon backdrop of data streams and code, searching for order and meaning.
                 </em>
               </small>
             </div>

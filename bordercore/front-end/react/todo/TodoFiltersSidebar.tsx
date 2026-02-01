@@ -77,18 +77,15 @@ export function TodoFiltersSidebar({
   return (
     <>
       {/* Filters drawer overlay (for mobile) */}
-      {drawerOpen && (
-        <div
-          className="todo-filters-drawer-overlay"
-          onClick={onToggleDrawer}
-        />
-      )}
+      {drawerOpen && <div className="todo-filters-drawer-overlay" onClick={onToggleDrawer} />}
 
       {/* Filters section - hidden on small screens, shown in drawer */}
-      <div className={`col-lg-3 d-flex flex-column todo-filters-sidebar ${drawerOpen ? "drawer-open" : ""}`}>
+      <div
+        className={`col-lg-3 d-flex flex-column todo-filters-sidebar ${drawerOpen ? "drawer-open" : ""}`}
+      >
         <div className="sticky-top card-body backdrop-filter h-100">
           <h4>Priority</h4>
-          {priorityOptions.map((option) => (
+          {priorityOptions.map(option => (
             <div
               key={option[0]}
               data-priority={option[0]}
@@ -105,7 +102,7 @@ export function TodoFiltersSidebar({
           <hr className="divider" />
 
           <h4>Created</h4>
-          {timeOptions.map((option) => (
+          {timeOptions.map(option => (
             <div
               key={option[0]}
               className={`list-with-counts ps-2 py-1 pe-1 d-flex ${getTimeClass(option[0])}`}
@@ -122,7 +119,7 @@ export function TodoFiltersSidebar({
 
           <h4>Tags</h4>
           {tags.length > 0 ? (
-            tags.map((tag) => (
+            tags.map(tag => (
               <div
                 key={tag.name}
                 className={`list-with-counts ps-2 py-1 pe-1 d-flex ${getTagClass(tag.name)}`}

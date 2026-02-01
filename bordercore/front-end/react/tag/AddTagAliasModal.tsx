@@ -125,7 +125,7 @@ export const AddTagAliasModal = forwardRef<AddTagAliasModalHandle, AddTagAliasMo
                     autoComplete="off"
                     placeholder="Alias"
                     value={aliasName}
-                    onChange={(e) => setAliasName(e.target.value)}
+                    onChange={e => setAliasName(e.target.value)}
                     onKeyDown={handleKeyDown}
                   />
                 </div>
@@ -135,10 +135,7 @@ export const AddTagAliasModal = forwardRef<AddTagAliasModalHandle, AddTagAliasMo
               <div className="mt-2 text-secondary">
                 {message && (
                   <>
-                    <FontAwesomeIcon
-                      icon={faExclamationTriangle}
-                      className="me-1 pt-1 success"
-                    />
+                    <FontAwesomeIcon icon={faExclamationTriangle} className="me-1 pt-1 success" />
                     {message}
                   </>
                 )}

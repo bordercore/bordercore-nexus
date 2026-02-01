@@ -1,4 +1,4 @@
-// This debounce method is meant to be used as a composable for Vue components
+// Debounce utility for limiting rapid repeated invocations
 
 const delay = 300; // default debounce delay in milliseconds
 

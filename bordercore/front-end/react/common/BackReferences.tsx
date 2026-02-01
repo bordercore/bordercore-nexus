@@ -37,7 +37,7 @@ export function BackReferences({ backReferences }: BackReferencesProps) {
     <Card title="Back references">
       <hr className="divider" />
       <ul className="list-group interior-borders cursor-pointer text-truncate">
-        {backReferences.map((node) => (
+        {backReferences.map(node => (
           <li
             key={node.uuid}
             className="hoverable px-0 list-group-item list-group-item-secondary text-primary"
@@ -57,7 +57,7 @@ export function BackReferences({ backReferences }: BackReferencesProps) {
                     }}
                   />
                   <div className="pt-2">
-                    {node.tags.map((tag) => (
+                    {node.tags.map(tag => (
                       <span key={tag} className="tag me-2">
                         {tag}
                       </span>
@@ -72,9 +72,7 @@ export function BackReferences({ backReferences }: BackReferencesProps) {
                   <FontAwesomeIcon icon={faCopy} className="text-success" />
                 </div>
                 <div className="text-truncate">
-                  {node.cover_url && (
-                    <img src={node.cover_url} className="mw-100" alt="" />
-                  )}
+                  {node.cover_url && <img src={node.cover_url} className="mw-100" alt="" />}
                   {/* Content is trusted server-rendered HTML from the app's own database */}
                   <div
                     className="text-truncate cursor-pointer"
@@ -82,7 +80,7 @@ export function BackReferences({ backReferences }: BackReferencesProps) {
                     dangerouslySetInnerHTML={{ __html: node.name || "" }}
                   />
                   <div className="pt-2">
-                    {node.tags.map((tag) => (
+                    {node.tags.map(tag => (
                       <span key={tag} className="tag me-2">
                         {tag}
                       </span>

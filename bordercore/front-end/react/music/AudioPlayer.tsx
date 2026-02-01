@@ -32,12 +32,12 @@ export const AudioPlayer = React.forwardRef<AudioPlayerHandle, AudioPlayerProps>
     const listenTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
     const currentTitle = React.useMemo(() => {
-      const song = trackList.find((x) => x.uuid === currentSongUuid);
+      const song = trackList.find(x => x.uuid === currentSongUuid);
       return song ? song.title : "";
     }, [trackList, currentSongUuid]);
 
     const getIndex = React.useCallback(() => {
-      return trackList.findIndex((x) => x.uuid === currentSongUuid);
+      return trackList.findIndex(x => x.uuid === currentSongUuid);
     }, [trackList, currentSongUuid]);
 
     const markSongAsListenedTo = React.useCallback(async () => {
@@ -72,7 +72,7 @@ export const AudioPlayer = React.forwardRef<AudioPlayerHandle, AudioPlayerProps>
         }
 
         if (selectRow) {
-          const index = trackList.findIndex((x) => x.uuid === songUuid);
+          const index = trackList.findIndex(x => x.uuid === songUuid);
           onCurrentSong(index);
         }
 
@@ -87,7 +87,7 @@ export const AudioPlayer = React.forwardRef<AudioPlayerHandle, AudioPlayerProps>
         }, MUSIC_LISTEN_TIMEOUT);
 
         // Update document title
-        const song = trackList.find((x) => x.uuid === songUuid);
+        const song = trackList.find(x => x.uuid === songUuid);
         if (song) {
           document.title = song.title;
         }
@@ -159,8 +159,10 @@ export const AudioPlayer = React.forwardRef<AudioPlayerHandle, AudioPlayerProps>
     // Suppress "no supported sources" error from media-chrome when no song is loaded
     React.useEffect(() => {
       const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-        if (event.reason?.name === "NotSupportedError" &&
-            event.reason?.message?.includes("no supported sources")) {
+        if (
+          event.reason?.name === "NotSupportedError" &&
+          event.reason?.message?.includes("no supported sources")
+        ) {
           event.preventDefault();
         }
       };
@@ -187,12 +189,7 @@ export const AudioPlayer = React.forwardRef<AudioPlayerHandle, AudioPlayerProps>
         <div>
           {/* @ts-ignore - media-chrome web components */}
           <media-controller audio className="w-100">
-            <audio
-              id="player"
-              ref={audioRef}
-              slot="media"
-              src=""
-            />
+            <audio id="player" ref={audioRef} slot="media" src="" />
             {/* @ts-ignore */}
             <media-control-bar className="media-control-bar">
               {/* @ts-ignore */}
@@ -217,7 +214,7 @@ export const AudioPlayer = React.forwardRef<AudioPlayerHandle, AudioPlayerProps>
               type="checkbox"
               id="continuous_play"
               checked={continuousPlay}
-              onChange={(e) => setContinuousPlay(e.target.checked)}
+              onChange={e => setContinuousPlay(e.target.checked)}
             />
             <label className="form-check-label" htmlFor="continuous_play">
               Continuous Play

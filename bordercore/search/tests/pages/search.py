@@ -23,7 +23,7 @@ class SearchPage(Page):
 
     def search_input(self):
         """
-        Find the search form input - wait for Vue to mount
+        Find the search form input - wait for React to mount
         """
         wait = WebDriverWait(self.browser, timeout=10)
         wait.until(lambda driver: driver.find_element(*self.SEARCH_INPUT))
@@ -31,7 +31,7 @@ class SearchPage(Page):
 
     def exact_match_select(self):
         """
-        Find the "Exact Match" dropdown - wait for Vue to mount
+        Find the "Exact Match" dropdown - wait for React to mount
         """
         wait = WebDriverWait(self.browser, timeout=10)
         wait.until(lambda driver: driver.find_element(*self.SEARCH_EXACT_MATCH_DROPDOWN))
@@ -97,7 +97,7 @@ class TagSearchPage(Page):
 class NoteSearchPage(Page):
 
     SEARCH_INPUT = (By.CSS_SELECTOR, "#top-search input.multiselect__input")
-    SEARCH_RESULT_COUNT = (By.CSS_SELECTOR, "#vue-app ul[class*='note-search-result'] li")
+    SEARCH_RESULT_COUNT = (By.CSS_SELECTOR, "#react-root ul[class*='note-search-result'] li")
     TOP_SEARCH_ICON = (By.CSS_SELECTOR, "#top-search-icon")
 
     def __init__(self, browser):

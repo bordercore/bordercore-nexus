@@ -32,14 +32,7 @@ interface SortablePinnedNoteItemProps {
 }
 
 function SortablePinnedNoteItem({ note }: SortablePinnedNoteItemProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: note.uuid,
   });
 
@@ -120,19 +113,14 @@ function NoteCard({
     .join(" ");
 
   return (
-    <div
-      className={`position-relative ${isSearchResult && !isSelected ? "d-none" : ""}`}
-    >
+    <div className={`position-relative ${isSearchResult && !isSelected ? "d-none" : ""}`}>
       <Card
         cardClassName="me-0"
         titleSlot={
           <>
             {index === 0 && (
               <div className="position-absolute end-0">
-                <a
-                  className="btn btn-primary ms-2 me-4"
-                  href={urls.createNote}
-                >
+                <a className="btn btn-primary ms-2 me-4" href={urls.createNote}>
                   New note
                 </a>
               </div>
@@ -160,7 +148,7 @@ function NoteCard({
                 <a
                   className="text-primary"
                   href="#"
-                  onClick={(e) => {
+                  onClick={e => {
                     e.preventDefault();
                     onExpand();
                   }}
@@ -170,7 +158,7 @@ function NoteCard({
               </div>
             )}
           </div>
-          {note.source.tags.map((tag) => (
+          {note.source.tags.map(tag => (
             <span key={tag} className="me-2">
               <a className="tag" href={`${urls.notesSearch}?tagsearch=${tag}`}>
                 {tag}
@@ -190,12 +178,7 @@ interface SearchResultItemProps {
   urls: NoteListPageProps["urls"];
 }
 
-function SearchResultItem({
-  note,
-  isSelected,
-  onClick,
-  urls,
-}: SearchResultItemProps) {
+function SearchResultItem({ note, isSelected, onClick, urls }: SearchResultItemProps) {
   const getContent = (content: string, limit?: number): string => {
     if (!content) {
       return "";
@@ -222,7 +205,7 @@ function SearchResultItem({
         />
       </div>
       <div className="mt-2">
-        {note.source.tags.map((tag) => (
+        {note.source.tags.map(tag => (
           <span key={tag} className="me-2">
             <a className="tag" href={`${urls.notesSearch}?tagsearch=${tag}`}>
               {tag}
@@ -282,9 +265,9 @@ export function NoteListPage({
 
     if (updates.length > 0) {
       hasCheckedHeights.current = true;
-      setResults((prev) => {
+      setResults(prev => {
         const newResults = [...prev];
-        updates.forEach((index) => {
+        updates.forEach(index => {
           newResults[index] = { ...newResults[index], isExpanded: true };
         });
         return newResults;
@@ -309,8 +292,8 @@ export function NoteListPage({
       const { active, over } = event;
 
       if (over && active.id !== over.id) {
-        const oldIndex = pinnedNotes.findIndex((item) => item.uuid === active.id);
-        const newIndex = pinnedNotes.findIndex((item) => item.uuid === over.id);
+        const oldIndex = pinnedNotes.findIndex(item => item.uuid === active.id);
+        const newIndex = pinnedNotes.findIndex(item => item.uuid === over.id);
 
         if (oldIndex !== -1 && newIndex !== -1) {
           const newList = arrayMove(pinnedNotes, oldIndex, newIndex);
@@ -337,10 +320,8 @@ export function NoteListPage({
   );
 
   const handleExpand = useCallback((uuid: string) => {
-    setResults((prev) =>
-      prev.map((note) =>
-        note.source.uuid === uuid ? { ...note, isExpanded: true } : note
-      )
+    setResults(prev =>
+      prev.map(note => (note.source.uuid === uuid ? { ...note, isExpanded: true } : note))
     );
   }, []);
 
@@ -356,10 +337,7 @@ export function NoteListPage({
         {/* Pinned Notes - show when not searching */}
         {pinnedNotes.length > 0 && !isSearchResult && (
           <div className="d-flex flex-column h-100">
-            <Card
-              cardClassName="flex-grow-1"
-              titleSlot={<div className="h3">Pinned Notes</div>}
-            >
+            <Card cardClassName="flex-grow-1" titleSlot={<div className="h3">Pinned Notes</div>}>
               <ul className="list-group list-group-flush interior-borders">
                 <DndContext
                   sensors={sensors}
@@ -367,10 +345,10 @@ export function NoteListPage({
                   onDragEnd={handleDragEnd}
                 >
                   <SortableContext
-                    items={pinnedNotes.map((n) => n.uuid)}
+                    items={pinnedNotes.map(n => n.uuid)}
                     strategy={verticalListSortingStrategy}
                   >
-                    {pinnedNotes.map((note) => (
+                    {pinnedNotes.map(note => (
                       <SortablePinnedNoteItem key={note.uuid} note={note} />
                     ))}
                   </SortableContext>
@@ -384,10 +362,12 @@ export function NoteListPage({
         {/* Search Results List - show when searching */}
         {isSearchResult && (
           <div className="scrollable-panel-scrollbar-hover card-body d-flex flex-column h-100">
-            <div className="h3">{count} Note{count !== 1 ? "s" : ""} Found</div>
+            <div className="h3">
+              {count} Note{count !== 1 ? "s" : ""} Found
+            </div>
             <div className="d-flex flex-column">
               <ul className="note-search-result list-unstyled">
-                {results.map((note) => (
+                {results.map(note => (
                   <SearchResultItem
                     key={note.source.uuid}
                     note={note}
@@ -427,10 +407,7 @@ export function NoteListPage({
               <p>No notes found matching search criteria.</p>
             </div>
 
-            <a
-              className="btn btn-primary ms-2 me-4 float-end me-3"
-              href={urls.createNote}
-            >
+            <a className="btn btn-primary ms-2 me-4 float-end me-3" href={urls.createNote}>
               Add note
             </a>
           </div>

@@ -92,8 +92,11 @@ export function PlaylistSongTable({
   };
 
   const getEditUrl = (songUuid: string) => {
-    return editSongUrlTemplate.replace(/00000000-0000-0000-0000-000000000000/, songUuid) +
-      "?return_url=" + encodeURIComponent(window.location.pathname);
+    return (
+      editSongUrlTemplate.replace(/00000000-0000-0000-0000-000000000000/, songUuid) +
+      "?return_url=" +
+      encodeURIComponent(window.location.pathname)
+    );
   };
 
   // Get the appropriate equalizer image based on playing state
@@ -124,16 +127,19 @@ export function PlaylistSongTable({
     setDragOverIndex(null);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent<HTMLTableRowElement>, dropIndex: number) => {
-    e.preventDefault();
-    if (draggingIndex !== null && draggingIndex !== dropIndex) {
-      const song = songs[draggingIndex];
-      // Position is 1-indexed
-      onReorder(song.playlistitem_uuid, dropIndex + 1);
-    }
-    setDraggingIndex(null);
-    setDragOverIndex(null);
-  }, [draggingIndex, songs, onReorder]);
+  const handleDrop = useCallback(
+    (e: React.DragEvent<HTMLTableRowElement>, dropIndex: number) => {
+      e.preventDefault();
+      if (draggingIndex !== null && draggingIndex !== dropIndex) {
+        const song = songs[draggingIndex];
+        // Position is 1-indexed
+        onReorder(song.playlistitem_uuid, dropIndex + 1);
+      }
+      setDraggingIndex(null);
+      setDragOverIndex(null);
+    },
+    [draggingIndex, songs, onReorder]
+  );
 
   // Helper to get header class for sortable columns
   const getHeaderClass = (field: SortField, baseClass: string = "") => {
@@ -146,19 +152,11 @@ export function PlaylistSongTable({
       <table className="table table-hover playlist-song-table">
         <thead>
           <tr>
-            {isManualPlaylist && (
-              <th className="text-center table-col-number">#</th>
-            )}
-            <th
-              className={getHeaderClass("title")}
-              onClick={() => handleSort("title")}
-            >
+            {isManualPlaylist && <th className="text-center table-col-number">#</th>}
+            <th className={getHeaderClass("title")} onClick={() => handleSort("title")}>
               Title{renderSortIcon("title")}
             </th>
-            <th
-              className={getHeaderClass("artist")}
-              onClick={() => handleSort("artist")}
-            >
+            <th className={getHeaderClass("artist")} onClick={() => handleSort("artist")}>
               Artist{renderSortIcon("artist")}
             </th>
             <th
@@ -189,11 +187,11 @@ export function PlaylistSongTable({
                 key={song.playlistitem_uuid}
                 className={`song hover-target cursor-pointer ${dragOverIndex === index ? "drag-over" : ""}`}
                 draggable={isManualPlaylist}
-                onDragStart={isManualPlaylist ? (e) => handleDragStart(e, index) : undefined}
+                onDragStart={isManualPlaylist ? e => handleDragStart(e, index) : undefined}
                 onDragEnd={isManualPlaylist ? handleDragEnd : undefined}
-                onDragOver={isManualPlaylist ? (e) => handleDragOver(e, index) : undefined}
+                onDragOver={isManualPlaylist ? e => handleDragOver(e, index) : undefined}
                 onDragLeave={isManualPlaylist ? handleDragLeave : undefined}
-                onDrop={isManualPlaylist ? (e) => handleDrop(e, index) : undefined}
+                onDrop={isManualPlaylist ? e => handleDrop(e, index) : undefined}
               >
                 {isManualPlaylist && (
                   <td
@@ -213,10 +211,7 @@ export function PlaylistSongTable({
                     )}
                   </td>
                 )}
-                <td
-                  className="align-middle"
-                  onClick={() => handleRowClick(song, "title")}
-                >
+                <td className="align-middle" onClick={() => handleRowClick(song, "title")}>
                   {song.title}
                 </td>
                 <td
@@ -237,7 +232,10 @@ export function PlaylistSongTable({
                 >
                   {song.length}
                 </td>
-                <td className="col-action text-center align-middle" onClick={(e) => e.stopPropagation()}>
+                <td
+                  className="col-action text-center align-middle"
+                  onClick={e => e.stopPropagation()}
+                >
                   <DropDownMenu
                     showOnHover={true}
                     dropdownSlot={
@@ -254,10 +252,7 @@ export function PlaylistSongTable({
                           </button>
                         </li>
                         <li>
-                          <a
-                            className="dropdown-menu-item"
-                            href={getEditUrl(song.uuid)}
-                          >
+                          <a className="dropdown-menu-item" href={getEditUrl(song.uuid)}>
                             <span className="dropdown-menu-icon">
                               <FontAwesomeIcon icon={faPencilAlt} />
                             </span>

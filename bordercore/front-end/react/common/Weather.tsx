@@ -30,11 +30,24 @@ export function Weather({ weatherInfo }: WeatherProps) {
 
     if (conditionText.includes("sunny") || conditionText.includes("clear")) {
       return "sunny";
-    } else if (conditionText.includes("rain") || conditionText.includes("drizzle") || conditionText.includes("shower")) {
+    } else if (
+      conditionText.includes("rain") ||
+      conditionText.includes("drizzle") ||
+      conditionText.includes("shower")
+    ) {
       return "rain";
-    } else if (conditionText.includes("snow") || conditionText.includes("blizzard") || conditionText.includes("sleet")) {
+    } else if (
+      conditionText.includes("snow") ||
+      conditionText.includes("blizzard") ||
+      conditionText.includes("sleet")
+    ) {
       return "snow";
-    } else if (conditionText.includes("cloud") || conditionText.includes("overcast") || conditionText.includes("fog") || conditionText.includes("mist")) {
+    } else if (
+      conditionText.includes("cloud") ||
+      conditionText.includes("overcast") ||
+      conditionText.includes("fog") ||
+      conditionText.includes("mist")
+    ) {
       return "cloudy";
     }
 
@@ -63,7 +76,12 @@ export function Weather({ weatherInfo }: WeatherProps) {
   const temperatureText = getTemperatureText();
 
   useEffect(() => {
-    if (weatherIconType && temperatureText && tooltipRef.current && (window as any).BootstrapTooltip) {
+    if (
+      weatherIconType &&
+      temperatureText &&
+      tooltipRef.current &&
+      (window as any).BootstrapTooltip
+    ) {
       const tooltip = new (window as any).BootstrapTooltip(tooltipRef.current);
       return () => {
         if (tooltip) {
@@ -92,4 +110,3 @@ export function Weather({ weatherInfo }: WeatherProps) {
 }
 
 export default Weather;
-

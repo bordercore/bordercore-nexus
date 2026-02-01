@@ -101,16 +101,13 @@ export function MetricListPage({ testResults }: MetricListPageProps) {
         <div className="col-lg-3 d-flex flex-column flex-grow-1 pe-gutter">
           <div className="card-body h-100">
             <h3 className="mb-4">Bordercore Testing Methodology</h3>
-
             <h4 className="text-secondary mt-4">Unit Testing</h4>
-            Tests that primarily focus on the Django models and integration tests on the Django views.
-
+            Tests that primarily focus on the Django models and integration tests on the Django
+            views.
             <h4 className="text-secondary mt-4">Functional Testing</h4>
             Selenium-based tests for the front-end.
-
             <h4 className="text-secondary mt-4">Data Quality Testing</h4>
             Check for inconsistent or missing data in the database.
-
             <h4 className="text-secondary mt-4">Wumpus Testing</h4>
             Check that the data stored in S3 is consistent with the data stored on wumpus.
           </div>
@@ -124,36 +121,33 @@ export function MetricListPage({ testResults }: MetricListPageProps) {
               <div className="flex-grow-1">
                 <div className="d-flex">
                   <div className="item-name fw-bold">Test Count</div>
-                  <div className="item-value ms-auto">
-                    {testResults.unit.test_count}
-                  </div>
+                  <div className="item-value ms-auto">{testResults.unit.test_count}</div>
                 </div>
                 <div className="d-flex">
                   <div className="item-name fw-bold">Errors</div>
-                  <div className="item-value ms-auto">
-                    {testResults.unit.test_errors}
-                  </div>
+                  <div className="item-value ms-auto">{testResults.unit.test_errors}</div>
                 </div>
                 <div className="d-flex">
                   <div className="item-name fw-bold">Failures</div>
-                  <div className="item-value ms-auto">
-                    {testResults.unit.test_failures}
-                  </div>
+                  <div className="item-value ms-auto">{testResults.unit.test_failures}</div>
                 </div>
                 <div className="d-flex">
                   <div className="item-name fw-bold">Runtime</div>
-                  <div className="item-value ms-auto">
-                    {testResults.unit.test_time_elapsed}
-                  </div>
+                  <div className="item-value ms-auto">{testResults.unit.test_time_elapsed}</div>
                 </div>
               </div>
               <div className="ms-3">
-                <FontAwesomeIcon className={`ms-1 fa-3x ${statusUnit.className}`} icon={statusUnit.icon} />
+                <FontAwesomeIcon
+                  className={`ms-1 fa-3x ${statusUnit.className}`}
+                  icon={statusUnit.icon}
+                />
               </div>
             </div>
             <div className="d-flex">
               <div className="item-name fw-bold">Date</div>
-              <div className={`item-value ms-auto${testResults.unit.test_overdue ? " text-danger" : ""}`}>
+              <div
+                className={`item-value ms-auto${testResults.unit.test_overdue ? " text-danger" : ""}`}
+              >
                 {testResults.unit.test_runtime}
               </div>
             </div>
@@ -165,36 +159,33 @@ export function MetricListPage({ testResults }: MetricListPageProps) {
               <div className="flex-grow-1">
                 <div className="d-flex">
                   <div className="item-name fw-bold">Test Count</div>
-                  <div className="ms-auto">
-                    {testResults.wumpus.test_count}
-                  </div>
+                  <div className="ms-auto">{testResults.wumpus.test_count}</div>
                 </div>
                 <div className="d-flex">
                   <div className="item-name fw-bold">Errors</div>
-                  <div className="ms-auto">
-                    {testResults.wumpus.test_errors}
-                  </div>
+                  <div className="ms-auto">{testResults.wumpus.test_errors}</div>
                 </div>
                 <div className="d-flex">
                   <div className="item-name fw-bold">Failures</div>
-                  <div className="ms-auto">
-                    {testResults.wumpus.test_failures}
-                  </div>
+                  <div className="ms-auto">{testResults.wumpus.test_failures}</div>
                 </div>
                 <div className="d-flex">
                   <div className="item-name fw-bold">Runtime</div>
-                  <div className="item-value ms-auto">
-                    {testResults.wumpus.test_time_elapsed}
-                  </div>
+                  <div className="item-value ms-auto">{testResults.wumpus.test_time_elapsed}</div>
                 </div>
               </div>
               <div className="ms-3">
-                <FontAwesomeIcon className={`ms-1 fa-3x ${statusWumpus.className}`} icon={statusWumpus.icon} />
+                <FontAwesomeIcon
+                  className={`ms-1 fa-3x ${statusWumpus.className}`}
+                  icon={statusWumpus.icon}
+                />
               </div>
             </div>
             <div className="d-flex">
               <div className="item-name fw-bold">Date</div>
-              <div className={`item-value ms-auto${testResults.wumpus.test_overdue ? " text-danger" : ""}`}>
+              <div
+                className={`item-value ms-auto${testResults.wumpus.test_overdue ? " text-danger" : ""}`}
+              >
                 {testResults.wumpus.test_runtime}
               </div>
             </div>
@@ -209,21 +200,15 @@ export function MetricListPage({ testResults }: MetricListPageProps) {
               <div className="flex-grow-1">
                 <div className="d-flex">
                   <div className="item-name fw-bold">Test Count</div>
-                  <div className="item-value ms-auto">
-                    {testResults.functional.test_count}
-                  </div>
+                  <div className="item-value ms-auto">{testResults.functional.test_count}</div>
                 </div>
                 <div className="d-flex">
                   <div className="item-name fw-bold">Errors</div>
-                  <div className="item-value ms-auto">
-                    {testResults.functional.test_errors}
-                  </div>
+                  <div className="item-value ms-auto">{testResults.functional.test_errors}</div>
                 </div>
                 <div className="d-flex">
                   <div className="item-name fw-bold">Failures</div>
-                  <div className="item-value ms-auto">
-                    {testResults.functional.test_failures}
-                  </div>
+                  <div className="item-value ms-auto">{testResults.functional.test_failures}</div>
                 </div>
                 <div className="d-flex">
                   <div className="item-name fw-bold">Runtime</div>
@@ -233,12 +218,17 @@ export function MetricListPage({ testResults }: MetricListPageProps) {
                 </div>
               </div>
               <div className="ms-3">
-                <FontAwesomeIcon className={`ms-1 fa-3x ${statusFunctional.className}`} icon={statusFunctional.icon} />
+                <FontAwesomeIcon
+                  className={`ms-1 fa-3x ${statusFunctional.className}`}
+                  icon={statusFunctional.icon}
+                />
               </div>
             </div>
             <div className="d-flex">
               <div className="item-name fw-bold">Date</div>
-              <div className={`item-value ms-auto${testResults.functional.test_overdue ? " text-danger" : ""}`}>
+              <div
+                className={`item-value ms-auto${testResults.functional.test_overdue ? " text-danger" : ""}`}
+              >
                 {testResults.functional.test_runtime}
               </div>
             </div>
@@ -250,18 +240,21 @@ export function MetricListPage({ testResults }: MetricListPageProps) {
               <div className="flex-grow-1">
                 <div className="d-flex">
                   <div className="item-name fw-bold">Coverage</div>
-                  <div className="item-value ms-auto">
-                    {testResults.coverage.line_rate}%
-                  </div>
+                  <div className="item-value ms-auto">{testResults.coverage.line_rate}%</div>
                 </div>
               </div>
               <div className="ms-3">
-                <FontAwesomeIcon className={`ms-1 fa-3x ${statusCoverage.className}`} icon={statusCoverage.icon} />
+                <FontAwesomeIcon
+                  className={`ms-1 fa-3x ${statusCoverage.className}`}
+                  icon={statusCoverage.icon}
+                />
               </div>
             </div>
             <div className="d-flex">
               <div className="item-name fw-bold">Date</div>
-              <div className={`item-value ms-auto${testResults.coverage.test_overdue ? " text-danger" : ""}`}>
+              <div
+                className={`item-value ms-auto${testResults.coverage.test_overdue ? " text-danger" : ""}`}
+              >
                 {testResults.coverage.test_runtime}
               </div>
             </div>
@@ -277,36 +270,33 @@ export function MetricListPage({ testResults }: MetricListPageProps) {
                 <div className="flex-grow-1">
                   <div className="d-flex">
                     <div className="item-name fw-bold">Test Count</div>
-                    <div className="item-value ms-auto">
-                      {testResults.data.test_count}
-                    </div>
+                    <div className="item-value ms-auto">{testResults.data.test_count}</div>
                   </div>
                   <div className="d-flex">
                     <div className="item-name fw-bold">Errors</div>
-                    <div className="item-value ms-auto">
-                      {testResults.data.test_errors}
-                    </div>
+                    <div className="item-value ms-auto">{testResults.data.test_errors}</div>
                   </div>
                   <div className="d-flex">
                     <div className="item-name fw-bold">Failures</div>
-                    <div className="item-value ms-auto">
-                      {testResults.data.test_failures}
-                    </div>
+                    <div className="item-value ms-auto">{testResults.data.test_failures}</div>
                   </div>
                   <div className="d-flex">
                     <div className="item-name fw-bold">Runtime</div>
-                    <div className="item-value ms-auto">
-                      {testResults.data.test_time_elapsed}
-                    </div>
+                    <div className="item-value ms-auto">{testResults.data.test_time_elapsed}</div>
                   </div>
                 </div>
                 <div className="ms-3">
-                  <FontAwesomeIcon className={`ms-1 fa-3x ${statusData.className}`} icon={statusData.icon} />
+                  <FontAwesomeIcon
+                    className={`ms-1 fa-3x ${statusData.className}`}
+                    icon={statusData.icon}
+                  />
                 </div>
               </div>
               <div className="d-flex">
                 <div className="item-name fw-bold">Date</div>
-                <div className={`item-value ms-auto${testResults.data.test_overdue ? " text-danger" : ""}`}>
+                <div
+                  className={`item-value ms-auto${testResults.data.test_overdue ? " text-danger" : ""}`}
+                >
                   {testResults.data.test_runtime}
                 </div>
               </div>
@@ -315,15 +305,26 @@ export function MetricListPage({ testResults }: MetricListPageProps) {
         </div>
       </div>
 
-      {/* Modal for test output - uses trusted backend test output, matching Vue v-html pattern */}
-      <div id="modalTestOutput" className="modal fade" tabIndex={-1} role="dialog" aria-labelledby="myModalLabel">
+      {/* Modal for test output - uses trusted backend test output */}
+      <div
+        id="modalTestOutput"
+        className="modal fade"
+        tabIndex={-1}
+        role="dialog"
+        aria-labelledby="myModalLabel"
+      >
         <div className="modal-dialog modal-lg" role="document">
           <div className="modal-content">
             <div className="modal-header">
               <h4 id="myModalLabel" className="modal-title">
                 Test Output
               </h4>
-              <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close" />
+              <button
+                type="button"
+                className="btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+              />
             </div>
             <div
               className="modal-body"

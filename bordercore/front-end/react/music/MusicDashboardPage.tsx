@@ -7,12 +7,7 @@ import RecentlyPlayedSongsCard from "./RecentlyPlayedSongsCard";
 import RecentAlbumsCard from "./RecentAlbumsCard";
 import RecentSongsTable from "./RecentSongsTable";
 import CreatePlaylistModal, { CreatePlaylistModalHandle } from "./CreatePlaylistModal";
-import type {
-  MusicDashboardProps,
-  RecentAlbum,
-  RecentAddedSong,
-  PaginatorInfo,
-} from "./types";
+import type { MusicDashboardProps, RecentAlbum, RecentAddedSong, PaginatorInfo } from "./types";
 
 export function MusicDashboardPage({
   randomAlbum,
@@ -44,9 +39,7 @@ export function MusicDashboardPage({
   const handlePaginate = React.useCallback(
     (direction: "prev" | "next") => {
       const pageNumber =
-        direction === "prev"
-          ? paginator.previous_page_number
-          : paginator.next_page_number;
+        direction === "prev" ? paginator.previous_page_number : paginator.next_page_number;
 
       if (pageNumber === null) return;
 

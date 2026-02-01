@@ -77,7 +77,7 @@ export const CreateCollectionModal = forwardRef<
                     type="text"
                     name="name"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={e => setName(e.target.value)}
                     autoComplete="off"
                     maxLength={200}
                     required
@@ -95,7 +95,7 @@ export const CreateCollectionModal = forwardRef<
                     id="id_description"
                     name="description"
                     value={description}
-                    onChange={(e) => setDescription(e.target.value)}
+                    onChange={e => setDescription(e.target.value)}
                     cols={40}
                     rows={3}
                     className="form-control"
@@ -118,9 +118,7 @@ export const CreateCollectionModal = forwardRef<
               </div>
 
               <div className="row mb-3">
-                <label className="col-lg-3 col-form-label">
-                  Is Favorite
-                </label>
+                <label className="col-lg-3 col-form-label">Is Favorite</label>
                 <div className="col-lg-9 d-flex align-items-center">
                   <div className="form-check form-switch">
                     <input
@@ -128,7 +126,7 @@ export const CreateCollectionModal = forwardRef<
                       name="is_favorite"
                       className="form-check-input"
                       checked={isFavorite}
-                      onChange={(e) => setIsFavorite(e.target.checked)}
+                      onChange={e => setIsFavorite(e.target.checked)}
                       value="true"
                     />
                   </div>

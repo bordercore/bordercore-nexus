@@ -115,26 +115,12 @@ export function BlobImportPage({
         <div className="card-body backdrop-filter">
           <div className="d-flex align-items-center">
             <div id="blob-import-icon" className="me-3">
-              <img
-                height="80"
-                width="80"
-                src={`${staticUrl}img/website.jpg`}
-                alt="Website"
-              />
+              <img height="80" width="80" src={`${staticUrl}img/website.jpg`} alt="Website" />
             </div>
 
             <div className="w-100">
-              <form
-                id="import-blob-form"
-                method="post"
-                action={importUrl}
-                onSubmit={handleSubmit}
-              >
-                <input
-                  type="hidden"
-                  name="csrfmiddlewaretoken"
-                  value={csrfToken}
-                />
+              <form id="import-blob-form" method="post" action={importUrl} onSubmit={handleSubmit}>
+                <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken} />
 
                 <div className="row">
                   <h3 className="col-lg-12 mb-4">

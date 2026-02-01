@@ -171,10 +171,7 @@ export function CollectionDetailPage({
 
       if (response.data.status === "OK") {
         const blobUuid = response.data.blob_uuid;
-        const blobUrl = urls.blobDetail.replace(
-          /00000000-0000-0000-0000-000000000000/,
-          blobUuid
-        );
+        const blobUrl = urls.blobDetail.replace(/00000000-0000-0000-0000-000000000000/, blobUuid);
         window.location.href = blobUrl;
       } else {
         alert(response.data.message || "Error creating blob");
@@ -190,9 +187,7 @@ export function CollectionDetailPage({
   const handlePaginate = (direction: "prev" | "next") => {
     if (!paginator) return;
     const pageNumber =
-      direction === "prev"
-        ? paginator.previous_page_number
-        : paginator.next_page_number;
+      direction === "prev" ? paginator.previous_page_number : paginator.next_page_number;
     if (pageNumber !== null) {
       fetchObjectList(pageNumber);
     }
@@ -340,13 +335,10 @@ export function CollectionDetailPage({
     },
   ];
 
-  const needsPagination =
-    paginator && (paginator.has_previous || paginator.has_next);
+  const needsPagination = paginator && (paginator.has_previous || paginator.has_next);
 
   // Render markdown description - content is user-owned and trusted
-  const descriptionHtml = collection.description
-    ? markdown.render(collection.description)
-    : "";
+  const descriptionHtml = collection.description ? markdown.render(collection.description) : "";
 
   return (
     <>
@@ -379,10 +371,7 @@ export function CollectionDetailPage({
         <div className="col-lg-3 d-flex flex-column flex-grow-last h-100">
           <div className="card-body h-100">
             {collection.description && (
-              <h3
-                className="mb-3"
-                dangerouslySetInnerHTML={{ __html: descriptionHtml }}
-              />
+              <h3 className="mb-3" dangerouslySetInnerHTML={{ __html: descriptionHtml }} />
             )}
 
             <div className="d-flex mb-3">
@@ -408,12 +397,10 @@ export function CollectionDetailPage({
               >
                 <div className="ps-2">All Objects</div>
                 <div className="ms-auto pe-2">
-                  <span className="px-2 badge rounded-pill">
-                    {collection.object_count}
-                  </span>
+                  <span className="px-2 badge rounded-pill">{collection.object_count}</span>
                 </div>
               </div>
-              {objectTags.map((tag) => (
+              {objectTags.map(tag => (
                 <li
                   key={tag.id}
                   className={`list-with-counts ps-2 py-1 pe-1 d-flex cursor-pointer ${
@@ -457,7 +444,7 @@ export function CollectionDetailPage({
                         <a
                           href="#"
                           className="dropdown-menu-item"
-                          onClick={(e) => {
+                          onClick={e => {
                             e.preventDefault();
                             handleSlideShowModal();
                           }}
@@ -472,7 +459,7 @@ export function CollectionDetailPage({
                         <a
                           href="#"
                           className="dropdown-menu-item"
-                          onClick={(e) => {
+                          onClick={e => {
                             e.preventDefault();
                             handleEdit();
                           }}
@@ -487,7 +474,7 @@ export function CollectionDetailPage({
                         <a
                           href="#"
                           className="dropdown-menu-item"
-                          onClick={(e) => {
+                          onClick={e => {
                             e.preventDefault();
                             handleDelete();
                           }}
@@ -530,16 +517,13 @@ export function CollectionDetailPage({
                     {paginator?.has_previous ? (
                       <a
                         href="#"
-                        onClick={(e) => {
+                        onClick={e => {
                           e.preventDefault();
                           handlePaginate("prev");
                         }}
                         className="me-1 glow icon-hover"
                       >
-                        <FontAwesomeIcon
-                          icon={faChevronLeft}
-                          className="text-emphasis"
-                        />
+                        <FontAwesomeIcon icon={faChevronLeft} className="text-emphasis" />
                       </a>
                     ) : (
                       <FontAwesomeIcon
@@ -552,16 +536,13 @@ export function CollectionDetailPage({
                     {paginator?.has_next ? (
                       <a
                         href="#"
-                        onClick={(e) => {
+                        onClick={e => {
                           e.preventDefault();
                           handlePaginate("next");
                         }}
                         className="ms-1 glow icon-hover"
                       >
-                        <FontAwesomeIcon
-                          icon={faChevronRight}
-                          className="text-emphasis"
-                        />
+                        <FontAwesomeIcon icon={faChevronRight} className="text-emphasis" />
                       </a>
                     ) : (
                       <FontAwesomeIcon

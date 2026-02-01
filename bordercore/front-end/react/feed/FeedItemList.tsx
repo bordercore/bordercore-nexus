@@ -9,11 +9,7 @@ interface FeedItemListProps {
   onDeleteFeed: () => void;
 }
 
-export function FeedItemList({
-  currentFeed,
-  onOpenModal,
-  onDeleteFeed,
-}: FeedItemListProps) {
+export function FeedItemList({ currentFeed, onOpenModal, onDeleteFeed }: FeedItemListProps) {
   const feedDetailMenuItems = useMemo(
     () => [
       {
@@ -57,14 +53,12 @@ export function FeedItemList({
         </div>
         <hr />
         <ul>
-          {currentFeed.feedItems.map((item) => (
+          {currentFeed.feedItems.map(item => (
             <li key={item.id}>
               <a href={item.link}>{item.title}</a>
             </li>
           ))}
-          {currentFeed.feedItems.length === 0 && (
-            <div>No feed items found.</div>
-          )}
+          {currentFeed.feedItems.length === 0 && <div>No feed items found.</div>}
         </ul>
       </div>
     </div>

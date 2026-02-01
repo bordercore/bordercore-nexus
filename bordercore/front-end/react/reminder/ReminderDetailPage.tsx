@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEdit, faTrash, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 import MarkdownIt from "markdown-it";
 
-// Initialize markdown-it renderer (matching Vue bundle configuration)
+// Initialize markdown-it renderer
 const markdown = MarkdownIt({
   html: true,
   linkify: true,
@@ -136,47 +136,34 @@ export function ReminderDetailPage({ detailAjaxUrl }: ReminderDetailPageProps) {
                 </dd>
 
                 <dt className="col-sm-5 mt-2">Schedule Type</dt>
-                <dd className="col-sm-7 mt-2">
-                  {reminder.schedule_type_display}
-                </dd>
+                <dd className="col-sm-7 mt-2">{reminder.schedule_type_display}</dd>
 
                 <dt className="col-sm-5 mt-2">Schedule</dt>
-                <dd className="col-sm-7 mt-2">
-                  {reminder.schedule_description}
-                </dd>
+                <dd className="col-sm-7 mt-2">{reminder.schedule_description}</dd>
 
-                {reminder.schedule_type === "weekly" && reminder.days_of_week_display.length > 0 && (
-                  <>
-                    <dt className="col-sm-5 mt-2">Days</dt>
-                    <dd className="col-sm-7 mt-2">
-                      {reminder.days_of_week_display.join(", ")}
-                    </dd>
-                  </>
-                )}
+                {reminder.schedule_type === "weekly" &&
+                  reminder.days_of_week_display.length > 0 && (
+                    <>
+                      <dt className="col-sm-5 mt-2">Days</dt>
+                      <dd className="col-sm-7 mt-2">{reminder.days_of_week_display.join(", ")}</dd>
+                    </>
+                  )}
 
                 {reminder.schedule_type === "monthly" && reminder.days_of_month.length > 0 && (
                   <>
                     <dt className="col-sm-5 mt-2">Days of Month</dt>
-                    <dd className="col-sm-7 mt-2">
-                      {reminder.days_of_month.join(", ")}
-                    </dd>
+                    <dd className="col-sm-7 mt-2">{reminder.days_of_month.join(", ")}</dd>
                   </>
                 )}
 
                 <dt className="col-sm-5 mt-2">Time</dt>
-                <dd className="col-sm-7 mt-2">
-                  {reminder.trigger_time || "Not set"}
-                </dd>
+                <dd className="col-sm-7 mt-2">{reminder.trigger_time || "Not set"}</dd>
 
                 <dt className="col-sm-5 mt-2">Next Trigger</dt>
-                <dd className="col-sm-7 mt-2">
-                  {reminder.next_trigger_at || "Not scheduled"}
-                </dd>
+                <dd className="col-sm-7 mt-2">{reminder.next_trigger_at || "Not scheduled"}</dd>
 
                 <dt className="col-sm-5 mt-2">Last Triggered</dt>
-                <dd className="col-sm-7 mt-2">
-                  {reminder.last_triggered_at || "Never"}
-                </dd>
+                <dd className="col-sm-7 mt-2">{reminder.last_triggered_at || "Never"}</dd>
 
                 <dt className="col-sm-5 mt-2">Start Date</dt>
                 <dd className="col-sm-7 mt-2">{reminder.start_at || "Not set"}</dd>
@@ -210,4 +197,3 @@ export function ReminderDetailPage({ detailAjaxUrl }: ReminderDetailPageProps) {
 }
 
 export default ReminderDetailPage;
-

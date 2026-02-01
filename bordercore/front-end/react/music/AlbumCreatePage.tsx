@@ -43,7 +43,7 @@ export function AlbumCreatePage({
 
   // Compute unique artists from song list
   const artistsUnique = useMemo(() => {
-    return new Set(songList.map((song) => song.artist));
+    return new Set(songList.map(song => song.artist));
   }, [songList]);
 
   // Collect song list changes for submission
@@ -60,16 +60,12 @@ export function AlbumCreatePage({
 
   // Handle song title change
   const handleSongTitleChange = (index: number, newTitle: string) => {
-    setSongList((prev) =>
-      prev.map((song, i) => (i === index ? { ...song, title: newTitle } : song))
-    );
+    setSongList(prev => prev.map((song, i) => (i === index ? { ...song, title: newTitle } : song)));
   };
 
   // Handle song note change
   const handleSongNoteChange = (index: number, newNote: string) => {
-    setSongList((prev) =>
-      prev.map((song, i) => (i === index ? { ...song, note: newNote } : song))
-    );
+    setSongList(prev => prev.map((song, i) => (i === index ? { ...song, note: newNote } : song)));
   };
 
   // Handle zipfile upload to scan
@@ -204,9 +200,9 @@ export function AlbumCreatePage({
                     className="form-control form-select"
                     id="id_source"
                     value={songSource || ""}
-                    onChange={(e) => setSongSource(parseInt(e.target.value, 10))}
+                    onChange={e => setSongSource(parseInt(e.target.value, 10))}
                   >
-                    {songSources.map((source) => (
+                    {songSources.map(source => (
                       <option key={source.id} value={source.id}>
                         {source.name}
                       </option>
@@ -231,16 +227,16 @@ export function AlbumCreatePage({
                 <hr className="divider" />
                 <div className="d-flex justify-content-center">
                   <div className="me-3">
-                    <strong className="me-2">NOTE</strong>Multiple artists detected.
-                    Please choose one:
+                    <strong className="me-2">NOTE</strong>Multiple artists detected. Please choose
+                    one:
                   </div>
                   <div>
                     <select
                       className="form-control form-select"
                       value={artist}
-                      onChange={(e) => setArtist(e.target.value)}
+                      onChange={e => setArtist(e.target.value)}
                     >
-                      {Array.from(artistsUnique).map((artistOption) => (
+                      {Array.from(artistsUnique).map(artistOption => (
                         <option key={artistOption} value={artistOption}>
                           {artistOption}
                         </option>
@@ -268,9 +264,7 @@ export function AlbumCreatePage({
                             type="text"
                             size={20}
                             value={song.title}
-                            onChange={(e) =>
-                              handleSongTitleChange(index, e.target.value)
-                            }
+                            onChange={e => handleSongTitleChange(index, e.target.value)}
                           />
                         </td>
                         <td>
@@ -279,9 +273,7 @@ export function AlbumCreatePage({
                             type="text"
                             size={20}
                             value={song.note}
-                            onChange={(e) =>
-                              handleSongNoteChange(index, e.target.value)
-                            }
+                            onChange={e => handleSongNoteChange(index, e.target.value)}
                           />
                         </td>
                       </tr>
@@ -308,11 +300,7 @@ export function AlbumCreatePage({
 
       {/* Processing Modal */}
       {processing && (
-        <div
-          className="modal show d-block"
-          className="music-modal-overlay"
-          tabIndex={-1}
-        >
+        <div className="modal show d-block music-modal-overlay" tabIndex={-1}>
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-body text-center py-4">

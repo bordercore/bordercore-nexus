@@ -86,18 +86,21 @@ export function DrillListPage({
     switch (studySession.type) {
       case "all":
         return (
-          <>Currently studying <strong>all questions</strong>.</>
+          <>
+            Currently studying <strong>all questions</strong>.
+          </>
         );
       case "favorites":
         return (
-          <>Currently studying your <strong>favorite questions</strong>.</>
+          <>
+            Currently studying your <strong>favorite questions</strong>.
+          </>
         );
       case "tag":
         const hasMultipleTags = studySession.tag?.includes(",");
         return (
           <>
-            Currently studying tag{hasMultipleTags ? "s" : ""}{" "}
-            <strong>{studySession.tag}</strong>.
+            Currently studying tag{hasMultipleTags ? "s" : ""} <strong>{studySession.tag}</strong>.
           </>
         );
       case "random":
@@ -120,51 +123,50 @@ export function DrillListPage({
       <div className="col-lg-3 d-flex flex-column pe-gutter">
         <div className="card">
           <div className="card-body backdrop-filter flex-grow-1">
-          <div>
-            Click the <strong>Study</strong> button to start a study session or
-            select a <strong>tag</strong> on the right to drill on a specific
-            category.
-          </div>
+            <div>
+              Click the <strong>Study</strong> button to start a study session or select a{" "}
+              <strong>tag</strong> on the right to drill on a specific category.
+            </div>
 
-          <div className="mt-3">
-            <button
-              type="button"
-              className="btn btn-primary"
-              data-bs-toggle="modal"
-              data-bs-target="#modal-study"
-            >
-              Study
-            </button>
-          </div>
+            <div className="mt-3">
+              <button
+                type="button"
+                className="btn btn-primary"
+                data-bs-toggle="modal"
+                data-bs-target="#modal-study"
+              >
+                Study
+              </button>
+            </div>
 
-          {studySession && (
-            <>
-              <hr />
-              <span>
-                <a href={urls.resume} type="button" className="btn btn-primary">
-                  Resume
-                </a>{" "}
-                study session.
-              </span>
-              <div className="text-secondary mt-3">
-                <small>
-                  {getStudySessionDescription()}
-                  <br />
-                  <strong>{studySessionProgress}</strong> out of{" "}
-                  <strong>{studySession.list.length}</strong> questions completed.
-                </small>
-              </div>
-            </>
-          )}
+            {studySession && (
+              <>
+                <hr />
+                <span>
+                  <a href={urls.resume} type="button" className="btn btn-primary">
+                    Resume
+                  </a>{" "}
+                  study session.
+                </span>
+                <div className="text-secondary mt-3">
+                  <small>
+                    {getStudySessionDescription()}
+                    <br />
+                    <strong>{studySessionProgress}</strong> out of{" "}
+                    <strong>{studySession.list.length}</strong> questions completed.
+                  </small>
+                </div>
+              </>
+            )}
 
-          <hr />
+            <hr />
 
-          <div>
-            <a href={urls.drillAdd} className="btn btn-primary" role="button">
-              <FontAwesomeIcon icon={faPlus} className="me-2" />
-              New Question
-            </a>
-          </div>
+            <div>
+              <a href={urls.drillAdd} className="btn btn-primary" role="button">
+                <FontAwesomeIcon icon={faPlus} className="me-2" />
+                New Question
+              </a>
+            </div>
           </div>
         </div>
       </div>
@@ -177,10 +179,7 @@ export function DrillListPage({
             <div className="d-flex justify-content-center align-items-center">
               Percentage of all questions not needing review
             </div>
-            <DrillTagProgress
-              count={totalProgress.count}
-              progress={totalProgress.percentage}
-            />
+            <DrillTagProgress count={totalProgress.count} progress={totalProgress.percentage} />
           </div>
         </Card>
 
@@ -209,18 +208,14 @@ export function DrillListPage({
             </li>
             <hr className="divider my-1" />
             {tagsLastReviewed.length > 0 ? (
-              tagsLastReviewed.map((tag) => (
+              tagsLastReviewed.map(tag => (
                 <li key={tag.name} className="d-flex px-2">
                   <div className="item-name flex-fill">
-                    <a
-                      href={`${urls.startStudySession}?study_method=tag&tags=${tag.name}`}
-                    >
+                    <a href={`${urls.startStudySession}?study_method=tag&tags=${tag.name}`}>
                       {tag.name}
                     </a>
                   </div>
-                  <div className="item-value text-end">
-                    {tag.last_reviewed || "Never"}
-                  </div>
+                  <div className="item-value text-end">{tag.last_reviewed || "Never"}</div>
                 </li>
               ))
             ) : (
@@ -271,10 +266,7 @@ export function DrillListPage({
                 </li>
               </ul>
             </div>
-            <DrillTagProgress
-              count={featuredTag.count}
-              progress={featuredTag.progress}
-            />
+            <DrillTagProgress count={featuredTag.count} progress={featuredTag.progress} />
           </div>
         </Card>
 
@@ -323,7 +315,7 @@ export function DrillListPage({
                     type="radio"
                     value="all"
                     checked={studyMethod === "all"}
-                    onChange={(e) => setStudyMethod(e.target.value)}
+                    onChange={e => setStudyMethod(e.target.value)}
                   />
                   <label className="form-check-label ms-2" htmlFor="id_studymethod_all">
                     All questions
@@ -339,7 +331,7 @@ export function DrillListPage({
                     type="radio"
                     value="favorites"
                     checked={studyMethod === "favorites"}
-                    onChange={(e) => setStudyMethod(e.target.value)}
+                    onChange={e => setStudyMethod(e.target.value)}
                   />
                   <label className="form-check-label ms-2" htmlFor="id_studymethod_favorites">
                     Favorite questions
@@ -355,7 +347,7 @@ export function DrillListPage({
                     type="radio"
                     value="recent"
                     checked={studyMethod === "recent"}
-                    onChange={(e) => setStudyMethod(e.target.value)}
+                    onChange={e => setStudyMethod(e.target.value)}
                   />
                   <label
                     className="form-check-label ms-2 d-flex align-items-center"
@@ -388,7 +380,7 @@ export function DrillListPage({
                     type="radio"
                     value="tag"
                     checked={studyMethod === "tag"}
-                    onChange={(e) => setStudyMethod(e.target.value)}
+                    onChange={e => setStudyMethod(e.target.value)}
                   />
                   <label
                     className="form-check-label ms-2 d-flex align-items-center"
@@ -415,7 +407,7 @@ export function DrillListPage({
                     type="radio"
                     value="random"
                     checked={studyMethod === "random"}
-                    onChange={(e) => setStudyMethod(e.target.value)}
+                    onChange={e => setStudyMethod(e.target.value)}
                   />
                   <label
                     className="form-check-label ms-2 d-flex align-items-center"
@@ -444,7 +436,7 @@ export function DrillListPage({
                     type="radio"
                     value="keyword"
                     checked={studyMethod === "keyword"}
-                    onChange={(e) => setStudyMethod(e.target.value)}
+                    onChange={e => setStudyMethod(e.target.value)}
                   />
                   <label
                     className="form-check-label ms-2 d-flex align-items-center"

@@ -47,20 +47,18 @@ export function AddWorkoutForm({
   }
 
   function editCellHandler(index: number, field: string) {
-    setItems(items.map((item) => ({ ...item, isEdit: false })));
-    setItems((prev) => prev.map((item, i) => (i === index ? { ...item, isEdit: true } : item)));
+    setItems(items.map(item => ({ ...item, isEdit: false })));
+    setItems(prev => prev.map((item, i) => (i === index ? { ...item, isEdit: true } : item)));
     setEditingCell({ index, field });
   }
 
   function onBlur(index: number) {
-    setItems((prev) => prev.map((item, i) => (i === index ? { ...item, isEdit: false } : item)));
+    setItems(prev => prev.map((item, i) => (i === index ? { ...item, isEdit: false } : item)));
     setEditingCell(null);
   }
 
   function handleCellChange(index: number, field: string, value: string) {
-    setItems((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
-    );
+    setItems(prev => prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)));
   }
 
   return (
@@ -81,7 +79,7 @@ export function AddWorkoutForm({
                   size={3}
                   autoComplete="off"
                   value={weight}
-                  onChange={(e) => setWeight(e.target.value)}
+                  onChange={e => setWeight(e.target.value)}
                 />
               </div>
             )}
@@ -96,7 +94,7 @@ export function AddWorkoutForm({
                   size={3}
                   autoComplete="off"
                   value={duration}
-                  onChange={(e) => setDuration(e.target.value)}
+                  onChange={e => setDuration(e.target.value)}
                 />
               </div>
             )}
@@ -110,7 +108,7 @@ export function AddWorkoutForm({
                 size={3}
                 autoComplete="off"
                 value={reps}
-                onChange={(e) => setReps(e.target.value)}
+                onChange={e => setReps(e.target.value)}
               />
             </div>
           </div>
@@ -151,7 +149,10 @@ export function AddWorkoutForm({
             <tbody>
               {items.length === 0 ? (
                 <tr>
-                  <td colSpan={(hasWeight ? 1 : 0) + (hasDuration ? 1 : 0) + 1} className="text-center">
+                  <td
+                    colSpan={(hasWeight ? 1 : 0) + (hasDuration ? 1 : 0) + 1}
+                    className="text-center"
+                  >
                     No workout data
                   </td>
                 </tr>
@@ -166,12 +167,14 @@ export function AddWorkoutForm({
                             className="form-control text-center"
                             size={3}
                             value={item.weight}
-                            onChange={(e) => handleCellChange(index, "weight", e.target.value)}
+                            onChange={e => handleCellChange(index, "weight", e.target.value)}
                             onBlur={() => onBlur(index)}
                             autoFocus
                           />
                         ) : (
-                          <span onClick={() => editCellHandler(index, "weight")}>{item.weight}</span>
+                          <span onClick={() => editCellHandler(index, "weight")}>
+                            {item.weight}
+                          </span>
                         )}
                       </td>
                     )}
@@ -183,12 +186,14 @@ export function AddWorkoutForm({
                             className="form-control text-center"
                             size={3}
                             value={item.duration}
-                            onChange={(e) => handleCellChange(index, "duration", e.target.value)}
+                            onChange={e => handleCellChange(index, "duration", e.target.value)}
                             onBlur={() => onBlur(index)}
                             autoFocus
                           />
                         ) : (
-                          <span onClick={() => editCellHandler(index, "duration")}>{item.duration}</span>
+                          <span onClick={() => editCellHandler(index, "duration")}>
+                            {item.duration}
+                          </span>
                         )}
                       </td>
                     )}
@@ -199,7 +204,7 @@ export function AddWorkoutForm({
                           className="form-control text-center"
                           size={3}
                           value={item.reps}
-                          onChange={(e) => handleCellChange(index, "reps", e.target.value)}
+                          onChange={e => handleCellChange(index, "reps", e.target.value)}
                           onBlur={() => onBlur(index)}
                           autoFocus
                         />

@@ -121,14 +121,14 @@ export function ReminderFormPage({
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
 
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       [name]: type === "checkbox" ? checked : type === "number" ? parseInt(value, 10) || 0 : value,
     }));
 
     // Clear error for this field when user starts typing
     if (errors[name as keyof ReminderFormErrors]) {
-      setErrors((prev) => {
+      setErrors(prev => {
         const newErrors = { ...prev };
         delete newErrors[name as keyof ReminderFormErrors];
         return newErrors;
@@ -137,17 +137,17 @@ export function ReminderFormPage({
   };
 
   const handleDayOfWeekToggle = (day: number) => {
-    setFormData((prev) => {
+    setFormData(prev => {
       const currentDays = prev.days_of_week || [];
       const newDays = currentDays.includes(day)
-        ? currentDays.filter((d) => d !== day)
+        ? currentDays.filter(d => d !== day)
         : [...currentDays, day].sort((a, b) => a - b);
       return { ...prev, days_of_week: newDays };
     });
 
     // Clear error when user makes a selection
     if (errors.days_of_week_input) {
-      setErrors((prev) => {
+      setErrors(prev => {
         const newErrors = { ...prev };
         delete newErrors.days_of_week_input;
         return newErrors;
@@ -156,17 +156,17 @@ export function ReminderFormPage({
   };
 
   const handleDayOfMonthToggle = (day: number) => {
-    setFormData((prev) => {
+    setFormData(prev => {
       const currentDays = prev.days_of_month || [];
       const newDays = currentDays.includes(day)
-        ? currentDays.filter((d) => d !== day)
+        ? currentDays.filter(d => d !== day)
         : [...currentDays, day].sort((a, b) => a - b);
       return { ...prev, days_of_month: newDays };
     });
 
     // Clear error when user makes a selection
     if (errors.days_of_month_input) {
-      setErrors((prev) => {
+      setErrors(prev => {
         const newErrors = { ...prev };
         delete newErrors.days_of_month_input;
         return newErrors;
@@ -224,7 +224,7 @@ export function ReminderFormPage({
       } else if (err.response?.data) {
         // Handle Django form errors format
         const formErrors: ReminderFormErrors = {};
-        Object.keys(err.response.data).forEach((key) => {
+        Object.keys(err.response.data).forEach(key => {
           if (Array.isArray(err.response.data[key])) {
             formErrors[key as keyof ReminderFormErrors] = err.response.data[key];
           }
@@ -327,7 +327,7 @@ export function ReminderFormPage({
                 value={formData.schedule_type}
                 onChange={handleChange}
               >
-                {SCHEDULE_TYPE_CHOICES.map((choice) => (
+                {SCHEDULE_TYPE_CHOICES.map(choice => (
                   <option key={choice.value} value={choice.value}>
                     {choice.label}
                   </option>
@@ -362,7 +362,9 @@ export function ReminderFormPage({
                   ))}
                 </div>
               )}
-              <small className="form-text text-muted">What time of day to trigger the reminder.</small>
+              <small className="form-text text-muted">
+                What time of day to trigger the reminder.
+              </small>
             </div>
 
             {/* Days of Week - shown only for weekly schedule */}
@@ -370,7 +372,7 @@ export function ReminderFormPage({
               <div className="mb-3">
                 <label className="form-label">Days of Week</label>
                 <div className="d-flex flex-wrap gap-2">
-                  {DAYS_OF_WEEK.map((day) => (
+                  {DAYS_OF_WEEK.map(day => (
                     <button
                       key={day.value}
                       type="button"
@@ -403,7 +405,7 @@ export function ReminderFormPage({
               <div className="mb-3">
                 <label className="form-label">Days of Month</label>
                 <div className="d-flex flex-wrap gap-1 reminder-days-container">
-                  {daysOfMonth.map((day) => (
+                  {daysOfMonth.map(day => (
                     <button
                       key={day}
                       type="button"
@@ -530,9 +532,17 @@ export function ReminderFormPage({
                 <strong>Schedule Type:</strong> Choose how often the reminder repeats:
               </p>
               <ul>
-                <li><strong>Daily:</strong> Triggers every day at the specified time.</li>
-                <li><strong>Weekly:</strong> Triggers on selected days of the week (e.g., every Monday and Wednesday).</li>
-                <li><strong>Monthly:</strong> Triggers on selected days of the month (e.g., the 1st and 15th).</li>
+                <li>
+                  <strong>Daily:</strong> Triggers every day at the specified time.
+                </li>
+                <li>
+                  <strong>Weekly:</strong> Triggers on selected days of the week (e.g., every Monday
+                  and Wednesday).
+                </li>
+                <li>
+                  <strong>Monthly:</strong> Triggers on selected days of the month (e.g., the 1st
+                  and 15th).
+                </li>
               </ul>
               <p>
                 <strong>Time:</strong> What time of day the reminder should trigger.

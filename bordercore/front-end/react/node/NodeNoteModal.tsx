@@ -114,7 +114,7 @@ export default function NodeNoteModal({
                   maxLength={200}
                   required
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={e => setName(e.target.value)}
                   onKeyDown={handleKeyDown}
                 />
               </div>
@@ -125,7 +125,7 @@ export default function NodeNoteModal({
               </label>
               <div className="col-lg-9">
                 <div className="d-flex">
-                  {NODE_COLORS.map((c) => (
+                  {NODE_COLORS.map(c => (
                     <div
                       key={c}
                       className={`${getColorClass(c)} flex-grow-1 mx-2 cursor-pointer`}

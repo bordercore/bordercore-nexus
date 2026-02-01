@@ -63,61 +63,91 @@ export function TodoListPage({
   // Computed: Title based on active filters
   const title = useMemo(() => {
     if (currentSearchFilter) {
-      return <>Results for "<span className="filter-value">{currentSearchFilter}</span>"</>;
+      return (
+        <>
+          Results for "<span className="filter-value">{currentSearchFilter}</span>"
+        </>
+      );
     }
     const parts: React.ReactNode[] = [];
     if (filterTag) {
-      parts.push(<span key="tag">Tag: <span className="filter-value">{filterTag}</span></span>);
+      parts.push(
+        <span key="tag">
+          Tag: <span className="filter-value">{filterTag}</span>
+        </span>
+      );
     }
     if (filterPriority && priorityOptions.length > 0) {
       const priorityIdx = parseInt(filterPriority) - 1;
       if (priorityOptions[priorityIdx]) {
-        parts.push(<span key="priority">Priority: <span className="filter-value">{priorityOptions[priorityIdx][1]}</span></span>);
+        parts.push(
+          <span key="priority">
+            Priority: <span className="filter-value">{priorityOptions[priorityIdx][1]}</span>
+          </span>
+        );
       }
     }
     if (filterTime && timeOptions.length > 0) {
       const timeOption = timeOptions.find(opt => opt[0] === filterTime);
       if (timeOption) {
-        parts.push(<span key="time">Time: <span className="filter-value">{timeOption[1]}</span></span>);
+        parts.push(
+          <span key="time">
+            Time: <span className="filter-value">{timeOption[1]}</span>
+          </span>
+        );
       }
     }
     if (parts.length === 0) {
       return "All";
     }
-    return parts.reduce((prev, curr, i) => i === 0 ? curr : <>{prev}, {curr}</>, null as React.ReactNode);
+    return parts.reduce(
+      (prev, curr, i) =>
+        i === 0 ? (
+          curr
+        ) : (
+          <>
+            {prev}, {curr}
+          </>
+        ),
+      null as React.ReactNode
+    );
   }, [currentSearchFilter, filterTag, filterPriority, filterTime, priorityOptions, timeOptions]);
 
   // Fetch todo list
-  const getTodoList = useCallback((uuid?: string) => {
-    const params = new URLSearchParams();
-    params.append("tag", filterTag);
-    params.append("priority", filterPriority);
-    params.append("time", filterTime);
-    params.append("search", filterSearch);
+  const getTodoList = useCallback(
+    (uuid?: string) => {
+      const params = new URLSearchParams();
+      params.append("tag", filterTag);
+      params.append("priority", filterPriority);
+      params.append("time", filterTime);
+      params.append("search", filterSearch);
 
-    axios.get<TodoListResponse>(`${getTasksUrl}?${params.toString()}`)
-      .then((response) => {
-        setItems(response.data.todo_list);
-        setPriorityOptions(response.data.priority_counts);
-        setTimeOptions(response.data.created_counts);
+      axios
+        .get<TodoListResponse>(`${getTasksUrl}?${params.toString()}`)
+        .then(response => {
+          setItems(response.data.todo_list);
+          setPriorityOptions(response.data.priority_counts);
+          setTimeOptions(response.data.created_counts);
 
-        // If a uuid is given, open the modal dialog for that todo task
-        if (uuid) {
-          const todo = response.data.todo_list.find(x => x.uuid === uuid);
-          if (todo) {
-            handleEdit(todo);
+          // If a uuid is given, open the modal dialog for that todo task
+          if (uuid) {
+            const todo = response.data.todo_list.find(x => x.uuid === uuid);
+            if (todo) {
+              handleEdit(todo);
+            }
           }
-        }
-      })
-      .catch((error) => {
-        console.error("Error getting todo list:", error);
-        EventBus.$emit("toast", {
-          title: "Error",
-          body: "Error getting todo list",
-          variant: "danger",
+        })
+        .catch(error => {
+          console.error("Error getting todo list:", error);
+          EventBus.$emit("toast", {
+            title: "Error",
+            body: "Error getting todo list",
+            variant: "danger",
+          });
         });
-      });
-  }, [getTasksUrl, filterTag, filterPriority, filterTime, filterSearch]);
+    },
+    [getTasksUrl, filterTag, filterPriority, filterTime, filterSearch]
+  );
 
   // Initial load
   useEffect(() => {
@@ -138,32 +168,41 @@ export function TodoListPage({
     setDrawerOpen(!drawerOpen);
   };
 
-  const handleTagClick = useCallback((tag: string) => {
-    setCurrentSearchFilter("");
-    setFilterSearch("");
-    setFilterTag(tag);
-    if (drawerOpen && window.innerWidth < 992) {
-      setDrawerOpen(false);
-    }
-  }, [drawerOpen]);
+  const handleTagClick = useCallback(
+    (tag: string) => {
+      setCurrentSearchFilter("");
+      setFilterSearch("");
+      setFilterTag(tag);
+      if (drawerOpen && window.innerWidth < 992) {
+        setDrawerOpen(false);
+      }
+    },
+    [drawerOpen]
+  );
 
-  const handlePriorityClick = useCallback((priority: string) => {
-    setCurrentSearchFilter("");
-    setFilterSearch("");
-    setFilterPriority(priority);
-    if (drawerOpen && window.innerWidth < 992) {
-      setDrawerOpen(false);
-    }
-  }, [drawerOpen]);
+  const handlePriorityClick = useCallback(
+    (priority: string) => {
+      setCurrentSearchFilter("");
+      setFilterSearch("");
+      setFilterPriority(priority);
+      if (drawerOpen && window.innerWidth < 992) {
+        setDrawerOpen(false);
+      }
+    },
+    [drawerOpen]
+  );
 
-  const handleTimeClick = useCallback((time: string) => {
-    setCurrentSearchFilter("");
-    setFilterSearch("");
-    setFilterTime(time);
-    if (drawerOpen && window.innerWidth < 992) {
-      setDrawerOpen(false);
-    }
-  }, [drawerOpen]);
+  const handleTimeClick = useCallback(
+    (time: string) => {
+      setCurrentSearchFilter("");
+      setFilterSearch("");
+      setFilterTime(time);
+      if (drawerOpen && window.innerWidth < 992) {
+        setDrawerOpen(false);
+      }
+    },
+    [drawerOpen]
+  );
 
   const handleSearch = useCallback(() => {
     if (filterSearch === "") {
@@ -200,50 +239,55 @@ export function TodoListPage({
     getTodoList();
   }, [getTodoList]);
 
-  const handleSort = useCallback((field: string, direction: "asc" | "desc") => {
-    const sort = { field, direction };
-    doPost(
-      storeInSessionUrl,
-      { todo_sort: JSON.stringify(sort) },
-      () => {},
-    );
-  }, [storeInSessionUrl]);
+  const handleSort = useCallback(
+    (field: string, direction: "asc" | "desc") => {
+      const sort = { field, direction };
+      doPost(storeInSessionUrl, { todo_sort: JSON.stringify(sort) }, () => {});
+    },
+    [storeInSessionUrl]
+  );
 
-  const handleDrop = useCallback((todoUuid: string, position: number) => {
-    if (!isSortable) {
-      EventBus.$emit("toast", {
-        title: "Error",
-        body: "Sorting is only supported if only a tag filter is applied",
-        variant: "danger",
-      });
-      return;
-    }
+  const handleDrop = useCallback(
+    (todoUuid: string, position: number) => {
+      if (!isSortable) {
+        EventBus.$emit("toast", {
+          title: "Error",
+          body: "Sorting is only supported if only a tag filter is applied",
+          variant: "danger",
+        });
+        return;
+      }
 
-    doPost(
-      sortUrl,
-      {
-        todo_uuid: todoUuid,
-        position: position.toString(),
-        tag: filterTag,
-      },
-      () => {
-        getTodoList();
-      },
-    );
-  }, [isSortable, filterTag, sortUrl, getTodoList]);
+      doPost(
+        sortUrl,
+        {
+          todo_uuid: todoUuid,
+          position: position.toString(),
+          tag: filterTag,
+        },
+        () => {
+          getTodoList();
+        }
+      );
+    },
+    [isSortable, filterTag, sortUrl, getTodoList]
+  );
 
-  const handleMoveToTop = useCallback((todo: Todo) => {
-    doPost(
-      moveToTopUrl,
-      {
-        tag: filterTag,
-        todo_uuid: todo.uuid,
-      },
-      () => {
-        getTodoList();
-      },
-    );
-  }, [filterTag, moveToTopUrl, getTodoList]);
+  const handleMoveToTop = useCallback(
+    (todo: Todo) => {
+      doPost(
+        moveToTopUrl,
+        {
+          tag: filterTag,
+          todo_uuid: todo.uuid,
+        },
+        () => {
+          getTodoList();
+        }
+      );
+    },
+    [filterTag, moveToTopUrl, getTodoList]
+  );
 
   const handleEdit = useCallback((todo: Todo) => {
     const todoInfo = {
@@ -258,28 +302,34 @@ export function TodoListPage({
     editTodoRef.current?.openModal("Edit", todoInfo);
   }, []);
 
-  const handleDelete = useCallback((todo: Todo) => {
-    doDelete(
-      editTodoUrl.replace("00000000-0000-0000-0000-000000000000", todo.uuid),
-      () => {
-        getTodoList();
-      },
-      "Todo task deleted",
-    );
-  }, [editTodoUrl, getTodoList]);
-
-  // Wrapper for TodoEditor's onDelete which receives TodoInfo instead of Todo
-  const handleEditorDelete = useCallback((todoInfo: { uuid?: string }) => {
-    if (todoInfo.uuid) {
+  const handleDelete = useCallback(
+    (todo: Todo) => {
       doDelete(
-        editTodoUrl.replace("00000000-0000-0000-0000-000000000000", todoInfo.uuid),
+        editTodoUrl.replace("00000000-0000-0000-0000-000000000000", todo.uuid),
         () => {
           getTodoList();
         },
-        "Todo task deleted",
+        "Todo task deleted"
       );
-    }
-  }, [editTodoUrl, getTodoList]);
+    },
+    [editTodoUrl, getTodoList]
+  );
+
+  // Wrapper for TodoEditor's onDelete which receives TodoInfo instead of Todo
+  const handleEditorDelete = useCallback(
+    (todoInfo: { uuid?: string }) => {
+      if (todoInfo.uuid) {
+        doDelete(
+          editTodoUrl.replace("00000000-0000-0000-0000-000000000000", todoInfo.uuid),
+          () => {
+            getTodoList();
+          },
+          "Todo task deleted"
+        );
+      }
+    },
+    [editTodoUrl, getTodoList]
+  );
 
   const handleCreateTodo = useCallback(() => {
     const initialTagList = filterTag ? [filterTag] : [];
@@ -331,19 +381,26 @@ export function TodoListPage({
               Filters
             </button>
 
-            <form className="form-inline" role="form" onSubmit={(e) => e.preventDefault()}>
+            <form className="form-inline" role="form" onSubmit={e => e.preventDefault()}>
               <div className="position-relative">
                 <input
                   type="text"
                   value={filterSearch}
-                  onChange={(e) => setFilterSearch(e.target.value)}
+                  onChange={e => setFilterSearch(e.target.value)}
                   className="form-control"
                   placeholder="Search"
                   onKeyDown={handleSearchKeyDown}
                 />
                 {currentSearchFilter && (
                   <div className="search-input-cancel">
-                    <a className="ms-1" href="#" onClick={(e) => { e.preventDefault(); removeSearchFilter(); }}>
+                    <a
+                      className="ms-1"
+                      href="#"
+                      onClick={e => {
+                        e.preventDefault();
+                        removeSearchFilter();
+                      }}
+                    >
                       <FontAwesomeIcon icon={faTimes} className="text-primary" />
                     </a>
                   </div>
@@ -351,9 +408,7 @@ export function TodoListPage({
               </div>
             </form>
 
-            <div className="card-title ms-3 me-auto">
-              {title}
-            </div>
+            <div className="card-title ms-3 me-auto">{title}</div>
 
             <div className="me-2">
               <DropDownMenu

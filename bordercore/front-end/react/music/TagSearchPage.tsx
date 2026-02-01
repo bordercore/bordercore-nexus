@@ -101,7 +101,7 @@ export function TagSearchPage({
   };
 
   // Convert albums to the format expected by AlbumGrid
-  const albumGridItems: ArtistDetailAlbum[] = albums.map((album) => ({
+  const albumGridItems: ArtistDetailAlbum[] = albums.map(album => ({
     uuid: album.uuid,
     title: album.title,
     year: album.year,
@@ -168,28 +168,16 @@ export function TagSearchPage({
                     <table className="table table-hover">
                       <thead>
                         <tr>
-                          <th
-                            className="cursor-pointer"
-                            onClick={() => handleSort("title")}
-                          >
+                          <th className="cursor-pointer" onClick={() => handleSort("title")}>
                             Title{getSortIcon("title")}
                           </th>
-                          <th
-                            className="cursor-pointer"
-                            onClick={() => handleSort("artist")}
-                          >
+                          <th className="cursor-pointer" onClick={() => handleSort("artist")}>
                             Artist{getSortIcon("artist")}
                           </th>
-                          <th
-                            className="cursor-pointer"
-                            onClick={() => handleSort("year")}
-                          >
+                          <th className="cursor-pointer" onClick={() => handleSort("year")}>
                             Year{getSortIcon("year")}
                           </th>
-                          <th
-                            className="cursor-pointer"
-                            onClick={() => handleSort("length")}
-                          >
+                          <th className="cursor-pointer" onClick={() => handleSort("length")}>
                             Length{getSortIcon("length")}
                           </th>
                         </tr>
@@ -217,15 +205,9 @@ export function TagSearchPage({
                                 )}
                                 {song.title}
                               </td>
-                              <td className={cellClass}>
-                                {song.artist__name}
-                              </td>
-                              <td className={cellClass}>
-                                {song.year}
-                              </td>
-                              <td className={cellClass}>
-                                {song.length}
-                              </td>
+                              <td className={cellClass}>{song.artist__name}</td>
+                              <td className={cellClass}>{song.year}</td>
+                              <td className={cellClass}>{song.length}</td>
                             </tr>
                           );
                         })}

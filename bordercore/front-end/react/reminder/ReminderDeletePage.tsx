@@ -27,7 +27,7 @@ export function ReminderDeletePage({
     try {
       const formData = new URLSearchParams();
       // Django DeleteView expects POST with empty body (or just CSRF token)
-      
+
       await axios.post(deleteUrl, formData, {
         headers: {
           "X-Csrftoken": csrfToken,
@@ -66,11 +66,7 @@ export function ReminderDeletePage({
 
               <form method="post" onSubmit={handleSubmit}>
                 <div className="d-flex gap-2">
-                  <button
-                    type="submit"
-                    className="btn btn-danger"
-                    disabled={submitting}
-                  >
+                  <button type="submit" className="btn btn-danger" disabled={submitting}>
                     {submitting ? "Deleting..." : "Delete"}
                   </button>
                   <a href={cancelUrl} className="btn btn-outline-secondary">
@@ -88,4 +84,3 @@ export function ReminderDeletePage({
 }
 
 export default ReminderDeletePage;
-

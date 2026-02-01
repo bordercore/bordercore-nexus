@@ -54,7 +54,7 @@ export const TagsInput = forwardRef<TagsInputHandle, TagsInputProps>(function Ta
   ref
 ) {
   const [selectedTags, setSelectedTags] = useState<TagOption[]>(
-    initialTags.map((t) => ({ label: t, value: t }))
+    initialTags.map(t => ({ label: t, value: t }))
   );
 
   const selectRef = useRef<any>(null);
@@ -64,11 +64,11 @@ export const TagsInput = forwardRef<TagsInputHandle, TagsInputProps>(function Ta
   const initialTagsJson = JSON.stringify(initialTags);
   useEffect(() => {
     const tags = JSON.parse(initialTagsJson) as string[];
-    setSelectedTags(tags.map((t) => ({ label: t, value: t })));
+    setSelectedTags(tags.map(t => ({ label: t, value: t })));
   }, [initialTagsJson]);
 
   // Computed: comma-separated tags for hidden input
-  const tagsCommaSeparated = selectedTags.map((t) => t.label).join(",");
+  const tagsCommaSeparated = selectedTags.map(t => t.label).join(",");
 
   const focus = useCallback(() => {
     selectRef.current?.focus();
@@ -80,7 +80,7 @@ export const TagsInput = forwardRef<TagsInputHandle, TagsInputProps>(function Ta
       if (!trimmed) return;
 
       // Check if tag already exists
-      if (selectedTags.some((t) => t.label.toLowerCase() === trimmed.toLowerCase())) {
+      if (selectedTags.some(t => t.label.toLowerCase() === trimmed.toLowerCase())) {
         return;
       }
 
@@ -92,7 +92,7 @@ export const TagsInput = forwardRef<TagsInputHandle, TagsInputProps>(function Ta
       const newTag = { label: trimmed, value: trimmed };
       const newTags = [...selectedTags, newTag];
       setSelectedTags(newTags);
-      onTagsChanged?.(newTags.map((t) => t.label));
+      onTagsChanged?.(newTags.map(t => t.label));
     },
     [selectedTags, maxTags, onTagsChanged]
   );
@@ -102,16 +102,13 @@ export const TagsInput = forwardRef<TagsInputHandle, TagsInputProps>(function Ta
     onTagsChanged?.([]);
   }, [onTagsChanged]);
 
-  const setTagList = useCallback(
-    (tagList: string[]) => {
-      const newTags = tagList.map((t) => ({ label: t, value: t }));
-      setSelectedTags(newTags);
-    },
-    []
-  );
+  const setTagList = useCallback((tagList: string[]) => {
+    const newTags = tagList.map(t => ({ label: t, value: t }));
+    setSelectedTags(newTags);
+  }, []);
 
   const getTags = useCallback(() => {
-    return selectedTags.map((t) => t.label);
+    return selectedTags.map(t => t.label);
   }, [selectedTags]);
 
   useImperativeHandle(
@@ -136,12 +133,10 @@ export const TagsInput = forwardRef<TagsInputHandle, TagsInputProps>(function Ta
       try {
         const response = await axios.get(`${searchUrl}${encodeURIComponent(inputValue)}`);
         const results = Array.isArray(response.data) ? response.data : [];
-        return results
-          .slice(0, optionsLimit)
-          .map((item: any) => {
-            const label = item.label || item.name || item;
-            return { label, value: label };
-          });
+        return results.slice(0, optionsLimit).map((item: any) => {
+          const label = item.label || item.name || item;
+          return { label, value: label };
+        });
       } catch (error) {
         console.error("TagsInput search error:", error);
         return [];
@@ -154,7 +149,7 @@ export const TagsInput = forwardRef<TagsInputHandle, TagsInputProps>(function Ta
     (newValue: MultiValue<TagOption>, _actionMeta: ActionMeta<TagOption>) => {
       const tags = newValue as TagOption[];
       setSelectedTags(tags);
-      onTagsChanged?.(tags.map((t) => t.label));
+      onTagsChanged?.(tags.map(t => t.label));
     },
     [onTagsChanged]
   );
@@ -193,7 +188,7 @@ export const TagsInput = forwardRef<TagsInputHandle, TagsInputProps>(function Ta
             ? `Type at least ${minLength} characters to search`
             : "No options found"
         }
-        formatCreateLabel={(inputValue) => `Create "${inputValue}"`}
+        formatCreateLabel={inputValue => `Create "${inputValue}"`}
         classNamePrefix="react-select"
         className="react-select-container"
       />

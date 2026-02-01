@@ -14,10 +14,7 @@ interface NodeNodeProps {
   nodeDetailUrl: string;
   removeComponentUrl: string;
   editNodeUrl: string;
-  onOpenNodeModal: (
-    callback: (options: NodeOptions) => void,
-    options: NodeOptions
-  ) => void;
+  onOpenNodeModal: (callback: (options: NodeOptions) => void, options: NodeOptions) => void;
   onEditLayout: (layout: string) => void;
 }
 
@@ -67,9 +64,9 @@ export default function NodeNode({
   const getNodeInfo = (notesOnly: boolean = false) => {
     doGet(
       `${getNodeInfoUrl}?notesOnly=${notesOnly}`,
-      (response) => {
+      response => {
         if (notesOnly) {
-          setNodeInfo((prev) => ({
+          setNodeInfo(prev => ({
             ...prev,
             random_note: response.data.info.random_note,
             random_todo: response.data.info.random_todo,
@@ -89,7 +86,7 @@ export default function NodeNode({
         node_uuid: parentNodeUuid,
         uuid: uuid,
       },
-      (response) => {
+      response => {
         onEditLayout(response.data.layout);
       },
       "Node removed"
@@ -105,9 +102,12 @@ export default function NodeNode({
       if (rotateIntervalRef.current) {
         clearInterval(rotateIntervalRef.current);
       }
-      rotateIntervalRef.current = setInterval(() => {
-        getNodeInfo();
-      }, nodeOptions.rotate * 1000 * 60);
+      rotateIntervalRef.current = setInterval(
+        () => {
+          getNodeInfo();
+        },
+        nodeOptions.rotate * 1000 * 60
+      );
     }
 
     // Create a separate timer for notes and todos (every minute)
@@ -127,7 +127,7 @@ export default function NodeNode({
         uuid: uuid,
         options: JSON.stringify(options),
       },
-      (response) => {
+      response => {
         setNodeOptions(options);
         setTimer();
         onEditLayout(response.data.layout);
@@ -142,7 +142,7 @@ export default function NodeNode({
         <a
           href="#"
           className="dropdown-menu-item"
-          onClick={(e) => {
+          onClick={e => {
             e.preventDefault();
             handleOpenNodeModal();
           }}
@@ -157,7 +157,7 @@ export default function NodeNode({
         <a
           href="#"
           className="dropdown-menu-item"
-          onClick={(e) => {
+          onClick={e => {
             e.preventDefault();
             handleRemoveNode();
           }}
@@ -193,7 +193,7 @@ export default function NodeNode({
     <div className="hover-target">
       <Card cardClassName="backdrop-filter node-color-1" titleSlot={titleSlot}>
         <div className="d-flex">
-          {nodeInfo.images.map((image) => (
+          {nodeInfo.images.map(image => (
             <div key={image.uuid} className="w-50 me-2">
               <a href={image.blob_url} target="_blank" rel="noopener noreferrer">
                 <img src={image.cover_url} className="mw-100" alt="" />
@@ -206,13 +206,10 @@ export default function NodeNode({
             <div className="text-truncate">
               <div className="d-flex">
                 <div className="text-nowrap">
-                  <strong>{nodeInfo.note_count}</strong>{" "}
-                  {pluralize("note", nodeInfo.note_count)}
+                  <strong>{nodeInfo.note_count}</strong> {pluralize("note", nodeInfo.note_count)}
                 </div>
                 {nodeInfo.random_note && (
-                  <div className="text-truncate text-info ms-2">
-                    {nodeInfo.random_note.name}
-                  </div>
+                  <div className="text-truncate text-info ms-2">{nodeInfo.random_note.name}</div>
                 )}
               </div>
             </div>
@@ -221,13 +218,10 @@ export default function NodeNode({
             <div>
               <div className="d-flex">
                 <div className="text-nowrap">
-                  <strong>{nodeInfo.todo_count}</strong>{" "}
-                  {pluralize("todo", nodeInfo.todo_count)}
+                  <strong>{nodeInfo.todo_count}</strong> {pluralize("todo", nodeInfo.todo_count)}
                 </div>
                 {nodeInfo.random_todo && (
-                  <div className="text-truncate text-info ms-2">
-                    {nodeInfo.random_todo.name}
-                  </div>
+                  <div className="text-truncate text-info ms-2">{nodeInfo.random_todo.name}</div>
                 )}
               </div>
             </div>

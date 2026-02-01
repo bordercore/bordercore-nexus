@@ -335,9 +335,9 @@ def parse_date_from_string(input_date: str) -> str:
 def get_javascript_date(date: str) -> str:
     """Return a sanitized date string for JavaScript datepicker widgets.
 
-    Formats a date string for use with the vuejs-datepicker widget. Adds "T00:00"
+    Formats a date string for use with JavaScript datepicker widgets. Adds "T00:00"
     suffix to ensure JavaScript uses localtime rather than UTC. Removes time
-    components if present, as the datepicker widget will reject dates with times.
+    components if present, as datepicker widgets reject dates with times.
 
     Args:
         date: The date string to sanitize. May be in formats like "2023-01-15",
@@ -348,7 +348,7 @@ def get_javascript_date(date: str) -> str:
         or the original string if it's a year-only format (e.g., "2023").
     """
     if re.compile(r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}").match(date):
-        # If the date has a time, remove it. The vuejs-datepicker widget will reject it.
+        # If the date has a time, remove it. Datepicker widgets reject dates with times.
         return datetime.datetime.strptime(date, "%Y-%m-%d %H:%M:%S").strftime("%Y-%m-%dT00:00")
     if re.compile(r"^\d{4}$").match(date):
         return date

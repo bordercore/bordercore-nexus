@@ -7,7 +7,10 @@ import {
   type Table,
 } from "@tanstack/react-table";
 
-export interface BootstrapTableOptions<TData> extends Omit<TableOptions<TData>, "getCoreRowModel" | "getSortedRowModel" | "getPaginationRowModel"> {
+export interface BootstrapTableOptions<TData> extends Omit<
+  TableOptions<TData>,
+  "getCoreRowModel" | "getSortedRowModel" | "getPaginationRowModel"
+> {
   enableSorting?: boolean;
   enablePagination?: boolean;
   defaultSorting?: Array<{ id: string; desc: boolean }>;
@@ -69,4 +72,3 @@ export function useBootstrapTable<TData>(options: BootstrapTableOptions<TData>) 
 }
 
 export type { Table };
-

@@ -58,30 +58,27 @@ export function FeedPage({
     setEditorModalOpen(true);
   }, []);
 
-  const handleOpenModal = useCallback(
-    (action: "Edit" | "Create", feedInfo: Feed | null) => {
-      setEditorAction(action);
-      if (feedInfo) {
-        setEditorFeedInfo({
-          uuid: feedInfo.uuid,
-          name: feedInfo.name,
-          url: feedInfo.url,
-          homepage: feedInfo.homepage || "",
-        });
-      } else {
-        setEditorFeedInfo({ name: "", url: "", homepage: "" });
-      }
-      setEditorModalOpen(true);
-    },
-    []
-  );
+  const handleOpenModal = useCallback((action: "Edit" | "Create", feedInfo: Feed | null) => {
+    setEditorAction(action);
+    if (feedInfo) {
+      setEditorFeedInfo({
+        uuid: feedInfo.uuid,
+        name: feedInfo.name,
+        url: feedInfo.url,
+        homepage: feedInfo.homepage || "",
+      });
+    } else {
+      setEditorFeedInfo({ name: "", url: "", homepage: "" });
+    }
+    setEditorModalOpen(true);
+  }, []);
 
   const handleEditorClose = useCallback(() => {
     setEditorModalOpen(false);
   }, []);
 
   const handleFeedAdd = useCallback((newFeed: Feed) => {
-    setFeedList((prev) => [newFeed, ...prev]);
+    setFeedList(prev => [newFeed, ...prev]);
   }, []);
 
   const handleReorder = useCallback((reorderedList: Feed[]) => {
@@ -97,30 +94,31 @@ export function FeedPage({
   const handleDeleteFeedConfirm = useCallback(() => {
     if (!currentFeed) return;
 
-    const deleteUrl = editFeedUrl.replace(
-      /00000000-0000-0000-0000-000000000000/,
-      currentFeed.uuid
-    );
+    const deleteUrl = editFeedUrl.replace(/00000000-0000-0000-0000-000000000000/, currentFeed.uuid);
 
-    doDelete(deleteUrl, () => {
-      // Remove from list
-      setFeedList((prev) => prev.filter((f) => f.uuid !== currentFeed.uuid));
+    doDelete(
+      deleteUrl,
+      () => {
+        // Remove from list
+        setFeedList(prev => prev.filter(f => f.uuid !== currentFeed.uuid));
 
-      // Select first remaining feed
-      setFeedList((prev) => {
-        if (prev.length > 0) {
-          setCurrentFeed(prev[0]);
-        } else {
-          setCurrentFeed(null);
+        // Select first remaining feed
+        setFeedList(prev => {
+          if (prev.length > 0) {
+            setCurrentFeed(prev[0]);
+          } else {
+            setCurrentFeed(null);
+          }
+          return prev;
+        });
+
+        // Hide modal
+        if (deleteModalInstanceRef.current) {
+          deleteModalInstanceRef.current.hide();
         }
-        return prev;
-      });
-
-      // Hide modal
-      if (deleteModalInstanceRef.current) {
-        deleteModalInstanceRef.current.hide();
-      }
-    }, "Feed deleted");
+      },
+      "Feed deleted"
+    );
   }, [currentFeed, editFeedUrl]);
 
   return (

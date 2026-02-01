@@ -50,7 +50,7 @@ export function SearchResult({
 
   // Note: dangerouslySetInnerHTML is used here because the title may contain
   // highlighted search terms (e.g., <em>search term</em>). This is the same
-  // pattern used in the Vue version with v-html. The content is from the
+  // pattern for backend HTML. The content is from the
   // backend search engine and is trusted.
   return (
     <div className="d-flex my-1">
@@ -77,7 +77,7 @@ export function SearchResult({
         </h4>
         {extraSlot}
         <div>
-          {tags.map((tag) => (
+          {tags.map(tag => (
             <a key={tag} href={tagUrl.replace("666", tag)} className="tag">
               {tag}
             </a>

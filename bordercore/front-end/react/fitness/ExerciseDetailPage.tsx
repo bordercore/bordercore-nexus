@@ -189,13 +189,13 @@ export function ExerciseDetailPage({
                 <div className="card-title text-primary">
                   Muscles Targeted:
                   <ul>
-                    {targetedMuscles.primary.map((muscle) => (
+                    {targetedMuscles.primary.map(muscle => (
                       <li key={muscle}>
                         <span className="item-name">{muscle}</span>
                         <span className="item-value small text-muted">PRIMARY</span>
                       </li>
                     ))}
-                    {targetedMuscles.secondary.map((muscle) => (
+                    {targetedMuscles.secondary.map(muscle => (
                       <li key={muscle}>
                         <span className="item-name">{muscle}</span>
                         <span className="item-value small text-muted">SECONDARY</span>
@@ -216,7 +216,7 @@ export function ExerciseDetailPage({
                       type="text"
                       size={3}
                       value={restPeriod}
-                      onChange={(e) => setRestPeriod(e.target.value)}
+                      onChange={e => setRestPeriod(e.target.value)}
                       autoComplete="off"
                     />
                     <input

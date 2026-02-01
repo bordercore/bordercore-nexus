@@ -86,7 +86,7 @@ const isActiveRoute = (item: MenuItemData, currentPath: string): boolean => {
 
   if (item.alias) {
     const aliases = Array.isArray(item.alias) ? item.alias : [item.alias];
-    return aliases.some((alias) => {
+    return aliases.some(alias => {
       // Convert wildcard pattern to regex
       const pattern = alias.replace(/\*/g, ".*");
       const regex = new RegExp(`^${pattern}$`);
@@ -188,7 +188,8 @@ export function SidebarMenu({
 
   // Sidebar root styles with gradient background
   const sidebarRootStyles = {
-    background: "linear-gradient(180deg, var(--sidebar-gradient-start) 29%, var(--sidebar-gradient-end) 90%)",
+    background:
+      "linear-gradient(180deg, var(--sidebar-gradient-start) 29%, var(--sidebar-gradient-end) 90%)",
     color: "var(--sidebar-color)",
     height: "100vh",
     position: "fixed" as const,
@@ -257,41 +258,39 @@ export function SidebarMenu({
         collapsedWidth="64px"
         transitionDuration={300}
       >
-      {headerSlot}
-          <Menu menuItemStyles={menuItemStyles}>
-            {menu.map((item) => {
-              const isActive = isActiveRoute(item, currentPath);
-              const icon = renderIcon(item.icon);
-              const suffix = item.badge && item.badge.text ? (
+        {headerSlot}
+        <Menu menuItemStyles={menuItemStyles}>
+          {menu.map(item => {
+            const isActive = isActiveRoute(item, currentPath);
+            const icon = renderIcon(item.icon);
+            const suffix =
+              item.badge && item.badge.text ? (
                 <span className={item.badge.class || ""}>{item.badge.text}</span>
               ) : undefined;
 
-          return (
-            <MenuItem
-              key={item.href}
-              icon={icon}
-              active={isActive}
-              suffix={suffix}
-              onClick={(e) => {
-                // Navigate using window.location for regular href navigation
-                window.location.href = item.href;
-                if (onItemClick) {
-                  onItemClick(e as any, item);
-                }
-              }}
-            >
-              {item.title}
-            </MenuItem>
-          );
-        })}
-      </Menu>
-      <div
-        className="sidebar-toggle-button"
-        onClick={handleToggleCollapse}
-      >
-        {toggleIconSlot || <FontAwesomeIcon icon={faArrowsAltH} />}
-      </div>
-    </Sidebar>
+            return (
+              <MenuItem
+                key={item.href}
+                icon={icon}
+                active={isActive}
+                suffix={suffix}
+                onClick={e => {
+                  // Navigate using window.location for regular href navigation
+                  window.location.href = item.href;
+                  if (onItemClick) {
+                    onItemClick(e as any, item);
+                  }
+                }}
+              >
+                {item.title}
+              </MenuItem>
+            );
+          })}
+        </Menu>
+        <div className="sidebar-toggle-button" onClick={handleToggleCollapse}>
+          {toggleIconSlot || <FontAwesomeIcon icon={faArrowsAltH} />}
+        </div>
+      </Sidebar>
     </>
   );
 }

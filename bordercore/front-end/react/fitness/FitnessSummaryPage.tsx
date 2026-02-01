@@ -36,13 +36,16 @@ function getRowClass(row: Exercise): string {
 type SortField = "exercise" | "muscle_group" | "last_active";
 type SortDirection = "asc" | "desc";
 
-export function FitnessSummaryPage({ activeExercises, inactiveExercises }: FitnessSummaryPageProps) {
+export function FitnessSummaryPage({
+  activeExercises,
+  inactiveExercises,
+}: FitnessSummaryPageProps) {
   const [sortField, setSortField] = useState<SortField>("exercise");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
-      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+      setSortDirection(prev => (prev === "asc" ? "desc" : "asc"));
     } else {
       setSortField(field);
       setSortDirection("asc");
@@ -86,7 +89,7 @@ export function FitnessSummaryPage({ activeExercises, inactiveExercises }: Fitne
               </tr>
             </thead>
             <tbody>
-              {activeExercises.map((row) => (
+              {activeExercises.map(row => (
                 <tr key={row.exercise_url} className={getRowClass(row)}>
                   <td>
                     <a href={row.exercise_url}>{row.exercise}</a>
@@ -141,7 +144,7 @@ export function FitnessSummaryPage({ activeExercises, inactiveExercises }: Fitne
               </tr>
             </thead>
             <tbody>
-              {sortedInactiveExercises.map((row) => (
+              {sortedInactiveExercises.map(row => (
                 <tr key={row.exercise_url}>
                   <td>
                     <a href={row.exercise_url}>{row.exercise}</a>

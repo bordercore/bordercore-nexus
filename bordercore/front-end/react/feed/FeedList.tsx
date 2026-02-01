@@ -45,14 +45,11 @@ export function FeedList({
     [storeInSessionUrl, onShowFeed]
   );
 
-  const handleDragStart = useCallback(
-    (e: React.DragEvent<HTMLDivElement>, index: number) => {
-      e.dataTransfer.effectAllowed = "move";
-      e.dataTransfer.setData("text/plain", index.toString());
-      setDraggingIndex(index);
-    },
-    []
-  );
+  const handleDragStart = useCallback((e: React.DragEvent<HTMLDivElement>, index: number) => {
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", index.toString());
+    setDraggingIndex(index);
+  }, []);
 
   const handleDragEnd = useCallback(() => {
     setDraggingIndex(null);
@@ -111,7 +108,13 @@ export function FeedList({
     return (
       <div className="text-secondary">
         No feeds found.{" "}
-        <a href="#" onClick={(e) => { e.preventDefault(); onEditFeed(); }}>
+        <a
+          href="#"
+          onClick={e => {
+            e.preventDefault();
+            onEditFeed();
+          }}
+        >
           Add a new one here.
         </a>
       </div>
@@ -125,11 +128,11 @@ export function FeedList({
           key={feed.uuid}
           className={`slicklist-item ${dragOverIndex === index ? "drag-over" : ""} ${draggingIndex === index ? "dragging" : ""}`}
           draggable
-          onDragStart={(e) => handleDragStart(e, index)}
+          onDragStart={e => handleDragStart(e, index)}
           onDragEnd={handleDragEnd}
-          onDragOver={(e) => handleDragOver(e, index)}
+          onDragOver={e => handleDragOver(e, index)}
           onDragLeave={handleDragLeave}
-          onDrop={(e) => handleDrop(e, index)}
+          onDrop={e => handleDrop(e, index)}
         >
           <div className="slicklist-list-item-inner">
             <li
@@ -138,7 +141,7 @@ export function FeedList({
               <a
                 href="#"
                 data-id={feed.id}
-                onClick={(e) => {
+                onClick={e => {
                   e.preventDefault();
                   handleClick(feed);
                 }}

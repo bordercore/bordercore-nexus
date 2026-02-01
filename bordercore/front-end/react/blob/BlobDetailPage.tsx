@@ -27,11 +27,7 @@ import { BlobDetailCover } from "./BlobDetailCover";
 import { CollectionsCard } from "./CollectionsCard";
 import { AddToCollectionModal, AddToCollectionModalHandle } from "./AddToCollectionModal";
 import { doGet, doPost, EventBus } from "../utils/reactUtils";
-import type {
-  BlobDetailPageProps,
-  Collection,
-  ElasticsearchInfo,
-} from "./types";
+import type { BlobDetailPageProps, Collection, ElasticsearchInfo } from "./types";
 
 const RETRY_INTERVALS = [1000, 3000, 6000];
 
@@ -74,7 +70,7 @@ export function BlobDetailPage({
       console.log(`Retrieving blob info, attempt #${attempts + 1}`);
       doGet(
         urls.getElasticsearchInfo,
-        (response) => {
+        response => {
           if (response.data.info && Object.keys(response.data.info).length > 0) {
             setElasticsearchInfo(response.data.info);
           } else {
@@ -93,7 +89,11 @@ export function BlobDetailPage({
 
   // MathJax integration
   useEffect(() => {
-    if (blob.mathSupport && typeof window !== "undefined" && (window as any).MathJax?.typesetPromise) {
+    if (
+      blob.mathSupport &&
+      typeof window !== "undefined" &&
+      (window as any).MathJax?.typesetPromise
+    ) {
       (window as any).MathJax.typesetPromise().catch((err: Error) => {
         console.error("MathJax typeset error:", err);
       });
@@ -102,7 +102,7 @@ export function BlobDetailPage({
 
   // Hotkey support
   useEffect(() => {
-    hotkeys("alt+a", (event) => {
+    hotkeys("alt+a", event => {
       event.preventDefault();
       addToCollectionModalRef.current?.open();
     });
@@ -132,7 +132,7 @@ export function BlobDetailPage({
       .then(() => {
         window.location.href = urls.list;
       })
-      .catch((error) => {
+      .catch(error => {
         EventBus.$emit("toast", {
           title: "Error",
           body: `Error deleting blob: ${error}`,
@@ -170,7 +170,7 @@ export function BlobDetailPage({
   const refreshCollectionList = useCallback(() => {
     doGet(
       `${urls.collectionSearch}?blob_uuid=${blob.uuid}`,
-      (response) => {
+      response => {
         // Transform snake_case API response to camelCase
         const transformedList = response.data.map((c: any) => ({
           uuid: c.uuid,
@@ -222,7 +222,7 @@ export function BlobDetailPage({
         <a
           className="dropdown-item"
           href="#"
-          onClick={(e) => {
+          onClick={e => {
             e.preventDefault();
             handleAddToCollection();
           }}
@@ -235,7 +235,7 @@ export function BlobDetailPage({
         <a
           className="dropdown-item"
           href="#"
-          onClick={(e) => {
+          onClick={e => {
             e.preventDefault();
             openObjectSelectModal();
           }}
@@ -245,10 +245,7 @@ export function BlobDetailPage({
         </a>
       </li>
       <li>
-        <a
-          className="dropdown-item"
-          href={`${urls.create}?linked_blob_uuid=${blob.uuid}`}
-        >
+        <a className="dropdown-item" href={`${urls.create}?linked_blob_uuid=${blob.uuid}`}>
           <FontAwesomeIcon icon={faFileAlt} className="text-primary me-3" />
           Link to New Blob
         </a>
@@ -264,7 +261,7 @@ export function BlobDetailPage({
           <a
             className="dropdown-item"
             href="#"
-            onClick={(e) => {
+            onClick={e => {
               e.preventDefault();
               handlePinNote();
             }}
@@ -280,7 +277,7 @@ export function BlobDetailPage({
             <a
               className="dropdown-item"
               href="#"
-              onClick={(e) => {
+              onClick={e => {
                 e.preventDefault();
                 handleCopySha1sum();
               }}
@@ -303,7 +300,7 @@ export function BlobDetailPage({
         <a
           className="dropdown-item"
           href="#"
-          onClick={(e) => {
+          onClick={e => {
             e.preventDefault();
             handleDelete();
           }}
@@ -340,135 +337,139 @@ export function BlobDetailPage({
         <div className="sticky-top d-flex flex-column flex-grow-last">
           <div className="card backdrop-filter blob-metadata-card">
             <div className="card-body hover-target">
-            {/* Actions dropdown */}
-            <div className="blob-detail-dropdown">
-              <DropDownMenu ref={dropdownMenuRef} showOnHover={true} dropdownSlot={dropdownItems} />
-            </div>
-
-            {/* Edition string */}
-            {blob.editionString && <h5>{blob.editionString}</h5>}
-
-            {/* Subtitle */}
-            {blob.subtitle && <div id="blob_subtitle">{blob.subtitle}</div>}
-
-            {/* Author */}
-            {blob.author && (
-              <div className="mt-2">
-                <span className="item-name">by</span>{" "}
-                <span className="item-value">{blob.author}</span>
+              {/* Actions dropdown */}
+              <div className="blob-detail-dropdown">
+                <DropDownMenu
+                  ref={dropdownMenuRef}
+                  showOnHover={true}
+                  dropdownSlot={dropdownItems}
+                />
               </div>
-            )}
 
-            {/* Date */}
-            {blob.date && <div className="mb-2">{blob.date}</div>}
+              {/* Edition string */}
+              {blob.editionString && <h5>{blob.editionString}</h5>}
 
-            {/* Tags */}
-            {blob.tags.length > 0 && (
-              <div className="d-flex mb-2">
-                <div>
-                  <FontAwesomeIcon icon={faTags} className="text-primary" />
+              {/* Subtitle */}
+              {blob.subtitle && <div id="blob_subtitle">{blob.subtitle}</div>}
+
+              {/* Author */}
+              {blob.author && (
+                <div className="mt-2">
+                  <span className="item-name">by</span>{" "}
+                  <span className="item-value">{blob.author}</span>
                 </div>
-                <div className="ms-2">
-                  <div id="blob-tag-list">
-                    {blob.tags.map((tag) => (
-                      <a key={tag.name} className="tag" href={tag.url}>
-                        {tag.name}
-                      </a>
-                    ))}
+              )}
+
+              {/* Date */}
+              {blob.date && <div className="mb-2">{blob.date}</div>}
+
+              {/* Tags */}
+              {blob.tags.length > 0 && (
+                <div className="d-flex mb-2">
+                  <div>
+                    <FontAwesomeIcon icon={faTags} className="text-primary" />
+                  </div>
+                  <div className="ms-2">
+                    <div id="blob-tag-list">
+                      {blob.tags.map(tag => (
+                        <a key={tag.name} className="tag" href={tag.url}>
+                          {tag.name}
+                        </a>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* URLs */}
-            {blobUrls.length > 0 && (
-              <div className="mb-3">
-                {blobUrls.map((urlInfo, index) => (
-                  <div key={index}>
-                    <FontAwesomeIcon icon={faLink} className="text-primary me-2" />
-                    <strong>
-                      <a href={urlInfo.url}>{urlInfo.domain}</a>
-                    </strong>
-                  </div>
-                ))}
-              </div>
-            )}
+              {/* URLs */}
+              {blobUrls.length > 0 && (
+                <div className="mb-3">
+                  {blobUrls.map((urlInfo, index) => (
+                    <div key={index}>
+                      <FontAwesomeIcon icon={faLink} className="text-primary me-2" />
+                      <strong>
+                        <a href={urlInfo.url}>{urlInfo.domain}</a>
+                      </strong>
+                    </div>
+                  ))}
+                </div>
+              )}
 
-            {/* Metadata misc and elasticsearch info */}
-            {showMetadata && (Object.keys(metadataMisc).length > 0 || elasticsearchInfo) && (
-              <div className="highlight-box mb-3">
-                {Object.entries(metadataMisc).map(([name, value]) => (
-                  <div key={name} className="d-flex">
-                    <div className="item-name me-2">{name}</div>
-                    <div className="item-value text-break">{value}</div>
-                  </div>
-                ))}
+              {/* Metadata misc and elasticsearch info */}
+              {showMetadata && (Object.keys(metadataMisc).length > 0 || elasticsearchInfo) && (
+                <div className="highlight-box mb-3">
+                  {Object.entries(metadataMisc).map(([name, value]) => (
+                    <div key={name} className="d-flex">
+                      <div className="item-name me-2">{name}</div>
+                      <div className="item-value text-break">{value}</div>
+                    </div>
+                  ))}
 
-                {elasticsearchInfo?.contentType && (
-                  <div className="d-flex">
-                    <div className="item-name me-2">Object Type</div>
-                    <div className="item-value">{elasticsearchInfo.contentType}</div>
-                  </div>
-                )}
+                  {elasticsearchInfo?.contentType && (
+                    <div className="d-flex">
+                      <div className="item-name me-2">Object Type</div>
+                      <div className="item-value">{elasticsearchInfo.contentType}</div>
+                    </div>
+                  )}
 
-                {elasticsearchInfo?.size && (
-                  <div className="d-flex">
-                    <div className="item-name me-2">Size</div>
-                    <div className="item-value">{elasticsearchInfo.size}</div>
-                  </div>
-                )}
+                  {elasticsearchInfo?.size && (
+                    <div className="d-flex">
+                      <div className="item-name me-2">Size</div>
+                      <div className="item-value">{elasticsearchInfo.size}</div>
+                    </div>
+                  )}
 
-                {elasticsearchInfo?.numPages && (
-                  <div className="d-flex">
-                    <div className="item-name me-2">Pages</div>
-                    <div className="item-value">{elasticsearchInfo.numPages}</div>
-                  </div>
-                )}
+                  {elasticsearchInfo?.numPages && (
+                    <div className="d-flex">
+                      <div className="item-name me-2">Pages</div>
+                      <div className="item-value">{elasticsearchInfo.numPages}</div>
+                    </div>
+                  )}
 
-                {elasticsearchInfo?.duration && (
-                  <div className="d-flex">
-                    <div className="item-name me-2">Duration</div>
-                    <div className="item-value">{elasticsearchInfo.duration}</div>
-                  </div>
-                )}
-              </div>
-            )}
+                  {elasticsearchInfo?.duration && (
+                    <div className="d-flex">
+                      <div className="item-name me-2">Duration</div>
+                      <div className="item-value">{elasticsearchInfo.duration}</div>
+                    </div>
+                  )}
+                </div>
+              )}
 
-            {/* Blob note - user's own markdown content from database */}
-            {blob.note && (
-              <div
-                className="highlight-box mt-3 text-break"
-                id="blob-note"
-                dangerouslySetInnerHTML={{ __html: getNote() }}
-              />
-            )}
+              {/* Blob note - user's own markdown content from database */}
+              {blob.note && (
+                <div
+                  className="highlight-box mt-3 text-break"
+                  id="blob-note"
+                  dangerouslySetInnerHTML={{ __html: getNote() }}
+                />
+              )}
 
-            {/* Last edited for notes */}
-            {blob.isNote && blob.hasBeenModified && blob.modified && (
-              <div className="mt-3">
-                <strong className="me-2">Last edited</strong>
-                <small>{blob.modified}</small>
-              </div>
-            )}
+              {/* Last edited for notes */}
+              {blob.isNote && blob.hasBeenModified && blob.modified && (
+                <div className="mt-3">
+                  <strong className="me-2">Last edited</strong>
+                  <small>{blob.modified}</small>
+                </div>
+              )}
 
-            {/* Nodes */}
-            {nodeList.length > 0 && (
-              <div className="mt-3">
-                <strong>Nodes:</strong>
-                {nodeList.map((node) => (
-                  <small key={node.uuid} className="ms-1">
-                    <a href={node.url}>{node.name}</a>
-                  </small>
-                ))}
-              </div>
-            )}
+              {/* Nodes */}
+              {nodeList.length > 0 && (
+                <div className="mt-3">
+                  <strong>Nodes:</strong>
+                  {nodeList.map(node => (
+                    <small key={node.uuid} className="ms-1">
+                      <a href={node.url}>{node.name}</a>
+                    </small>
+                  ))}
+                </div>
+              )}
 
-            {/* Download button */}
-            {blob.sha1sum && blob.fileUrl && (
-              <a className="button-icon mt-3" href={blob.fileUrl} role="button">
-                <FontAwesomeIcon icon={faDownload} className="text-emphasis" />
-              </a>
-            )}
+              {/* Download button */}
+              {blob.sha1sum && blob.fileUrl && (
+                <a className="button-icon mt-3" href={blob.fileUrl} role="button">
+                  <FontAwesomeIcon icon={faDownload} className="text-emphasis" />
+                </a>
+              )}
             </div>
           </div>
 
@@ -498,9 +499,7 @@ export function BlobDetailPage({
           />
 
           {/* Back References */}
-          {backReferences.length > 0 && (
-            <BackReferences backReferences={backReferences} />
-          )}
+          {backReferences.length > 0 && <BackReferences backReferences={backReferences} />}
         </div>
       </div>
 
@@ -518,10 +517,7 @@ export function BlobDetailPage({
 
           {/* Cover image for image/pdf blobs */}
           {(blob.isImage || blob.isPdf) && blob.coverUrl && (
-            <BlobDetailCover
-              coverUrl={blob.coverUrl}
-              fullSize={!blob.content}
-            />
+            <BlobDetailCover coverUrl={blob.coverUrl} fullSize={!blob.content} />
           )}
 
           {/* Audio player */}

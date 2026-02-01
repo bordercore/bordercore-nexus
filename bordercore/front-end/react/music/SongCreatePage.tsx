@@ -1,5 +1,5 @@
 import React, { useRef, useState, useCallback } from "react";
-import axios from "axios";  // Still needed for ID3 extraction and dupe check
+import axios from "axios"; // Still needed for ID3 extraction and dupe check
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faStar, faMusic, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 import { SelectValue, SelectValueHandle } from "../common/SelectValue";
@@ -141,14 +141,14 @@ export function SongCreatePage({
       newValue = value ? parseInt(value, 10) : null;
     }
 
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       [name]: newValue,
     }));
 
     // Clear error for this field
     if (errors[name as keyof SongFormErrors]) {
-      setErrors((prev) => {
+      setErrors(prev => {
         const newErrors = { ...prev };
         delete newErrors[name as keyof SongFormErrors];
         return newErrors;
@@ -158,7 +158,7 @@ export function SongCreatePage({
 
   const handleArtistSelect = (option: { label?: string; artist?: string }) => {
     const artistName = option.artist || option.label || "";
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       artist: artistName,
     }));
@@ -211,7 +211,7 @@ export function SongCreatePage({
       const data = response.data;
 
       // Update form fields with ID3 data
-      setFormData((prev) => ({
+      setFormData(prev => ({
         ...prev,
         title: data.title || prev.title,
         artist: data.artist || prev.artist,
@@ -256,7 +256,7 @@ export function SongCreatePage({
   };
 
   const handleTagsChanged = (tags: string[]) => {
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       tags,
     }));
@@ -275,9 +275,9 @@ export function SongCreatePage({
     const clickedRating = starIndex + 1;
     // If clicking the same rating, deselect it
     if (clickedRating === formData.rating) {
-      setFormData((prev) => ({ ...prev, rating: null }));
+      setFormData(prev => ({ ...prev, rating: null }));
     } else {
-      setFormData((prev) => ({ ...prev, rating: clickedRating }));
+      setFormData(prev => ({ ...prev, rating: clickedRating }));
     }
   };
 
@@ -302,10 +302,8 @@ export function SongCreatePage({
           {/* Duplicate songs warning */}
           {dupeSongs.length > 0 && (
             <Card className="backdrop-filter ms-3">
-              <h6 className="text-warning mb-2 text-center">
-                Possible duplicate songs found
-              </h6>
-              {dupeSongs.map((dupe) => (
+              <h6 className="text-warning mb-2 text-center">Possible duplicate songs found</h6>
+              {dupeSongs.map(dupe => (
                 <div key={dupe.uuid} className="my-2">
                   <hr className="divider" />
                   <div className="d-flex">
@@ -314,9 +312,7 @@ export function SongCreatePage({
                       <a href={dupe.url} target="bc-dupe-song">
                         {dupe.title}
                       </a>
-                      {dupe.note && (
-                        <div className="dupe-song-note text-truncate">{dupe.note}</div>
-                      )}
+                      {dupe.note && <div className="dupe-song-note text-truncate">{dupe.note}</div>}
                       {dupe.album_name && (
                         <div>
                           <a className="text-primary" href={dupe.album_url}>
@@ -361,12 +357,11 @@ export function SongCreatePage({
           <Card title="Tag Suggestions" className="backdrop-filter ms-3">
             <hr className="divider" />
             <ul className="list-group interior-borders">
-              {tagSuggestions.map((tag) => (
+              {tagSuggestions.map(tag => (
                 <li
                   key={tag.name}
-                  className="list-with-counts ps-2 py-1 pe-2 d-flex"
+                  className="list-with-counts ps-2 py-1 pe-2 d-flex cursor-pointer"
                   onClick={() => handleTagClick(tag.name)}
-                  className="cursor-pointer"
                 >
                   <div className="text-truncate">{tag.name}</div>
                   <div className="ms-auto me-1">
@@ -394,7 +389,14 @@ export function SongCreatePage({
       <div className="col-lg-8 h-100">
         <p className="lead offset-lg-3 fw-bold ps-2">New Song</p>
 
-        <form id="song-form" action={submitUrl} method="POST" onSubmit={handleSubmit} encType="multipart/form-data" noValidate>
+        <form
+          id="song-form"
+          action={submitUrl}
+          method="POST"
+          onSubmit={handleSubmit}
+          encType="multipart/form-data"
+          noValidate
+        >
           <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken} />
           {errors.non_field_errors && (
             <div className="row">
@@ -609,14 +611,13 @@ export function SongCreatePage({
           <div className="row align-items-center mb-3">
             <label className="col-lg-3 col-form-label fw-bold text-end">Rating</label>
             <div className="col-lg-9" onMouseLeave={handleRatingMouseLeave}>
-              {[0, 1, 2, 3, 4].map((starIndex) => (
+              {[0, 1, 2, 3, 4].map(starIndex => (
                 <span
                   key={starIndex}
-                  className={`rating-no-hover me-1 ${displayRating > starIndex ? "rating-star-selected" : ""}`}
+                  className={`rating-no-hover me-1 cursor-pointer ${displayRating > starIndex ? "rating-star-selected" : ""}`}
                   data-rating={starIndex}
                   onClick={() => handleRatingClick(starIndex)}
                   onMouseOver={() => handleRatingMouseOver(starIndex)}
-                  className="cursor-pointer"
                 >
                   <FontAwesomeIcon icon={faStar} />
                 </span>
@@ -655,7 +656,7 @@ export function SongCreatePage({
                 value={formData.source || ""}
                 onChange={handleChange}
               >
-                {sourceOptions.map((option) => (
+                {sourceOptions.map(option => (
                   <option key={option.id} value={option.id}>
                     {option.name}
                   </option>
@@ -682,11 +683,7 @@ export function SongCreatePage({
 
       {/* Processing Modal */}
       {processingFile && (
-        <div
-          className="modal show d-block"
-          className="music-modal-overlay"
-          tabIndex={-1}
-        >
+        <div className="modal show d-block music-modal-overlay" tabIndex={-1}>
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-body text-center py-4">

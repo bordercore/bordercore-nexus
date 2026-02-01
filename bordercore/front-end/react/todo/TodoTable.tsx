@@ -93,17 +93,20 @@ export function TodoTable({
     });
   }, [items, sortField, sortDirection]);
 
-  const handleSort = useCallback((field: SortField) => {
-    let newDirection: "asc" | "desc";
-    if (sortField === field) {
-      newDirection = sortDirection === "asc" ? "desc" : "asc";
-    } else {
-      newDirection = "asc";
-    }
-    setSortField(field);
-    setSortDirection(newDirection);
-    onSort(field, newDirection);
-  }, [sortField, sortDirection, onSort]);
+  const handleSort = useCallback(
+    (field: SortField) => {
+      let newDirection: "asc" | "desc";
+      if (sortField === field) {
+        newDirection = sortDirection === "asc" ? "desc" : "asc";
+      } else {
+        newDirection = "asc";
+      }
+      setSortField(field);
+      setSortDirection(newDirection);
+      onSort(field, newDirection);
+    },
+    [sortField, sortDirection, onSort]
+  );
 
   const renderSortIcon = (field: SortField) => {
     if (sortField !== field) return null;
@@ -128,29 +131,35 @@ export function TodoTable({
     setDragOverIndex(null);
   }, []);
 
-  const handleDragOver = useCallback((e: React.DragEvent<HTMLTableRowElement>, index: number) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-    if (draggingIndex !== index) {
-      setDragOverIndex(index);
-    }
-  }, [draggingIndex]);
+  const handleDragOver = useCallback(
+    (e: React.DragEvent<HTMLTableRowElement>, index: number) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      if (draggingIndex !== index) {
+        setDragOverIndex(index);
+      }
+    },
+    [draggingIndex]
+  );
 
   const handleDragLeave = useCallback(() => {
     setDragOverIndex(null);
   }, []);
 
-  const handleDropOnRow = useCallback((e: React.DragEvent<HTMLTableRowElement>, dropIndex: number) => {
-    e.preventDefault();
-    const dragIndex = parseInt(e.dataTransfer.getData("text/plain"), 10);
-    if (!isNaN(dragIndex) && dragIndex !== dropIndex) {
-      const todo = sortedItems[dragIndex];
-      // Position is 1-indexed
-      onDrop(todo.uuid, dropIndex + 1);
-    }
-    setDraggingIndex(null);
-    setDragOverIndex(null);
-  }, [sortedItems, onDrop]);
+  const handleDropOnRow = useCallback(
+    (e: React.DragEvent<HTMLTableRowElement>, dropIndex: number) => {
+      e.preventDefault();
+      const dragIndex = parseInt(e.dataTransfer.getData("text/plain"), 10);
+      if (!isNaN(dragIndex) && dragIndex !== dropIndex) {
+        const todo = sortedItems[dragIndex];
+        // Position is 1-indexed
+        onDrop(todo.uuid, dropIndex + 1);
+      }
+      setDraggingIndex(null);
+      setDragOverIndex(null);
+    },
+    [sortedItems, onDrop]
+  );
 
   const canDrag = isSortable && sortField === "sort_order" && sortDirection === "asc";
 
@@ -159,9 +168,7 @@ export function TodoTable({
   };
 
   if (items.length === 0) {
-    return (
-      <div className="text-center p-3">No tasks found</div>
-    );
+    return <div className="text-center p-3">No tasks found</div>;
   }
 
   return (
@@ -175,16 +182,10 @@ export function TodoTable({
             >
               Manual{renderSortIcon("sort_order")}
             </th>
-            <th
-              className="cursor-pointer"
-              onClick={() => handleSort("name")}
-            >
+            <th className="cursor-pointer" onClick={() => handleSort("name")}>
               Name{renderSortIcon("name")}
             </th>
-            <th
-              className="todo-col-priority cursor-pointer"
-              onClick={() => handleSort("priority")}
-            >
+            <th className="todo-col-priority cursor-pointer" onClick={() => handleSort("priority")}>
               Priority{renderSortIcon("priority")}
             </th>
             <th
@@ -201,15 +202,15 @@ export function TodoTable({
             <tr
               key={todo.uuid}
               className={`hover-target ${dragOverIndex === index ? "drag-over" : ""} ${draggingIndex === index ? "dragging" : ""}`}
-              onDragOver={canDrag ? (e) => handleDragOver(e, index) : undefined}
+              onDragOver={canDrag ? e => handleDragOver(e, index) : undefined}
               onDragLeave={canDrag ? handleDragLeave : undefined}
-              onDrop={canDrag ? (e) => handleDropOnRow(e, index) : undefined}
+              onDrop={canDrag ? e => handleDropOnRow(e, index) : undefined}
             >
               <td className="todo-col-manual-sorting text-center">
                 <span
                   className={`drag-handle ${canDrag ? "drag-handle-active" : ""}`}
                   draggable={canDrag}
-                  onDragStart={canDrag ? (e) => handleDragStart(e, index) : undefined}
+                  onDragStart={canDrag ? e => handleDragStart(e, index) : undefined}
                   onDragEnd={canDrag ? handleDragEnd : undefined}
                 >
                   <FontAwesomeIcon icon={faGripVertical} />
@@ -221,7 +222,12 @@ export function TodoTable({
                     {todo.name}
                     {todo.url && (
                       <span>
-                        <a className="ms-1" href={todo.url} target="_blank" rel="noopener noreferrer">
+                        <a
+                          className="ms-1"
+                          href={todo.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
                           <FontAwesomeIcon icon={faLink} />
                         </a>
                       </span>
@@ -229,23 +235,15 @@ export function TodoTable({
                   </div>
                   <div className="ms-auto">
                     {todo.note && (
-                      <span
-                        title={todo.note}
-                        data-bs-toggle="tooltip"
-                        data-bs-html="true"
-                      >
+                      <span title={todo.note} data-bs-toggle="tooltip" data-bs-html="true">
                         <FontAwesomeIcon icon={faStickyNote} className="glow text-primary" />
                       </span>
                     )}
                   </div>
                 </div>
               </td>
-              <td className="todo-col-priority">
-                {todo.priority_name}
-              </td>
-              <td className="todo-col-date text-nowrap">
-                {getFormattedDate(todo.created)}
-              </td>
+              <td className="todo-col-priority">{todo.priority_name}</td>
+              <td className="todo-col-date text-nowrap">{getFormattedDate(todo.created)}</td>
               <td className="col-action">
                 <DropDownMenu
                   showOnHover={true}
@@ -253,10 +251,7 @@ export function TodoTable({
                     <ul className="dropdown-menu-list">
                       {isSortable && todo.sort_order > 1 && (
                         <li>
-                          <button
-                            className="dropdown-menu-item"
-                            onClick={() => onMoveToTop(todo)}
-                          >
+                          <button className="dropdown-menu-item" onClick={() => onMoveToTop(todo)}>
                             <span className="dropdown-menu-icon">
                               <FontAwesomeIcon icon={faArrowUp} />
                             </span>
@@ -265,10 +260,7 @@ export function TodoTable({
                         </li>
                       )}
                       <li>
-                        <button
-                          className="dropdown-menu-item"
-                          onClick={() => onEdit(todo)}
-                        >
+                        <button className="dropdown-menu-item" onClick={() => onEdit(todo)}>
                           <span className="dropdown-menu-icon">
                             <FontAwesomeIcon icon={faPencilAlt} />
                           </span>
@@ -276,10 +268,7 @@ export function TodoTable({
                         </button>
                       </li>
                       <li>
-                        <button
-                          className="dropdown-menu-item"
-                          onClick={() => onDelete(todo)}
-                        >
+                        <button className="dropdown-menu-item" onClick={() => onDelete(todo)}>
                           <span className="dropdown-menu-icon">
                             <FontAwesomeIcon icon={faTrashAlt} />
                           </span>

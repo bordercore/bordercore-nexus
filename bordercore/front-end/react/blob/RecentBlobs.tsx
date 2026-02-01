@@ -80,18 +80,24 @@ export function RecentBlobs({ blobListInfo, blobDetailUrl, recentlyViewed }: Rec
             <div className="recent-blobs-title">Recently Viewed</div>
             {recentlyViewed.blobList.length > 0 ? (
               <ul className="recent-blobs-list">
-                {recentlyViewed.blobList.map((link) => (
+                {recentlyViewed.blobList.map(link => (
                   <li key={link.uuid} className="recent-blobs-item">
                     <a
                       href={link.url}
                       className="recent-blobs-link"
-                      onClick={link.clickHandler ? (e) => {
-                        e.preventDefault();
-                        link.clickHandler?.();
-                        setIsOpen(false);
-                      } : () => setIsOpen(false)}
+                      onClick={
+                        link.clickHandler
+                          ? e => {
+                              e.preventDefault();
+                              link.clickHandler?.();
+                              setIsOpen(false);
+                            }
+                          : () => setIsOpen(false)
+                      }
                     >
-                      <span className={`recent-blobs-doctype doctype-${link.doctype.toLowerCase()}`}>
+                      <span
+                        className={`recent-blobs-doctype doctype-${link.doctype.toLowerCase()}`}
+                      >
                         <FontAwesomeIcon icon={getDoctypeIcon(link.doctype)} />
                       </span>
                       <span className="recent-blobs-name">{link.name}</span>
@@ -100,9 +106,7 @@ export function RecentBlobs({ blobListInfo, blobDetailUrl, recentlyViewed }: Rec
                 ))}
               </ul>
             ) : (
-              <div className="recent-blobs-empty">
-                Nothing recently viewed
-              </div>
+              <div className="recent-blobs-empty">Nothing recently viewed</div>
             )}
             {blobListInfo.message && (
               <div className="recent-blobs-error">

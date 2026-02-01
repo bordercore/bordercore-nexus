@@ -60,17 +60,13 @@ export function StarRating({
   const displayRating = hoverRating ?? rating ?? 0;
 
   return (
-    <div
-      className="rating-container d-flex"
-      onMouseLeave={handleMouseLeave}
-    >
-      {[0, 1, 2, 3, 4].map((starIndex) => (
+    <div className="rating-container d-flex" onMouseLeave={handleMouseLeave}>
+      {[0, 1, 2, 3, 4].map(starIndex => (
         <span
           key={starIndex}
-          className={`rating me-1 ${displayRating > starIndex ? "rating-star-selected" : ""}`}
+          className={`rating me-1 ${displayRating > starIndex ? "rating-star-selected" : ""} ${isUpdating ? "cursor-wait" : "cursor-pointer"}`}
           onClick={() => handleClick(starIndex)}
           onMouseOver={() => handleMouseOver(starIndex)}
-          className={isUpdating ? "cursor-wait" : "cursor-pointer"}
         >
           <FontAwesomeIcon icon={faStar} />
         </span>

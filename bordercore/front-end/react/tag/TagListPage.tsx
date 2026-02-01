@@ -27,7 +27,7 @@ export function TagListPage({ initialTagInfo, urls }: TagListPageProps) {
   const getTagAliasList = () => {
     doGet(
       urls.tagAliasListUrl,
-      (response) => {
+      response => {
         setAliases(response.data.results);
       },
       "Error retrieving tag alias list"
@@ -41,7 +41,7 @@ export function TagListPage({ initialTagInfo, urls }: TagListPageProps) {
     }
     doGet(
       url,
-      (response) => {
+      response => {
         setTagInfo(response.data.info);
         setDataLoading(false);
       },
@@ -65,16 +65,17 @@ export function TagListPage({ initialTagInfo, urls }: TagListPageProps) {
   };
 
   const handleDeleteAlias = (uuid: string) => {
-    const deleteUrl = urls.tagAliasDetailUrl.replace(
-      "00000000-0000-0000-0000-000000000000",
-      uuid
+    const deleteUrl = urls.tagAliasDetailUrl.replace("00000000-0000-0000-0000-000000000000", uuid);
+    doDelete(
+      deleteUrl,
+      () => {
+        EventBus.$emit("toast", {
+          body: "Tag alias deleted",
+        });
+        getTagAliasList();
+      },
+      ""
     );
-    doDelete(deleteUrl, () => {
-      EventBus.$emit("toast", {
-        body: "Tag alias deleted",
-      });
-      getTagAliasList();
-    }, "");
   };
 
   const handleOpenModal = () => {
@@ -115,77 +116,76 @@ export function TagListPage({ initialTagInfo, urls }: TagListPageProps) {
       <div className="col-lg-3 d-flex flex-column flex-grow-last pe-gutter">
         <div className="card">
           <div className="card-body backdrop-filter">
-          <div className="d-flex position-relative">
-            <h4>Tag Info</h4>
-            {showTagSearch && (
-              <div id="tags-search" ref={searchContainerRef}>
-                <SelectValue
-                  ref={selectValueRef}
-                  searchUrl={`${urls.tagSearchUrl}?query=`}
-                  placeHolder="Tag name"
-                  onSelect={handleTagSelect}
-                />
+            <div className="d-flex position-relative">
+              <h4>Tag Info</h4>
+              {showTagSearch && (
+                <div id="tags-search" ref={searchContainerRef}>
+                  <SelectValue
+                    ref={selectValueRef}
+                    searchUrl={`${urls.tagSearchUrl}?query=`}
+                    placeHolder="Tag name"
+                    onSelect={handleTagSelect}
+                  />
+                </div>
+              )}
+              <div
+                className="ms-auto d-flex align-items-center cursor-pointer"
+                onClick={openSearchWindow}
+              >
+                <FontAwesomeIcon icon={faMagnifyingGlass} className="glow text-emphasis" />
               </div>
-            )}
-            <div
-              className="ms-auto d-flex align-items-center"
-              onClick={openSearchWindow}
-              className="cursor-pointer"
-            >
-              <FontAwesomeIcon icon={faMagnifyingGlass} className="glow text-emphasis" />
+            </div>
+            <h4>
+              <strong className="text-primary">{tagInfo.name}</strong>
+            </h4>
+
+            <div className={`d-flex flex-column ${dataLoading ? "d-none" : ""}`}>
+              <div className="list-header-border mb-2 pb-2 mt-4">Objects using this tag</div>
+
+              {tagInfo.blob__count > 0 && (
+                <div>
+                  <span className="text-name">Blobs</span>:{" "}
+                  <span className="text-value">{tagInfo.blob__count}</span>
+                </div>
+              )}
+              {tagInfo.bookmark__count > 0 && (
+                <div>
+                  <span className="text-name">Bookmarks</span>:{" "}
+                  <span className="text-value">{tagInfo.bookmark__count}</span>
+                </div>
+              )}
+              {tagInfo.todo__count > 0 && (
+                <div>
+                  <span className="text-name">Todos</span>:{" "}
+                  <span className="text-value">{tagInfo.todo__count}</span>
+                </div>
+              )}
+              {tagInfo.question__count > 0 && (
+                <div>
+                  <span className="text-name">Questions</span>:{" "}
+                  <span className="text-value">{tagInfo.question__count}</span>
+                </div>
+              )}
+              {tagInfo.song__count > 0 && (
+                <div>
+                  <span className="text-name">Songs</span>:{" "}
+                  <span className="text-value">{tagInfo.song__count}</span>
+                </div>
+              )}
+              {tagInfo.album__count > 0 && (
+                <div>
+                  <span className="text-name">Albums</span>:{" "}
+                  <span className="text-value">{tagInfo.album__count}</span>
+                </div>
+              )}
+              {tagInfo.collection__count > 0 && (
+                <div>
+                  <span className="text-name">Collections</span>:{" "}
+                  <span className="text-value">{tagInfo.collection__count}</span>
+                </div>
+              )}
             </div>
           </div>
-          <h4>
-            <strong className="text-primary">{tagInfo.name}</strong>
-          </h4>
-
-          <div className={`d-flex flex-column ${dataLoading ? "d-none" : ""}`}>
-            <div className="list-header-border mb-2 pb-2 mt-4">Objects using this tag</div>
-
-            {tagInfo.blob__count > 0 && (
-              <div>
-                <span className="text-name">Blobs</span>:{" "}
-                <span className="text-value">{tagInfo.blob__count}</span>
-              </div>
-            )}
-            {tagInfo.bookmark__count > 0 && (
-              <div>
-                <span className="text-name">Bookmarks</span>:{" "}
-                <span className="text-value">{tagInfo.bookmark__count}</span>
-              </div>
-            )}
-            {tagInfo.todo__count > 0 && (
-              <div>
-                <span className="text-name">Todos</span>:{" "}
-                <span className="text-value">{tagInfo.todo__count}</span>
-              </div>
-            )}
-            {tagInfo.question__count > 0 && (
-              <div>
-                <span className="text-name">Questions</span>:{" "}
-                <span className="text-value">{tagInfo.question__count}</span>
-              </div>
-            )}
-            {tagInfo.song__count > 0 && (
-              <div>
-                <span className="text-name">Songs</span>:{" "}
-                <span className="text-value">{tagInfo.song__count}</span>
-              </div>
-            )}
-            {tagInfo.album__count > 0 && (
-              <div>
-                <span className="text-name">Albums</span>:{" "}
-                <span className="text-value">{tagInfo.album__count}</span>
-              </div>
-            )}
-            {tagInfo.collection__count > 0 && (
-              <div>
-                <span className="text-name">Collections</span>:{" "}
-                <span className="text-value">{tagInfo.collection__count}</span>
-              </div>
-            )}
-          </div>
-        </div>
         </div>
       </div>
 
@@ -204,7 +204,7 @@ export function TagListPage({ initialTagInfo, urls }: TagListPageProps) {
                         <a
                           href="#"
                           className="dropdown-menu-item"
-                          onClick={(e) => {
+                          onClick={e => {
                             e.preventDefault();
                             handleOpenModal();
                           }}
@@ -230,8 +230,7 @@ export function TagListPage({ initialTagInfo, urls }: TagListPageProps) {
               Tag aliases are labels you can assign as synonyms for tags.
               <br />
               <br />
-              An example might be the alias{" "}
-              <span className="text-primary">math</span> for the tag{" "}
+              An example might be the alias <span className="text-primary">math</span> for the tag{" "}
               <span className="text-primary">mathematics</span>
             </div>
 

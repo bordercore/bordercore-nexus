@@ -1,6 +1,12 @@
 import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faStickyNote, faPencilAlt, faPlus, faChevronRight, faCheck } from "@fortawesome/free-solid-svg-icons";
+import {
+  faStickyNote,
+  faPencilAlt,
+  faPlus,
+  faChevronRight,
+  faCheck,
+} from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
 import MarkdownIt from "markdown-it";
 import type { Song, Playlist } from "./types";
@@ -52,8 +58,11 @@ export function SongTable({
   };
 
   const getEditUrl = (songUuid: string) => {
-    return editSongUrlTemplate.replace(/00000000-0000-0000-0000-000000000000/, songUuid) +
-      "?return_url=" + encodeURIComponent(window.location.pathname);
+    return (
+      editSongUrlTemplate.replace(/00000000-0000-0000-0000-000000000000/, songUuid) +
+      "?return_url=" +
+      encodeURIComponent(window.location.pathname)
+    );
   };
 
   const handlePlaylistToggle = async (songUuid: string, playlistUuid: string) => {
@@ -73,7 +82,7 @@ export function SongTable({
       onPlaylistToggle(songUuid, playlistUuid, action);
 
       // Show toast notification
-      const playlist = playlists.find((p) => p.uuid === playlistUuid);
+      const playlist = playlists.find(p => p.uuid === playlistUuid);
       const playlistName = playlist?.name || "playlist";
       if (window.EventBus) {
         window.EventBus.$emit("toast", {
@@ -116,37 +125,22 @@ export function SongTable({
           </tr>
         </thead>
         <tbody>
-          {songs.map((song) => (
-            <tr
-              key={song.uuid}
-              className="song hover-target cursor-pointer"
-            >
+          {songs.map(song => (
+            <tr key={song.uuid} className="song hover-target cursor-pointer">
               <td
                 className="text-center align-middle"
                 onClick={() => handleRowClick(song, "track")}
               >
                 {currentSongUuid === song.uuid ? (
-                  <img
-                    id="isPlaying"
-                    src={equalizerImage}
-                    width={20}
-                    height={20}
-                    alt="Playing"
-                  />
+                  <img id="isPlaying" src={equalizerImage} width={20} height={20} alt="Playing" />
                 ) : (
                   song.track
                 )}
               </td>
-              <td
-                className="align-middle"
-                onClick={() => handleRowClick(song, "title")}
-              >
+              <td className="align-middle" onClick={() => handleRowClick(song, "title")}>
                 {song.title}
               </td>
-              <td
-                className="align-middle"
-                onClick={() => handleRowClick(song, "note")}
-              >
+              <td className="align-middle" onClick={() => handleRowClick(song, "note")}>
                 {song.note && (
                   <span
                     className="note-icon"
@@ -158,15 +152,12 @@ export function SongTable({
                       className="note-tooltip-content d-none"
                       dangerouslySetInnerHTML={renderNote(song.note)}
                     />
-                    <FontAwesomeIcon
-                      icon={faStickyNote}
-                      className="glow text-primary"
-                    />
+                    <FontAwesomeIcon icon={faStickyNote} className="glow text-primary" />
                   </span>
                 )}
               </td>
               <td className="align-middle">
-                <div className="d-flex justify-content-end" onClick={(e) => e.stopPropagation()}>
+                <div className="d-flex justify-content-end" onClick={e => e.stopPropagation()}>
                   <StarRating
                     songUuid={song.uuid}
                     rating={song.rating}
@@ -176,22 +167,19 @@ export function SongTable({
                   />
                 </div>
               </td>
-              <td
-                className="align-middle"
-                onClick={() => handleRowClick(song, "length")}
-              >
+              <td className="align-middle" onClick={() => handleRowClick(song, "length")}>
                 {song.length}
               </td>
-              <td className="col-action text-center align-middle" onClick={(e) => e.stopPropagation()}>
+              <td
+                className="col-action text-center align-middle"
+                onClick={e => e.stopPropagation()}
+              >
                 <DropDownMenu
                   showOnHover={false}
                   dropdownSlot={
                     <ul className="dropdown-menu-list">
                       <li>
-                        <a
-                          className="dropdown-menu-item"
-                          href={getEditUrl(song.uuid)}
-                        >
+                        <a className="dropdown-menu-item" href={getEditUrl(song.uuid)}>
                           <span className="dropdown-menu-icon">
                             <FontAwesomeIcon icon={faPencilAlt} />
                           </span>
@@ -216,7 +204,7 @@ export function SongTable({
                           }
                           dropdownSlot={
                             <ul className="dropdown-menu-list">
-                              {playlists.map((playlist) => (
+                              {playlists.map(playlist => (
                                 <li key={playlist.uuid}>
                                   <button
                                     className="dropdown-menu-item"

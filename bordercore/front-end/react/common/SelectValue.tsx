@@ -37,21 +37,24 @@ export interface SelectValueHandle {
   clear: () => void;
 }
 
-export const SelectValue = forwardRef<SelectValueHandle, SelectValueProps>(function SelectValue({
-  id,
-  label = "label",
-  placeHolder = "Search",
-  searchUrl = "",
-  initialValue,
-  minLength = 2,
-  optionsLimit = 20,
-  searchIcon = false,
-  onKeyDown,
-  onSearch,
-  onSearchChange,
-  onSelect,
-  optionSlot,
-}: SelectValueProps, ref) {
+export const SelectValue = forwardRef<SelectValueHandle, SelectValueProps>(function SelectValue(
+  {
+    id,
+    label = "label",
+    placeHolder = "Search",
+    searchUrl = "",
+    initialValue,
+    minLength = 2,
+    optionsLimit = 20,
+    searchIcon = false,
+    onKeyDown,
+    onSearch,
+    onSearchChange,
+    onSelect,
+    optionSlot,
+  }: SelectValueProps,
+  ref
+) {
   const [value, setValue] = useState<Option | null>(initialValue || null);
   const [options, setOptions] = useState<Option[]>([]);
   const [search, setSearch] = useState("");
@@ -66,7 +69,7 @@ export const SelectValue = forwardRef<SelectValueHandle, SelectValueProps>(funct
 
   // Get selectable options (excluding splitters)
   const getSelectableOptions = () => {
-    return options.filter((option) => !option.splitter);
+    return options.filter(option => !option.splitter);
   };
 
   const performSearch = async (query: string) => {
@@ -157,19 +160,23 @@ export const SelectValue = forwardRef<SelectValueHandle, SelectValueProps>(funct
     }
   };
 
-  useImperativeHandle(ref, () => ({
-    focus: () => {
-      inputRef.current?.focus();
-    },
-    search: search,
-    setValue: (val: string) => {
-      setValue({ [label]: val });
-    },
-    clear: () => {
-      setValue(null);
-      setSearch("");
-    },
-  }), [search, label]);
+  useImperativeHandle(
+    ref,
+    () => ({
+      focus: () => {
+        inputRef.current?.focus();
+      },
+      search: search,
+      setValue: (val: string) => {
+        setValue({ [label]: val });
+      },
+      clear: () => {
+        setValue(null);
+        setSearch("");
+      },
+    }),
+    [search, label]
+  );
 
   const handleKeyboardNavigation = (e: React.KeyboardEvent<HTMLInputElement>) => {
     const selectableOptions = getSelectableOptions();
@@ -197,7 +204,9 @@ export const SelectValue = forwardRef<SelectValueHandle, SelectValueProps>(funct
       setIsOpen(true);
       // Scroll highlighted item into view
       setTimeout(() => {
-        const highlightedElement = dropdownRef.current?.querySelector(`[data-option-index="${newIndex}"]`) as HTMLElement;
+        const highlightedElement = dropdownRef.current?.querySelector(
+          `[data-option-index="${newIndex}"]`
+        ) as HTMLElement;
         if (highlightedElement) {
           highlightedElement.scrollIntoView({ block: "nearest", behavior: "smooth" });
         }
@@ -209,7 +218,9 @@ export const SelectValue = forwardRef<SelectValueHandle, SelectValueProps>(funct
       setIsOpen(true);
       // Scroll highlighted item into view
       setTimeout(() => {
-        const highlightedElement = dropdownRef.current?.querySelector(`[data-option-index="${newIndex}"]`) as HTMLElement;
+        const highlightedElement = dropdownRef.current?.querySelector(
+          `[data-option-index="${newIndex}"]`
+        ) as HTMLElement;
         if (highlightedElement) {
           highlightedElement.scrollIntoView({ block: "nearest", behavior: "smooth" });
         }
@@ -258,69 +269,86 @@ export const SelectValue = forwardRef<SelectValueHandle, SelectValueProps>(funct
         className="form-control"
         placeholder={placeHolder}
         value={search}
-        onChange={(e) => handleSearchChange(e.target.value)}
+        onChange={e => handleSearchChange(e.target.value)}
         onFocus={() => search.length >= minLength && setIsOpen(true)}
         onKeyDown={handleKeyboardNavigation}
       />
-      {isOpen && options.length > 0 && (() => {
-        const selectableOptions = getSelectableOptions();
-        let selectableIndex = -1;
+      {isOpen &&
+        options.length > 0 &&
+        (() => {
+          const selectableOptions = getSelectableOptions();
+          let selectableIndex = -1;
 
-        return (
-          <div ref={dropdownRef} className="dropdown-menu show select-value-dropdown">
-            {options.map((option, index) => {
-              if (!option.splitter) {
-                selectableIndex++;
-              }
-              const isHighlighted = !option.splitter && selectableIndex === highlightedIndex;
+          return (
+            <div ref={dropdownRef} className="dropdown-menu show select-value-dropdown">
+              {options.map((option, index) => {
+                if (!option.splitter) {
+                  selectableIndex++;
+                }
+                const isHighlighted = !option.splitter && selectableIndex === highlightedIndex;
 
-              return (
-                <div key={index}>
-                  {optionSlot ? (
-                    <div
-                      data-option-index={option.splitter ? -1 : selectableIndex}
-                      className={[isHighlighted && "highlighted", !option.splitter && "cursor-pointer"].filter(Boolean).join(" ")}
-                      onClick={(e) => {
-                        if (!option.splitter) {
+                return (
+                  <div key={index}>
+                    {optionSlot ? (
+                      <div
+                        data-option-index={option.splitter ? -1 : selectableIndex}
+                        className={[
+                          isHighlighted && "highlighted",
+                          !option.splitter && "cursor-pointer",
+                        ]
+                          .filter(Boolean)
+                          .join(" ")}
+                        onClick={e => {
+                          if (!option.splitter) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleSelect(option);
+                          }
+                        }}
+                      >
+                        {optionSlot({ option, search })}
+                      </div>
+                    ) : option.splitter ? (
+                      <div className="search-splitter">{option[label] || option.name}</div>
+                    ) : (
+                      <div
+                        data-option-index={selectableIndex}
+                        className={`search-suggestion dropdown-item cursor-pointer ${isHighlighted ? "highlighted" : ""}`.trim()}
+                        onClick={e => {
                           e.preventDefault();
                           e.stopPropagation();
                           handleSelect(option);
-                        }
-                      }}
-                    >
-                      {optionSlot({ option, search })}
-                    </div>
-                  ) : option.splitter ? (
-                    <div className="search-splitter">{option[label] || option.name}</div>
-                  ) : (
-                    <div
-                      data-option-index={selectableIndex}
-                      className={`search-suggestion dropdown-item cursor-pointer ${isHighlighted ? "highlighted" : ""}`.trim()}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleSelect(option);
-                      }}
-                    >
-                      {option.important === 10 && (
-                        <FontAwesomeIcon icon={faHeart} className="text-danger me-1" />
-                      )}
-                      {option.doctype && (
-                        <em className="top-search-object-type">{option.doctype} - </em>
-                      )}
-                      <span dangerouslySetInnerHTML={{ __html: boldenOption(option[label] || option.name || "", search) }} />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        );
-      })()}
-      {id && <input id={id} type="hidden" name="search" value={value?.[label] || value?.name || search} />}
+                        }}
+                      >
+                        {option.important === 10 && (
+                          <FontAwesomeIcon icon={faHeart} className="text-danger me-1" />
+                        )}
+                        {option.doctype && (
+                          <em className="top-search-object-type">{option.doctype} - </em>
+                        )}
+                        <span
+                          dangerouslySetInnerHTML={{
+                            __html: boldenOption(option[label] || option.name || "", search),
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
+      {id && (
+        <input
+          id={id}
+          type="hidden"
+          name="search"
+          value={value?.[label] || value?.name || search}
+        />
+      )}
     </div>
   );
 });
 
 export default SelectValue;
-

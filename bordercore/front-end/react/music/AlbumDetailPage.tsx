@@ -65,21 +65,23 @@ export function AlbumDetailPage({
   };
 
   const handleRatingChange = (songUuid: string, newRating: number | null) => {
-    setSongs((prevSongs) =>
-      prevSongs.map((song) =>
-        song.uuid === songUuid ? { ...song, rating: newRating } : song
-      )
+    setSongs(prevSongs =>
+      prevSongs.map(song => (song.uuid === songUuid ? { ...song, rating: newRating } : song))
     );
   };
 
-  const handlePlaylistToggle = (songUuid: string, playlistUuid: string, action: "added" | "removed") => {
-    setSongs((prevSongs) =>
-      prevSongs.map((song) => {
+  const handlePlaylistToggle = (
+    songUuid: string,
+    playlistUuid: string,
+    action: "added" | "removed"
+  ) => {
+    setSongs(prevSongs =>
+      prevSongs.map(song => {
         if (song.uuid !== songUuid) return song;
         if (action === "added") {
           return { ...song, playlists: [...song.playlists, playlistUuid] };
         } else {
-          return { ...song, playlists: song.playlists.filter((p) => p !== playlistUuid) };
+          return { ...song, playlists: song.playlists.filter(p => p !== playlistUuid) };
         }
       })
     );
@@ -132,9 +134,7 @@ export function AlbumDetailPage({
             alt={`${album.title} cover`}
           />
 
-          {album.note && (
-            <h5 className="mt-3" dangerouslySetInnerHTML={renderAlbumNote()!} />
-          )}
+          {album.note && <h5 className="mt-3" dangerouslySetInnerHTML={renderAlbumNote()!} />}
 
           <AudioPlayer
             ref={audioPlayerRef}

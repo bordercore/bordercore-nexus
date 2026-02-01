@@ -6,28 +6,22 @@ interface BookmarkPaginationProps {
   onGetPage: (pageNumber: number) => void;
 }
 
-export function BookmarkPagination({
-  pagination,
-  onGetPage,
-}: BookmarkPaginationProps) {
+export function BookmarkPagination({ pagination, onGetPage }: BookmarkPaginationProps) {
   if (!pagination || !pagination.range || pagination.num_pages <= 1) {
     return null;
   }
 
   const showStartEllipsis =
-    pagination.page_number - pagination.paginate_by > 1 &&
-    pagination.num_pages > 4;
+    pagination.page_number - pagination.paginate_by > 1 && pagination.num_pages > 4;
 
   const showEndEllipsis =
     pagination.num_pages - pagination.page_number > pagination.paginate_by &&
     pagination.num_pages > 4;
 
-  const showFirstPageLink =
-    pagination.page_number !== pagination.paginate_by + 2;
+  const showFirstPageLink = pagination.page_number !== pagination.paginate_by + 2;
 
   const showLastPageLink =
-    pagination.num_pages - pagination.page_number !==
-    pagination.paginate_by + 1;
+    pagination.num_pages - pagination.page_number !== pagination.paginate_by + 1;
 
   return (
     <div className="d-flex justify-content-center">
@@ -40,7 +34,7 @@ export function BookmarkPagination({
                 <li className="page-item">
                   <a
                     className="page-link"
-                    onClick={(e) => {
+                    onClick={e => {
                       e.preventDefault();
                       onGetPage(pagination.previous_page_number!);
                     }}
@@ -63,7 +57,7 @@ export function BookmarkPagination({
                   <li className="page-item">
                     <a
                       className="page-link"
-                      onClick={(e) => {
+                      onClick={e => {
                         e.preventDefault();
                         onGetPage(1);
                       }}
@@ -83,7 +77,7 @@ export function BookmarkPagination({
               )}
 
               {/* Page range */}
-              {pagination.range.map((page) =>
+              {pagination.range.map(page =>
                 pagination.page_number === page ? (
                   <li key={page} className="disabled page-item">
                     <a className="page-link" href="#">
@@ -94,7 +88,7 @@ export function BookmarkPagination({
                   <li key={page} className="page-item">
                     <a
                       className="page-link"
-                      onClick={(e) => {
+                      onClick={e => {
                         e.preventDefault();
                         onGetPage(page);
                       }}
@@ -119,7 +113,7 @@ export function BookmarkPagination({
                   <li className="page-item">
                     <a
                       className="page-link"
-                      onClick={(e) => {
+                      onClick={e => {
                         e.preventDefault();
                         onGetPage(pagination.num_pages);
                       }}
@@ -136,7 +130,7 @@ export function BookmarkPagination({
                 <li className="page-item">
                   <a
                     className="page-link"
-                    onClick={(e) => {
+                    onClick={e => {
                       e.preventDefault();
                       onGetPage(pagination.next_page_number!);
                     }}

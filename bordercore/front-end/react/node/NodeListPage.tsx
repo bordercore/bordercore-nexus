@@ -11,11 +11,7 @@ interface NodeListPageProps {
   formFields: FormField[];
 }
 
-export default function NodeListPage({
-  nodes,
-  createUrl,
-  formFields,
-}: NodeListPageProps) {
+export default function NodeListPage({ nodes, createUrl, formFields }: NodeListPageProps) {
   const [modalInstance, setModalInstance] = useState<Modal | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -52,7 +48,7 @@ export default function NodeListPage({
         <a
           href="#"
           className="dropdown-menu-item"
-          onClick={(e) => {
+          onClick={e => {
             e.preventDefault();
             handleClickCreate();
           }}
@@ -70,7 +66,7 @@ export default function NodeListPage({
     <>
       <div className="card-grid d-flex ms-3">
         <div className="d-flex flex-row flex-wrap">
-          {nodes.map((node) => (
+          {nodes.map(node => (
             <div key={node.uuid} className="w-50">
               <h4>
                 <a href={`/node/${node.uuid}/`} data-name={node.name}>
@@ -80,17 +76,14 @@ export default function NodeListPage({
                   <ul className="list-unstyled">
                     <li>
                       Last modified:{" "}
-                      <span className="text-emphasis">
-                        {formatDate(node.modified)}
-                      </span>
+                      <span className="text-emphasis">{formatDate(node.modified)}</span>
                     </li>
                     <li>
                       Collection count:{" "}
                       <span className="text-emphasis">{node.collection_count}</span>
                     </li>
                     <li>
-                      Todo count:{" "}
-                      <span className="text-emphasis">{node.todo_count}</span>
+                      Todo count: <span className="text-emphasis">{node.todo_count}</span>
                     </li>
                   </ul>
                 </div>
@@ -134,12 +127,9 @@ export default function NodeListPage({
                   />
                 </div>
                 <div className="modal-body">
-                  {formFields.map((field) => (
+                  {formFields.map(field => (
                     <div key={field.name} className="row mb-3">
-                      <label
-                        className="col-lg-3 col-form-label"
-                        htmlFor={`id_${field.name}`}
-                      >
+                      <label className="col-lg-3 col-form-label" htmlFor={`id_${field.name}`}>
                         {field.label}
                       </label>
                       <div className="col-lg-9">

@@ -16,7 +16,7 @@ import { Modal } from "bootstrap";
 import MarkdownIt from "markdown-it";
 import { EventBus, doGet, doPost } from "../react/utils/reactUtils";
 
-// Initialize markdown-it renderer (matching Vue bundle configuration)
+// Initialize markdown-it renderer
 const markdown = MarkdownIt({
   html: true,
   linkify: true,

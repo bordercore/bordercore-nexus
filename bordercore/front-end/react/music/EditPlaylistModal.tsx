@@ -50,15 +50,11 @@ export const EditPlaylistModal = forwardRef<EditPlaylistModalHandle, EditPlaylis
     const [startYear, setStartYear] = useState<string>(
       playlist.parameters.start_year?.toString() || ""
     );
-    const [endYear, setEndYear] = useState<string>(
-      playlist.parameters.end_year?.toString() || ""
-    );
+    const [endYear, setEndYear] = useState<string>(playlist.parameters.end_year?.toString() || "");
     const [excludeRecent, setExcludeRecent] = useState<string>(
       playlist.parameters.exclude_recent?.toString() || ""
     );
-    const [excludeAlbums, setExcludeAlbums] = useState(
-      playlist.parameters.exclude_albums || false
-    );
+    const [excludeAlbums, setExcludeAlbums] = useState(playlist.parameters.exclude_albums || false);
     const [sortBy, setSortBy] = useState(playlist.parameters.sort_by || "recent");
     const [size, setSize] = useState<string>(playlist.parameters.size?.toString() || "20");
     const [refreshSongList, setRefreshSongList] = useState(false);
@@ -201,7 +197,7 @@ export const EditPlaylistModal = forwardRef<EditPlaylistModalHandle, EditPlaylis
                       name="name"
                       className="form-control"
                       value={name}
-                      onChange={(e) => setName(e.target.value)}
+                      onChange={e => setName(e.target.value)}
                       autoComplete="off"
                       maxLength={200}
                       required
@@ -221,7 +217,7 @@ export const EditPlaylistModal = forwardRef<EditPlaylistModalHandle, EditPlaylis
                       className="form-control"
                       rows={3}
                       value={note}
-                      onChange={(e) => setNote(e.target.value)}
+                      onChange={e => setNote(e.target.value)}
                     />
                   </div>
                 </div>
@@ -250,9 +246,7 @@ export const EditPlaylistModal = forwardRef<EditPlaylistModalHandle, EditPlaylis
 
                     {/* Time Period */}
                     <div className="row mt-3">
-                      <label className="col-lg-4 form-check-label text-nowrap">
-                        Time Period
-                      </label>
+                      <label className="col-lg-4 form-check-label text-nowrap">Time Period</label>
                       <div className="col-lg-8 d-flex">
                         <input
                           type="number"
@@ -260,7 +254,7 @@ export const EditPlaylistModal = forwardRef<EditPlaylistModalHandle, EditPlaylis
                           className="form-control me-1"
                           placeholder="Start Year"
                           value={startYear}
-                          onChange={(e) => setStartYear(e.target.value)}
+                          onChange={e => setStartYear(e.target.value)}
                           autoComplete="off"
                         />
                         <input
@@ -269,7 +263,7 @@ export const EditPlaylistModal = forwardRef<EditPlaylistModalHandle, EditPlaylis
                           className="form-control ms-1"
                           placeholder="End Year"
                           value={endYear}
-                          onChange={(e) => setEndYear(e.target.value)}
+                          onChange={e => setEndYear(e.target.value)}
                           autoComplete="off"
                         />
                       </div>
@@ -283,13 +277,12 @@ export const EditPlaylistModal = forwardRef<EditPlaylistModalHandle, EditPlaylis
                           className="rating-container d-flex"
                           onMouseLeave={() => setHoverRating(null)}
                         >
-                          {[0, 1, 2, 3, 4].map((starIndex) => (
+                          {[0, 1, 2, 3, 4].map(starIndex => (
                             <span
                               key={starIndex}
-                              className={`rating me-1 ${displayRating > starIndex ? "rating-star-selected" : ""}`}
+                              className={`rating me-1 cursor-pointer ${displayRating > starIndex ? "rating-star-selected" : ""}`}
                               onClick={() => handleRatingClick(starIndex)}
                               onMouseOver={() => setHoverRating(starIndex + 1)}
-                              className="cursor-pointer"
                             >
                               <FontAwesomeIcon icon={faStar} />
                             </span>
@@ -300,17 +293,15 @@ export const EditPlaylistModal = forwardRef<EditPlaylistModalHandle, EditPlaylis
 
                     {/* Exclude Recent Listens */}
                     <div className="row mt-3">
-                      <label className="col-lg-4 col-form-label">
-                        Exclude Recent Listens
-                      </label>
+                      <label className="col-lg-4 col-form-label">Exclude Recent Listens</label>
                       <div className="col-lg-8">
                         <select
                           className="form-control form-select"
                           name="exclude_recent"
                           value={excludeRecent}
-                          onChange={(e) => setExcludeRecent(e.target.value)}
+                          onChange={e => setExcludeRecent(e.target.value)}
                         >
-                          {EXCLUDE_RECENT_OPTIONS.map((option) => (
+                          {EXCLUDE_RECENT_OPTIONS.map(option => (
                             <option key={option.value} value={option.value}>
                               {option.display}
                             </option>
@@ -328,7 +319,7 @@ export const EditPlaylistModal = forwardRef<EditPlaylistModalHandle, EditPlaylis
                             className="form-check-input"
                             type="checkbox"
                             checked={excludeAlbums}
-                            onChange={(e) => setExcludeAlbums(e.target.checked)}
+                            onChange={e => setExcludeAlbums(e.target.checked)}
                           />
                         </div>
                       </div>
@@ -342,7 +333,7 @@ export const EditPlaylistModal = forwardRef<EditPlaylistModalHandle, EditPlaylis
                           className="form-control form-select"
                           name="sort_by"
                           value={sortBy}
-                          onChange={(e) => setSortBy(e.target.value)}
+                          onChange={e => setSortBy(e.target.value)}
                         >
                           <option value="recent">Recently Added</option>
                           <option value="random">Random</option>
@@ -358,9 +349,9 @@ export const EditPlaylistModal = forwardRef<EditPlaylistModalHandle, EditPlaylis
                           className="form-control form-select"
                           name="size"
                           value={size}
-                          onChange={(e) => setSize(e.target.value)}
+                          onChange={e => setSize(e.target.value)}
                         >
-                          {SIZE_OPTIONS.map((option) => (
+                          {SIZE_OPTIONS.map(option => (
                             <option key={option.value} value={option.value}>
                               {option.display}
                             </option>
@@ -378,7 +369,7 @@ export const EditPlaylistModal = forwardRef<EditPlaylistModalHandle, EditPlaylis
                             className="form-check-input"
                             type="checkbox"
                             checked={refreshSongList}
-                            onChange={(e) => setRefreshSongList(e.target.checked)}
+                            onChange={e => setRefreshSongList(e.target.checked)}
                           />
                         </div>
                       </div>

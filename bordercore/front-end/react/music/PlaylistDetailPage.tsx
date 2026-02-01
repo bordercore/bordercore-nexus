@@ -161,9 +161,7 @@ export function PlaylistDetailPage({
                   <strong className="text-primary">{playlist.parameters.end_year}</strong>
                 </li>
               )}
-              {playlist.type === "manual" && (
-                <li>Manually created playlist</li>
-              )}
+              {playlist.type === "manual" && <li>Manually created playlist</li>}
               {playlist.parameters.rating && (
                 <li>
                   with a <strong className="text-primary">{playlist.parameters.rating} star</strong>{" "}
@@ -173,13 +171,11 @@ export function PlaylistDetailPage({
               {playlist.parameters.exclude_recent && (
                 <li>
                   not listened to within the past{" "}
-                  <strong className="text-primary">{playlist.parameters.exclude_recent}</strong>{" "}
-                  day{playlist.parameters.exclude_recent > 1 ? "s" : ""}
+                  <strong className="text-primary">{playlist.parameters.exclude_recent}</strong> day
+                  {playlist.parameters.exclude_recent > 1 ? "s" : ""}
                 </li>
               )}
-              {playlist.parameters.exclude_albums && (
-                <li>not on an album</li>
-              )}
+              {playlist.parameters.exclude_albums && <li>not on an album</li>}
             </ul>
           </div>
 
@@ -218,7 +214,10 @@ export function PlaylistDetailPage({
                             </button>
                           </li>
                           <li>
-                            <button className="dropdown-menu-item" onClick={() => setShowDeleteModal(true)}>
+                            <button
+                              className="dropdown-menu-item"
+                              onClick={() => setShowDeleteModal(true)}
+                            >
                               <span className="dropdown-menu-icon">
                                 <FontAwesomeIcon icon={faTimes} />
                               </span>
@@ -280,16 +279,13 @@ export function PlaylistDetailPage({
               <div className="modal-body">
                 <div>Are you sure you want to delete this playlist?</div>
                 <div className="mt-3">
-                  <button
-                    className="btn btn-primary"
-                    onClick={handleDeletePlaylist}
-                  >
+                  <button className="btn btn-primary" onClick={handleDeletePlaylist}>
                     Confirm
                   </button>
                   <a
                     href="#"
                     className="ms-3"
-                    onClick={(e) => {
+                    onClick={e => {
                       e.preventDefault();
                       setShowDeleteModal(false);
                     }}

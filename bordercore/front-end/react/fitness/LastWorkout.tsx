@@ -47,7 +47,7 @@ export function LastWorkout({
   const repsChartRef = useRef<HTMLCanvasElement>(null);
 
   const sets = Array.from({ length: weight.length }, (_, i) => i + 1);
-  const labels = sets.map((x) => `Set ${x}`);
+  const labels = sets.map(x => `Set ${x}`);
 
   function getGraphOptions(label: string) {
     const styles = getComputedStyle(document.body);
@@ -91,7 +91,11 @@ export function LastWorkout({
     };
   }
 
-  function createChart(canvasRef: React.RefObject<HTMLCanvasElement | null>, data: number[], label: string) {
+  function createChart(
+    canvasRef: React.RefObject<HTMLCanvasElement | null>,
+    data: number[],
+    label: string
+  ) {
     if (!canvasRef.current) return;
     const styles = getComputedStyle(document.body);
     const ctx = canvasRef.current.getContext("2d");
@@ -140,28 +144,53 @@ export function LastWorkout({
     createChart(repsChartRef, reps, "Reps");
 
     if (initialNote && descriptionRef.current) {
-      descriptionRef.current.classList.add("animate__animated", "animate__wobble", "animate__delay-1s");
+      descriptionRef.current.classList.add(
+        "animate__animated",
+        "animate__wobble",
+        "animate__delay-1s"
+      );
     }
   }, []);
 
   const dropdownContent = (
     <ul className="dropdown-menu-list">
       <li>
-        <a className="dropdown-item" href="#" onClick={(e) => { e.preventDefault(); handleNoteAdd(); }}>
+        <a
+          className="dropdown-item"
+          href="#"
+          onClick={e => {
+            e.preventDefault();
+            handleNoteAdd();
+          }}
+        >
           <FontAwesomeIcon icon={faPencilAlt} className="text-primary me-3" />
           {note ? "Edit" : "Add"} note
         </a>
       </li>
       {note && (
         <li>
-          <a className="dropdown-item" href="#" onClick={(e) => { e.preventDefault(); handleNoteDelete(); }}>
+          <a
+            className="dropdown-item"
+            href="#"
+            onClick={e => {
+              e.preventDefault();
+              handleNoteDelete();
+            }}
+          >
             <FontAwesomeIcon icon={faTrashAlt} className="text-primary me-3" />
             Delete note
           </a>
         </li>
       )}
       <li>
-        <a className="dropdown-item" href="#" onClick={(e) => { e.preventDefault(); handleAskChatbot(); }}>
+        <a
+          className="dropdown-item"
+          href="#"
+          onClick={e => {
+            e.preventDefault();
+            handleAskChatbot();
+          }}
+        >
           <FontAwesomeIcon icon={faComment} className="text-primary me-3" />
           Ask AI
         </a>
@@ -170,7 +199,7 @@ export function LastWorkout({
   );
 
   // Note: description and note content come from authenticated user's own input
-  // stored in the database, matching the Vue implementation's v-html usage
+  // stored in the database
   return (
     <div className="d-flex flex-column h-100">
       <Card cardClassName="flex-grow-0 backdrop-filter mb-gutter" title="">
@@ -185,17 +214,18 @@ export function LastWorkout({
           ) : (
             <div>No previous workout found.</div>
           )}
-          {weight[0] > 0 && <canvas ref={weightChartRef} id="last_workout_weights" className="mt-3" />}
-          {duration[0] > 0 && <canvas ref={durationChartRef} id="last_workout_duration" className="mt-3" />}
+          {weight[0] > 0 && (
+            <canvas ref={weightChartRef} id="last_workout_weights" className="mt-3" />
+          )}
+          {duration[0] > 0 && (
+            <canvas ref={durationChartRef} id="last_workout_duration" className="mt-3" />
+          )}
           <canvas ref={repsChartRef} id="last_workout_reps" className="mt-3" />
         </div>
       </Card>
 
       <div className="hover-target h-100 mb-3">
-        <Card
-          cardClassName="z-index-positive position-relative h-100 backdrop-filter"
-          title=""
-        >
+        <Card cardClassName="z-index-positive position-relative h-100 backdrop-filter" title="">
           <div className="d-flex flex-column" ref={descriptionRef} id="description">
             <div className="d-flex flex-column">
               <div className="d-flex">
@@ -204,7 +234,9 @@ export function LastWorkout({
                   <DropDownMenu showOnHover={true} dropdownSlot={dropdownContent} />
                 </div>
               </div>
-              <div dangerouslySetInnerHTML={{ __html: md.render(description || "No description") }} />
+              <div
+                dangerouslySetInnerHTML={{ __html: md.render(description || "No description") }}
+              />
             </div>
 
             {description && note && <hr className="m-2" />}
@@ -218,7 +250,7 @@ export function LastWorkout({
                     className="px-3 w-100"
                     placeholder="Note text"
                     value={note}
-                    onChange={(e) => setNote(e.target.value)}
+                    onChange={e => setNote(e.target.value)}
                     onBlur={handleNoteBlur}
                     rows={10}
                   />

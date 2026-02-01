@@ -54,17 +54,15 @@ export const ImageViewModal = forwardRef<ImageViewModalHandle>(
             <div className="modal-body text-center p-0">
               <button
                 type="button"
-                className="btn-close btn-close-white position-absolute top-0 end-0 m-3"
+                className="btn-close btn-close-white position-absolute top-0 end-0 m-3 image-view-modal-close"
                 data-bs-dismiss="modal"
                 aria-label="Close"
-                className="image-view-modal-close"
               />
               {imageUrl && (
                 <img
                   src={imageUrl}
                   alt="Collection image"
-                  className="img-fluid"
-                  className="image-view-modal-image"
+                  className="img-fluid image-view-modal-image"
                   onClick={closeModal}
                 />
               )}

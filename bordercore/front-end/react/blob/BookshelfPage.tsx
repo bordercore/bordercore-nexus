@@ -18,12 +18,12 @@ export function BookshelfPage({
   // Initialize Bootstrap tooltips
   useEffect(() => {
     const tooltipElements = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-    tooltipElements.forEach((el) => {
+    tooltipElements.forEach(el => {
       new Tooltip(el);
     });
 
     return () => {
-      tooltipElements.forEach((el) => {
+      tooltipElements.forEach(el => {
         const tooltip = Tooltip.getInstance(el);
         if (tooltip) {
           tooltip.dispose();
@@ -63,7 +63,7 @@ export function BookshelfPage({
           <div className="card-title-large">Tag List</div>
           <hr className="divider" />
           <ul className="list-group flex-column w-100">
-            {tagList.map((tag) => (
+            {tagList.map(tag => (
               <li
                 key={tag.name}
                 className="list-with-counts rounded d-flex ps-2 py-1 pr-1"
@@ -88,7 +88,7 @@ export function BookshelfPage({
               className="form-control w-100"
               placeholder="Search"
               value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
+              onChange={e => setSearchValue(e.target.value)}
             />
           </form>
         </div>
@@ -112,7 +112,7 @@ export function BookshelfPage({
         >
           <hr className="divider mb-5" />
           <ul className="d-flex flex-wrap text-center list-unstyled collection-sortable">
-            {books.map((book) => (
+            {books.map(book => (
               <li key={book.uuid} className="mx-3">
                 <div className="zoom d-flex flex-column justify-content-top h-100 mb-4">
                   <div>

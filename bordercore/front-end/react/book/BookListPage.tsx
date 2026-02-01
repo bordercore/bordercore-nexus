@@ -16,12 +16,7 @@ interface BookListPageProps {
 type SortField = "title" | "author" | "year";
 type SortDirection = "asc" | "desc";
 
-export function BookListPage({
-  books,
-  alphabet,
-  selectedLetter,
-  baseUrl,
-}: BookListPageProps) {
+export function BookListPage({ books, alphabet, selectedLetter, baseUrl }: BookListPageProps) {
   const [sortField, setSortField] = useState<SortField>("title");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [filter, setFilter] = useState("");
@@ -33,7 +28,7 @@ export function BookListPage({
     if (filter) {
       const lowerFilter = filter.toLowerCase();
       result = result.filter(
-        (book) =>
+        book =>
           book.title.toLowerCase().includes(lowerFilter) ||
           book.author.toLowerCase().includes(lowerFilter) ||
           (book.year && book.year.toString().includes(lowerFilter))
@@ -79,7 +74,7 @@ export function BookListPage({
     <div className="book-list-page">
       {/* Alphabet Navigation */}
       <ul className="nav nav-pills mb-3">
-        {alphabet.map((letter) => (
+        {alphabet.map(letter => (
           <li key={letter} className={letter === selectedLetter ? "active" : ""}>
             <a
               href={`${baseUrl}${letter}`}
@@ -98,7 +93,7 @@ export function BookListPage({
           className="form-control book-list-search-input"
           placeholder="Search books..."
           value={filter}
-          onChange={(e) => setFilter(e.target.value)}
+          onChange={e => setFilter(e.target.value)}
         />
       </div>
 
@@ -109,22 +104,13 @@ export function BookListPage({
         <table className="table table-striped">
           <thead>
             <tr>
-              <th
-                className="sortable-header"
-                onClick={() => handleSort("title")}
-              >
+              <th className="sortable-header" onClick={() => handleSort("title")}>
                 Title{getSortIndicator("title")}
               </th>
-              <th
-                className="sortable-header"
-                onClick={() => handleSort("author")}
-              >
+              <th className="sortable-header" onClick={() => handleSort("author")}>
                 Author{getSortIndicator("author")}
               </th>
-              <th
-                className="sortable-header"
-                onClick={() => handleSort("year")}
-              >
+              <th className="sortable-header" onClick={() => handleSort("year")}>
                 Year{getSortIndicator("year")}
               </th>
             </tr>

@@ -23,14 +23,11 @@ export function CollectionObjectGrid({
   const [isDragOverContainer, setIsDragOverContainer] = useState(false);
 
   // Drag and drop handlers for reordering
-  const handleDragStart = useCallback(
-    (e: React.DragEvent<HTMLDivElement>, index: number) => {
-      e.dataTransfer.effectAllowed = "move";
-      e.dataTransfer.setData("text/plain", String(index));
-      setDraggingIndex(index);
-    },
-    []
-  );
+  const handleDragStart = useCallback((e: React.DragEvent<HTMLDivElement>, index: number) => {
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", String(index));
+    setDraggingIndex(index);
+  }, []);
 
   const handleDragEnd = useCallback(() => {
     setDraggingIndex(null);
@@ -76,27 +73,21 @@ export function CollectionObjectGrid({
   );
 
   // Container drag handlers for file drops
-  const handleContainerDragOver = useCallback(
-    (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      // Only show drag over state if there are files being dragged
-      if (e.dataTransfer.types.includes("Files")) {
-        setIsDragOverContainer(true);
-      }
-    },
-    []
-  );
+  const handleContainerDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    // Only show drag over state if there are files being dragged
+    if (e.dataTransfer.types.includes("Files")) {
+      setIsDragOverContainer(true);
+    }
+  }, []);
 
-  const handleContainerDragLeave = useCallback(
-    (e: React.DragEvent<HTMLDivElement>) => {
-      // Only update if leaving the container (not entering a child)
-      const relatedTarget = e.relatedTarget as HTMLElement;
-      if (!e.currentTarget.contains(relatedTarget)) {
-        setIsDragOverContainer(false);
-      }
-    },
-    []
-  );
+  const handleContainerDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    // Only update if leaving the container (not entering a child)
+    const relatedTarget = e.relatedTarget as HTMLElement;
+    if (!e.currentTarget.contains(relatedTarget)) {
+      setIsDragOverContainer(false);
+    }
+  }, []);
 
   const handleContainerDrop = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {
@@ -122,11 +113,11 @@ export function CollectionObjectGrid({
         <div
           key={object.uuid}
           draggable
-          onDragStart={(e) => handleDragStart(e, index)}
+          onDragStart={e => handleDragStart(e, index)}
           onDragEnd={handleDragEnd}
-          onDragOver={(e) => handleDragOver(e, index)}
+          onDragOver={e => handleDragOver(e, index)}
           onDragLeave={handleDragLeave}
-          onDrop={(e) => handleDrop(e, index)}
+          onDrop={e => handleDrop(e, index)}
           className={`slicklist-list-item-inner h-100 ${
             draggingIndex === index ? "dragging" : ""
           } ${dragOverIndex === index ? "drag-over" : ""}`}
@@ -136,7 +127,7 @@ export function CollectionObjectGrid({
               type="button"
               className="collection-item-delete btn-close"
               aria-label="Remove"
-              onClick={(e) => {
+              onClick={e => {
                 e.stopPropagation();
                 onRemoveObject(object.uuid);
               }}
@@ -152,10 +143,7 @@ export function CollectionObjectGrid({
                 </div>
               ) : (
                 <div>
-                  <FontAwesomeIcon
-                    icon={faBookmark}
-                    className="text-primary fa-4x mt-3"
-                  />
+                  <FontAwesomeIcon icon={faBookmark} className="text-primary fa-4x mt-3" />
                 </div>
               )}
               <div className="collection-item-name" title={object.name}>

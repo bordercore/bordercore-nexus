@@ -49,12 +49,9 @@ export function PreferencesPage({
 }: PreferencesPageProps) {
   const [eyeCandy, setEyeCandy] = useState(initialEyeCandy);
 
-  const handleThemeChange = useCallback(
-    (e: React.ChangeEvent<HTMLSelectElement>) => {
-      document.documentElement.setAttribute("color-mode", e.target.value);
-    },
-    []
-  );
+  const handleThemeChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    document.documentElement.setAttribute("color-mode", e.target.value);
+  }, []);
 
   // Render a standard form field based on its type
   const renderFormField = (field: FormField) => {
@@ -72,13 +69,8 @@ export function PreferencesPage({
     }
 
     return (
-      <div
-        key={field.name}
-        className={`${field.errors.length > 0 ? "error" : ""} row mb-3`}
-      >
-        <label className="fw-bold col-lg-3 col-sm-2 col-form-label text-end">
-          {field.label}
-        </label>
+      <div key={field.name} className={`${field.errors.length > 0 ? "error" : ""} row mb-3`}>
+        <label className="fw-bold col-lg-3 col-sm-2 col-form-label text-end">{field.label}</label>
         <div className="col-lg-7">
           {field.name === "theme" ? (
             <select
@@ -88,7 +80,7 @@ export function PreferencesPage({
               defaultValue={field.value}
               onChange={handleThemeChange}
             >
-              {field.choices.map((choice) => (
+              {field.choices.map(choice => (
                 <option key={choice[0]} value={choice[0]}>
                   {choice[1]}
                 </option>
@@ -109,7 +101,7 @@ export function PreferencesPage({
               id={`id_${field.name}`}
               defaultValue={field.value}
             >
-              {field.choices.map((choice) => (
+              {field.choices.map(choice => (
                 <option key={choice[0]} value={choice[0]}>
                   {choice[1]}
                 </option>
@@ -138,12 +130,12 @@ export function PreferencesPage({
 
   // Find specific field values from formFields
   const getFieldValue = (name: string): string => {
-    const field = formFields.find((f) => f.name === name);
+    const field = formFields.find(f => f.name === name);
     return field?.value || "";
   };
 
   const getFieldChoices = (name: string): [string, string][] => {
-    const field = formFields.find((f) => f.name === name);
+    const field = formFields.find(f => f.name === name);
     return field?.choices || [];
   };
 
@@ -202,34 +194,19 @@ export function PreferencesPage({
           </ul>
 
           {/* Preferences form */}
-          <form
-            encType="multipart/form-data"
-            id="prefs-form"
-            action={formAction}
-            method="post"
-          >
-            <input
-              type="hidden"
-              name="csrfmiddlewaretoken"
-              value={csrfToken}
-            />
+          <form encType="multipart/form-data" id="prefs-form" action={formAction} method="post">
+            <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken} />
 
             {/* API Token */}
             <div className="row mb-3">
-              <label className="fw-bold col-lg-3 col-form-label text-end">
-                API Token
-              </label>
-              <div className="col-lg-7 align-self-center">
-                {authToken || "None"}
-              </div>
+              <label className="fw-bold col-lg-3 col-form-label text-end">API Token</label>
+              <div className="col-lg-7 align-self-center">{authToken || "None"}</div>
             </div>
 
             {/* Groups (conditional) */}
             {groups && (
               <div className="row mb-3">
-                <label className="fw-bold col-lg-3 col-form-label text-end">
-                  Groups
-                </label>
+                <label className="fw-bold col-lg-3 col-form-label text-end">Groups</label>
                 <div className="col-lg-7 align-self-center">{groups}</div>
               </div>
             )}
@@ -252,9 +229,7 @@ export function PreferencesPage({
 
             {/* Drill Muted Tags */}
             <div className="row mb-3">
-              <label className="fw-bold col-lg-3 col-form-label text-end">
-                Drill Muted Tags
-              </label>
+              <label className="fw-bold col-lg-3 col-form-label text-end">Drill Muted Tags</label>
               <div className="col-lg-7 d-flex">
                 <TagsInput
                   name="drill_tags_muted"
@@ -266,27 +241,18 @@ export function PreferencesPage({
 
             {/* Eye Candy */}
             <div className="row mb-3">
-              <label
-                className="fw-bold col-lg-3 col-form-label text-end"
-                htmlFor="eye_candy"
-              >
+              <label className="fw-bold col-lg-3 col-form-label text-end" htmlFor="eye_candy">
                 Eye Candy
               </label>
               <div className="col-lg-7 d-flex">
-                <ToggleSwitch
-                  name="eye_candy"
-                  checked={eyeCandy}
-                  onChange={setEyeCandy}
-                />
+                <ToggleSwitch name="eye_candy" checked={eyeCandy} onChange={setEyeCandy} />
               </div>
             </div>
 
             {/* Theme */}
             {themeChoices.length > 0 && (
               <div className="row mb-3">
-                <label className="fw-bold col-lg-3 col-sm-2 col-form-label text-end">
-                  Theme
-                </label>
+                <label className="fw-bold col-lg-3 col-sm-2 col-form-label text-end">Theme</label>
                 <div className="col-lg-7">
                   <select
                     name="theme"
@@ -295,7 +261,7 @@ export function PreferencesPage({
                     defaultValue={themeValue}
                     onChange={handleThemeChange}
                   >
-                    {themeChoices.map((choice) => (
+                    {themeChoices.map(choice => (
                       <option key={choice[0]} value={choice[0]}>
                         {choice[1]}
                       </option>
@@ -335,7 +301,7 @@ export function PreferencesPage({
             {/* Other form fields */}
             {formFields
               .filter(
-                (f) =>
+                f =>
                   ![
                     "background_image",
                     "sidebar_image",
@@ -350,12 +316,7 @@ export function PreferencesPage({
             {/* Submit button */}
             <div className="row mb-3">
               <div className="col-lg-1 offset-lg-3">
-                <input
-                  className="btn btn-primary me-1"
-                  type="submit"
-                  name="Go"
-                  value="Update"
-                />
+                <input className="btn btn-primary me-1" type="submit" name="Go" value="Update" />
               </div>
             </div>
           </form>

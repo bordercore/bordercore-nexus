@@ -96,7 +96,7 @@ class QuestionForm(ModelForm):
         fields = ("question", "answer", "is_reversible", "tags")
         widgets = {
             # Add "v-pre" attribute in case the question or answer happens to contain
-            #  any Vue mustache tags
+            #  any template mustache tags
             "question": Textarea(attrs={"rows": 10, "class": "form-control", "v-pre": "true"}),
             "answer": Textarea(attrs={"rows": 10, "class": "form-control", "v-pre": "true"})
         }

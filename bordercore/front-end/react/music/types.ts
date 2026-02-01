@@ -15,7 +15,7 @@ export interface Song extends BaseTrack {
   rating: number | null;
   length_seconds: number | null;
   length: string;
-  playlists: string[];  // UUIDs of playlists containing this song
+  playlists: string[]; // UUIDs of playlists containing this song
 }
 
 export interface Album {
@@ -76,7 +76,7 @@ export interface ArtistSong extends BaseTrack {
   length: string;
   year_effective: number | null;
   artist: string;
-  playlists: string[];  // UUIDs of playlists containing this song
+  playlists: string[]; // UUIDs of playlists containing this song
 }
 
 export interface ArtistDetailAlbum {

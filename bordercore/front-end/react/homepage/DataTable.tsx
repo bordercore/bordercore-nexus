@@ -42,7 +42,7 @@ export function DataTable({
   }, [data, sortConfig]);
 
   const handleSort = (field: string) => {
-    setSortConfig((prevConfig) => {
+    setSortConfig(prevConfig => {
       if (prevConfig?.field === field) {
         return {
           field,
@@ -73,7 +73,7 @@ export function DataTable({
     <table className={`table ${hoverable ? "table-hover" : ""}`}>
       <thead>
         <tr>
-          {columns.map((col) => (
+          {columns.map(col => (
             <th
               key={col}
               onClick={() => handleSort(col)}
@@ -88,8 +88,10 @@ export function DataTable({
       <tbody>
         {sortedData.map((row, rowIndex) => (
           <tr key={rowIndex}>
-            {columns.map((col) => (
-              <td key={col}>{row[col] !== null && row[col] !== undefined ? String(row[col]) : ""}</td>
+            {columns.map(col => (
+              <td key={col}>
+                {row[col] !== null && row[col] !== undefined ? String(row[col]) : ""}
+              </td>
             ))}
           </tr>
         ))}

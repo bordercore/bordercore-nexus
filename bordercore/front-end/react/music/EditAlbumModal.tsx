@@ -24,7 +24,15 @@ interface ArtistSearchResult {
 
 export const EditAlbumModal = React.forwardRef<EditAlbumModalHandle, EditAlbumModalProps>(
   function EditAlbumModal(
-    { album, initialTags, updateAlbumUrl, searchArtistsUrl, searchTagsUrl, csrfToken, onAlbumUpdated },
+    {
+      album,
+      initialTags,
+      updateAlbumUrl,
+      searchArtistsUrl,
+      searchTagsUrl,
+      csrfToken,
+      onAlbumUpdated,
+    },
     ref
   ) {
     const [title, setTitle] = React.useState(album.title);
@@ -137,10 +145,7 @@ export const EditAlbumModal = React.forwardRef<EditAlbumModalHandle, EditAlbumMo
     // Close suggestions when clicking outside
     React.useEffect(() => {
       const handleClickOutside = (e: MouseEvent) => {
-        if (
-          artistInputRef.current &&
-          !artistInputRef.current.contains(e.target as Node)
-        ) {
+        if (artistInputRef.current && !artistInputRef.current.contains(e.target as Node)) {
           setShowArtistSuggestions(false);
         }
       };
@@ -175,16 +180,14 @@ export const EditAlbumModal = React.forwardRef<EditAlbumModalHandle, EditAlbumMo
               <div className="modal-body">
                 {/* Title */}
                 <div className="row mb-3">
-                  <label className="col-lg-4 col-form-label fw-bold text-end">
-                    Title
-                  </label>
+                  <label className="col-lg-4 col-form-label fw-bold text-end">Title</label>
                   <div className="col-lg-8">
                     <input
                       type="text"
                       name="title"
                       className="form-control"
                       value={title}
-                      onChange={(e) => setTitle(e.target.value)}
+                      onChange={e => setTitle(e.target.value)}
                       autoComplete="off"
                     />
                   </div>
@@ -192,9 +195,7 @@ export const EditAlbumModal = React.forwardRef<EditAlbumModalHandle, EditAlbumMo
 
                 {/* Artist */}
                 <div className="row mb-3">
-                  <label className="col-lg-4 col-form-label fw-bold text-end">
-                    Artist
-                  </label>
+                  <label className="col-lg-4 col-form-label fw-bold text-end">Artist</label>
                   <div className="col-lg-8 position-relative" ref={artistInputRef}>
                     <input
                       type="text"
@@ -207,12 +208,11 @@ export const EditAlbumModal = React.forwardRef<EditAlbumModalHandle, EditAlbumMo
                     />
                     {showArtistSuggestions && artistSuggestions.length > 0 && (
                       <ul className="list-group position-absolute w-100 edit-album-dropdown">
-                        {artistSuggestions.map((artist) => (
+                        {artistSuggestions.map(artist => (
                           <li
                             key={artist.uuid}
-                            className="list-group-item list-group-item-action"
+                            className="list-group-item list-group-item-action cursor-pointer"
                             onClick={() => selectArtist(artist)}
-                            className="cursor-pointer"
                           >
                             {artist.name}
                           </li>
@@ -224,16 +224,14 @@ export const EditAlbumModal = React.forwardRef<EditAlbumModalHandle, EditAlbumMo
 
                 {/* Year */}
                 <div className="row mb-3">
-                  <label className="col-lg-4 col-form-label fw-bold text-end">
-                    Year
-                  </label>
+                  <label className="col-lg-4 col-form-label fw-bold text-end">Year</label>
                   <div className="col-lg-8">
                     <input
                       type="number"
                       name="year"
                       className="form-control"
                       value={year}
-                      onChange={(e) => setYear(e.target.value)}
+                      onChange={e => setYear(e.target.value)}
                       autoComplete="off"
                     />
                   </div>
@@ -241,16 +239,14 @@ export const EditAlbumModal = React.forwardRef<EditAlbumModalHandle, EditAlbumMo
 
                 {/* Tags */}
                 <div className="row mb-3">
-                  <label className="col-lg-4 col-form-label fw-bold text-end">
-                    Tags
-                  </label>
+                  <label className="col-lg-4 col-form-label fw-bold text-end">Tags</label>
                   <div className="col-lg-8">
                     <input
                       type="text"
                       name="tags"
                       className="form-control"
                       value={tags}
-                      onChange={(e) => setTags(e.target.value)}
+                      onChange={e => setTags(e.target.value)}
                       placeholder="Comma-separated tags"
                       autoComplete="off"
                     />
@@ -259,16 +255,14 @@ export const EditAlbumModal = React.forwardRef<EditAlbumModalHandle, EditAlbumMo
 
                 {/* Note */}
                 <div className="row mb-3">
-                  <label className="col-lg-4 col-form-label fw-bold text-end">
-                    Note
-                  </label>
+                  <label className="col-lg-4 col-form-label fw-bold text-end">Note</label>
                   <div className="col-lg-8">
                     <input
                       type="text"
                       name="note"
                       className="form-control"
                       value={note}
-                      onChange={(e) => setNote(e.target.value)}
+                      onChange={e => setNote(e.target.value)}
                       autoComplete="off"
                     />
                   </div>
@@ -276,9 +270,7 @@ export const EditAlbumModal = React.forwardRef<EditAlbumModalHandle, EditAlbumMo
 
                 {/* Cover Image */}
                 <div className="row mb-3">
-                  <label className="col-lg-4 col-form-label fw-bold text-end">
-                    Cover Image
-                  </label>
+                  <label className="col-lg-4 col-form-label fw-bold text-end">Cover Image</label>
                   <div className="col-lg-8">
                     <div className="input-group">
                       <input

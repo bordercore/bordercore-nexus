@@ -172,8 +172,11 @@ export function RemindersPage({ listAjaxUrl, createUrl }: RemindersPageProps) {
             {pagination && pagination.total_pages > 1 && (
               <div className="reminders-pagination-footer">
                 <p className="pagination-info">
-                  Showing <span className="pagination-count">{paginationInfo.start}-{paginationInfo.end}</span> of{" "}
-                  <span className="pagination-count">{paginationInfo.total}</span> reminders
+                  Showing{" "}
+                  <span className="pagination-count">
+                    {paginationInfo.start}-{paginationInfo.end}
+                  </span>{" "}
+                  of <span className="pagination-count">{paginationInfo.total}</span> reminders
                 </p>
                 <div className="pagination-controls">
                   <button
@@ -187,7 +190,10 @@ export function RemindersPage({ listAjaxUrl, createUrl }: RemindersPageProps) {
                   {paginationInfo.pageNumbers.map((pageNum, index) => {
                     if (pageNum === "ellipsis") {
                       return (
-                        <span key={`ellipsis-${index}`} className="pagination-button pagination-button-ellipsis">
+                        <span
+                          key={`ellipsis-${index}`}
+                          className="pagination-button pagination-button-ellipsis"
+                        >
                           ...
                         </span>
                       );
@@ -206,7 +212,9 @@ export function RemindersPage({ listAjaxUrl, createUrl }: RemindersPageProps) {
                   })}
                   <button
                     className="pagination-button pagination-button-icon"
-                    onClick={() => handlePageChange(pagination.next_page_number || pagination.total_pages)}
+                    onClick={() =>
+                      handlePageChange(pagination.next_page_number || pagination.total_pages)
+                    }
                     disabled={!pagination.has_next}
                     aria-label="Next page"
                   >
@@ -223,4 +231,3 @@ export function RemindersPage({ listAjaxUrl, createUrl }: RemindersPageProps) {
 }
 
 export default RemindersPage;
-

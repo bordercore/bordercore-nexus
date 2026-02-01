@@ -36,7 +36,7 @@ export function TagDetailPage({
   storeInSessionUrl,
 }: TagDetailPageProps) {
   // Add display names to doctype counts
-  const enrichedDoctypeCounts = doctypeCounts.map((doctype) => ({
+  const enrichedDoctypeCounts = doctypeCounts.map(doctype => ({
     key: doctype[0],
     count: doctype[1],
     displayName: DOCTYPE_MAPPING[doctype[0]] || doctype[0],
@@ -58,11 +58,7 @@ export function TagDetailPage({
       setSelectedDoctype(doctype);
 
       // Store the selected tab in session
-      doPost(
-        storeInSessionUrl,
-        { search_tag_detail_current_tab: doctype },
-        () => {}
-      );
+      doPost(storeInSessionUrl, { search_tag_detail_current_tab: doctype }, () => {});
     },
     [storeInSessionUrl]
   );
@@ -102,7 +98,7 @@ export function TagDetailPage({
             <>
               <h4 className="text4 border-bottom pb-2">Doctypes</h4>
               <ul className="list-unstyled">
-                {enrichedDoctypeCounts.map((doctype) => {
+                {enrichedDoctypeCounts.map(doctype => {
                   const isSelected = doctype.key === selectedDoctype;
                   return (
                     <li
@@ -135,15 +131,51 @@ export function TagDetailPage({
           initialTags={initialTags}
         />
         <div className="tab-content ps-3 h-100 mb-3">
-          <TagSearchResult docType="blob" matches={results.blob || []} isActive={selectedDoctype === "blob"} />
-          <TagSearchResult docType="book" matches={results.book || []} isActive={selectedDoctype === "book"} />
-          <TagSearchResult docType="bookmark" matches={results.bookmark || []} isActive={selectedDoctype === "bookmark"} />
-          <TagSearchResult docType="document" matches={results.document || []} isActive={selectedDoctype === "document"} />
-          <TagSearchResult docType="note" matches={results.note || []} isActive={selectedDoctype === "note"} />
-          <TagSearchResult docType="drill" matches={results.drill || []} isActive={selectedDoctype === "drill"} />
-          <TagSearchResult docType="song" matches={results.song || []} isActive={selectedDoctype === "song"} />
-          <TagSearchResult docType="todo" matches={results.todo || []} isActive={selectedDoctype === "todo"} />
-          <TagSearchResult docType="album" matches={results.album || []} isActive={selectedDoctype === "album"} />
+          <TagSearchResult
+            docType="blob"
+            matches={results.blob || []}
+            isActive={selectedDoctype === "blob"}
+          />
+          <TagSearchResult
+            docType="book"
+            matches={results.book || []}
+            isActive={selectedDoctype === "book"}
+          />
+          <TagSearchResult
+            docType="bookmark"
+            matches={results.bookmark || []}
+            isActive={selectedDoctype === "bookmark"}
+          />
+          <TagSearchResult
+            docType="document"
+            matches={results.document || []}
+            isActive={selectedDoctype === "document"}
+          />
+          <TagSearchResult
+            docType="note"
+            matches={results.note || []}
+            isActive={selectedDoctype === "note"}
+          />
+          <TagSearchResult
+            docType="drill"
+            matches={results.drill || []}
+            isActive={selectedDoctype === "drill"}
+          />
+          <TagSearchResult
+            docType="song"
+            matches={results.song || []}
+            isActive={selectedDoctype === "song"}
+          />
+          <TagSearchResult
+            docType="todo"
+            matches={results.todo || []}
+            isActive={selectedDoctype === "todo"}
+          />
+          <TagSearchResult
+            docType="album"
+            matches={results.album || []}
+            isActive={selectedDoctype === "album"}
+          />
         </div>
       </div>
     </div>

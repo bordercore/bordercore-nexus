@@ -63,14 +63,9 @@ function SortableItem({
   onEditNote,
   onStartEditNote,
 }: SortableItemProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: element.uuid });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: element.uuid,
+  });
 
   const nodeRef = useRef<HTMLDivElement | null>(null);
   const setRef = (el: HTMLDivElement | null) => {
@@ -86,21 +81,11 @@ function SortableItem({
   }, [transform, transition]);
 
   return (
-    <div
-      ref={setRef}
-      className={`slicklist-item ${isDragging ? "dragging" : ""}`}
-    >
+    <div ref={setRef} className={`slicklist-item ${isDragging ? "dragging" : ""}`}>
       <div className="slicklist-list-item-inner">
-        <li
-          className="hover-target list-group-item pe-0"
-          data-uuid={element.uuid}
-        >
+        <li className="hover-target list-group-item pe-0" data-uuid={element.uuid}>
           <div className="dropdown-height d-flex align-items-start">
-            <div
-              className="drag-handle pe-2 cursor-grab"
-              {...attributes}
-              {...listeners}
-            >
+            <div className="drag-handle pe-2 cursor-grab" {...attributes} {...listeners}>
               <FontAwesomeIcon icon={faGripVertical} className="text-secondary" />
             </div>
             {element.type === "blob" ? (
@@ -121,8 +106,8 @@ function SortableItem({
                   className="form-control form-control-sm"
                   defaultValue={element.note || ""}
                   autoFocus
-                  onBlur={(e) => onEditNote(element.uuid, e.target.value)}
-                  onKeyDown={(e) => {
+                  onBlur={e => onEditNote(element.uuid, e.target.value)}
+                  onKeyDown={e => {
                     if (e.key === "Enter") {
                       onEditNote(element.uuid, (e.target as HTMLInputElement).value);
                     }
@@ -147,7 +132,7 @@ function SortableItem({
                       <a
                         href="#"
                         className="dropdown-menu-item"
-                        onClick={(e) => {
+                        onClick={e => {
                           e.preventDefault();
                           onRemove(element.uuid);
                         }}
@@ -162,7 +147,7 @@ function SortableItem({
                       <a
                         href="#"
                         className="dropdown-menu-item"
-                        onClick={(e) => {
+                        onClick={e => {
                           e.preventDefault();
                           onStartEditNote(element.uuid);
                         }}
@@ -201,10 +186,7 @@ interface NodeCollectionCardProps {
     callback: (settings: CollectionSettings) => void,
     data: CollectionSettings
   ) => void;
-  onOpenObjectSelectModal: (
-    callback: () => void,
-    data: { collectionUuid: string }
-  ) => void;
+  onOpenObjectSelectModal: (callback: () => void, data: { collectionUuid: string }) => void;
   onOpenImageModal: (imageUrl: string) => void;
   onEditLayout: (layout: string) => void;
 }
@@ -275,7 +257,7 @@ export default function NodeCollectionCard({
   const getObjectList = () => {
     doGet(
       `${getObjectListUrl}?random_order=${collection.random_order}`,
-      (response) => {
+      response => {
         setObjectList(response.data.object_list);
         setObjectCount(response.data.paginator?.count || response.data.object_list.length);
         setCurrentObjectIndex(0);
@@ -294,27 +276,25 @@ export default function NodeCollectionCard({
       clearInterval(rotateIntervalRef.current);
     }
 
-    rotateIntervalRef.current = setInterval(() => {
-      showNextObject();
-    }, collection.rotate * 1000 * 60);
+    rotateIntervalRef.current = setInterval(
+      () => {
+        showNextObject();
+      },
+      collection.rotate * 1000 * 60
+    );
   };
 
   const showNextObject = () => {
-    setCurrentObjectIndex((prev) =>
-      prev === objectList.length - 1 ? 0 : prev + 1
-    );
+    setCurrentObjectIndex(prev => (prev === objectList.length - 1 ? 0 : prev + 1));
   };
 
   const showPreviousObject = () => {
-    setCurrentObjectIndex((prev) =>
-      prev === 0 ? objectList.length - 1 : prev - 1
-    );
+    setCurrentObjectIndex(prev => (prev === 0 ? objectList.length - 1 : prev - 1));
   };
 
   const handleEditCollection = (settings: CollectionSettings) => {
-    const limitValue = (settings.limit != null && typeof settings.limit === "number")
-      ? settings.limit.toString()
-      : "";
+    const limitValue =
+      settings.limit != null && typeof settings.limit === "number" ? settings.limit.toString() : "";
     doPost(
       editCollectionUrl,
       {
@@ -327,7 +307,7 @@ export default function NodeCollectionCard({
         limit: limitValue,
       },
       () => {
-        setCollection((prev) => ({
+        setCollection(prev => ({
           ...prev,
           name: settings.name,
           display: settings.display as "list" | "individual",
@@ -349,7 +329,7 @@ export default function NodeCollectionCard({
         collection_uuid: collection.uuid,
         collection_type: collection.collection_type,
       },
-      (response) => {
+      response => {
         onEditLayout(response.data.layout);
       },
       "Collection deleted"
@@ -371,7 +351,7 @@ export default function NodeCollectionCard({
   };
 
   const handleEditNote = (objectUuid: string, note: string) => {
-    const object = objectList.find((o) => o.uuid === objectUuid);
+    const object = objectList.find(o => o.uuid === objectUuid);
     if (note === object?.note) {
       setEditingNoteUuid(null);
       return;
@@ -401,8 +381,8 @@ export default function NodeCollectionCard({
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      const oldIndex = objectList.findIndex((item) => item.uuid === active.id);
-      const newIndex = objectList.findIndex((item) => item.uuid === over.id);
+      const oldIndex = objectList.findIndex(item => item.uuid === active.id);
+      const newIndex = objectList.findIndex(item => item.uuid === over.id);
 
       const newList = arrayMove(objectList, oldIndex, newIndex);
       setObjectList(newList);
@@ -456,9 +436,7 @@ export default function NodeCollectionCard({
     onOpenObjectSelectModal(getObjectList, { collectionUuid: collection.uuid });
   };
 
-  const limitedObjectList = collection.limit
-    ? objectList.slice(0, collection.limit)
-    : objectList;
+  const limitedObjectList = collection.limit ? objectList.slice(0, collection.limit) : objectList;
 
   const dropdownContent = (
     <ul className="dropdown-menu-list">
@@ -467,7 +445,7 @@ export default function NodeCollectionCard({
           <a
             href="#"
             className="dropdown-menu-item"
-            onClick={(e) => {
+            onClick={e => {
               e.preventDefault();
               openObjectSelectModal();
             }}
@@ -498,7 +476,7 @@ export default function NodeCollectionCard({
         <a
           href="#"
           className="dropdown-menu-item"
-          onClick={(e) => {
+          onClick={e => {
             e.preventDefault();
             openEditModal();
           }}
@@ -513,7 +491,7 @@ export default function NodeCollectionCard({
         <a
           href="#"
           className="dropdown-menu-item"
-          onClick={(e) => {
+          onClick={e => {
             e.preventDefault();
             handleDeleteCollection();
           }}
@@ -549,7 +527,7 @@ export default function NodeCollectionCard({
       className="hover-reveal-target"
       onMouseOver={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      onDragOver={(e) => e.preventDefault()}
+      onDragOver={e => e.preventDefault()}
       onDrop={handleObjectDrop}
     >
       <Card cardClassName="backdrop-filter node-color-1 position-relative" titleSlot={titleSlot}>
@@ -574,11 +552,11 @@ export default function NodeCollectionCard({
             onDragEnd={handleDragEnd}
           >
             <SortableContext
-              items={limitedObjectList.map((item) => item.uuid)}
+              items={limitedObjectList.map(item => item.uuid)}
               strategy={verticalListSortingStrategy}
             >
               <ul className="drag-target list-group list-group-flush interior-borders">
-                {limitedObjectList.map((element) => (
+                {limitedObjectList.map(element => (
                   <SortableItem
                     key={element.uuid}
                     element={element}

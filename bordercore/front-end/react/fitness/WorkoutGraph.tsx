@@ -22,7 +22,7 @@ export function WorkoutGraph({ getWorkoutDataUrl }: WorkoutGraphProps) {
   const [currentPlotType, setCurrentPlotType] = useState<PlotType>("reps");
 
   const hasNote = useMemo(() => {
-    return plotInfo?.notes?.some((note) => note !== null) ?? false;
+    return plotInfo?.notes?.some(note => note !== null) ?? false;
   }, [plotInfo]);
 
   const hasWeight = useMemo(() => {
@@ -175,11 +175,12 @@ export function WorkoutGraph({ getWorkoutDataUrl }: WorkoutGraphProps) {
 
   function paginate(direction: "prev" | "next") {
     const pageNumber =
-      plotInfo?.paginator?.[direction === "prev" ? "previous_page_number" : "next_page_number"] ?? 1;
+      plotInfo?.paginator?.[direction === "prev" ? "previous_page_number" : "next_page_number"] ??
+      1;
 
     doGet(
       getWorkoutDataUrl + pageNumber,
-      (response) => {
+      response => {
         const wd = response.data.workout_data;
         const newPlotInfo: PlotInfo = {
           labels: wd.labels,
@@ -256,14 +257,27 @@ export function WorkoutGraph({ getWorkoutDataUrl }: WorkoutGraphProps) {
         </div>
         <h5 className="text-nowrap ms-auto">
           {plotInfo?.paginator?.has_previous ? (
-            <a href="#" onClick={(e) => { e.preventDefault(); paginate("prev"); }}>
+            <a
+              href="#"
+              onClick={e => {
+                e.preventDefault();
+                paginate("prev");
+              }}
+            >
               <FontAwesomeIcon icon={faChevronLeft} className="text-emphasis glow icon-hover" />
             </a>
           ) : (
             <FontAwesomeIcon icon={faChevronLeft} className="text-emphasis icon-disabled" />
           )}
           {plotInfo?.paginator?.has_next ? (
-            <a href="#" className="ms-1" onClick={(e) => { e.preventDefault(); paginate("next"); }}>
+            <a
+              href="#"
+              className="ms-1"
+              onClick={e => {
+                e.preventDefault();
+                paginate("next");
+              }}
+            >
               <FontAwesomeIcon icon={faChevronRight} className="text-emphasis glow icon-hover" />
             </a>
           ) : (

@@ -26,22 +26,14 @@ export function TreeMenu({ item, depth = 1, initialOpen = true }: TreeMenuProps)
   return (
     <li className={depth === 0 ? "hide-list-element" : ""}>
       {depth > 0 && (
-        <div
-          className={`text-break ${isFolder ? "tree-folder" : ""}`}
-          onClick={toggle}
-        >
+        <div className={`text-break ${isFolder ? "tree-folder" : ""}`} onClick={toggle}>
           <a href={`#section_${item.id}`}>{item.label}</a>
         </div>
       )}
       {isFolder && isOpen && (
         <ul className="mb-0 ms-2">
           {item.nodes.map((child, index) => (
-            <TreeMenu
-              key={index}
-              item={child}
-              depth={depth + 1}
-              initialOpen={depth < 0}
-            />
+            <TreeMenu key={index} item={child} depth={depth + 1} initialOpen={depth < 0} />
           ))}
         </ul>
       )}

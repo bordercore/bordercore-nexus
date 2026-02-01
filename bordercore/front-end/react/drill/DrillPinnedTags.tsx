@@ -61,14 +61,11 @@ export function DrillPinnedTags({
   }, []);
 
   // Drag and drop handlers
-  const handleDragStart = useCallback(
-    (e: React.DragEvent<HTMLDivElement>, index: number) => {
-      e.dataTransfer.effectAllowed = "move";
-      e.dataTransfer.setData("text/plain", index.toString());
-      setDraggingIndex(index);
-    },
-    []
-  );
+  const handleDragStart = useCallback((e: React.DragEvent<HTMLDivElement>, index: number) => {
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", index.toString());
+    setDraggingIndex(index);
+  }, []);
 
   const handleDragEnd = useCallback(() => {
     setDraggingIndex(null);
@@ -124,26 +121,18 @@ export function DrillPinnedTags({
 
   const handleTagAdd = useCallback(
     (tag: string) => {
-      doPost(
-        pinTagUrl,
-        { tag },
-        () => {
-          getTagList();
-        }
-      );
+      doPost(pinTagUrl, { tag }, () => {
+        getTagList();
+      });
     },
     [pinTagUrl, getTagList]
   );
 
   const handleTagDelete = useCallback(
     (tagName: string) => {
-      doPost(
-        unpinTagUrl,
-        { tag: tagName },
-        () => {
-          getTagList();
-        }
-      );
+      doPost(unpinTagUrl, { tag: tagName }, () => {
+        getTagList();
+      });
     },
     [unpinTagUrl, getTagList]
   );
@@ -174,7 +163,14 @@ export function DrillPinnedTags({
           dropdownSlot={
             <ul className="dropdown-menu-list">
               <li key="manage">
-                <a className="dropdown-item" href="#" onClick={(e) => { e.preventDefault(); openModal(); }}>
+                <a
+                  className="dropdown-item"
+                  href="#"
+                  onClick={e => {
+                    e.preventDefault();
+                    openModal();
+                  }}
+                >
                   <FontAwesomeIcon icon={faPencilAlt} className="text-primary me-3" />
                   Manage
                 </a>
@@ -189,24 +185,14 @@ export function DrillPinnedTags({
   return (
     <>
       {/* Modal for managing pinned tags */}
-      <div
-        ref={modalRef}
-        id="modalNewTag"
-        className="modal fade"
-        tabIndex={-1}
-        role="dialog"
-      >
+      <div ref={modalRef} id="modalNewTag" className="modal fade" tabIndex={-1} role="dialog">
         <div className="modal-dialog" role="document">
           <div className="modal-content">
             <div className="modal-header">
               <h4 id="myModalLabel" className="modal-title">
                 Pinned Tags
               </h4>
-              <button
-                type="button"
-                className="close-button btn-close"
-                data-bs-dismiss="modal"
-              />
+              <button type="button" className="close-button btn-close" data-bs-dismiss="modal" />
             </div>
             <div className="modal-body">
               <div className="form-row align-items-center">
@@ -219,10 +205,7 @@ export function DrillPinnedTags({
                   />
                 </div>
               </div>
-              <ul
-                id="drill-pinned-tags"
-                className="interior-borders p-2 mb-0 wide-list"
-              >
+              <ul id="drill-pinned-tags" className="interior-borders p-2 mb-0 wide-list">
                 {tagList.map((element, index) => (
                   <div
                     key={element.name}
@@ -230,11 +213,11 @@ export function DrillPinnedTags({
                       draggingIndex === index ? "dragging" : ""
                     } ${dragOverIndex === index ? "drag-over" : ""}`}
                     draggable
-                    onDragStart={(e) => handleDragStart(e, index)}
+                    onDragStart={e => handleDragStart(e, index)}
                     onDragEnd={handleDragEnd}
-                    onDragOver={(e) => handleDragOver(e, index)}
+                    onDragOver={e => handleDragOver(e, index)}
                     onDragLeave={handleDragLeave}
-                    onDrop={(e) => handleDrop(e, index)}
+                    onDrop={e => handleDrop(e, index)}
                   >
                     <div className="slicklist-list-item-inner">
                       <li className="list-group-item px-2 py-1">
@@ -243,9 +226,8 @@ export function DrillPinnedTags({
                           <div className="ms-auto my-auto show-on-hover">
                             <FontAwesomeIcon
                               icon={faTimesCircle}
-                              className="list-delete"
+                              className="list-delete cursor-pointer"
                               onClick={() => handleTagDelete(element.name)}
-                              className="cursor-pointer"
                             />
                           </div>
                         </div>
@@ -278,7 +260,7 @@ export function DrillPinnedTags({
           <div className="text-secondary">Data Loading...</div>
         ) : (
           <ul className="list-unstyled">
-            {tagList.map((tag) => (
+            {tagList.map(tag => (
               <li key={tag.name} className="d-flex px-2">
                 <div className="item-name flex-fill">
                   <a href={tag.url}>{tag.name}</a>
@@ -288,7 +270,13 @@ export function DrillPinnedTags({
             ))}
             {tagList.length === 0 && (
               <li key="add-tag">
-                <a href="#" onClick={(e) => { e.preventDefault(); openModal(); }}>
+                <a
+                  href="#"
+                  onClick={e => {
+                    e.preventDefault();
+                    openModal();
+                  }}
+                >
                   Add a tag
                 </a>
               </li>

@@ -1,6 +1,6 @@
 import axios from "axios";
 
-// EventBus for React (using tiny-emitter like Vue version)
+// EventBus for React (using tiny-emitter)
 import emitter from "tiny-emitter/instance";
 
 export const EventBus = {
@@ -10,7 +10,7 @@ export const EventBus = {
   $emit: (...args: any[]) => emitter.emit(...args),
 };
 
-// Configure axios to use CSRF token from cookies (matching Vue bundle behavior)
+// Configure axios to use CSRF token from cookies
 axios.defaults.xsrfCookieName = "csrftoken";
 axios.defaults.xsrfHeaderName = "X-CSRFToken";
 axios.defaults.withCredentials = true; // Ensure cookies are sent
@@ -39,10 +39,15 @@ function getCsrfToken(): string {
  * @param {string} errorMsg The message to display on error.
  * @param {string} responseType The response type (json, text, or arraybuffer).
  */
-export function doGet(url: string, callback: (response: any) => void, errorMsg = "", responseType: "json" | "text" | "arraybuffer" = "json") {
+export function doGet(
+  url: string,
+  callback: (response: any) => void,
+  errorMsg = "",
+  responseType: "json" | "text" | "arraybuffer" = "json"
+) {
   axios
     .get(url, { responseType: responseType })
-    .then((response) => {
+    .then(response => {
       // Skip status check for arraybuffer responses (binary data has no .status property)
       if (responseType !== "arraybuffer" && response.data.status && response.data.status !== "OK") {
         EventBus.$emit("toast", {
@@ -56,7 +61,7 @@ export function doGet(url: string, callback: (response: any) => void, errorMsg =
         return callback(response);
       }
     })
-    .catch((error) => {
+    .catch(error => {
       EventBus.$emit("toast", {
         title: "Error!",
         body: `${errorMsg}: ${error.message}`,
@@ -75,7 +80,13 @@ export function doGet(url: string, callback: (response: any) => void, errorMsg =
  * @param {string} successMsg The message to display on success.
  * @param {string} errorMsg The message to display on error.
  */
-export function doPost(url: string, params: Record<string, any>, callback: (response: any) => void, successMsg = "", errorMsg = ""): void {
+export function doPost(
+  url: string,
+  params: Record<string, any>,
+  callback: (response: any) => void,
+  successMsg = "",
+  errorMsg = ""
+): void {
   const bodyFormData = new URLSearchParams();
 
   // Get CSRF token first so we can add it to form data
@@ -95,15 +106,16 @@ export function doPost(url: string, params: Record<string, any>, callback: (resp
     // Also set header (Django accepts both X-CSRFToken and X-Csrftoken, case-insensitive)
     headers["X-CSRFToken"] = csrfToken;
   }
-  
-  // Match Vue version: use axios() directly, ensure credentials are sent
+
+  // Use axios() directly, ensure credentials are sent
   axios(url, {
     method: "POST",
     data: bodyFormData,
     headers: headers,
     withCredentials: true, // Ensure cookies are sent for same-origin requests
-  }).then((response) => {
-    if (response.data.status && response.data.status === "Warning") {
+  })
+    .then(response => {
+      if (response.data.status && response.data.status === "Warning") {
         EventBus.$emit("toast", {
           title: "Error",
           body: response.data.message,
@@ -131,7 +143,7 @@ export function doPost(url: string, params: Record<string, any>, callback: (resp
         callback(response);
       }
     })
-    .catch((error) => {
+    .catch(error => {
       EventBus.$emit("toast", {
         title: "Error",
         body: error.response?.data?.message || error.message,
@@ -150,7 +162,13 @@ export function doPost(url: string, params: Record<string, any>, callback: (resp
  * @param {string} successMsg The message to display on success.
  * @param {string} errorMsg The message to display on error.
  */
-export function doPut(url: string, params: Record<string, any>, callback: (response: any) => void, successMsg = "", errorMsg = ""): void {
+export function doPut(
+  url: string,
+  params: Record<string, any>,
+  callback: (response: any) => void,
+  successMsg = "",
+  errorMsg = ""
+): void {
   const bodyFormData = new URLSearchParams();
 
   // Get CSRF token first so we can add it to form data
@@ -175,28 +193,29 @@ export function doPut(url: string, params: Record<string, any>, callback: (respo
     data: bodyFormData,
     headers: headers,
     withCredentials: true,
-  }).then((response) => {
-    if (response.status !== 200) {
-      EventBus.$emit("toast", {
-        title: "Error",
-        body: response.data.message,
-        variant: "danger",
-        autoHide: true,
-      });
-      console.log("Error: ", response.statusText);
-    } else {
-      const body = response.data.message ? response.data.message : successMsg;
-      if (body) {
-        EventBus.$emit("toast", {
-          title: "Success",
-          body: response.data.message ? response.data.message : successMsg,
-          variant: "info",
-        });
-      }
-      callback(response);
-    }
   })
-    .catch((error) => {
+    .then(response => {
+      if (response.status !== 200) {
+        EventBus.$emit("toast", {
+          title: "Error",
+          body: response.data.message,
+          variant: "danger",
+          autoHide: true,
+        });
+        console.log("Error: ", response.statusText);
+      } else {
+        const body = response.data.message ? response.data.message : successMsg;
+        if (body) {
+          EventBus.$emit("toast", {
+            title: "Success",
+            body: response.data.message ? response.data.message : successMsg,
+            variant: "info",
+          });
+        }
+        callback(response);
+      }
+    })
+    .catch(error => {
       EventBus.$emit("toast", {
         title: "Error",
         body: error.message,
@@ -232,16 +251,17 @@ export function doDelete(url: string, callback: (response: any) => void, success
     data: bodyFormData,
     headers: headers,
     withCredentials: true,
-  }).then((response) => {
-    if (successMsg) {
-      EventBus.$emit("toast", {
-        body: successMsg,
-        variant: "info",
-      });
-    }
-    callback(response);
   })
-    .catch((error) => {
+    .then(response => {
+      if (successMsg) {
+        EventBus.$emit("toast", {
+          body: successMsg,
+          variant: "info",
+        });
+      }
+      callback(response);
+    })
+    .catch(error => {
       EventBus.$emit("toast", {
         title: "Error",
         body: error.response?.data?.message || error.message,

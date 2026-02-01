@@ -21,11 +21,8 @@ export function TagSearchResult({ docType, matches, isActive = false }: TagSearc
   return (
     <div id={docType} className={`tab-pane fade ${isActive ? "show active" : ""}`}>
       <ul className={`list-unstyled ${isFlexWrap ? "d-flex flex-wrap" : ""}`}>
-        {matches.map((match) => (
-          <li
-            key={match.uuid}
-            className={`search-result py-3 ${isGrid ? "grid" : ""}`}
-          >
+        {matches.map(match => (
+          <li key={match.uuid} className={`search-result py-3 ${isGrid ? "grid" : ""}`}>
             {docType === "drill" && (
               <div className="col-lg-12">
                 <a href={match.object_url}>{match.question}</a>
@@ -111,16 +108,14 @@ export function TagSearchResult({ docType, matches, isActive = false }: TagSearc
                       </div>
                     )}
                     <div className="d-flex flex-wrap mt-2">
-                      {match.tags.map((tag) => (
+                      {match.tags.map(tag => (
                         <a key={tag.name} href={tag.url} className="tag">
                           {tag.name}
                         </a>
                       ))}
                     </div>
                   </div>
-                  {(docType === "bookmark" ||
-                    docType === "note" ||
-                    docType === "document") &&
+                  {(docType === "bookmark" || docType === "note" || docType === "document") &&
                     match.date && (
                       <div className="search-result-date text-nowrap ms-auto ps-4">
                         {match.date}

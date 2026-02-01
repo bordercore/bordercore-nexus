@@ -1,10 +1,4 @@
-import React, {
-  useState,
-  useRef,
-  forwardRef,
-  useImperativeHandle,
-  useCallback,
-} from "react";
+import React, { useState, useRef, forwardRef, useImperativeHandle, useCallback } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
 import TagsInput, { TagsInputHandle } from "../common/TagsInput";
@@ -105,7 +99,7 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(function Se
                 id="search-bar"
                 ref={searchInputRef}
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={e => setSearchTerm(e.target.value)}
                 name="term_search"
                 placeholder="Search"
                 className="default-input form-control"
@@ -124,7 +118,7 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(function Se
               <div className="mb-1">Exact Match</div>
               <select
                 value={exactMatch}
-                onChange={(e) => setExactMatch(e.target.value)}
+                onChange={e => setExactMatch(e.target.value)}
                 name="exact_match"
                 className="form-control"
               >
@@ -137,7 +131,7 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(function Se
               <select
                 id="search-sort-by"
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
+                onChange={e => setSortBy(e.target.value)}
                 name="sort"
                 className="form-control"
               >
@@ -179,7 +173,7 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(function Se
               <div className="mb-1">Related Tags</div>
               <select className="form-control form-select" onChange={handleRelatedTagsChange}>
                 <option value="-1">Choose</option>
-                {tagCounts.map((tag) => (
+                {tagCounts.map(tag => (
                   <option key={tag[0]} value={tag[0]}>
                     {tag[0]} ({tag[1]})
                   </option>
@@ -194,7 +188,10 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(function Se
               type="submit"
               name="Go"
               value="Search"
-              disabled={!tagsInputRef.current || (tagsInputRef.current?.getTags()?.length === 0 && initialTags.length === 0)}
+              disabled={
+                !tagsInputRef.current ||
+                (tagsInputRef.current?.getTags()?.length === 0 && initialTags.length === 0)
+              }
             />
           </div>
         </div>
@@ -212,7 +209,7 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(function Se
                   <FontAwesomeIcon icon={faMagnifyingGlass} className="search-icon" />
                   <input
                     value={searchSemantic}
-                    onChange={(e) => setSearchSemantic(e.target.value)}
+                    onChange={e => setSearchSemantic(e.target.value)}
                     name="semantic_search"
                     placeholder="Search"
                     className="default-input form-control"

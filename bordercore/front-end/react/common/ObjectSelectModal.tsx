@@ -99,16 +99,19 @@ export const ObjectSelectModal = React.forwardRef<ObjectSelectModalHandle, Objec
       setOptions(initialOptions);
     }, []);
 
-    const openModal = useCallback((callback?: (object: ObjectOption) => void) => {
-      onSelectCallbackRef.current = callback || null;
-      if (modalInstanceRef.current) {
-        modalInstanceRef.current.show();
-        loadInitialOptions();
-        setTimeout(() => {
-          selectValueRef.current?.focus();
-        }, 500);
-      }
-    }, [loadInitialOptions]);
+    const openModal = useCallback(
+      (callback?: (object: ObjectOption) => void) => {
+        onSelectCallbackRef.current = callback || null;
+        if (modalInstanceRef.current) {
+          modalInstanceRef.current.show();
+          loadInitialOptions();
+          setTimeout(() => {
+            selectValueRef.current?.focus();
+          }, 500);
+        }
+      },
+      [loadInitialOptions]
+    );
 
     const closeModal = useCallback(() => {
       // Blur focused element before hiding to avoid aria-hidden accessibility warning
@@ -149,7 +152,7 @@ export const ObjectSelectModal = React.forwardRef<ObjectSelectModalHandle, Objec
         return (
           <div
             className="object-select-suggestion d-flex dropdown-item cursor-pointer"
-            onClick={(e) => {
+            onClick={e => {
               e.preventDefault();
               e.stopPropagation();
               handleObjectSelect(option);
@@ -158,10 +161,9 @@ export const ObjectSelectModal = React.forwardRef<ObjectSelectModalHandle, Objec
             {option.cover_url && (
               <div className="cover-image me-2">
                 <img
-                  className="mh-100 mw-100"
+                  className="mh-100 mw-100 object-select-cover-image"
                   src={option.cover_url}
                   alt=""
-                  className="object-select-cover-image"
                 />
               </div>
             )}
@@ -172,12 +174,7 @@ export const ObjectSelectModal = React.forwardRef<ObjectSelectModalHandle, Objec
             )}
             {!option.cover_url && option.doctype === "Bookmark" && option.thumbnail_url && (
               <div className="cover-image me-2">
-                <img
-                  width="120"
-                  height="67"
-                  src={option.thumbnail_url}
-                  alt=""
-                />
+                <img width="120" height="67" src={option.thumbnail_url} alt="" />
               </div>
             )}
             <div className="name d-flex flex-column">
@@ -201,13 +198,7 @@ export const ObjectSelectModal = React.forwardRef<ObjectSelectModalHandle, Objec
     );
 
     return (
-      <div
-        ref={modalRef}
-        id={id}
-        className="modal fade"
-        tabIndex={-1}
-        role="dialog"
-      >
+      <div ref={modalRef} id={id} className="modal fade" tabIndex={-1} role="dialog">
         <div className="modal-dialog" role="document">
           <div className="modal-content">
             <div className="modal-header">
@@ -221,7 +212,7 @@ export const ObjectSelectModal = React.forwardRef<ObjectSelectModalHandle, Objec
             </div>
             <div className="modal-body">
               <div className="d-flex flex-column">
-                <form onSubmit={(e) => e.preventDefault()}>
+                <form onSubmit={e => e.preventDefault()}>
                   <SelectValue
                     ref={selectValueRef}
                     searchUrl={getSearchUrl()}

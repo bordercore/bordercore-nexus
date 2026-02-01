@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useCallback } from "react";
-import axios from "axios";  // Still needed for fetching form data and dupe check
+import axios from "axios"; // Still needed for fetching form data and dupe check
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faStar, faMusic, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 import { SelectValue, SelectValueHandle } from "../common/SelectValue";
@@ -118,7 +118,9 @@ export function SongEditPage({
       if (formAjaxUrl) {
         try {
           setLoading(true);
-          const response = await axios.get<SongFormData & { uuid?: string; source_options?: SourceOption[] }>(formAjaxUrl);
+          const response = await axios.get<
+            SongFormData & { uuid?: string; source_options?: SourceOption[] }
+          >(formAjaxUrl);
           setFormData(response.data);
           if (response.data.uuid) {
             setSongUuid(response.data.uuid);
@@ -157,14 +159,14 @@ export function SongEditPage({
       newValue = value ? parseInt(value, 10) : null;
     }
 
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       [name]: newValue,
     }));
 
     // Clear error for this field
     if (errors[name as keyof SongFormErrors]) {
-      setErrors((prev) => {
+      setErrors(prev => {
         const newErrors = { ...prev };
         delete newErrors[name as keyof SongFormErrors];
         return newErrors;
@@ -174,7 +176,7 @@ export function SongEditPage({
 
   const handleArtistSelect = (option: { label?: string; artist?: string }) => {
     const artistName = option.artist || option.label || "";
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       artist: artistName,
     }));
@@ -218,7 +220,7 @@ export function SongEditPage({
   };
 
   const handleTagsChanged = (tags: string[]) => {
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       tags,
     }));
@@ -237,9 +239,9 @@ export function SongEditPage({
     const clickedRating = starIndex + 1;
     // If clicking the same rating, deselect it
     if (clickedRating === formData.rating) {
-      setFormData((prev) => ({ ...prev, rating: null }));
+      setFormData(prev => ({ ...prev, rating: null }));
     } else {
-      setFormData((prev) => ({ ...prev, rating: clickedRating }));
+      setFormData(prev => ({ ...prev, rating: clickedRating }));
     }
   };
 
@@ -268,10 +270,8 @@ export function SongEditPage({
           {/* Duplicate songs warning */}
           {dupeSongs.length > 0 && (
             <Card className="backdrop-filter">
-              <h6 className="text-warning mb-2 text-center">
-                Possible duplicate songs found
-              </h6>
-              {dupeSongs.map((dupe) => (
+              <h6 className="text-warning mb-2 text-center">Possible duplicate songs found</h6>
+              {dupeSongs.map(dupe => (
                 <div key={dupe.uuid} className="my-2">
                   <hr className="divider" />
                   <div className="d-flex">
@@ -280,9 +280,7 @@ export function SongEditPage({
                       <a href={dupe.url} target="bc-dupe-song">
                         {dupe.title}
                       </a>
-                      {dupe.note && (
-                        <div className="dupe-song-note text-truncate">{dupe.note}</div>
-                      )}
+                      {dupe.note && <div className="dupe-song-note text-truncate">{dupe.note}</div>}
                       {dupe.album_name && (
                         <div>
                           <a className="text-primary" href={dupe.album_url}>
@@ -298,7 +296,9 @@ export function SongEditPage({
           )}
 
           {/* Song Info Card */}
-          {(formData.length != null || formData.last_time_played !== "Never" || formData.times_played > 0) && (
+          {(formData.length != null ||
+            formData.last_time_played !== "Never" ||
+            formData.times_played > 0) && (
             <Card title="Song Info" className="backdrop-filter ms-3">
               <ul>
                 {formData.length != null && (
@@ -322,7 +322,7 @@ export function SongEditPage({
           <Card title="Tag Suggestions" className="backdrop-filter ms-3">
             <hr className="divider" />
             <ul className="list-group interior-borders">
-              {tagSuggestions.map((tag) => (
+              {tagSuggestions.map(tag => (
                 <li
                   key={tag.name}
                   className="list-with-counts ps-2 py-1 pe-2 d-flex"
@@ -373,9 +373,7 @@ export function SongEditPage({
                 onBlur={handleTitleBlur}
                 autoComplete="off"
               />
-              {errors.title && (
-                <span className="form-error">{errors.title.join(", ")}</span>
-              )}
+              {errors.title && <span className="form-error">{errors.title.join(", ")}</span>}
             </div>
           </div>
 
@@ -393,9 +391,7 @@ export function SongEditPage({
                 onSelect={handleArtistSelect}
               />
               <input type="hidden" name="artist" value={formData.artist} />
-              {errors.artist && (
-                <span className="form-error">{errors.artist.join(", ")}</span>
-              )}
+              {errors.artist && <span className="form-error">{errors.artist.join(", ")}</span>}
             </div>
           </div>
 
@@ -412,9 +408,7 @@ export function SongEditPage({
                 onChange={handleChange}
                 autoComplete="off"
               />
-              {errors.track && (
-                <span className="form-error">{errors.track.join(", ")}</span>
-              )}
+              {errors.track && <span className="form-error">{errors.track.join(", ")}</span>}
             </div>
           </div>
 
@@ -431,9 +425,7 @@ export function SongEditPage({
                 onChange={handleChange}
                 autoComplete="off"
               />
-              {errors.year && (
-                <span className="form-error">{errors.year.join(", ")}</span>
-              )}
+              {errors.year && <span className="form-error">{errors.year.join(", ")}</span>}
             </div>
           </div>
 
@@ -468,9 +460,7 @@ export function SongEditPage({
                 initialTags={formData.tags}
                 onTagsChanged={handleTagsChanged}
               />
-              {errors.tags && (
-                <span className="form-error">{errors.tags.join(", ")}</span>
-              )}
+              {errors.tags && <span className="form-error">{errors.tags.join(", ")}</span>}
             </div>
           </div>
 
@@ -519,14 +509,13 @@ export function SongEditPage({
           <div className="row align-items-center mb-3">
             <label className="col-lg-3 col-form-label fw-bold text-end">Rating</label>
             <div className="col-lg-9" onMouseLeave={handleRatingMouseLeave}>
-              {[0, 1, 2, 3, 4].map((starIndex) => (
+              {[0, 1, 2, 3, 4].map(starIndex => (
                 <span
                   key={starIndex}
-                  className={`rating-no-hover me-1 ${displayRating > starIndex ? "rating-star-selected" : ""}`}
+                  className={`rating-no-hover me-1 cursor-pointer ${displayRating > starIndex ? "rating-star-selected" : ""}`}
                   data-rating={starIndex}
                   onClick={() => handleRatingClick(starIndex)}
                   onMouseOver={() => handleRatingMouseOver(starIndex)}
-                  className="cursor-pointer"
                 >
                   <FontAwesomeIcon icon={faStar} />
                 </span>
@@ -547,9 +536,7 @@ export function SongEditPage({
                 value={formData.note}
                 onChange={handleChange}
               />
-              {errors.note && (
-                <span className="form-error">{errors.note.join(", ")}</span>
-              )}
+              {errors.note && <span className="form-error">{errors.note.join(", ")}</span>}
             </div>
           </div>
 
@@ -564,26 +551,20 @@ export function SongEditPage({
                 value={formData.source || ""}
                 onChange={handleChange}
               >
-                {sourceOptions.map((option) => (
+                {sourceOptions.map(option => (
                   <option key={option.id} value={option.id}>
                     {option.name}
                   </option>
                 ))}
               </select>
-              {errors.source && (
-                <span className="form-error">{errors.source.join(", ")}</span>
-              )}
+              {errors.source && <span className="form-error">{errors.source.join(", ")}</span>}
             </div>
           </div>
 
           {/* Submit buttons */}
           <div>
             <div className="col-lg-9 offset-lg-3">
-              <button
-                type="submit"
-                className="btn btn-primary ms-2"
-                disabled={submitting}
-              >
+              <button type="submit" className="btn btn-primary ms-2" disabled={submitting}>
                 {submitting ? "Saving..." : "Save"}
               </button>
               <a href={cancelUrl} className="ms-3">

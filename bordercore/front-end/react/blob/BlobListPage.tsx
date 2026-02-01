@@ -1,17 +1,9 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faPlus,
-  faFileImport,
-  faBookOpen,
-} from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faFileImport, faBookOpen } from "@fortawesome/free-solid-svg-icons";
 import MarkdownIt from "markdown-it";
 import { DropDownMenu } from "../common/DropDownMenu";
-import type {
-  BlobListPageProps,
-  NavItem,
-  Blob,
-} from "./types";
+import type { BlobListPageProps, NavItem, Blob } from "./types";
 
 const markdown = new MarkdownIt();
 
@@ -37,7 +29,7 @@ export function BlobListPage({ blobListData, urls }: BlobListPageProps) {
   const [navCurrent, setNavCurrent] = useState<NavItem>("All");
 
   const visibleNav = useMemo(() => {
-    return NAV_ALL.filter((nav) => {
+    return NAV_ALL.filter(nav => {
       if (nav === "All") return true;
       const doctype = getNormalizedDoctype(nav);
       return (blobListData.docTypes[doctype as keyof typeof blobListData.docTypes] || 0) > 0;
@@ -49,7 +41,7 @@ export function BlobListPage({ blobListData, urls }: BlobListPageProps) {
       return blobListData.blobList;
     }
     const doctype = getNormalizedDoctype(navCurrent);
-    return blobListData.blobList.filter((blob) => blob.doctype === doctype);
+    return blobListData.blobList.filter(blob => blob.doctype === doctype);
   }, [blobListData.blobList, navCurrent]);
 
   const doctypeCount = (nav: NavItem): number => {
@@ -72,7 +64,7 @@ export function BlobListPage({ blobListData, urls }: BlobListPageProps) {
 
   // Scale down headings in blob content after render
   useEffect(() => {
-    document.querySelectorAll(".blob-content :is(h1, h2, h3, h4, h5, h6)").forEach((el) => {
+    document.querySelectorAll(".blob-content :is(h1, h2, h3, h4, h5, h6)").forEach(el => {
       const htmlEl = el as HTMLElement;
       const style = window.getComputedStyle(htmlEl, null).getPropertyValue("font-size");
       const fontSize = parseFloat(style);
@@ -93,28 +85,19 @@ export function BlobListPage({ blobListData, urls }: BlobListPageProps) {
                 <ul className="dropdown-menu-list">
                   <li>
                     <a className="dropdown-item" href={urls.createBlob}>
-                      <FontAwesomeIcon
-                        icon={faPlus}
-                        className="text-primary me-3"
-                      />
+                      <FontAwesomeIcon icon={faPlus} className="text-primary me-3" />
                       <span>New Blob</span>
                     </a>
                   </li>
                   <li>
                     <a className="dropdown-item" href={urls.importBlob}>
-                      <FontAwesomeIcon
-                        icon={faFileImport}
-                        className="text-primary me-3"
-                      />
+                      <FontAwesomeIcon icon={faFileImport} className="text-primary me-3" />
                       <span>Import Blob</span>
                     </a>
                   </li>
                   <li>
                     <a className="dropdown-item" href={urls.bookshelf}>
-                      <FontAwesomeIcon
-                        icon={faBookOpen}
-                        className="text-primary me-3"
-                      />
+                      <FontAwesomeIcon icon={faBookOpen} className="text-primary me-3" />
                       <span>Bookshelf</span>
                     </a>
                   </li>
@@ -126,22 +109,16 @@ export function BlobListPage({ blobListData, urls }: BlobListPageProps) {
       </div>
 
       <ul className="nav nav-tabs mx-3">
-        {visibleNav.map((nav) => (
-          <li
-            key={nav}
-            className="nav-item px-5"
-            onClick={() => handleClickNav(nav)}
-          >
+        {visibleNav.map(nav => (
+          <li key={nav} className="nav-item px-5" onClick={() => handleClickNav(nav)}>
             <a
               className={`nav-link ${navCurrent === nav ? "active" : ""}`}
               data-bs-toggle="tab"
               href="#"
-              onClick={(e) => e.preventDefault()}
+              onClick={e => e.preventDefault()}
             >
               {nav}
-              <span className="badge rounded-pill align-middle ms-2">
-                {doctypeCount(nav)}
-              </span>
+              <span className="badge rounded-pill align-middle ms-2">{doctypeCount(nav)}</span>
             </a>
           </li>
         ))}
@@ -157,17 +134,13 @@ export function BlobListPage({ blobListData, urls }: BlobListPageProps) {
           >
             <div className="d-flex flex-column h-100">
               <h5 className="text-center mb-2">
-                <a
-                  href={blob.url}
-                  className="text-primary"
-                  onClick={(e) => e.stopPropagation()}
-                >
+                <a href={blob.url} className="text-primary" onClick={e => e.stopPropagation()}>
                   {blob.name}
                 </a>
               </h5>
 
               {blob.cover_url && (
-                <a href={blob.url} onClick={(e) => e.stopPropagation()}>
+                <a href={blob.url} onClick={e => e.stopPropagation()}>
                   <img className="w-100" src={blob.cover_url} alt={blob.name} />
                 </a>
               )}
@@ -181,9 +154,7 @@ export function BlobListPage({ blobListData, urls }: BlobListPageProps) {
               )}
 
               <div className="blob-info d-flex justify-content-between mt-auto">
-                <div className="text-primary me-auto">
-                  {getDeltaDays(blob.delta_days)}
-                </div>
+                <div className="text-primary me-auto">{getDeltaDays(blob.delta_days)}</div>
                 <div className="text-center">
                   {blob.content_size !== "0 Bytes" && (
                     <span>

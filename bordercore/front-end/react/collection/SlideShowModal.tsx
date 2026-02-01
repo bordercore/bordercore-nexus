@@ -119,10 +119,10 @@ export const SlideShowModal = forwardRef<SlideShowModalHandle, SlideShowModalPro
                       <select
                         className="form-control form-select"
                         value={interval}
-                        onChange={(e) => setInterval(e.target.value)}
+                        onChange={e => setInterval(e.target.value)}
                         disabled={type === "manual"}
                       >
-                        {slideShowOptions.map((option) => (
+                        {slideShowOptions.map(option => (
                           <option key={option.value} value={option.value}>
                             {option.display}
                           </option>
@@ -136,7 +136,7 @@ export const SlideShowModal = forwardRef<SlideShowModalHandle, SlideShowModalPro
                           className="form-check-input"
                           id="randomize-switch"
                           checked={randomize}
-                          onChange={(e) => setRandomize(e.target.checked)}
+                          onChange={e => setRandomize(e.target.checked)}
                           disabled={type === "manual"}
                         />
                         <label className="form-check-label" htmlFor="randomize-switch">
@@ -160,10 +160,10 @@ export const SlideShowModal = forwardRef<SlideShowModalHandle, SlideShowModalPro
                       id="slideshow-tag"
                       className="form-control form-select"
                       value={tag}
-                      onChange={(e) => setTag(e.target.value)}
+                      onChange={e => setTag(e.target.value)}
                     >
                       <option value="">All Objects</option>
-                      {objectTags.map((t) => (
+                      {objectTags.map(t => (
                         <option key={t.id} value={t.tag}>
                           {t.tag}
                         </option>

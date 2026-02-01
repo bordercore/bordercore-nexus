@@ -71,7 +71,7 @@ export function Toast({ initialMessages = [], defaultVariant = "info" }: ToastPr
         window.EventBus.$on("toast", handler);
 
         // Show initial messages
-        initialMessages.forEach((message) => {
+        initialMessages.forEach(message => {
           showToast(message);
         });
 
@@ -84,13 +84,23 @@ export function Toast({ initialMessages = [], defaultVariant = "info" }: ToastPr
 
   return (
     <div className={`toast-wrapper position-fixed top-0 end-0 p-3 ${variant}`}>
-      <div id="liveToast" className="toast hide" role="alert" aria-live="assertive" aria-atomic="true" ref={toastRef}>
+      <div
+        id="liveToast"
+        className="toast hide"
+        role="alert"
+        aria-live="assertive"
+        aria-atomic="true"
+        ref={toastRef}
+      >
         <div className="toast-header">
           <strong className="me-auto" dangerouslySetInnerHTML={{ __html: title }} />
           <button type="button" className="btn-close" data-bs-dismiss="toast" aria-label="Close" />
         </div>
         <div className="toast-body d-flex align-items-top">
-          <FontAwesomeIcon className={`fa-lg me-2 mt-1 mb-1 pt-1 text-${variant}`} icon={getIcon()} />
+          <FontAwesomeIcon
+            className={`fa-lg me-2 mt-1 mb-1 pt-1 text-${variant}`}
+            icon={getIcon()}
+          />
           <div className="mt-1" dangerouslySetInnerHTML={{ __html: body }} />
         </div>
       </div>
@@ -99,4 +109,3 @@ export function Toast({ initialMessages = [], defaultVariant = "info" }: ToastPr
 }
 
 export default Toast;
-

@@ -94,13 +94,10 @@ export function FeedEditorModal({
     }
   }, [statusMessage.type]);
 
-  const handleInputChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const { name, value } = e.target;
-      setFeedInfo((prev) => ({ ...prev, [name]: value }));
-    },
-    []
-  );
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFeedInfo(prev => ({ ...prev, [name]: value }));
+  }, []);
 
   const handleUrlBlur = useCallback(() => {
     const feedUrl = feedInfo.url;
@@ -114,7 +111,7 @@ export function FeedEditorModal({
     if (!feedInfo.homepage) {
       const baseUrl = feedUrl.match(/^(https?:\/\/.*?)\//);
       if (baseUrl) {
-        setFeedInfo((prev) => ({ ...prev, homepage: baseUrl[1] }));
+        setFeedInfo(prev => ({ ...prev, homepage: baseUrl[1] }));
       }
     }
 
@@ -123,7 +120,7 @@ export function FeedEditorModal({
 
     doGet(
       checkUrl,
-      (response) => {
+      response => {
         setCheckingStatus(false);
         setLastResponseCode(response.data.status_code);
         if (!response || response.data.status_code !== StatusCodes.OK) {
@@ -146,10 +143,7 @@ export function FeedEditorModal({
 
   const handleSubmit = useCallback(() => {
     if (action === "Edit" && feedInfo.uuid) {
-      const url = editFeedUrl.replace(
-        /00000000-0000-0000-0000-000000000000/,
-        feedInfo.uuid
-      );
+      const url = editFeedUrl.replace(/00000000-0000-0000-0000-000000000000/, feedInfo.uuid);
       doPut(
         url,
         {
@@ -173,7 +167,7 @@ export function FeedEditorModal({
           name: feedInfo.name,
           url: feedInfo.url,
         },
-        (response) => {
+        response => {
           onAddFeed(response.data.feed_info);
           if (modalInstanceRef.current) {
             modalInstanceRef.current.hide();
@@ -228,12 +222,9 @@ export function FeedEditorModal({
             />
           </div>
           <div className="modal-body">
-            <form onSubmit={(e) => e.preventDefault()}>
+            <form onSubmit={e => e.preventDefault()}>
               <div className="row mb-3">
-                <label
-                  className="fw-bold col-lg-3 col-form-label text-end"
-                  htmlFor="id_name"
-                >
+                <label className="fw-bold col-lg-3 col-form-label text-end" htmlFor="id_name">
                   Name
                 </label>
                 <div className="col-lg-9">
@@ -252,10 +243,7 @@ export function FeedEditorModal({
               </div>
 
               <div className="row mb-3">
-                <label
-                  className="fw-bold col-lg-3 col-form-label text-end"
-                  htmlFor="id_url"
-                >
+                <label className="fw-bold col-lg-3 col-form-label text-end" htmlFor="id_url">
                   Url
                 </label>
                 <div className="col-lg-9">
@@ -274,10 +262,7 @@ export function FeedEditorModal({
               </div>
 
               <div className="row mb-3">
-                <label
-                  className="fw-bold col-lg-3 col-form-label text-end"
-                  htmlFor="id_homepage"
-                >
+                <label className="fw-bold col-lg-3 col-form-label text-end" htmlFor="id_homepage">
                   Homepage
                 </label>
                 <div className="col-lg-9">

@@ -18,7 +18,7 @@ export function BaseStoreProvider({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(initialCollapsed);
 
   const toggleSidebar = () => {
-    setSidebarCollapsed((prev) => !prev);
+    setSidebarCollapsed(prev => !prev);
   };
 
   return (
@@ -41,4 +41,3 @@ export function useBaseStore() {
   }
   return context;
 }
-

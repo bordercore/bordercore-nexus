@@ -12,11 +12,7 @@ interface CollectionListPageProps {
   csrfToken: string;
 }
 
-export function CollectionListPage({
-  collections,
-  urls,
-  csrfToken,
-}: CollectionListPageProps) {
+export function CollectionListPage({ collections, urls, csrfToken }: CollectionListPageProps) {
   const [filter, setFilter] = useState<string>("");
   const [showFilterInput, setShowFilterInput] = useState(false);
   const [filterInputValue, setFilterInputValue] = useState("");
@@ -27,7 +23,7 @@ export function CollectionListPage({
       return collections;
     }
     const regex = new RegExp(`.*${filter}.*`, "i");
-    return collections.filter((c) => regex.test(c.name));
+    return collections.filter(c => regex.test(c.name));
   }, [collections, filter]);
 
   const handleCollectionClick = (url: string) => {
@@ -87,7 +83,7 @@ export function CollectionListPage({
                   size={20}
                   placeholder="Name"
                   value={filterInputValue}
-                  onChange={(e) => setFilterInputValue(e.target.value)}
+                  onChange={e => setFilterInputValue(e.target.value)}
                   onBlur={handleFilterBlur}
                   onKeyUp={handleFilterEnter}
                 />
@@ -103,7 +99,7 @@ export function CollectionListPage({
                   <a
                     className="ms-1"
                     href="#"
-                    onClick={(e) => {
+                    onClick={e => {
                       e.preventDefault();
                       handleRemoveFilter();
                     }}
@@ -126,7 +122,7 @@ export function CollectionListPage({
                     <a
                       href="#"
                       className="dropdown-menu-item"
-                      onClick={(e) => {
+                      onClick={e => {
                         e.preventDefault();
                         handleCreateClick();
                       }}
@@ -149,7 +145,7 @@ export function CollectionListPage({
 
         <div className="card-grid ms-3">
           <div className="d-flex flex-wrap">
-            {filteredCollections.map((collection) => (
+            {filteredCollections.map(collection => (
               <CollectionCard
                 key={collection.uuid}
                 collection={collection}

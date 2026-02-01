@@ -17,7 +17,7 @@ import {
 import MarkdownIt from "markdown-it";
 import { useBootstrapTable } from "../common/useBootstrapTable";
 
-// Initialize markdown-it renderer (matching Vue bundle configuration)
+// Initialize markdown-it renderer
 const markdown = MarkdownIt({
   html: true,
   linkify: true,
@@ -64,7 +64,7 @@ export function RemindersTable({ data }: RemindersTableProps) {
     () => [
       columnHelper.accessor("name", {
         header: "Name",
-        cell: (info) => {
+        cell: info => {
           const reminder = info.row.original;
           const notePreview = reminder.note
             ? reminder.note.split(" ").slice(0, 12).join(" ")
@@ -86,7 +86,7 @@ export function RemindersTable({ data }: RemindersTableProps) {
       }),
       columnHelper.accessor("schedule_description", {
         header: "Schedule",
-        cell: (info) => {
+        cell: info => {
           const reminder = info.row.original;
           const scheduleIcon = getScheduleIcon(reminder.schedule_type);
           return (
@@ -99,12 +99,11 @@ export function RemindersTable({ data }: RemindersTableProps) {
       }),
       columnHelper.accessor("is_active", {
         header: "Status",
-        cell: (info) => {
+        cell: info => {
           const reminder = info.row.original;
           const currentTime = Math.floor(Date.now() / 1000);
           const isReady =
-            reminder.next_trigger_at_unix &&
-            reminder.next_trigger_at_unix <= currentTime;
+            reminder.next_trigger_at_unix && reminder.next_trigger_at_unix <= currentTime;
 
           if (reminder.is_active) {
             if (isReady) {
@@ -132,7 +131,7 @@ export function RemindersTable({ data }: RemindersTableProps) {
       }),
       columnHelper.accessor("next_trigger_at", {
         header: "Next Trigger",
-        cell: (info) => {
+        cell: info => {
           const reminder = info.row.original;
 
           if (reminder.next_trigger_at) {
@@ -149,7 +148,7 @@ export function RemindersTable({ data }: RemindersTableProps) {
       columnHelper.display({
         id: "actions",
         header: () => <div className="text-end">Actions</div>,
-        cell: (info) => {
+        cell: info => {
           const reminder = info.row.original;
           return (
             <div className="text-end">
@@ -171,7 +170,11 @@ export function RemindersTable({ data }: RemindersTableProps) {
                   </li>
                   <li>
                     <a className="dropdown-item" href={reminder.update_url}>
-                      <FontAwesomeIcon icon={faPencilAlt} className="text-primary me-3" fixedWidth />
+                      <FontAwesomeIcon
+                        icon={faPencilAlt}
+                        className="text-primary me-3"
+                        fixedWidth
+                      />
                       Edit
                     </a>
                   </li>
@@ -215,9 +218,9 @@ export function RemindersTable({ data }: RemindersTableProps) {
       <div className="overflow-x-auto">
         <table className="reminders-table">
           <thead>
-            {table.getHeaderGroups().map((headerGroup) => (
+            {table.getHeaderGroups().map(headerGroup => (
               <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
+                {headerGroup.headers.map(header => {
                   const canSort = header.column.getCanSort();
                   const isSorted = header.column.getIsSorted();
                   return (
@@ -246,9 +249,9 @@ export function RemindersTable({ data }: RemindersTableProps) {
             ))}
           </thead>
           <tbody>
-            {table.getRowModel().rows.map((row) => (
+            {table.getRowModel().rows.map(row => (
               <tr key={row.id}>
-                {row.getVisibleCells().map((cell) => (
+                {row.getVisibleCells().map(cell => (
                   <td key={cell.id}>
                     {typeof cell.column.columnDef.cell === "function"
                       ? cell.column.columnDef.cell({
