@@ -89,7 +89,11 @@ class DrillListView(LoginRequiredMixin, ListView):
             "study_session_json": json.dumps(study_session) if study_session else "null",
             "total_progress_json": json.dumps({"count": total_progress["count"], "percentage": total_progress["percentage"]}),
             "favorite_progress_json": json.dumps({"count": favorite_questions_progress["count"], "percentage": favorite_questions_progress["percentage"]}),
-            "tags_last_reviewed_json": json.dumps([{"name": t.name, "last_reviewed": t.last_reviewed.strftime("%B %d, %Y") if t.last_reviewed else None} for t in tags_last_reviewed]),
+            "tags_last_reviewed_json": json.dumps([
+                {"name": t.name, "last_reviewed": (lr.strftime("%B %d, %Y") if lr else None)}
+                for t in tags_last_reviewed
+                for lr in [getattr(t, "last_reviewed", None)]
+            ]),
             "featured_tag_json": json.dumps(random_tag) if random_tag else "null",
         }
 

@@ -171,12 +171,13 @@ def fitness_summary(request: HttpRequest) -> HttpResponse:
         """Serialize an exercise for JSON."""
         from django.urls import reverse
 
+        last_active = getattr(e, "last_active", None)
         data = {
             "exercise_url": reverse("fitness:exercise_detail", args=[e.uuid]),
             "exercise": e.name,
             "muscle_group": str(e.muscle.all()[0].muscle_group) if e.muscle.exists() else "",
-            "last_active": e.last_active.strftime("%Y-%m-%d") if e.last_active else None,
-            "last_active_unixtime": str(int(e.last_active.timestamp())) if e.last_active else "0",
+            "last_active": last_active.strftime("%Y-%m-%d") if last_active else None,
+            "last_active_unixtime": str(int(last_active.timestamp())) if last_active else "0",
             "delta_days": e.delta_days if hasattr(e, "delta_days") else None,
             "overdue": e.overdue if hasattr(e, "overdue") else 0,
         }

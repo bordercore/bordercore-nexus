@@ -9,11 +9,13 @@ Usage:
 """
 
 import sys
-from typing import Any
+from argparse import ArgumentParser
+from typing import Any, cast
 
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.management.base import BaseCommand
+from django.db.models import Model
 
 from tag.models import Tag
 
@@ -21,7 +23,7 @@ from tag.models import Tag
 class Command(BaseCommand):
     help = "Display a summary of a tag, including all related models and object counts"
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "tag_name",
             help="The name of the tag to summarize"
@@ -37,7 +39,14 @@ class Command(BaseCommand):
             help="Display the name of each object linked to this tag"
         )
 
-    def handle(self, tag_name, username, verbose, *args, **kwargs):
+    def handle(
+        self,
+        tag_name: str,
+        username: str,
+        verbose: bool,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         # Look up the user
         try:
             user = User.objects.get(username=username)
@@ -99,14 +108,17 @@ class Command(BaseCommand):
                 through_model = None
                 if hasattr(field, "through"):
                     through_model = field.through
-                elif hasattr(field, "remote_field") and hasattr(field.remote_field, "through"):
-                    through_model = field.remote_field.through
+                else:
+                    remote_field = getattr(field, "remote_field", None)
+                    if remote_field is not None and hasattr(remote_field, "through"):
+                        through_model = remote_field.through
 
-                # Get a display name for the model
-                model_name = f"{related_model._meta.app_label}.{related_model._meta.model_name}"
+                # Get a display name for the model (related_model is a Model class here)
+                related_model_cls = cast(type[Model], related_model)
+                model_name = f"{related_model_cls._meta.app_label}.{related_model_cls._meta.model_name}"
 
                 related_models.append({
-                    "model": related_model,
+                    "model": related_model_cls,
                     "reverse_accessor": field.name,
                     "through": through_model,
                     "model_name": model_name,
