@@ -112,14 +112,6 @@ STATICFILES_FINDERS = (
     "django.contrib.staticfiles.finders.AppDirectoriesFinder"
 )
 
-WEBPACK_LOADER = {
-    "DEFAULT": {
-        "BUNDLE_DIR_NAME": "",
-        "STATS_FILE": os.path.join(PROJECT_DIR, "webpack-stats.json"),
-        "POLL_INTERVAL": 0.1,
-    }
-}
-
 # Absolute filesystem path to the directory that will hold user-uploaded files.
 MEDIA_ROOT = "blobs"
 
@@ -148,8 +140,6 @@ INSTALLED_APPS = (
     "django.contrib.staticfiles",
     "django.contrib.admin",
     "django.contrib.admindocs",
-
-    "webpack_loader",
 
     "accounts",
     "blob",

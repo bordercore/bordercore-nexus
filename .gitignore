@@ -37,7 +37,6 @@ bordercore/aws/create_collection_thumbnail/lib/*
 **/static/dist
 **/static/vite/dist
 bordercore/static/vite/*
-bordercore/webpack-stats.json
 **.min.js
 **.min.js.map
 **.wasm

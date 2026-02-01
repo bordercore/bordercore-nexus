@@ -14,7 +14,6 @@ from unittest.mock import MagicMock, patch
 import boto3
 import botocore
 import pytest
-from _pytest.config import Config
 from faker import Factory as FakerFactory
 from faker_file.providers.pdf_file import PdfFileProvider
 from faker_file.providers.pdf_file.generators.reportlab_generator import \
@@ -95,23 +94,6 @@ os.environ["DISABLE_DEBUG_TOOLBAR"] = "1"
 
 faker = FakerFactory.create()
 faker.add_provider(PdfFileProvider)
-
-
-def pytest_configure(config: Config) -> None:
-    """Configure pytest to disable django-webpack-loader during tests.
-
-    This hook runs once when pytest starts. It replaces the default
-    WebpackLoader with the ``FakeWebpackLoader`` so that Django templates
-    can render without requiring a real ``webpack-stats.json`` file.
-    This prevents errors in CI environments or containers where webpack
-    has not been run.
-
-    Args:
-        config: The pytest configuration object provided by pytest.
-            It is not used directly here but is required by the hook
-            signature.
-    """
-    settings.WEBPACK_LOADER["DEFAULT"]["LOADER_CLASS"] = "webpack_loader.loaders.FakeWebpackLoader"
 
 
 @pytest.fixture(autouse=True)
