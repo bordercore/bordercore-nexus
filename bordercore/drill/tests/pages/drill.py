@@ -25,8 +25,6 @@ class SummaryPage:
         """
         import time
 
-        from selenium.common.exceptions import (NoSuchElementException,
-                                                StaleElementReferenceException)
         from selenium.webdriver.support.wait import WebDriverWait
 
         # Wait for element to be present

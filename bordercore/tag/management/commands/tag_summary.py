@@ -14,7 +14,6 @@ from typing import Any
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.management.base import BaseCommand
-from django.db import models
 
 from tag.models import Tag
 
@@ -298,7 +297,7 @@ class Command(BaseCommand):
                             uuid_str = ""
                             if hasattr(obj, "uuid"):
                                 uuid_str = f"{obj.uuid} "
-                            
+
                             # Check if the object has a 'name' attribute, otherwise use __str__
                             if hasattr(obj, "name") and obj.name:
                                 self.stdout.write(f"  - {uuid_str}{obj.name}")
