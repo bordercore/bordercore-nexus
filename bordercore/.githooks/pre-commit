@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-set -euo pipefail
-
-echo "Running Prettier on React components…"
-npm run -s format:react
-
-echo "Pre-commit formatting complete."

@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+#
+# Git pre-commit hook
+#
+# Purpose:
+# 1. Block commits with unused Python imports (flake8 F401).
+# 2. Block commits with frontend lint violations (ESLint, stylelint).
+# 3. Automatically format React components with Prettier.
+#
+# Usage:
+# Run 'git config core.hooksPath .githooks' to enable these hooks.
+
+set -euo pipefail
+
+# Get the repository root directory
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+BORDERCORE_DIR="$REPO_ROOT/bordercore"
+
+echo "--- Starting Pre-commit Checks ---"
+
+# ----------------------------------------------------------------------
+# 1. Python Linting (Unused Imports)
+# ----------------------------------------------------------------------
+echo "Checking for unused Python imports..."
+if command -v flake8 >/dev/null 2>&1; then
+  flake8 \
+    --extend-exclude="*.aws-sam*,*node_modules*" \
+    --select F401 \
+    "$BORDERCORE_DIR"
+  echo "✅ Python linting passed."
+else
+  echo "⚠️ Warning: flake8 not found. Skipping Python linting."
+fi
+
+# ----------------------------------------------------------------------
+# 2. Frontend Linting (lint-staged)
+# ----------------------------------------------------------------------
+echo "Running lint-staged (ESLint, stylelint)..."
+cd "$BORDERCORE_DIR"
+if [ -d "node_modules" ]; then
+  npm run -s lint:staged
+  echo "✅ Frontend linting passed."
+else
+  echo "⚠️ Warning: node_modules not found. Skipping frontend linting."
+fi
+
+# ----------------------------------------------------------------------
+# 3. Frontend Formatting (Prettier)
+# ----------------------------------------------------------------------
+echo "Formatting React components with Prettier..."
+npm run -s format:react
+echo "✅ Frontend formatting complete."
+
+echo "--- Pre-commit Checks Finished Successfully ---"
+exit 0

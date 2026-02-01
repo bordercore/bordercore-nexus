@@ -16,9 +16,13 @@
         "format:check": "prettier --check",
         "format:react": "prettier --write \"front-end/react/**/*.{ts,tsx,jsx,js}\"",
         "format:check:react": "prettier --check \"front-end/react/**/*.{ts,tsx,jsx,js}\"",
+        "lint:react": "eslint --no-eslintrc -c .eslintrc.react.json \"front-end/react/**/*.{ts,tsx,jsx}\"",
         "lint:staged": "lint-staged"
     },
     "lint-staged": {
+        "front-end/react/**/*.{ts,tsx,jsx}": [
+            "eslint --no-eslintrc -c .eslintrc.react.json"
+        ],
         "static/scss/**/*.{scss,css}": [
             "stylelint"
         ]
@@ -29,10 +33,12 @@
     "devDependencies": {
         "@types/react": "^18.2.37",
         "@types/react-dom": "^18.2.15",
+        "@typescript-eslint/parser": "^8.54.0",
         "@vitejs/plugin-react": "^4.2.0",
         "eslint": "^8.57.1",
         "eslint-config-google": "^0.14.0",
         "eslint-plugin-html": "^6.2.0",
+        "eslint-plugin-react": "^7.37.5",
         "lint-staged": "^16.2.7",
         "postcss-scss": "^4.0.9",
         "prettier": "^3.1.0",
