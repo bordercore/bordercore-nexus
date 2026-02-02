@@ -203,7 +203,10 @@ export const CreatePlaylistModal = React.forwardRef<
                     </div>
                   </div>
                   <div className="row mt-3">
-                    <label className="col-lg-4 from-check-label text-nowrap" htmlFor="id_start_year">
+                    <label
+                      className="col-lg-4 from-check-label text-nowrap"
+                      htmlFor="id_start_year"
+                    >
                       Time Period
                     </label>
                     <div className="col-lg-8 d-flex">

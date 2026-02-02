@@ -262,7 +262,10 @@ export function PreferencesPage({
             {/* Theme */}
             {themeChoices.length > 0 && (
               <div className="row mb-3">
-                <label className="fw-bold col-lg-3 col-sm-2 col-form-label text-end" htmlFor="id_theme">
+                <label
+                  className="fw-bold col-lg-3 col-sm-2 col-form-label text-end"
+                  htmlFor="id_theme"
+                >
                   Theme
                 </label>
                 <div className="col-lg-7">

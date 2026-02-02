@@ -148,8 +148,7 @@ export function TagSearchPage({
       <div className="sticky-top col-lg-3 d-flex flex-column pt-0">
         <div className="card-grid ms-4">
           <div className="card backdrop-filter hover-target me-0 mb-3">
-            <div className="card-body d-flex flex-column align-items-center">
-            </div>
+            <div className="card-body d-flex flex-column align-items-center"></div>
           </div>
         </div>
       </div>

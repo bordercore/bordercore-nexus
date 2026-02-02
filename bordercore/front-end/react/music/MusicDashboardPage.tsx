@@ -65,9 +65,7 @@ export function MusicDashboardPage({
     <div className="row g-0 h-100 mx-2 music-dashboard">
       {/* Left sidebar */}
       <div className="flex-grow-last col-lg-3 d-flex flex-column pe-gutter">
-        {randomAlbum && (
-          <FeaturedAlbumCard album={randomAlbum} className="flex-grow-0" />
-        )}
+        {randomAlbum && <FeaturedAlbumCard album={randomAlbum} className="flex-grow-0" />}
 
         <PlaylistsCard
           playlists={playlists}
@@ -75,9 +73,7 @@ export function MusicDashboardPage({
           className="flex-grow-0 hover-target z-index-positive"
         />
 
-        {recentPlayedSongs.length > 0 && (
-          <RecentlyPlayedSongsCard songs={recentPlayedSongs} />
-        )}
+        {recentPlayedSongs.length > 0 && <RecentlyPlayedSongsCard songs={recentPlayedSongs} />}
       </div>
 
       {/* Main content */}

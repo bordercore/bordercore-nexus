@@ -27,38 +27,41 @@ export const GlobalAudioPlayer: React.FC = () => {
   const listenTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const currentSongUuidRef = React.useRef<string | null>(null);
 
-  const markSongAsListenedTo = React.useCallback(async (uuid: string) => {
-    if (!config || !uuid) return;
+  const markSongAsListenedTo = React.useCallback(
+    async (uuid: string) => {
+      if (!config || !uuid) return;
 
-    try {
-      const url = config.markListenedToUrl.replace(
-        /00000000-0000-0000-0000-000000000000/,
-        uuid
-      );
-      await fetch(url, {
-        method: "POST",
-        headers: {
-          "X-CSRFToken": config.csrfToken,
-        },
-        credentials: "include",
-      });
-    } catch (error) {
-      console.error("Error marking song as listened:", error);
-    }
-  }, [config]);
-
-  const startListenTimer = React.useCallback((uuid: string) => {
-    if (listenTimeoutRef.current) {
-      clearTimeout(listenTimeoutRef.current);
-    }
-
-    currentSongUuidRef.current = uuid;
-    listenTimeoutRef.current = setTimeout(() => {
-      if (currentSongUuidRef.current === uuid) {
-        markSongAsListenedTo(uuid);
+      try {
+        const url = config.markListenedToUrl.replace(/00000000-0000-0000-0000-000000000000/, uuid);
+        await fetch(url, {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": config.csrfToken,
+          },
+          credentials: "include",
+        });
+      } catch (error) {
+        console.error("Error marking song as listened:", error);
       }
-    }, MUSIC_LISTEN_TIMEOUT);
-  }, [markSongAsListenedTo]);
+    },
+    [config]
+  );
+
+  const startListenTimer = React.useCallback(
+    (uuid: string) => {
+      if (listenTimeoutRef.current) {
+        clearTimeout(listenTimeoutRef.current);
+      }
+
+      currentSongUuidRef.current = uuid;
+      listenTimeoutRef.current = setTimeout(() => {
+        if (currentSongUuidRef.current === uuid) {
+          markSongAsListenedTo(uuid);
+        }
+      }, MUSIC_LISTEN_TIMEOUT);
+    },
+    [markSongAsListenedTo]
+  );
 
   React.useEffect(() => {
     const handlePlayTrack = (data: PlayTrackEvent) => {
@@ -70,7 +73,7 @@ export const GlobalAudioPlayer: React.FC = () => {
       }));
 
       const index = data.trackList.findIndex(t => t.uuid === data.track.uuid);
-      
+
       setAudioList(newList);
       setPlayIndex(index >= 0 ? index : 0);
       setConfig({
@@ -124,7 +127,7 @@ export const GlobalAudioPlayer: React.FC = () => {
         responsive={true}
         glassBg={true}
         clearPriorAudioLists={true}
-        onPlayIndexChange={(index) => setPlayIndex(index)}
+        onPlayIndexChange={index => setPlayIndex(index)}
         quietUpdate={false}
       />
     </div>

@@ -167,61 +167,61 @@ export function PlaylistSongTable({
       <div className="table-responsive">
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <table className="playlist-song-table data-table">
-          <thead>
-            <tr>
-              <th className="table-col-action"></th>
-              {isManualPlaylist && <th className="text-center table-col-number">#</th>}
-              <th className={getHeaderClass("title")} onClick={() => handleSort("title")}>
-                Title{renderSortIcon("title")}
-              </th>
-              <th className={getHeaderClass("artist")} onClick={() => handleSort("artist")}>
-                Artist{renderSortIcon("artist")}
-              </th>
-              <th
-                className={getHeaderClass("year", "text-center")}
-                onClick={() => handleSort("year")}
-              >
-                Year{renderSortIcon("year")}
-              </th>
-              <th
-                className={getHeaderClass("length", "text-center")}
-                onClick={() => handleSort("length")}
-              >
-                Length{renderSortIcon("length")}
-              </th>
-              <th className="text-center table-col-action"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedSongs.length === 0 ? (
+            <thead>
               <tr>
-                <td colSpan={isManualPlaylist ? 7 : 6} className="text-center">
-                  No songs in the playlist
-                </td>
+                <th className="table-col-action"></th>
+                {isManualPlaylist && <th className="text-center table-col-number">#</th>}
+                <th className={getHeaderClass("title")} onClick={() => handleSort("title")}>
+                  Title{renderSortIcon("title")}
+                </th>
+                <th className={getHeaderClass("artist")} onClick={() => handleSort("artist")}>
+                  Artist{renderSortIcon("artist")}
+                </th>
+                <th
+                  className={getHeaderClass("year", "text-center")}
+                  onClick={() => handleSort("year")}
+                >
+                  Year{renderSortIcon("year")}
+                </th>
+                <th
+                  className={getHeaderClass("length", "text-center")}
+                  onClick={() => handleSort("length")}
+                >
+                  Length{renderSortIcon("length")}
+                </th>
+                <th className="text-center table-col-action"></th>
               </tr>
-            ) : (
-              <SortableContext
-                items={sortedSongs.map(song => song.playlistitem_uuid)}
-                strategy={verticalListSortingStrategy}
-              >
-                {sortedSongs.map((song, index) => (
-                  <SortableSongRow
-                    key={song.playlistitem_uuid}
-                    song={song}
-                    index={index}
-                    isManualPlaylist={isManualPlaylist}
-                    currentSongUuid={currentSongUuid}
-                    equalizerImage={equalizerImage}
-                    handleRowClick={handleRowClick}
-                    onRemoveSong={onRemoveSong}
-                    getEditUrl={getEditUrl}
-                  />
-                ))}
-              </SortableContext>
-            )}
-          </tbody>
-        </table>
-      </DndContext>
+            </thead>
+            <tbody>
+              {sortedSongs.length === 0 ? (
+                <tr>
+                  <td colSpan={isManualPlaylist ? 7 : 6} className="text-center">
+                    No songs in the playlist
+                  </td>
+                </tr>
+              ) : (
+                <SortableContext
+                  items={sortedSongs.map(song => song.playlistitem_uuid)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {sortedSongs.map((song, index) => (
+                    <SortableSongRow
+                      key={song.playlistitem_uuid}
+                      song={song}
+                      index={index}
+                      isManualPlaylist={isManualPlaylist}
+                      currentSongUuid={currentSongUuid}
+                      equalizerImage={equalizerImage}
+                      handleRowClick={handleRowClick}
+                      onRemoveSong={onRemoveSong}
+                      getEditUrl={getEditUrl}
+                    />
+                  ))}
+                </SortableContext>
+              )}
+            </tbody>
+          </table>
+        </DndContext>
       </div>
     </div>
   );
@@ -290,10 +290,7 @@ function SortableSongRow({
         </div>
       </td>
       {isManualPlaylist && (
-        <td
-          className="text-center align-middle"
-          onClick={() => handleRowClick(song, "sort_order")}
-        >
+        <td className="text-center align-middle" onClick={() => handleRowClick(song, "sort_order")}>
           {currentSongUuid === song.uuid ? (
             <img id="isPlaying" src={equalizerImage} width={20} height={20} alt="Playing" />
           ) : (
