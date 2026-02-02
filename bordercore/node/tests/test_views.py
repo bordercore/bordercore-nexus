@@ -7,8 +7,9 @@ from django import urls
 
 from blob.models import Blob
 from collection.models import Collection
-from node.models import Node
+from node.models import Node, NodeTodo
 from node.tests.factories import NodeFactory
+from todo.tests.factories import TodoFactory
 
 pytestmark = [pytest.mark.django_db]
 
@@ -518,3 +519,144 @@ def test_node_search(auto_login_user, node):
 
     assert resp.json()[0]["uuid"] == str(node.uuid)
     assert resp.json()[0]["name"] == node.name
+
+
+def test_get_todo_list(auto_login_user, node):
+
+    user, client = auto_login_user()
+
+    node.add_todo_list()
+    todo = TodoFactory(user=user, name="Node todo task")
+    url_add = urls.reverse("node:add_todo")
+    client.post(url_add, {"node_uuid": node.uuid, "todo_uuid": todo.uuid})
+
+    url = urls.reverse("node:get_todo_list", kwargs={"uuid": node.uuid})
+    resp = client.get(url)
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["status"] == "OK"
+    assert "todo_list" in data
+    assert len(data["todo_list"]) == 1
+    assert data["todo_list"][0]["name"] == "Node todo task"
+    assert data["todo_list"][0]["uuid"] == str(todo.uuid)
+
+
+def test_get_todo_list_empty(auto_login_user, node):
+
+    _, client = auto_login_user()
+
+    url = urls.reverse("node:get_todo_list", kwargs={"uuid": node.uuid})
+    resp = client.get(url)
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["status"] == "OK"
+    assert data["todo_list"] == []
+
+
+def test_add_todo(auto_login_user, node):
+
+    user, client = auto_login_user()
+
+    node.add_todo_list()
+    todo = TodoFactory(user=user, name="Todo to add")
+
+    url = urls.reverse("node:add_todo")
+    resp = client.post(url, {"node_uuid": node.uuid, "todo_uuid": todo.uuid})
+
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "OK"
+    assert NodeTodo.objects.filter(node=node, todo=todo).exists()
+
+
+def test_remove_todo(auto_login_user, node):
+
+    user, client = auto_login_user()
+
+    node.add_todo_list()
+    todo = TodoFactory(user=user, name="Todo to remove")
+    NodeTodo.objects.create(node=node, todo=todo)
+
+    url = urls.reverse("node:remove_todo")
+    resp = client.post(url, {"node_uuid": node.uuid, "todo_uuid": todo.uuid})
+
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "OK"
+    assert not NodeTodo.objects.filter(node=node, todo=todo).exists()
+
+
+def test_sort_todos(auto_login_user, node):
+
+    user, client = auto_login_user()
+
+    node.add_todo_list()
+    todo_a = TodoFactory(user=user, name="Todo A")
+    todo_b = TodoFactory(user=user, name="Todo B")
+    so_a = NodeTodo.objects.create(node=node, todo=todo_a)
+    so_b = NodeTodo.objects.create(node=node, todo=todo_b)
+
+    url = urls.reverse("node:sort_todos")
+    resp = client.post(url, {
+        "node_uuid": node.uuid,
+        "todo_uuid": todo_a.uuid,
+        "new_position": 2,
+    })
+
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "OK"
+
+    order = list(
+        NodeTodo.objects.filter(node=node).order_by("sort_order").values_list("todo__uuid", flat=True)
+    )
+    assert order[0] == todo_b.uuid
+    assert order[1] == todo_a.uuid
+
+
+def test_update_node(auto_login_user, node):
+
+    user, client = auto_login_user()
+
+    nested = NodeFactory.create(user=user, name="Nested node")
+    component_uuid = node.add_component("node", nested, {"display": "minimal"})
+
+    options = {"display": "full", "rotate": 90}
+    url = urls.reverse("node:update_node")
+    resp = client.post(url, {
+        "parent_node_uuid": node.uuid,
+        "uuid": component_uuid,
+        "options": json.dumps(options),
+    })
+
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "OK"
+
+    updated = Node.objects.get(uuid=node.uuid)
+    component = next(
+        (c for col in updated.layout for c in col if c.get("type") == "node" and c.get("uuid") == component_uuid),
+        None,
+    )
+    assert component is not None
+    assert component.get("options", {}).get("display") == "full"
+    assert component.get("options", {}).get("rotate") == 90
+
+
+def test_node_preview(auto_login_user, node):
+
+    user, client = auto_login_user()
+
+    url = urls.reverse("node:preview", kwargs={"uuid": node.uuid})
+    resp = client.get(url)
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["status"] == "OK"
+    assert "info" in data
+    info = data["info"]
+    assert info["uuid"] == str(node.uuid)
+    assert info["name"] == node.name
+    assert "images" in info
+    assert "note_count" in info
+    assert "random_note" in info
+    assert "random_todo" in info
+    assert "todo_count" in info

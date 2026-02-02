@@ -301,14 +301,14 @@ def robots_txt(request):
     return render(request, "robots.txt", content_type="text/plain")
 
 
-def handler404(request, _):
+def handler404(request, exception=None):
 
     response = render(request, "404.html", {})
     response.status_code = 404
     return response
 
 
-def handler403(request, _):
+def handler403(request, exception=None):
 
     response = render(request, "403.html", {})
     response.status_code = 403

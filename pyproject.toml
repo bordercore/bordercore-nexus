@@ -25,7 +25,7 @@ known_django = ["django"]
 known_first_party = [
   "accounts", "api", "blob", "bookmark", "collection", "drill",
   "fitness", "homepage", "lib", "metrics", "music", "node",
-  "search", "quote", "tag", "todo"
+  "reminder", "search", "quote", "tag", "todo"
 ]
 virtual_env = "/home/jerrell/dev/django/env"
 
