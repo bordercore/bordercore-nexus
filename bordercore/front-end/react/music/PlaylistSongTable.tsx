@@ -1,6 +1,12 @@
-import React, { useState, useCallback, useMemo, useEffect } from "react";
+import React, { useState, useCallback, useMemo, useEffect, useRef, useLayoutEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPencilAlt, faTrashAlt, faAngleUp, faAngleDown } from "@fortawesome/free-solid-svg-icons";
+import {
+  faBars,
+  faPencilAlt,
+  faTrashAlt,
+  faAngleUp,
+  faAngleDown,
+} from "@fortawesome/free-solid-svg-icons";
 import {
   DndContext,
   closestCenter,
@@ -157,11 +163,13 @@ export function PlaylistSongTable({
   };
 
   return (
-    <div className="table-responsive">
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <table className="table table-hover playlist-song-table">
+    <div className="song-table-container data-table-container">
+      <div className="table-responsive">
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <table className="playlist-song-table data-table">
           <thead>
             <tr>
+              <th className="table-col-action"></th>
               {isManualPlaylist && <th className="text-center table-col-number">#</th>}
               <th className={getHeaderClass("title")} onClick={() => handleSort("title")}>
                 Title{renderSortIcon("title")}
@@ -187,7 +195,7 @@ export function PlaylistSongTable({
           <tbody>
             {sortedSongs.length === 0 ? (
               <tr>
-                <td colSpan={isManualPlaylist ? 6 : 5} className="text-center">
+                <td colSpan={isManualPlaylist ? 7 : 6} className="text-center">
                   No songs in the playlist
                 </td>
               </tr>
@@ -214,6 +222,7 @@ export function PlaylistSongTable({
           </tbody>
         </table>
       </DndContext>
+      </div>
     </div>
   );
 }
@@ -244,24 +253,45 @@ function SortableSongRow({
     id: song.playlistitem_uuid,
     disabled: !isManualPlaylist,
   });
+  const elRef = useRef<HTMLTableRowElement | null>(null);
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: isDragging ? 1000 : undefined,
-    position: isDragging ? ("relative" as const) : undefined,
-  };
+  const refCallback = useCallback(
+    (el: HTMLTableRowElement | null) => {
+      setNodeRef(el);
+      elRef.current = el;
+    },
+    [setNodeRef]
+  );
+
+  useLayoutEffect(() => {
+    const el = elRef.current;
+    if (el) {
+      el.style.setProperty(
+        "--sortable-transform",
+        transform ? CSS.Transform.toString(transform) : "none"
+      );
+      el.style.setProperty("--sortable-transition", transition ?? "none");
+    }
+  }, [transform, transition]);
 
   return (
     <tr
-      ref={setNodeRef}
-      style={style}
-      className={`song hover-target cursor-pointer ${isDragging ? "dragging" : ""}`}
-      {...(isManualPlaylist ? { ...attributes, ...listeners } : {})}
+      ref={refCallback}
+      className={`song hover-target hover-reveal-target cursor-pointer sortable-song-row ${isDragging ? "dragging" : ""}`}
     >
+      <td
+        className="text-center align-middle drag-handle-cell"
+        {...attributes}
+        {...listeners}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="hover-reveal-object">
+          <FontAwesomeIcon icon={faBars} />
+        </div>
+      </td>
       {isManualPlaylist && (
         <td
-          className="text-center align-middle cursor-grab"
+          className="text-center align-middle"
           onClick={() => handleRowClick(song, "sort_order")}
         >
           {currentSongUuid === song.uuid ? (
@@ -272,6 +302,11 @@ function SortableSongRow({
         </td>
       )}
       <td className="align-middle" onClick={() => handleRowClick(song, "title")}>
+        {!isManualPlaylist && currentSongUuid === song.uuid && (
+          <span className="me-2">
+            <img id="isPlaying" src={equalizerImage} width={20} height={20} alt="Playing" />
+          </span>
+        )}
         {song.title}
       </td>
       <td className="align-middle cursor-grab" onClick={() => handleRowClick(song, "artist")}>

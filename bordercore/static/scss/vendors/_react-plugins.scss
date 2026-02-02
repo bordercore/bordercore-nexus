@@ -104,3 +104,59 @@
     }
   }
 }
+
+// React Jinke Music Player - base panel (lower specificity) before .global-audio-player
+.react-jinke-music-player-main .music-player-panel {
+  background-color: var(--surface2) !important;
+}
+
+.global-audio-player {
+  z-index: 2000; // Ensure it's above other elements
+
+  .react-jinke-music-player-main {
+    --primary-color: var(--accent);
+
+    .music-player-panel {
+      border-top: 1px solid var(--border-color);
+      box-shadow: 0 -2px 10px rgb(0 0 0 / 30%);
+    }
+
+    .music-player-controller {
+      border: 1px solid var(--border-color);
+      background-color: var(--surface2);
+      box-shadow: 0 2px 10px rgb(0 0 0 / 30%);
+
+      &:hover {
+        border-color: var(--accent);
+      }
+    }
+
+    .audio-lists-panel {
+      border: 1px solid var(--border-color);
+      background-color: var(--surface2);
+
+      .audio-lists-panel-header {
+        border-bottom: 1px solid var(--border-color);
+        background-color: var(--surface1);
+      }
+
+      .audio-item {
+        background-color: var(--surface2);
+        color: var(--text1);
+
+        &:hover {
+          background-color: var(--hover-bg);
+        }
+
+        &.playing {
+          background-color: var(--selected-bg);
+          color: var(--accent);
+        }
+      }
+    }
+  }
+}
+
+.react-jinke-music-player-main .audio-main {
+  margin-top: 0 !important;
+}

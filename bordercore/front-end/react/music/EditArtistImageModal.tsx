@@ -107,11 +107,15 @@ export const EditArtistImageModal = React.forwardRef<
             </div>
             <div className="modal-body">
               <div className="row">
-                <label className="col-lg-4 col-form-label fw-bold text-end">Artist Image</label>
+                <label className="col-lg-4 col-form-label fw-bold text-end" htmlFor="imageFilename">
+                  Artist Image
+                </label>
                 <div className="col-lg-8">
                   <div className="input-group">
                     <input
                       type="text"
+                      id="imageFilename"
+                      name="imageFilename"
                       className="form-control"
                       value={imageFilename}
                       readOnly

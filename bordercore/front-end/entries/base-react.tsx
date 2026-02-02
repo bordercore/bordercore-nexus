@@ -9,6 +9,7 @@ import DropDownMenu from "../react/common/DropDownMenu";
 import OverdueTasks from "../react/todo/OverdueTasks";
 import ChatBot, { ChatBotHandle } from "../react/blob/ChatBot";
 import SidebarMenu from "../react/common/SidebarMenu";
+import GlobalAudioPlayer from "../react/music/GlobalAudioPlayer";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSearch, faAngleDown, faBriefcase, faChartBar, faComment, faQuestion, faSignOutAlt } from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
@@ -488,4 +489,10 @@ const chatBotContainer = document.getElementById("chat-bot");
 if (chatBotContainer) {
   const chatBotRoot = createRoot(chatBotContainer);
   chatBotRoot.render(<ChatBotContent />);
+}
+
+const audioPlayerContainer = document.getElementById("global-audio-player");
+if (audioPlayerContainer) {
+  const audioPlayerRoot = createRoot(audioPlayerContainer);
+  audioPlayerRoot.render(<GlobalAudioPlayer />);
 }

@@ -1,7 +1,7 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useRef, useLayoutEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faGripVertical,
+  faBars,
   faLink,
   faStickyNote,
   faArrowUp,
@@ -122,12 +122,12 @@ export function TodoTable({
   }
 
   return (
-    <div className="todo-table-container">
-      <table className="todo-table">
+    <div className="todo-table-container data-table-container">
+      <table className="todo-table data-table">
         <thead>
           <tr>
             <th
-              className="todo-col-manual-sorting text-center cursor-pointer"
+              className="todo-col-manual-sorting text-center cursor-pointer text-nowrap"
               onClick={() => handleSort("sort_order")}
             >
               Manual{renderSortIcon("sort_order")}
@@ -190,23 +190,40 @@ function SortableRow({
     id: todo.uuid,
     disabled: !canDrag,
   });
+  const elRef = useRef<HTMLTableRowElement | null>(null);
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: isDragging ? 1000 : undefined,
-    position: isDragging ? ("relative" as const) : undefined,
-  };
+  const refCallback = useCallback(
+    (el: HTMLTableRowElement | null) => {
+      setNodeRef(el);
+      elRef.current = el;
+    },
+    [setNodeRef]
+  );
+
+  useLayoutEffect(() => {
+    const el = elRef.current;
+    if (el) {
+      el.style.setProperty(
+        "--sortable-transform",
+        transform ? CSS.Transform.toString(transform) : "none"
+      );
+      el.style.setProperty("--sortable-transition", transition ?? "none");
+    }
+  }, [transform, transition]);
 
   return (
-    <tr ref={setNodeRef} style={style} className={`hover-target ${isDragging ? "dragging" : ""}`}>
-      <td className="todo-col-manual-sorting text-center">
-        <span
-          className={`drag-handle ${canDrag ? "drag-handle-active" : ""}`}
-          {...(canDrag ? { ...attributes, ...listeners } : {})}
-        >
-          <FontAwesomeIcon icon={faGripVertical} />
-        </span>
+    <tr
+      ref={refCallback}
+      className={`hover-target hover-reveal-target sortable-todo-row ${isDragging ? "dragging" : ""} ${!canDrag ? "no-drag" : ""}`}
+    >
+      <td
+        className="todo-col-manual-sorting text-center align-middle drag-handle-cell"
+        {...(canDrag ? { ...attributes, ...listeners } : {})}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="hover-reveal-object">
+          <FontAwesomeIcon icon={faBars} />
+        </div>
       </td>
       <td>
         <div className="d-flex">

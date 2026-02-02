@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useLayoutEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faPlus,
@@ -862,19 +862,31 @@ function SortableLayoutItem({ id, editLayout, children }: SortableLayoutItemProp
     id,
     disabled: !editLayout,
   });
+  const elRef = useRef<HTMLDivElement | null>(null);
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: isDragging ? 1 : 0,
-    position: "relative" as const,
-  };
+  const refCallback = useCallback(
+    (el: HTMLDivElement | null) => {
+      setNodeRef(el);
+      elRef.current = el;
+    },
+    [setNodeRef]
+  );
+
+  useLayoutEffect(() => {
+    const el = elRef.current;
+    if (el) {
+      el.style.setProperty(
+        "--sortable-transform",
+        transform ? CSS.Transform.toString(transform) : "none"
+      );
+      el.style.setProperty("--sortable-transition", transition ?? "none");
+    }
+  }, [transform, transition]);
 
   return (
     <div
-      ref={setNodeRef}
-      style={style}
-      className={`mb-gutter ${editLayout ? "draggable-item" : ""} ${isDragging ? "dragging" : ""}`}
+      ref={refCallback}
+      className={`mb-gutter sortable-layout-item ${editLayout ? "draggable-item" : ""} ${isDragging ? "dragging" : ""}`}
       {...(editLayout ? { ...attributes, ...listeners } : {})}
     >
       {children}

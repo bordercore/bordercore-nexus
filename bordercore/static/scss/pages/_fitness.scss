@@ -32,80 +32,28 @@
   font-weight: 600;
 }
 
-// Fitness table container - matches reminders table styling
-.fitness-table-container {
-  overflow: hidden;
-  border: 1px solid var(--border-color);
-  background-color: var(--surface2);
-  border-radius: 0.75rem;
-  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 5%);
-}
-
+// Fitness table - uses .data-table-container + .data-table; overrides below
 .fitness-table {
-  width: 100%;
-  margin-bottom: 0;
-  border-collapse: collapse;
-  text-align: left;
+  tbody tr {
+    &.selected {
+      td {
+        background-color: var(--selected-bg);
+        color: var(--selected-color);
+      }
 
-  thead {
-    tr {
-      border-bottom: 1px solid var(--border-color);
-      background-color: var(--surface3);
-
-      th {
-        padding: 1rem;
-        border: none;
-        color: var(--text6);
-        font-size: 0.75rem;
-        font-weight: 600;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
+      a {
+        color: var(--selected-color);
       }
     }
-  }
 
-  tbody {
-    tr {
-      border-bottom: 1px solid var(--border-color);
-      background-color: transparent;
-      transition: background-color 0.15s ease;
-
-      &:hover {
-        background-color: var(--hover-bg);
-      }
-
-      &:last-child {
-        border-bottom: none;
-      }
-
+    &.overdue {
       td {
-        padding: 1rem;
-        border: none;
-        background-color: transparent;
-        color: var(--text1);
+        background-color: var(--fitness-overdue-bg);
+        color: var(--fitness-overdue-color);
       }
 
-      // Row highlighting for selected/overdue states
-      &.selected {
-        td {
-          background-color: var(--selected-bg);
-          color: var(--selected-color);
-        }
-
-        a {
-          color: var(--selected-color);
-        }
-      }
-
-      &.overdue {
-        td {
-          background-color: var(--fitness-overdue-bg);
-          color: var(--fitness-overdue-color);
-        }
-
-        a {
-          color: var(--fitness-overdue-color);
-        }
+      a {
+        color: var(--fitness-overdue-color);
       }
     }
   }

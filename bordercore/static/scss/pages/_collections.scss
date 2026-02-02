@@ -63,6 +63,16 @@
   }
 }
 
+.sortable-collection-grid-item {
+  position: relative;
+  transform: var(--sortable-transform, none);
+  transition: var(--sortable-transition);
+
+  &.dragging {
+    z-index: 1;
+  }
+}
+
 .collection-sortable li {
   width: 12.5rem;
 }

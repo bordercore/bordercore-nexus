@@ -8,7 +8,7 @@ import {
   faTimes,
   faTrashAlt,
   faBookmark,
-  faGripVertical,
+  faBars,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   DndContext,
@@ -86,7 +86,7 @@ function SortableItem({
         <li className="hover-target list-group-item pe-0" data-uuid={element.uuid}>
           <div className="dropdown-height d-flex align-items-start">
             <div className="drag-handle pe-2 cursor-grab" {...attributes} {...listeners}>
-              <FontAwesomeIcon icon={faGripVertical} className="text-secondary" />
+              <FontAwesomeIcon icon={faBars} />
             </div>
             {element.type === "blob" ? (
               <div className="pe-2">

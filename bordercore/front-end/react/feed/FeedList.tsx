@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef, useLayoutEffect } from "react";
 import {
   DndContext,
   closestCenter,
@@ -146,19 +146,31 @@ function SortableFeedItem({ feed, currentFeed, handleClick }: SortableFeedItemPr
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: feed.uuid,
   });
+  const elRef = useRef<HTMLDivElement | null>(null);
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: isDragging ? 1 : 0,
-    position: "relative" as const,
-  };
+  const refCallback = useCallback(
+    (el: HTMLDivElement | null) => {
+      setNodeRef(el);
+      elRef.current = el;
+    },
+    [setNodeRef]
+  );
+
+  useLayoutEffect(() => {
+    const el = elRef.current;
+    if (el) {
+      el.style.setProperty(
+        "--sortable-transform",
+        transform ? CSS.Transform.toString(transform) : "none"
+      );
+      el.style.setProperty("--sortable-transition", transition ?? "none");
+    }
+  }, [transform, transition]);
 
   return (
     <div
-      ref={setNodeRef}
-      style={style}
-      className={`slicklist-item ${isDragging ? "dragging" : ""}`}
+      ref={refCallback}
+      className={`slicklist-item sortable-slicklist-item ${isDragging ? "dragging" : ""}`}
       {...attributes}
       {...listeners}
     >

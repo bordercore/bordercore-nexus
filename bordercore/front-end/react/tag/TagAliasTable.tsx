@@ -62,8 +62,8 @@ export function TagAliasTable({ data, onDelete }: TagAliasTableProps) {
   }
 
   return (
-    <div className="tag-alias-table-container">
-      <table className="tag-alias-table">
+    <div className="tag-alias-table-container data-table-container">
+      <table className="tag-alias-table data-table">
         <thead>
           <tr>
             <th className="cursor-pointer" onClick={() => handleSort("tag")}>

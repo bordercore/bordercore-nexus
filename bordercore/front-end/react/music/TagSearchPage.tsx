@@ -1,7 +1,7 @@
 import React from "react";
 import type { TagSearchSong, TagSearchAlbum, TagSearchUrls, ArtistDetailAlbum } from "./types";
-import AudioPlayer, { type AudioPlayerHandle } from "./AudioPlayer";
 import AlbumGrid from "./AlbumGrid";
+import { EventBus } from "../utils/reactUtils";
 
 interface TagSearchPageProps {
   tagName: string;
@@ -29,8 +29,6 @@ export function TagSearchPage({
   const [sortField, setSortField] = React.useState<SortField>("year");
   const [sortDirection, setSortDirection] = React.useState<SortDirection>("desc");
 
-  const audioPlayerRef = React.useRef<AudioPlayerHandle>(null);
-
   const handleCurrentSong = (songIndex: number) => {
     if (songIndex === -1) {
       setCurrentSongUuid(null);
@@ -43,8 +41,32 @@ export function TagSearchPage({
     setIsPlaying(playing);
   };
 
+  React.useEffect(() => {
+    const onPlay = (data: { uuid: string }) => {
+      setIsPlaying(true);
+      setCurrentSongUuid(data.uuid);
+    };
+    const onPause = () => {
+      setIsPlaying(false);
+    };
+
+    EventBus.$on("audio-play", onPlay);
+    EventBus.$on("audio-pause", onPause);
+
+    return () => {
+      EventBus.$off("audio-play", onPlay);
+      EventBus.$off("audio-pause", onPause);
+    };
+  }, []);
+
   const handleSongClick = (song: TagSearchSong) => {
-    audioPlayerRef.current?.playTrack(song.uuid);
+    EventBus.$emit("play-track", {
+      track: song,
+      trackList: sortedSongs,
+      songUrl: urls.songMedia,
+      markListenedToUrl: urls.markListenedTo,
+      csrfToken: csrfToken,
+    });
     setCurrentSongUuid(song.uuid);
   };
 
@@ -127,17 +149,6 @@ export function TagSearchPage({
         <div className="card-grid ms-4">
           <div className="card backdrop-filter hover-target me-0 mb-3">
             <div className="card-body d-flex flex-column align-items-center">
-              {songs.length > 0 && (
-                <AudioPlayer
-                  ref={audioPlayerRef}
-                  trackList={sortedSongs}
-                  songUrl={urls.songMedia}
-                  markListenedToUrl={urls.markListenedTo}
-                  csrfToken={csrfToken}
-                  onCurrentSong={handleCurrentSong}
-                  onIsPlaying={handleIsPlaying}
-                />
-              )}
             </div>
           </div>
         </div>

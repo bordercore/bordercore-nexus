@@ -86,6 +86,11 @@
   }
 }
 
+// Drag handle icon color (used by .drag-handle divs in node lists/cards)
+.drag-handle {
+  color: var(--drag-handle-icon-color);
+}
+
 // Drag and drop styles for collection items and todo tasks
 .slicklist-item {
   position: relative;
@@ -103,12 +108,23 @@
   }
 }
 
+.slicklist-item.sortable-slicklist-item {
+  transform: var(--sortable-transform, none);
+  transition: var(--sortable-transition);
+}
+
 .slicklist-list-item-inner {
   transition: background 0.2s, transform 0.2s;
 }
 
 // Edit layout mode for node detail page
 .edit-layout-mode {
+  .sortable-layout-item {
+    position: relative;
+    transform: var(--sortable-transform, none);
+    transition: var(--sortable-transition);
+  }
+
   .draggable-item {
     cursor: grab;
 
@@ -117,6 +133,7 @@
     }
 
     &.dragging {
+      z-index: 1;
       opacity: 0.5;
     }
   }

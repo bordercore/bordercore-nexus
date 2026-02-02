@@ -70,7 +70,12 @@ export function PreferencesPage({
 
     return (
       <div key={field.name} className={`${field.errors.length > 0 ? "error" : ""} row mb-3`}>
-        <label className="fw-bold col-lg-3 col-sm-2 col-form-label text-end">{field.label}</label>
+        <label
+          className="fw-bold col-lg-3 col-sm-2 col-form-label text-end"
+          htmlFor={`id_${field.name}`}
+        >
+          {field.label}
+        </label>
         <div className="col-lg-7">
           {field.name === "theme" ? (
             <select
@@ -245,14 +250,21 @@ export function PreferencesPage({
                 Eye Candy
               </label>
               <div className="col-lg-7 d-flex">
-                <ToggleSwitch name="eye_candy" checked={eyeCandy} onChange={setEyeCandy} />
+                <ToggleSwitch
+                  id="eye_candy"
+                  name="eye_candy"
+                  checked={eyeCandy}
+                  onChange={setEyeCandy}
+                />
               </div>
             </div>
 
             {/* Theme */}
             {themeChoices.length > 0 && (
               <div className="row mb-3">
-                <label className="fw-bold col-lg-3 col-sm-2 col-form-label text-end">Theme</label>
+                <label className="fw-bold col-lg-3 col-sm-2 col-form-label text-end" htmlFor="id_theme">
+                  Theme
+                </label>
                 <div className="col-lg-7">
                   <select
                     name="theme"
@@ -273,13 +285,17 @@ export function PreferencesPage({
 
             {/* Instagram Credentials */}
             <div className="row mb-3">
-              <label className="fw-bold col-lg-3 col-sm-2 col-form-label text-end">
+              <label
+                className="fw-bold col-lg-3 col-sm-2 col-form-label text-end"
+                htmlFor="instagram_username"
+              >
                 Instagram Credentials
               </label>
               <div className="col-lg-7">
                 <div className="d-flex">
                   <input
                     type="text"
+                    id="instagram_username"
                     name="instagram_username"
                     defaultValue={instagramUsername}
                     className="form-control me-2"
@@ -288,6 +304,7 @@ export function PreferencesPage({
                   />
                   <input
                     type="password"
+                    id="instagram_password"
                     name="instagram_password"
                     defaultValue={instagramPassword}
                     className="form-control ms-2"

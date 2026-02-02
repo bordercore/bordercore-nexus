@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useLayoutEffect } from "react";
 import { Modal } from "bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTimesCircle, faEllipsisV, faPencilAlt } from "@fortawesome/free-solid-svg-icons";
@@ -277,19 +277,31 @@ function SortablePinnedTag({ element, onDelete }: SortablePinnedTagProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: element.name,
   });
+  const elRef = useRef<HTMLDivElement | null>(null);
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: isDragging ? 1 : 0,
-    position: "relative" as const,
-  };
+  const refCallback = useCallback(
+    (el: HTMLDivElement | null) => {
+      setNodeRef(el);
+      elRef.current = el;
+    },
+    [setNodeRef]
+  );
+
+  useLayoutEffect(() => {
+    const el = elRef.current;
+    if (el) {
+      el.style.setProperty(
+        "--sortable-transform",
+        transform ? CSS.Transform.toString(transform) : "none"
+      );
+      el.style.setProperty("--sortable-transition", transition ?? "none");
+    }
+  }, [transform, transition]);
 
   return (
     <div
-      ref={setNodeRef}
-      style={style}
-      className={`slicklist-item show-child-on-hover ${isDragging ? "dragging" : ""}`}
+      ref={refCallback}
+      className={`slicklist-item sortable-slicklist-item show-child-on-hover ${isDragging ? "dragging" : ""}`}
       {...attributes}
       {...listeners}
     >

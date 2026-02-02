@@ -15,7 +15,7 @@ export function RecentlyPlayedSongsCard({ songs, className }: RecentlyPlayedSong
   return (
     <Card title="Recently Played Songs" className={className}>
       <hr className="divider" />
-      <ul className="list-group interior-borders">
+      <ul id="recently-played-songs" className="list-group interior-borders">
         {songs.map(song => (
           <li key={song.uuid} className="list-group-item list-group-item-secondary">
             <span className="item-name">{song.title}</span>

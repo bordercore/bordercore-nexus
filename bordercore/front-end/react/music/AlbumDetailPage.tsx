@@ -5,7 +5,6 @@ import axios from "axios";
 import MarkdownIt from "markdown-it";
 import type { Song, Album, AlbumDetailUrls, Playlist } from "./types";
 import SongTable from "./SongTable";
-import AudioPlayer, { type AudioPlayerHandle } from "./AudioPlayer";
 import EditAlbumModal, { type EditAlbumModalHandle } from "./EditAlbumModal";
 import DropDownMenu from "../common/DropDownMenu";
 import { EventBus } from "../utils/reactUtils";
@@ -44,7 +43,6 @@ export function AlbumDetailPage({
   const [currentSongUuid, setCurrentSongUuid] = React.useState<string | null>(null);
   const [isPlaying, setIsPlaying] = React.useState(false);
 
-  const audioPlayerRef = React.useRef<AudioPlayerHandle>(null);
   const editAlbumRef = React.useRef<EditAlbumModalHandle>(null);
 
   const handleCurrentSong = (songIndex: number) => {
@@ -59,8 +57,32 @@ export function AlbumDetailPage({
     setIsPlaying(playing);
   };
 
+  React.useEffect(() => {
+    const onPlay = (data: { uuid: string }) => {
+      setIsPlaying(true);
+      setCurrentSongUuid(data.uuid);
+    };
+    const onPause = () => {
+      setIsPlaying(false);
+    };
+
+    EventBus.$on("audio-play", onPlay);
+    EventBus.$on("audio-pause", onPause);
+
+    return () => {
+      EventBus.$off("audio-play", onPlay);
+      EventBus.$off("audio-pause", onPause);
+    };
+  }, []);
+
   const handleSongClick = (song: Song) => {
-    audioPlayerRef.current?.playTrack(song.uuid);
+    EventBus.$emit("play-track", {
+      track: song,
+      trackList: songs,
+      songUrl: urls.songMedia,
+      markListenedToUrl: urls.markListenedTo,
+      csrfToken: csrfToken,
+    });
     setCurrentSongUuid(song.uuid);
   };
 
@@ -135,16 +157,6 @@ export function AlbumDetailPage({
           />
 
           {album.note && <h5 className="mt-3" dangerouslySetInnerHTML={renderAlbumNote()!} />}
-
-          <AudioPlayer
-            ref={audioPlayerRef}
-            trackList={songs}
-            songUrl={urls.songMedia}
-            markListenedToUrl={urls.markListenedTo}
-            csrfToken={csrfToken}
-            onCurrentSong={handleCurrentSong}
-            onIsPlaying={handleIsPlaying}
-          />
 
           {album.tags.length > 0 && (
             <div className="align-self-start ms-3 mt-3 mb-3">

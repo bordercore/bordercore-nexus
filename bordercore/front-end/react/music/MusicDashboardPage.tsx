@@ -66,17 +66,17 @@ export function MusicDashboardPage({
       {/* Left sidebar */}
       <div className="flex-grow-last col-lg-3 d-flex flex-column pe-gutter">
         {randomAlbum && (
-          <FeaturedAlbumCard album={randomAlbum} className="flex-grow-0 backdrop-filter" />
+          <FeaturedAlbumCard album={randomAlbum} className="flex-grow-0" />
         )}
 
         <PlaylistsCard
           playlists={playlists}
           onClickCreate={handleClickCreate}
-          className="flex-grow-0 backdrop-filter hover-target z-index-positive"
+          className="flex-grow-0 hover-target z-index-positive"
         />
 
         {recentPlayedSongs.length > 0 && (
-          <RecentlyPlayedSongsCard songs={recentPlayedSongs} className="backdrop-filter" />
+          <RecentlyPlayedSongsCard songs={recentPlayedSongs} />
         )}
       </div>
 
@@ -87,10 +87,10 @@ export function MusicDashboardPage({
           paginator={paginator}
           urls={urls}
           onPaginate={handlePaginate}
-          className="backdrop-filter hover-target"
+          className="hover-target"
         />
 
-        <Card title="Recently Added Songs" className="backdrop-filter">
+        <Card title="Recently Added Songs">
           <hr className="divider" />
           <div className="card-grid ms-2">
             <RecentSongsTable songs={songList} />

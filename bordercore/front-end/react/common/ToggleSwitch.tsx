@@ -2,6 +2,7 @@ import React from "react";
 
 interface ToggleSwitchProps {
   name: string;
+  id?: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
   disabled?: boolean;
@@ -10,6 +11,7 @@ interface ToggleSwitchProps {
 
 export function ToggleSwitch({
   name,
+  id,
   checked,
   onChange,
   disabled = false,
@@ -19,12 +21,14 @@ export function ToggleSwitch({
     onChange(e.target.checked);
   };
 
+  const inputId = id || `toggle-${name}`;
+
   return (
     <div className={`form-check form-switch ${className}`}>
       <input
         type="checkbox"
         className="form-check-input"
-        id={`toggle-${name}`}
+        id={inputId}
         name={name}
         checked={checked}
         onChange={handleChange}

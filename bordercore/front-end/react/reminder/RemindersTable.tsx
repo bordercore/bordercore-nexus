@@ -214,9 +214,9 @@ export function RemindersTable({ data }: RemindersTableProps) {
   }
 
   return (
-    <div className="reminders-table-container">
+    <div className="reminders-table-container data-table-container">
       <div className="overflow-x-auto">
-        <table className="reminders-table">
+        <table className="reminders-table data-table">
           <thead>
             {table.getHeaderGroups().map(headerGroup => (
               <tr key={headerGroup.id}>

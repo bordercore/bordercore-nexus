@@ -2,6 +2,18 @@
 // COMPONENTS: TABLES
 // =============================================================================
 // Table styles including Oruga tables and Bootstrap tables
+// Data table (site-wide): Use .data-table-container + .data-table for new tables
+// so they match todo, music, tags, fitness, reminders without repeating CSS.
+// Add a second class (e.g. .todo-table) only for feature-specific overrides.
+
+// Data table container - shared by todo, music, tags, fitness, reminders
+.data-table-container {
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  background-color: var(--surface2);
+  border-radius: var(--data-table-container-radius);
+  box-shadow: var(--data-table-container-shadow);
+}
 
 .is-invisible {
   visibility: hidden;
@@ -56,7 +68,56 @@
   }
 }
 
-// Oruga tables - more specific selectors last
+// Data table - shared thead/tbody/tr/td styling (lower specificity tr/td before .o-table)
+.data-table {
+  width: 100%;
+  margin-bottom: 0;
+  border-collapse: collapse;
+  text-align: left;
+
+  thead {
+    tr {
+      border-bottom: 1px solid var(--border-color);
+      background-color: var(--surface3);
+
+      th {
+        padding: var(--data-table-cell-padding);
+        border: none;
+        color: var(--text6);
+        font-size: var(--data-table-header-font-size);
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+    }
+  }
+
+  tbody {
+    tr {
+      border-bottom: 1px solid var(--border-color);
+      background-color: transparent;
+      transition: background-color 0.15s ease;
+
+      &:hover {
+        background-color: var(--hover-bg);
+      }
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      td {
+        padding: var(--data-table-cell-padding);
+        border: none;
+        background-color: transparent;
+        color: var(--text1);
+      }
+    }
+  }
+}
+
+// Oruga tables - more specific (tr:hover, .hoverable-cells td) after .data-table
+/* stylelint-disable no-descending-specificity */
 .o-table {
   width: 100%;
   background-color: var(--surface2);
@@ -93,6 +154,7 @@
     }
   }
 }
+/* stylelint-enable no-descending-specificity */
 
 /* stylelint-disable selector-class-pattern */
 .o-table__tr--selected {

@@ -12,7 +12,6 @@ import type {
 } from "./types";
 import ArtistSongTable from "./ArtistSongTable";
 import AlbumGrid from "./AlbumGrid";
-import AudioPlayer, { type AudioPlayerHandle } from "./AudioPlayer";
 import EditArtistImageModal, { type EditArtistImageModalHandle } from "./EditArtistImageModal";
 import DropDownMenu from "../common/DropDownMenu";
 import { EventBus } from "../utils/reactUtils";
@@ -51,7 +50,6 @@ export function ArtistDetailPage({
   const [artistImageKey, setArtistImageKey] = React.useState(Date.now());
   const [dropdownContainer, setDropdownContainer] = React.useState<HTMLElement | null>(null);
 
-  const audioPlayerRef = React.useRef<AudioPlayerHandle>(null);
   const editImageRef = React.useRef<EditArtistImageModalHandle>(null);
 
   React.useEffect(() => {
@@ -73,8 +71,32 @@ export function ArtistDetailPage({
     setIsPlaying(playing);
   };
 
+  React.useEffect(() => {
+    const onPlay = (data: { uuid: string }) => {
+      setIsPlaying(true);
+      setCurrentSongUuid(data.uuid);
+    };
+    const onPause = () => {
+      setIsPlaying(false);
+    };
+
+    EventBus.$on("audio-play", onPlay);
+    EventBus.$on("audio-pause", onPause);
+
+    return () => {
+      EventBus.$off("audio-play", onPlay);
+      EventBus.$off("audio-pause", onPause);
+    };
+  }, []);
+
   const handleSongClick = (song: ArtistSong) => {
-    audioPlayerRef.current?.playTrack(song.uuid);
+    EventBus.$emit("play-track", {
+      track: song,
+      trackList: songs,
+      songUrl: urls.songMedia,
+      markListenedToUrl: urls.markListenedTo,
+      csrfToken: csrfToken,
+    });
     setCurrentSongUuid(song.uuid);
   };
 
@@ -209,18 +231,6 @@ export function ArtistDetailPage({
                     data-bs-target="#artistImageModal"
                   />
                 </div>
-              )}
-
-              {songs.length > 0 && (
-                <AudioPlayer
-                  ref={audioPlayerRef}
-                  trackList={songs}
-                  songUrl={urls.songMedia}
-                  markListenedToUrl={urls.markListenedTo}
-                  csrfToken={csrfToken}
-                  onCurrentSong={handleCurrentSong}
-                  onIsPlaying={handleIsPlaying}
-                />
               )}
             </div>
           </div>

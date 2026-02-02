@@ -5,6 +5,15 @@
 // Theme-specific colors are in themes/ folder
 
 * {
+  // Drag handle icon (bars) color - used for table/list drag handles site-wide
+  --drag-handle-icon-color: #666;
+
+  // Data table - shared styling for tables site-wide (todo, music, tags, fitness, reminders)
+  --data-table-cell-padding: 1rem;
+  --data-table-header-font-size: 0.75rem;
+  --data-table-container-radius: 0.75rem;
+  --data-table-container-shadow: 0 1px 2px 0 rgb(0 0 0 / 5%);
+
   // Layout & Spacing
   --border-radius1: 0.375rem;
   --collection-list-item-width: 13rem;

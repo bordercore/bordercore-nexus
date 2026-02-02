@@ -145,13 +145,9 @@
   }
 }
 
-// Bookmark table (React version)
+// Bookmark table (React version) - uses .data-table; overrides below
 .bookmark-table {
-  width: 100%;
-  border-collapse: collapse;
-
   thead {
-    // Hide header visually but keep for accessibility
     &.visually-hidden {
       position: absolute;
       overflow: hidden;
@@ -167,44 +163,58 @@
 
   .drag-handle-cell {
     width: 30px;
-    color: var(--text3);
     cursor: grab;
 
     &:active {
       cursor: grabbing;
     }
 
-    // Hide by default, show on row hover
     .hover-reveal-object {
+      color: var(--drag-handle-icon-color) !important;
       opacity: 0;
       transition: opacity 0.15s ease;
     }
   }
 
-  tbody {
-    .bookmark-row {
-      position: relative;
-      border-bottom: 1px solid var(--border-color);
-      transition: background-color 0.15s ease;
+  .hover-reveal-target {
+    .hover-reveal-object {
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
 
-      &:hover {
-        background-color: var(--hover-bg);
-      }
-
-      &.selected {
-        background-color: var(--selected-bg);
-      }
-
-      &.no-drag {
-        .drag-handle-cell {
-          cursor: default;
-        }
+    &:hover {
+      .hover-reveal-object {
+        opacity: 1;
       }
     }
   }
 
-  .bookmark-row:hover .drag-handle-cell .hover-reveal-object {
-    opacity: 1;
+  tbody tr.sortable-bookmark-row {
+    transform: var(--sortable-transform, none);
+    transition: var(--sortable-transition);
+  }
+
+  tbody .bookmark-row {
+    position: relative;
+
+    &.selected {
+      background-color: var(--selected-bg);
+    }
+
+    &.dragging {
+      z-index: 1000;
+    }
+
+    &.no-drag .drag-handle-cell {
+      cursor: default;
+    }
+  }
+
+  .bookmark-row:hover {
+    .drag-handle-cell .hover-reveal-object {
+      color: var(--drag-handle-icon-color) !important;
+      opacity: 1;
+    }
   }
 
   .date-cell {
@@ -277,6 +287,7 @@
 
     // Hide trigger by default, show on row hover
     .dropdown-trigger {
+      color: inherit;
       opacity: 0;
       transition: opacity 0.15s ease;
     }

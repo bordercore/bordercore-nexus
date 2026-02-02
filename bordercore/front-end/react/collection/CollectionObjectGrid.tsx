@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef, useLayoutEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBookmark } from "@fortawesome/free-solid-svg-icons";
 import {
@@ -129,19 +129,31 @@ function SortableCollectionItem({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: object.uuid,
   });
+  const elRef = useRef<HTMLDivElement | null>(null);
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: isDragging ? 1 : 0,
-    position: "relative" as const,
-  };
+  const refCallback = useCallback(
+    (el: HTMLDivElement | null) => {
+      setNodeRef(el);
+      elRef.current = el;
+    },
+    [setNodeRef]
+  );
+
+  useLayoutEffect(() => {
+    const el = elRef.current;
+    if (el) {
+      el.style.setProperty(
+        "--sortable-transform",
+        transform ? CSS.Transform.toString(transform) : "none"
+      );
+      el.style.setProperty("--sortable-transition", transition ?? "none");
+    }
+  }, [transform, transition]);
 
   return (
     <div
-      ref={setNodeRef}
-      style={style}
-      className={`slicklist-list-item-inner h-100 ${isDragging ? "dragging" : ""}`}
+      ref={refCallback}
+      className={`slicklist-list-item-inner sortable-collection-grid-item h-100 ${isDragging ? "dragging" : ""}`}
       {...attributes}
       {...listeners}
     >

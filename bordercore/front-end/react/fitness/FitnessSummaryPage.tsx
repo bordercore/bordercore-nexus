@@ -78,8 +78,8 @@ export function FitnessSummaryPage({
       <div className="me-3">
         <h1>Active Exercises</h1>
 
-        <div className="fitness-table-container">
-          <table className="fitness-table">
+        <div className="fitness-table-container data-table-container">
+          <table className="fitness-table data-table">
             <thead>
               <tr>
                 <th>Exercise</th>
@@ -122,8 +122,8 @@ export function FitnessSummaryPage({
 
         <h1 className="mt-3">Inactive Exercises</h1>
 
-        <div className="fitness-table-container">
-          <table className="fitness-table">
+        <div className="fitness-table-container data-table-container">
+          <table className="fitness-table data-table">
             <thead>
               <tr>
                 <th className="cursor-pointer" onClick={() => handleSort("exercise")}>

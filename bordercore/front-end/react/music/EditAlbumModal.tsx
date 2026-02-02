@@ -180,10 +180,13 @@ export const EditAlbumModal = React.forwardRef<EditAlbumModalHandle, EditAlbumMo
               <div className="modal-body">
                 {/* Title */}
                 <div className="row mb-3">
-                  <label className="col-lg-4 col-form-label fw-bold text-end">Title</label>
+                  <label className="col-lg-4 col-form-label fw-bold text-end" htmlFor="id_title">
+                    Title
+                  </label>
                   <div className="col-lg-8">
                     <input
                       type="text"
+                      id="id_title"
                       name="title"
                       className="form-control"
                       value={title}
@@ -195,10 +198,13 @@ export const EditAlbumModal = React.forwardRef<EditAlbumModalHandle, EditAlbumMo
 
                 {/* Artist */}
                 <div className="row mb-3">
-                  <label className="col-lg-4 col-form-label fw-bold text-end">Artist</label>
+                  <label className="col-lg-4 col-form-label fw-bold text-end" htmlFor="id_artist">
+                    Artist
+                  </label>
                   <div className="col-lg-8 position-relative" ref={artistInputRef}>
                     <input
                       type="text"
+                      id="id_artist"
                       name="artist"
                       className="form-control"
                       value={artistName}
@@ -224,10 +230,13 @@ export const EditAlbumModal = React.forwardRef<EditAlbumModalHandle, EditAlbumMo
 
                 {/* Year */}
                 <div className="row mb-3">
-                  <label className="col-lg-4 col-form-label fw-bold text-end">Year</label>
+                  <label className="col-lg-4 col-form-label fw-bold text-end" htmlFor="id_year">
+                    Year
+                  </label>
                   <div className="col-lg-8">
                     <input
                       type="number"
+                      id="id_year"
                       name="year"
                       className="form-control"
                       value={year}
@@ -239,10 +248,13 @@ export const EditAlbumModal = React.forwardRef<EditAlbumModalHandle, EditAlbumMo
 
                 {/* Tags */}
                 <div className="row mb-3">
-                  <label className="col-lg-4 col-form-label fw-bold text-end">Tags</label>
+                  <label className="col-lg-4 col-form-label fw-bold text-end" htmlFor="id_tags">
+                    Tags
+                  </label>
                   <div className="col-lg-8">
                     <input
                       type="text"
+                      id="id_tags"
                       name="tags"
                       className="form-control"
                       value={tags}
@@ -255,10 +267,13 @@ export const EditAlbumModal = React.forwardRef<EditAlbumModalHandle, EditAlbumMo
 
                 {/* Note */}
                 <div className="row mb-3">
-                  <label className="col-lg-4 col-form-label fw-bold text-end">Note</label>
+                  <label className="col-lg-4 col-form-label fw-bold text-end" htmlFor="id_note">
+                    Note
+                  </label>
                   <div className="col-lg-8">
                     <input
                       type="text"
+                      id="id_note"
                       name="note"
                       className="form-control"
                       value={note}
@@ -270,11 +285,18 @@ export const EditAlbumModal = React.forwardRef<EditAlbumModalHandle, EditAlbumMo
 
                 {/* Cover Image */}
                 <div className="row mb-3">
-                  <label className="col-lg-4 col-form-label fw-bold text-end">Cover Image</label>
+                  <label
+                    className="col-lg-4 col-form-label fw-bold text-end"
+                    htmlFor="coverImageFilename"
+                  >
+                    Cover Image
+                  </label>
                   <div className="col-lg-8">
                     <div className="input-group">
                       <input
                         type="text"
+                        id="coverImageFilename"
+                        name="coverImageFilename"
                         className="form-control"
                         value={coverImageFilename}
                         readOnly

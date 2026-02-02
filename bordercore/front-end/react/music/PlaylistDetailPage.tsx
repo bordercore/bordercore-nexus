@@ -4,7 +4,6 @@ import { faPencilAlt, faTimes } from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
 import type { PlaylistDetail, PlaylistSong, PlaylistDetailUrls } from "./types";
 import PlaylistSongTable from "./PlaylistSongTable";
-import AudioPlayer, { type AudioPlayerHandle } from "./AudioPlayer";
 import EditPlaylistModal, { type EditPlaylistModalHandle } from "./EditPlaylistModal";
 import DropDownMenu from "../common/DropDownMenu";
 import { EventBus } from "../utils/reactUtils";
@@ -33,7 +32,6 @@ export function PlaylistDetailPage({
   const [isPlaying, setIsPlaying] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  const audioPlayerRef = useRef<AudioPlayerHandle>(null);
   const editPlaylistRef = useRef<EditPlaylistModalHandle>(null);
 
   // Fetch playlist songs
@@ -63,8 +61,32 @@ export function PlaylistDetailPage({
     setIsPlaying(playing);
   };
 
+  useEffect(() => {
+    const onPlay = (data: { uuid: string }) => {
+      setIsPlaying(true);
+      setCurrentSongUuid(data.uuid);
+    };
+    const onPause = () => {
+      setIsPlaying(false);
+    };
+
+    EventBus.$on("audio-play", onPlay);
+    EventBus.$on("audio-pause", onPause);
+
+    return () => {
+      EventBus.$off("audio-play", onPlay);
+      EventBus.$off("audio-pause", onPause);
+    };
+  }, []);
+
   const handleSongClick = (song: PlaylistSong) => {
-    audioPlayerRef.current?.playTrack(song.uuid);
+    EventBus.$emit("play-track", {
+      track: song,
+      trackList: songs,
+      songUrl: urls.songMedia,
+      markListenedToUrl: urls.markListenedTo,
+      csrfToken: csrfToken,
+    });
     setCurrentSongUuid(song.uuid);
   };
 
@@ -178,16 +200,6 @@ export function PlaylistDetailPage({
               {playlist.parameters.exclude_albums && <li>not on an album</li>}
             </ul>
           </div>
-
-          <AudioPlayer
-            ref={audioPlayerRef}
-            trackList={songs}
-            songUrl={urls.songMedia}
-            markListenedToUrl={urls.markListenedTo}
-            csrfToken={csrfToken}
-            onCurrentSong={handleCurrentSong}
-            onIsPlaying={handleIsPlaying}
-          />
         </div>
       </div>
 
@@ -243,19 +255,17 @@ export function PlaylistDetailPage({
 
             {/* Song table card */}
             <div className="card backdrop-filter flex-grow-1 me-0 mt-3 mb-3" id="album-song-list">
-              <div className="card-body">
-                <PlaylistSongTable
-                  songs={songs}
-                  currentSongUuid={currentSongUuid}
-                  isPlaying={isPlaying}
-                  isManualPlaylist={playlist.type === "manual"}
-                  staticUrl={staticUrl}
-                  editSongUrlTemplate={urls.editSong}
-                  onSongClick={handleSongClick}
-                  onRemoveSong={handleRemoveSong}
-                  onReorder={handleReorder}
-                />
-              </div>
+              <PlaylistSongTable
+                songs={songs}
+                currentSongUuid={currentSongUuid}
+                isPlaying={isPlaying}
+                isManualPlaylist={playlist.type === "manual"}
+                staticUrl={staticUrl}
+                editSongUrlTemplate={urls.editSong}
+                onSongClick={handleSongClick}
+                onRemoveSong={handleRemoveSong}
+                onReorder={handleReorder}
+              />
             </div>
           </div>
         </div>

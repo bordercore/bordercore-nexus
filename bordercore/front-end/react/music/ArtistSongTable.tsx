@@ -112,8 +112,8 @@ export function ArtistSongTable({
     : `${staticUrl}img/equaliser-animated-green-frozen.gif`;
 
   return (
-    <div className="song-table-container">
-      <table className="song-table">
+    <div className="song-table-container data-table-container">
+      <table className="song-table data-table">
         <thead>
           <tr>
             <th>Title</th>

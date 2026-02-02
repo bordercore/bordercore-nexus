@@ -412,7 +412,9 @@ export function SongCreatePage({
 
           {/* File Upload */}
           <div className={`row mb-3 ${errors.song ? "error" : ""}`}>
-            <label className="col-lg-3 col-form-label fw-bold text-end">File</label>
+            <label className="col-lg-3 col-form-label fw-bold text-end" htmlFor="id_filename">
+              File
+            </label>
             <div className="col-lg-9">
               <div className="input-group">
                 <input
@@ -443,7 +445,9 @@ export function SongCreatePage({
 
           {/* Title */}
           <div className={`row mb-3 ${errors.title ? "error" : ""}`}>
-            <label className="col-lg-3 col-form-label fw-bold text-end">Title</label>
+            <label className="col-lg-3 col-form-label fw-bold text-end" htmlFor="id_title">
+              Title
+            </label>
             <div className="col-lg-9">
               <input
                 type="text"
@@ -461,7 +465,9 @@ export function SongCreatePage({
 
           {/* Artist */}
           <div className={`row mb-3 ${errors.artist ? "error" : ""}`}>
-            <label className="col-lg-3 col-form-label fw-bold text-end">Artist</label>
+            <label className="col-lg-3 col-form-label fw-bold text-end" htmlFor="id_artist">
+              Artist
+            </label>
             <div className="col-lg-9">
               <SelectValue
                 ref={selectValueRef}
@@ -478,7 +484,9 @@ export function SongCreatePage({
 
           {/* Track */}
           <div className={`row mb-3 ${errors.track ? "error" : ""}`}>
-            <label className="col-lg-3 col-form-label fw-bold text-end">Track</label>
+            <label className="col-lg-3 col-form-label fw-bold text-end" htmlFor="id_track">
+              Track
+            </label>
             <div className="col-lg-9">
               <input
                 type="text"
@@ -495,7 +503,9 @@ export function SongCreatePage({
 
           {/* Year */}
           <div className={`row mb-3 ${errors.year ? "error" : ""}`}>
-            <label className="col-lg-3 col-form-label fw-bold text-end">Year</label>
+            <label className="col-lg-3 col-form-label fw-bold text-end" htmlFor="id_year">
+              Year
+            </label>
             <div className="col-lg-9">
               <input
                 type="text"
@@ -512,7 +522,9 @@ export function SongCreatePage({
 
           {/* Original Year */}
           <div className={`row mb-3 ${errors.original_year ? "error" : ""}`}>
-            <label className="col-lg-3 col-form-label fw-bold text-end">Original Year</label>
+            <label className="col-lg-3 col-form-label fw-bold text-end" htmlFor="id_original_year">
+              Original Year
+            </label>
             <div className="col-lg-9">
               <input
                 type="text"
@@ -531,7 +543,9 @@ export function SongCreatePage({
 
           {/* Tags */}
           <div className={`row mb-3 ${errors.tags ? "error" : ""}`}>
-            <label className="col-lg-3 col-form-label fw-bold text-end">Tags</label>
+            <label className="col-lg-3 col-form-label fw-bold text-end" htmlFor="id_tags">
+              Tags
+            </label>
             <div className="col-lg-9">
               <TagsInput
                 ref={tagsInputRef}
@@ -547,7 +561,9 @@ export function SongCreatePage({
 
           {/* Album Name */}
           <div className={`row mb-3 ${errors.album_name ? "error" : ""}`}>
-            <label className="col-lg-3 col-form-label fw-bold text-end">Album</label>
+            <label className="col-lg-3 col-form-label fw-bold text-end" htmlFor="id_album_name">
+              Album
+            </label>
             <div className="col-lg-9">
               <input
                 type="text"
@@ -589,7 +605,9 @@ export function SongCreatePage({
           {/* Album Artist - only shown when compilation is checked */}
           {formData.compilation && (
             <div className={`row mb-3 ${errors.album_artist ? "error" : ""}`}>
-              <label className="col-lg-3 col-form-label fw-bold text-end">Album Artist</label>
+              <label className="col-lg-3 col-form-label fw-bold text-end" htmlFor="id_album_artist">
+                Album Artist
+              </label>
               <div className="col-lg-9">
                 <input
                   type="text"
@@ -631,7 +649,9 @@ export function SongCreatePage({
 
           {/* Note */}
           <div className={`row mb-3 ${errors.note ? "error" : ""}`}>
-            <label className="col-lg-3 col-form-label fw-bold text-end">Note</label>
+            <label className="col-lg-3 col-form-label fw-bold text-end" htmlFor="id_note">
+              Note
+            </label>
             <div className="col-lg-9">
               <textarea
                 className={`form-control ${errors.note ? "is-invalid" : ""}`}
@@ -647,7 +667,9 @@ export function SongCreatePage({
 
           {/* Source */}
           <div className={`row mb-3 ${errors.source ? "error" : ""}`}>
-            <label className="col-lg-3 col-form-label fw-bold text-end">Source</label>
+            <label className="col-lg-3 col-form-label fw-bold text-end" htmlFor="id_source">
+              Source
+            </label>
             <div className="col-lg-9">
               <select
                 className={`form-control form-select ${errors.source ? "is-invalid" : ""}`}

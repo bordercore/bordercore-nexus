@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef, useLayoutEffect } from "react";
 import {
   DndContext,
   closestCenter,
@@ -41,12 +41,26 @@ function SortableTagItem({
     id: tag.id.toString(),
     disabled: isUntagged,
   });
+  const elRef = useRef<HTMLDivElement | null>(null);
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: isDragging ? 1000 : undefined,
-  };
+  const refCallback = useCallback(
+    (el: HTMLDivElement | null) => {
+      setNodeRef(el);
+      elRef.current = el;
+    },
+    [setNodeRef]
+  );
+
+  useLayoutEffect(() => {
+    const el = elRef.current;
+    if (el) {
+      el.style.setProperty(
+        "--sortable-transform",
+        transform ? CSS.Transform.toString(transform) : "none"
+      );
+      el.style.setProperty("--sortable-transition", transition ?? "none");
+    }
+  }, [transform, transition]);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -68,9 +82,8 @@ function SortableTagItem({
 
   return (
     <div
-      ref={setNodeRef}
-      style={style}
-      className={`slicklist-item ${isDragging ? "dragging" : ""} ${isUntagged ? "no-drag" : ""}`}
+      ref={refCallback}
+      className={`slicklist-item sortable-slicklist-item ${isDragging ? "dragging" : ""} ${isUntagged ? "no-drag" : ""}`}
     >
       <div className="slicklist-list-item-inner">
         <li

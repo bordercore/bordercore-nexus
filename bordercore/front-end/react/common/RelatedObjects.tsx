@@ -3,6 +3,7 @@ import React, {
   useEffect,
   useCallback,
   useRef,
+  useLayoutEffect,
   useImperativeHandle,
   forwardRef,
 } from "react";
@@ -297,19 +298,31 @@ function SortableRelatedObject({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: element.uuid,
   });
+  const elRef = useRef<HTMLDivElement | null>(null);
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: isDragging ? 1001 : 1000 - index,
-    position: "relative" as const,
-  };
+  const refCallback = useCallback(
+    (el: HTMLDivElement | null) => {
+      setNodeRef(el);
+      elRef.current = el;
+    },
+    [setNodeRef]
+  );
+
+  useLayoutEffect(() => {
+    const el = elRef.current;
+    if (el) {
+      el.style.setProperty(
+        "--sortable-transform",
+        transform ? CSS.Transform.toString(transform) : "none"
+      );
+      el.style.setProperty("--sortable-transition", transition ?? "none");
+    }
+  }, [transform, transition]);
 
   return (
     <div
-      ref={setNodeRef}
-      style={style}
-      className={`slicklist-item show-child-on-hover ${isDragging ? "dragging" : ""}`}
+      ref={refCallback}
+      className={`slicklist-item sortable-slicklist-item show-child-on-hover ${isDragging ? "dragging" : ""}`}
       {...attributes}
       {...listeners}
     >

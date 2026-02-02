@@ -186,10 +186,13 @@ export const CreatePlaylistModal = React.forwardRef<
                   <hr className="mb-1" />
                   <div className="form-section">Options</div>
                   <div className="row mt-3">
-                    <label className="col-lg-4 form-check-label">Tag</label>
+                    <label className="col-lg-4 form-check-label" htmlFor="id_tag">
+                      Tag
+                    </label>
                     <div className="col-lg-8">
                       <input
                         type="text"
+                        id="id_tag"
                         name="tag"
                         value={tag}
                         onChange={e => setTag(e.target.value)}
@@ -200,10 +203,13 @@ export const CreatePlaylistModal = React.forwardRef<
                     </div>
                   </div>
                   <div className="row mt-3">
-                    <label className="col-lg-4 from-check-label text-nowrap">Time Period</label>
+                    <label className="col-lg-4 from-check-label text-nowrap" htmlFor="id_start_year">
+                      Time Period
+                    </label>
                     <div className="col-lg-8 d-flex">
                       <input
                         type="number"
+                        id="id_start_year"
                         name="start_year"
                         value={startYear}
                         onChange={e => setStartYear(e.target.value)}
@@ -214,6 +220,7 @@ export const CreatePlaylistModal = React.forwardRef<
                       />
                       <input
                         type="number"
+                        id="id_end_year"
                         name="end_year"
                         value={endYear}
                         onChange={e => setEndYear(e.target.value)}
@@ -246,9 +253,12 @@ export const CreatePlaylistModal = React.forwardRef<
                     </div>
                   </div>
                   <div className="row mt-3">
-                    <label className="col-lg-4 col-form-label">Exclude Recent Listens</label>
+                    <label className="col-lg-4 col-form-label" htmlFor="id_exclude_recent">
+                      Exclude Recent Listens
+                    </label>
                     <div className="col-lg-8">
                       <select
+                        id="id_exclude_recent"
                         name="exclude_recent"
                         value={excludeRecent}
                         onChange={e => setExcludeRecent(e.target.value)}
@@ -263,11 +273,14 @@ export const CreatePlaylistModal = React.forwardRef<
                     </div>
                   </div>
                   <div className="row mt-3">
-                    <label className="col-lg-4 col-form-label">Exclude Albums</label>
+                    <label className="col-lg-4 col-form-label" htmlFor="id_exclude_albums">
+                      Exclude Albums
+                    </label>
                     <div className="col-lg-8 d-flex align-items-center">
                       <div className="form-check form-switch">
                         <input
                           type="checkbox"
+                          id="id_exclude_albums"
                           name="exclude_albums"
                           className="form-check-input"
                           checked={excludeAlbums}
@@ -278,9 +291,12 @@ export const CreatePlaylistModal = React.forwardRef<
                     </div>
                   </div>
                   <div className="row mt-3">
-                    <label className="col-lg-4 col-form-label">Sort By</label>
+                    <label className="col-lg-4 col-form-label" htmlFor="id_sort_by">
+                      Sort By
+                    </label>
                     <div className="col-lg-8">
                       <select
+                        id="id_sort_by"
                         name="sort_by"
                         value={sortBy}
                         onChange={e => setSortBy(e.target.value)}
@@ -292,9 +308,12 @@ export const CreatePlaylistModal = React.forwardRef<
                     </div>
                   </div>
                   <div className="row mt-3">
-                    <label className="col-lg-4 col-form-label">Size</label>
+                    <label className="col-lg-4 col-form-label" htmlFor="id_size">
+                      Size
+                    </label>
                     <div className="col-lg-8">
                       <select
+                        id="id_size"
                         name="size"
                         value={size}
                         onChange={e => setSize(e.target.value)}

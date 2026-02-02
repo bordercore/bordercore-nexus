@@ -106,62 +106,7 @@
   }
 }
 
-// Todo table container - matches reminders table styling
-.todo-table-container {
-  overflow: hidden;
-  border: 1px solid var(--border-color);
-  background-color: var(--surface2);
-  border-radius: 0.75rem;
-  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 5%);
-}
-
-.todo-table {
-  width: 100%;
-  margin-bottom: 0;
-  border-collapse: collapse;
-  text-align: left;
-
-  thead {
-    tr {
-      border-bottom: 1px solid var(--border-color);
-      background-color: var(--surface3);
-
-      th {
-        padding: 1rem;
-        border: none;
-        color: var(--text6);
-        font-size: 0.75rem;
-        font-weight: 600;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-      }
-    }
-  }
-
-  tbody {
-    tr {
-      border-bottom: 1px solid var(--border-color);
-      background-color: transparent;
-      transition: background-color 0.15s ease;
-
-      &:hover {
-        background-color: var(--hover-bg);
-      }
-
-      &:last-child {
-        border-bottom: none;
-      }
-
-      td {
-        padding: 1rem;
-        border: none;
-        background-color: transparent;
-        color: var(--text1);
-      }
-    }
-  }
-}
-
+// Todo table - uses .data-table-container + .data-table; overrides below
 .todo-priority-high {
   color: var(--error-color);
 }
@@ -180,32 +125,43 @@
   font-weight: 600;
 }
 
-// Drag and drop styles for todo table
-.drag-handle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.25rem;
-  color: var(--text3);
-  opacity: 0.3;
-
-  &.drag-handle-active {
-    color: var(--link-color);
+// Drag handle cell: same pattern as playlist song table (hover-reveal, faBars icon)
+.todo-table {
+  .drag-handle-cell {
+    width: 30px;
     cursor: grab;
-    opacity: 1;
-
-    &:hover {
-      color: var(--text1);
-    }
 
     &:active {
       cursor: grabbing;
     }
+
+    .hover-reveal-object {
+      color: var(--drag-handle-icon-color) !important;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
   }
+
+  tbody tr.no-drag .drag-handle-cell {
+    cursor: default;
+  }
+
+  tbody tr:hover .drag-handle-cell .hover-reveal-object {
+    color: var(--drag-handle-icon-color) !important;
+    opacity: 1;
+  }
+}
+
+// Sortable row: transform/transition set via CSS vars from dnd-kit
+.todo-table tbody tr.sortable-todo-row {
+  transform: var(--sortable-transform, none);
+  transition: var(--sortable-transition);
 }
 
 // Row being dragged
 .todo-table tbody tr.dragging {
+  position: relative;
+  z-index: 1000;
   background-color: var(--surface2);
   opacity: 0.5;
 }

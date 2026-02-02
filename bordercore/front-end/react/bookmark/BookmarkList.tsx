@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useLayoutEffect, useCallback } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBars, faPencilAlt, faTrashAlt } from "@fortawesome/free-solid-svg-icons";
 import {
@@ -62,13 +62,26 @@ function SortableBookmarkRow({
     id: bookmark.uuid,
     disabled: dragDisabled,
   });
+  const elRef = useRef<HTMLTableRowElement | null>(null);
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: isDragging ? 1000 : undefined,
-    position: isDragging ? ("relative" as const) : undefined,
-  };
+  const refCallback = useCallback(
+    (el: HTMLTableRowElement | null) => {
+      setNodeRef(el);
+      elRef.current = el;
+    },
+    [setNodeRef]
+  );
+
+  useLayoutEffect(() => {
+    const el = elRef.current;
+    if (el) {
+      el.style.setProperty(
+        "--sortable-transform",
+        transform ? CSS.Transform.toString(transform) : "none"
+      );
+      el.style.setProperty("--sortable-transition", transition ?? "none");
+    }
+  }, [transform, transition]);
 
   // Filter out the currently selected tag from display
   const filteredTags = bookmark.tags.filter(tag => tag !== selectedTagName);
@@ -88,20 +101,21 @@ function SortableBookmarkRow({
 
   return (
     <tr
-      ref={setNodeRef}
-      style={style}
+      ref={refCallback}
       data-uuid={bookmark.uuid}
-      className={`hover-reveal-target bookmark-row ${
+      className={`hover-reveal-target sortable-bookmark-row bookmark-row ${
         selectedBookmarkUuid === bookmark.uuid ? "selected" : ""
       } ${isDragging ? "dragging" : ""} ${dragDisabled ? "no-drag" : ""}`}
       onClick={() => onClickBookmark(bookmark.uuid)}
-      draggable={!dragDisabled}
-      onDragStart={handleDragStart}
       onMouseEnter={() => setShowYtDuration(true)}
       onMouseLeave={() => setShowYtDuration(false)}
     >
       {/* Drag handle */}
-      <td className="drag-handle-cell" {...(dragDisabled ? {} : { ...attributes, ...listeners })}>
+      <td
+        className="drag-handle-cell"
+        {...(dragDisabled ? {} : { ...attributes, ...listeners })}
+        onClick={e => e.stopPropagation()}
+      >
         <div className="hover-reveal-object">
           <FontAwesomeIcon icon={faBars} />
         </div>
@@ -284,7 +298,7 @@ export function BookmarkList({
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <div id="bookmark-list-container" className="scrollable-panel-scrollbar-hover vh-100">
-        <table className="table bookmark-table">
+        <table className="bookmark-table data-table">
           <thead className="visually-hidden">
             <tr>
               <th scope="col">Drag</th>

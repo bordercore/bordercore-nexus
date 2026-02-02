@@ -230,7 +230,9 @@ export const EditPlaylistModal = forwardRef<EditPlaylistModalHandle, EditPlaylis
 
                     {/* Tag */}
                     <div className="row mt-3">
-                      <label className="col-lg-4 form-check-label">Tag</label>
+                      <label className="col-lg-4 form-check-label" htmlFor="smart-list-tag">
+                        Tag
+                      </label>
                       <div className="col-lg-8">
                         <TagsInput
                           ref={tagsInputRef}
@@ -246,10 +248,13 @@ export const EditPlaylistModal = forwardRef<EditPlaylistModalHandle, EditPlaylis
 
                     {/* Time Period */}
                     <div className="row mt-3">
-                      <label className="col-lg-4 form-check-label text-nowrap">Time Period</label>
+                      <label className="col-lg-4 form-check-label text-nowrap" htmlFor="start_year">
+                        Time Period
+                      </label>
                       <div className="col-lg-8 d-flex">
                         <input
                           type="number"
+                          id="start_year"
                           name="start_year"
                           className="form-control me-1"
                           placeholder="Start Year"
@@ -259,6 +264,7 @@ export const EditPlaylistModal = forwardRef<EditPlaylistModalHandle, EditPlaylis
                         />
                         <input
                           type="number"
+                          id="end_year"
                           name="end_year"
                           className="form-control ms-1"
                           placeholder="End Year"
@@ -293,10 +299,13 @@ export const EditPlaylistModal = forwardRef<EditPlaylistModalHandle, EditPlaylis
 
                     {/* Exclude Recent Listens */}
                     <div className="row mt-3">
-                      <label className="col-lg-4 col-form-label">Exclude Recent Listens</label>
+                      <label className="col-lg-4 col-form-label" htmlFor="exclude_recent">
+                        Exclude Recent Listens
+                      </label>
                       <div className="col-lg-8">
                         <select
                           className="form-control form-select"
+                          id="exclude_recent"
                           name="exclude_recent"
                           value={excludeRecent}
                           onChange={e => setExcludeRecent(e.target.value)}
@@ -312,12 +321,16 @@ export const EditPlaylistModal = forwardRef<EditPlaylistModalHandle, EditPlaylis
 
                     {/* Exclude Albums */}
                     <div className="row mt-3">
-                      <label className="col-lg-4 col-form-label">Exclude Albums</label>
+                      <label className="col-lg-4 col-form-label" htmlFor="excludeAlbums">
+                        Exclude Albums
+                      </label>
                       <div className="col-lg-8 d-flex align-items-center">
                         <div className="form-check form-switch">
                           <input
                             className="form-check-input"
                             type="checkbox"
+                            id="excludeAlbums"
+                            name="excludeAlbums"
                             checked={excludeAlbums}
                             onChange={e => setExcludeAlbums(e.target.checked)}
                           />
@@ -327,10 +340,13 @@ export const EditPlaylistModal = forwardRef<EditPlaylistModalHandle, EditPlaylis
 
                     {/* Sort By */}
                     <div className="row mt-3">
-                      <label className="col-lg-4 col-form-label">Sort By</label>
+                      <label className="col-lg-4 col-form-label" htmlFor="sort_by">
+                        Sort By
+                      </label>
                       <div className="col-lg-8">
                         <select
                           className="form-control form-select"
+                          id="sort_by"
                           name="sort_by"
                           value={sortBy}
                           onChange={e => setSortBy(e.target.value)}
@@ -343,10 +359,13 @@ export const EditPlaylistModal = forwardRef<EditPlaylistModalHandle, EditPlaylis
 
                     {/* Size */}
                     <div className="row mt-3">
-                      <label className="col-lg-4 col-form-label">Size</label>
+                      <label className="col-lg-4 col-form-label" htmlFor="size">
+                        Size
+                      </label>
                       <div className="col-lg-8">
                         <select
                           className="form-control form-select"
+                          id="size"
                           name="size"
                           value={size}
                           onChange={e => setSize(e.target.value)}
@@ -362,12 +381,16 @@ export const EditPlaylistModal = forwardRef<EditPlaylistModalHandle, EditPlaylis
 
                     {/* Refresh Song List */}
                     <div className="row mt-3">
-                      <label className="col-lg-4 col-form-label">Refresh Song List</label>
+                      <label className="col-lg-4 col-form-label" htmlFor="refreshSongList">
+                        Refresh Song List
+                      </label>
                       <div className="col-lg-8 d-flex align-items-center">
                         <div className="form-check form-switch">
                           <input
                             className="form-check-input"
                             type="checkbox"
+                            id="refreshSongList"
+                            name="refreshSongList"
                             checked={refreshSongList}
                             onChange={e => setRefreshSongList(e.target.checked)}
                           />
