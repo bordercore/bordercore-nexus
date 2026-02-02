@@ -111,7 +111,7 @@ def get_playlist_songs(playlist: Playlist) -> Dict[str, Union[List[Dict[str, Any
         }
         for x
         in PlaylistItem.objects.filter(playlist=playlist)
-        .select_related("song").order_by("sort_order")
+        .select_related("song", "song__artist").order_by("sort_order")
     ]
 
     return {
