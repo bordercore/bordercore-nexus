@@ -32,7 +32,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { DropDownMenu, DropDownMenuHandle } from "../common/DropDownMenu";
-import { doPost } from "../utils/reactUtils";
+import { doPost, doPut } from "../utils/reactUtils";
 import { TodoEditor, TodoEditorHandle } from "../todo/TodoEditor";
 import { ObjectSelectModal, ObjectSelectModalHandle } from "../common/ObjectSelectModal";
 import NodeCollectionCard from "./NodeCollectionCard";
@@ -217,18 +217,10 @@ export default function NodeDetailPage({
     [layout, syncLayout]
   );
 
-  // Node name editing
+  // Node name editing (editNode URL is the API node detail endpoint; use PUT to update)
   const handleNodeNameSave = () => {
     setIsEditingName(false);
-    doPost(
-      urls.editNode,
-      {
-        uuid: nodeUuid,
-        name: nodeName,
-      },
-      () => {},
-      "Node name updated"
-    );
+    doPut(urls.editNode, { name: nodeName }, () => {}, "Node name updated");
   };
 
   // Add new components
