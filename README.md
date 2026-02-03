@@ -2,86 +2,99 @@
 
 ---
 
-*Bordercore* is a "Second Brain" personal knowledge base platform, designed to organize your digital life. Imagine a digital sanctuary where all your vital information converges -- notes whispering insights, PDFs sharing knowledge, bookmarks guiding your web exploration, flashcards sparking memory, and todos orchestrating your day. It supports:
+*Bordercore* is a "Second Brain" personal knowledge base platform, designed to organize your digital life. Imagine a digital sanctuary where all your vital information converges -- notes whispering insights, PDFs sharing knowledge, bookmarks guiding your web exploration, flashcards sparking memory, and todos orchestrating your day.
 
-- Notes
-- PDFs
-- Bookmarks
-- Todo Lists
-- Flashcards
-- Music
-- Workouts
-- RSS Feeds
+## Features
 
-The platform is built on Django, relies on AWS Lambda for various asyncronous tasks and uses Elasticsearch for search.
+Bordercore supports a wide range of personal data types, all integrated into a single searchable interface:
 
-Virtually every object in the system can be tagged.
+- **Notes & Documents**: Create and manage rich text notes and uploaded documents (PDFs, images, etc.).
+- **Bookmarks**: Save and organize web links with automatic favicon and thumbnail generation.
+- **Todo Lists**: Track tasks with priorities, tags, and reminders.
+- **Flashcards (Drill)**: A spaced-repetition system for learning and memory.
+- **Music Library**: Manage your music collection, playlists, and listening history.
+- **Fitness Tracking**: Log workouts, exercises, and track progress over time.
+- **RSS Feeds**: Subscribe to and read your favorite web feeds.
+- **Quotes**: Collect and tag inspiring quotes.
+- **Collections**: Group any object in the system into curated collections.
+- **Tagging**: Virtually every object in the system can be tagged for easy organization.
+- **Semantic Search**: Search by keyword, tag, or embedding (semantic search) powered by Elasticsearch and OpenAI/local embeddings.
 
-You can search by keyword, tag, or embedding (semantic search).
+## Architecture
 
-# Tests
+Bordercore is built with a modern, scalable tech stack:
 
-Be sure the following environment variables are set:
+- **Backend**: [Django](https://www.djangoproject.com/) (Python) provides the core logic and REST API.
+- **Frontend**: [React](https://reactjs.org/) with [Vite](https://vitejs.dev/) for a fast, responsive user interface.
+- **Database**: [PostgreSQL](https://www.postgresql.org/) for structured data.
+- **Search Engine**: [Elasticsearch](https://www.elastic.co/) for full-text and vector-based semantic search.
+- **Asynchronous Tasks**: [AWS Lambda](https://aws.amazon.com/lambda/) handles background tasks like thumbnail generation, embedding creation, and RSS feed updates.
+- **Storage**: [AWS S3](https://aws.amazon.com/s3/) for hosting user-uploaded blobs and media.
+
+## Development
+
+To run the development environment:
+
+1.  **Backend**:
+    ```bash
+    pip install -r requirements/dev.txt
+    python manage.py runserver
+    ```
+
+2.  **Frontend**:
+    ```bash
+    cd bordercore/front-end
+    npm install
+    npm run dev
+    ```
+
+## Testing
+
+Bordercore uses `pytest` for its testing suite, orchestrated by a custom test runner.
+
+### Prerequisites
+
+Ensure the following environment variables are set:
 
 ```bash
 export BORDERCORE_HOME=$INSTALL_DIR/bordercore
 export PYTHONPATH=$INSTALL_DIR:$INSTALL_DIR/bordercore
-export DJANGO_SETTINGS_MODULE=config.settings.prod
+export DJANGO_SETTINGS_MODULE=config.settings.prod # Or dev
 ```
 
-To run all unit tests:
+### Running Tests
+
+You can run tests using the `Makefile` or directly via the `test_runner.py` script.
+
+**Using Make:**
 
 ```bash
-cd $INSTALL_DIR/bordercore
+# Run unit tests (Elasticsearch is mocked by default)
 make test_unit
-```
 
-To run all functional tests:
-
-```bash
-cd $INSTALL_DIR/bordercore
+# Run functional tests (Selenium-based)
 make test_functional
-```
 
-To run all data quality tests:
-
-```bash
-cd $INSTALL_DIR/bordercore
+# Run data quality tests
 make test_data
+
+# Run coverage report
+make test_coverage
 ```
 
-## Setup
+**Using the Test Runner:**
 
-An instance of Elasticsearch running inside Docker is used during testing. All objects are indexed in Elasticsearch during a test just like production.
-
-To build the image:
+The `bin/test_runner.py` script provides more control and records metrics to the database.
 
 ```bash
-cd $INSTALL_DIR/bordercore/config/elasticsearch
-docker build -t elasticsearch-with-attachment .
+python3 bin/test_runner.py --test [unit|coverage|functional|wumpus|data] [--verbose]
 ```
 
-To run a container based on this image:
-
+If you need to reset the test index, you can use:
 ```bash
-docker run --detach --rm -p 9201:9200 -p 9301:9300 -e "discovery.type=single-node" elasticsearch-with-attachment:latest
-```
-
-Then add the pipeline attachment and field mappings:
-
-```bash
-cd $INSTALL_DIR/bordercore/config/elasticsearch
-curl -XPUT http://localhost:9201/_ingest/pipeline/attachment -H 'Content-Type: application/json' -d @ingest_pipeline.json
-
-MAPPINGS=$HOME/dev/django/bordercore/config/elasticsearch/mappings.json
-curl -XPUT http://localhost:9201/bordercore_test -H "Content-Type: application/json" -d @$MAPPINGS
-```
-
-If you need to delete the `bordercore_test` instance and start fresh, run this:
-
-```bash
-cd $INSTALL_DIR/bordercore/
 make reset_elasticsearch
 ```
 
-Elasticsearch is installed in the `/usr/share/elasticsearch` directory in the Docker image.
+### Mocking
+
+By default, the test runner sets `MOCK_ELASTICSEARCH=1` for unit and functional tests to avoid external dependencies. If you want to test with a real Elasticsearch instance, ensure `MOCK_ELASTICSEARCH` is not set to `1` in your environment.
