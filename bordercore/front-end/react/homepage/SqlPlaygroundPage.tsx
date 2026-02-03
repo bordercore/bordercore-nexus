@@ -3,6 +3,7 @@ import sqlite3InitModule from "@sqlite.org/sqlite-wasm";
 import { Card } from "../common/Card";
 import { DropDownMenu } from "../common/DropDownMenu";
 import { DataTable } from "./DataTable";
+import { SqlEditor } from "../common/SqlEditor";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFileImport } from "@fortawesome/free-solid-svg-icons";
 import { doGet } from "../utils/reactUtils";
@@ -243,10 +244,10 @@ export function SqlPlaygroundPage({ sqlDbUrl }: SqlPlaygroundPageProps) {
           </div>
         }
       >
-        <textarea
+        <SqlEditor
           value={sql}
-          onChange={e => setSql(e.target.value)}
-          className="sql-input mt-2 p-3 w-100"
+          onChange={setSql}
+          className="mt-2 w-100"
           rows={3}
           placeholder="Your SQL Here..."
           onKeyDown={handleKeyDown}

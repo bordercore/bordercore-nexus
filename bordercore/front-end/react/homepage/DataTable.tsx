@@ -70,33 +70,35 @@ export function DataTable({
   }
 
   return (
-    <table className={`table ${hoverable ? "table-hover" : ""}`}>
-      <thead>
-        <tr>
-          {columns.map(col => (
-            <th
-              key={col}
-              onClick={() => handleSort(col)}
-              className="cursor-pointer user-select-none"
-            >
-              {col}
-              {getSortIcon(col)}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {sortedData.map((row, rowIndex) => (
-          <tr key={rowIndex}>
+    <div className="data-table-container">
+      <table className="data-table">
+        <thead>
+          <tr>
             {columns.map(col => (
-              <td key={col}>
-                {row[col] !== null && row[col] !== undefined ? String(row[col]) : ""}
-              </td>
+              <th
+                key={col}
+                onClick={() => handleSort(col)}
+                className="cursor-pointer user-select-none"
+              >
+                {col}
+                {getSortIcon(col)}
+              </th>
             ))}
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {sortedData.map((row, rowIndex) => (
+            <tr key={rowIndex}>
+              {columns.map(col => (
+                <td key={col}>
+                  {row[col] !== null && row[col] !== undefined ? String(row[col]) : ""}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
