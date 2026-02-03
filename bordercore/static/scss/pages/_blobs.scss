@@ -197,6 +197,33 @@
 $blob-detail-gutter: 1rem;
 
 .blob-detail-page {
+  li:hover {
+    background-color: transparent !important;
+  }
+
+  // Heading colors: h1 = text2, then progressively pink
+  $blob-heading-pink: hsl(330deg 85% 58%);
+
+  h1 {
+    color: var(--text2);
+  }
+
+  h2 {
+    color: color-mix(in srgb, var(--text2) 55%, $blob-heading-pink);
+  }
+
+  h3 {
+    color: color-mix(in srgb, var(--text2) 30%, $blob-heading-pink);
+  }
+
+  h4 {
+    color: color-mix(in srgb, var(--text2) 10%, $blob-heading-pink);
+  }
+
+  h5 {
+    color: $blob-heading-pink;
+  }
+
   .col-lg-3 {
     .card,
     .card-body {
@@ -276,8 +303,39 @@ $blob-detail-gutter: 1rem;
 $note-list-gutter: 1rem;
 
 .note-list-page {
+  $note-heading-pink: hsl(330deg 85% 58%);
+
   .col-lg-9 {
     padding-left: $note-list-gutter;
+  }
+
+  .scrollable-panel > div.position-relative {
+    margin-bottom: var(--column-gutter);
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  // Match the progressive heading colors from the blob detail page
+  h1 {
+    color: var(--text2);
+  }
+
+  h2 {
+    color: color-mix(in srgb, var(--text2) 55%, $note-heading-pink);
+  }
+
+  h3 {
+    color: color-mix(in srgb, var(--text2) 30%, $note-heading-pink);
+  }
+
+  h4 {
+    color: color-mix(in srgb, var(--text2) 10%, $note-heading-pink);
+  }
+
+  h5 {
+    color: $note-heading-pink;
   }
 }
 
