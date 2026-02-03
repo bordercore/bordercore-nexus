@@ -16,6 +16,8 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faBars } from "@fortawesome/free-solid-svg-icons";
 import { doPost } from "../utils/reactUtils";
 import type { Feed } from "./types";
 
@@ -119,7 +121,7 @@ export function FeedList({
         items={localFeedList.map(feed => feed.uuid)}
         strategy={verticalListSortingStrategy}
       >
-        <ul>
+        <ul className="ps-0">
           {localFeedList.map(feed => (
             <SortableFeedItem
               key={feed.uuid}
@@ -171,13 +173,20 @@ function SortableFeedItem({ feed, currentFeed, handleClick }: SortableFeedItemPr
     <div
       ref={refCallback}
       className={`slicklist-item sortable-slicklist-item ${isDragging ? "dragging" : ""}`}
-      {...attributes}
-      {...listeners}
     >
       <div className="slicklist-list-item-inner">
         <li
-          className={`feed-item ps-2 ${currentFeed?.id === feed.id ? "selected rounded-sm" : ""}`}
+          className={`feed-item ps-2 d-flex align-items-center hover-reveal-target ${
+            currentFeed?.id === feed.id ? "selected rounded-sm" : ""
+          }`}
         >
+          <div
+            className="drag-handle hover-reveal-object pe-3 cursor-grab"
+            {...attributes}
+            {...listeners}
+          >
+            <FontAwesomeIcon icon={faBars} />
+          </div>
           <a
             href="#"
             data-id={feed.id}
