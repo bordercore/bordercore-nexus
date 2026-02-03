@@ -266,20 +266,22 @@ export function BookmarkFormPage({
             ))}
 
             <div>
-              <div className="col-lg-7 offset-lg-2">
-                <input className="btn btn-primary" type="submit" name="Go" value="Save" />
+              <div className="col-lg-7 offset-lg-2 d-flex">
                 {uuid && (
                   <input
-                    className="btn btn-secondary ms-3"
+                    className="btn btn-outline-danger me-auto"
                     type="button"
                     name="Go"
                     value="Delete"
                     onClick={handleDelete}
                   />
                 )}
-                <a href={urls.bookmarkOverview} className="ms-3">
-                  Cancel
-                </a>
+                <div className="d-flex ms-auto align-items-center">
+                  <a href={urls.bookmarkOverview} className="btn btn-secondary">
+                    Cancel
+                  </a>
+                  <input className="btn btn-primary ms-2" type="submit" name="Go" value="Save" />
+                </div>
               </div>
             </div>
           </form>

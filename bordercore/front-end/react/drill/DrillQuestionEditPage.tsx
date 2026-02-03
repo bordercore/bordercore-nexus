@@ -274,18 +274,24 @@ export function DrillQuestionEditPage({
 
             {/* Buttons */}
             <div>
-              <div className="col-lg-9 offset-lg-2" id="button-wrapper">
-                <button className="btn btn-primary ms-1" type="button" onClick={handleSubmit}>
-                  Save
-                </button>
+              <div className="col-lg-9 offset-lg-2 d-flex" id="button-wrapper">
                 {objectUuid && urls.delete && (
-                  <button className="btn btn-secondary ms-3" type="button" onClick={handleDelete}>
+                  <button
+                    className="btn btn-outline-danger me-auto"
+                    type="button"
+                    onClick={handleDelete}
+                  >
                     Delete
                   </button>
                 )}
-                <a className="ms-3" href={urls.cancel}>
-                  Cancel
-                </a>
+                <div className="d-flex ms-auto align-items-center">
+                  <a className="btn btn-secondary" href={urls.cancel}>
+                    Cancel
+                  </a>
+                  <button className="btn btn-primary ms-2" type="button" onClick={handleSubmit}>
+                    Save
+                  </button>
+                </div>
               </div>
             </div>
           </form>
