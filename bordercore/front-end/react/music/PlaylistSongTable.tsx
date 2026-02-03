@@ -323,7 +323,6 @@ function SortableSongRow({
       </td>
       <td className="col-action text-center align-middle" onClick={e => e.stopPropagation()}>
         <DropDownMenu
-          showOnHover={true}
           dropdownSlot={
             <ul className="dropdown-menu-list">
               <li>

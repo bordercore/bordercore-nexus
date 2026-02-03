@@ -592,7 +592,6 @@ export function DrillQuestionPage({
                   </a>
                   <div className="dropdown-menu-container dropdown-menu-container-width ms-auto">
                     <DropDownMenu
-                      showOnHover={false}
                       dropdownSlot={
                         <ul className="dropdown-menu-list">
                           <li key="edit">

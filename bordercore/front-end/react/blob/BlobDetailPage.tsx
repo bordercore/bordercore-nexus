@@ -341,7 +341,6 @@ export function BlobDetailPage({
               <div className="blob-detail-dropdown">
                 <DropDownMenu
                   ref={dropdownMenuRef}
-                  showOnHover={true}
                   dropdownSlot={dropdownItems}
                 />
               </div>

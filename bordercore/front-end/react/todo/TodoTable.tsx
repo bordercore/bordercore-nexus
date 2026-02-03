@@ -250,7 +250,6 @@ function SortableRow({
       <td className="todo-col-date text-nowrap">{getFormattedDate(todo.created)}</td>
       <td className="col-action">
         <DropDownMenu
-          showOnHover={true}
           dropdownSlot={
             <ul className="dropdown-menu-list">
               {isSortable && todo.sort_order > 1 && (

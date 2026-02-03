@@ -95,7 +95,6 @@ export function DrillDisabledTags({
       <div>Disabled Tags</div>
       <div className="ms-auto">
         <DropDownMenu
-          showOnHover={true}
           iconSlot={<FontAwesomeIcon icon={faEllipsisV} />}
           dropdownSlot={
             <ul className="dropdown-menu-list">

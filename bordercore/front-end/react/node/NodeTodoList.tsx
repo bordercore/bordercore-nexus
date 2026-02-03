@@ -80,7 +80,6 @@ function SortableTodoItem({ element, onEdit, onRemove }: SortableTodoItemProps) 
 
             <div className="ms-auto">
               <DropDownMenu
-                showOnHover
                 dropdownSlot={
                   <ul className="dropdown-menu-list">
                     <li>
@@ -296,7 +295,7 @@ const NodeTodoList = forwardRef<NodeTodoListHandle, NodeTodoListProps>(function 
         Todo Tasks
       </div>
       <div className="dropdown-menu-container ms-auto hover-reveal-content">
-        <DropDownMenu showOnHover={false} dropdownSlot={headerDropdownContent} />
+        <DropDownMenu dropdownSlot={headerDropdownContent} />
       </div>
     </div>
   );

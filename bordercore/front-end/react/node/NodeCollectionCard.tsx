@@ -125,7 +125,6 @@ function SortableItem({
 
             <div className="ms-auto">
               <DropDownMenu
-                showOnHover
                 dropdownSlot={
                   <ul className="dropdown-menu-list">
                     <li>
@@ -517,7 +516,7 @@ export default function NodeCollectionCard({
         {objectCount} <span>{pluralize("object", objectCount)}</span>
       </div>
       <div className="dropdown-menu-container dropdown-menu-container-width ms-auto hover-reveal-content">
-        <DropDownMenu showOnHover={false} dropdownSlot={dropdownContent} />
+        <DropDownMenu dropdownSlot={dropdownContent} />
       </div>
     </div>
   );

@@ -194,7 +194,7 @@ export default function NodeQuote({
             </div>
           </div>
           <div className="dropdown-menu-container ms-auto">
-            <DropDownMenu showOnHover dropdownSlot={dropdownContent} />
+            <DropDownMenu dropdownSlot={dropdownContent} />
           </div>
         </div>
         <hr className="divider" />

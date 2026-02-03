@@ -221,7 +221,6 @@ export function SqlPlaygroundPage({ sqlDbUrl }: SqlPlaygroundPageProps) {
             <div className="card-title">SQL</div>
             <div className="dropdown-menu-container ms-auto">
               <DropDownMenu
-                showOnHover
                 dropdownSlot={
                   <ul className="dropdown-menu-list">
                     <li>

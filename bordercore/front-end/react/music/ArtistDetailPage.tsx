@@ -184,7 +184,6 @@ export function ArtistDetailPage({
 
   const dropdownMenu = (
     <DropDownMenu
-      showOnHover={false}
       dropdownSlot={
         <ul className="dropdown-menu-list">
           <li>

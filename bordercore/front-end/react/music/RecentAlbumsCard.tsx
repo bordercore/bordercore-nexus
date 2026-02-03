@@ -30,7 +30,6 @@ export function RecentAlbumsCard({
           <div className="card-title">Recently Added Albums</div>
           <div className="ms-auto">
             <DropDownMenu
-              showOnHover={true}
               dropdownSlot={
                 <ul className="dropdown-menu-list">
                   <li>

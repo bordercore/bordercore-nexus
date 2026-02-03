@@ -182,7 +182,6 @@ export function AlbumDetailPage({
                   <h1>{album.title}</h1>
                   <div className="ms-auto">
                     <DropDownMenu
-                      showOnHover={false}
                       dropdownSlot={
                         <ul className="dropdown-menu-list">
                           <li>

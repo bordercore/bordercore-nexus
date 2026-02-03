@@ -231,7 +231,7 @@ export function LastWorkout({
               <div className="d-flex">
                 <div className="card-title text-primary">Description</div>
                 <div className="ms-auto">
-                  <DropDownMenu showOnHover={true} dropdownSlot={dropdownContent} />
+                  <DropDownMenu dropdownSlot={dropdownContent} />
                 </div>
               </div>
               <div

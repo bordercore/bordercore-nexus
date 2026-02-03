@@ -325,7 +325,7 @@ export function Schedule({
                     </div>
                   </div>
                   <div className="ms-auto">
-                    <DropDownMenu showOnHover={true} dropdownSlot={dropdownContent} />
+                    <DropDownMenu dropdownSlot={dropdownContent} />
                   </div>
                 </div>
                 <hr className="m-2" />

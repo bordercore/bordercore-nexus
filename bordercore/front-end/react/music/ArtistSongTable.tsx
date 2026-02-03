@@ -173,7 +173,6 @@ export function ArtistSongTable({
                 onClick={e => e.stopPropagation()}
               >
                 <DropDownMenu
-                  showOnHover={false}
                   dropdownSlot={
                     <ul className="dropdown-menu-list">
                       <li>
@@ -186,7 +185,6 @@ export function ArtistSongTable({
                       </li>
                       <li>
                         <DropDownMenu
-                          showOnHover={false}
                           showTarget={false}
                           direction="dropend"
                           iconSlot={

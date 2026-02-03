@@ -211,7 +211,6 @@ export const RelatedObjects = forwardRef<RelatedObjectsHandle, RelatedObjectsPro
         </div>
         <div className="dropdown-menu-container ms-auto">
           <DropDownMenu
-            showOnHover={false}
             dropdownSlot={
               <ul className="dropdown-menu-list">
                 <li key="new-object">
@@ -373,7 +372,6 @@ function SortableRelatedObject({
             </div>
             <div className="show-on-hover" onPointerDown={e => e.stopPropagation()}>
               <DropDownMenu
-                showOnHover={true}
                 dropdownSlot={
                   <ul className="dropdown-menu-list">
                     <li key="remove">

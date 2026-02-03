@@ -220,7 +220,7 @@ export default function NodeNote({
       </div>
       {note && (
         <div className="dropdown-menu-container ms-auto">
-          <DropDownMenu showOnHover dropdownSlot={dropdownContent} />
+          <DropDownMenu dropdownSlot={dropdownContent} />
         </div>
       )}
     </div>

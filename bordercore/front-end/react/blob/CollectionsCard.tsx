@@ -45,7 +45,7 @@ export function CollectionsCard({ collections, onAddToCollection }: CollectionsC
         Collections
       </div>
       <div className="dropdown-menu-container collections-dropdown ms-auto">
-        <DropDownMenu showOnHover={true} dropdownSlot={dropdownItems} />
+        <DropDownMenu dropdownSlot={dropdownItems} />
       </div>
     </div>
   );

@@ -186,7 +186,6 @@ function SortableBookmarkRow({
       {/* Actions */}
       <td className="actions-cell">
         <DropDownMenu
-          showOnHover={true}
           allowFlip={false}
           dropdownSlot={
             <ul className="dropdown-menu-list">

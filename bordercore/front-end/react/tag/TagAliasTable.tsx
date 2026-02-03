@@ -82,7 +82,6 @@ export function TagAliasTable({ data, onDelete }: TagAliasTableProps) {
               <td>{alias.name}</td>
               <td className="col-action">
                 <DropDownMenu
-                  showOnHover={true}
                   dropdownSlot={
                     <ul className="dropdown-menu-list">
                       <li>

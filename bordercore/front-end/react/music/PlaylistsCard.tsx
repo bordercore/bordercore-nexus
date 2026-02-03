@@ -20,7 +20,6 @@ export function PlaylistsCard({ playlists, onClickCreate, className }: Playlists
           <div className="card-title">Playlists</div>
           <div className="ms-auto">
             <DropDownMenu
-              showOnHover={true}
               dropdownSlot={
                 <ul className="dropdown-menu-list">
                   <li>
