@@ -90,6 +90,11 @@ urlpatterns = [
         name="update_related_object_note"
     ),
     path(
+        route="<uuid:uuid>/file/",
+        view=views.blob_file_serve,
+        name="file"
+    ),
+    path(
         route="template",
         view=views.get_template,
         name="get_template"

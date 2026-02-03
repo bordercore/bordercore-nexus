@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import sqlite3InitModule from "@sqlite.org/sqlite-wasm";
 import { Card } from "../common/Card";
 import { DropDownMenu } from "../common/DropDownMenu";
 import { DataTable } from "./DataTable";
@@ -6,16 +7,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFileImport } from "@fortawesome/free-solid-svg-icons";
 import { doGet } from "../utils/reactUtils";
 import type { TableInfo, SqlOutput } from "./types";
-
-// Declare the global sqlite3InitModule
-declare global {
-  interface Window {
-    sqlite3InitModule: (config: {
-      print: (...args: any[]) => void;
-      printErr: (...args: any[]) => void;
-    }) => Promise<any>;
-  }
-}
 
 interface SqlPlaygroundPageProps {
   sqlDbUrl?: string;
@@ -112,9 +103,10 @@ export function SqlPlaygroundPage({ sqlDbUrl }: SqlPlaygroundPageProps) {
 
   const createDatabase = useCallback(async () => {
     try {
-      const sqlite3 = await window.sqlite3InitModule({
+      const sqlite3 = await sqlite3InitModule({
         print: log,
         printErr: logError,
+        locateFile: () => "/static/sqlite3.wasm",
       });
 
       sqlite3Ref.current = sqlite3;
@@ -202,7 +194,7 @@ export function SqlPlaygroundPage({ sqlDbUrl }: SqlPlaygroundPageProps) {
 
   return (
     <div className="sql-playground p-3">
-      <div className="d-flex flex-wrap">
+      <div className="d-flex flex-wrap mb-gutter">
         {Object.entries(tables).map(([tableName, tableInfo]) => (
           <div key={tableName} className="w-100">
             <Card title={`Table: ${tableName}`}>
@@ -222,6 +214,7 @@ export function SqlPlaygroundPage({ sqlDbUrl }: SqlPlaygroundPageProps) {
 
       <Card
         className="hover-target"
+        cardClassName="mb-gutter"
         titleSlot={
           <div className="d-flex">
             <div className="card-title">SQL</div>

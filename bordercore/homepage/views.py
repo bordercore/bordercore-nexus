@@ -10,6 +10,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import F
 from django.http import JsonResponse
 from django.shortcuts import render
+from django.urls import reverse
 
 from blob.models import Blob
 from bookmark.models import Bookmark
@@ -291,8 +292,13 @@ def gallery(request):
 def sql(request):
     context = {}
     if "sql_db_uuid" in request.GET:
-        sql_db = Blob.objects.get(uuid=request.GET["sql_db_uuid"])
-        context["sql_db_url"] = settings.MEDIA_URL + "blobs/" + sql_db.url
+        sql_db_uuid = request.GET["sql_db_uuid"]
+        try:
+            sql_db = Blob.objects.get(uuid=sql_db_uuid, user=request.user)
+            # Use the proxy URL instead of direct S3 URL to avoid CORS issues
+            context["sql_db_url"] = reverse("blob:file", kwargs={"uuid": sql_db.uuid})
+        except Blob.DoesNotExist:
+            messages.add_message(request, messages.ERROR, "SQL database not found")
 
     return render(request, "homepage/sql.html", context)
 

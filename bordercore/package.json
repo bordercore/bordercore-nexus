@@ -8,6 +8,8 @@
     },
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
+        "copy-sqlite-wasm": "node scripts/copy-sqlite-wasm.js",
+        "postinstall": "npm run copy-sqlite-wasm",
         "vite:dev": "vite",
         "vite:build": "vite build",
         "vite:serve": "vite preview --strictPort",

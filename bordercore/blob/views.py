@@ -1026,6 +1026,60 @@ def update_page_number(request: HttpRequest) -> JsonResponse:
 
 
 @login_required
+def blob_file_serve(request: HttpRequest, uuid: str) -> HttpResponse | StreamingHttpResponse:
+    """Serve a blob's file through Django.
+
+    This acts as a proxy to S3, allowing authenticated users to access
+    files without needing a public S3 bucket or CORS configuration.
+
+    Args:
+        request: The HTTP request.
+        uuid: UUID of the blob to serve.
+
+    Returns:
+        HttpResponse or StreamingHttpResponse with the file content.
+    """
+    user = cast(User, request.user)
+    try:
+        blob = Blob.objects.get(uuid=uuid, user=user)
+    except Blob.DoesNotExist:
+        log.error("Blob not found for uuid=%s and user=%s", uuid, user.id)
+        return HttpResponse("Blob not found", status=404)
+    except Exception as e:
+        log.error("Error fetching blob %s: %s", uuid, e, exc_info=True)
+        return HttpResponse("Error fetching blob", status=500)
+
+    if not blob.file:
+        return HttpResponse("Blob has no file", status=404)
+
+    try:
+        # Construct the correct S3 path relative to the bucket root
+        from django.core.files.storage import default_storage
+        file_path = f"blobs/{blob.uuid}/{blob.file.name}"
+
+        if not default_storage.exists(file_path):
+            log.error("File not found in storage: %s", file_path)
+            return HttpResponse("File not found in storage", status=404)
+
+        # Use StreamingHttpResponse with the storage backend's open method
+        response = StreamingHttpResponse(default_storage.open(file_path, "rb"), content_type="application/octet-stream")
+
+        # Set filename in header (just the base name, not the full path)
+        import os
+        filename = os.path.basename(blob.file.name)
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+
+        # Add access control headers for same-origin requests
+        response["Access-Control-Allow-Origin"] = request.headers.get("Origin", "*")
+        response["Access-Control-Allow-Credentials"] = "true"
+
+        return response
+    except Exception as e:
+        log.error("Failed to serve blob file %s: %s", uuid, e, exc_info=True)
+        return HttpResponse("Error serving file", status=500)
+
+
+@login_required
 def get_template(request: HttpRequest) -> JsonResponse:
     """Get a blob template by UUID.
 

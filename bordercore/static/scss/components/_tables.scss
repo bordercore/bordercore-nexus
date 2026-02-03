@@ -49,23 +49,9 @@
   border: 1px solid var(--border-color);
 }
 
-.table-colors {
-  background-color: var(--surface2);
-}
-
 .table-borderless td,
 .table-borderless th {
   border: none;
-}
-
-.table-responsive {
-  background-color: var(--surface2);
-  border-radius: var(--border-radius1);
-
-  .table {
-    margin-bottom: 0;
-    color: var(--text1);
-  }
 }
 
 // Data table - shared thead/tbody/tr/td styling (lower specificity tr/td before .o-table)
@@ -113,6 +99,54 @@
         color: var(--text1);
       }
     }
+  }
+}
+
+// Drill question/answer markdown-rendered tables
+.table-colors {
+  background-color: var(--surface2);
+
+  table {
+    overflow: hidden;
+    width: 100%;
+    border: 1px solid var(--border-color);
+    margin: 0.5rem 0;
+    border-collapse: collapse;
+    border-radius: var(--border-radius1);
+    color: var(--text1);
+
+    thead {
+      background-color: var(--surface3);
+
+      th {
+        padding: 0.5rem 0.75rem;
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text6);
+        font-weight: 600;
+        text-align: left;
+      }
+    }
+
+    tbody {
+      td {
+        padding: 0.5rem 0.75rem;
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      tr:last-child td {
+        border-bottom: none;
+      }
+    }
+  }
+}
+
+.table-responsive {
+  background-color: var(--surface2);
+  border-radius: var(--border-radius1);
+
+  .table {
+    margin-bottom: 0;
+    color: var(--text1);
   }
 }
 

@@ -13,7 +13,8 @@ export const EventBus = {
 // Configure axios to use CSRF token from cookies
 axios.defaults.xsrfCookieName = "csrftoken";
 axios.defaults.xsrfHeaderName = "X-CSRFToken";
-axios.defaults.withCredentials = true; // Ensure cookies are sent
+// Note: withCredentials is NOT set globally here to avoid CORS issues with wildcard origins on S3.
+// It is set per-request for same-origin calls in doPost, doPut, and doDelete.
 
 // Helper function to get CSRF token from cookie
 // Django validates the header token against the cookie token, so we must use the cookie value
