@@ -173,7 +173,7 @@ export function BookmarkListPage({
 
       if (searchTag !== null) {
         url = urls.getBookmarksByTag.replace("666", encodeURIComponent(searchTag));
-      } else if (searchTermParam !== null) {
+      } else if (searchTermParam !== null && searchTermParam !== "") {
         url = urls.getBookmarksByKeyword.replace("666", encodeURIComponent(searchTermParam));
       } else {
         url = urls.getBookmarksByPage.replace("666", pageNumber.toString());
@@ -255,8 +255,13 @@ export function BookmarkListPage({
   );
 
   const handleSearch = useCallback(
-    (query: { label?: string }) => {
-      getBookmarkList({ searchTermParam: query.label || "" });
+    (query: string | { label?: string }) => {
+      const searchTermParam = typeof query === "string" ? query : query.label || "";
+      if (searchTermParam) {
+        getBookmarkList({ searchTermParam: searchTermParam });
+      } else {
+        getBookmarkList({ pageNumber: 1 });
+      }
     },
     [getBookmarkList]
   );
