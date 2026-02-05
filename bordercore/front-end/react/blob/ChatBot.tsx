@@ -39,6 +39,7 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
   const [mode, setMode] = useState("chat");
   const [prompt, setPrompt] = useState("");
   const [show, setShow] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useImperativeHandle(ref, () => ({
     show: show,
@@ -73,9 +74,13 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
       payload = { exercise_uuid: exerciseUuid };
       setMode("chat");
     } else if (mode === "chat" || mode === "notes") {
+      const messageContent = content || prompt;
+      if (!messageContent) {
+        return;
+      }
       const newMessage: ChatMessage = {
         id: chatHistory.length + 1,
-        content: content || prompt,
+        content: messageContent,
         role: "user",
       };
       setChatHistory(prev => [...prev, newMessage]);
@@ -211,6 +216,12 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
     }
   }, [mode, chatOptions]);
 
+  useEffect(() => {
+    if (show && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [show]);
+
   if (!show) {
     return null;
   }
@@ -244,6 +255,7 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
         </div>
         <div className="d-flex">
           <input
+            ref={inputRef}
             type="text"
             className="form-control me-2"
             placeholder="Send a message"
