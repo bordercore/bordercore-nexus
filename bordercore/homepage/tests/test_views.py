@@ -61,5 +61,5 @@ def test_sql(auto_login_user):
     url = urls.reverse("homepage:sql")
     resp = client.get(f"{url}?sql_db_uuid={blob.uuid}")
 
-    assert resp.context["sql_db_url"] == f"https://bordercore-blobs.s3.amazonaws.com/blobs/{blob.uuid}/"
+    assert resp.context["sql_db_url"] == urls.reverse("blob:file", kwargs={"uuid": blob.uuid})
     assert resp.status_code == 200

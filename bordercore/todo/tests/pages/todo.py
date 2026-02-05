@@ -9,10 +9,10 @@ except ModuleNotFoundError:
 class TodoPage:
 
     TITLE = (By.TAG_NAME, "title")
-    TODO_ELEMENTS = (By.XPATH, "//div[@id='react-root']//table/tbody/tr")
-    FIRST_TASK = (By.CSS_SELECTOR, "div#react-root table tbody tr td:nth-child(2)")
+    TODO_ELEMENTS = (By.CSS_SELECTOR, "div.todo-grid-body div.todo-grid-row")
+    FIRST_TASK = (By.CSS_SELECTOR, "div.todo-grid-row div.todo-col-name")
     NO_TASKS = (By.CSS_SELECTOR, "div#react-root .text-center.p-3")
-    PRIORITY_COLUMN = (By.CSS_SELECTOR, "div#react-root table thead tr th:nth-child(3)")
+    PRIORITY_COLUMN = (By.CSS_SELECTOR, "div.todo-grid-header div.todo-col-priority")
     LOW_PRIORITY_FILTER = (By.CSS_SELECTOR, "div[data-priority='3']")
 
     def __init__(self, browser):
