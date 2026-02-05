@@ -339,10 +339,7 @@ export function BlobDetailPage({
             <div className="card-body hover-target">
               {/* Actions dropdown */}
               <div className="blob-detail-dropdown">
-                <DropDownMenu
-                  ref={dropdownMenuRef}
-                  dropdownSlot={dropdownItems}
-                />
+                <DropDownMenu ref={dropdownMenuRef} dropdownSlot={dropdownItems} />
               </div>
 
               {/* Edition string */}

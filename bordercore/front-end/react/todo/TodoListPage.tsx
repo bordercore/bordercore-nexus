@@ -1,15 +1,24 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBars, faTimes, faPlus } from "@fortawesome/free-solid-svg-icons";
+import {
+  faBars,
+  faTimes,
+  faPlus,
+  faStickyNote,
+  faLink,
+  faEllipsisV,
+} from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
 import {
   DndContext,
+  DragOverlay,
   closestCenter,
   KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
   DragEndEvent,
+  DragStartEvent,
 } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -66,6 +75,7 @@ export function TodoListPage({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [priorityOptions, setPriorityOptions] = useState<PriorityOption[]>([]);
   const [timeOptions, setTimeOptions] = useState<TimeOption[]>([]);
+  const [activeId, setActiveId] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -269,8 +279,13 @@ export function TodoListPage({
     [storeInSessionUrl]
   );
 
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  }, []);
+
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
+      setActiveId(null);
       const { active, over } = event;
 
       if (over && active.id !== over.id) {
@@ -295,6 +310,10 @@ export function TodoListPage({
     },
     [items, filterTag, sortUrl, getTodoList]
   );
+
+  const activeTodo = useMemo(() => {
+    return activeId ? items.find(item => item.uuid === activeId) : null;
+  }, [activeId, items]);
 
   const handleMoveToTop = useCallback(
     (todo: Todo) => {
@@ -461,6 +480,7 @@ export function TodoListPage({
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
           >
             <SortableContext
@@ -475,8 +495,65 @@ export function TodoListPage({
                 onMoveToTop={handleMoveToTop}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
+                activeTodo={activeTodo}
               />
             </SortableContext>
+            <DragOverlay>
+              {activeTodo ? (
+                <div className="data-grid-row todo-grid-row data-table-drag-overlay">
+                  <div role="cell" className="todo-col-manual drag-handle-cell">
+                    <div className="hover-reveal-object" style={{ opacity: 1 }}>
+                      <FontAwesomeIcon icon={faBars} />
+                    </div>
+                  </div>
+                  <div role="cell" className="todo-col-name">
+                    <div className="d-flex">
+                      <div>
+                        {activeTodo.name}
+                        {activeTodo.url && (
+                          <span>
+                            <a
+                              className="ms-1"
+                              href={activeTodo.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <FontAwesomeIcon icon={faLink} />
+                            </a>
+                          </span>
+                        )}
+                      </div>
+                      <div className="ms-auto">
+                        {activeTodo.note && (
+                          <span>
+                            <FontAwesomeIcon icon={faStickyNote} className="glow text-primary" />
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div role="cell" className="todo-col-priority">
+                    {activeTodo.priority_name}
+                  </div>
+                  <div role="cell" className="todo-col-date">
+                    {new Date(activeTodo.created).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </div>
+                  <div role="cell" className="todo-col-actions">
+                    <div className="dropdown-wrapper">
+                      <div className="dropdown-trigger dropdownmenu">
+                        <div className="d-flex align-items-center justify-content-center h-100 w-100">
+                          <FontAwesomeIcon icon={faEllipsisV} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+            </DragOverlay>
           </DndContext>
         </div>
       </div>

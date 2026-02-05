@@ -3,12 +3,14 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBars, faPencilAlt, faTrashAlt } from "@fortawesome/free-solid-svg-icons";
 import {
   DndContext,
+  DragOverlay,
   closestCenter,
   KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
   DragEndEvent,
+  DragStartEvent,
 } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -62,10 +64,10 @@ function SortableBookmarkRow({
     id: bookmark.uuid,
     disabled: dragDisabled,
   });
-  const elRef = useRef<HTMLTableRowElement | null>(null);
+  const elRef = useRef<HTMLDivElement | null>(null);
 
   const refCallback = useCallback(
-    (el: HTMLTableRowElement | null) => {
+    (el: HTMLDivElement | null) => {
       setNodeRef(el);
       elRef.current = el;
     },
@@ -90,59 +92,60 @@ function SortableBookmarkRow({
     return markdown.render(note);
   };
 
-  const handleDragStart = (e: React.DragEvent) => {
-    e.dataTransfer.setData("application/x-bookmark-uuid", bookmark.uuid);
-    // Store in window for cross-component access
-    (window as any).__draggedBookmarkUuid = bookmark.uuid;
-  };
-
   const isYouTubeVideo =
     bookmark.url.startsWith("https://www.youtube.com/watch") && viewType === "normal";
 
   return (
-    <tr
+    <div
       ref={refCallback}
+      role="row"
       data-uuid={bookmark.uuid}
-      className={`hover-reveal-target sortable-bookmark-row bookmark-row ${
-        selectedBookmarkUuid === bookmark.uuid ? "selected" : ""
-      } ${isDragging ? "dragging" : ""} ${dragDisabled ? "no-drag" : ""}`}
+      className={`data-grid-row bookmark-grid-row sortable-row hover-reveal-target bookmark-row ${
+        viewType === "compact" ? "compact" : ""
+      } ${selectedBookmarkUuid === bookmark.uuid ? "selected" : ""} ${
+        isDragging ? "dragging" : ""
+      } ${dragDisabled ? "no-drag" : ""}`}
       onClick={() => onClickBookmark(bookmark.uuid)}
       onMouseEnter={() => setShowYtDuration(true)}
       onMouseLeave={() => setShowYtDuration(false)}
     >
       {/* Drag handle */}
-      <td
-        className="drag-handle-cell"
+      <div
+        role="cell"
+        className="bookmark-col-drag drag-handle-cell"
         {...(dragDisabled ? {} : { ...attributes, ...listeners })}
         onClick={e => e.stopPropagation()}
       >
         <div className="hover-reveal-object">
           <FontAwesomeIcon icon={faBars} />
         </div>
-      </td>
+      </div>
 
       {/* Date */}
-      <td className="date-cell">{bookmark.created || "\u00A0"}</td>
+      <div role="cell" className="bookmark-col-date date-cell">
+        {bookmark.created || "\u00A0"}
+      </div>
 
       {/* Thumbnail - only in normal view */}
       {viewType !== "compact" && (
-        <td className="thumbnail-cell">
+        <div role="cell" className="bookmark-col-thumbnail thumbnail-cell">
           {bookmark.thumbnail_url && (
             <img width="120" height="67" src={bookmark.thumbnail_url} alt="" />
           )}
-        </td>
+        </div>
       )}
 
       {/* Favicon - trusted server-rendered HTML from the app's own database */}
-      <td
-        className="favicon-cell"
+      <div
+        role="cell"
+        className="bookmark-col-favicon favicon-cell pt-4"
         dangerouslySetInnerHTML={
           bookmark.favicon_url ? { __html: bookmark.favicon_url } : undefined
         }
       />
 
       {/* Content: title, tags, note */}
-      <td className="content-cell">
+      <div role="cell" className="bookmark-col-content content-cell">
         <div className="position-relative">
           <a
             className="me-2"
@@ -181,10 +184,10 @@ function SortableBookmarkRow({
             />
           )}
         </div>
-      </td>
+      </div>
 
       {/* Actions */}
-      <td className="actions-cell">
+      <div role="cell" className="bookmark-col-actions actions-cell">
         <DropDownMenu
           allowFlip={false}
           dropdownSlot={
@@ -220,8 +223,8 @@ function SortableBookmarkRow({
             </ul>
           }
         />
-      </td>
-    </tr>
+      </div>
+    </div>
   );
 }
 
@@ -252,6 +255,8 @@ export function BookmarkList({
   onDeleteBookmark,
   onClickTag,
 }: BookmarkListProps) {
+  const [activeId, setActiveId] = useState<string | null>(null);
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -265,7 +270,16 @@ export function BookmarkList({
 
   const dragDisabled = selectedTagName === "Untagged";
 
+  const activeBookmark = useMemo(() => {
+    return activeId ? bookmarks.find(b => b.uuid === activeId) : null;
+  }, [activeId, bookmarks]);
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
+    setActiveId(null);
     const { active, over } = event;
 
     if (!over || active.id === over.id) return;
@@ -295,20 +309,31 @@ export function BookmarkList({
   };
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-      <div id="bookmark-list-container" className="scrollable-panel-scrollbar-hover vh-100">
-        <table className="bookmark-table data-table">
-          <thead className="visually-hidden">
-            <tr>
-              <th scope="col">Drag</th>
-              <th scope="col">Date</th>
-              {viewType !== "compact" && <th scope="col">Thumbnail</th>}
-              <th scope="col">Icon</th>
-              <th scope="col">Bookmark</th>
-              <th scope="col">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
+      <div
+        id="bookmark-list-container"
+        className="scrollable-panel-scrollbar-hover vh-100 data-grid-container bookmark-grid-container"
+      >
+        <div className="data-grid bookmark-grid" role="table">
+          <div
+            className={`data-grid-header bookmark-grid-header visually-hidden ${
+              viewType === "compact" ? "compact" : ""
+            }`}
+            role="row"
+          >
+            <div role="columnheader">Drag</div>
+            <div role="columnheader">Date</div>
+            {viewType !== "compact" && <div role="columnheader">Thumbnail</div>}
+            <div role="columnheader">Icon</div>
+            <div role="columnheader">Bookmark</div>
+            <div role="columnheader">Actions</div>
+          </div>
+          <div className="data-grid-body bookmark-grid-body" role="rowgroup">
             <SortableContext
               items={bookmarks.map(b => b.uuid)}
               strategy={verticalListSortingStrategy}
@@ -328,10 +353,52 @@ export function BookmarkList({
                 />
               ))}
             </SortableContext>
-          </tbody>
-        </table>
+          </div>
+        </div>
         {bookmarks.length === 0 && <div className="text-center pt-3">No bookmarks found.</div>}
       </div>
+      <DragOverlay>
+        {activeBookmark ? (
+          <div
+            className={`data-grid-row bookmark-grid-row data-table-drag-overlay ${
+              viewType === "compact" ? "compact" : ""
+            }`}
+          >
+            <div role="cell" className="bookmark-col-drag drag-handle-cell">
+              <FontAwesomeIcon icon={faBars} />
+            </div>
+            <div role="cell" className="bookmark-col-date date-cell">
+              {activeBookmark.created || "\u00A0"}
+            </div>
+            {viewType !== "compact" && (
+              <div role="cell" className="bookmark-col-thumbnail thumbnail-cell">
+                {activeBookmark.thumbnail_url && (
+                  <img width="120" height="67" src={activeBookmark.thumbnail_url} alt="" />
+                )}
+              </div>
+            )}
+            {/* Favicon - trusted server-rendered HTML from the app's own database */}
+            <div
+              role="cell"
+              className="bookmark-col-favicon favicon-cell pt-4"
+              dangerouslySetInnerHTML={
+                activeBookmark.favicon_url ? { __html: activeBookmark.favicon_url } : undefined
+              }
+            />
+            <div role="cell" className="bookmark-col-content content-cell">
+              <span>{unescapeHtml(activeBookmark.name)}</span>
+              {activeBookmark.tags
+                .filter(tag => tag !== selectedTagName)
+                .map(tag => (
+                  <span key={tag} className="tag ms-2">
+                    {tag}
+                  </span>
+                ))}
+            </div>
+            <div role="cell" className="bookmark-col-actions actions-cell"></div>
+          </div>
+        ) : null}
+      </DragOverlay>
     </DndContext>
   );
 }

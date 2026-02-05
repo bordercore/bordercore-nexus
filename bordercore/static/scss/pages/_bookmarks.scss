@@ -145,88 +145,31 @@
   }
 }
 
-// Bookmark table (React version) - uses .data-table; overrides below
-.bookmark-table {
-  thead {
-    &.visually-hidden {
-      position: absolute;
-      overflow: hidden;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      border: 0;
-      margin: -1px;
-      clip-path: inset(50%);
-      white-space: nowrap;
-    }
-  }
+// Bookmark Grid - column layout only (base styles in _tables.scss)
+// =============================================================================
 
-  .drag-handle-cell {
-    width: 30px;
-    cursor: grab;
+.bookmark-grid-header,
+.bookmark-grid-row {
+  display: grid;
+  align-items: stretch; // allow cells to fill row height
+  grid-template-columns: 30px 145px 150px 24px 1fr 50px; // drag, date, thumbnail, favicon, content, actions
+}
 
-    &:active {
-      cursor: grabbing;
-    }
+// Compact view (no thumbnail)
+.bookmark-grid-header.compact,
+.bookmark-grid-row.compact {
+  grid-template-columns: 30px 145px 24px 1fr 50px; // drag, date, favicon, content, actions
+}
 
-    .hover-reveal-object {
-      color: var(--drag-handle-icon-color) !important;
-      opacity: 0;
-      transition: opacity 0.15s ease;
-    }
-  }
-
-  .hover-reveal-target {
-    .hover-reveal-object {
-      opacity: 0;
-      transition: opacity 0.15s ease;
-    }
-
-    &:hover {
-      .hover-reveal-object {
-        opacity: 1;
-      }
-    }
-  }
-
-  tbody tr.sortable-bookmark-row {
-    transform: var(--sortable-transform, none);
-    transition: var(--sortable-transition);
-  }
-
-  tbody .bookmark-row {
-    position: relative;
-
-    &.selected {
-      background-color: var(--selected-bg);
-    }
-
-    &.dragging {
-      z-index: 1000;
-    }
-
-    &.no-drag .drag-handle-cell {
-      cursor: default;
-    }
-  }
-
-  .bookmark-row:hover {
-    .drag-handle-cell .hover-reveal-object {
-      color: var(--drag-handle-icon-color) !important;
-      opacity: 1;
-    }
-  }
-
+.bookmark-grid-container {
+  // Cell styles (lower specificity before .bookmark-row)
   .date-cell {
-    width: 85px;
     color: var(--text2);
     font-size: 0.875rem;
-    vertical-align: top;
     white-space: nowrap;
   }
 
   .thumbnail-cell {
-    width: 130px;
     padding-right: 0.5rem;
 
     img {
@@ -236,10 +179,8 @@
   }
 
   .favicon-cell {
-    width: 24px;
-    padding-top: 0.85rem;
+    padding-top: 0;
     padding-right: 0.5rem;
-    vertical-align: top;
 
     img {
       width: 16px;
@@ -248,8 +189,6 @@
   }
 
   .content-cell {
-    vertical-align: top;
-
     a:not(.tag) {
       color: var(--link-color);
       text-decoration-color: transparent;
@@ -281,9 +220,7 @@
   }
 
   .actions-cell {
-    width: 40px;
     text-align: right;
-    vertical-align: top;
 
     // Hide trigger by default, show on row hover
     .dropdown-trigger {
@@ -295,6 +232,35 @@
     // Left-align dropdown items
     .dropdown-menu-list {
       text-align: left;
+    }
+  }
+
+  // Inherit base grid container styles
+  .bookmark-row {
+    position: relative;
+
+    &.selected {
+      background-color: var(--selected-bg);
+    }
+
+    // Ensure cells align content appropriately
+    [role="cell"] {
+      display: flex;
+      align-items: flex-start; // default for content cells
+      padding: var(--data-table-cell-padding);
+    }
+
+    .drag-handle-cell {
+      align-items: center; // vertically center drag handle
+      justify-content: center;
+    }
+
+    .date-cell,
+    .thumbnail-cell,
+    .favicon-cell,
+    .content-cell,
+    .actions-cell {
+      align-items: flex-start; // keep other cells top-aligned
     }
   }
 
@@ -310,3 +276,4 @@
     font-size: 0.75rem;
   }
 }
+

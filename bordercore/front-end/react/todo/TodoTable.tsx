@@ -30,6 +30,7 @@ interface TodoTableProps {
   onMoveToTop: (todo: Todo) => void;
   onEdit: (todo: Todo) => void;
   onDelete: (todo: Todo) => void;
+  activeTodo?: Todo | null;
 }
 
 function getFormattedDate(dateString: string): string {
@@ -49,6 +50,7 @@ export function TodoTable({
   onMoveToTop,
   onEdit,
   onDelete,
+  activeTodo,
 }: TodoTableProps) {
   const [sortField, setSortField] = useState<SortField>(defaultSort.field as SortField);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">(defaultSort.direction);
@@ -122,32 +124,40 @@ export function TodoTable({
   }
 
   return (
-    <div className="todo-table-container data-table-container">
-      <table className="todo-table data-table">
-        <thead>
-          <tr>
-            <th
-              className="todo-col-manual-sorting text-center cursor-pointer text-nowrap"
-              onClick={() => handleSort("sort_order")}
-            >
-              Manual{renderSortIcon("sort_order")}
-            </th>
-            <th className="cursor-pointer" onClick={() => handleSort("name")}>
-              Name{renderSortIcon("name")}
-            </th>
-            <th className="todo-col-priority cursor-pointer" onClick={() => handleSort("priority")}>
-              Priority{renderSortIcon("priority")}
-            </th>
-            <th
-              className="todo-col-date cursor-pointer"
-              onClick={() => handleSort("created_unixtime")}
-            >
-              Date{renderSortIcon("created_unixtime")}
-            </th>
-            <th className="col-action"></th>
-          </tr>
-        </thead>
-        <tbody>
+    <div className="data-grid-container todo-grid-container">
+      <div className="data-grid todo-grid" role="table">
+        <div className="data-grid-header todo-grid-header" role="row">
+          <div
+            role="columnheader"
+            className="todo-col-manual cursor-pointer"
+            onClick={() => handleSort("sort_order")}
+          >
+            Manual{renderSortIcon("sort_order")}
+          </div>
+          <div
+            role="columnheader"
+            className="todo-col-name cursor-pointer"
+            onClick={() => handleSort("name")}
+          >
+            Name{renderSortIcon("name")}
+          </div>
+          <div
+            role="columnheader"
+            className="todo-col-priority cursor-pointer"
+            onClick={() => handleSort("priority")}
+          >
+            Priority{renderSortIcon("priority")}
+          </div>
+          <div
+            role="columnheader"
+            className="todo-col-date cursor-pointer"
+            onClick={() => handleSort("created_unixtime")}
+          >
+            Date{renderSortIcon("created_unixtime")}
+          </div>
+          <div role="columnheader" className="todo-col-actions"></div>
+        </div>
+        <div className="data-grid-body todo-grid-body" role="rowgroup">
           {sortedItems.map((todo, index) => (
             <SortableRow
               key={todo.uuid}
@@ -160,8 +170,8 @@ export function TodoTable({
               onDelete={onDelete}
             />
           ))}
-        </tbody>
-      </table>
+        </div>
+      </div>
     </div>
   );
 }
@@ -190,10 +200,10 @@ function SortableRow({
     id: todo.uuid,
     disabled: !canDrag,
   });
-  const elRef = useRef<HTMLTableRowElement | null>(null);
+  const elRef = useRef<HTMLDivElement | null>(null);
 
   const refCallback = useCallback(
-    (el: HTMLTableRowElement | null) => {
+    (el: HTMLDivElement | null) => {
       setNodeRef(el);
       elRef.current = el;
     },
@@ -212,20 +222,22 @@ function SortableRow({
   }, [transform, transition]);
 
   return (
-    <tr
+    <div
       ref={refCallback}
-      className={`hover-target hover-reveal-target sortable-todo-row ${isDragging ? "dragging" : ""} ${!canDrag ? "no-drag" : ""}`}
+      role="row"
+      className={`data-grid-row todo-grid-row sortable-row hover-target hover-reveal-target sortable-todo-row ${isDragging ? "dragging" : ""} ${!canDrag ? "no-drag" : ""}`}
     >
-      <td
-        className="todo-col-manual-sorting text-center align-middle drag-handle-cell"
+      <div
+        role="cell"
+        className="todo-col-manual drag-handle-cell"
         {...(canDrag ? { ...attributes, ...listeners } : {})}
         onClick={e => e.stopPropagation()}
       >
         <div className="hover-reveal-object">
           <FontAwesomeIcon icon={faBars} />
         </div>
-      </td>
-      <td>
+      </div>
+      <div role="cell" className="todo-col-name">
         <div className="d-flex">
           <div>
             {todo.name}
@@ -245,10 +257,14 @@ function SortableRow({
             )}
           </div>
         </div>
-      </td>
-      <td className="todo-col-priority">{todo.priority_name}</td>
-      <td className="todo-col-date text-nowrap">{getFormattedDate(todo.created)}</td>
-      <td className="col-action">
+      </div>
+      <div role="cell" className="todo-col-priority">
+        {todo.priority_name}
+      </div>
+      <div role="cell" className="todo-col-date">
+        {getFormattedDate(todo.created)}
+      </div>
+      <div role="cell" className="todo-col-actions">
         <DropDownMenu
           dropdownSlot={
             <ul className="dropdown-menu-list">
@@ -281,7 +297,7 @@ function SortableRow({
             </ul>
           }
         />
-      </td>
-    </tr>
+      </div>
+    </div>
   );
 }

@@ -212,3 +212,226 @@
 .table-col-action {
   width: 3rem;
 }
+
+// =============================================================================
+// Data Grid (CSS Grid-based tables with drag-and-drop support)
+// =============================================================================
+// Use these base classes for sortable grid tables. Define column layouts
+// in page-specific SCSS files using grid-template-columns.
+
+.data-grid-container {
+  overflow: visible;
+  border: 1px solid var(--border-color);
+  background-color: var(--surface2);
+  border-radius: var(--data-table-container-radius);
+  box-shadow: var(--data-table-container-shadow);
+}
+
+.data-grid {
+  display: flex;
+  flex-direction: column;
+}
+
+.data-grid-header {
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--surface3);
+
+  [role="columnheader"] {
+    overflow: hidden;
+    padding: var(--data-table-cell-padding);
+    color: var(--text6);
+    font-size: var(--data-table-header-font-size);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+}
+
+.data-grid-body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  isolation: isolate;
+}
+
+.data-grid-row {
+  border-bottom: 1px solid var(--border-color);
+  background-color: transparent;
+  transition: background-color 0.15s ease;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background-color: var(--hover-bg);
+  }
+
+  [role="cell"] {
+    padding: var(--data-table-cell-padding);
+    color: var(--text1);
+  }
+
+  // Drag handle cell
+  .drag-handle-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+    text-align: center;
+
+    &:active {
+      cursor: grabbing;
+    }
+
+    .hover-reveal-object {
+      color: var(--drag-handle-icon-color) !important;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+  }
+
+  &.no-drag .drag-handle-cell {
+    cursor: default;
+  }
+
+  &:hover .drag-handle-cell .hover-reveal-object {
+    color: var(--drag-handle-icon-color) !important;
+    opacity: 1;
+  }
+
+  // Sortable row transform
+  &.sortable-row {
+    position: relative;
+    transform: var(--sortable-transform, none);
+    transition: var(--sortable-transition);
+  }
+
+  // Row being dragged
+  &.dragging {
+    opacity: 0.4;
+  }
+
+  // Drop target indicator
+  &.drag-over {
+    border-top: 2px solid var(--link-color);
+  }
+}
+
+// Drag overlay - rendered outside normal flow via portal (dnd-kit DragOverlay)
+// Used by todo, music playlist, and bookmark tables
+/* stylelint-disable no-descending-specificity */
+.data-table-drag-overlay {
+  padding: 0;
+  background-color: var(--surface2);
+  border-radius: var(--border-radius1);
+  box-shadow: var(--data-table-container-shadow);
+  color: var(--text1);
+
+  .drag-overlay-title {
+    padding: var(--data-table-cell-padding);
+    color: var(--text1);
+  }
+
+  .drag-overlay-subtitle {
+    padding: var(--data-table-cell-padding);
+    margin-left: 1rem;
+    color: var(--text2);
+  }
+
+  // When used with grid rows (todo), padding is on columns instead
+  &.todo-grid-row {
+    background-color: var(--surface3);
+
+    [role="cell"] {
+      color: var(--text1);
+    }
+
+    .todo-col-manual {
+      color: var(--drag-handle-icon-color);
+      text-align: center;
+    }
+  }
+
+  // Bookmark overlay - replicate table row structure
+  &.bookmark-grid-row {
+    align-items: stretch;
+    background-color: var(--surface2);
+
+    [role="cell"] {
+      display: flex;
+      align-items: flex-start;
+      padding: var(--data-table-cell-padding);
+    }
+
+    .drag-handle-cell {
+      align-items: center;
+      justify-content: center;
+      color: var(--drag-handle-icon-color);
+    }
+
+    .date-cell {
+      color: var(--text2);
+      font-size: 0.875rem;
+      white-space: nowrap;
+    }
+
+    .thumbnail-cell {
+      padding-right: 0.5rem;
+
+      img {
+        border-radius: var(--border-radius1);
+        object-fit: cover;
+      }
+    }
+
+    .favicon-cell {
+      padding-top: 0;
+      padding-right: 0.5rem;
+
+      img {
+        width: 16px;
+        height: 16px;
+      }
+    }
+
+    .content-cell {
+      color: var(--link-color) !important;
+
+      .tag {
+        color: var(--text2) !important;
+        font-size: 0.8rem;
+      }
+    }
+  }
+
+  // Playlist song overlay - replicate table row structure
+  &.playlist-grid-row {
+    background-color: var(--surface3);
+
+    [role="cell"] {
+      color: var(--text1);
+    }
+
+    .playlist-col-drag {
+      color: var(--drag-handle-icon-color);
+      text-align: center;
+    }
+  }
+
+  // Drag overlay for grid rows (shared)
+  &.data-grid-row {
+    background-color: var(--surface3);
+
+    [role="cell"] {
+      color: var(--text1);
+    }
+
+    .drag-handle-cell {
+      color: var(--drag-handle-icon-color);
+    }
+  }
+}
+/* stylelint-enable no-descending-specificity */

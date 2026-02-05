@@ -103,8 +103,6 @@
 
   &.dragging {
     z-index: 1000;
-    background-color: var(--surface5);
-    opacity: 0.5;
   }
 }
 
@@ -114,7 +112,14 @@
 }
 
 .slicklist-list-item-inner {
-  transition: background 0.2s, transform 0.2s;
+  transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+
+.dragging .slicklist-list-item-inner {
+  background: var(--surface-bg);
+  border-radius: var(--border-radius1);
+  box-shadow: 0 0 20px rgb(var(--bs-primary-rgb) / 50%);
+  transform: scale(1.08);
 }
 
 // Edit layout mode for node detail page

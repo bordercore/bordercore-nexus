@@ -163,6 +163,36 @@
 
 // Song table / playlist song table - use .data-table-container + .data-table; overrides below
 
+// Playlist Grid - column layout only (base styles in _tables.scss)
+// =============================================================================
+
+.playlist-grid-header,
+.playlist-grid-row {
+  display: grid;
+  align-items: center;
+  grid-template-columns: 50px 1fr 1fr 80px 100px 50px; // Non-manual: drag, title, artist, year, length, actions
+}
+
+// Manual playlist adds a # column
+.playlist-grid-header.manual,
+.playlist-grid-row.manual {
+  grid-template-columns: 50px 60px 1fr 1fr 80px 100px 50px; // drag, #, title, artist, year, length, actions
+}
+
+// Column-specific styling
+.playlist-col-drag {
+  text-align: center;
+}
+
+.playlist-col-number {
+  text-align: center;
+}
+
+.playlist-col-year,
+.playlist-col-length {
+  text-align: center;
+}
+
 // Playlist song table - feature-specific (sortable, dragging, sort icon)
 /* stylelint-disable no-descending-specificity */
 .playlist-song-table {
@@ -176,13 +206,11 @@
   }
 
   tbody tr.dragging {
-    position: relative;
-    z-index: 1000;
-    background-color: var(--surface2);
-    opacity: 0.5;
+    opacity: 0.4;
   }
 }
 /* stylelint-enable no-descending-specificity */
+
 
 // Album detail song list
 #album-song-list {

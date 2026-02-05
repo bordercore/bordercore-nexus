@@ -7,22 +7,7 @@ import {
   faAngleUp,
   faAngleDown,
 } from "@fortawesome/free-solid-svg-icons";
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-  useSortable,
-} from "@dnd-kit/sortable";
+import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { PlaylistSong } from "./types";
 import DropDownMenu from "../common/DropDownMenu";
@@ -39,7 +24,6 @@ interface PlaylistSongTableProps {
   editSongUrlTemplate: string;
   onSongClick: (song: PlaylistSong) => void;
   onRemoveSong: (playlistItemUuid: string) => void;
-  onReorder: (playlistItemUuid: string, newPosition: number) => void;
 }
 
 export function PlaylistSongTable({
@@ -51,7 +35,6 @@ export function PlaylistSongTable({
   editSongUrlTemplate,
   onSongClick,
   onRemoveSong,
-  onReorder,
 }: PlaylistSongTableProps) {
   const [localSongs, setLocalSongs] = useState<PlaylistSong[]>(songs);
   const [sortField, setSortField] = useState<SortField | null>(null);
@@ -60,32 +43,6 @@ export function PlaylistSongTable({
   useEffect(() => {
     setLocalSongs(songs);
   }, [songs]);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
-  const handleDragEnd = useCallback(
-    (event: DragEndEvent) => {
-      const { active, over } = event;
-
-      if (over && active.id !== over.id) {
-        const oldIndex = localSongs.findIndex(item => item.playlistitem_uuid === active.id);
-        const newIndex = localSongs.findIndex(item => item.playlistitem_uuid === over.id);
-
-        const newList = arrayMove(localSongs, oldIndex, newIndex);
-        setLocalSongs(newList);
-
-        const song = localSongs[oldIndex];
-        // Position is 1-indexed
-        onReorder(song.playlistitem_uuid, newIndex + 1);
-      }
-    },
-    [localSongs, onReorder]
-  );
 
   // Sort songs for non-manual playlists
   const sortedSongs = useMemo(() => {
@@ -163,65 +120,80 @@ export function PlaylistSongTable({
   };
 
   return (
-    <div className="song-table-container data-table-container">
-      <div className="table-responsive">
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <table className="playlist-song-table data-table">
-            <thead>
-              <tr>
-                <th className="table-col-action"></th>
-                {isManualPlaylist && <th className="text-center table-col-number">#</th>}
-                <th className={getHeaderClass("title")} onClick={() => handleSort("title")}>
-                  Title{renderSortIcon("title")}
-                </th>
-                <th className={getHeaderClass("artist")} onClick={() => handleSort("artist")}>
-                  Artist{renderSortIcon("artist")}
-                </th>
-                <th
-                  className={getHeaderClass("year", "text-center")}
-                  onClick={() => handleSort("year")}
-                >
-                  Year{renderSortIcon("year")}
-                </th>
-                <th
-                  className={getHeaderClass("length", "text-center")}
-                  onClick={() => handleSort("length")}
-                >
-                  Length{renderSortIcon("length")}
-                </th>
-                <th className="text-center table-col-action"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedSongs.length === 0 ? (
-                <tr>
-                  <td colSpan={isManualPlaylist ? 7 : 6} className="text-center">
-                    No songs in the playlist
-                  </td>
-                </tr>
-              ) : (
-                <SortableContext
-                  items={sortedSongs.map(song => song.playlistitem_uuid)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  {sortedSongs.map((song, index) => (
-                    <SortableSongRow
-                      key={song.playlistitem_uuid}
-                      song={song}
-                      index={index}
-                      isManualPlaylist={isManualPlaylist}
-                      currentSongUuid={currentSongUuid}
-                      equalizerImage={equalizerImage}
-                      handleRowClick={handleRowClick}
-                      onRemoveSong={onRemoveSong}
-                      getEditUrl={getEditUrl}
-                    />
-                  ))}
-                </SortableContext>
-              )}
-            </tbody>
-          </table>
-        </DndContext>
+    <div className="data-grid-container playlist-grid-container">
+      <div className="data-grid playlist-grid" role="table">
+        <div
+          className={`data-grid-header playlist-grid-header ${isManualPlaylist ? "manual" : ""}`}
+          role="row"
+        >
+          <div role="columnheader" className="playlist-col-drag"></div>
+          {isManualPlaylist && (
+            <div
+              role="columnheader"
+              className="playlist-col-number cursor-pointer"
+              onClick={() => handleSort("sort_order" as SortField)}
+            >
+              #
+            </div>
+          )}
+          <div
+            role="columnheader"
+            className={getHeaderClass("title", "playlist-col-title")}
+            onClick={() => handleSort("title")}
+          >
+            Title{renderSortIcon("title")}
+          </div>
+          <div
+            role="columnheader"
+            className={getHeaderClass("artist", "playlist-col-artist")}
+            onClick={() => handleSort("artist")}
+          >
+            Artist{renderSortIcon("artist")}
+          </div>
+          <div
+            role="columnheader"
+            className={getHeaderClass("year", "playlist-col-year")}
+            onClick={() => handleSort("year")}
+          >
+            Year{renderSortIcon("year")}
+          </div>
+          <div
+            role="columnheader"
+            className={getHeaderClass("length", "playlist-col-length")}
+            onClick={() => handleSort("length")}
+          >
+            Length{renderSortIcon("length")}
+          </div>
+          <div role="columnheader" className="playlist-col-actions"></div>
+        </div>
+        <div className="data-grid-body playlist-grid-body" role="rowgroup">
+          {sortedSongs.length === 0 ? (
+            <div role="row" className="data-grid-row playlist-grid-row no-songs">
+              <div role="cell" className="text-center w-100 p-3">
+                No songs in the playlist
+              </div>
+            </div>
+          ) : (
+            <SortableContext
+              items={sortedSongs.map(song => song.playlistitem_uuid)}
+              strategy={verticalListSortingStrategy}
+            >
+              {sortedSongs.map((song, index) => (
+                <SortableSongRow
+                  key={song.playlistitem_uuid}
+                  song={song}
+                  index={index}
+                  isManualPlaylist={isManualPlaylist}
+                  currentSongUuid={currentSongUuid}
+                  equalizerImage={equalizerImage}
+                  handleRowClick={handleRowClick}
+                  onRemoveSong={onRemoveSong}
+                  getEditUrl={getEditUrl}
+                />
+              ))}
+            </SortableContext>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -253,10 +225,10 @@ function SortableSongRow({
     id: song.playlistitem_uuid,
     disabled: !isManualPlaylist,
   });
-  const elRef = useRef<HTMLTableRowElement | null>(null);
+  const elRef = useRef<HTMLDivElement | null>(null);
 
   const refCallback = useCallback(
-    (el: HTMLTableRowElement | null) => {
+    (el: HTMLDivElement | null) => {
       setNodeRef(el);
       elRef.current = el;
     },
@@ -275,12 +247,14 @@ function SortableSongRow({
   }, [transform, transition]);
 
   return (
-    <tr
+    <div
       ref={refCallback}
-      className={`song hover-target hover-reveal-target cursor-pointer sortable-song-row ${isDragging ? "dragging" : ""}`}
+      role="row"
+      className={`data-grid-row playlist-grid-row sortable-row hover-target hover-reveal-target cursor-pointer sortable-song-row ${isDragging ? "dragging" : ""} ${isManualPlaylist ? "manual" : "no-drag"}`}
     >
-      <td
-        className="text-center align-middle drag-handle-cell"
+      <div
+        role="cell"
+        className="playlist-col-drag drag-handle-cell"
         {...attributes}
         {...listeners}
         onClick={e => e.stopPropagation()}
@@ -288,40 +262,50 @@ function SortableSongRow({
         <div className="hover-reveal-object">
           <FontAwesomeIcon icon={faBars} />
         </div>
-      </td>
+      </div>
       {isManualPlaylist && (
-        <td className="text-center align-middle" onClick={() => handleRowClick(song, "sort_order")}>
+        <div
+          role="cell"
+          className="playlist-col-number"
+          onClick={() => handleRowClick(song, "sort_order")}
+        >
           {currentSongUuid === song.uuid ? (
             <img id="isPlaying" src={equalizerImage} width={20} height={20} alt="Playing" />
           ) : (
             song.sort_order
           )}
-        </td>
+        </div>
       )}
-      <td className="align-middle" onClick={() => handleRowClick(song, "title")}>
+      <div role="cell" className="playlist-col-title" onClick={() => handleRowClick(song, "title")}>
         {!isManualPlaylist && currentSongUuid === song.uuid && (
           <span className="me-2">
             <img id="isPlaying" src={equalizerImage} width={20} height={20} alt="Playing" />
           </span>
         )}
         {song.title}
-      </td>
-      <td className="align-middle cursor-grab" onClick={() => handleRowClick(song, "artist")}>
+      </div>
+      <div
+        role="cell"
+        className="playlist-col-artist cursor-grab"
+        onClick={() => handleRowClick(song, "artist")}
+      >
         {song.artist}
-      </td>
-      <td
-        className="text-center align-middle cursor-grab"
+      </div>
+      <div
+        role="cell"
+        className="playlist-col-year cursor-grab"
         onClick={() => handleRowClick(song, "year")}
       >
         {song.year}
-      </td>
-      <td
-        className="text-center align-middle cursor-grab"
+      </div>
+      <div
+        role="cell"
+        className="playlist-col-length cursor-grab"
         onClick={() => handleRowClick(song, "length")}
       >
         {song.length}
-      </td>
-      <td className="col-action text-center align-middle" onClick={e => e.stopPropagation()}>
+      </div>
+      <div role="cell" className="playlist-col-actions" onClick={e => e.stopPropagation()}>
         <DropDownMenu
           dropdownSlot={
             <ul className="dropdown-menu-list">
@@ -347,7 +331,7 @@ function SortableSongRow({
             </ul>
           }
         />
-      </td>
-    </tr>
+      </div>
+    </div>
   );
 }

@@ -386,7 +386,7 @@ export function BookmarkListPage({
         />
       </div>
 
-      <div className="col-lg-9">
+      <div className="col-lg-9 ps-gutter">
         <div>
           <div id="bookmark-search-form" className="d-flex flex-column me-2 p-3">
             <div>
@@ -418,7 +418,7 @@ export function BookmarkListPage({
                       ref={selectValueRef}
                       id="bookmarkSearch"
                       searchUrl={`${urls.getTagsUsedByBookmarks}?query=`}
-                      placeHolder="Search term or tag"
+                      placeHolder="Filter by keyword or tag"
                       searchIcon={true}
                       onSelect={selectTag}
                       onSearch={handleSearch}
@@ -441,6 +441,24 @@ export function BookmarkListPage({
                     Compact
                   </button>
                 </div>
+                {tagIsSelected && (
+                  <div
+                    className="tag d-flex align-items-center"
+                    style={{ marginLeft: "1rem", paddingLeft: "1rem", paddingRight: "1rem" }}
+                  >
+                    {selectedTagName}
+                    <a
+                      className="ms-2"
+                      href="#"
+                      onClick={e => {
+                        e.preventDefault();
+                        removeFilter();
+                      }}
+                    >
+                      <FontAwesomeIcon icon={faTimes} />
+                    </a>
+                  </div>
+                )}
                 <div className="ms-auto">
                   <DropDownMenu
                     dropdownSlot={
@@ -472,52 +490,30 @@ export function BookmarkListPage({
                 </div>
               </div>
             </div>
-            <div>
+            {searchTerm && (
               <div className="d-flex mt-1 ms-3">
-                {tagIsSelected && (
-                  <div id="bookmark-search-filter" className="tag d-flex align-items-center">
-                    <div>
-                      Tag: <strong>{selectedTagName}</strong>
-                    </div>
-                    <div>
-                      <a
-                        className="ms-1"
-                        href="#"
-                        onClick={e => {
-                          e.preventDefault();
-                          removeFilter();
-                        }}
-                      >
-                        <FontAwesomeIcon icon={faTimes} className="text-primary" />
-                      </a>
-                    </div>
+                <div
+                  id="bookmark-search-filter"
+                  className="tag label label-info d-flex align-items-center"
+                >
+                  <div>
+                    Term: <span className="text-white">{searchTerm}</span>
                   </div>
-                )}
-
-                {searchTerm && (
-                  <div
-                    id="bookmark-search-filter"
-                    className="tag label label-info d-flex align-items-center"
-                  >
-                    <div>
-                      Term: <span className="text-white">{searchTerm}</span>
-                    </div>
-                    <div>
-                      <a
-                        className="ms-1"
-                        href="#"
-                        onClick={e => {
-                          e.preventDefault();
-                          removeFilter();
-                        }}
-                      >
-                        <FontAwesomeIcon icon={faTimes} className="text-primary" />
-                      </a>
-                    </div>
+                  <div>
+                    <a
+                      className="ms-1"
+                      href="#"
+                      onClick={e => {
+                        e.preventDefault();
+                        removeFilter();
+                      }}
+                    >
+                      <FontAwesomeIcon icon={faTimes} className="text-primary" />
+                    </a>
                   </div>
-                )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 

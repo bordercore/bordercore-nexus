@@ -235,6 +235,11 @@ $blob-detail-gutter: 1rem;
     }
   }
 
+  // Match todo list page: gutter between sidebar and main content
+  .col-lg-9 > div {
+    margin-left: var(--column-gutter);
+  }
+
   .blob-metadata-card {
     z-index: 100;
   }

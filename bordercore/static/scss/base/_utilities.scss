@@ -172,7 +172,7 @@ div.drag-target {
 }
 
 .dragging {
-  opacity: 0.5;
+  z-index: 999;
 }
 
 // Visual effects

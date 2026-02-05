@@ -106,7 +106,7 @@
   }
 }
 
-// Todo table - uses .data-table-container + .data-table; overrides below
+// Todo priority colors
 .todo-priority-high {
   color: var(--error-color);
 }
@@ -125,62 +125,33 @@
   font-weight: 600;
 }
 
-// Drag handle cell: same pattern as playlist song table (hover-reveal, faBars icon)
-.todo-table {
-  .drag-handle-cell {
-    width: 30px;
-    cursor: grab;
+// =============================================================================
+// Todo Grid - column layout only (base styles in _tables.scss)
+// =============================================================================
 
-    &:active {
-      cursor: grabbing;
-    }
-
-    .hover-reveal-object {
-      color: var(--drag-handle-icon-color) !important;
-      opacity: 0;
-      transition: opacity 0.15s ease;
-    }
-  }
-
-  tbody tr.no-drag .drag-handle-cell {
-    cursor: default;
-  }
-
-  tbody tr:hover .drag-handle-cell .hover-reveal-object {
-    color: var(--drag-handle-icon-color) !important;
-    opacity: 1;
-  }
+.todo-grid-header,
+.todo-grid-row {
+  display: grid;
+  align-items: center;
+  grid-template-columns: 80px 1fr 100px 120px 50px;
 }
 
-// Sortable row: transform/transition set via CSS vars from dnd-kit
-.todo-table tbody tr.sortable-todo-row {
-  transform: var(--sortable-transform, none);
-  transition: var(--sortable-transition);
+// Column-specific styling
+.todo-col-manual {
+  text-align: center;
+  white-space: nowrap;
 }
 
-// Row being dragged
-.todo-table tbody tr.dragging {
-  position: relative;
-  z-index: 1000;
-  background-color: var(--surface2);
-  opacity: 0.5;
+.todo-col-date {
+  white-space: nowrap;
 }
 
-// Drop target indicator
-.todo-table tbody tr.drag-over {
-  border-top: 2px solid var(--link-color);
+// Note icon hover effect
+.todo-col-name .glow {
+  display: inline-block;
+  transition: transform 0.3s ease;
 
-  td:first-child {
-    position: relative;
-
-    &::before {
-      position: absolute;
-      top: -2px;
-      right: 0;
-      left: 0;
-      height: 2px;
-      background-color: var(--link-color);
-      content: "";
-    }
+  &:hover {
+    transform: scale(1.3);
   }
 }
