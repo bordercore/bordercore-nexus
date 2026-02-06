@@ -502,7 +502,7 @@ export function TodoListPage({
               {activeTodo ? (
                 <div className="data-grid-row todo-grid-row data-table-drag-overlay">
                   <div role="cell" className="todo-col-manual drag-handle-cell">
-                    <div className="hover-reveal-object" style={{ opacity: 1 }}>
+                    <div className="hover-reveal-object">
                       <FontAwesomeIcon icon={faBars} />
                     </div>
                   </div>

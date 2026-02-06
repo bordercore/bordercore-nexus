@@ -64,7 +64,7 @@
   thead {
     tr {
       border-bottom: 1px solid var(--border-color);
-      background-color: var(--surface3);
+      background-color: var(--surface5);
 
       th {
         padding: var(--data-table-cell-padding);
@@ -220,7 +220,7 @@
 // in page-specific SCSS files using grid-template-columns.
 
 .data-grid-container {
-  overflow: visible;
+  overflow: hidden;
   border: 1px solid var(--border-color);
   background-color: var(--surface2);
   border-radius: var(--data-table-container-radius);
@@ -234,7 +234,7 @@
 
 .data-grid-header {
   border-bottom: 1px solid var(--border-color);
-  background-color: var(--surface3);
+  background-color: var(--surface5);
 
   [role="columnheader"] {
     overflow: hidden;
@@ -353,16 +353,21 @@
       color: var(--drag-handle-icon-color);
       text-align: center;
     }
+
+    // Drag overlay is outside hover-reveal-target; keep handle icon visible
+    .drag-handle-cell .hover-reveal-object {
+      opacity: 1;
+    }
   }
 
   // Bookmark overlay - replicate table row structure
   &.bookmark-grid-row {
-    align-items: stretch;
+    align-items: center;
     background-color: var(--surface2);
 
     [role="cell"] {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       padding: var(--data-table-cell-padding);
     }
 
@@ -398,6 +403,7 @@
     }
 
     .content-cell {
+      align-items: flex-start;
       color: var(--link-color) !important;
 
       .tag {
@@ -418,6 +424,11 @@
     .playlist-col-drag {
       color: var(--drag-handle-icon-color);
       text-align: center;
+    }
+
+    // Drag overlay is outside hover-reveal-target; keep handle icon visible
+    .drag-handle-cell .hover-reveal-object {
+      opacity: 1;
     }
   }
 
