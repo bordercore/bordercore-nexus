@@ -85,7 +85,7 @@ class Bookmark(TimeStampedModel):
     """
 
     uuid = models.UUIDField(default=uuid.uuid4, editable=False)
-    url = models.URLField(max_length=1000)
+    url = models.URLField(max_length=1000, assume_scheme="https")
     name = models.TextField()
     user = models.ForeignKey(User, on_delete=models.PROTECT)
     note = models.TextField(blank=True, null=True)
