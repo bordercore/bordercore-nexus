@@ -39,6 +39,13 @@
   }
 }
 
+// Selected tag chip in list toolbar (filter pill with remove)
+.bookmark-selected-tag-chip {
+  padding-right: 1rem;
+  padding-left: 1rem;
+  margin-left: 1rem;
+}
+
 .bookmark-tags-sidebar {
   padding: 1rem;
   background-color: var(--surface2);
@@ -60,6 +67,35 @@
       background-color: var(--selected-bg);
     }
   }
+
+  // Mobile drawer behavior
+  @media (width < 992px) {
+    position: fixed;
+    z-index: 1050;
+    top: 0;
+    left: 0;
+    width: 85%;
+    max-width: 320px;
+    height: 100vh;
+    box-shadow: 2px 0 8px rgb(0 0 0 / 15%);
+    overflow-y: auto;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+
+    &.drawer-open {
+      transform: translateX(0);
+    }
+  }
+}
+
+.bookmark-tags-drawer-overlay {
+  position: fixed;
+  z-index: 1049;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgb(0 0 0 / 50%);
 }
 
 // Drawer
@@ -151,8 +187,17 @@
 .bookmark-grid-header,
 .bookmark-grid-row {
   display: grid;
-  align-items: stretch; // allow cells to fill row height
+  align-items: center; // align cells vertically
   grid-template-columns: 30px 145px 150px 24px 1fr 50px; // drag, date, thumbnail, favicon, content, actions
+}
+
+// Link column header spans thumbnail + favicon + content (or favicon + content in compact)
+.bookmark-grid-header [role="columnheader"].bookmark-link-col {
+  grid-column: 3 / span 3;
+}
+
+.bookmark-grid-header.compact [role="columnheader"].bookmark-link-col {
+  grid-column: 3 / span 2;
 }
 
 // Compact view (no thumbnail)
@@ -220,7 +265,9 @@
   }
 
   .actions-cell {
-    text-align: right;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
 
     // Hide trigger by default, show on row hover
     .dropdown-trigger {
@@ -246,7 +293,6 @@
     // Ensure cells align content appropriately
     [role="cell"] {
       display: flex;
-      align-items: flex-start; // default for content cells
       padding: var(--data-table-cell-padding);
     }
 
@@ -257,10 +303,14 @@
 
     .date-cell,
     .thumbnail-cell,
-    .favicon-cell,
     .content-cell,
     .actions-cell {
-      align-items: flex-start; // keep other cells top-aligned
+      align-items: center; // align other cells vertically
+    }
+
+    .favicon-cell {
+      align-items: flex-start; // top-align favicon
+      align-self: start; // override grid's align-items: center for this cell
     }
   }
 

@@ -377,7 +377,7 @@ export function PlaylistDetailPage({
             className={`data-grid-row playlist-grid-row data-table-drag-overlay ${playlist.type === "manual" ? "manual" : ""}`}
           >
             <div role="cell" className="playlist-col-drag drag-handle-cell">
-              <div className="hover-reveal-object" style={{ opacity: 1 }}>
+              <div className="hover-reveal-object">
                 <FontAwesomeIcon icon={faBars} />
               </div>
             </div>

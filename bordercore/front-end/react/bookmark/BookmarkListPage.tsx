@@ -442,10 +442,7 @@ export function BookmarkListPage({
                   </button>
                 </div>
                 {tagIsSelected && (
-                  <div
-                    className="tag d-flex align-items-center"
-                    style={{ marginLeft: "1rem", paddingLeft: "1rem", paddingRight: "1rem" }}
-                  >
+                  <div className="tag d-flex align-items-center bookmark-selected-tag-chip">
                     {selectedTagName}
                     <a
                       className="ms-2"

@@ -138,7 +138,7 @@ function SortableBookmarkRow({
       {/* Favicon - trusted server-rendered HTML from the app's own database */}
       <div
         role="cell"
-        className="bookmark-col-favicon favicon-cell pt-4"
+        className="bookmark-col-favicon favicon-cell"
         dangerouslySetInnerHTML={
           bookmark.favicon_url ? { __html: bookmark.favicon_url } : undefined
         }
@@ -193,32 +193,34 @@ function SortableBookmarkRow({
           dropdownSlot={
             <ul className="dropdown-menu-list">
               <li>
-                <a
-                  className="dropdown-item"
-                  href="#"
+                <button
+                  className="dropdown-menu-item"
                   onClick={e => {
                     e.preventDefault();
                     e.stopPropagation();
                     onEditBookmark(bookmark.uuid);
                   }}
                 >
-                  <FontAwesomeIcon icon={faPencilAlt} className="text-primary me-3" />
-                  Edit
-                </a>
+                  <span className="dropdown-menu-icon">
+                    <FontAwesomeIcon icon={faPencilAlt} />
+                  </span>
+                  <span className="dropdown-menu-text">Edit</span>
+                </button>
               </li>
               <li>
-                <a
-                  className="dropdown-item"
-                  href="#"
+                <button
+                  className="dropdown-menu-item"
                   onClick={e => {
                     e.preventDefault();
                     e.stopPropagation();
                     onDeleteBookmark(bookmark.uuid);
                   }}
                 >
-                  <FontAwesomeIcon icon={faTrashAlt} className="text-primary me-3" />
-                  Delete
-                </a>
+                  <span className="dropdown-menu-icon">
+                    <FontAwesomeIcon icon={faTrashAlt} />
+                  </span>
+                  <span className="dropdown-menu-text">Delete</span>
+                </button>
               </li>
             </ul>
           }
@@ -317,21 +319,28 @@ export function BookmarkList({
     >
       <div
         id="bookmark-list-container"
-        className="scrollable-panel-scrollbar-hover vh-100 data-grid-container bookmark-grid-container"
+        className="scrollable-panel-scrollbar-hover h-100 data-grid-container bookmark-grid-container"
       >
         <div className="data-grid bookmark-grid" role="table">
           <div
-            className={`data-grid-header bookmark-grid-header visually-hidden ${
+            className={`data-grid-header bookmark-grid-header ${
               viewType === "compact" ? "compact" : ""
             }`}
             role="row"
           >
-            <div role="columnheader">Drag</div>
+            <div role="columnheader"></div>
             <div role="columnheader">Date</div>
-            {viewType !== "compact" && <div role="columnheader">Thumbnail</div>}
-            <div role="columnheader">Icon</div>
-            <div role="columnheader">Bookmark</div>
-            <div role="columnheader">Actions</div>
+            {viewType !== "compact" && (
+              <div role="columnheader" className="bookmark-link-col">
+                Link
+              </div>
+            )}
+            {viewType === "compact" && (
+              <div role="columnheader" className="bookmark-link-col">
+                Link
+              </div>
+            )}
+            <div role="columnheader"></div>
           </div>
           <div className="data-grid-body bookmark-grid-body" role="rowgroup">
             <SortableContext
@@ -380,7 +389,7 @@ export function BookmarkList({
             {/* Favicon - trusted server-rendered HTML from the app's own database */}
             <div
               role="cell"
-              className="bookmark-col-favicon favicon-cell pt-4"
+              className="bookmark-col-favicon favicon-cell"
               dangerouslySetInnerHTML={
                 activeBookmark.favicon_url ? { __html: activeBookmark.favicon_url } : undefined
               }
