@@ -27,10 +27,11 @@ export function ReminderDeletePage({
     try {
       const formData = new URLSearchParams();
       // Django DeleteView expects POST with empty body (or just CSRF token)
+      formData.append("csrfmiddlewaretoken", csrfToken);
 
       await axios.post(deleteUrl, formData, {
         headers: {
-          "X-Csrftoken": csrfToken,
+          "X-CSRFToken": csrfToken,
           "Content-Type": "application/x-www-form-urlencoded",
         },
         withCredentials: true,
