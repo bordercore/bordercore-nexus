@@ -229,6 +229,14 @@ ELASTICSEARCH_EXTRA_FIELDS = {}
 
 DJANGO_LOG_DIR = os.environ.get("DJANGO_LOG_DIR", "/var/log/django")
 
+# Ensure the log directory exists; fall back to a local logs/ dir if
+# the configured path cannot be created (e.g. /var/log/django on macOS).
+try:
+    os.makedirs(DJANGO_LOG_DIR, exist_ok=True)
+except OSError:
+    DJANGO_LOG_DIR = os.path.join(BASE_DIR, "logs")
+    os.makedirs(DJANGO_LOG_DIR, exist_ok=True)
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,

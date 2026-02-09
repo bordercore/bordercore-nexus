@@ -15,6 +15,7 @@ secrets.env
 
 # Dependencies
 node_modules/
+logs/
 
 # Build artifacts and coverage
 **/htmlcov/*
