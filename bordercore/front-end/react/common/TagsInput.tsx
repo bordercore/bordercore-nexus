@@ -54,14 +54,14 @@ export const TagsInput = forwardRef<TagsInputHandle, TagsInputProps>(function Ta
   ref
 ) {
   const [selectedTags, setSelectedTags] = useState<TagOption[]>(
-    initialTags.map(t => ({ label: t, value: t }))
+    Array.isArray(initialTags) ? initialTags.map(t => ({ label: t, value: t })) : []
   );
 
   const selectRef = useRef<any>(null);
 
   // Sync selectedTags when initialTags prop changes
   // Use JSON.stringify to compare by value, not reference
-  const initialTagsJson = JSON.stringify(initialTags);
+  const initialTagsJson = JSON.stringify(initialTags || []);
   useEffect(() => {
     const tags = JSON.parse(initialTagsJson) as string[];
     setSelectedTags(tags.map(t => ({ label: t, value: t })));

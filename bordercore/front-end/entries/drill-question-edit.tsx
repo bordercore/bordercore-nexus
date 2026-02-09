@@ -8,9 +8,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Parse initial tags from JSON script
   const initialTagsEl = document.getElementById("initial-tags");
-  const initialTags: string[] = initialTagsEl
+  let initialTags: string[] = initialTagsEl
     ? JSON.parse(initialTagsEl.textContent || "[]")
     : [];
+
+  if (!Array.isArray(initialTags)) {
+    initialTags = [];
+  }
 
   // Parse recent tags from JSON script
   const recentTagsEl = document.getElementById("recent-tags");

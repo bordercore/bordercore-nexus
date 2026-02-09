@@ -128,8 +128,11 @@ class QuestionCreateView(LoginRequiredMixin, FormRequestMixin, CreateView):
 
         # If we're adding a question with an initial tag value,
         # pre-populate the form with this tag.
-        if context["form"]["tags"].value():
-            context["tags"] = context["form"]["tags"].value().split(",")
+        tags_value = context["form"]["tags"].value()
+        if tags_value:
+            context["tags"] = tags_value.split(",")
+        else:
+            context["tags"] = []
 
         # Get a list of the most recently used tags
         context["recent_tags"] = Question.objects.recent_tags()[:10]
