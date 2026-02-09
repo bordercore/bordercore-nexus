@@ -99,15 +99,16 @@ class CheckboxIntegerField(IntegerField):
     def to_python(self, value: Any) -> int:
         """Convert the checkbox value to an integer.
 
-        Converts a boolean True value to 10 (high importance) and any other
-        value to 1 (low importance).
+        Converts a boolean True value, or the strings "true" or "1", to 10
+        (high importance) and any other value to 1 (low importance).
 
         Args:
-            value: The raw input value, typically a boolean from a checkbox.
+            value: The raw input value, typically a boolean from a checkbox
+                or a string from a hidden input.
 
         Returns:
-            An integer value: 10 if value is True, otherwise 1.
+            An integer value: 10 if value is True, "true", or "1", otherwise 1.
         """
-        if value is True:
+        if value is True or value == "true" or value == "1":
             return 10
         return 1
