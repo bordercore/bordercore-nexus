@@ -79,13 +79,19 @@ export function ArtistDetailPage({
     const onPause = () => {
       setIsPlaying(false);
     };
+    const onEnded = () => {
+      setIsPlaying(false);
+      setCurrentSongUuid(null);
+    };
 
     EventBus.$on("audio-play", onPlay);
     EventBus.$on("audio-pause", onPause);
+    EventBus.$on("audio-ended", onEnded);
 
     return () => {
       EventBus.$off("audio-play", onPlay);
       EventBus.$off("audio-pause", onPause);
+      EventBus.$off("audio-ended", onEnded);
     };
   }, []);
 

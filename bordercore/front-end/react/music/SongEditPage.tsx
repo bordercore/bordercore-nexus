@@ -1,7 +1,13 @@
 import React, { useRef, useEffect, useCallback } from "react";
 import axios from "axios"; // Still needed for fetching form data and dupe check
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faStar, faMusic, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
+import {
+  faStar,
+  faMusic,
+  faArrowLeft,
+  faInfoCircle,
+  faTags,
+} from "@fortawesome/free-solid-svg-icons";
 import { SelectValue, SelectValueHandle } from "../common/SelectValue";
 import { TagsInput, TagsInputHandle } from "../common/TagsInput";
 import Card from "../common/Card";
@@ -263,7 +269,7 @@ export function SongEditPage({
   }
 
   return (
-    <div className="row g-0 h-100 music-dashboard">
+    <div className="row g-0 h-100">
       {/* Left sidebar */}
       <div className="col-lg-3 d-flex flex-column pe-2">
         <div className="w-100">
@@ -299,19 +305,33 @@ export function SongEditPage({
           {(formData.length != null ||
             formData.last_time_played !== "Never" ||
             formData.times_played > 0) && (
-            <Card title="Song Info" className="backdrop-filter ms-3">
-              <ul>
+            <Card
+              cardClassName="mb-gutter drill-info-card"
+              className="backdrop-filter"
+              titleSlot={
+                <div className="card-title d-flex align-items-center mb-3">
+                  <FontAwesomeIcon icon={faInfoCircle} className="text-primary me-3 mt-1" />
+                  Song Info
+                </div>
+              }
+            >
+              <ul className="list-unstyled mb-0">
                 {formData.length != null && (
-                  <li>
-                    Song Length <span className="ms-1 text-primary">{formData.length_pretty}</span>
+                  <li className="d-flex">
+                    <div className="text-name flex-fill fw-bold">Song Length</div>
+                    <div className="text-value text-end text-primary">{formData.length_pretty}</div>
                   </li>
                 )}
-                <li>
-                  Last Played <span className="ms-1 text-primary">{formData.last_time_played}</span>
+                <li className="d-flex">
+                  <div className="text-name flex-fill fw-bold">Last Played</div>
+                  <div className="text-value text-end text-primary">
+                    {formData.last_time_played}
+                  </div>
                 </li>
                 {formData.times_played > 0 && (
-                  <li>
-                    Times Played <span className="ms-1 text-primary">{formData.times_played}</span>
+                  <li className="d-flex">
+                    <div className="text-name flex-fill fw-bold">Times Played</div>
+                    <div className="text-value text-end text-primary">{formData.times_played}</div>
                   </li>
                 )}
               </ul>
@@ -319,7 +339,16 @@ export function SongEditPage({
           )}
 
           {/* Tag Suggestions Card */}
-          <Card title="Tag Suggestions" className="backdrop-filter ms-3">
+          <Card
+            cardClassName="mb-gutter drill-info-card"
+            className="backdrop-filter"
+            titleSlot={
+              <div className="card-title d-flex align-items-center mb-3">
+                <FontAwesomeIcon icon={faTags} className="text-primary me-3 mt-1" />
+                Tag Suggestions
+              </div>
+            }
+          >
             <hr className="divider" />
             <ul className="list-group interior-borders">
               {tagSuggestions.map(tag => (
