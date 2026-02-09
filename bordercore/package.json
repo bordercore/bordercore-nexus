@@ -68,7 +68,7 @@
         "@sqlite.org/sqlite-wasm": "^3.43.1-build1",
         "@tanstack/react-table": "^8.20.5",
         "animate.css": "^4.1.1",
-        "axios": "^0.21.4",
+        "axios": "^1.13.5",
         "babel-plugin-prismjs": "^2.1.0",
         "bootstrap": "^5.2.0",
         "chart.js": "^3.7.0",
