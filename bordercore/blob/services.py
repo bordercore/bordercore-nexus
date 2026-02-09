@@ -18,9 +18,19 @@ from typing import Any, Generator, Union
 from urllib.parse import ParseResult, urlparse
 
 import humanize
-import instaloader
+try:
+    import instaloader
+except (ImportError, ModuleNotFoundError):
+    # instaloader depends on lzma, which is sometimes missing in macOS Python builds.
+    # We catch the error here to allow the server to start without it.
+    instaloader = None
+
 import requests
-from instaloader import Post
+
+if instaloader:
+    from instaloader import Post
+else:
+    Post = None
 from openai import OpenAI
 from trafilatura import bare_extraction, extract, extract_metadata, fetch_url
 
