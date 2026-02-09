@@ -400,6 +400,35 @@ class Bookmark(TimeStampedModel):
         return Bookmark.get_favicon_img_tag_static(self.url, size)
 
     @staticmethod
+    def get_favicon_url_static(url: str) -> str | None:
+        """Return the favicon URL for a given bookmark URL.
+
+        This extracts the domain from the URL, strips the "www." prefix if present,
+        and returns the URL to the favicon stored in S3.
+
+        Args:
+            url: The URL to extract the domain from.
+
+        Returns:
+            Favicon URL string, or None if the URL cannot be parsed or is empty.
+        """
+        if not url:
+            return None
+
+        p = re.compile("https?://([^/]*)")
+
+        m = p.match(url)
+
+        if m:
+            domain = m.group(1)
+            parts = domain.split(".")
+            # We want the domain part of the hostname (eg npr.org instead of www.npr.org)
+            if len(parts) == 3:
+                domain = ".".join(parts[1:])
+            return f"https://www.bordercore.com/favicons/{domain}.ico"
+        return None
+
+    @staticmethod
     def get_favicon_img_tag_static(url: str, size: int = 32) -> str:
         """Return an HTML img tag for a favicon given a URL.
 
@@ -414,20 +443,9 @@ class Bookmark(TimeStampedModel):
             HTML img tag string pointing to the favicon, or empty string if the
             URL cannot be parsed or is empty.
         """
-        if not url:
-            return ""
-
-        p = re.compile("https?://([^/]*)")
-
-        m = p.match(url)
-
-        if m:
-            domain = m.group(1)
-            parts = domain.split(".")
-            # We want the domain part of the hostname (eg npr.org instead of www.npr.org)
-            if len(parts) == 3:
-                domain = ".".join(parts[1:])
-            return f"<img src=\"https://www.bordercore.com/favicons/{domain}.ico\" width=\"{size}\" height=\"{size}\" />"
+        favicon_url = Bookmark.get_favicon_url_static(url)
+        if favicon_url:
+            return f'<img src="{favicon_url}" width="{size}" height="{size}" />'
         return ""
 
     def related_nodes(self) -> list[dict[str, str]]:
