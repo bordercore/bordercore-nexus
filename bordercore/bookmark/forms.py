@@ -40,15 +40,19 @@ class DailyCheckboxInput(CheckboxInput):
         This is needed to avoid an error when rendering the field value after
         a form submission that results in validation errors.
 
+        The ToggleSwitch React component always sends a hidden input with
+        name="daily", so we check the actual value rather than just the
+        presence of the key.
+
         Args:
             data: The form data dictionary.
             files: The uploaded files dictionary (unused).
             name: The field name.
 
         Returns:
-            "true" if the field is present in data, "false" otherwise.
+            "true" if the field value is "true", "false" otherwise.
         """
-        return "true" if "daily" in data else "false"
+        return "true" if data.get("daily") == "true" else "false"
 
 
 class BookmarkForm(ModelForm):

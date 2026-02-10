@@ -53,9 +53,9 @@ class DailyBookmarkJSONField(JSONField):
             value: The form input value (typically from a checkbox).
 
         Returns:
-            A dict with {"viewed": "false"} if value is truthy, None otherwise.
+            A dict with {"viewed": "false"} if value is truthy and not the string "false", None otherwise.
         """
-        if value:
+        if value and value != "false":
             return {"viewed": "false"}
         return None
 
