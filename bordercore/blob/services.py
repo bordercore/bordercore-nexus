@@ -518,17 +518,19 @@ def extract_article_data(url: str) -> dict[str, Any]:
             extracted_date = result.get("date")
             # Normalize the date to YYYY-MM-DD format to avoid timezone issues
             normalized_date = parse_date(extracted_date) if extracted_date else None
+            # bare_extraction provides metadata; extract() provides formatted markdown
+            md_content = extract(downloaded, url=url, output_format="markdown")
             return {
                 "success": True,
                 "title": result.get("title"),
-                "content": result.get("text"),
+                "content": md_content,
                 "author": result.get("author"),
                 "date": normalized_date,
                 "url": url
             }
 
         # Fallback to separate extraction
-        content = extract(downloaded, url=url)
+        content = extract(downloaded, url=url, output_format="markdown")
         metadata = extract_metadata(downloaded)
 
         if not content and not metadata:
