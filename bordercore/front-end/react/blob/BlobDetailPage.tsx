@@ -14,6 +14,20 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { faAws } from "@fortawesome/free-brands-svg-icons";
 import markdownit from "markdown-it";
+import Prism from "prismjs";
+import "prismjs/components/prism-python";
+import "prismjs/components/prism-bash";
+import "prismjs/components/prism-sql";
+import "prismjs/components/prism-json";
+import "prismjs/components/prism-yaml";
+import "prismjs/components/prism-go";
+import "prismjs/components/prism-rust";
+import "prismjs/components/prism-java";
+import "prismjs/components/prism-typescript";
+import "prismjs/components/prism-c";
+import "prismjs/components/prism-cpp";
+import "prismjs/components/prism-ruby";
+import "prismjs/components/prism-markdown";
 import hotkeys from "hotkeys-js";
 import axios from "axios";
 
@@ -28,6 +42,56 @@ import { CollectionsCard } from "./CollectionsCard";
 import { AddToCollectionModal, AddToCollectionModalHandle } from "./AddToCollectionModal";
 import { doGet, doPost, EventBus } from "../utils/reactUtils";
 import type { BlobDetailPageProps, Collection, ElasticsearchInfo } from "./types";
+
+// Add copy button to code blocks after Prism highlighting
+// Based on util.js addCopyButton() - uses wrapper div because pre has
+// overflow:auto for scrollbars, and we don't want button to scroll
+Prism.hooks.add("complete", env => {
+  const code = env.element as HTMLElement;
+  const pre = code.parentNode as HTMLElement;
+
+  // Skip if not in a pre element
+  if (!pre || pre.tagName !== "PRE") {
+    return;
+  }
+
+  // Skip if wrapper already exists (already processed)
+  if (pre.parentElement?.classList.contains("code-block-wrapper")) {
+    return;
+  }
+
+  // Create wrapper div - button is positioned relative to this, not pre
+  // This prevents button from scrolling with code content
+  const wrapper = document.createElement("div");
+  wrapper.className = "code-block-wrapper";
+
+  // Replace pre with wrapper, put pre inside
+  pre.parentNode?.replaceChild(wrapper, pre);
+  wrapper.appendChild(pre);
+
+  // Create copy button
+  const button = document.createElement("button");
+  button.className = "copy-button";
+  button.setAttribute("type", "button");
+
+  const linkSpan = document.createElement("span");
+  linkSpan.textContent = "Copy";
+  button.appendChild(linkSpan);
+
+  button.addEventListener("click", () => {
+    if (navigator.clipboard) {
+      const textContent = code.textContent?.replaceAll(/^\$ /gm, "") || "";
+      navigator.clipboard.writeText(textContent);
+      linkSpan.textContent = "Copied!";
+      setTimeout(() => {
+        linkSpan.textContent = "Copy";
+      }, 2000);
+    }
+  });
+
+  // Button is child of wrapper (sibling of pre), not inside pre
+  wrapper.appendChild(button);
+});
 
 const RETRY_INTERVALS = [1000, 3000, 6000];
 
@@ -99,6 +163,13 @@ export function BlobDetailPage({
       });
     }
   }, [blob.mathSupport, blob.content]);
+
+  // Syntax highlighting
+  useEffect(() => {
+    if (blob.content) {
+      Prism.highlightAll();
+    }
+  }, [blob.content]);
 
   // Hotkey support
   useEffect(() => {
