@@ -158,7 +158,7 @@ class Todo(TimeStampedModel):
         """Build the dict representation for Elasticsearch indexing.
 
         Returns:
-            Dictionary containing the album data formatted for Elasticsearch indexing.
+            Dictionary containing the todo data formatted for Elasticsearch indexing.
         """
         tags = list(self.tags.values_list('name', flat=True))
 

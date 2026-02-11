@@ -443,7 +443,7 @@ class Question(TimeStampedModel):
             session: The caller's session dict (e.g. request.session).
             study_type: The type of drill the user wants:
                 "favorites", "recent", "tag", "keyword", "random", or default.
-            filter: Optional extra filter logic. If "review", restrict to
+            question_filter: Optional extra filter logic. If "review", restrict to
                 questions currently due.
             params: Extra parameters:
                 - "interval" (for "recent")

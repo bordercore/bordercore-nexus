@@ -11,7 +11,7 @@ It includes logic for ensuring lowercase names, preventing name collisions, and 
 from __future__ import annotations
 
 import uuid
-from typing import TYPE_CHECKING, Any, List, Mapping
+from typing import TYPE_CHECKING, Any, List
 
 from django.apps import apps
 from django.contrib.auth.models import User
@@ -74,7 +74,7 @@ class Tag(models.Model):
             raise ValidationError(f"An alias with this same name already exists: {self}")
         super().save(*args, **kwargs)
 
-    def get_todo_counts(self) -> QuerySet["Tag", Mapping[str, Any]]:
+    def get_todo_counts(self) -> QuerySet:
         """
         Returns a QuerySet with annotation counts of all related models for this tag.
 
