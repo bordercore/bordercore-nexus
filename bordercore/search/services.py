@@ -5,6 +5,7 @@ and document deletion using Elasticsearch.
 """
 
 from typing import Any, cast
+from uuid import UUID
 
 from elasticsearch import RequestError, helpers
 
@@ -54,6 +55,120 @@ def get_elasticsearch_source_fields() -> list[str]:
     ]
 
 
+def build_base_query(
+    user_id: int,
+    *,
+    additional_must: list[dict[str, Any]] | None = None,
+    size: int = 10,
+    offset: int = 0,
+    source_fields: list[str] | None = None,
+) -> dict[str, Any]:
+    """Construct the common function_score query skeleton.
+
+    Builds a ``function_score`` query filtered by ``user_id`` with the
+    standard ``field_value_factor`` on ``importance``.  Callers can append
+    their own clauses to the returned ``must`` list or replace
+    ``functions`` for custom scoring.
+
+    Args:
+        user_id: The user whose documents to search.
+        additional_must: Extra clauses to add to the bool/must list.
+        size: Number of results to return.
+        offset: Starting offset (``from_``).
+        source_fields: ``_source`` field list.  Defaults to
+            :func:`get_elasticsearch_source_fields`.
+
+    Returns:
+        A mutable Elasticsearch query dict ready for further customisation.
+    """
+    must: list[dict[str, Any]] = [{"term": {"user_id": user_id}}]
+    if additional_must:
+        must.extend(additional_must)
+
+    return {
+        "query": {
+            "function_score": {
+                "functions": [
+                    {
+                        "field_value_factor": {
+                            "field": "importance",
+                            "missing": 1
+                        }
+                    }
+                ],
+                "query": {
+                    "bool": {
+                        "must": must
+                    }
+                }
+            }
+        },
+        "from_": offset,
+        "size": size,
+        "_source": source_fields if source_fields is not None else get_elasticsearch_source_fields(),
+    }
+
+
+def execute_search(
+    search_object: dict[str, Any],
+    timeout: int | None = None,
+) -> dict[str, Any]:
+    """Execute an Elasticsearch search.
+
+    Wraps the repeated ``get_elasticsearch_connection`` +
+    ``es.search`` two-liner.  Error handling (e.g. ``RequestError``)
+    stays in callers since each handles it differently.
+
+    Args:
+        search_object: The Elasticsearch query dict (passed as
+            ``**kwargs`` to ``es.search``).
+        timeout: Optional connection timeout in seconds.
+
+    Returns:
+        The raw Elasticsearch response dict.
+    """
+    kwargs: dict[str, Any] = {"host": settings.ELASTICSEARCH_ENDPOINT}
+    if timeout is not None:
+        kwargs["timeout"] = timeout
+    es = get_elasticsearch_connection(**kwargs)
+    return es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
+
+
+def get_cover_url(
+    doctype: str,
+    uuid: str,
+    filename: str = "",
+    url: str = "",
+) -> str | None:
+    """Return the cover/thumbnail URL for a search result.
+
+    Consolidates the cover URL logic that was duplicated across
+    ``SearchListView``, ``SearchTagDetailView``, and
+    ``search_names_es``.
+
+    Args:
+        doctype: Document type (case-insensitive).
+        uuid: Object UUID.
+        filename: Filename (used for blob-like types).
+        url: Original URL (used for bookmarks).
+
+    Returns:
+        The cover URL string, or ``None`` if the doctype has no cover.
+    """
+    # Import here to avoid circular import (blob.models → collection.models → search.services)
+    from blob.models import Blob
+    from bookmark.models import Bookmark
+
+    dt = doctype.lower()
+    if dt in ("blob", "book", "document"):
+        return Blob.get_cover_url_static(UUID(uuid), filename, size="small")
+    if dt == "bookmark":
+        return Bookmark.thumbnail_url_static(uuid, url)
+    if dt == "collection":
+        return f"{settings.COVER_URL}collections/{uuid}.jpg"
+    return None
+
+
 def semantic_search(request: HttpRequest, search: str) -> dict[str, Any]:
     """Perform semantic search using embeddings and Elasticsearch.
 
@@ -74,42 +189,11 @@ def semantic_search(request: HttpRequest, search: str) -> dict[str, Any]:
 
     embeddings = len_safe_get_embedding(search)
 
-    search_object = {
-        "query": {
-            "function_score": {
-                "functions": [
-                    {
-                        "script_score": {
-                            "script": {
-                                "source": "doc['embeddings_vector'].size() == 0 ? 0 : cosineSimilarity(params.query_vector, 'embeddings_vector') + 1.0",
-                                "params": {
-                                    "query_vector": embeddings
-                                }
-                            }
-                        }
-                    }
-                ],
-                "query": {
-                    "bool": {
-                        "must": [
-                            {
-                                "term": {
-                                    "user_id": request.user.id
-                                }
-                            },
-                            {
-                                "term": {
-                                    "doctype": "note"
-                                }
-                            }
-                        ]
-                    }
-                }
-            }
-        },
-        "sort": {"_score": {"order": "desc"}},
-        "size": 1,
-        "_source": [
+    search_object = build_base_query(
+        cast(int, request.user.id),
+        additional_must=[{"term": {"doctype": "note"}}],
+        size=1,
+        source_fields=[
             "date",
             "contents",
             "doctype",
@@ -117,12 +201,25 @@ def semantic_search(request: HttpRequest, search: str) -> dict[str, Any]:
             "title",
             "url",
             "uuid"
-        ]
-    }
+        ],
+    )
 
-    es = get_elasticsearch_connection(host=settings.ELASTICSEARCH_ENDPOINT)
+    search_object["query"]["function_score"]["functions"] = [
+        {
+            "script_score": {
+                "script": {
+                    "source": "doc['embeddings_vector'].size() == 0 ? 0 : cosineSimilarity(params.query_vector, 'embeddings_vector') + 1.0",
+                    "params": {
+                        "query_vector": embeddings
+                    }
+                }
+            }
+        }
+    ]
+    search_object["sort"] = {"_score": {"order": "desc"}}
+
     try:
-        return es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
+        return execute_search(search_object)
     except RequestError as e:
         error_info = cast(dict[str, Any], e.info)
         messages.add_message(request, messages.ERROR, f"Request Error: {e.status_code} {error_info.get('error')}")

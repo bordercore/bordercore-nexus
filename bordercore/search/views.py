@@ -8,71 +8,50 @@ and autocomplete functionality.
 
 from __future__ import annotations
 
-import datetime
 import json
 import math
 import operator
-import re
 from typing import Any, cast
-from urllib.parse import unquote, urlparse
+from urllib.parse import urlparse
 
 import markdown
 from elasticsearch import RequestError
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.request import Request
 
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
-from django.http import HttpRequest, JsonResponse
 from django.urls import reverse
 from django.views.generic.list import ListView
 
 from blob.models import Blob
-from bookmark.models import Bookmark
 from lib.embeddings import len_safe_get_embedding
 from lib.time_utils import get_date_from_pattern, get_relative_date
-from lib.util import (favicon_url, get_elasticsearch_connection,
-                      get_pagination_range, truncate)
-from music.models import Album
+from lib.util import favicon_url, get_pagination_range, truncate
 from tag.models import Tag
-from tag.services import get_tag_aliases, get_tag_link
 
+from .api import (search_music, search_names, search_names_es,
+                  search_tags_and_names, search_tags_es)
+from .helpers import (get_creators, get_doctype, get_doctypes_from_request,
+                      get_link, get_name, is_cached, sort_results)
 from .models import RecentSearch
-from .services import get_elasticsearch_source_fields
+from .services import build_base_query, execute_search, get_cover_url
 
-SEARCH_LIMIT = 100
-
-
-def get_creators(matches: dict[str, Any]) -> str:
-    """Return all "creator" related fields from a match result.
-
-    Extracts author, artist, and photographer fields from the metadata
-    and returns them as a comma-separated string.
-
-    Args:
-        matches: A dictionary containing search result data, expected to
-            have a "metadata" key with creator-related fields.
-
-    Returns:
-        A comma-separated string of creator names, or empty string if
-        no metadata or creators are found.
-    """
-
-    if "metadata" not in matches:
-        return ""
-
-    creators = [
-        matches["metadata"][x][0]
-        for x
-        in matches["metadata"].keys()
-        if x in ["author", "artist", "photographer"]
-    ]
-
-    return ", ".join(creators)
+# Re-export helpers and API functions so existing imports keep working.
+__all__ = [
+    "get_creators",
+    "get_doctype",
+    "get_doctypes_from_request",
+    "get_link",
+    "get_name",
+    "is_cached",
+    "search_music",
+    "search_names",
+    "search_names_es",
+    "search_tags_and_names",
+    "search_tags_es",
+    "sort_results",
+]
 
 
 class SearchListView(LoginRequiredMixin, ListView):
@@ -174,15 +153,13 @@ class SearchListView(LoginRequiredMixin, ListView):
             match["source"]["last_modified"] = get_relative_date(match["source"]["last_modified"])
             match["source"]["url"] = get_link(match["source"]["doctype"], match["source"])
 
-            if match["source"]["doctype"] in ["book", "blob"]:
-                match["source"]["cover_url"] = Blob.get_cover_url_static(
-                    match["source"]["uuid"],
-                    match["source"]["filename"],
-                    size="small"
-                )
-
-            if match["source"]["doctype"] == "collection":
-                match["source"]["cover_url"] = f"{settings.COVER_URL}collections/{match['source']['uuid']}.jpg"
+            cover_url = get_cover_url(
+                match["source"]["doctype"],
+                match["source"].get("uuid", ""),
+                match["source"].get("filename", ""),
+            )
+            if cover_url:
+                match["source"]["cover_url"] = cover_url
 
             match["tags_json"] = json.dumps(match["source"]["tags"]) \
                 if "tags" in match["source"] \
@@ -237,51 +214,11 @@ class SearchListView(LoginRequiredMixin, ListView):
 
         offset = (int(self.request.GET.get("page", 1)) - 1) * self.RESULT_COUNT_PER_PAGE
 
-        search_object: dict[str, Any] = {
-            "query": {
-                "function_score": {
-                    "functions": [
-                        {
-                            "field_value_factor": {
-                                "field": "importance",
-                                "missing": 1
-                            }
-                        }
-                    ],
-                    "query": {
-                        "bool": {
-                            "must": [
-                                {
-                                    "term": {
-                                        "user_id": self.request.user.id
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            },
-            "aggs": {
-                "Doctype Filter": {
-                    "terms": {
-                        "field": "doctype",
-                        "size": 10,
-                    }
-                }
-            },
-            "highlight": {
-                "fields": {
-                    "attachment.content": {},
-                    "contents": {},
-                },
-                "number_of_fragments": 1,
-                "fragment_size": 200,
-                "order": "score"
-            },
-            "sort": {sort_field: {"order": "desc"}},
-            "from_": offset,
-            "size": self.RESULT_COUNT_PER_PAGE,
-            "_source": [
+        search_object = build_base_query(
+            cast(int, self.request.user.id),
+            size=self.RESULT_COUNT_PER_PAGE,
+            offset=offset,
+            source_fields=[
                 "album_uuid",
                 "artist",
                 "artist_uuid",
@@ -302,8 +239,26 @@ class SearchListView(LoginRequiredMixin, ListView):
                 "title",
                 "url",
                 "uuid"
-            ]
+            ],
+        )
+        search_object["aggs"] = {
+            "Doctype Filter": {
+                "terms": {
+                    "field": "doctype",
+                    "size": 10,
+                }
+            }
         }
+        search_object["highlight"] = {
+            "fields": {
+                "attachment.content": {},
+                "contents": {},
+            },
+            "number_of_fragments": 1,
+            "fragment_size": 200,
+            "order": "score"
+        }
+        search_object["sort"] = {sort_field: {"order": "desc"}}
 
         # Let subclasses modify the query
         search_object = self.refine_search(search_object)
@@ -339,9 +294,8 @@ class SearchListView(LoginRequiredMixin, ListView):
                 }
             )
 
-        es = get_elasticsearch_connection(host=settings.ELASTICSEARCH_ENDPOINT, timeout=40)
         try:
-            results = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
+            results = execute_search(search_object, timeout=40)
         except RequestError as e:
             error_info = cast(dict[str, Any], e.info)
             messages.add_message(self.request, messages.ERROR, f"Request Error: {e.status_code} {error_info.get('error')}")
@@ -552,11 +506,11 @@ class SearchTagDetailView(LoginRequiredMixin, ListView):
                         match["_source"]["uuid"],
                         match["_source"].get("filename", "")
                     ),
-                    "cover_url": Blob.get_cover_url_static(
+                    "cover_url": get_cover_url(
+                        match["_source"]["doctype"],
                         match["_source"].get("uuid", ""),
                         match["_source"].get("filename", ""),
-                        size="small"
-                    ),
+                    ) or "",
                     **result,
                 }
 
@@ -586,8 +540,6 @@ class SearchTagDetailView(LoginRequiredMixin, ListView):
         """
         taglist = self.kwargs.get("taglist", "").split(",")
 
-        es = get_elasticsearch_connection(host=settings.ELASTICSEARCH_ENDPOINT)
-
         # Use the keyword field for an exact match
         tag_query = [
             {
@@ -598,52 +550,31 @@ class SearchTagDetailView(LoginRequiredMixin, ListView):
             for x in taglist
         ]
 
-        tag_query.append(
-            {
-                "term": {
-                    "user_id": self.request.user.id
+        search_object = build_base_query(
+            cast(int, self.request.user.id),
+            additional_must=tag_query,
+            size=self.RESULT_COUNT_PER_PAGE,
+        )
+        search_object["aggs"] = {
+            "Doctype Filter": {
+                "terms": {
+                    "field": "doctype",
+                    "size": 10
+                }
+            },
+            "Tag Filter": {
+                "terms": {
+                    "field": "tags.keyword",
+                    "size": 20
                 }
             }
-        )
-
-        search_object = {
-            "query": {
-                "function_score": {
-                    "field_value_factor": {
-                        "field": "importance",
-                        "missing": 1
-                    },
-                    "query": {
-                        "bool": {
-                            "must": tag_query
-                        }
-                    }
-                }
-            },
-            "aggs": {
-                "Doctype Filter": {
-                    "terms": {
-                        "field": "doctype",
-                        "size": 10
-                    }
-                },
-                "Tag Filter": {
-                    "terms": {
-                        "field": "tags.keyword",
-                        "size": 20
-                    }
-                }
-            },
-            "sort": [
-                {"importance": {"order": "desc"}},
-                {"last_modified": {"order": "desc"}}
-            ],
-            "from_": 0,
-            "size": self.RESULT_COUNT_PER_PAGE,
-            "_source": get_elasticsearch_source_fields()
         }
+        search_object["sort"] = [
+            {"importance": {"order": "desc"}},
+            {"last_modified": {"order": "desc"}}
+        ]
 
-        return es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
+        return execute_search(search_object)
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         """Get context data for the tag detail template.
@@ -755,723 +686,3 @@ class SemanticSearchListView(SearchListView):
         ]
 
         return search_object
-
-
-def sort_results(matches: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Sort search results by document type in a predefined order.
-
-    Organizes matches into categories by document type, then returns them
-    in a specific order with category headers (splitters) inserted between
-    each type group.
-
-    Args:
-        matches: List of search result dictionaries, each containing a
-            "doctype" key.
-
-    Returns:
-        A list of result dictionaries, with category splitter dictionaries
-        inserted between each document type group. Splitters have:
-            - id: "__{Type}"
-            - name: "{Type}s"
-            - splitter: True
-    """
-    # These categories are sorted according to importance and define
-    #  the order matches appear in the search results
-    types: dict[str, list] = {
-        "Tag": [],
-        "Artist": [],
-        "Song": [],
-        "Album": [],
-        "Book": [],
-        "Drill": [],
-        "Note": [],
-        "Bookmark": [],
-        "Document": [],
-        "Blob": [],
-        "Todo": [],
-        "Collection": []
-    }
-
-    for match in matches:
-        types[match["doctype"]].append(match)
-
-    # Remove empty categories
-    result = {key: value for (key, value) in types.items() if len(value) > 0}
-
-    response = []
-    for key, value in result.items():
-        response.extend(
-            [
-                {
-                    "id": f"__{key}",
-                    "name": f"{key}s",
-                    "splitter": True,
-                },
-                *result[key]
-            ]
-        )
-
-    return response
-
-
-def get_link(doctype: str, match: dict[str, Any]) -> str:
-    """Generate a URL for a document based on its type.
-
-    Args:
-        doctype: The document type (e.g., "bookmark", "song", "album").
-        match: Dictionary containing document data, including uuid and
-            other type-specific fields.
-
-    Returns:
-        A URL string pointing to the detail page for the document, or
-        empty string if the type is not recognized.
-    """
-    url = ""
-
-    if doctype == "bookmark":
-        url = match["url"]
-    elif doctype == "song":
-        if "album_uuid" in match:
-            url = reverse("music:album_detail", kwargs={"uuid": match["album_uuid"]})
-        else:
-            url = reverse("music:artist_detail", kwargs={"uuid": match["artist_uuid"]})
-    elif doctype == "album":
-        url = reverse("music:album_detail", kwargs={"uuid": match["uuid"]})
-    elif doctype == "artist":
-        url = reverse("music:artist_detail", kwargs={"uuid": match["artist_uuid"]})
-    elif doctype in ("blob", "book", "document", "note"):
-        url = reverse("blob:detail", kwargs={"uuid": match["uuid"]})
-    elif doctype == "drill":
-        url = reverse("drill:detail", kwargs={"uuid": match["uuid"]})
-    elif doctype == "todo":
-        url = reverse("todo:detail", kwargs={"uuid": match["uuid"]})
-    elif doctype == "collection":
-        url = reverse("collection:detail", kwargs={"uuid": match["uuid"]})
-
-    return url
-
-
-def get_name(doctype: str, match: dict[str, Any]) -> str:
-    """Extract a display name for a document based on its type.
-
-    Args:
-        doctype: The document type (e.g., "Song", "Artist", "Album").
-        match: Dictionary containing document data with type-specific
-            fields like title, artist, question, or name.
-
-    Returns:
-        A formatted display name string for the document.
-    """
-    if doctype == "Song":
-        return f"{match['title']} - {match['artist']}"
-    if doctype == "Artist":
-        return match["artist"]
-    if doctype == "Album":
-        return match["title"]
-    if doctype == "Drill":
-        return match["question"][:30]
-
-    return match["name"].title()
-
-
-def get_doctype(match: dict[str, Any]) -> str:
-    """Determine the display document type from a search result.
-
-    For songs, checks highlighted fields to determine if the match was
-    on artist, title, etc., and returns the appropriate type. For other
-    types, returns the doctype from the source.
-
-    Args:
-        match: Search result dictionary containing "_source" with "doctype"
-            and optionally "highlight" fields.
-
-    Returns:
-        A title-cased document type string (e.g., "Song", "Artist", "Album").
-    """
-    if match["_source"]["doctype"] == "song" and "highlight" in match:
-        highlight_fields = [x if x != "name" else "Song" for x in match["highlight"].keys()]
-        # There could be multiple highlighted fields. For now,
-        #  pick the first one.
-        # Remove the subfield ".autocomplete" from the result, so
-        #  "artist.autocomplete" becomes "artist".
-        return highlight_fields[0].split(".")[0].title()
-
-    return match["_source"]["doctype"].title()
-
-
-def get_doctypes_from_request(request: HttpRequest) -> list[str]:
-    """Extract document type filters from request parameters.
-
-    Parses the "doctype" or "doc_type" GET parameter and handles special cases like
-    "music" which maps to multiple document types.
-
-    Args:
-        request: HTTP request object with GET parameters.
-
-    Returns:
-        A list of document type strings to filter by.
-    """
-    # Accept both "doctype" and "doc_type" for backwards compatibility
-    # (ObjectSelectModal sends "doc_type", other places send "doctype")
-    doctype_param = request.GET.get("doctype", "") or request.GET.get("doc_type", "")
-    if doctype_param != "":
-        doctypes = doctype_param.split(",")
-    else:
-        doctypes = []
-
-    # The front-end filter "Music" translates to the two doctypes
-    #  "album" and "song" in the Elasticsearch index
-    if "music" in doctypes:
-        doctypes = ["album", "song"]
-
-    return doctypes
-
-
-def is_cached() -> Any:
-    """Create a cache checker function for deduplicating results.
-
-    Returns a closure that maintains an in-memory cache of seen
-    Artist and Album names to prevent duplicate results in search
-    output.
-
-    Returns:
-        A function that takes (doctype, value) and returns True if
-        the value has been seen before, False otherwise. Only caches
-        "Artist" and "Album" doctypes.
-    """
-    cache: dict[str, dict] = {
-        "Artist": {},
-        "Album": {}
-    }
-
-    def check_cache(doctype: str, value: str) -> bool:
-        if doctype not in ["Artist", "Album"]:
-            return False
-
-        if value in cache[doctype]:
-            return True
-
-        cache[doctype][value] = True
-        return False
-
-    return check_cache
-
-
-@login_required
-def search_tags_and_names(request: HttpRequest) -> JsonResponse:
-    """Endpoint for top-search autocomplete matching tags and names.
-
-    Performs parallel searches for matching document names and tags,
-    combines the results, sorts them by type, and returns JSON.
-
-    Args:
-        request: HTTP request containing:
-            - term: Search query string
-            - doctype: Optional comma-separated list of document types
-
-    Returns:
-        JSON response containing sorted list of matching tags and documents.
-    """
-    search_term = request.GET["term"].lower()
-
-    doctypes = get_doctypes_from_request(request)
-
-    user = cast(User, request.user)
-    matches = search_names_es(user, search_term, doctypes)
-
-    # Add tag search results to the list of matches
-    matches.extend(search_tags_es(user, search_term, doctypes))
-
-    return JsonResponse(sort_results(matches), safe=False)
-
-
-def search_tags_es(user: User, search_term: str, doctypes: list[str]) -> list[dict[str, Any]]:
-    """Search Elasticsearch for tags matching the search term.
-
-    Performs a tag autocomplete search and returns matching tag names
-    along with their associated document types.
-
-    Args:
-        user: The User whose tags to search.
-        search_term: The search query string (lowercase).
-        doctypes: List of document types to filter by.
-
-    Returns:
-        A list of dictionaries, each containing:
-            - doctype: "Tag"
-            - name: Tag name
-            - id: Tag name (same as name)
-            - link: URL to search for objects with this tag
-    """
-
-    es = get_elasticsearch_connection(host=settings.ELASTICSEARCH_ENDPOINT)
-
-    search_object: dict[str, Any] = {
-        "query": {
-            "bool": {
-                "must": [
-                    {
-                        "term": {
-                            "user_id": user.id
-                        }
-                    },
-                    {
-                        "bool": {
-                            "should": [
-                                {
-                                    "match": {
-                                        "tags.autocomplete": {
-                                            "query": search_term,
-                                            "operator": "and"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                ]
-            }
-        },
-        "aggs": {
-            "Distinct Tags": {
-                "terms": {
-                    "field": "tags.keyword",
-                    "size": 1000
-                }
-            }
-        },
-        "from_": 0, "size": 100,
-        "_source": get_elasticsearch_source_fields()
-    }
-
-    if len(doctypes) > 1:
-        search_object["query"]["bool"]["must"].append(
-            {
-                "bool": {
-                    "should": [
-                        {
-                            "term": {
-                                "doctype": x
-                            }
-                        }
-                        for x in doctypes
-                    ]
-                }
-            }
-        )
-
-    results = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
-
-    matches: list[dict[str, Any]] = []
-    for tag_result in results["aggregations"]["Distinct Tags"]["buckets"]:
-        if tag_result["key"].lower().find(search_term.lower()) != -1:
-            matches.insert(0,
-                           {
-                               "doctype": "Tag",
-                               "name": tag_result["key"],
-                               "id": tag_result["key"],
-                               "link": get_tag_link(tag_result["key"], doctypes)
-                           }
-                           )
-
-    matches.extend(get_tag_aliases(user, search_term))
-    return matches
-
-
-@login_required
-def search_names(request: HttpRequest) -> JsonResponse:
-    """Endpoint for searching document names via autocomplete.
-
-    Performs a name-based search with special handling for ngram tokenizer
-    limitations: truncates terms to 10 characters and filters out terms
-    shorter than 2 characters.
-
-    Args:
-        request: HTTP request containing:
-            - term: Search query string (URL-encoded)
-            - doctype: Optional comma-separated list of document types
-
-    Returns:
-        JSON response containing list of matching documents with names,
-        dates, UUIDs, and other metadata.
-    """
-    # Limit each search term to 10 characters, since we've configured the
-    # Elasticsearch ngram_tokenizer to only analyze tokens up to that many
-    # characters (see mappings.json). Otherwise no results will be returned
-    # for longer terms.
-    #
-    # Remove search terms less than 2 characters in length, since the
-    # ngram_tokenizer generates tokens that are 2 characters or longer.
-    # Therefore shorter tokens won't generate a match based on the ES query used.
-    #
-    # Search terms are separated by spaces.
-    search_term = unquote(request.GET["term"].lower())
-    search_term = " ".join([x[:10] for x in re.split(r"\s+", search_term) if len(x) > 1])
-
-    doctypes = get_doctypes_from_request(request)
-
-    user = cast(User, request.user)
-    matches = search_names_es(user, search_term, doctypes)
-    return JsonResponse(matches, safe=False)
-
-
-def search_names_es(user: User, search_term: str, doctypes: list[str]) -> list[dict[str, Any]]:
-    """Search Elasticsearch for objects based on name or equivalent fields.
-
-    Performs autocomplete-style search across name, title, artist, and
-    question fields. Supports filtering by document type and special
-    handling for image and media content types.
-
-    Args:
-        user: The User whose objects to search.
-        search_term: The search query string.
-        doctypes: List of document types to filter by. Special values:
-            - "image": Matches content_type "image/*"
-            - "media": Matches content_type "image/*" or "video/*"
-
-    Returns:
-        A list of dictionaries, each containing:
-            - name: Display name for the object
-            - date: Formatted date string
-            - doctype: Document type
-            - note: Optional note field
-            - uuid: Object UUID
-            - id: Object UUID (same as uuid)
-            - important: Importance score
-            - url: Object URL
-            - link: Detail page URL
-            - score: Search relevance score
-            - cover_url: Optional cover image URL
-            - type: Optional type indicator ("blob" or "bookmark")
-    """
-
-    es = get_elasticsearch_connection(host=settings.ELASTICSEARCH_ENDPOINT)
-
-    search_object: dict[str, Any] = {
-        "query": {
-            "function_score": {
-                "field_value_factor": {
-                    "field": "importance",
-                    "missing": 1
-                },
-                "query": {
-                    "bool": {
-                        "must": [
-                            {
-                                "term": {
-                                    "user_id": user.id
-                                }
-                            },
-                            {
-                                "bool": {
-                                    "should": [
-                                        {
-                                            "match": {
-                                                "name.autocomplete": {
-                                                    "query": search_term,
-                                                    "operator": "and"
-                                                }
-                                            }
-                                        },
-                                        {
-                                            "match": {
-                                                "question.autocomplete": {
-                                                    "query": search_term,
-                                                    "operator": "and"
-                                                }
-                                            }
-                                        },
-                                        {
-                                            "match": {
-                                                "title.autocomplete": {
-                                                    "query": search_term,
-                                                    "operator": "and"
-                                                }
-                                            }
-                                        },
-                                        {
-                                            "match": {
-                                                "artist.autocomplete": {
-                                                    "query": search_term,
-                                                    "operator": "and"
-                                                }
-                                            }
-                                        }
-                                    ]
-                                }
-                            }
-                        ]
-                    }
-                }
-            }
-        },
-        "highlight": {
-            "fields": {
-                "name.autocomplete": {},
-                "artist.autocomplete": {}
-            }
-        },
-        "from_": 0,
-        "size": SEARCH_LIMIT,
-        "_source": get_elasticsearch_source_fields()
-    }
-
-    if len(doctypes) > 0:
-
-        if "image" in doctypes:
-            # 'image' isn't an official ES doctype, so treat this
-            #  as a search for a content type that matches an image.
-            doctypes.remove("image")
-            search_object["query"]["function_score"]["query"]["bool"]["must"].append(
-                {
-                    "bool": {
-                        "should": [
-                            {
-                                "wildcard": {
-                                    "content_type": {
-                                        "value": "image/*",
-                                    }
-                                }
-                            }
-                        ]
-                    }
-                }
-            )
-        elif "media" in doctypes:
-            # 'media' isn't an official ES doctype, so treat this
-            #  as a search for a content type that matches either
-            #  an image or a video
-            doctypes.remove("media")
-            search_object["query"]["function_score"]["query"]["bool"]["must"].append(
-                {
-                    "bool": {
-                        "should": [
-                            {
-                                "wildcard": {
-                                    "content_type": {
-                                        "value": "image/*",
-                                    }
-                                }
-                            },
-                            {
-                                "wildcard": {
-                                    "content_type": {
-                                        "value": "video/*",
-                                    }
-                                }
-                            }
-                        ]
-                    }
-                }
-            )
-
-        search_object["query"]["function_score"]["query"]["bool"]["must"].append(
-            {
-                "bool": {
-                    "should": [
-                        {
-                            "term": {
-                                "doctype": x
-                            }
-                        }
-                        for x in doctypes
-                    ]
-                }
-            }
-        )
-
-    results = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
-    matches = []
-
-    cache_checker = is_cached()
-
-    for match in results["hits"]["hits"]:
-        doctype_pretty = get_doctype(match)
-        name = get_name(doctype_pretty, match["_source"])
-
-        if not cache_checker(doctype_pretty, name):
-            if "date_unixtime" in match["_source"] and match["_source"]["date_unixtime"] is not None:
-                date = datetime.datetime.fromtimestamp(
-                    int(match["_source"]["date_unixtime"])
-                ).strftime(
-                    "%b %Y"
-                )
-            else:
-                date = ""
-            match_dict = {
-                "name": name,
-                "date": date,
-                "doctype": doctype_pretty,
-                "note": match["_source"].get("note", ""),
-                "uuid": match["_source"].get("uuid"),
-                "id": match["_source"].get("uuid"),
-                "important": match["_source"].get("importance"),
-                "url": match["_source"].get("url", None),
-                "link": get_link(doctype_pretty.lower(), match["_source"]),
-                "score": match["_score"]
-            }
-            matches.append(match_dict)
-            if doctype_pretty in ["Blob", "Book", "Document"]:
-                matches[-1]["cover_url"] = Blob.get_cover_url_static(
-                    match["_source"].get("uuid"),
-                    match["_source"].get("filename"),
-                    size="small"
-                )
-                matches[-1]["type"] = "blob"
-            if doctype_pretty == "Bookmark":
-                matches[-1]["cover_url"] = Bookmark.thumbnail_url_static(
-                    match["_source"].get("uuid"),
-                    match["_source"].get("url"),
-                )
-                matches[-1]["type"] = "bookmark"
-            if doctype_pretty == "Collection":
-                matches[-1]["cover_url"] = f"{settings.COVER_URL}collections/{match['_source'].get('uuid')}.jpg"
-                matches[-1]["description"] = match["_source"].get("description", "")
-
-    return matches
-
-
-@api_view(["GET"])
-@permission_classes([IsAuthenticated])
-def search_music(request: Request) -> JsonResponse:
-    """API endpoint for searching music (songs, artists, albums).
-
-    Performs music-specific searches with support for filtering by artist,
-    song title, or album. When searching by album, returns all songs in
-    track order.
-
-    Args:
-        request: REST framework request containing query parameters:
-            - artist: Optional artist name to filter by
-            - song: Optional song title to filter by
-            - album: Optional album title to filter by
-
-    Returns:
-        JSON response containing list of song dictionaries with:
-            - artist: Artist name
-            - uuid: Song UUID
-            - title: Song title
-            - track: Optional track number (for album searches)
-    """
-    limit = 10
-
-    artist = None
-    song = None
-    album = None
-
-    if "artist" in request.query_params:
-        artist = request.query_params["artist"]
-    if "song" in request.query_params:
-        song = request.query_params["song"]
-    if "album" in request.query_params:
-        album = request.query_params["album"]
-
-    es = get_elasticsearch_connection(host=settings.ELASTICSEARCH_ENDPOINT)
-
-    search_object: dict[str, Any] = {
-        "query": {
-            "function_score": {
-                "functions": [
-                    {
-                        "field_value_factor": {
-                            "field": "importance",
-                            "missing": 1
-                        }
-                    }
-                ],
-                "query": {
-                    "bool": {
-                        "must": [
-                            {
-                                "term": {
-                                    "user_id": request.user.id
-                                }
-                            }
-                        ]
-                    }
-                }
-            }
-        },
-        "from_": 0,
-        "size": limit,
-        "_source": get_elasticsearch_source_fields()
-    }
-
-    constraints = search_object["query"]["function_score"]["query"]["bool"]["must"]
-    if song:
-        constraints.append(
-            {
-                "bool": {
-                    "must": [
-                        {
-                            "match": {
-                                "title.autocomplete": {
-                                    "query": song,
-                                    "operator": "and"
-                                }
-                            }
-                        },
-                        {
-                            "term": {
-                                "doctype": "song"
-                            }
-                        }
-                    ]
-                }
-            }
-        )
-        search_object["query"]["function_score"]["functions"].append({"random_score": {}})
-    if artist:
-        constraints.append(
-            {
-                "bool": {
-                    "must": [
-                        {
-                            "match": {
-                                "artist.autocomplete": {
-                                    "query": artist,
-                                    "operator": "and"
-                                }
-                            }
-                        }
-                    ]
-                }
-            }
-        )
-        search_object["query"]["function_score"]["functions"].append({"random_score": {}})
-    if album:
-        album_info = Album.objects.filter(title__icontains=album)
-        if album_info:
-            constraints.append(
-                {
-                    "bool": {
-                        "must": [
-                            {
-                                "match": {
-                                    "album_uuid": {
-                                        "query": album_info[0].uuid,
-                                        "operator": "and"
-                                    }
-                                }
-                            }
-                        ]
-                    }
-                }
-            )
-            search_object["sort"] = {"track": {"order": "asc"}}
-            search_object["size"] = 1000  # Get all songs from the album
-
-    results = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
-
-    return JsonResponse(
-        [
-            {
-                "artist": x["_source"]["artist"],
-                "uuid": x["_source"]["uuid"],
-                "title": x["_source"]["title"],
-                "track": x["_source"].get("track", None)
-            }
-            for x in results["hits"]["hits"]
-        ],
-        safe=False
-    )

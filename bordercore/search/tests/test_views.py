@@ -15,7 +15,7 @@ pytestmark = [pytest.mark.django_db]
 django.setup()
 
 
-@patch("search.views.get_elasticsearch_connection")
+@patch("search.services.get_elasticsearch_connection")
 def test_notes_list(mock_get_es, auto_login_user):
 
     _, client = auto_login_user()

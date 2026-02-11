@@ -4,14 +4,14 @@ URL configuration for the Search app.
 
 from django.urls import path, re_path
 
-from . import views
+from . import api, views
 
 app_name = "search"
 
 urlpatterns = [
     path(
         route="tagstitle/",
-        view=views.search_tags_and_names,
+        view=api.search_tags_and_names,
         name="search_tags_and_names"
     ),
     re_path(
@@ -41,7 +41,7 @@ urlpatterns = [
     ),
     path(
         route="names",
-        view=views.search_names,
+        view=api.search_names,
         name="search_names"
     ),
 ]

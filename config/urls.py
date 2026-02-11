@@ -16,7 +16,7 @@ from collection.views import get_images
 from homepage.views import handler403, handler404, handler500, robots_txt
 from lib.services import extract_text, site_stats
 from music.views import mark_song_as_listened_to
-from search.views import search_music
+from search.api import search_music
 
 admin.autodiscover()
 
