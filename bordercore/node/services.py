@@ -8,6 +8,7 @@ from typing import Any
 from uuid import UUID
 
 from django.apps import apps
+from django.db import transaction
 from django.db.models import Count
 from django.db.models.query import QuerySet
 
@@ -58,15 +59,16 @@ def delete_note_from_nodes(user: Any, note_uuid: UUID | str) -> None:
 
     Node = apps.get_model("node", "Node")
 
-    for node in Node.objects.filter(user=user):
-        changed = False
-        layout = node.layout
-        for i, col in enumerate(layout):
-            temp_layout = [x for x in col if "uuid" not in x or x["uuid"] != str(note_uuid)]
-            if layout[i] != temp_layout:
-                changed = True
-            layout[i] = temp_layout
+    with transaction.atomic():
+        for node in Node.objects.filter(user=user):
+            changed = False
+            layout = node.layout
+            for i, col in enumerate(layout):
+                temp_layout = [x for x in col if "uuid" not in x or x["uuid"] != str(note_uuid)]
+                if layout[i] != temp_layout:
+                    changed = True
+                layout[i] = temp_layout
 
-        if changed:
-            node.layout = layout
-            node.save()
+            if changed:
+                node.layout = layout
+                node.save()

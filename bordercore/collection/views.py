@@ -10,6 +10,7 @@ from rest_framework.decorators import api_view
 
 from django.conf import settings
 from django.contrib import messages
+from django.db import transaction
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
@@ -446,20 +447,21 @@ def create_blob(request: HttpRequest) -> JsonResponse:
 
     else:
 
-        blob = Blob.objects.create(
-            user=user,
-            date=timezone.now().date().strftime("%Y-%m-%d")
-        )
+        with transaction.atomic():
+            blob = Blob.objects.create(
+                user=user,
+                date=timezone.now().date().strftime("%Y-%m-%d")
+            )
 
-        blob.file_modified = str(int(timezone.now().timestamp()))  # type: ignore[attr-defined]
-        blob.file.save(uploaded_file.name, BytesIO(file_contents))
-        blob.sha1sum = sha1sum
-        blob.save()
+            blob.file_modified = str(int(timezone.now().timestamp()))  # type: ignore[attr-defined]
+            blob.file.save(uploaded_file.name, BytesIO(file_contents))
+            blob.sha1sum = sha1sum
+            blob.save()
+
+            collection = Collection.objects.get(uuid=collection_uuid, user=user)
+            collection.add_object(blob)
 
         blob.index_blob()
-
-        collection = Collection.objects.get(uuid=collection_uuid, user=user)
-        collection.add_object(blob)
 
         response = {
             "status": "OK",

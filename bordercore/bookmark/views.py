@@ -94,9 +94,8 @@ class BookmarkFormValidMixin(ModelFormMixin):
 
         new_object = bookmark.pk is None
 
-        bookmark.save()
-
         with transaction.atomic():
+            bookmark.save()
 
             for tag in bookmark.tags.all():
                 s = TagBookmark.objects.get(tag=tag, bookmark=bookmark)

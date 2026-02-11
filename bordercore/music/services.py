@@ -19,6 +19,7 @@ from mutagen.mp3 import MP3
 
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.db import transaction
 from django.core.paginator import Page, Paginator
 from django.db.models import Count, QuerySet, Sum
 from django.db.models.functions import Coalesce
@@ -413,48 +414,49 @@ def create_album_from_zipfile(
     """
     info = scan_zipfile(zipfile_obj, include_song_data=True)
 
-    artist, _ = Artist.objects.get_or_create(name=artist_name, user=user)
+    with transaction.atomic():
+        artist, _ = Artist.objects.get_or_create(name=artist_name, user=user)
 
-    album = Song.get_or_create_album(
-        user,
-        {
-            "album_name": info["song_info"][0]["album_name"],
-            "artist": artist,
-            "compilation": False,
-            "year": info["song_info"][0]["year"],
-        }
-    )
-
-    for song_info in info["song_info"]:
-        song = Song(
-            artist=artist,
-            album=album,
-            length=song_info["length"],
-            source=song_source,
-            title=song_info["title"],
-            track=song_info["track"],
-            user=user,
-            year=song_info["year"],
+        album = Song.get_or_create_album(
+            user,
+            {
+                "album_name": info["song_info"][0]["album_name"],
+                "artist": artist,
+                "compilation": False,
+                "year": info["song_info"][0]["year"],
+            }
         )
-        # Edit the title and add a note if the user made any changes
-        change = (changes or {}).get(str(song_info.get("track")), {})
-        note = change.get("note")
-        if note:
-            song.note = note
-        title_edited = change.get("title")
-        if title_edited:
-            song.title = title_edited
-        song.save()
 
-        if tags:
-            tag_objs = [
-                Tag.objects.get_or_create(name=t.strip(), user=user)[0]
-                for t in tags.split(",") if t.strip()
-            ]
-            song.tags.set(tag_objs)
+        for song_info in info["song_info"]:
+            song = Song(
+                artist=artist,
+                album=album,
+                length=song_info["length"],
+                source=song_source,
+                title=song_info["title"],
+                track=song_info["track"],
+                user=user,
+                year=song_info["year"],
+            )
+            # Edit the title and add a note if the user made any changes
+            change = (changes or {}).get(str(song_info.get("track")), {})
+            note = change.get("note")
+            if note:
+                song.note = note
+            title_edited = change.get("title")
+            if title_edited:
+                song.title = title_edited
+            song.save()
 
-        # Upload the song and its artwork to S3
-        song.upload_song_media_to_s3(song_info["data"])
+            if tags:
+                tag_objs = [
+                    Tag.objects.get_or_create(name=t.strip(), user=user)[0]
+                    for t in tags.split(",") if t.strip()
+                ]
+                song.tags.set(tag_objs)
+
+            # Upload the song and its artwork to S3
+            song.upload_song_media_to_s3(song_info["data"])
 
     if album is not None:
         return album.uuid
