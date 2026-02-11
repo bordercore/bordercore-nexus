@@ -187,7 +187,7 @@
 .bookmark-grid-header,
 .bookmark-grid-row {
   display: grid;
-  align-items: center; // align cells vertically
+  align-items: stretch; // allow cells to fill height
   grid-template-columns: 30px 145px 150px 1fr 50px; // drag, date, thumbnail, content, actions
 }
 
@@ -303,9 +303,12 @@
 
     .date-cell,
     .thumbnail-cell,
-    .content-cell,
-    .actions-cell {
+    .content-cell {
       align-items: center; // align other cells vertically
+    }
+
+    .actions-cell {
+      align-items: flex-start; // top-align dropdown
     }
   }
 

@@ -62,6 +62,7 @@ if (container) {
     math_support: false,
   });
 
+
   // Read data attributes from container
   const blobUuid = container.dataset.blobUuid || undefined;
   const blobSha1sum = container.dataset.blobSha1sum || undefined;
