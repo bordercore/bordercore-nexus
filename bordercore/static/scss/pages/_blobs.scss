@@ -116,24 +116,33 @@
   padding: 1rem;
   background-color: var(--surface2);
   border-radius: var(--border-radius1);
+  list-style: none;
 
-  .tree-item {
-    padding: 0.5rem;
-    border-radius: var(--border-radius1);
+  ul {
+    list-style: none;
+  }
+
+  .tree-node {
+    display: flex;
+    align-items: baseline;
+    padding: 0.25rem 0;
+  }
+
+  .tree-arrow {
+    display: inline-block;
+    width: 1rem;
+    flex-shrink: 0;
     cursor: pointer;
-    transition: background-color 0.2s ease;
+    transition: transform 0.2s ease;
+    user-select: none;
 
-    &:hover {
-      background-color: var(--hover-bg);
-    }
-
-    &.active {
-      background-color: var(--selected-bg);
+    &.open {
+      transform: rotate(90deg);
     }
   }
 
-  .tree-children {
-    padding-left: 1.5rem;
+  .tree-leaf {
+    padding-left: 1rem;
   }
 }
 

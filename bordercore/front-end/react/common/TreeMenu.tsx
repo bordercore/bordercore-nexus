@@ -12,7 +12,7 @@ interface TreeMenuProps {
   initialOpen?: boolean;
 }
 
-export function TreeMenu({ item, depth = 1, initialOpen = true }: TreeMenuProps) {
+export function TreeMenu({ item, depth = 1, initialOpen = false }: TreeMenuProps) {
   const [isOpen, setIsOpen] = useState(initialOpen);
 
   const isFolder = item.nodes && item.nodes.length > 0;
@@ -26,14 +26,19 @@ export function TreeMenu({ item, depth = 1, initialOpen = true }: TreeMenuProps)
   return (
     <li className={depth === 0 ? "hide-list-element" : ""}>
       {depth > 0 && (
-        <div className={`text-break ${isFolder ? "tree-folder" : ""}`} onClick={toggle}>
+        <div className={`text-break tree-node ${isFolder ? "tree-folder" : "tree-leaf"}`}>
+          {isFolder && (
+            <span className={`tree-arrow ${isOpen ? "open" : ""}`} onClick={toggle}>
+              &#9656;
+            </span>
+          )}
           <a href={`#section_${item.id}`}>{item.label}</a>
         </div>
       )}
       {isFolder && isOpen && (
         <ul className="mb-0 ms-2">
           {item.nodes.map((child, index) => (
-            <TreeMenu key={index} item={child} depth={depth + 1} initialOpen={depth < 0} />
+            <TreeMenu key={index} item={child} depth={depth + 1} />
           ))}
         </ul>
       )}
@@ -54,9 +59,9 @@ export function TreeMenuRoot({ tree }: TreeMenuRootProps) {
   }
 
   return (
-    <ul className="tree-menu mb-0 ps-5">
+    <ul className="tree-menu mb-0 ps-4">
       {tree.nodes.map((node, index) => (
-        <TreeMenu key={index} item={node} depth={1} initialOpen={true} />
+        <TreeMenu key={index} item={node} depth={1} />
       ))}
     </ul>
   );

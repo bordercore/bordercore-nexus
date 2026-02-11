@@ -471,7 +471,7 @@ export function BlobDetailPage({
 
           {/* Tree menu */}
           {tree.nodes.length > 0 && (
-            <div className="card-body backdrop-filter">
+            <div className="card-body backdrop-filter mb-gutter">
               <TreeMenuRoot tree={tree} />
             </div>
           )}
