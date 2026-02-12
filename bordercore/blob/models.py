@@ -13,7 +13,6 @@ from __future__ import annotations
 import datetime
 import hashlib
 import io
-import json
 import logging
 import re
 import uuid
@@ -24,7 +23,6 @@ from typing import Any
 from urllib.parse import quote_plus, urlparse
 from uuid import UUID
 
-import boto3
 import humanize
 from PIL import Image
 from storages.backends.s3boto3 import S3Boto3Storage
@@ -600,11 +598,10 @@ class Blob(TimeStampedModel):
                 # This is set in __init__
                 filename_orig = getattr(self, "__original_filename")
 
-                key = f"{self.parent_dir}/{filename_orig}"
-                log.info("Blob file changed detected. Deleting old file: %s", key)
+                log.info("Blob file changed detected. Deleting old file: %s/%s", self.parent_dir, filename_orig)
                 log.info("%s != %s", sha1sum_old, self.sha1sum)
-                s3 = boto3.resource("s3")
-                s3.Object(settings.AWS_STORAGE_BUCKET_NAME, key).delete()
+                from blob.services import delete_blob_s3_file
+                delete_blob_s3_file(self.parent_dir, filename_orig)
 
         super().save(*args, **kwargs)
 
@@ -631,23 +628,12 @@ class Blob(TimeStampedModel):
         if not hasattr(self, "file_modified") or self.file_modified is None:
             return
 
-        s3 = boto3.resource("s3")
         key = self.s3_key
         if key is None:
             return
 
-        s3_object = s3.Object(settings.AWS_STORAGE_BUCKET_NAME, key)
-
-        s3_object.metadata.update({"file-modified": str(self.file_modified)})
-
-        # Note: since "Content-Type" is system-defined metadata, it will be reset
-        #  to "binary/octent-stream" if you don't explicitly specify it.
-        s3_object.copy_from(
-            ContentType=s3_object.content_type,
-            CopySource={"Bucket": settings.AWS_STORAGE_BUCKET_NAME, "Key": key},
-            Metadata=s3_object.metadata,
-            MetadataDirective="REPLACE"
-        )
+        from blob.services import update_blob_s3_metadata
+        update_blob_s3_metadata(key, str(self.file_modified))
 
     @staticmethod
     def related_objects(app: str, model: str, base_object: Any) -> list[dict[str, Any]]:
@@ -934,42 +920,27 @@ class Blob(TimeStampedModel):
         Args:
             image: Image bytes (JPEG format).
         """
-        s3_client = boto3.client("s3")
-
-        key = f"blobs/{self.uuid}/cover-large.jpg"
+        # Large cover image
         fo = io.BytesIO(image)
-        width, height = Image.open(fo).size
+        large_width, large_height = Image.open(fo).size
         fo.seek(0)
 
-        s3_client.upload_fileobj(
+        # Small cover image (128x128 thumbnail)
+        fo_small = io.BytesIO(image)
+        cover_image_small = Image.open(fo_small)
+        cover_image_small.thumbnail((128, 128))
+        small_width, small_height = cover_image_small.size
+        buf_small = io.BytesIO()
+        cover_image_small.save(buf_small, "jpeg")
+        buf_small.seek(0)
+
+        from blob.services import upload_blob_cover_images
+        upload_blob_cover_images(
+            str(self.uuid),
             fo,
-            settings.AWS_STORAGE_BUCKET_NAME,
-            key,
-            ExtraArgs={"Metadata": {"image-width": str(width),
-                                    "image-height": str(height),
-                                    "cover-image": "Yes"},
-                       "ContentType": "image/jpeg"}
-        )
-
-        key = f"blobs/{self.uuid}/cover.jpg"
-        fo = io.BytesIO(image)
-        cover_image_small = Image.open(fo)
-
-        size = 128, 128
-        cover_image_small.thumbnail(size)
-        width, height = cover_image_small.size
-        fo = io.BytesIO()
-        cover_image_small.save(fo, "jpeg")
-        fo.seek(0)
-
-        s3_client.upload_fileobj(
-            fo,
-            settings.AWS_STORAGE_BUCKET_NAME,
-            key,
-            ExtraArgs={"Metadata": {"image-width": str(width),
-                                    "image-height": str(height),
-                                    "cover-image": "Yes"},
-                       "ContentType": "image/jpeg"}
+            buf_small,
+            (large_width, large_height),
+            (small_width, small_height),
         )
 
     def update_page_number(self, page_number: int) -> None:
@@ -987,39 +958,12 @@ class Blob(TimeStampedModel):
             self.data["pdf_page_number"] = page_number
         self.save()
 
-        message = {
-            "Records": [
-                {
-                    "eventName": "ObjectCreated: Put",
-                    "s3": {
-                        "bucket": {
-                            "name": settings.AWS_STORAGE_BUCKET_NAME,
-                        },
-                        "object": {
-                            "key": f"blobs/{self.uuid}/{self.file}",
-                            "page_number": page_number
-                        }
-                    }
-                }
-            ]
-        }
-
-        payload = {
-            "Records": [
-                {
-                    "Sns": {
-                        "Message": json.dumps(message)
-                    }
-                }
-            ]
-        }
-
-        client = boto3.client("lambda")
-
-        client.invoke(
-            FunctionName="CreateThumbnail",
-            InvocationType="Event",
-            Payload=json.dumps(payload)
+        from blob.services import invoke_create_thumbnail
+        invoke_create_thumbnail(
+            settings.AWS_STORAGE_BUCKET_NAME,
+            str(self.uuid),
+            str(self.file),
+            page_number,
         )
 
     def rename_file(self, filename: str) -> None:
@@ -1035,14 +979,8 @@ class Blob(TimeStampedModel):
             ValidationError: If the S3 operation fails.
         """
         try:
-            s3 = boto3.resource("s3")
-            key_root = f"{settings.MEDIA_ROOT}/{self.uuid}"
-            s3.Object(
-                settings.AWS_STORAGE_BUCKET_NAME, f"{key_root}/{filename}"
-            ).copy_from(
-                CopySource=f"{settings.AWS_STORAGE_BUCKET_NAME}/{key_root}/{self.file.name}"
-            )
-            s3.Object(settings.AWS_STORAGE_BUCKET_NAME, f"{key_root}/{self.file.name}").delete()
+            from blob.services import rename_blob_s3_file
+            rename_blob_s3_file(str(self.uuid), self.file.name, filename)
         except Exception as e:
             raise ValidationError(f"Error renaming file: {e}") from e
 
@@ -1060,27 +998,8 @@ class Blob(TimeStampedModel):
             file_changed: Whether the file content has changed. Defaults to True.
             new_blob: Whether this is a newly created blob. Defaults to True.
         """
-        client = boto3.client("sns")
-
-        message = {
-            "Records": [
-                {
-                    "s3": {
-                        "bucket": {
-                            "name": settings.AWS_STORAGE_BUCKET_NAME
-                        },
-                        "uuid": str(self.uuid),
-                        "file_changed": file_changed,
-                        "new_blob": new_blob
-                    }
-                }
-            ]
-        }
-
-        client.publish(
-            TopicArn=settings.INDEX_BLOB_TOPIC_ARN,
-            Message=json.dumps(message),
-        )
+        from blob.services import publish_index_blob
+        publish_index_blob(str(self.uuid), file_changed, new_blob)
 
     def get_tree(self) -> list[dict[str, Any]]:
         """Parse markdown headings from content and build a hierarchical tree structure.
@@ -1238,12 +1157,8 @@ class Blob(TimeStampedModel):
             # Delete from S3
             if has_file and directory:
                 try:
-                    s3 = boto3.resource("s3")
-                    my_bucket = s3.Bucket(settings.AWS_STORAGE_BUCKET_NAME)
-
-                    for fn in my_bucket.objects.filter(Prefix=directory):
-                        log.info("Deleting blob %s", fn)
-                        fn.delete()
+                    from blob.services import delete_blob_s3_directory
+                    delete_blob_s3_directory(blob_uuid)
                 except Exception as e:
                     log.error("Failed to delete blob %s from S3: %s", blob_uuid, e)
 

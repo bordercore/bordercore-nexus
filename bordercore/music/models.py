@@ -11,7 +11,6 @@ import uuid
 from datetime import timedelta
 from typing import Any, Optional
 
-import boto3
 import humanize
 from mutagen.mp3 import MP3
 
@@ -28,6 +27,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
+from lib.aws import s3_delete_object, s3_upload_fileobj
 from lib.mixins import SortOrderMixin, TimeStampedModel
 from lib.util import remove_non_ascii_characters
 from search.services import delete_document, index_document
@@ -265,9 +265,7 @@ class Song(TimeStampedModel):
 
             # Delete from S3
             try:
-                boto3.client("s3").delete_object(
-                    Bucket=settings.AWS_BUCKET_NAME_MUSIC, Key=f"songs/{song_uuid}"
-                )
+                s3_delete_object(settings.AWS_BUCKET_NAME_MUSIC, f"songs/{song_uuid}")
             except Exception as e:
                 log.error("Failed to delete song %s from S3: %s", song_uuid, e)
 
@@ -388,22 +386,15 @@ class Song(TimeStampedModel):
         Args:
             song_bytes: The song data as bytes.
         """
-        s3_client = boto3.client("s3")
-
-        key = f"songs/{self.uuid}"
-        fo = io.BytesIO(song_bytes)
-
         # Note: S3 Metadata cannot contain non ASCII characters
-        s3_client.upload_fileobj(
-            fo,
+        s3_upload_fileobj(
+            io.BytesIO(song_bytes),
             settings.AWS_BUCKET_NAME_MUSIC,
-            key,
-            ExtraArgs={
-                "Metadata": {
-                    "artist": remove_non_ascii_characters(self.artist.name, default="Artist"),
-                    "title": remove_non_ascii_characters(self.title, default="Title")
-                }
-            }
+            f"songs/{self.uuid}",
+            metadata={
+                "artist": remove_non_ascii_characters(self.artist.name, default="Artist"),
+                "title": remove_non_ascii_characters(self.title, default="Title"),
+            },
         )
 
         if not self.album:
@@ -414,11 +405,11 @@ class Song(TimeStampedModel):
         if getattr(audio, "tags", None):
             apics = audio.tags.getall("APIC") or []
             if apics:
-                s3_client.upload_fileobj(
+                s3_upload_fileobj(
                     io.BytesIO(apics[0].data),
                     settings.AWS_BUCKET_NAME_MUSIC,
                     f"album_artwork/{self.album.uuid}",
-                    ExtraArgs={"ContentType": "image/jpeg"},
+                    content_type="image/jpeg",
                 )
 
 

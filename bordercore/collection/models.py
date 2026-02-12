@@ -9,14 +9,11 @@ thumbnails, and paginated browsing of their contents.
 
 from __future__ import unicode_literals
 
-import json
 import logging
 import re
 import uuid
 from random import randint
 from typing import TYPE_CHECKING, Any
-
-import boto3
 
 from django.apps import apps
 from django.conf import settings
@@ -33,6 +30,7 @@ if TYPE_CHECKING:
     from blob.models import Blob
     from bookmark.models import Bookmark
 
+from collection.services import delete_collection_thumbnail, publish_create_collection_thumbnail
 from lib.exceptions import DuplicateObjectError
 from lib.mixins import SortOrderMixin, TimeStampedModel
 from search.services import delete_document, index_document
@@ -218,8 +216,7 @@ class Collection(TimeStampedModel):
 
         def cleanup() -> None:
             try:
-                s3 = boto3.resource("s3")
-                s3.Object(settings.AWS_STORAGE_BUCKET_NAME, f"collections/{collection_uuid}.jpg").delete()
+                delete_collection_thumbnail(collection_uuid)
             except Exception as e:
                 log.error("Failed to delete collection %s thumbnail from S3: %s", collection_uuid, e)
             try:
@@ -402,25 +399,7 @@ class Collection(TimeStampedModel):
         based on the collection's current contents.
         """
         # Generate a fresh cover image for the collection
-        client = boto3.client("sns")
-
-        message = {
-            "Records": [
-                {
-                    "s3": {
-                        "bucket": {
-                            "name": settings.AWS_STORAGE_BUCKET_NAME,
-                        },
-                        "collection_uuid": str(self.uuid)
-                    }
-                }
-            ]
-        }
-
-        client.publish(
-            TopicArn=settings.CREATE_COLLECTION_THUMBNAIL_TOPIC_ARN,
-            Message=json.dumps(message),
-        )
+        publish_create_collection_thumbnail(str(self.uuid))
 
 
 class CollectionObject(SortOrderMixin):

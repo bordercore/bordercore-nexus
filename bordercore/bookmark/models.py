@@ -7,14 +7,12 @@ thumbnails, indexing in Elasticsearch, and managing relationships with tags
 and collections.
 """
 
-import json
 import logging
 import re
 import uuid
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
-import boto3
 import isodate
 import requests
 
@@ -27,7 +25,6 @@ from django.db import models, transaction
 from django.db.models import JSONField
 from django.db.models.signals import m2m_changed
 
-from lib.constants import S3_CACHE_MAX_AGE_SECONDS
 from lib.mixins import TimeStampedModel
 from lib.time_utils import convert_seconds
 from search.services import delete_document, index_document
@@ -178,14 +175,8 @@ class Bookmark(TimeStampedModel):
 
             # Delete cover images from S3
             try:
-                s3 = boto3.resource("s3")
-
-                for key in [
-                    f"bookmarks/{bookmark_uuid}.png",
-                    f"bookmarks/{bookmark_uuid}-small.png",
-                    f"bookmarks/{bookmark_uuid}.jpg",
-                ]:
-                    s3.Object(settings.AWS_STORAGE_BUCKET_NAME, key).delete()
+                from bookmark.services import delete_bookmark_cover_images
+                delete_bookmark_cover_images(bookmark_uuid)
             except Exception as e:
                 log.error("Failed to delete bookmark %s cover images from S3: %s", bookmark_uuid, e)
 
@@ -224,25 +215,8 @@ class Bookmark(TimeStampedModel):
             self.generate_youtube_cover_image()
             return
 
-        sns_topic = settings.SNS_TOPIC_ARN
-        client = boto3.client("sns")
-
-        message = {
-            "url": self.url,
-            "s3key": f"bookmarks/{self.uuid}.png",
-            "puppeteer": {
-                "screenshot": {
-                    "type": "jpeg",
-                    "quality": 50,
-                    "omitBackground": False
-                }
-            }
-        }
-
-        client.publish(
-            TopicArn=sns_topic,
-            Message=json.dumps(message),
-        )
+        from bookmark.services import publish_bookmark_screenshot
+        publish_bookmark_screenshot(self.url, str(self.uuid))
 
     def generate_youtube_cover_image(self) -> None:
         """Generate cover image for a YouTube bookmark using the YouTube API.
@@ -273,18 +247,9 @@ class Bookmark(TimeStampedModel):
             except KeyError as e:
                 log.warning("Can't parse duration: %s", e)
 
-            s3_resource = boto3.resource("s3")
-            bucket_name = settings.AWS_STORAGE_BUCKET_NAME
-
             r = requests.get(video_info["items"][0]["snippet"]["thumbnails"]["medium"]["url"], timeout=10)
-            s3_object = s3_resource.Object(bucket_name, f"bookmarks/{self.uuid}.jpg")
-            s3_object.put(
-                Body=r.content,
-                ContentType="image/jpeg",
-                ACL="public-read",
-                CacheControl=f"max-age={S3_CACHE_MAX_AGE_SECONDS}",
-                Metadata={"cover-image": "Yes"}
-            )
+            from bookmark.services import upload_youtube_thumbnail
+            upload_youtube_thumbnail(str(self.uuid), r.content)
 
     def index_bookmark(self) -> None:
         """Index this bookmark in Elasticsearch."""
@@ -373,20 +338,8 @@ class Bookmark(TimeStampedModel):
         This invokes the SnarfFavicon Lambda function asynchronously to extract
         the favicon from the bookmark's URL and store it in S3.
         """
-        client = boto3.client("lambda")
-
-        payload = {
-            "url": self.url,
-            "parse_domain": True
-        }
-
-        client.invoke(
-            ClientContext="MyApp",
-            FunctionName="SnarfFavicon",
-            InvocationType="Event",
-            LogType="Tail",
-            Payload=json.dumps(payload)
-        )
+        from bookmark.services import invoke_snarf_favicon
+        invoke_snarf_favicon(self.url)
 
     def get_favicon_img_tag(self, size: int = 32) -> str:
         """Return an HTML img tag for this bookmark's favicon.

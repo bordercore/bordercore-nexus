@@ -11,7 +11,6 @@ import uuid
 from datetime import timedelta
 from typing import Any, Union, cast
 
-import boto3
 import humanize
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -42,7 +41,9 @@ from lib.decorators import validate_post_data
 from lib.mixins import FormRequestMixin
 from lib.time_utils import convert_seconds
 from music.services import (create_album_from_zipfile, get_id3_info,
-                            get_song_tags, scan_zipfile)
+                            get_song_tags, list_artist_image_keys,
+                            scan_zipfile, upload_album_artwork,
+                            upload_artist_image)
 from music.services import search as search_service
 
 from .forms import AlbumForm, PlaylistForm, SongForm
@@ -518,16 +519,8 @@ class AlbumUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView):
         Raises:
             Exception: If S3 upload fails.
         """
-        s3_client = boto3.client("s3")
-
-        key = f"album_artwork/{self.object.uuid}"
         cover_image = cast(UploadedFile, self.request.FILES["cover_image"])
-        s3_client.upload_fileobj(
-            cover_image.file,
-            settings.AWS_BUCKET_NAME_MUSIC,
-            key,
-            ExtraArgs={"ContentType": "image/jpeg"}
-        )
+        upload_album_artwork(str(self.object.uuid), cover_image.file, "image/jpeg")
 
 
 class SongUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView):
@@ -1385,21 +1378,9 @@ def update_artist_image(request: HttpRequest) -> JsonResponse:
     get_object_or_404(Artist, uuid=artist_uuid, user=request.user)
     image = cast(UploadedFile, request.FILES["image"])
 
-    s3_client = boto3.client("s3")
+    upload_artist_image(artist_uuid, image.file)
 
-    key = f"artist_images/{artist_uuid}"
-    s3_client.upload_fileobj(
-        image.file,
-        settings.AWS_BUCKET_NAME_MUSIC,
-        key,
-        ExtraArgs={"ContentType": "image/jpeg"}
-    )
-
-    response = {
-        "status": "OK"
-    }
-
-    return JsonResponse(response)
+    return JsonResponse({"status": "OK"})
 
 
 @login_required
@@ -1453,18 +1434,11 @@ def missing_artist_images(request: HttpRequest) -> HttpResponse:
     Returns:
         HTTP redirect to an artist detail page or the main music page if none found.
     """
-    s3_resource = boto3.resource("s3")
-
-    unique_uuids = {}
-
-    paginator = s3_resource.meta.client.get_paginator("list_objects_v2")
-    page_iterator = paginator.paginate(Bucket=settings.AWS_BUCKET_NAME_MUSIC)
-
-    for page in page_iterator:
-        for key in page.get("Contents", []):
-            m = re.search(r"^artist_images/(.*)", str(key["Key"]))
-            if m:
-                unique_uuids[m.group(1)] = True
+    artist_image_keys = list_artist_image_keys()
+    unique_uuids = {
+        key.removeprefix("artist_images/")
+        for key in artist_image_keys
+    }
 
     artists = Artist.objects.all(
     ).exclude(

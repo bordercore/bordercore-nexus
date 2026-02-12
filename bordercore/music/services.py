@@ -25,6 +25,7 @@ from django.db.models import Count, QuerySet, Sum
 from django.db.models.functions import Coalesce
 from django.urls import reverse
 
+from lib.aws import s3_delete_object, s3_list_objects, s3_upload_fileobj
 from lib.time_utils import convert_seconds
 from lib.util import get_elasticsearch_connection
 from tag.models import Tag
@@ -495,3 +496,81 @@ def get_id3_info(song: bytes) -> dict[str, Any]:
         data["track"] = track_number
 
     return data
+
+
+# ---------------------------------------------------------------------------
+# AWS service functions
+# ---------------------------------------------------------------------------
+
+def delete_song_from_s3(uuid: str) -> None:
+    """Delete a song file from the music S3 bucket.
+
+    Args:
+        uuid: The song's UUID string.
+    """
+    s3_delete_object(settings.AWS_BUCKET_NAME_MUSIC, f"songs/{uuid}")
+
+
+def upload_song_to_s3(
+    uuid: str,
+    fileobj: Any,
+    artist: str,
+    title: str,
+) -> None:
+    """Upload a song file to S3 with artist/title metadata.
+
+    Args:
+        uuid: The song's UUID string.
+        fileobj: A file-like object containing the MP3 data.
+        artist: The artist name to store as S3 metadata.
+        title: The song title to store as S3 metadata.
+    """
+    s3_upload_fileobj(
+        fileobj,
+        settings.AWS_BUCKET_NAME_MUSIC,
+        f"songs/{uuid}",
+        metadata={"artist": artist, "title": title},
+    )
+
+
+def upload_album_artwork(uuid: str, fileobj: Any, content_type: str) -> None:
+    """Upload album cover artwork to S3.
+
+    Args:
+        uuid: The album's UUID string.
+        fileobj: A file-like object containing the image data.
+        content_type: MIME type of the image (e.g. ``"image/jpeg"``).
+    """
+    s3_upload_fileobj(
+        fileobj,
+        settings.AWS_BUCKET_NAME_MUSIC,
+        f"album_artwork/{uuid}",
+        content_type=content_type,
+    )
+
+
+def upload_artist_image(uuid: str, fileobj: Any) -> None:
+    """Upload an artist image to S3.
+
+    Args:
+        uuid: The artist's UUID string.
+        fileobj: A file-like object containing the JPEG image data.
+    """
+    s3_upload_fileobj(
+        fileobj,
+        settings.AWS_BUCKET_NAME_MUSIC,
+        f"artist_images/{uuid}",
+        content_type="image/jpeg",
+    )
+
+
+def list_artist_image_keys(prefix: str = "artist_images/") -> set[str]:
+    """Return a set of S3 keys under the artist_images prefix.
+
+    Args:
+        prefix: The S3 key prefix to list. Defaults to ``"artist_images/"``.
+
+    Returns:
+        Set of S3 object key strings.
+    """
+    return set(s3_list_objects(settings.AWS_BUCKET_NAME_MUSIC, prefix))

@@ -50,6 +50,9 @@ from blob.models import Blob, MetaData, RecentlyViewedBlob
 from bookmark.models import Bookmark
 from drill.models import Question
 from fitness.models import Exercise
+from lib.aws import (lambda_invoke_async, s3_copy_object, s3_delete_object,
+                     s3_delete_objects_by_prefix, s3_update_metadata,
+                     s3_upload_fileobj, sns_publish)
 from lib.constants import USER_AGENT
 from lib.exceptions import (NodeNotFoundError, ObjectAlreadyRelatedError,
                             RelatedObjectNotFoundError,
@@ -1098,3 +1101,173 @@ def add_related_object(node_type: str, node_uuid: str, object_uuid: str, user: U
         raise ObjectAlreadyRelatedError("That object is already related")
 
     return {"status": "OK"}
+
+
+# ---------------------------------------------------------------------------
+# AWS service functions
+# ---------------------------------------------------------------------------
+
+def delete_blob_s3_directory(uuid: str) -> None:
+    """Delete all S3 objects under a blob's directory.
+
+    Args:
+        uuid: The blob's UUID string.
+    """
+    directory = f"{settings.MEDIA_ROOT}/{uuid}"
+    s3_delete_objects_by_prefix(settings.AWS_STORAGE_BUCKET_NAME, directory)
+
+
+def delete_blob_s3_file(parent_dir: str, filename: str) -> None:
+    """Delete a single blob file from S3.
+
+    Args:
+        parent_dir: The blob's parent directory path in S3.
+        filename: The filename to delete within the parent directory.
+    """
+    key = f"{parent_dir}/{filename}"
+    s3_delete_object(settings.AWS_STORAGE_BUCKET_NAME, key)
+
+
+def update_blob_s3_metadata(
+    s3_key: str,
+    file_modified: str,
+) -> None:
+    """Update a blob's S3 metadata with file_modified timestamp.
+
+    Reads the current content_type from the S3 object to preserve it
+    during the copy-in-place operation.
+
+    Args:
+        s3_key: The full S3 object key of the blob file.
+        file_modified: The file_modified timestamp string to store in metadata.
+    """
+    import boto3
+    s3_obj = boto3.resource("s3").Object(settings.AWS_STORAGE_BUCKET_NAME, s3_key)
+    content_type = s3_obj.content_type or "binary/octet-stream"
+    s3_update_metadata(
+        settings.AWS_STORAGE_BUCKET_NAME,
+        s3_key,
+        {"file-modified": file_modified},
+        content_type,
+    )
+
+
+def upload_blob_cover_images(
+    uuid: str,
+    large_image_bytes: Any,
+    small_image_bytes: Any,
+    large_dims: tuple[int, int],
+    small_dims: tuple[int, int],
+) -> None:
+    """Upload large and small cover images for a blob to S3.
+
+    Args:
+        uuid: The blob's UUID string.
+        large_image_bytes: File-like object containing the large cover JPEG.
+        small_image_bytes: File-like object containing the small cover JPEG.
+        large_dims: ``(width, height)`` tuple for the large image.
+        small_dims: ``(width, height)`` tuple for the small image.
+    """
+    s3_upload_fileobj(
+        large_image_bytes,
+        settings.AWS_STORAGE_BUCKET_NAME,
+        f"blobs/{uuid}/cover-large.jpg",
+        content_type="image/jpeg",
+        metadata={
+            "image-width": str(large_dims[0]),
+            "image-height": str(large_dims[1]),
+            "cover-image": "Yes",
+        },
+    )
+    s3_upload_fileobj(
+        small_image_bytes,
+        settings.AWS_STORAGE_BUCKET_NAME,
+        f"blobs/{uuid}/cover.jpg",
+        content_type="image/jpeg",
+        metadata={
+            "image-width": str(small_dims[0]),
+            "image-height": str(small_dims[1]),
+            "cover-image": "Yes",
+        },
+    )
+
+
+def invoke_create_thumbnail(
+    bucket: str,
+    uuid: str,
+    filename: str,
+    page_number: int,
+) -> None:
+    """Invoke the CreateThumbnail Lambda for a specific PDF page.
+
+    Args:
+        bucket: The S3 bucket name containing the blob file.
+        uuid: The blob's UUID string.
+        filename: The PDF filename within the blob's S3 directory.
+        page_number: The PDF page number to generate a thumbnail for.
+    """
+    message = {
+        "Records": [
+            {
+                "eventName": "ObjectCreated: Put",
+                "s3": {
+                    "bucket": {"name": bucket},
+                    "object": {
+                        "key": f"blobs/{uuid}/{filename}",
+                        "page_number": page_number,
+                    },
+                },
+            }
+        ]
+    }
+    payload = {
+        "Records": [{"Sns": {"Message": json.dumps(message)}}]
+    }
+    lambda_invoke_async("CreateThumbnail", payload)
+
+
+def rename_blob_s3_file(
+    uuid: str,
+    old_filename: str,
+    new_filename: str,
+) -> None:
+    """Rename a blob file in S3 by copying to new key and deleting old.
+
+    Args:
+        uuid: The blob's UUID string.
+        old_filename: The current filename to rename from.
+        new_filename: The new filename to rename to.
+    """
+    key_root = f"{settings.MEDIA_ROOT}/{uuid}"
+    s3_copy_object(
+        settings.AWS_STORAGE_BUCKET_NAME,
+        f"{key_root}/{old_filename}",
+        f"{key_root}/{new_filename}",
+    )
+    s3_delete_object(
+        settings.AWS_STORAGE_BUCKET_NAME,
+        f"{key_root}/{old_filename}",
+    )
+
+
+def publish_index_blob(uuid: str, file_changed: bool, new_blob: bool) -> None:
+    """Publish an SNS message to trigger Elasticsearch indexing for a blob.
+
+    Args:
+        uuid: The blob's UUID string.
+        file_changed: Whether the blob's file content has changed.
+        new_blob: Whether this is a newly created blob.
+    """
+    message = {
+        "Records": [
+            {
+                "s3": {
+                    "bucket": {"name": settings.AWS_STORAGE_BUCKET_NAME},
+                    "uuid": uuid,
+                    "file_changed": file_changed,
+                    "new_blob": new_blob,
+                }
+            }
+        ]
+    }
+    sns_publish(settings.INDEX_BLOB_TOPIC_ARN, message)

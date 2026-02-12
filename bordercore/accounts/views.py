@@ -5,9 +5,6 @@ password changes, and user-related operations.
 """
 from typing import Any, cast
 
-import boto3
-
-from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import (authenticate, login, logout,
                                  update_session_auth_hash)
@@ -27,6 +24,7 @@ from django.views.generic.edit import UpdateView
 
 from accounts.forms import UserProfileForm
 from accounts.models import UserNote, UserProfile
+from accounts.services import delete_profile_image, upload_profile_image
 from blob.models import Blob
 from lib.decorators import validate_post_data
 from lib.mixins import FormRequestMixin
@@ -134,8 +132,7 @@ class UserProfileUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView):
             s3_prefix: S3 key prefix (e.g. "background" or "sidebar").
         """
         user = cast(User, self.request.user)
-        bucket_name = settings.AWS_STORAGE_BUCKET_NAME
-        s3_client = boto3.client("s3")
+        profile_uuid = str(user.userprofile.uuid)
 
         old_name = form.initial.get(field_name)
         uploaded_file = cast(
@@ -147,10 +144,7 @@ class UserProfileUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView):
         # Delete branch
         if delete_requested:
             if old_name:
-                s3_client.delete_object(
-                    Bucket=bucket_name,
-                    Key=f"{s3_prefix}/{user.userprofile.uuid}/{old_name}",
-                )
+                delete_profile_image(profile_uuid, s3_prefix, old_name)
 
             setattr(self.object, field_name, None)
             self.object.save()
@@ -160,31 +154,19 @@ class UserProfileUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView):
         if uploaded_file and field_name in form.changed_data:
             # Delete previous object, if any
             if old_name:
-                s3_client.delete_object(
-                    Bucket=bucket_name,
-                    Key=f"{s3_prefix}/{user.userprofile.uuid}/{old_name}",
-                )
+                delete_profile_image(profile_uuid, s3_prefix, old_name)
 
-            key = f"{s3_prefix}/{user.userprofile.uuid}/{uploaded_file.name}"
-
-            extra_args = {}
-            if uploaded_file.content_type:
-                extra_args["ContentType"] = uploaded_file.content_type
-
-            upload_kwargs = {}
-            if extra_args:
-                upload_kwargs["ExtraArgs"] = extra_args
-
-            # Use the file-like directly instead of reading into memory
-            s3_client.upload_fileobj(
+            filename = uploaded_file.name or "upload"
+            upload_profile_image(
+                profile_uuid,
+                s3_prefix,
+                filename,
                 uploaded_file.file,
-                bucket_name,
-                key,
-                **upload_kwargs,
+                content_type=uploaded_file.content_type,
             )
 
             # Update the profile field
-            setattr(self.object, field_name, uploaded_file.name)
+            setattr(self.object, field_name, filename)
             self.object.save()
 
             # Mirror onto the user's profile instance in case templates
