@@ -368,10 +368,10 @@ export function BlobUpdatePage({
     formData.append("is_book", isBook ? "on" : "");
     formData.append("math_support", mathSupport ? "on" : "");
     formData.append("metadata", JSON.stringify(metadata));
+    formData.append("filename", fileName);
 
     if (fileObject) {
       formData.append("file", fileObject);
-      formData.append("filename", fileName);
       formData.append("file_modified", String(Math.round(fileObject.lastModified / 1000)));
     }
 
