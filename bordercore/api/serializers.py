@@ -106,6 +106,43 @@ class BookmarkSerializer(serializers.ModelSerializer):
                   "last_response_code", "note", "name", "url", "user", "uuid"]
 
 
+class MobileBookmarkSerializer(serializers.ModelSerializer):
+    """Serializer for mobile apps with denormalized tag and media data."""
+
+    tags = serializers.SerializerMethodField()
+    thumbnail_url = serializers.SerializerMethodField()
+    favicon_url = serializers.SerializerMethodField()
+    video_duration = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Bookmark
+        fields = ["uuid", "name", "url", "note", "created", "last_response_code",
+                  "importance", "is_pinned", "tags", "thumbnail_url", "favicon_url",
+                  "video_duration"]
+
+    def get_tags(self, obj):
+        return list(obj.tags.values_list("name", flat=True))
+
+    def get_thumbnail_url(self, obj):
+        return obj.thumbnail_url
+
+    def get_favicon_url(self, obj):
+        return Bookmark.get_favicon_url_static(obj.url)
+
+    def get_video_duration(self, obj):
+        return obj.video_duration
+
+
+class PinnedTagSerializer(serializers.ModelSerializer):
+    """Serializer for pinned tags with bookmark counts."""
+
+    bookmark_count = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Tag
+        fields = ["name", "bookmark_count"]
+
+
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag

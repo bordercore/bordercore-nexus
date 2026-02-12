@@ -1,10 +1,12 @@
 from elasticsearch.exceptions import NotFoundError
 from feed.models import Feed, FeedItem
 from rest_framework import status, viewsets
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from django.contrib import messages
+from django.db.models import Count
 
 from accounts.models import UserFeed
 from blob.models import Blob
@@ -14,13 +16,14 @@ from drill.models import Question
 from music.models import Album, Playlist, PlaylistItem, Song, SongSource
 from node.models import Node
 from quote.models import Quote
-from tag.models import Tag, TagAlias
+from tag.models import Tag, TagAlias, TagBookmark
 from todo.models import Todo
 
 from .serializers import (AlbumSerializer, BlobSerializer,
                           BlobSha1sumSerializer, BookmarkSerializer,
                           CollectionSerializer, FeedItemSerializer,
-                          FeedSerializer, NodeSerializer,
+                          FeedSerializer, MobileBookmarkSerializer,
+                          NodeSerializer, PinnedTagSerializer,
                           PlaylistItemSerializer, PlaylistSerializer,
                           QuestionSerializer, QuoteSerializer, SongSerializer,
                           SongSourceSerializer, TagAliasSerializer,
@@ -146,6 +149,33 @@ class BookmarkViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         """Delete the bookmark."""
         instance.delete()
+
+    @action(detail=False, methods=["get"])
+    def untagged(self, request):
+        """GET /api/bookmarks/untagged/ - Bare bookmarks without tags."""
+        queryset = Bookmark.objects.bare_bookmarks(request.user, limit=None)
+        page = self.paginate_queryset(queryset)
+        serializer = MobileBookmarkSerializer(page or queryset, many=True)
+        if page:
+            return self.get_paginated_response(serializer.data)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=["get"], url_path="by-tag/(?P<tag_name>[^/.]+)")
+    def by_tag(self, request, tag_name=None):
+        """GET /api/bookmarks/by-tag/<tag_name>/ - Bookmarks for a tag."""
+        tag_bookmarks = TagBookmark.objects.filter(
+            tag__name=tag_name,
+            tag__user=request.user,
+            bookmark__user=request.user,
+        ).select_related("bookmark").order_by("sort_order")
+        # Return bookmarks with sort_order
+        data = []
+        for tb in tag_bookmarks:
+            bookmark_data = MobileBookmarkSerializer(tb.bookmark).data
+            bookmark_data["sort_order"] = tb.sort_order
+            bookmark_data["tag_note"] = tb.note
+            data.append(bookmark_data)
+        return Response(data)
 
 
 class CollectionViewSet(viewsets.ModelViewSet):
@@ -304,6 +334,15 @@ class TagViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return Tag.objects.filter(user=self.request.user)
+
+    @action(detail=False, methods=["get"])
+    def pinned(self, request):
+        """GET /api/tags/pinned/ - User's pinned tags with counts."""
+        tags = request.user.userprofile.pinned_tags.annotate(
+            bookmark_count=Count("tagbookmark")
+        ).order_by("usertag__sort_order")
+        serializer = PinnedTagSerializer(tags, many=True)
+        return Response(serializer.data)
 
 
 class TagNameViewSet(viewsets.ModelViewSet):

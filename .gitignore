@@ -9,6 +9,13 @@
 .projectile
 .dir-locals.el
 
+# iOS / Xcode
+.DS_Store
+*.xcuserstate
+xcuserdata/
+DerivedData/
+*.xcworkspace/xcshareddata/swiftpm/
+
 # Secrets
 secrets.json
 secrets.env
