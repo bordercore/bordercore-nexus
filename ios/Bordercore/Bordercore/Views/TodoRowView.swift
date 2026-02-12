@@ -2,6 +2,7 @@ import SwiftUI
 
 struct TodoRowView: View {
     let todo: TodoItem
+    let onTap: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -24,17 +25,15 @@ struct TodoRowView: View {
             }
 
             if !todo.tags.isEmpty {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 4) {
-                        ForEach(todo.tags, id: \.self) { tag in
-                            Text(tag)
-                                .font(.caption2)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Color.blue.opacity(0.12))
-                                .foregroundStyle(.blue)
-                                .clipShape(Capsule())
-                        }
+                FlowLayout(spacing: 6) {
+                    ForEach(todo.tags, id: \.self) { tag in
+                        Text(tag)
+                            .font(.caption2)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.blue.opacity(0.12))
+                            .foregroundStyle(.blue)
+                            .clipShape(Capsule())
                     }
                 }
             }
@@ -63,7 +62,7 @@ struct TodoRowView: View {
         .padding(.vertical, 4)
         .contentShape(Rectangle())
         .onTapGesture {
-            openURLIfPresent()
+            onTap()
         }
     }
 
@@ -77,10 +76,53 @@ struct TodoRowView: View {
             return .green
         }
     }
+}
 
-    private func openURLIfPresent() {
-        guard let url = todo.url else { return }
-        UIApplication.shared.open(url)
+private struct FlowLayout: Layout {
+    var spacing: CGFloat = 8
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let maxWidth = proposal.width ?? .infinity
+        var currentX: CGFloat = 0
+        var currentY: CGFloat = 0
+        var rowHeight: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if currentX + size.width > maxWidth {
+                currentX = 0
+                currentY += rowHeight + spacing
+                rowHeight = 0
+            }
+
+            rowHeight = max(rowHeight, size.height)
+            currentX += size.width + spacing
+        }
+
+        return CGSize(width: proposal.width ?? currentX, height: currentY + rowHeight)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var currentX = bounds.minX
+        var currentY = bounds.minY
+        var rowHeight: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if currentX + size.width > bounds.maxX {
+                currentX = bounds.minX
+                currentY += rowHeight + spacing
+                rowHeight = 0
+            }
+
+            subview.place(
+                at: CGPoint(x: currentX, y: currentY),
+                proposal: ProposedViewSize(width: size.width, height: size.height)
+            )
+
+            rowHeight = max(rowHeight, size.height)
+            currentX += size.width + spacing
+        }
     }
 }
 
@@ -91,11 +133,12 @@ struct TodoRowView: View {
                 uuid: UUID(),
                 name: "Ship iOS splash screen",
                 note: "Add splash navigation and todo list filter menu.",
-                tags: ["ios", "swiftui"],
+                tags: ["ios", "swiftui", "backend", "ux"],
                 priority: 1,
                 url: URL(string: "https://example.com"),
                 dueDate: .now
-            )
+            ),
+            onTap: {}
         )
     }
 }

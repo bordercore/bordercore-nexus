@@ -2,6 +2,7 @@ import SwiftUI
 
 struct TodoListView: View {
     @ObservedObject var viewModel: TodoViewModel
+    let onSelectTodo: (TodoItem) -> Void
 
     var body: some View {
         Group {
@@ -16,16 +17,19 @@ struct TodoListView: View {
             } else {
                 List {
                     ForEach(viewModel.todos) { todo in
-                        TodoRowView(todo: todo)
-                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                Button(role: .destructive) {
-                                    Task {
-                                        await viewModel.deleteTodo(todo)
-                                    }
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
+                        TodoRowView(todo: todo) {
+                            onSelectTodo(todo)
+                        }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button(role: .destructive) {
+                                Task {
+                                    await viewModel.deleteTodo(todo)
                                 }
+                            } label: {
+                                Label("Delete", systemImage: "trash")
                             }
+                            .tint(.red)
+                        }
                     }
                 }
                 .listStyle(.plain)
@@ -52,7 +56,7 @@ struct TodoListView: View {
 
 #Preview {
     NavigationStack {
-        TodoListView(viewModel: TodoViewModel())
+        TodoListView(viewModel: TodoViewModel(), onSelectTodo: { _ in })
             .navigationTitle("Todo")
     }
 }

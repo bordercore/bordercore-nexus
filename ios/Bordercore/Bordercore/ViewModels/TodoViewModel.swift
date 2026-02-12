@@ -77,7 +77,7 @@ final class TodoViewModel: ObservableObject {
         guard let token = authManager.getToken() else { return "Not authenticated" }
 
         do {
-            let created = try await TodoService.shared.createTodo(
+            _ = try await TodoService.shared.createTodo(
                 name: name,
                 note: note,
                 urlString: urlString,
@@ -86,16 +86,43 @@ final class TodoViewModel: ObservableObject {
                 dueDate: dueDate,
                 token: token
             )
-            allTodos.append(created)
-            allTodos.sort { lhs, rhs in
-                lhs.priority < rhs.priority
-            }
-            recalculateFacets()
-            applyFilter()
+
+            await reloadTodos()
             return nil
         } catch {
             handleError(error)
             return errorMessage ?? "Could not create todo"
+        }
+    }
+
+    func updateTodo(
+        todo: TodoItem,
+        name: String,
+        note: String,
+        urlString: String,
+        tagsCSV: String,
+        priority: Int,
+        dueDate: Date?
+    ) async -> String? {
+        guard let token = authManager.getToken() else { return "Not authenticated" }
+
+        do {
+            _ = try await TodoService.shared.updateTodo(
+                uuid: todo.uuid,
+                name: name,
+                note: note,
+                urlString: urlString,
+                tagsCSV: tagsCSV,
+                priority: priority,
+                dueDate: dueDate,
+                token: token
+            )
+
+            await reloadTodos()
+            return nil
+        } catch {
+            handleError(error)
+            return errorMessage ?? "Could not update todo"
         }
     }
 
