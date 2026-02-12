@@ -1,9 +1,12 @@
 import json
 import string
+from typing import Any, cast
 
 from book.models import Book
 
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.models import User
+from django.db.models import QuerySet
 from django.views.generic.list import ListView
 
 
@@ -14,13 +17,14 @@ class BookListView(LoginRequiredMixin, ListView):
     context_object_name = "info"
     selected_letter = "A"
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Book]:
         if self.args[0]:
             self.selected_letter = self.args[0]
 
-        return Book.objects.filter(user=self.request.user, title__istartswith=self.selected_letter)
+        user = cast(User, self.request.user)
+        return Book.objects.filter(user=user, title__istartswith=self.selected_letter)
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
 
         info = []

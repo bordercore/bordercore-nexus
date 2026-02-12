@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Any
 
 from feed.models import Feed, FeedItem
 from rest_framework import serializers
@@ -26,22 +27,22 @@ class BlobFileField(serializers.RelatedField):
     """
     Extract just the filename from the file path
     """
-    def to_representation(self, value):
+    def to_representation(self, value: Any) -> str:
         return Path(value.name).name
 
 
 class BlobMetaDataField(serializers.RelatedField):
-    def to_representation(self, value):
+    def to_representation(self, value: Any) -> dict[str, Any]:
         return {
             value.name: value.value
         }
 
 
 class BlobTagsField(serializers.RelatedField):
-    def to_representation(self, value):
+    def to_representation(self, value: Any) -> str:
         return value.name
 
-    def to_internal_value(self, data):
+    def to_internal_value(self, data: Any) -> Any:
         return data
 
 
@@ -68,8 +69,7 @@ class BlobSerializer(serializers.ModelSerializer):
 
     # Override __init__ so that we can parse an optional "fields" searcharg
     #  to specify which fields should be returned, overriding the default set
-    def __init__(self, *args, **kwargs):
-
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super(BlobSerializer, self).__init__(*args, **kwargs)
 
         if "request" in self.context:
@@ -120,16 +120,16 @@ class MobileBookmarkSerializer(serializers.ModelSerializer):
                   "importance", "is_pinned", "tags", "thumbnail_url", "favicon_url",
                   "video_duration"]
 
-    def get_tags(self, obj):
+    def get_tags(self, obj: Bookmark) -> list[str]:
         return list(obj.tags.values_list("name", flat=True))
 
-    def get_thumbnail_url(self, obj):
-        return obj.thumbnail_url
+    def get_thumbnail_url(self, obj: Bookmark) -> str:
+        return obj.thumbnail_url or ""
 
-    def get_favicon_url(self, obj):
-        return Bookmark.get_favicon_url_static(obj.url)
+    def get_favicon_url(self, obj: Bookmark) -> str:
+        return Bookmark.get_favicon_url_static(obj.url) or ""
 
-    def get_video_duration(self, obj):
+    def get_video_duration(self, obj: Bookmark) -> str | None:
         return obj.video_duration
 
 
@@ -241,8 +241,7 @@ class TodoSerializer(serializers.ModelSerializer):
         model = Todo
         fields = ["due_date", "id", "note", "tags", "name", "priority", "url", "user", "uuid"]
 
-    def create(self, validated_data):
-
+    def create(self, validated_data: dict[str, Any]) -> Todo:
         tags = validated_data.pop("tags", None)
 
         # We need to save the task first before adding the m2m
@@ -264,9 +263,7 @@ class TodoSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
-    def update(self, instance, validated_data):
-
-        instance.name = validated_data.get("name", instance.name)
+    def update(self, instance: Todo, validated_data: dict[str, Any]) -> Todo:
         instance.note = validated_data.get("note", instance.note)
         instance.priority = validated_data.get("priority", instance.priority)
         instance.url = validated_data.get("url", instance.url)

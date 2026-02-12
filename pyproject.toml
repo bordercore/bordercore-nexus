@@ -51,6 +51,9 @@ exclude = '''
     bordercore/blob/management/commands/
     |
     bordercore/aws/[^/]+/lib/.*$
+    |
+    # Exclude selenium test page (complex dynamic patterns)
+    bordercore/test_page\.py
  )
 '''
 

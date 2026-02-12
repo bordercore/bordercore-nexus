@@ -1,5 +1,6 @@
 from elasticsearch.exceptions import NotFoundError
 from feed.models import Feed, FeedItem
+from rest_framework.request import Request
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -7,6 +8,7 @@ from rest_framework.response import Response
 
 from django.contrib import messages
 from django.db.models import Count
+from django.db.models import QuerySet
 
 from accounts.models import UserFeed
 from blob.models import Blob
@@ -35,14 +37,14 @@ class AlbumViewSet(viewsets.ModelViewSet):
     serializer_class = AlbumSerializer
     lookup_field = "uuid"
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Album]:
         return Album.objects.filter(
             user=self.request.user
         ).prefetch_related(
             "tags"
         )
 
-    def perform_destroy(self, instance):
+    def perform_destroy(self, instance: Album) -> None:
         """
         Use this DRF hook to add a message to the user.
         """
@@ -55,7 +57,7 @@ class BlobViewSet(viewsets.ModelViewSet):
     serializer_class = BlobSerializer
     lookup_field = "uuid"
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Blob]:
         """
         Only the owner of the blob or the service user has access
         """
@@ -68,7 +70,7 @@ class BlobViewSet(viewsets.ModelViewSet):
             "tags"
         )
 
-    def create(self, request, *args, **kwargs):
+    def create(self, request: Request, *args: object, **kwargs: object) -> Response:
         """
         We need to override this to avoid a "unique_together" constraint
         violation when creating blobs without a sha1sum. The constraint
@@ -82,14 +84,14 @@ class BlobViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def perform_destroy(self, instance):
+    def perform_destroy(self, instance: Blob) -> None:
         """
         Use this DRF hook to add a message to the user.
         """
         instance.delete()
         messages.add_message(self.request, messages.INFO, "Blob successfully deleted")
 
-    def perform_update(self, serializer):
+    def perform_update(self, serializer: BlobSerializer) -> None:
         instance = serializer.save()
         instance.index_blob()
 
@@ -99,7 +101,7 @@ class BlobSha1sumViewSet(viewsets.ModelViewSet):
     serializer_class = BlobSha1sumSerializer
     lookup_field = "sha1sum"
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Blob]:
         """
         Only the owner of the blob or the service user has access
         """
@@ -113,7 +115,7 @@ class BlobSha1sumViewSet(viewsets.ModelViewSet):
             "tags"
         )
 
-    def perform_create(self, serializer):
+    def perform_create(self, serializer: BlobSha1sumSerializer) -> None:
         instance = serializer.save()
         instance.index_blob()
 
@@ -125,18 +127,18 @@ class BookmarkViewSet(viewsets.ModelViewSet):
     ordering_fields = ["created, modified"]
     ordering = ["-created"]
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Bookmark]:
         return Bookmark.objects.filter(user=self.request.user)
 
-    def perform_create(self, serializer):
+    def perform_create(self, serializer: BookmarkSerializer) -> None:
         instance = serializer.save()
         instance.index_bookmark()
 
-    def perform_update(self, serializer):
+    def perform_update(self, serializer: BookmarkSerializer) -> None:
         instance = serializer.save()
         instance.index_bookmark()
 
-    def destroy(self, request, *args, **kwargs):
+    def destroy(self, request: Request, *args: object, **kwargs: object) -> Response:
         """Override destroy to catch NotFoundError and return JSON error response."""
         try:
             return super().destroy(request, *args, **kwargs)
@@ -146,12 +148,12 @@ class BookmarkViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-    def perform_destroy(self, instance):
+    def perform_destroy(self, instance: Bookmark) -> None:
         """Delete the bookmark."""
         instance.delete()
 
     @action(detail=False, methods=["get"])
-    def untagged(self, request):
+    def untagged(self, request: Request) -> Response:
         """GET /api/bookmarks/untagged/ - Bare bookmarks without tags."""
         queryset = Bookmark.objects.bare_bookmarks(request.user, limit=None)
         page = self.paginate_queryset(queryset)
@@ -161,7 +163,7 @@ class BookmarkViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     @action(detail=False, methods=["get"], url_path="by-tag/(?P<tag_name>[^/.]+)")
-    def by_tag(self, request, tag_name=None):
+    def by_tag(self, request: Request, tag_name: str | None = None) -> Response:
         """GET /api/bookmarks/by-tag/<tag_name>/ - Bookmarks for a tag."""
         tag_bookmarks = TagBookmark.objects.filter(
             tag__name=tag_name,
@@ -183,20 +185,20 @@ class CollectionViewSet(viewsets.ModelViewSet):
     serializer_class = CollectionSerializer
     lookup_field = "uuid"
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Collection]:
         return Collection.objects.filter(
             user=self.request.user
         ).prefetch_related(
             "tags"
         )
 
-    def perform_create(self, serializer):
+    def perform_create(self, serializer: CollectionSerializer) -> None:
         instance = serializer.save(user=self.request.user)
 
         # Save a copy of the new object so we can reference it in create()
         self._instance = instance
 
-    def create(self, request, *args, **kwargs):
+    def create(self, request: Request, *args: object, **kwargs: object) -> Response:
         response = super(CollectionViewSet, self).create(request, *args, **kwargs)
         response.data = {
             "status": "OK",
@@ -211,10 +213,10 @@ class FeedViewSet(viewsets.ModelViewSet):
     serializer_class = FeedSerializer
     lookup_field = "uuid"
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Feed]:
         return Feed.objects.filter(user=self.request.user)
 
-    def perform_create(self, serializer):
+    def perform_create(self, serializer: FeedSerializer) -> None:
         instance = serializer.save(user=self.request.user)
         so = UserFeed(userprofile=self.request.user.userprofile, feed=instance)
         so.save()
@@ -222,7 +224,7 @@ class FeedViewSet(viewsets.ModelViewSet):
         # Save a copy of the new object so we can reference it in create()
         self._instance = instance
 
-    def create(self, request, *args, **kwargs):
+    def create(self, request: Request, *args: object, **kwargs: object) -> Response:
         response = super(FeedViewSet, self).create(request, *args, **kwargs)
         response.data = {
             "status": "OK",
@@ -237,7 +239,7 @@ class FeedViewSet(viewsets.ModelViewSet):
         }
         return response
 
-    def perform_destroy(self, instance):
+    def perform_destroy(self, instance: Feed) -> None:
         # If we're deleting the user's currently viewed feed, delete that from the session
         current_feed = self.request.session.get("current_feed")
         if current_feed and int(current_feed) == instance.id:
@@ -251,7 +253,7 @@ class FeedItemViewSet(viewsets.ModelViewSet):
     serializer_class = FeedItemSerializer
     queryset = FeedItem.objects.filter()
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[FeedItem]:
         return FeedItem.objects.all().select_related("feed")
 
 
@@ -260,7 +262,7 @@ class NodeViewSet(viewsets.ModelViewSet):
     serializer_class = NodeSerializer
     lookup_field = "uuid"
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Node]:
         return Node.objects.filter(user=self.request.user)
 
 
@@ -272,7 +274,7 @@ class QuestionViewSet(viewsets.ModelViewSet):
     serializer_class = QuestionSerializer
     lookup_field = "uuid"
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Question]:
         return Question.objects.filter(
             user=self.request.user
         ).prefetch_related(
@@ -285,7 +287,7 @@ class QuoteViewSet(viewsets.ModelViewSet):
     serializer_class = QuoteSerializer
     lookup_field = "uuid"
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Quote]:
         return Quote.objects.filter(user=self.request.user)
 
 
@@ -294,7 +296,7 @@ class SongViewSet(viewsets.ModelViewSet):
     serializer_class = SongSerializer
     lookup_field = "uuid"
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Song]:
         return Song.objects.filter(
             user=self.request.user
         ).prefetch_related(
@@ -306,7 +308,7 @@ class SongSourceViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = SongSourceSerializer
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[SongSource]:
         return SongSource.objects.all()
 
 
@@ -315,7 +317,7 @@ class PlaylistViewSet(viewsets.ModelViewSet):
     serializer_class = PlaylistSerializer
     lookup_field = "uuid"
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Playlist]:
         return Playlist.objects.filter(user=self.request.user)
 
 
@@ -324,7 +326,7 @@ class PlaylistItemViewSet(viewsets.ModelViewSet):
     serializer_class = PlaylistItemSerializer
     lookup_field = "uuid"
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[PlaylistItem]:
         return PlaylistItem.objects.filter(playlist__user=self.request.user)
 
 
@@ -332,11 +334,11 @@ class TagViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = TagSerializer
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Tag]:
         return Tag.objects.filter(user=self.request.user)
 
     @action(detail=False, methods=["get"])
-    def pinned(self, request):
+    def pinned(self, request: Request) -> Response:
         """GET /api/tags/pinned/ - User's pinned tags with counts."""
         tags = request.user.userprofile.pinned_tags.annotate(
             bookmark_count=Count("tagbookmark")
@@ -350,7 +352,7 @@ class TagNameViewSet(viewsets.ModelViewSet):
     serializer_class = TagSerializer
     lookup_field = "name"
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Tag]:
         return Tag.objects.filter(user=self.request.user)
 
 
@@ -359,7 +361,7 @@ class TagAliasViewSet(viewsets.ModelViewSet):
     serializer_class = TagAliasSerializer
     lookup_field = "uuid"
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[TagAlias]:
         return TagAlias.objects.filter(
             user=self.request.user
         ).select_related(
@@ -373,10 +375,10 @@ class TodoViewSet(viewsets.ModelViewSet):
     lookup_field = "uuid"
     ordering_fields = ["priority"]
 
-    def perform_create(self, serializer):
+    def perform_create(self, serializer: TodoSerializer) -> None:
         serializer.save(user=self.request.user)
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Todo]:
         queryset = Todo.objects.filter(
             user=self.request.user
         ).prefetch_related(

@@ -11,6 +11,7 @@ import itertools
 import json
 import os
 import re
+import types
 import urllib.request
 from collections import defaultdict
 from pathlib import Path
@@ -18,19 +19,20 @@ from typing import Any, Generator, Union
 from urllib.parse import ParseResult, urlparse
 
 import humanize
+
+instaloader: types.ModuleType | None
+Post: Any
+
 try:
     import instaloader
+    from instaloader import Post
 except (ImportError, ModuleNotFoundError):
     # instaloader depends on lzma, which is sometimes missing in macOS Python builds.
     # We catch the error here to allow the server to start without it.
     instaloader = None
+    Post = None
 
 import requests
-
-if instaloader:
-    from instaloader import Post
-else:
-    Post = None
 from openai import OpenAI
 from trafilatura import bare_extraction, extract, extract_metadata, fetch_url
 
@@ -690,6 +692,9 @@ def import_instagram(user: User, parsed_url: ParseResult) -> Blob:
 
     if not user.userprofile.instagram_credentials:
         raise ValueError("Please provide your Instagram credentials in <a href='" + reverse('accounts:prefs') + "'>preferences</a>.")
+
+    if instaloader is None:
+        raise ImportError("instaloader is not installed (requires lzma support)")
 
     loader = instaloader.Instaloader(download_videos=True)
 

@@ -98,7 +98,6 @@ import calendar
 import datetime
 import re
 import time
-
 __all__ = ["tzinfo", "UTC_TZ", "parse_date", "parse_datetime", "now", "utcfromtimestamp", "utctotimestamp", "datetimetostr", "timestamptostr", "strtotimestamp"]
 
 ZERO = datetime.timedelta(0)
@@ -107,7 +106,7 @@ class tzinfo(datetime.tzinfo):
     """
     Implementation of a fixed-offset tzinfo.
     """
-    def __init__(self, minutesEast = 0, name = 'Z'):
+    def __init__(self, minutesEast: int = 0, name: str = "Z") -> None:
         """
         minutesEast -> number of minutes east of UTC that this tzinfo represents.
         name -> symbolic (but uninterpreted) name of this tzinfo.
@@ -116,19 +115,19 @@ class tzinfo(datetime.tzinfo):
         self.offset = datetime.timedelta(minutes = minutesEast)
         self.name = name
 
-    def utcoffset(self, dt):
+    def utcoffset(self, dt: datetime.datetime | None) -> datetime.timedelta:
         """Returns minutesEast from the constructor, as a datetime.timedelta."""
         return self.offset
 
-    def dst(self, dt):
+    def dst(self, dt: datetime.datetime | None) -> datetime.timedelta:
         """This is a fixed offset tzinfo, so always returns a zero timedelta."""
         return ZERO
 
-    def tzname(self, dt):
+    def tzname(self, dt: datetime.datetime | None) -> str:
         """Returns the name from the constructor."""
         return self.name
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """If minutesEast==0, prints specially as rfc3339.UTC_TZ."""
         if self.minutesEast == 0:
             return "rfc3339.UTC_TZ"
@@ -140,13 +139,13 @@ UTC_TZ = tzinfo(0, 'Z')
 date_re_str = r'(\d\d\d\d)-(\d\d)-(\d\d)'
 time_re_str = r'(\d\d):(\d\d):(\d\d)(\.(\d+))?([zZ]|(([-+])(\d\d):?(\d\d)))'
 
-def make_re(*parts):
-    return re.compile(r'^\s*' + ''.join(parts) + r'\s*$')
+def make_re(*parts: str) -> re.Pattern[str]:
+    return re.compile(r"^\s*" + "".join(parts) + r"\s*$")
 
 date_re = make_re(date_re_str)
 datetime_re = make_re(date_re_str, r'[ tT]', time_re_str)
 
-def parse_date(s):
+def parse_date(s: str) -> datetime.date:
     """
     Given a string matching the 'full-date' production above, returns
     a datetime.date instance. Any deviation from the allowed format
@@ -183,14 +182,14 @@ def parse_date(s):
     >>> parse_date("2008-08-24").isoformat()
     '2008-08-24'
     """
-    m = date_re.match(s)
-    if m:
-        (y, m, d) = m.groups()
-        return datetime.date(int(y), int(m), int(d))
+    match = date_re.match(s)
+    if match:
+        (y, month, d) = match.groups()
+        return datetime.date(int(y), int(month), int(d))
     else:
         raise ValueError('Invalid RFC 3339 date string', s)
 
-def _offset_to_tzname(offset):
+def _offset_to_tzname(offset: int | float) -> str:
     """
     Converts an offset in minutes to an RFC 3339 "time-offset" string.
 
@@ -219,7 +218,7 @@ def _offset_to_tzname(offset):
     tzmin = offset % 60
     return '%s%02d:%02d' % (tzsign, tzhour, tzmin)
 
-def parse_datetime(s):
+def parse_datetime(s: str) -> datetime.datetime:
     """
     Given a string matching the 'date-time' production above, returns
     a datetime.datetime instance. Any deviation from the allowed
@@ -292,10 +291,11 @@ def parse_datetime(s):
     >>> parse_datetime("2008-08-24T00:00:11.25Z").isoformat()
     '2008-08-24T00:00:11.250000+00:00'
     """
-    m = datetime_re.match(s)
-    if m:
-        (y, m, d, hour, min, sec, ignore1, frac_sec, wholetz, ignore2, tzsign, tzhour, tzmin) = \
-            m.groups()
+    match = datetime_re.match(s)
+    if match:
+        (y, month, d, hour, min, sec, ignore1, frac_sec, wholetz, ignore2, tzsign, tzhour, tzmin) = (
+            match.groups()
+        )
 
         if frac_sec:
             frac_sec = float("0." + frac_sec)
@@ -303,48 +303,48 @@ def parse_datetime(s):
             frac_sec = 0
         microsec = int((frac_sec * 1000000) + 0.5)
 
-        if wholetz == 'z' or wholetz == 'Z':
+        if wholetz == "z" or wholetz == "Z":
             tz = UTC_TZ
         else:
-            tzhour = int(tzhour)
-            tzmin = int(tzmin)
-            offset = tzhour * 60 + tzmin
+            tzhour_int = int(tzhour)
+            tzmin_int = int(tzmin)
+            offset = tzhour_int * 60 + tzmin_int
             if offset == 0:
                 tz = UTC_TZ
             else:
-                if tzhour > 24 or tzmin > 60 or offset > 1439: ## see tzinfo docs for the 1439 part
-                    raise ValueError('Invalid timezone offset', s, wholetz)
+                if tzhour_int > 24 or tzmin_int > 60 or offset > 1439:  # see tzinfo docs
+                    raise ValueError("Invalid timezone offset", s, wholetz)
 
-                if tzsign == '-':
+                if tzsign == "-":
                     offset = -offset
                 tz = tzinfo(offset, _offset_to_tzname(offset))
 
-        return datetime.datetime(int(y), int(m), int(d),
+        return datetime.datetime(int(y), int(month), int(d),
                                  int(hour), int(min), int(sec), microsec,
                                  tz)
     else:
         raise ValueError('Invalid RFC 3339 datetime string', s)
 
-def now():
+def now() -> datetime.datetime:
     """Return a timezone-aware datetime.datetime object in
     rfc3339.UTC_TZ timezone, representing the current moment
     (time.time()). Useful as a replacement for the (timezone-unaware)
     datetime.datetime.now() method."""
     return utcfromtimestamp(time.time())
 
-def utcfromtimestamp(unix_epoch_timestamp):
+def utcfromtimestamp(unix_epoch_timestamp: float) -> datetime.datetime:
     """Interprets its argument as a count of seconds elapsed since the
     Unix epoch, and returns a datetime.datetime in rfc3339.UTC_TZ
     timezone."""
     (y, m, d, hour, min, sec) = time.gmtime(unix_epoch_timestamp)[:6]
     return datetime.datetime(y, m, d, hour, min, sec, 0, UTC_TZ)
 
-def utctotimestamp(dt):
+def utctotimestamp(dt: datetime.datetime) -> int:
     """Returns a count of the elapsed seconds between the Unix epoch
     and the passed-in datetime.datetime object."""
     return calendar.timegm(dt.utctimetuple())
 
-def datetimetostr(dt):
+def datetimetostr(dt: datetime.datetime) -> str:
     """Return a RFC3339 date-time string corresponding to the given
     datetime object."""
     if dt.utcoffset() is not None:
@@ -352,12 +352,12 @@ def datetimetostr(dt):
     else:
         return "%sZ" % dt.isoformat()
 
-def timestamptostr(ts):
+def timestamptostr(ts: float) -> str:
     """Return a RFC3339 date-time string corresponding to the given
     Unix-epoch timestamp."""
     return datetimetostr(utcfromtimestamp(ts))
 
-def strtotimestamp(s):
+def strtotimestamp(s: str) -> int:
     """Return the Unix-epoch timestamp corresponding to the given RFC3339
     date-time string."""
     return utctotimestamp(parse_datetime(s))

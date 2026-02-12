@@ -40,23 +40,7 @@ jobs:
 
     - name: Run mypy
       run: |
-        mypy --config-file pyproject.toml \
-          bordercore/accounts/ \
-          bordercore/aws/ \
-          bordercore/blob/ \
-          bordercore/bookmark/ \
-          bordercore/collection/ \
-          bordercore/drill/ \
-          bordercore/feed/ \
-          bordercore/fitness/ \
-          bordercore/lib/ \
-          bordercore/node/ \
-          bordercore/metrics/ \
-          bordercore/music/ \
-          bordercore/reminder/ \
-          bordercore/search/ \
-          bordercore/tag/ \
-          bordercore/todo/
+        mypy --config-file pyproject.toml bordercore/
 
     - name: Run tests
       env:

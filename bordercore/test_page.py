@@ -1,3 +1,5 @@
+from typing import Any
+
 try:
     import time
 
@@ -12,9 +14,11 @@ except (ModuleNotFoundError, NameError):
 
 class Page:
 
-    def find_element(self, element, selector, wait=False):
+    def find_element(
+        self, element: Any, selector: Any, wait: bool = False
+    ) -> Any:
         if wait:
-            def _find_in_container(driver):
+            def _find_in_container(driver: Any) -> Any:
                 try:
                     return element.find_element(*selector)
                 except (NoSuchElementException, StaleElementReferenceException):
@@ -41,7 +45,7 @@ class Page:
 
         # Add a click method to the element that uses JS click as fallback
         original_click = found_element.click
-        def smart_click():
+        def smart_click() -> None:
             from selenium.common.exceptions import \
                 ElementClickInterceptedException
             try:
@@ -64,7 +68,7 @@ class Page:
 
         # Also add a send_keys method that uses JS fallback or ensures focus
         original_send_keys = found_element.send_keys
-        def smart_send_keys(*args):
+        def smart_send_keys(*args: Any) -> None:
             try:
                 browser.execute_script("arguments[0].scrollIntoView({block: 'center'});", found_element)
                 time.sleep(0.5)
@@ -83,16 +87,20 @@ class Page:
 
         # Use a wrapper class to avoid modifying the original element object directly
         class ElementWrapper(WebElement):
-            def __init__(self, element, smart_click, smart_send_keys):
+            def __init__(
+                self, element: Any, smart_click: Any, smart_send_keys: Any
+            ) -> None:
                 super().__init__(element.parent, element.id)
                 self.click = smart_click
                 self.send_keys = smart_send_keys
 
         return ElementWrapper(found_element, smart_click, smart_send_keys)
 
-    def find_elements(self, element, selector, wait=False):
+    def find_elements(
+        self, element: Any, selector: Any, wait: bool = False
+    ) -> Any:
         if wait:
-            def _find_in_container(driver):
+            def _find_in_container(driver: Any) -> Any:
                 try:
                     elements = element.find_elements(*selector)
                     return elements if len(elements) > 0 else False
@@ -102,7 +110,7 @@ class Page:
             wait.until(_find_in_container)
         return element.find_elements(*selector)
 
-    def element_has_focus(self, element, selector):
+    def element_has_focus(self, element: Any, selector: Any) -> bool:
         try:
             active_element = self.browser.switch_to.active_element
             target_element = element.find_element(*selector)
@@ -110,6 +118,6 @@ class Page:
         except:
             return False
 
-    def wait_for_focus(self, element, selector):
+    def wait_for_focus(self, element: Any, selector: Any) -> None:
         wait = WebDriverWait(self.browser, timeout=10)
         wait.until(lambda driver: self.element_has_focus(element, selector))

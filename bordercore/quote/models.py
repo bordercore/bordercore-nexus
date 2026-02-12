@@ -27,5 +27,5 @@ class Quote(TimeStampedModel):
     is_favorite = models.BooleanField(default=False)
     user = models.ForeignKey(User, on_delete=models.PROTECT)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.quote[:100]
