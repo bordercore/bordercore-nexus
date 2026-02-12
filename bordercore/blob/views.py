@@ -48,6 +48,33 @@ from lib.time_utils import parse_date_from_string
 
 log = logging.getLogger(f"bordercore.{__name__}")
 
+_EMPTY_FORM_DATA: dict[str, Any] = {
+    "name": "",
+    "date": "",
+    "content": "",
+    "note": "",
+    "filename": "",
+    "importance": False,
+    "is_note": False,
+    "math_support": False,
+}
+
+
+def _build_form_data_for_json(form: BaseModelForm | None) -> dict[str, Any]:
+    """Build form data dict for JSON serialization (avoids escapejs breaking newlines)."""
+    if not form:
+        return _EMPTY_FORM_DATA
+    return {
+        "name": str(form["name"].value() or ""),
+        "date": str(form["date"].value() or ""),
+        "content": str(form["content"].value() or ""),
+        "note": str(form["note"].value() or ""),
+        "filename": str(form["filename"].value() or ""),
+        "importance": form["importance"].value() == 10,
+        "is_note": bool(form["is_note"].value()),
+        "math_support": bool(form["math_support"].value()),
+    }
+
 
 class FormValidMixin(ModelFormMixin):
     """A mixin to encapsulate common logic used in Update and Create views.
@@ -268,6 +295,9 @@ class BlobCreateView(LoginRequiredMixin, FormRequestMixin, CreateView, FormValid
             BlobTemplate.objects.filter(user=user)
         ]
         context["title"] = "Create Blob"
+
+        form = context.get("form")
+        context["form_data"] = _build_form_data_for_json(form)
 
         return context
 
@@ -562,6 +592,9 @@ class BlobUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView, FormValid
         context["title"] = self.object.get_name(remove_edition_string=True)
         context["tags"] = [x.name for x in self.object.tags.all()]
         context["template_list"] = []  # Templates only used for new blobs
+
+        form = context.get("form")
+        context["form_data"] = _build_form_data_for_json(form)
 
         return context
 

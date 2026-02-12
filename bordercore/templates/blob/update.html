@@ -142,18 +142,7 @@
     {"uuid": "{{ collection_info.uuid }}", "name": "{{ collection_info.name|escapejs }}"}
     </script>
     {% endif %}
-    <script type="application/json" id="form-data">
-    {
-        "name": "{{ form.name.value|default:''|escapejs }}",
-        "date": "{{ form.date.value|default:''|escapejs }}",
-        "content": "{{ form.content.value|default:''|escapejs }}",
-        "note": "{{ form.note.value|default:''|escapejs }}",
-        "filename": "{{ form.filename.value|default:''|escapejs }}",
-        "importance": {% if form.importance.value == 10 %}true{% else %}false{% endif %},
-        "is_note": {% if form.is_note.value %}true{% else %}false{% endif %},
-        "math_support": {% if form.math_support.value %}true{% else %}false{% endif %}
-    }
-    </script>
+    {{ form_data|json_script:"form-data" }}
 {% endblock %}
 
 {% block javascript_bundles %}
