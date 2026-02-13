@@ -41,7 +41,7 @@ rsa==4.7
 simplejson==3.6.5
 singledispatch==3.4.0.3
 six==1.16.0
-sqlparse==0.5.0
+sqlparse==0.5.4
 tiktoken==0.8.0
 trafilatura==1.12.1
 types-Markdown==3.10.0.20251106
