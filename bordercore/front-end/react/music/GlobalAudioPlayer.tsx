@@ -31,6 +31,7 @@ export const GlobalAudioPlayer: React.FC = () => {
   const currentSongUuidRef = React.useRef<string | null>(null);
   const audioInstanceRef = React.useRef<HTMLAudioElement | null>(null);
   const isManualPlayRef = React.useRef(false);
+  const songEndedRef = React.useRef(false);
 
   const markSongAsListenedTo = React.useCallback(
     async (uuid: string) => {
@@ -82,6 +83,7 @@ export const GlobalAudioPlayer: React.FC = () => {
 
       setAudioList(newList);
       setPlayIndex(index >= 0 ? index : 0);
+
       setConfig({
         markListenedToUrl: data.markListenedToUrl,
         csrfToken: data.csrfToken,
@@ -101,11 +103,13 @@ export const GlobalAudioPlayer: React.FC = () => {
   const onAudioPlay = (audioInfo: any) => {
     const uuid = audioInfo.uuid;
     if (uuid) {
-      if (!autoPlayNext && !isManualPlayRef.current) {
+      if (songEndedRef.current) {
+        // This is the singleLoop auto-replay after a song ended
+        // with autoplay off — pause it, don't let it loop.
+        songEndedRef.current = false;
         if (audioInstanceRef.current) {
           audioInstanceRef.current.pause();
         }
-        isManualPlayRef.current = false;
         return;
       }
       isManualPlayRef.current = false;
@@ -130,13 +134,9 @@ export const GlobalAudioPlayer: React.FC = () => {
       EventBus.$emit("audio-ended", { uuid: audioInfo.uuid });
 
       if (!autoPlayNext) {
-        // Keep the UI on the track that just ended.
-        // The actual pause is handled in onAudioPlay to ensure it stops
-        // even if the library has already started the next track.
-        const endedIndex = audioLists.findIndex((item: any) => item.uuid === audioInfo.uuid);
-        if (endedIndex >= 0) {
-          setPlayIndex(endedIndex);
-        }
+        // Signal that the next onAudioPlay is a singleLoop auto-replay
+        // (not a user action) and should be paused.
+        songEndedRef.current = true;
       }
     },
     [autoPlayNext]
@@ -156,6 +156,7 @@ export const GlobalAudioPlayer: React.FC = () => {
           audioInstanceRef.current = instance;
         }}
         mode="full"
+        playMode={autoPlayNext ? "order" : "singleLoop"}
         autoPlay={true}
         showDownload={false}
         showThemeSwitch={false}

@@ -107,6 +107,7 @@
 
 // React Jinke Music Player - base panel (lower specificity) before .global-audio-player
 .react-jinke-music-player-main .music-player-panel {
+  padding-left: 50px;
   background-color: var(--surface2) !important;
 }
 
