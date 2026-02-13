@@ -1,4 +1,8 @@
-# Update a blob's page count field in Elasticsearch
+"""Populate the page count field for PDF blobs in Elasticsearch.
+
+Walks the local blob filesystem, counts the pages of each PDF using PyMuPDF,
+and updates the corresponding Elasticsearch document with a ``num_pages`` field.
+"""
 
 import io
 import re
@@ -16,12 +20,19 @@ from lib.util import get_elasticsearch_connection, is_pdf
 
 
 class Command(BaseCommand):
+    """Management command to populate PDF page counts in Elasticsearch."""
+
     help = "Update a blob's page count field in Elasticsearch"
 
     BLOB_DIR = "/home/media"
     index_name = "bordercore"
 
     def add_arguments(self, parser):
+        """Add the --limit argument to the command parser.
+
+        Args:
+            parser: The argument parser for the management command.
+        """
         parser.add_argument(
             "--limit",
             help="The maximum number of blobs to process",
@@ -30,7 +41,13 @@ class Command(BaseCommand):
 
     @atomic
     def handle(self, *args, limit, **kwargs):
+        """Walk PDF blobs on disk and update Elasticsearch with page counts.
 
+        Args:
+            *args: Variable length argument list.
+            limit: Maximum number of blobs to process.
+            **kwargs: Additional keyword arguments.
+        """
         self.es = get_elasticsearch_connection(host=settings.ELASTICSEARCH_ENDPOINT)
 
         count = 0
@@ -74,7 +91,14 @@ class Command(BaseCommand):
                         sys.exit(0)
 
     def has_size_field(self, sha1sum):
+        """Check whether the Elasticsearch document already has a size field.
 
+        Args:
+            sha1sum: The sha1sum identifying the blob.
+
+        Returns:
+            List of matching Elasticsearch hits (truthy if size exists).
+        """
         body = {
             "query": {
                 "bool": {
@@ -112,7 +136,15 @@ class Command(BaseCommand):
         return(results["hits"]["hits"])
 
     def update_metadata(self, uuid, num_pages):
+        """Update the num_pages field in the blob's Elasticsearch document.
 
+        Args:
+            uuid: The UUID of the blob to update.
+            num_pages: The number of pages in the PDF.
+
+        Returns:
+            Elasticsearch update_by_query response.
+        """
         request_body = {
             "query": {
                 "term": {

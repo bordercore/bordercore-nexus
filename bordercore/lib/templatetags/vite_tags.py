@@ -1,3 +1,10 @@
+"""Django template tags for loading Vite-built assets.
+
+Reads the Vite manifest.json to resolve entry-point names to their built
+file paths and emits the appropriate ``<script>`` and ``<link>`` HTML tags.
+In DEBUG mode, assets are served directly from the Vite dev server for HMR.
+"""
+
 import json
 import logging
 import os
@@ -13,6 +20,14 @@ logger = logging.getLogger(__name__)
 _MANIFEST_CACHE: dict[str, dict[str, Any]] | None = None
 
 def _manifest_path() -> str | None:
+    """Locate the Vite manifest.json file on disk.
+
+    Checks the Vite 5+ path first (``static/vite/.vite/manifest.json``),
+    then falls back to the older location.
+
+    Returns:
+        Absolute path to the manifest file, or None if not found.
+    """
     try:
         project_dir = settings.PROJECT_DIR
     except Exception as e:
@@ -33,6 +48,11 @@ def _manifest_path() -> str | None:
     return None
 
 def _load_manifest() -> dict[str, dict[str, Any]]:
+    """Load and cache the Vite manifest.json.
+
+    Returns:
+        Parsed manifest dict mapping entry names to their build metadata.
+    """
     global _MANIFEST_CACHE
     if _MANIFEST_CACHE is not None:
         return _MANIFEST_CACHE

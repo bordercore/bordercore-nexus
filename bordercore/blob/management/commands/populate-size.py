@@ -1,4 +1,9 @@
-# Update a blob's size field in Elasticsearch
+"""Populate the size field for blobs in Elasticsearch.
+
+Walks the local blob filesystem, reads each file's size, and updates the
+corresponding Elasticsearch document with a ``size`` field if one does not
+already exist.
+"""
 
 import re
 import sys
@@ -13,12 +18,19 @@ from lib.util import get_elasticsearch_connection
 
 
 class Command(BaseCommand):
+    """Management command to populate blob size fields in Elasticsearch."""
+
     help = "Update a blob's size field in Elasticsearch"
 
     BLOB_DIR = "/home/media"
     index_name = "bordercore"
 
     def add_arguments(self, parser):
+        """Add the --limit argument to the command parser.
+
+        Args:
+            parser: The argument parser for the management command.
+        """
         parser.add_argument(
             "--limit",
             help="The maximum number of blobs to process",
@@ -27,7 +39,13 @@ class Command(BaseCommand):
 
     @atomic
     def handle(self, *args, limit, **kwargs):
+        """Walk blobs on disk and update Elasticsearch with file sizes.
 
+        Args:
+            *args: Variable length argument list.
+            limit: Maximum number of blobs to process.
+            **kwargs: Additional keyword arguments.
+        """
         self.es = get_elasticsearch_connection(host=settings.ELASTICSEARCH_ENDPOINT)
 
         count = 0
@@ -73,7 +91,14 @@ class Command(BaseCommand):
                         sys.exit(0)
 
     def has_size_field(self, sha1sum):
+        """Check whether the Elasticsearch document for a blob already has a size field.
 
+        Args:
+            sha1sum: The sha1sum identifying the blob.
+
+        Returns:
+            List of matching Elasticsearch hits (truthy if size exists).
+        """
         body = {
             "query": {
                 "bool": {
@@ -111,7 +136,15 @@ class Command(BaseCommand):
         return(results["hits"]["hits"])
 
     def update_metadata(self, uuid, size):
+        """Update the size field in the blob's Elasticsearch document.
 
+        Args:
+            uuid: The UUID of the blob to update.
+            size: The file size in bytes.
+
+        Returns:
+            Elasticsearch update_by_query response.
+        """
         request_body = {
             "query": {
                 "term": {

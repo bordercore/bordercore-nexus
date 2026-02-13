@@ -1,5 +1,8 @@
-# If a blob's cover image in S3 doesn't have a "Content Type" of
-#  image/jpeg, correct it.
+"""Fix cover image content types in S3.
+
+Scans all cover images in the S3 bucket and corrects any whose Content-Type
+is not ``image/jpeg`` by performing an in-place copy with the correct type.
+"""
 
 import re
 
@@ -11,11 +14,18 @@ from django.db.transaction import atomic
 
 
 class Command(BaseCommand):
+    """Management command to fix cover image Content-Type headers in S3."""
+
     help = "Set a cover image's content type field to 'image/jpeg'"
 
     bucket_name = settings.AWS_STORAGE_BUCKET_NAME
 
     def add_arguments(self, parser):
+        """Add --uuid and --dry-run arguments.
+
+        Args:
+            parser: The argument parser for the management command.
+        """
         parser.add_argument(
             "--uuid",
             help="The uuid of the blob to fix",
@@ -28,7 +38,14 @@ class Command(BaseCommand):
 
     @atomic
     def handle(self, *args, uuid, dry_run, **kwargs):
+        """Scan cover images in S3 and fix incorrect Content-Type headers.
 
+        Args:
+            *args: Variable length argument list.
+            uuid: Optional UUID to limit the fix to a single blob.
+            dry_run: If True, log actions without making changes.
+            **kwargs: Additional keyword arguments.
+        """
         s3_resource = boto3.resource("s3")
 
         paginator = s3_resource.meta.client.get_paginator("list_objects")

@@ -1,3 +1,9 @@
+"""Views for the Book app.
+
+Provides a paginated, alphabetically-filterable list view of the user's
+book library.
+"""
+
 import json
 import string
 from typing import Any, cast
@@ -11,6 +17,7 @@ from django.views.generic.list import ListView
 
 
 class BookListView(LoginRequiredMixin, ListView):
+    """List view for browsing books filtered by the first letter of the title."""
 
     model = Book
     template_name = "book/index.html"
@@ -18,6 +25,11 @@ class BookListView(LoginRequiredMixin, ListView):
     selected_letter = "A"
 
     def get_queryset(self) -> QuerySet[Book]:
+        """Return books whose title starts with the selected letter.
+
+        Returns:
+            QuerySet of Book objects filtered by starting letter and user.
+        """
         if self.args[0]:
             self.selected_letter = self.args[0]
 
@@ -25,6 +37,14 @@ class BookListView(LoginRequiredMixin, ListView):
         return Book.objects.filter(user=user, title__istartswith=self.selected_letter)
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        """Build template context with book info, alphabet nav, and selected letter.
+
+        Args:
+            **kwargs: Additional keyword arguments passed to the parent.
+
+        Returns:
+            Template context dict with book data serialized as JSON.
+        """
         context = super().get_context_data(**kwargs)
 
         info = []

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Management command to verify psycopg3 database connection pooling.
 
 This module provides a Django management command that verifies whether Django
@@ -7,6 +5,8 @@ is using psycopg3 as the database driver and whether connection pooling via
 psycopg_pool is active. It checks for pool attributes and displays connection
 and pooling statistics.
 """
+
+from __future__ import annotations
 
 from typing import Any
 

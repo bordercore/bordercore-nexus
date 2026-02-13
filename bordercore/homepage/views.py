@@ -1,3 +1,11 @@
+"""Views for the homepage and related utility pages.
+
+Renders the main dashboard with recent bookmarks, tasks, music, quotes,
+fitness exercises, drill progress, and a random image. Also serves
+calendar events, the gallery page, the SQL browser, error handlers,
+and robots.txt.
+"""
+
 import json
 from uuid import UUID
 from typing import List, cast
@@ -35,6 +43,18 @@ def json_for_html_attr(data: object) -> str:
 
 @login_required
 def homepage(request: HttpRequest) -> HttpResponse:
+    """Render the main homepage dashboard.
+
+    Aggregates pinned bookmarks, high-priority tasks, recent music, a random
+    image, daily bookmarks, overdue exercises, drill progress, and a quote
+    into the homepage template context.
+
+    Args:
+        request: The incoming HTTP request.
+
+    Returns:
+        Rendered homepage response.
+    """
     user = cast(User, request.user)
 
     quote = Quote.objects.order_by("?").first()
@@ -207,6 +227,14 @@ def homepage(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def get_calendar_events(request: HttpRequest) -> JsonResponse:
+    """Return the user's Google Calendar events as JSON.
+
+    Args:
+        request: The incoming HTTP request.
+
+    Returns:
+        JSON response containing a list of calendar events.
+    """
     user = cast(User, request.user)
     calendar = Calendar(user.userprofile)
     if calendar.has_credentials():
@@ -283,6 +311,14 @@ def get_random_image(request: HttpRequest, content_type: str | None = None) -> d
 
 
 def get_default_collection_blobs(request: HttpRequest) -> dict:
+    """Fetch blobs from the user's default homepage collection.
+
+    Args:
+        request: The incoming HTTP request.
+
+    Returns:
+        Dict with collection uuid, name, and blob_list, or empty dict.
+    """
     user = cast(User, request.user)
     default_collection = getattr(user.userprofile, "homepage_default_collection", None)
     if not default_collection:
@@ -302,11 +338,28 @@ def get_default_collection_blobs(request: HttpRequest) -> dict:
 
 @login_required
 def gallery(request: HttpRequest) -> HttpResponse:
+    """Render the image gallery page.
+
+    Args:
+        request: The incoming HTTP request.
+
+    Returns:
+        Rendered gallery page response.
+    """
     return render(request, "homepage/gallery.html", {})
 
 
 @login_required
 def sql(request: HttpRequest) -> HttpResponse:
+    """Render the SQL browser page for a given blob database.
+
+    Args:
+        request: The incoming HTTP request. May include a ``sql_db_uuid``
+            query parameter to select the database blob.
+
+    Returns:
+        Rendered SQL browser page response.
+    """
     user = cast(User, request.user)
     context = {}
     if "sql_db_uuid" in request.GET:
@@ -322,25 +375,56 @@ def sql(request: HttpRequest) -> HttpResponse:
 
 
 def robots_txt(request: HttpRequest) -> HttpResponse:
+    """Serve the robots.txt file as plain text.
+
+    Args:
+        request: The incoming HTTP request.
+
+    Returns:
+        Plain-text robots.txt response.
+    """
     return render(request, "robots.txt", content_type="text/plain")
 
 
 def handler404(request: HttpRequest, exception: Exception | None = None) -> HttpResponse:
+    """Custom 404 error handler.
 
+    Args:
+        request: The incoming HTTP request.
+        exception: The exception that triggered the 404, if any.
+
+    Returns:
+        Rendered 404 page with status code 404.
+    """
     response = render(request, "404.html", {})
     response.status_code = 404
     return response
 
 
 def handler403(request: HttpRequest, exception: Exception | None = None) -> HttpResponse:
+    """Custom 403 error handler.
 
+    Args:
+        request: The incoming HTTP request.
+        exception: The exception that triggered the 403, if any.
+
+    Returns:
+        Rendered 403 page with status code 403.
+    """
     response = render(request, "403.html", {})
     response.status_code = 403
     return response
 
 
 def handler500(request: HttpRequest) -> HttpResponse:
+    """Custom 500 error handler.
 
+    Args:
+        request: The incoming HTTP request.
+
+    Returns:
+        Rendered 500 page with status code 500.
+    """
     response = render(request, "500.html", {})
     response.status_code = 500
     return response

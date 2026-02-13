@@ -1,3 +1,5 @@
+"""Django admin configuration for the Fitness app."""
+
 from django.contrib import admin
 
 from fitness.models import (Data, Exercise, ExerciseMuscle, ExerciseUser,

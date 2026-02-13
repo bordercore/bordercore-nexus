@@ -1,3 +1,9 @@
+"""Sync all filesystem blobs to S3.
+
+Iterates over all blobs with a file and uploads any that are missing from S3,
+optionally setting the file-modified metadata header.
+"""
+
 import os
 
 import boto3
@@ -12,11 +18,18 @@ from blob.models import Blob, set_s3_metadata_file_modified
 
 
 class Command(BaseCommand):
+    """Management command to upload local blobs missing from S3."""
+
     help = "Sync all filesystem blobs to S3"
 
     bucket_name = settings.AWS_STORAGE_BUCKET_NAME
 
     def add_arguments(self, parser):
+        """Add --dry-run and --verbose arguments.
+
+        Args:
+            parser: The argument parser for the management command.
+        """
         parser.add_argument(
             "--dry-run",
             help="Dry run. Take no action",
@@ -30,7 +43,14 @@ class Command(BaseCommand):
 
     @atomic
     def handle(self, *args, dry_run, verbose, **kwargs):
+        """Upload blobs that are missing from S3.
 
+        Args:
+            *args: Variable length argument list.
+            dry_run: If True, log actions without uploading.
+            verbose: If True, log already-synced blobs.
+            **kwargs: Additional keyword arguments.
+        """
         s3_client = boto3.client("s3")
 
         for blob in Blob.objects.filter(~Q(file="")).order_by("?"):

@@ -1,3 +1,10 @@
+"""REST API viewsets for the Bordercore application.
+
+Provides Django REST Framework ``ModelViewSet`` classes for all core models,
+handling CRUD operations, Elasticsearch indexing on write, and custom actions
+such as fetching untagged bookmarks and pinned tags.
+"""
+
 from elasticsearch.exceptions import NotFoundError
 from feed.models import Feed, FeedItem
 from rest_framework.request import Request
@@ -33,11 +40,18 @@ from .serializers import (AlbumSerializer, BlobSerializer,
 
 
 class AlbumViewSet(viewsets.ModelViewSet):
+    """CRUD viewset for albums."""
+
     permission_classes = [IsAuthenticated]
     serializer_class = AlbumSerializer
     lookup_field = "uuid"
 
     def get_queryset(self) -> QuerySet[Album]:
+        """Return albums owned by the current user.
+
+        Returns:
+            QuerySet of Album objects for the authenticated user.
+        """
         return Album.objects.filter(
             user=self.request.user
         ).prefetch_related(
@@ -45,21 +59,29 @@ class AlbumViewSet(viewsets.ModelViewSet):
         )
 
     def perform_destroy(self, instance: Album) -> None:
-        """
-        Use this DRF hook to add a message to the user.
+        """Delete the album and display a success message.
+
+        Args:
+            instance: The Album instance to delete.
         """
         instance.delete()
         messages.add_message(self.request, messages.INFO, "Album successfully deleted")
 
 
 class BlobViewSet(viewsets.ModelViewSet):
+    """CRUD viewset for blobs with Elasticsearch indexing on create/update."""
+
     permission_classes = [IsAuthenticated]
     serializer_class = BlobSerializer
     lookup_field = "uuid"
 
     def get_queryset(self) -> QuerySet[Blob]:
-        """
-        Only the owner of the blob or the service user has access
+        """Return blobs visible to the current user.
+
+        The service user can access all blobs; regular users see only their own.
+
+        Returns:
+            QuerySet of Blob objects.
         """
         if self.request.user.username == "service_user":
             return Blob.objects.all()
@@ -71,10 +93,15 @@ class BlobViewSet(viewsets.ModelViewSet):
         )
 
     def create(self, request: Request, *args: object, **kwargs: object) -> Response:
-        """
-        We need to override this to avoid a "unique_together" constraint
-        violation when creating blobs without a sha1sum. The constraint
-        in question is ("sha1sum", "user").
+        """Create a blob, bypassing the unique_together (sha1sum, user) constraint.
+
+        Args:
+            request: The incoming DRF request.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Response with serialized blob data or validation errors.
         """
         blob = Blob()
         serializer = self.serializer_class(blob, data=request.data)
@@ -85,25 +112,38 @@ class BlobViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def perform_destroy(self, instance: Blob) -> None:
-        """
-        Use this DRF hook to add a message to the user.
+        """Delete the blob and display a success message.
+
+        Args:
+            instance: The Blob instance to delete.
         """
         instance.delete()
         messages.add_message(self.request, messages.INFO, "Blob successfully deleted")
 
     def perform_update(self, serializer: BlobSerializer) -> None:
+        """Save the blob and re-index it in Elasticsearch.
+
+        Args:
+            serializer: The validated BlobSerializer.
+        """
         instance = serializer.save()
         instance.index_blob()
 
 
 class BlobSha1sumViewSet(viewsets.ModelViewSet):
+    """Blob viewset that uses sha1sum as the lookup field."""
+
     permission_classes = [IsAuthenticated]
     serializer_class = BlobSha1sumSerializer
     lookup_field = "sha1sum"
 
     def get_queryset(self) -> QuerySet[Blob]:
-        """
-        Only the owner of the blob or the service user has access
+        """Return blobs visible to the current user.
+
+        The service user can access all blobs; regular users see only their own.
+
+        Returns:
+            QuerySet of Blob objects.
         """
         if self.request.user.username == "service_user":
             return Blob.objects.all()
@@ -116,11 +156,18 @@ class BlobSha1sumViewSet(viewsets.ModelViewSet):
         )
 
     def perform_create(self, serializer: BlobSha1sumSerializer) -> None:
+        """Save the blob and index it in Elasticsearch.
+
+        Args:
+            serializer: The validated BlobSha1sumSerializer.
+        """
         instance = serializer.save()
         instance.index_blob()
 
 
 class BookmarkViewSet(viewsets.ModelViewSet):
+    """CRUD viewset for bookmarks with Elasticsearch indexing and custom actions."""
+
     permission_classes = [IsAuthenticated]
     serializer_class = BookmarkSerializer
     lookup_field = "uuid"
@@ -128,13 +175,28 @@ class BookmarkViewSet(viewsets.ModelViewSet):
     ordering = ["-created"]
 
     def get_queryset(self) -> QuerySet[Bookmark]:
+        """Return bookmarks owned by the current user.
+
+        Returns:
+            QuerySet of Bookmark objects for the authenticated user.
+        """
         return Bookmark.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer: BookmarkSerializer) -> None:
+        """Save the bookmark and index it in Elasticsearch.
+
+        Args:
+            serializer: The validated BookmarkSerializer.
+        """
         instance = serializer.save()
         instance.index_bookmark()
 
     def perform_update(self, serializer: BookmarkSerializer) -> None:
+        """Save the bookmark and re-index it in Elasticsearch.
+
+        Args:
+            serializer: The validated BookmarkSerializer.
+        """
         instance = serializer.save()
         instance.index_bookmark()
 
@@ -181,11 +243,18 @@ class BookmarkViewSet(viewsets.ModelViewSet):
 
 
 class CollectionViewSet(viewsets.ModelViewSet):
+    """CRUD viewset for collections."""
+
     permission_classes = [IsAuthenticated]
     serializer_class = CollectionSerializer
     lookup_field = "uuid"
 
     def get_queryset(self) -> QuerySet[Collection]:
+        """Return collections owned by the current user.
+
+        Returns:
+            QuerySet of Collection objects with prefetched tags.
+        """
         return Collection.objects.filter(
             user=self.request.user
         ).prefetch_related(
@@ -193,12 +262,27 @@ class CollectionViewSet(viewsets.ModelViewSet):
         )
 
     def perform_create(self, serializer: CollectionSerializer) -> None:
+        """Save the collection with the current user as owner.
+
+        Args:
+            serializer: The validated CollectionSerializer.
+        """
         instance = serializer.save(user=self.request.user)
 
         # Save a copy of the new object so we can reference it in create()
         self._instance = instance
 
     def create(self, request: Request, *args: object, **kwargs: object) -> Response:
+        """Create a collection and return its id and uuid.
+
+        Args:
+            request: The incoming DRF request.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Response with status, id, and uuid of the new collection.
+        """
         response = super(CollectionViewSet, self).create(request, *args, **kwargs)
         response.data = {
             "status": "OK",
@@ -209,14 +293,26 @@ class CollectionViewSet(viewsets.ModelViewSet):
 
 
 class FeedViewSet(viewsets.ModelViewSet):
+    """CRUD viewset for RSS/Atom feeds."""
+
     permission_classes = [IsAuthenticated]
     serializer_class = FeedSerializer
     lookup_field = "uuid"
 
     def get_queryset(self) -> QuerySet[Feed]:
+        """Return feeds owned by the current user.
+
+        Returns:
+            QuerySet of Feed objects for the authenticated user.
+        """
         return Feed.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer: FeedSerializer) -> None:
+        """Save the feed, create a UserFeed link, and stash the instance.
+
+        Args:
+            serializer: The validated FeedSerializer.
+        """
         instance = serializer.save(user=self.request.user)
         so = UserFeed(userprofile=self.request.user.userprofile, feed=instance)
         so.save()
@@ -225,6 +321,16 @@ class FeedViewSet(viewsets.ModelViewSet):
         self._instance = instance
 
     def create(self, request: Request, *args: object, **kwargs: object) -> Response:
+        """Create a feed and return feed info including id, uuid, and name.
+
+        Args:
+            request: The incoming DRF request.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Response with status and feed info dict.
+        """
         response = super(FeedViewSet, self).create(request, *args, **kwargs)
         response.data = {
             "status": "OK",
@@ -240,6 +346,11 @@ class FeedViewSet(viewsets.ModelViewSet):
         return response
 
     def perform_destroy(self, instance: Feed) -> None:
+        """Delete the feed and clear it from the session if active.
+
+        Args:
+            instance: The Feed instance to delete.
+        """
         # If we're deleting the user's currently viewed feed, delete that from the session
         current_feed = self.request.session.get("current_feed")
         if current_feed and int(current_feed) == instance.id:
@@ -249,32 +360,50 @@ class FeedViewSet(viewsets.ModelViewSet):
 
 
 class FeedItemViewSet(viewsets.ModelViewSet):
+    """CRUD viewset for feed items."""
+
     permission_classes = [IsAuthenticated]
     serializer_class = FeedItemSerializer
     queryset = FeedItem.objects.filter()
 
     def get_queryset(self) -> QuerySet[FeedItem]:
+        """Return all feed items with their parent feed.
+
+        Returns:
+            QuerySet of FeedItem objects with select_related feed.
+        """
         return FeedItem.objects.all().select_related("feed")
 
 
 class NodeViewSet(viewsets.ModelViewSet):
+    """CRUD viewset for nodes."""
+
     permission_classes = [IsAuthenticated]
     serializer_class = NodeSerializer
     lookup_field = "uuid"
 
     def get_queryset(self) -> QuerySet[Node]:
+        """Return nodes owned by the current user.
+
+        Returns:
+            QuerySet of Node objects for the authenticated user.
+        """
         return Node.objects.filter(user=self.request.user)
 
 
 class QuestionViewSet(viewsets.ModelViewSet):
-    """
-    Questions for drilled spaced repetition
-    """
+    """CRUD viewset for spaced-repetition drill questions."""
+
     permission_classes = [IsAuthenticated]
     serializer_class = QuestionSerializer
     lookup_field = "uuid"
 
     def get_queryset(self) -> QuerySet[Question]:
+        """Return questions owned by the current user.
+
+        Returns:
+            QuerySet of Question objects with prefetched tags.
+        """
         return Question.objects.filter(
             user=self.request.user
         ).prefetch_related(
@@ -283,20 +412,34 @@ class QuestionViewSet(viewsets.ModelViewSet):
 
 
 class QuoteViewSet(viewsets.ModelViewSet):
+    """CRUD viewset for quotes."""
+
     permission_classes = [IsAuthenticated]
     serializer_class = QuoteSerializer
     lookup_field = "uuid"
 
     def get_queryset(self) -> QuerySet[Quote]:
+        """Return quotes owned by the current user.
+
+        Returns:
+            QuerySet of Quote objects for the authenticated user.
+        """
         return Quote.objects.filter(user=self.request.user)
 
 
 class SongViewSet(viewsets.ModelViewSet):
+    """CRUD viewset for songs."""
+
     permission_classes = [IsAuthenticated]
     serializer_class = SongSerializer
     lookup_field = "uuid"
 
     def get_queryset(self) -> QuerySet[Song]:
+        """Return songs owned by the current user.
+
+        Returns:
+            QuerySet of Song objects with prefetched tags.
+        """
         return Song.objects.filter(
             user=self.request.user
         ).prefetch_related(
@@ -305,36 +448,64 @@ class SongViewSet(viewsets.ModelViewSet):
 
 
 class SongSourceViewSet(viewsets.ModelViewSet):
+    """CRUD viewset for song sources."""
+
     permission_classes = [IsAuthenticated]
     serializer_class = SongSourceSerializer
 
     def get_queryset(self) -> QuerySet[SongSource]:
+        """Return all song sources.
+
+        Returns:
+            QuerySet of all SongSource objects.
+        """
         return SongSource.objects.all()
 
 
 class PlaylistViewSet(viewsets.ModelViewSet):
+    """CRUD viewset for playlists."""
+
     permission_classes = [IsAuthenticated]
     serializer_class = PlaylistSerializer
     lookup_field = "uuid"
 
     def get_queryset(self) -> QuerySet[Playlist]:
+        """Return playlists owned by the current user.
+
+        Returns:
+            QuerySet of Playlist objects for the authenticated user.
+        """
         return Playlist.objects.filter(user=self.request.user)
 
 
 class PlaylistItemViewSet(viewsets.ModelViewSet):
+    """CRUD viewset for playlist items."""
+
     permission_classes = [IsAuthenticated]
     serializer_class = PlaylistItemSerializer
     lookup_field = "uuid"
 
     def get_queryset(self) -> QuerySet[PlaylistItem]:
+        """Return playlist items from the current user's playlists.
+
+        Returns:
+            QuerySet of PlaylistItem objects for the authenticated user.
+        """
         return PlaylistItem.objects.filter(playlist__user=self.request.user)
 
 
 class TagViewSet(viewsets.ModelViewSet):
+    """CRUD viewset for tags with a pinned-tags action."""
+
     permission_classes = [IsAuthenticated]
     serializer_class = TagSerializer
 
     def get_queryset(self) -> QuerySet[Tag]:
+        """Return tags owned by the current user.
+
+        Returns:
+            QuerySet of Tag objects for the authenticated user.
+        """
         return Tag.objects.filter(user=self.request.user)
 
     @action(detail=False, methods=["get"])
@@ -348,20 +519,34 @@ class TagViewSet(viewsets.ModelViewSet):
 
 
 class TagNameViewSet(viewsets.ModelViewSet):
+    """Tag viewset that uses the tag name as the lookup field."""
+
     permission_classes = [IsAuthenticated]
     serializer_class = TagSerializer
     lookup_field = "name"
 
     def get_queryset(self) -> QuerySet[Tag]:
+        """Return tags owned by the current user.
+
+        Returns:
+            QuerySet of Tag objects for the authenticated user.
+        """
         return Tag.objects.filter(user=self.request.user)
 
 
 class TagAliasViewSet(viewsets.ModelViewSet):
+    """CRUD viewset for tag aliases."""
+
     permission_classes = [IsAuthenticated]
     serializer_class = TagAliasSerializer
     lookup_field = "uuid"
 
     def get_queryset(self) -> QuerySet[TagAlias]:
+        """Return tag aliases owned by the current user.
+
+        Returns:
+            QuerySet of TagAlias objects with select_related tag.
+        """
         return TagAlias.objects.filter(
             user=self.request.user
         ).select_related(
@@ -370,15 +555,27 @@ class TagAliasViewSet(viewsets.ModelViewSet):
 
 
 class TodoViewSet(viewsets.ModelViewSet):
+    """CRUD viewset for todos with optional priority filtering."""
+
     permission_classes = [IsAuthenticated]
     serializer_class = TodoSerializer
     lookup_field = "uuid"
     ordering_fields = ["priority"]
 
     def perform_create(self, serializer: TodoSerializer) -> None:
+        """Save the todo with the current user as owner.
+
+        Args:
+            serializer: The validated TodoSerializer.
+        """
         serializer.save(user=self.request.user)
 
     def get_queryset(self) -> QuerySet[Todo]:
+        """Return todos owned by the current user, optionally filtered by priority.
+
+        Returns:
+            QuerySet of Todo objects with prefetched tags.
+        """
         queryset = Todo.objects.filter(
             user=self.request.user
         ).prefetch_related(

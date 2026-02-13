@@ -1,3 +1,9 @@
+"""REST API serializers for the Bordercore application.
+
+Defines Django REST Framework serializers for all core models, including
+blobs, bookmarks, collections, feeds, music, tags, todos, and more.
+"""
+
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +23,8 @@ from todo.models import Todo
 
 
 class AlbumSerializer(serializers.ModelSerializer):
+    """Serializer for the Album model."""
+
     class Meta:
         model = Album
         fields = ["artist", "compilation", "note", "original_release_year",
@@ -24,35 +32,77 @@ class AlbumSerializer(serializers.ModelSerializer):
 
 
 class BlobFileField(serializers.RelatedField):
-    """
-    Extract just the filename from the file path
-    """
+    """Related field that extracts just the filename from a blob's file path."""
+
     def to_representation(self, value: Any) -> str:
+        """Return the filename component of the file path.
+
+        Args:
+            value: The file field value.
+
+        Returns:
+            The filename without directory components.
+        """
         return Path(value.name).name
 
 
 class BlobMetaDataField(serializers.RelatedField):
+    """Related field that serializes a MetaData instance as a name-value dict."""
+
     def to_representation(self, value: Any) -> dict[str, Any]:
+        """Return a single-entry dict mapping the metadata name to its value.
+
+        Args:
+            value: The MetaData instance.
+
+        Returns:
+            Dict with one key-value pair from the metadata.
+        """
         return {
             value.name: value.value
         }
 
 
 class BlobTagsField(serializers.RelatedField):
+    """Related field that serializes tags by name and accepts raw tag data."""
+
     def to_representation(self, value: Any) -> str:
+        """Return the tag name.
+
+        Args:
+            value: The Tag instance.
+
+        Returns:
+            The tag's name string.
+        """
         return value.name
 
     def to_internal_value(self, data: Any) -> Any:
+        """Pass through raw tag data for processing during create/update.
+
+        Args:
+            data: The raw input data.
+
+        Returns:
+            The data unchanged.
+        """
         return data
 
 
 class BlobUserSerializer(serializers.ModelSerializer):
+    """Minimal user serializer that exposes only the user ID."""
+
     class Meta:
         model = User
         fields = ["id"]
 
 
 class BlobSerializer(serializers.ModelSerializer):
+    """Full serializer for the Blob model with dynamic field selection.
+
+    Supports an optional ``fields`` query parameter to restrict which fields
+    are returned in the response.
+    """
 
     user = BlobUserSerializer(read_only=True, default=serializers.CurrentUserDefault())
     uuid = serializers.UUIDField()
@@ -67,9 +117,16 @@ class BlobSerializer(serializers.ModelSerializer):
                   "is_note", "metadata", "modified", "name",
                   "note", "sha1sum", "tags", "user", "uuid"]
 
-    # Override __init__ so that we can parse an optional "fields" searcharg
-    #  to specify which fields should be returned, overriding the default set
     def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Initialize the serializer, optionally filtering fields.
+
+        If the request includes a ``fields`` query parameter (comma-separated),
+        only those fields are kept in the serializer output.
+
+        Args:
+            *args: Positional arguments passed to the parent.
+            **kwargs: Keyword arguments passed to the parent.
+        """
         super(BlobSerializer, self).__init__(*args, **kwargs)
 
         if "request" in self.context:
@@ -84,6 +141,7 @@ class BlobSerializer(serializers.ModelSerializer):
 
 
 class BlobSha1sumSerializer(serializers.ModelSerializer):
+    """Blob serializer that uses sha1sum as the lookup field."""
 
     file = BlobFileField(read_only=True)
     metadata = BlobMetaDataField(many=True, read_only=True)
@@ -97,6 +155,7 @@ class BlobSha1sumSerializer(serializers.ModelSerializer):
 
 
 class BookmarkSerializer(serializers.ModelSerializer):
+    """Serializer for the Bookmark model."""
 
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
@@ -121,15 +180,47 @@ class MobileBookmarkSerializer(serializers.ModelSerializer):
                   "video_duration"]
 
     def get_tags(self, obj: Bookmark) -> list[str]:
+        """Return the bookmark's tag names as a list.
+
+        Args:
+            obj: The Bookmark instance.
+
+        Returns:
+            List of tag name strings.
+        """
         return list(obj.tags.values_list("name", flat=True))
 
     def get_thumbnail_url(self, obj: Bookmark) -> str:
+        """Return the bookmark's thumbnail URL, or empty string if absent.
+
+        Args:
+            obj: The Bookmark instance.
+
+        Returns:
+            Thumbnail URL string.
+        """
         return obj.thumbnail_url or ""
 
     def get_favicon_url(self, obj: Bookmark) -> str:
+        """Return the favicon URL for the bookmark's domain.
+
+        Args:
+            obj: The Bookmark instance.
+
+        Returns:
+            Favicon URL string.
+        """
         return Bookmark.get_favicon_url_static(obj.url) or ""
 
     def get_video_duration(self, obj: Bookmark) -> str | None:
+        """Return the video duration if the bookmark links to a video.
+
+        Args:
+            obj: The Bookmark instance.
+
+        Returns:
+            Duration string, or None.
+        """
         return obj.video_duration
 
 
@@ -144,12 +235,16 @@ class PinnedTagSerializer(serializers.ModelSerializer):
 
 
 class TagSerializer(serializers.ModelSerializer):
+    """Serializer for the Tag model."""
+
     class Meta:
         model = Tag
         fields = ["id", "is_meta", "name", "url", "user"]
 
 
 class CollectionSerializer(serializers.ModelSerializer):
+    """Serializer for the Collection model with nested tags."""
+
     tags = TagSerializer(many=True, required=False)
 
     class Meta:
@@ -158,12 +253,16 @@ class CollectionSerializer(serializers.ModelSerializer):
 
 
 class FeedSerializer(serializers.ModelSerializer):
+    """Serializer for the Feed model."""
+
     class Meta:
         model = Feed
         fields = ["homepage", "last_check", "last_response_code", "name", "url"]
 
 
 class FeedItemSerializer(serializers.ModelSerializer):
+    """Serializer for the FeedItem model with a nested feed."""
+
     feed = FeedSerializer()
 
     class Meta:
@@ -172,12 +271,16 @@ class FeedItemSerializer(serializers.ModelSerializer):
 
 
 class MetaDataSerializer(serializers.ModelSerializer):
+    """Serializer for the blob MetaData model."""
+
     class Meta:
         model = MetaData
         fields = ["name", "value", "blob", "user"]
 
 
 class NodeSerializer(serializers.ModelSerializer):
+    """Serializer for the Node model."""
+
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:
@@ -186,6 +289,8 @@ class NodeSerializer(serializers.ModelSerializer):
 
 
 class QuestionSerializer(serializers.ModelSerializer):
+    """Serializer for the spaced-repetition Question model."""
+
     class Meta:
         model = Question
         fields = ["answer", "interval", "last_reviewed",
@@ -193,12 +298,16 @@ class QuestionSerializer(serializers.ModelSerializer):
 
 
 class QuoteSerializer(serializers.ModelSerializer):
+    """Serializer for the Quote model."""
+
     class Meta:
         model = Quote
         fields = ["quote", "source", "user"]
 
 
 class SongSerializer(serializers.ModelSerializer):
+    """Serializer for the Song model."""
+
     class Meta:
         model = Song
         fields = ["album", "artist", "last_time_played", "length", "note",
@@ -207,24 +316,32 @@ class SongSerializer(serializers.ModelSerializer):
 
 
 class SongSourceSerializer(serializers.ModelSerializer):
+    """Serializer for the SongSource model."""
+
     class Meta:
         model = SongSource
         fields = ["description", "name"]
 
 
 class PlaylistSerializer(serializers.ModelSerializer):
+    """Serializer for the Playlist model."""
+
     class Meta:
         model = Playlist
         fields = ["uuid", "name", "note", "size", "parameters", "type"]
 
 
 class PlaylistItemSerializer(serializers.ModelSerializer):
+    """Serializer for the PlaylistItem model."""
+
     class Meta:
         model = PlaylistItem
         fields = ["uuid", "playlist", "song"]
 
 
 class TagAliasSerializer(serializers.ModelSerializer):
+    """Serializer for the TagAlias model with a nested tag."""
+
     tag = TagSerializer()
 
     class Meta:
@@ -233,6 +350,8 @@ class TagAliasSerializer(serializers.ModelSerializer):
 
 
 class TodoSerializer(serializers.ModelSerializer):
+    """Serializer for the Todo model with tag creation on write."""
+
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
     tags = BlobTagsField(queryset=Tag.objects.all(), many=True)
     due_date = serializers.DateTimeField(required=False, input_formats=["%Y-%m-%d"])
@@ -242,6 +361,14 @@ class TodoSerializer(serializers.ModelSerializer):
         fields = ["due_date", "id", "note", "tags", "name", "priority", "url", "user", "uuid"]
 
     def create(self, validated_data: dict[str, Any]) -> Todo:
+        """Create a new Todo, associating tags by name (creating if needed).
+
+        Args:
+            validated_data: Validated serializer data including optional tags.
+
+        Returns:
+            The newly created Todo instance.
+        """
         tags = validated_data.pop("tags", None)
 
         # We need to save the task first before adding the m2m
@@ -264,6 +391,15 @@ class TodoSerializer(serializers.ModelSerializer):
         return instance
 
     def update(self, instance: Todo, validated_data: dict[str, Any]) -> Todo:
+        """Update an existing Todo and reassign its tags.
+
+        Args:
+            instance: The existing Todo instance to update.
+            validated_data: Validated serializer data.
+
+        Returns:
+            The updated Todo instance.
+        """
         instance.name = validated_data.get("name", instance.name)
         instance.note = validated_data.get("note", instance.note)
         instance.priority = validated_data.get("priority", instance.priority)
