@@ -440,10 +440,10 @@ def create_blob(request: HttpRequest) -> JsonResponse:
     if existing_blob:
 
         blob_url = reverse("blob:detail", kwargs={"uuid": existing_blob.uuid})
-        response = {
-            "status": "Error",
+        return JsonResponse({
+            "status": "ERROR",
             "message": f"This blob <a href='{blob_url}'>already exists</a>."
-        }
+        }, status=400)
 
     else:
 
@@ -539,9 +539,10 @@ def add_object(request: HttpRequest) -> JsonResponse:
     else:
         return JsonResponse(
             {
-                "status": "Error",
+                "status": "ERROR",
                 "message": "You must specify a blob_uuid or bookmark_uuid"
-            }
+            },
+            status=400
         )
 
     try:
@@ -550,10 +551,10 @@ def add_object(request: HttpRequest) -> JsonResponse:
             "status": "OK",
         }
     except DuplicateObjectError:
-        response = {
-            "status": "Error",
+        return JsonResponse({
+            "status": "ERROR",
             "message": "That object already belongs to this collection."
-        }
+        }, status=400)
 
     return JsonResponse(response)
 
@@ -711,14 +712,10 @@ def add_new_bookmark(request: HttpRequest) -> JsonResponse:
             collection=collection,
             bookmark=bookmark
     ).exists():
-        response = {
-            "status": "Error",
+        return JsonResponse({
+            "status": "ERROR",
             "message": "This bookmark is already a member of the collection."
-        }
-    else:
-        collection.add_object(bookmark)
-        response = {
-            "status": "OK"
-        }
+        }, status=400)
 
-    return JsonResponse(response)
+    collection.add_object(bookmark)
+    return JsonResponse({"status": "OK"})

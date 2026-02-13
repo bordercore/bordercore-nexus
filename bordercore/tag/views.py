@@ -134,12 +134,12 @@ def add_alias(request: HttpRequest) -> JsonResponse:
     # Check that the alias doesn't already exist
     if TagAlias.objects.filter(name=alias_name):
         response = {
-            "status": "Warning",
+            "status": "WARNING",
             "message": "Alias already exists"
         }
     elif Tag.objects.filter(name=alias_name):
         response = {
-            "status": "Warning",
+            "status": "WARNING",
             "message": f"A tag with the name '{alias_name}' already exists"
         }
     else:
@@ -175,7 +175,7 @@ def get_todo_counts(request: HttpRequest) -> JsonResponse:
     else:
         tag_obj = Tag.objects.filter(user=user).order_by("?").first()
         if tag_obj is None:
-            return JsonResponse({"status": "Error", "message": "No tags found for user."}, status=404)
+            return JsonResponse({"status": "ERROR", "message": "No tags found for user."}, status=404)
         tag_name = tag_obj.name
 
     tag = Tag.objects.get(name=tag_name, user=user)

@@ -239,8 +239,8 @@ def test_drill_pin_tag(auto_login_user, question, tag):
         "tag": tag[2].name
     })
 
-    assert json.loads(resp.content)["status"] == "Error"
-    assert resp.status_code == 200
+    assert json.loads(resp.content)["status"] == "ERROR"
+    assert resp.status_code == 400
 
 
 def test_drill_unpin_tag(auto_login_user, question, tag):
@@ -259,8 +259,8 @@ def test_drill_unpin_tag(auto_login_user, question, tag):
         "tag": tag[0].name
     })
 
-    assert json.loads(resp.content)["status"] == "Error"
-    assert resp.status_code == 200
+    assert json.loads(resp.content)["status"] == "ERROR"
+    assert resp.status_code == 400
 
 
 def test_sort_pinned_tags(auto_login_user, question, tag):
@@ -319,8 +319,8 @@ def test_drill_disable_tag(auto_login_user, tag):
         "tag": tag[0].name
     })
 
-    assert json.loads(resp.content)["status"] == "Error"
-    assert resp.status_code == 200
+    assert json.loads(resp.content)["status"] == "ERROR"
+    assert resp.status_code == 400
 
 
 def test_drill_enable_tag(auto_login_user, tag):
@@ -347,8 +347,8 @@ def test_drill_enable_tag(auto_login_user, tag):
         "tag": tag[0].name
     })
 
-    assert json.loads(resp.content)["status"] == "Error"
-    assert resp.status_code == 200
+    assert json.loads(resp.content)["status"] == "ERROR"
+    assert resp.status_code == 400
 
 
 def test_drill_is_favorite_mutate(auto_login_user, question, tag):

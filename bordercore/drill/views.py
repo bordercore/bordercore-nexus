@@ -180,25 +180,6 @@ class QuestionCreateView(LoginRequiredMixin, FormRequestMixin, CreateView):
         return reverse("drill:add")
 
 
-def handle_related_objects(question: Question, request: HttpRequest) -> None:
-    """Handle adding related objects to a question.
-
-    Parses related object information from the request POST data and
-    associates them with the question.
-
-    Args:
-        question: The Question instance to add related objects to.
-        request: The HTTP request containing related object data in POST.
-    """
-    info = request.POST.get("related-objects", None)
-
-    if not info:
-        return
-
-    for object_info in json.loads(info):
-        question.add_related_object(object_info["uuid"])
-
-
 class QuestionDeleteView(LoginRequiredMixin, DeleteView):
     """View for deleting a question.
 
@@ -236,6 +217,25 @@ class QuestionDeleteView(LoginRequiredMixin, DeleteView):
             "Question deleted"
         )
         return super().form_valid(form)
+
+
+def handle_related_objects(question: Question, request: HttpRequest) -> None:
+    """Handle adding related objects to a question.
+
+    Parses related object information from the request POST data and
+    associates them with the question.
+
+    Args:
+        question: The Question instance to add related objects to.
+        request: The HTTP request containing related object data in POST.
+    """
+    info = request.POST.get("related-objects", None)
+
+    if not info:
+        return
+
+    for object_info in json.loads(info):
+        question.add_related_object(object_info["uuid"])
 
 
 class QuestionDetailView(LoginRequiredMixin, DetailView):
@@ -587,18 +587,21 @@ def pin_tag(request: HttpRequest) -> JsonResponse:
 
     Returns:
         JSON response containing:
-            - status: "OK" on success, "Error" on failure
-            - message: Error message if status is "Error"
+            - status: "OK" on success, "ERROR" on failure
+            - message: Error message if status is "ERROR"
     """
     tag_name = request.POST["tag"]
 
     user = cast(User, request.user)
     if DrillTag.objects.filter(userprofile=user.userprofile, tag__name=tag_name).exists():
 
-        response = {
-            "status": "Error",
-            "message": "Duplicate: that tag is already pinned."
-        }
+        return JsonResponse(
+            {
+                "status": "ERROR",
+                "message": "Duplicate: that tag is already pinned."
+            },
+            status=400
+        )
 
     else:
 
@@ -606,11 +609,11 @@ def pin_tag(request: HttpRequest) -> JsonResponse:
         so = DrillTag(userprofile=user.userprofile, tag=tag)
         so.save()
 
-        response = {
-            "status": "OK"
-        }
-
-    return JsonResponse(response)
+        return JsonResponse(
+            {
+                "status": "OK"
+            }
+        )
 
 
 @login_required
@@ -627,29 +630,32 @@ def unpin_tag(request: HttpRequest) -> JsonResponse:
 
     Returns:
         JSON response containing:
-            - status: "OK" on success, "Error" on failure
-            - message: Error message if status is "Error"
+            - status: "OK" on success, "ERROR" on failure
+            - message: Error message if status is "ERROR"
     """
     tag_name = request.POST["tag"]
 
     user = cast(User, request.user)
     if not DrillTag.objects.filter(userprofile=user.userprofile, tag__name=tag_name).exists():
 
-        response = {
-            "status": "Error",
-            "message": "That tag is not pinned."
-        }
+        return JsonResponse(
+            {
+                "status": "ERROR",
+                "message": "That tag is not pinned."
+            },
+            status=400
+        )
 
     else:
 
         so = DrillTag.objects.get(userprofile=user.userprofile, tag__name=tag_name)
         so.delete()
 
-        response = {
-            "status": "OK"
-        }
-
-    return JsonResponse(response)
+        return JsonResponse(
+            {
+                "status": "OK"
+            }
+        )
 
 
 @login_required
@@ -696,24 +702,27 @@ def disable_tag(request: HttpRequest) -> JsonResponse:
 
     Returns:
         JSON response containing:
-            - status: "OK" on success, "Error" on failure
-            - message: Error message if status is "Error"
+            - status: "OK" on success, "ERROR" on failure
+            - message: Error message if status is "ERROR"
     """
     tag_name = request.POST["tag"]
 
     user = cast(User, request.user)
     if tag_name in {x["name"] for x in Question.objects.get_disabled_tags(user)}:
-        response = {
-            "status": "Error",
-            "message": "Questions with that tag are already disabled."
-        }
+        return JsonResponse(
+            {
+                "status": "ERROR",
+                "message": "Questions with that tag are already disabled."
+            },
+            status=400
+        )
     else:
         Question.objects.filter(tags__name=tag_name, user=user).update(is_disabled=True)
-        response = {
-            "status": "OK"
-        }
-
-    return JsonResponse(response)
+        return JsonResponse(
+            {
+                "status": "OK"
+            }
+        )
 
 
 @login_required
@@ -730,25 +739,28 @@ def enable_tag(request: HttpRequest) -> JsonResponse:
 
     Returns:
         JSON response containing:
-            - status: "OK" on success, "Error" on failure
-            - message: Error message if status is "Error"
+            - status: "OK" on success, "ERROR" on failure
+            - message: Error message if status is "ERROR"
     """
     tag_name = request.POST["tag"]
 
     user = cast(User, request.user)
     if tag_name not in {x["name"] for x in Question.objects.get_disabled_tags(user)}:
-        response = {
-            "status": "Error",
-            "message": "No question with that tag is disabled."
-        }
+        return JsonResponse(
+            {
+                "status": "ERROR",
+                "message": "No question with that tag is disabled."
+            },
+            status=400
+        )
     else:
         Question.objects.filter(tags__name=tag_name, user=user).update(is_disabled=False)
 
-        response = {
-            "status": "OK"
-        }
-
-    return JsonResponse(response)
+        return JsonResponse(
+            {
+                "status": "OK"
+            }
+        )
 
 
 @login_required

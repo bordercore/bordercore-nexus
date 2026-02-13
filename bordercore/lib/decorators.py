@@ -65,7 +65,7 @@ def validate_post_data(*required_fields: str) -> Callable[
             if missing_fields:
                 return JsonResponse(
                     {
-                        "status": "error",
+                        "status": "ERROR",
                         "message": f"Missing required fields: {', '.join(missing_fields)}"
                     }, status=400)
             return view_func(request, *args, **kwargs)

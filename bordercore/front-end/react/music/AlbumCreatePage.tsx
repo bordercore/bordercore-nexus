@@ -132,15 +132,15 @@ export function AlbumCreatePage({
 
       if (response.data.status !== "OK") {
         setProcessing(false);
-        setError(response.data.error || "Error creating album");
+        setError(response.data.message || "Error creating album");
       } else {
         // Redirect to new album
         window.location.href = response.data.url;
       }
-    } catch (err) {
+    } catch (err: any) {
       setProcessing(false);
       console.error("Error creating album:", err);
-      setError("Error creating album. Please try again.");
+      setError(err.response?.data?.message || "Error creating album. Please try again.");
     }
   };
 

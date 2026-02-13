@@ -519,8 +519,8 @@ def sort_pinned_tags(request: HttpRequest) -> JsonResponse:
 
     Returns:
         JSON response containing:
-            - status: "OK" on success, "Error" on failure
-            - message: Error message if status is "Error"
+            - status: "OK" on success, "ERROR" on failure
+            - message: Error message if status is "ERROR"
     """
     tag_id = request.POST["tag_id"]
     new_position = int(request.POST["new_position"])
@@ -528,7 +528,7 @@ def sort_pinned_tags(request: HttpRequest) -> JsonResponse:
     if new_position < 1:
 
         response = {
-            "status": "Error",
+            "status": "ERROR",
             "message": f"Position cannot be < 1: {new_position}"
         }
 
@@ -542,7 +542,7 @@ def sort_pinned_tags(request: HttpRequest) -> JsonResponse:
 
         response = {"status": "OK"}
 
-    return JsonResponse(response)
+    return JsonResponse(response, status=400 if new_position < 1 else 200)
 
 
 @login_required
@@ -682,8 +682,8 @@ def add_tag(request: HttpRequest) -> JsonResponse:
 
     Returns:
         JSON response containing:
-            - status: "OK" on success, "Error" on failure
-            - message: Error message if status is "Error"
+            - status: "OK" on success, "ERROR" on failure
+            - message: Error message if status is "ERROR"
     """
     bookmark_uuid = request.POST["bookmark_uuid"]
     tag_id = request.POST["tag_id"]
@@ -693,18 +693,21 @@ def add_tag(request: HttpRequest) -> JsonResponse:
     tag = Tag.objects.get(user=user, id=tag_id)
 
     if tag in bookmark.tags.all():
-        response = {
-            "status": "Error",
-            "message": f"Bookmark already has tag {tag}"
-        }
+        return JsonResponse(
+            {
+                "status": "ERROR",
+                "message": f"Bookmark already has tag {tag}"
+            },
+            status=400
+        )
     else:
         bookmark.tags.add(tag)
         bookmark.index_bookmark()
-        response = {
-            "status": "OK",
-        }
-
-    return JsonResponse(response)
+        return JsonResponse(
+            {
+                "status": "OK",
+            }
+        )
 
 
 @login_required
@@ -723,8 +726,8 @@ def remove_tag(request: HttpRequest) -> JsonResponse:
 
     Returns:
         JSON response containing:
-            - status: "OK" on success, "Error" on failure
-            - message: Error message if status is "Error"
+            - status: "OK" on success, "ERROR" on failure
+            - message: Error message if status is "ERROR"
     """
     bookmark_uuid = request.POST["bookmark_uuid"]
     tag_name = request.POST["tag_name"]
@@ -734,14 +737,17 @@ def remove_tag(request: HttpRequest) -> JsonResponse:
     tag = Tag.objects.get(user=user, name=tag_name)
 
     if tag not in bookmark.tags.all():
-        response = {
-            "status": "Error",
-            "message": f"Bookmark does not have tag {tag}"
-        }
+        return JsonResponse(
+            {
+                "status": "ERROR",
+                "message": f"Bookmark does not have tag {tag}"
+            },
+            status=400
+        )
     else:
         bookmark.delete_tag(tag)
-        response = {
-            "status": "OK",
-        }
-
-    return JsonResponse(response)
+        return JsonResponse(
+            {
+                "status": "OK",
+            }
+        )

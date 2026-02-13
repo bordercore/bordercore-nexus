@@ -1221,7 +1221,7 @@ def add_album_from_zipfile(request: HttpRequest) -> JsonResponse:
             json.loads(request.POST.get("songListChanges", "{}"))
         )
     except Exception as e:
-        return JsonResponse({"status": "Error", "error": str(e)})
+        return JsonResponse({"status": "ERROR", "message": str(e)}, status=400)
 
     # Save the song source in the session
     request.session["song_source"] = SongSource.objects.get(id=request.POST["source"]).name

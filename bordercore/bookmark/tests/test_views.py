@@ -244,7 +244,7 @@ def test_remove_tag(auto_login_user, monkeypatch_bookmark):
         "bookmark_uuid": bookmark.uuid,
         "tag_name": tag.name
     })
-    assert json.loads(resp.content)["status"] == "Error"
+    assert json.loads(resp.content)["status"] == "ERROR"
     updated_bookmark = Bookmark.objects.get(uuid=bookmark.uuid)
     assert updated_bookmark.tags.count() == 0
-    assert resp.status_code == 200
+    assert resp.status_code == 400

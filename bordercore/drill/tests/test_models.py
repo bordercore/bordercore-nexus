@@ -147,10 +147,10 @@ def test_add_related_object(auto_login_user, question):
     assert response == {"status": "OK"}
 
     response = question[0].add_related_object(uuid.uuid4())
-    assert response == {"status": "Error", "message": "Related Blob or Bookmark not found"}
+    assert response == {"status": "ERROR", "message": "Related Blob or Bookmark not found"}
 
     response = question[0].add_related_object(blob.uuid)
-    assert response == {"status": "Error", "message": "That object is already related"}
+    assert response == {"status": "ERROR", "message": "That object is already related"}
 
 
 def test_start_study_session(question, tag):

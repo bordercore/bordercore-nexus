@@ -375,14 +375,14 @@ def test_blob_parse_date(auto_login_user):
 
     url = urls.reverse("blob:parse_date", kwargs={"input_date": "2021-01-01"})
     resp = client.get(url)
-    assert resp.json() == {'output_date': '2021-01-01T00:00', 'error': None}
+    assert resp.json() == {'output_date': '2021-01-01T00:00', 'message': None}
     assert resp.status_code == 200
 
     # Test a bogus date
     url = urls.reverse("blob:parse_date", kwargs={"input_date": "2021-01-34"})
     resp = client.get(url)
     assert resp.status_code == 200
-    assert resp.json() == {'output_date': '', 'error': "time data '01/34/2021' does not match format '%m/%d/%Y'"}
+    assert resp.json() == {'output_date': '', 'message': "time data '01/34/2021' does not match format '%m/%d/%Y'"}
 
 
 def test_blob_update_cover_image(s3_resource, s3_bucket, auto_login_user):

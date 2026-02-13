@@ -186,17 +186,15 @@ def check_url(request: HttpRequest, url: str) -> JsonResponse:
     headers: Dict[str, str] = {"user-agent": USER_AGENT}
     r = requests.get(url, headers=headers, timeout=10)
     if r.status_code != HTTPStatus.OK   :
-        status: Dict[str, Any] = {
-            "status": "Error",
+        return JsonResponse({
+            "status": "ERROR",
             "status_code": r.status_code,
-            "error": r.text,
-        }
-    else:
-        d: Any = feedparser.parse(r.text)
-        status = {
-            "status": "OK",
-            "status_code": r.status_code,
-            "entry_count": len(d.entries),
-        }
+            "message": r.text,
+        }, status=400)
 
-    return JsonResponse(status)
+    d: Any = feedparser.parse(r.text)
+    return JsonResponse({
+        "status": "OK",
+        "status_code": r.status_code,
+        "entry_count": len(d.entries),
+    })

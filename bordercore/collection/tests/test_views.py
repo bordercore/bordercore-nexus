@@ -221,7 +221,7 @@ def test_add_object(auto_login_user, collection, blob_image_factory):
 
     url = urls.reverse("collection:add_object")
     resp = client.post(url, {
-        "collection_uuid": collection[0].uuid,
+        "collection_uuid": collection[1].uuid,
         "blob_uuid": blob_image_factory[0].uuid
     })
 
@@ -229,10 +229,11 @@ def test_add_object(auto_login_user, collection, blob_image_factory):
 
     # Test for adding a duplicate blob
     resp = client.post(url, {
-        "collection_uuid": collection[0].uuid,
+        "collection_uuid": collection[1].uuid,
         "blob_uuid": blob_image_factory[0].uuid
     })
-    assert resp.json()["status"] == "Error"
+    assert resp.status_code == 400
+    assert resp.json()["status"] == "ERROR"
 
 
 def test_remove_object(auto_login_user, collection, blob_image_factory):
@@ -289,5 +290,5 @@ def test_add_new_bookmark(mock_parse_title_from_url, monkeypatch_bookmark, auto_
         "url": bookmark.url
     })
 
-    assert resp.status_code == 200
-    assert resp.json()["status"] == "Error"
+    assert resp.status_code == 400
+    assert resp.json()["status"] == "ERROR"

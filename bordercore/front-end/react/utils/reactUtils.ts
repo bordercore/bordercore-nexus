@@ -63,9 +63,10 @@ export function doGet(
       }
     })
     .catch(error => {
+      const serverMessage = error.response?.data?.message;
       EventBus.$emit("toast", {
         title: "Error!",
-        body: `${errorMsg}: ${error.message}`,
+        body: serverMessage || `${errorMsg}: ${error.message}`,
         variant: "danger",
         autoHide: true,
       });
@@ -116,7 +117,7 @@ export function doPost(
     withCredentials: true, // Ensure cookies are sent for same-origin requests
   })
     .then(response => {
-      if (response.data.status && response.data.status === "Warning") {
+      if (response.data.status && response.data.status === "WARNING") {
         EventBus.$emit("toast", {
           title: "Error",
           body: response.data.message,
@@ -219,7 +220,7 @@ export function doPut(
     .catch(error => {
       EventBus.$emit("toast", {
         title: "Error",
-        body: error.message,
+        body: error.response?.data?.message || error.message,
         variant: "danger",
         autoHide: true,
       });

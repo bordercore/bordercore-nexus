@@ -176,8 +176,9 @@ export function CollectionDetailPage({
       } else {
         alert(response.data.message || "Error creating blob");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error uploading file:", error);
+      alert(error.response?.data?.message || "Error uploading file");
       processingModal.hide();
       setIsProcessing(false);
     }

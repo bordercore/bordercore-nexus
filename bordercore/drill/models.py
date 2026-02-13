@@ -349,7 +349,7 @@ class Question(TimeStampedModel):
 
         Returns:
             A dict with:
-            - "status": "OK" on success, "Error" otherwise.
+            - "status": "OK" on success, "ERROR" otherwise.
             - "message": Present only on error (e.g. already related, not found).
         """
         blob_instance: Blob | None = Blob.objects.filter(
@@ -365,13 +365,13 @@ class Question(TimeStampedModel):
                 related_kwargs = {"bookmark": bookmark_instance}
             else:
                 return {
-                    "status": "Error",
+                    "status": "ERROR",
                     "message": "Related Blob or Bookmark not found",
                 }
 
         if QuestionToObject.objects.filter(node=self, **related_kwargs).exists():
             return {
-                "status": "Error",
+                "status": "ERROR",
                 "message": "That object is already related",
             }
 

@@ -576,7 +576,7 @@ def add_quote(request: HttpRequest) -> JsonResponse:
     # Choose a random quote
     quote = Quote.objects.filter(user=user).order_by("?").first()
     if not quote:
-        return JsonResponse({"status": "error", "message": "No quotes available."}, status=404)
+        return JsonResponse({"status": "ERROR", "message": "No quotes available."}, status=404)
 
     node.add_component("quote", quote, options)
 
@@ -630,7 +630,7 @@ def get_quote(request: HttpRequest) -> JsonResponse:
         quote_qs = quote_qs.filter(is_favorite=True)
     quote = quote_qs.order_by("?").first()
     if not quote:
-        return JsonResponse({"status": "error", "message": "No quotes available."}, status=404)
+        return JsonResponse({"status": "ERROR", "message": "No quotes available."}, status=404)
 
     node = Node.objects.get(uuid=node_uuid, user=user)
     node.set_quote(quote.uuid)

@@ -178,7 +178,7 @@ class FormValidMixin(ModelFormMixin):
         Returns:
             JSON response with form errors and 400 status code.
         """
-        return JsonResponse(form.errors, status=400)
+        return JsonResponse({"status": "ERROR", "message": form.errors}, status=400)
 
 
 class BlobListView(LoginRequiredMixin, ListView):
@@ -782,7 +782,7 @@ def parse_date(request: HttpRequest, input_date: str) -> JsonResponse:
         error = str(e)
 
     return JsonResponse({"output_date": response,
-                         "error": error})
+                         "message": error})
 
 
 @login_required
@@ -901,15 +901,15 @@ def add_related_object(request: HttpRequest) -> JsonResponse:
         result = add_related_object_service(node_type, node_uuid, object_uuid, user)
         return JsonResponse(result, status=200)
     except UnsupportedNodeTypeError as e:
-        return JsonResponse({"status": "Error", "message": str(e)}, status=400)
+        return JsonResponse({"status": "ERROR", "message": str(e)}, status=400)
     except InvalidNodeTypeError as e:
-        return JsonResponse({"status": "Error", "message": str(e)}, status=400)
+        return JsonResponse({"status": "ERROR", "message": str(e)}, status=400)
     except NodeNotFoundError as e:
-        return JsonResponse({"status": "Error", "message": str(e)}, status=404)
+        return JsonResponse({"status": "ERROR", "message": str(e)}, status=404)
     except RelatedObjectNotFoundError as e:
-        return JsonResponse({"status": "Error", "message": str(e)}, status=400)
+        return JsonResponse({"status": "ERROR", "message": str(e)}, status=400)
     except ObjectAlreadyRelatedError as e:
-        return JsonResponse({"status": "Error", "message": str(e)}, status=400)
+        return JsonResponse({"status": "ERROR", "message": str(e)}, status=400)
 
 
 @login_required
@@ -1135,7 +1135,7 @@ def get_template(request: HttpRequest) -> JsonResponse:
 
     if not blob_template:
         return JsonResponse({
-            "error": "Template not found"
+            "message": "Template not found"
         }, status=HTTPStatus.NOT_FOUND)
 
     response = {
