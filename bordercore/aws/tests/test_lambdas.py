@@ -4,8 +4,8 @@ import os
 os.environ["EFS_DIR"] = "/mnt/efs"
 
 import pytest
-from aws.create_thumbnail.create_thumbnail_lambda import (extract_uuid,
-                                                          get_cover_filename)
+from bordercore.aws.create_thumbnail.create_thumbnail_lambda import (extract_uuid,
+                                                                    get_cover_filename)
 
 
 def test_extract_uuid():
