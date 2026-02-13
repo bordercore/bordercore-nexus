@@ -10,6 +10,10 @@ struct TodoFormInitialValues {
 }
 
 struct NewTodoFormView: View {
+    private enum Field {
+        case name
+    }
+
     @Environment(\.dismiss) private var dismiss
 
     let title: String
@@ -28,6 +32,7 @@ struct NewTodoFormView: View {
     @State private var localError: String?
     @State private var tagSuggestions: [String] = []
     @State private var autocompleteTask: Task<Void, Never>?
+    @FocusState private var focusedField: Field?
 
     init(
         title: String = "New Todo",
@@ -45,8 +50,8 @@ struct NewTodoFormView: View {
             name: "",
             note: "",
             urlString: "",
-            tagsCSV: "",
-            priority: 3,
+            tagsCSV: "personal",
+            priority: 1,
             dueDate: nil
         )
 
@@ -64,6 +69,7 @@ struct NewTodoFormView: View {
             Form {
                 Section("Task") {
                     TextField("Name", text: $name)
+                        .focused($focusedField, equals: .name)
                     TextField("URL", text: $urlString)
                         .keyboardType(.URL)
                         .textInputAutocapitalization(.never)
@@ -127,6 +133,9 @@ struct NewTodoFormView: View {
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 scheduleTagSuggestions(for: tagsCSV)
+                DispatchQueue.main.async {
+                    focusedField = .name
+                }
             }
             .onDisappear {
                 autocompleteTask?.cancel()

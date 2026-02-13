@@ -17,7 +17,7 @@ struct BookmarkListView: View {
                 List {
                     ForEach(viewModel.bookmarks) { bookmark in
                         BookmarkRowView(bookmark: bookmark)
-                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                 Button(role: .destructive) {
                                     Task {
                                         await viewModel.deleteBookmark(bookmark)
@@ -25,6 +25,7 @@ struct BookmarkListView: View {
                                 } label: {
                                     Label("Delete", systemImage: "trash")
                                 }
+                                .tint(.red)
                             }
                     }
                 }
