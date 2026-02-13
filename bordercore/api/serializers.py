@@ -264,6 +264,7 @@ class TodoSerializer(serializers.ModelSerializer):
         return instance
 
     def update(self, instance: Todo, validated_data: dict[str, Any]) -> Todo:
+        instance.name = validated_data.get("name", instance.name)
         instance.note = validated_data.get("note", instance.note)
         instance.priority = validated_data.get("priority", instance.priority)
         instance.url = validated_data.get("url", instance.url)
