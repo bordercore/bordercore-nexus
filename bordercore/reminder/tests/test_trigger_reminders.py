@@ -17,7 +17,7 @@ pytestmark = pytest.mark.django_db
 
 def test_dry_run_finds_due_reminders_but_makes_no_changes():
     """With --dry-run, due reminders are found but DB is unchanged (no timestamps, no Todo)."""
-    user = UserFactory(email="user@example.com")
+    user = UserFactory(username="user_dryrun", email="user@example.com")
     reminder = ReminderFactory(
         user=user,
         name="Dry Run Reminder",
@@ -38,7 +38,7 @@ def test_dry_run_finds_due_reminders_but_makes_no_changes():
 
 def test_trigger_flow_updates_timestamps_and_sends_email():
     """When due, command updates last_triggered_at and next_trigger_at and sends email."""
-    user = UserFactory(email="trigger@example.com")
+    user = UserFactory(username="user_trigger", email="trigger@example.com")
     reminder = ReminderFactory(
         user=user,
         name="Trigger Me",
@@ -61,7 +61,7 @@ def test_trigger_flow_updates_timestamps_and_sends_email():
 
 def test_trigger_creates_todo_when_create_todo_enabled():
     """When create_todo is True, triggering creates a Todo task."""
-    user = UserFactory(email="todo@example.com")
+    user = UserFactory(username="user_todo", email="todo@example.com")
     reminder = ReminderFactory(
         user=user,
         name="Create Todo Reminder",
@@ -83,7 +83,7 @@ def test_trigger_creates_todo_when_create_todo_enabled():
 
 def test_trigger_does_not_create_todo_when_create_todo_disabled():
     """When create_todo is False, no Todo is created."""
-    user = UserFactory(email="notodo@example.com")
+    user = UserFactory(username="user_notodo", email="notodo@example.com")
     reminder = ReminderFactory(
         user=user,
         name="No Todo Reminder",
@@ -100,7 +100,7 @@ def test_trigger_does_not_create_todo_when_create_todo_disabled():
 
 def test_user_with_no_email_increments_failed_reminder_not_updated():
     """When user has no email, send_reminder_notification raises; reminder not updated."""
-    user = UserFactory(email="")
+    user = UserFactory(username="user_noemail", email="")
     reminder = ReminderFactory(
         user=user,
         name="No Email Reminder",
@@ -119,7 +119,7 @@ def test_user_with_no_email_increments_failed_reminder_not_updated():
 
 def test_inactive_reminder_not_selected():
     """Inactive reminders are not selected even if next_trigger_at is in the past."""
-    user = UserFactory(email="inactive@example.com")
+    user = UserFactory(username="user_inactive", email="inactive@example.com")
     reminder = ReminderFactory(
         user=user,
         name="Inactive Reminder",
@@ -137,7 +137,7 @@ def test_inactive_reminder_not_selected():
 
 def test_not_due_reminder_not_selected():
     """Reminders with next_trigger_at in the future are not selected."""
-    user = UserFactory(email="future@example.com")
+    user = UserFactory(username="user_future", email="future@example.com")
     reminder = ReminderFactory(
         user=user,
         name="Future Reminder",

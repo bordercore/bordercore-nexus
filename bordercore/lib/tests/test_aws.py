@@ -45,6 +45,18 @@ def aws_env(monkeypatch):
 def s3(aws_env):
     with mock_aws():
         client = boto3.client("s3", region_name="us-east-1")
+        # Clean up bucket from previous tests (session-scoped mock_aws
+        # makes nested contexts share state)
+        try:
+            resp = client.list_objects_v2(Bucket=BUCKET)
+            if "Contents" in resp:
+                client.delete_objects(
+                    Bucket=BUCKET,
+                    Delete={"Objects": [{"Key": o["Key"]} for o in resp["Contents"]]},
+                )
+            client.delete_bucket(Bucket=BUCKET)
+        except client.exceptions.NoSuchBucket:
+            pass
         client.create_bucket(Bucket=BUCKET)
         yield client
 

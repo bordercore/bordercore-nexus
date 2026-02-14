@@ -19,7 +19,7 @@ class UserFactory(factory.django.DjangoModelFactory):
 
     class Meta:
         model = User
-        django_get_or_create = ("username", "email")
+        django_get_or_create = ("username",)
 
     username = TEST_USERNAME
     password = factory.PostGenerationMethodCall("set_password", TEST_PASSWORD)

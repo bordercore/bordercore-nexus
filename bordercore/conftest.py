@@ -59,6 +59,7 @@ from music.models import Listen, SongSource, PlaylistItem  # isort:skip
 from music.tests.factories import SongFactory, AlbumFactory, PlaylistFactory  # isort:skip
 from node.tests.factories import NodeFactory  # isort:skip
 from quote.tests.factories import QuoteFactory  # isort:skip
+from tag.models import Tag  # isort:skip
 from tag.tests.factories import TagFactory  # isort:skip
 from todo.tests.factories import TodoFactory  # isort:skip
 
@@ -72,7 +73,7 @@ except ModuleNotFoundError:
 # with the MD5 hasher. Factories and client.login call set_password, so using the
 # fast hasher removes thousands of PBKDF2 iterations per test and keeps profiles
 # free of _hashlib.pbkdf2_hmac hotspots.
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=True, scope="session")
 def fast_password_hashers():
     settings.PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 
@@ -188,21 +189,14 @@ def aws_credentials():
 
 
 @pytest.fixture
-def auto_login_user(client, blob_text_factory, tag):
+def auto_login_user(client, _seed_data, blob_text_factory):
 
     def make_auto_login(user=None):
-
         if user is None:
-            user = UserFactory()
-            UserNote.objects.get_or_create(userprofile=user.userprofile, blob=blob_text_factory[0])
-
-            # Make the user an admin
-            admin_group, _ = Group.objects.get_or_create(name="Admin")
-            admin_group.user_set.add(user)
-
-            DrillTag.objects.get_or_create(userprofile=user.userprofile, tag=tag[0])
-            DrillTag.objects.get_or_create(userprofile=user.userprofile, tag=tag[1])
-
+            user = _seed_data["user"]
+            UserNote.objects.get_or_create(
+                userprofile=user.userprofile, blob=blob_text_factory[0]
+            )
         client.login(username=user.username, password=TEST_PASSWORD)
         return user, client
 
@@ -283,9 +277,34 @@ def _pdf_file_bytes():
         return fh.read()
 
 
+@pytest.fixture(scope="session")
+def _seed_data(fast_password_hashers, django_db_setup, django_db_blocker):
+    """Create the user and tag graph once per session.
+
+    Blobs are intentionally NOT session-scoped because S3 state
+    (session-scoped mock_aws) doesn't roll back with per-test DB
+    transactions, causing cross-test interference.
+    """
+    with django_db_blocker.unblock():
+        user = UserFactory()
+        admin_group, _ = Group.objects.get_or_create(name="Admin")
+        admin_group.user_set.add(user)
+
+        tag_0, _ = Tag.objects.get_or_create(name="django", defaults={"user": user})
+        tag_1, _ = Tag.objects.get_or_create(name="video", defaults={"user": user, "is_meta": True})
+        tag_2, _ = Tag.objects.get_or_create(name="linux", defaults={"user": user})
+
+        DrillTag.objects.get_or_create(userprofile=user.userprofile, tag=tag_0)
+        DrillTag.objects.get_or_create(userprofile=user.userprofile, tag=tag_1)
+
+    return {
+        "tags": [tag_0, tag_1, tag_2],
+        "user": user,
+    }
+
+
 @pytest.fixture()
 def blob_pdf_factory(temp_blob_directory, db, s3_resource, s3_bucket, _pdf_file_bytes):
-
     yield _create_blob(file_contents=_pdf_file_bytes, extension="pdf")
 
 
@@ -307,11 +326,14 @@ def _create_blob(file_contents=None, **file_info):
         name="Author",
         value=faker.text(max_nb_chars=40),
     )
-    MetaData.objects.create(
-        user=blob.user,
+    # BlobFactory.metadata post_generation already creates a "Url"
+    # MetaData unconditionally, so use update_or_create to avoid
+    # violating the unique_metadata_name_value_blob constraint if
+    # faker generates the same URL string.
+    MetaData.objects.update_or_create(
         blob=blob,
         name="Url",
-        value=faker.url(),
+        defaults={"user": blob.user, "value": faker.url()},
     )
 
     if not file_contents:
@@ -352,11 +374,14 @@ def blob_text_factory(db, s3_resource, s3_bucket):
             name="Author",
             value=faker.text(max_nb_chars=40),
         )
-        MetaData.objects.create(
-            user=blob.user,
+        # BlobFactory.metadata post_generation already creates a "Url"
+        # MetaData unconditionally, so use update_or_create to avoid
+        # violating the unique_metadata_name_value_blob constraint if
+        # faker generates the same URL string.
+        MetaData.objects.update_or_create(
             blob=blob,
             name="Url",
-            value=faker.url(),
+            defaults={"user": blob.user, "value": faker.url()},
         )
 
         BlobFactory.index_blob(blob)
@@ -736,15 +761,8 @@ def sort_order_user_tag(auto_login_user, tag):
 
 
 @pytest.fixture()
-def tag():
-
-    TagFactory.reset_sequence(0)
-
-    tag_0 = TagFactory(name="django")
-    tag_1 = TagFactory(name="video", is_meta=True)
-    tag_2 = TagFactory(name="linux")
-
-    yield [tag_0, tag_1, tag_2]
+def tag(_seed_data):
+    yield _seed_data["tags"]
 
 
 @pytest.fixture()
