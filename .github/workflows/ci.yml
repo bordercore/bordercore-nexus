@@ -50,4 +50,4 @@ jobs:
         DATABASE_USER: postgres
         DATABASE_PASSWORD: postgres
       run: |
-        pytest -m "not data_quality and not functional" ./bordercore/ -v
+        pytest -m "not data_quality and not functional" ./bordercore/ -v -n auto

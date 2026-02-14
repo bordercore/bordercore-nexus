@@ -164,10 +164,11 @@ def mock_es_client():
         yield mock_client
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session")
 def temp_blob_directory():
     """
-    Create the temporary directory needed by the Elasticsearch indexer
+    Create the temporary directory needed by the Elasticsearch indexer.
+    Session-scoped: only one temp dir for the entire test run.
     """
     temp_dir = tempfile.TemporaryDirectory()
     os.environ["EFS_DIR"] = temp_dir.name
@@ -177,7 +178,7 @@ def temp_blob_directory():
     # Note: The temp directory is automatically removed once the test has finished
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session")
 def aws_credentials():
     """Mocked AWS Credentials for moto."""
     os.environ["AWS_ACCESS_KEY_ID"] = "testing"
@@ -274,15 +275,18 @@ def blob_note(temp_blob_directory, db, s3_resource, s3_bucket):
     yield blob_1, blob_2
 
 
-@pytest.fixture()
-def blob_pdf_factory(temp_blob_directory, db, s3_resource, s3_bucket):
-
+@pytest.fixture(scope="session")
+def _pdf_file_bytes():
+    """Generate PDF bytes once per session — ReportLab is expensive."""
     file = faker.pdf_file(pdf_generator_cls=ReportlabPdfGenerator)
-
     with open(file.data["filename"], "rb") as fh:
-        file_contents = fh.read()
+        return fh.read()
 
-    yield _create_blob(file_contents=file_contents, extension="pdf")
+
+@pytest.fixture()
+def blob_pdf_factory(temp_blob_directory, db, s3_resource, s3_bucket, _pdf_file_bytes):
+
+    yield _create_blob(file_contents=_pdf_file_bytes, extension="pdf")
 
 
 @pytest.fixture()
@@ -641,15 +645,15 @@ def quote():
     yield quote
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session")
 def s3_resource(aws_credentials):
-    """Mocked S3 Fixture."""
+    """Mocked S3 Fixture. Session-scoped: moto context stays open for the entire run."""
 
     with mock_aws():
         yield boto3.resource(service_name="s3")
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session")
 def s3_bucket(s3_resource):
 
     # Verify that the S3 mock is working

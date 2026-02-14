@@ -77,7 +77,7 @@ max-line-length = 160
 disable = ["imported-auth-user"]
 
 [tool.pytest.ini_options]
-addopts = "--capture=no --tb=line -p no:cacheprovider --ignore=node_modules"
+addopts = "--reuse-db --capture=no --tb=line -p no:cacheprovider --ignore=node_modules"
 markers = [
     "data_quality: tests that measure data integrity",
     "django_db: Access the Django database (provided by pytest-django)",
