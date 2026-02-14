@@ -22,7 +22,7 @@ from django.db.models import Count, QuerySet
 from django.forms import BaseModelForm
 from django.http import (Http404, HttpRequest, HttpResponse,
                          HttpResponseRedirect, JsonResponse)
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DeleteView, ListView, UpdateView
@@ -58,7 +58,7 @@ def click(request: HttpRequest, bookmark_uuid: str | None = None) -> HttpRespons
     user = cast(User, request.user)
     if not bookmark_uuid:
         raise Http404("Bookmark UUID is required")
-    b = Bookmark.objects.get(user=user, uuid=bookmark_uuid)
+    b = get_object_or_404(Bookmark, user=user, uuid=bookmark_uuid)
     if b.daily is None:
         b.daily = {}
     b.daily["viewed"] = "true"
@@ -98,7 +98,7 @@ class BookmarkFormValidMixin(ModelFormMixin):
             bookmark.save()
 
             for tag in bookmark.tags.all():
-                s = TagBookmark.objects.get(tag=tag, bookmark=bookmark)
+                s = get_object_or_404(TagBookmark, tag=tag, bookmark=bookmark)
                 s.delete()
 
             # Delete all existing tags
@@ -535,9 +535,9 @@ def sort_pinned_tags(request: HttpRequest) -> JsonResponse:
     else:
 
         user = cast(User, request.user)
-        tag = Tag.objects.get(user=user, id=tag_id)
+        tag = get_object_or_404(Tag, user=user, id=tag_id)
 
-        s = UserTag.objects.get(userprofile=user.userprofile, tag=tag)
+        s = get_object_or_404(UserTag, userprofile=user.userprofile, tag=tag)
         UserTag.reorder(s, new_position)
 
         response = {"status": "OK"}
@@ -568,7 +568,7 @@ def sort_bookmarks(request: HttpRequest) -> JsonResponse:
     new_position = int(request.POST["position"])
 
     user = cast(User, request.user)
-    tb = TagBookmark.objects.get(tag__name=tag_name, tag__user=user, bookmark__uuid=bookmark_uuid, bookmark__user=user)
+    tb = get_object_or_404(TagBookmark, tag__name=tag_name, tag__user=user, bookmark__uuid=bookmark_uuid, bookmark__user=user)
     TagBookmark.reorder(tb, new_position)
 
     return JsonResponse({"status": "OK"})
@@ -689,8 +689,8 @@ def add_tag(request: HttpRequest) -> JsonResponse:
     tag_id = request.POST["tag_id"]
 
     user = cast(User, request.user)
-    bookmark = Bookmark.objects.get(uuid=bookmark_uuid, user=user)
-    tag = Tag.objects.get(user=user, id=tag_id)
+    bookmark = get_object_or_404(Bookmark, uuid=bookmark_uuid, user=user)
+    tag = get_object_or_404(Tag, user=user, id=tag_id)
 
     if tag in bookmark.tags.all():
         return JsonResponse(
@@ -733,8 +733,8 @@ def remove_tag(request: HttpRequest) -> JsonResponse:
     tag_name = request.POST["tag_name"]
 
     user = cast(User, request.user)
-    bookmark = Bookmark.objects.get(uuid=bookmark_uuid, user=user)
-    tag = Tag.objects.get(user=user, name=tag_name)
+    bookmark = get_object_or_404(Bookmark, uuid=bookmark_uuid, user=user)
+    tag = get_object_or_404(Tag, user=user, name=tag_name)
 
     if tag not in bookmark.tags.all():
         return JsonResponse(

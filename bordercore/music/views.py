@@ -859,7 +859,7 @@ def mark_song_as_listened_to(request: Request, song_uuid: str) -> JsonResponse:
     Returns:
         JSON response with status and play count.
     """
-    song = Song.objects.get(user=request.user, uuid=song_uuid)
+    song = get_object_or_404(Song, user=request.user, uuid=song_uuid)
     if not settings.DEBUG:
         song.listen_to()
 
@@ -1245,7 +1245,7 @@ def get_playlist(request: HttpRequest, playlist_uuid: str) -> JsonResponse:
     Returns:
         JSON response with playlist songs, total time, and status.
     """
-    playlist = Playlist.objects.get(uuid=playlist_uuid)
+    playlist = get_object_or_404(Playlist, uuid=playlist_uuid, user=request.user)
 
     playlist_data = get_playlist_songs(playlist)
     playtime_seconds: float = float(cast(int, playlist_data["playtime"]))

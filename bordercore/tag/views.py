@@ -11,7 +11,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.db.models import QuerySet
 from django.http import HttpRequest, HttpResponse, JsonResponse
-from django.shortcuts import redirect
+from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.http import require_POST
 from django.views.generic.list import ListView
 
@@ -40,7 +40,7 @@ def pin(request: HttpRequest) -> HttpResponse:
     user = cast(User, request.user)
     tag_name = request.POST["tag"]
 
-    tag = Tag.objects.get(name=tag_name, user=user)
+    tag = get_object_or_404(Tag, name=tag_name, user=user)
     tag.pin()
 
     return redirect("bookmark:overview")
@@ -64,7 +64,7 @@ def unpin(request: HttpRequest) -> HttpResponse:
     user = cast(User, request.user)
     tag_name = request.POST["tag"]
 
-    tag = Tag.objects.get(name=tag_name, user=user)
+    tag = get_object_or_404(Tag, name=tag_name, user=user)
     tag.unpin()
 
     return redirect("bookmark:overview")
@@ -144,7 +144,7 @@ def add_alias(request: HttpRequest) -> JsonResponse:
         }
     else:
         user = cast(User, request.user)
-        tag = Tag.objects.get(name=tag_name, user=user)
+        tag = get_object_or_404(Tag, name=tag_name, user=user)
         tag_alias = TagAlias(name=alias_name, tag=tag, user=user)
         tag_alias.save()
         response = {
@@ -178,7 +178,7 @@ def get_todo_counts(request: HttpRequest) -> JsonResponse:
             return JsonResponse({"status": "ERROR", "message": "No tags found for user."}, status=404)
         tag_name = tag_obj.name
 
-    tag = Tag.objects.get(name=tag_name, user=user)
+    tag = get_object_or_404(Tag, name=tag_name, user=user)
     info = tag.get_todo_counts().first() or {}
 
     response = {

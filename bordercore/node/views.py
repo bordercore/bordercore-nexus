@@ -20,6 +20,7 @@ from django.db import transaction
 from django.db.models.query import QuerySet as QuerySetType
 from django.http import (HttpRequest, HttpResponse, HttpResponseRedirect,
                          JsonResponse)
+from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -194,7 +195,7 @@ def edit_note(request: HttpRequest) -> JsonResponse:
     user = cast(User, request.user)
 
     with transaction.atomic():
-        node = Node.objects.get(uuid=node_uuid, user=user)
+        node = get_object_or_404(Node, uuid=node_uuid, user=user)
         node.note = note
         node.save(update_fields=["note"])
 
@@ -217,7 +218,7 @@ def get_todo_list(request: HttpRequest, uuid: str) -> JsonResponse:
         Json response with ``todo_list`` payload and status.
     """
     user = cast(User, request.user)
-    node = Node.objects.get(uuid=uuid, user=user)
+    node = get_object_or_404(Node, uuid=uuid, user=user)
     todo_list = node.get_todo_list()
 
     response = {"status": "OK", "todo_list": todo_list}
@@ -241,11 +242,12 @@ def add_todo(request: HttpRequest) -> JsonResponse:
     user = cast(User, request.user)
 
     with transaction.atomic():
-        node = Node.objects.select_for_update().get(
+        node = get_object_or_404(
+            Node.objects.select_for_update(),
             uuid=node_uuid,
-            user=user
+            user=user,
         )
-        todo = Todo.objects.get(uuid=todo_uuid, user=user)
+        todo = get_object_or_404(Todo, uuid=todo_uuid, user=user)
 
         so = NodeTodo(node=node, todo=todo)
         so.save()
@@ -274,10 +276,11 @@ def remove_todo(request: HttpRequest) -> JsonResponse:
     user = cast(User, request.user)
 
     with transaction.atomic():
-        so = NodeTodo.objects.select_related("node").get(
+        so = get_object_or_404(
+            NodeTodo.objects.select_related("node"),
             node__user=user,
             node__uuid=node_uuid,
-            todo__uuid=todo_uuid
+            todo__uuid=todo_uuid,
         )
         node = so.node  # capture before delete
         so.delete()
@@ -307,10 +310,11 @@ def sort_todos(request: HttpRequest) -> JsonResponse:
     user = cast(User, request.user)
 
     with transaction.atomic():
-        so = NodeTodo.objects.get(
+        so = get_object_or_404(
+            NodeTodo,
             node__user=user,
             node__uuid=node_uuid,
-            todo__uuid=todo_uuid
+            todo__uuid=todo_uuid,
         )
         NodeTodo.reorder(so, new_position)
 
@@ -337,7 +341,7 @@ def change_layout(request: HttpRequest) -> JsonResponse:
     layout = request.POST.get("layout", "").strip()
     user = cast(User, request.user)
 
-    node = Node.objects.get(uuid=node_uuid, user=user)
+    node = get_object_or_404(Node, uuid=node_uuid, user=user)
     node.layout = json.loads(layout)
     node.save()
 
@@ -374,7 +378,7 @@ def add_collection(request: HttpRequest) -> JsonResponse:
     limit = None if limit_raw.strip().lower() in ("", "null") else int(limit_raw)
     user = cast(User, request.user)
 
-    node = Node.objects.get(uuid=node_uuid, user=user)
+    node = get_object_or_404(Node, uuid=node_uuid, user=user)
     collection = node.add_collection(
         collection_name, collection_uuid, display, rotate, random_order, limit
     )
@@ -417,11 +421,11 @@ def update_collection(request: HttpRequest) -> JsonResponse:
     user = cast(User, request.user)
 
     with transaction.atomic():
-        collection = Collection.objects.get(uuid=collection_uuid, user=user)
+        collection = get_object_or_404(Collection, uuid=collection_uuid, user=user)
         collection.name = name
         collection.save(update_fields=["name"])
 
-        node = Node.objects.get(uuid=node_uuid, user=user)
+        node = get_object_or_404(Node, uuid=node_uuid, user=user)
         node.update_collection(collection_uuid, display, random_order, rotate, limit)
 
     response = {"status": "OK"}
@@ -445,7 +449,7 @@ def delete_collection(request: HttpRequest) -> JsonResponse:
     collection_type = request.POST.get("collection_type", "").strip()
     user = cast(User, request.user)
 
-    node = Node.objects.get(uuid=node_uuid, user=user)
+    node = get_object_or_404(Node, uuid=node_uuid, user=user)
     node.delete_collection(collection_uuid, collection_type)
 
     response = {"status": "OK", "layout": node.get_layout()}
@@ -469,7 +473,7 @@ def add_note(request: HttpRequest) -> JsonResponse:
     color = int(request.POST.get("color", "").strip())
     user = cast(User, request.user)
 
-    node = Node.objects.get(uuid=node_uuid, user=user)
+    node = get_object_or_404(Node, uuid=node_uuid, user=user)
     note = node.add_note(note_name)
 
     node.set_note_color(str(note.uuid), color)
@@ -498,7 +502,7 @@ def delete_note(request: HttpRequest) -> JsonResponse:
     note_uuid = request.POST.get("note_uuid", "").strip()
     user = cast(User, request.user)
 
-    node = Node.objects.get(uuid=node_uuid, user=user)
+    node = get_object_or_404(Node, uuid=node_uuid, user=user)
     node.delete_note(note_uuid)
 
     response = {"status": "OK", "layout": node.get_layout()}
@@ -522,7 +526,7 @@ def set_note_color(request: HttpRequest) -> JsonResponse:
     color = int(request.POST.get("color", "").strip())
     user = cast(User, request.user)
 
-    node = Node.objects.get(uuid=node_uuid, user=user)
+    node = get_object_or_404(Node, uuid=node_uuid, user=user)
     node.set_note_color(note_uuid, color)
 
     response = {"status": "OK"}
@@ -545,8 +549,8 @@ def add_image(request: HttpRequest) -> JsonResponse:
     image_uuid = request.POST.get("image_uuid", "").strip()
     user = cast(User, request.user)
 
-    node = Node.objects.get(uuid=node_uuid, user=user)
-    image = Blob.objects.get(uuid=image_uuid, user=user)
+    node = get_object_or_404(Node, uuid=node_uuid, user=user)
+    image = get_object_or_404(Blob, uuid=image_uuid, user=user)
     node.add_component("image", image)
 
     node.populate_image_info()
@@ -571,7 +575,7 @@ def add_quote(request: HttpRequest) -> JsonResponse:
     options = json.loads(request.POST.get("options", "{}").strip())
     user = cast(User, request.user)
 
-    node = Node.objects.get(uuid=node_uuid, user=user)
+    node = get_object_or_404(Node, uuid=node_uuid, user=user)
 
     # Choose a random quote
     quote = Quote.objects.filter(user=user).order_by("?").first()
@@ -602,7 +606,7 @@ def update_quote(request: HttpRequest) -> JsonResponse:
     options["favorites_only"] = options.get("favorites_only", "false").strip() == "true"
     user = cast(User, request.user)
 
-    node = Node.objects.get(uuid=node_uuid, user=user)
+    node = get_object_or_404(Node, uuid=node_uuid, user=user)
     node.update_component(uuid, options)
 
     response = {"status": "OK", "layout": node.get_layout()}
@@ -632,7 +636,7 @@ def get_quote(request: HttpRequest) -> JsonResponse:
     if not quote:
         return JsonResponse({"status": "ERROR", "message": "No quotes available."}, status=404)
 
-    node = Node.objects.get(uuid=node_uuid, user=user)
+    node = get_object_or_404(Node, uuid=node_uuid, user=user)
     node.set_quote(quote.uuid)
 
     response = {
@@ -662,7 +666,7 @@ def add_todo_list(request: HttpRequest) -> JsonResponse:
     node_uuid = request.POST.get("node_uuid", "").strip()
     user = cast(User, request.user)
 
-    node = Node.objects.get(uuid=node_uuid, user=user)
+    node = get_object_or_404(Node, uuid=node_uuid, user=user)
     node.add_todo_list()
 
     response = {"status": "OK", "layout": node.get_layout()}
@@ -684,7 +688,7 @@ def delete_todo_list(request: HttpRequest) -> JsonResponse:
     node_uuid = request.POST.get("node_uuid", "").strip()
     user = cast(User, request.user)
 
-    node = Node.objects.get(uuid=node_uuid, user=user)
+    node = get_object_or_404(Node, uuid=node_uuid, user=user)
     node.delete_todo_list()
 
     response = {"status": "OK", "layout": node.get_layout()}
@@ -708,8 +712,8 @@ def add_node(request: HttpRequest) -> JsonResponse:
     options = json.loads(request.POST.get("options", "{}").strip())
     user = cast(User, request.user)
 
-    parent_node = Node.objects.get(uuid=parent_node_uuid, user=user)
-    node = Node.objects.get(uuid=node_uuid, user=user)
+    parent_node = get_object_or_404(Node, uuid=parent_node_uuid, user=user)
+    node = get_object_or_404(Node, uuid=node_uuid, user=user)
     parent_node.add_component("node", node, options)
 
     response = {"status": "OK", "layout": parent_node.get_layout()}
@@ -733,7 +737,7 @@ def update_node(request: HttpRequest) -> JsonResponse:
     options = json.loads(request.POST.get("options", "").strip())
     user = cast(User, request.user)
 
-    node = Node.objects.get(uuid=parent_node_uuid, user=user)
+    node = get_object_or_404(Node, uuid=parent_node_uuid, user=user)
     node.update_component(uuid, options)
 
     response = {"status": "OK", "layout": node.get_layout()}
@@ -774,7 +778,7 @@ def node_preview(request: HttpRequest, uuid: str) -> JsonResponse:
         JSON response with ``info`` block for display and status.
     """
     user = cast(User, request.user)
-    node = Node.objects.get(user=user, uuid=uuid)
+    node = get_object_or_404(Node, user=user, uuid=uuid)
     preview = node.get_preview()
 
     try:
@@ -818,7 +822,7 @@ def remove_component(request: HttpRequest) -> JsonResponse:
     uuid = request.POST.get("uuid", "").strip()
     user = cast(User, request.user)
 
-    node = Node.objects.get(uuid=node_uuid, user=user)
+    node = get_object_or_404(Node, uuid=node_uuid, user=user)
     node.remove_component(uuid)
 
     response = {"status": "OK", "layout": node.get_layout()}

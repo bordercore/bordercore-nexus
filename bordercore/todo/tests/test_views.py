@@ -119,20 +119,15 @@ def test_sort_todo_success():
 
     mock_tag_todo = Mock()
 
-    with patch("todo.views.TagTodo.objects.select_for_update") as mock_select:
-        mock_select.return_value.get.return_value = mock_tag_todo
-
+    with patch("todo.views.get_object_or_404", return_value=mock_tag_todo) as mock_get:
         with patch("todo.views.TagTodo.reorder") as mock_reorder:
-            with patch("todo.views.TagTodo.objects.filter") as mock_filter:
-                mock_filter.return_value.count.return_value = 5
+            response = sort_todo(request)
 
-                response = sort_todo(request)
-
-                assert isinstance(response, JsonResponse)
-                data = json.loads(response.content)
-                assert data["status"] == "OK"
-                assert data["new_position"] == 2
-                mock_reorder.assert_called_once_with(mock_tag_todo, 2)
+            assert isinstance(response, JsonResponse)
+            data = json.loads(response.content)
+            assert data["status"] == "OK"
+            assert data["new_position"] == 2
+            mock_reorder.assert_called_once_with(mock_tag_todo, 2)
 
 
 def test_sort_todo(auto_login_user, todo):

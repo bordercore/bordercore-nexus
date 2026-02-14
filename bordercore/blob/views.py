@@ -22,7 +22,7 @@ from django.db.models import Count, Q, QuerySet
 from django.forms import BaseModelForm
 from django.http import (HttpRequest, HttpResponse, HttpResponseRedirect,
                          JsonResponse, StreamingHttpResponse)
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -124,13 +124,13 @@ class FormValidMixin(ModelFormMixin):
 
             if new_object:
                 if "linked_blob_uuid" in self.request.POST:
-                    linked_blob = Blob.objects.get(uuid=self.request.POST["linked_blob_uuid"], user=user)
+                    linked_blob = get_object_or_404(Blob, uuid=self.request.POST["linked_blob_uuid"], user=user)
                     BlobToObject.objects.create(node=linked_blob, blob=blob)
 
                 handle_linked_collection(blob, self.request)
 
                 if "collection_uuid" in self.request.POST:
-                    collection = Collection.objects.get(uuid=self.request.POST["collection_uuid"], user=user)
+                    collection = get_object_or_404(Collection, uuid=self.request.POST["collection_uuid"], user=user)
                     collection.add_object(blob)
 
         # Call index_blob outside the transaction since it's an external service call
@@ -240,7 +240,7 @@ class BlobCreateView(LoginRequiredMixin, FormRequestMixin, CreateView, FormValid
         user = cast(User, self.request.user)
 
         if "linked_blob_uuid" in self.request.GET:
-            linked_blob = Blob.objects.get(user=user, uuid=self.request.GET["linked_blob_uuid"])
+            linked_blob = get_object_or_404(Blob, user=user, uuid=self.request.GET["linked_blob_uuid"])
             context["linked_blob"] = {
                 "name": linked_blob.name,
                 "thumbnail_url": linked_blob.cover_url_small,
@@ -251,9 +251,8 @@ class BlobCreateView(LoginRequiredMixin, FormRequestMixin, CreateView, FormValid
             context["tags"] = [x["name"] for x in linked_blob.tags.all().values()]
 
         if "linked_collection" in self.request.GET:
-            context["linked_collection"] = Collection.objects.get(
-                user=user,
-                uuid=self.request.GET["linked_collection"]
+            context["linked_collection"] = get_object_or_404(
+                Collection, user=user, uuid=self.request.GET["linked_collection"]
             )
             collection_object = CollectionObject.objects.filter(
                 collection__user=user,
@@ -284,7 +283,7 @@ class BlobCreateView(LoginRequiredMixin, FormRequestMixin, CreateView, FormValid
             del self.request.session["imported_blob_data"]
 
         if "collection_uuid" in self.request.GET:
-            context["collection_info"] = Collection.objects.get(user=user, uuid=self.request.GET["collection_uuid"])
+            context["collection_info"] = get_object_or_404(Collection, user=user, uuid=self.request.GET["collection_uuid"])
 
         context["template_list"] = [
             {
@@ -322,7 +321,7 @@ class BlobCreateView(LoginRequiredMixin, FormRequestMixin, CreateView, FormValid
         user = cast(User, self.request.user)
 
         if "linked_blob" in self.request.GET:
-            blob = Blob.objects.get(user=user, pk=int(self.request.GET["linked_blob"]))
+            blob = get_object_or_404(Blob, user=user, pk=int(self.request.GET["linked_blob"]))
             form.initial["tags"] = ",".join([x.name for x in blob.tags.all()])
             form.initial["date"] = blob.date
             form.initial["name"] = blob.name
@@ -618,7 +617,7 @@ class BlobCloneView(LoginRequiredMixin, View):
             Redirect to the cloned blob's detail page.
         """
         user = cast(User, request.user)
-        original_blob = Blob.objects.get(uuid=kwargs["uuid"], user=user)
+        original_blob = get_object_or_404(Blob, uuid=kwargs["uuid"], user=user)
         new_blob = original_blob.clone()
         messages.add_message(request, messages.INFO, "New blob successfully cloned")
         return HttpResponseRedirect(reverse("blob:detail", kwargs={"uuid": new_blob.uuid}))
@@ -723,7 +722,7 @@ def handle_linked_collection(blob: Blob, request: HttpRequest) -> None:
     """
     if "linked_collection" in request.POST:
         user = cast(User, request.user)
-        collection = Collection.objects.get(user=user, uuid=request.POST["linked_collection"])
+        collection = get_object_or_404(Collection, user=user, uuid=request.POST["linked_collection"])
         collection.add_object(blob)
 
 
@@ -806,7 +805,7 @@ def update_cover_image(request: HttpRequest) -> JsonResponse:
     image = image_file.read()
 
     user = cast(User, request.user)
-    blob = Blob.objects.get(uuid=blob_uuid, user=user)
+    blob = get_object_or_404(Blob, uuid=blob_uuid, user=user)
     blob.update_cover_image(image)
 
     response = {
@@ -833,7 +832,7 @@ def get_elasticsearch_info(request: HttpRequest, uuid: str) -> JsonResponse:
             - status: "OK"
     """
     user = cast(User, request.user)
-    blob = Blob.objects.get(uuid=uuid, user=user)
+    blob = get_object_or_404(Blob, uuid=uuid, user=user)
 
     try:
         info = blob.get_elasticsearch_info()
@@ -865,7 +864,7 @@ def get_related_objects(request: HttpRequest, uuid: str) -> JsonResponse:
             - related_objects: List of related objects
     """
     user = cast(User, request.user)
-    blob = Blob.objects.get(user=user, uuid=uuid)
+    blob = get_object_or_404(Blob, user=user, uuid=uuid)
 
     response = {
         "status": "OK",
@@ -937,8 +936,8 @@ def remove_related_object(request: HttpRequest) -> JsonResponse:
     user = cast(User, request.user)
     node_model = Blob.get_node_model(node_type)
 
-    cast(Any, node_model).objects.get(
-        get_node_to_object_query(node_uuid, object_uuid, user)
+    get_object_or_404(
+        cast(Any, node_model), get_node_to_object_query(node_uuid, object_uuid, user)
     ).delete()
 
     response = {
@@ -975,8 +974,8 @@ def sort_related_objects(request: HttpRequest) -> JsonResponse:
     user = cast(User, request.user)
     node_model = Blob.get_node_model(node_type)
 
-    node_to_object = cast(Any, node_model).objects.get(
-        get_node_to_object_query(node_uuid, object_uuid, user)
+    node_to_object = get_object_or_404(
+        cast(Any, node_model), get_node_to_object_query(node_uuid, object_uuid, user)
     )
     cast(Any, node_model).reorder(node_to_object, new_position)
 
@@ -1014,8 +1013,8 @@ def update_related_object_note(request: HttpRequest) -> JsonResponse:
     user = cast(User, request.user)
     node_model = Blob.get_node_model(node_type)
 
-    node_to_object = cast(Any, node_model).objects.get(
-        get_node_to_object_query(node_uuid, object_uuid, user)
+    node_to_object = get_object_or_404(
+        cast(Any, node_model), get_node_to_object_query(node_uuid, object_uuid, user)
     )
     node_to_object.note = note
     node_to_object.save()
@@ -1047,7 +1046,7 @@ def update_page_number(request: HttpRequest) -> JsonResponse:
     page_number = int(request.POST["page_number"])
 
     user = cast(User, request.user)
-    blob = Blob.objects.get(uuid=blob_uuid, user=user)
+    blob = get_object_or_404(Blob, uuid=blob_uuid, user=user)
     blob.update_page_number(page_number)
 
     response = {

@@ -19,6 +19,7 @@ from django.db import transaction
 from django.db.models.query import QuerySet
 from django.http import HttpRequest, JsonResponse
 from django.http.response import HttpResponseBase
+from django.shortcuts import get_object_or_404
 from django.test import RequestFactory
 from django.utils import dateformat, timezone
 from django.views.decorators.http import require_POST
@@ -114,7 +115,7 @@ class TodoListView(LoginRequiredMixin, ListView):
         #  time filters so that the task isn't filtered out.
         if "uuid" in self.kwargs:
             context["uuid"] = self.kwargs["uuid"]
-            todo = Todo.objects.get(uuid=self.kwargs["uuid"])
+            todo = get_object_or_404(Todo, uuid=self.kwargs["uuid"])
             tag = todo.tags.first()
             current_filter["todo_filter_tag"] = tag.name if tag else None
             current_filter["todo_filter_priority"] = None
@@ -180,9 +181,8 @@ class TodoTaskList(LoginRequiredMixin, ListView):
 
         elif tag_name:
 
-            queryset = Tag.objects.get(
-                user=user,
-                name=tag_name
+            queryset = get_object_or_404(
+                Tag, user=user, name=tag_name
             ).todos.filter(
                 nodetodo__isnull=True
             ).order_by(
@@ -283,11 +283,12 @@ def sort_todo(request: HttpRequest) -> JsonResponse:
 
     with transaction.atomic():
         user = cast(User, request.user)
-        tag_todo = TagTodo.objects.select_for_update().get(
+        tag_todo = get_object_or_404(
+            TagTodo.objects.select_for_update(),
             tag__name=tag_name,
             tag__user=user,
             todo__uuid=todo_uuid,
-            todo__user=user
+            todo__user=user,
         )
         TagTodo.reorder(tag_todo, new_position)
 
@@ -341,7 +342,7 @@ def reschedule_task(request: HttpRequest) -> JsonResponse:
     todo_uuid = request.POST.get("todo_uuid", "").strip()
 
     user = cast(User, request.user)
-    todo = Todo.objects.get(uuid=todo_uuid, user=user)
+    todo = get_object_or_404(Todo, uuid=todo_uuid, user=user)
     todo.due_date = timezone.now() + timedelta(days=1)
     todo.save()
 

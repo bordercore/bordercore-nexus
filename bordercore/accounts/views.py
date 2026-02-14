@@ -17,7 +17,7 @@ from django.core.files.uploadedfile import UploadedFile
 from django.forms import BaseModelForm
 from django.http import (HttpRequest, HttpResponse, HttpResponseRedirect,
                          JsonResponse)
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
 from django.views.generic.edit import UpdateView
@@ -77,7 +77,7 @@ class UserProfileUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView):
             The UserProfile instance for the current user.
         """
         user = cast(User, self.request.user)
-        return UserProfile.objects.get(user=user)
+        return get_object_or_404(UserProfile, user=user)
 
     def form_valid(self, form: BaseModelForm) -> HttpResponse:
         """Handle a valid form submission.
@@ -271,7 +271,7 @@ def sort_pinned_notes(request: HttpRequest) -> JsonResponse:
     new_position = int(request.POST["new_position"])
 
     user = cast(User, request.user)
-    user_note = UserNote.objects.get(userprofile=user.userprofile, blob__uuid=note_uuid)
+    user_note = get_object_or_404(UserNote, userprofile=user.userprofile, blob__uuid=note_uuid)
     UserNote.reorder(user_note, new_position)
 
     return JsonResponse({"status": "OK"})
@@ -300,13 +300,13 @@ def pin_note(request: HttpRequest) -> JsonResponse:
     remove = request.POST.get("remove", False)
 
     user = cast(User, request.user)
-    note = Blob.objects.get(user=user, uuid=uuid)
+    note = get_object_or_404(Blob, user=user, uuid=uuid)
 
     message = ""
     status = ""
 
     if remove:
-        sort_order = UserNote.objects.get(userprofile=user.userprofile, blob=note)
+        sort_order = get_object_or_404(UserNote, userprofile=user.userprofile, blob=note)
         sort_order.delete()
         status = "OK"
     else:

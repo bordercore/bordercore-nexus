@@ -16,7 +16,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.http import HttpRequest, HttpResponse, JsonResponse
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 from django.views.generic.detail import DetailView
 
@@ -125,7 +125,7 @@ def fitness_add(request: HttpRequest, exercise_uuid: str) -> HttpResponse:
     Returns:
         HttpResponse: Redirects to the fitness summary view when complete.
     """
-    exercise = Exercise.objects.get(uuid=exercise_uuid)
+    exercise = get_object_or_404(Exercise, uuid=exercise_uuid)
     user = cast(User, request.user)
     payload = json.loads(request.POST["workout-data"])
 
@@ -228,11 +228,11 @@ def change_active_status(request: HttpRequest) -> JsonResponse:
 
     user = cast(User, request.user)
     if remove == "true":
-        eu = ExerciseUser.objects.get(user=user, exercise__uuid=uuid)
+        eu = get_object_or_404(ExerciseUser, user=user, exercise__uuid=uuid)
         eu.delete()
         info = {}
     else:
-        exercise = Exercise.objects.get(uuid=uuid)
+        exercise = get_object_or_404(Exercise, uuid=uuid)
         eu = ExerciseUser(
             user=user,
             exercise=exercise,
@@ -263,7 +263,7 @@ def edit_note(request: HttpRequest) -> JsonResponse:
     exercise_uuid = request.POST["uuid"]
     note = request.POST["note"]
 
-    exercise = Exercise.objects.get(uuid=exercise_uuid)
+    exercise = get_object_or_404(Exercise, uuid=exercise_uuid)
     exercise.note = note
     exercise.save()
 
@@ -288,7 +288,7 @@ def get_workout_data(request: HttpRequest) -> JsonResponse:
     exercise_uuid = request.GET["uuid"]
     page_number = int(request.GET.get("page_number", 1))
 
-    exercise = Exercise.objects.get(uuid=exercise_uuid)
+    exercise = get_object_or_404(Exercise, uuid=exercise_uuid)
 
     workout_data = exercise.get_plot_info(page_number=page_number)
 
@@ -320,7 +320,7 @@ def update_schedule(request: HttpRequest) -> JsonResponse:
     boolean_values = [s.lower() == "true" for s in schedule.split(",")]
 
     user = cast(User, request.user)
-    eu = ExerciseUser.objects.get(user=user, exercise__uuid=uuid)
+    eu = get_object_or_404(ExerciseUser, user=user, exercise__uuid=uuid)
     eu.schedule = boolean_values
     eu.save()
 
@@ -347,7 +347,7 @@ def update_rest_period(request: HttpRequest) -> JsonResponse:
     rest_period = request.POST["rest_period"]
 
     user = cast(User, request.user)
-    eu = ExerciseUser.objects.get(user=user, exercise__uuid=uuid)
+    eu = get_object_or_404(ExerciseUser, user=user, exercise__uuid=uuid)
     # Assign as string; Django model field will coerce/validate at save time.
     eu.rest_period = rest_period
     eu.save()

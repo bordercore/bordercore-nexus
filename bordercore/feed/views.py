@@ -22,6 +22,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.db.models import QuerySet
 from django.http import HttpRequest, JsonResponse
+from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_POST
 from django.views.generic.list import ListView
 
@@ -135,7 +136,7 @@ def sort_feed(request: HttpRequest) -> JsonResponse:
     new_position = int(request.POST.get("position", "").strip())
 
     user = cast(User, request.user)
-    s = UserFeed.objects.get(userprofile=user.userprofile, feed__id=feed_id)
+    s = get_object_or_404(UserFeed, userprofile=user.userprofile, feed__id=feed_id)
     UserFeed.reorder(s, new_position)
 
     return JsonResponse({"status": "OK"})
@@ -154,7 +155,7 @@ def update_feed_list(request: HttpRequest, feed_uuid: str) -> JsonResponse:
     """
     # We do not need to filter the feed by a user because this endpoint
     #  is only called by an AWS Lambda function using a service account.
-    feed = Feed.objects.get(uuid=feed_uuid)
+    feed = get_object_or_404(Feed, uuid=feed_uuid)
 
     try:
         updated_count = feed.update()

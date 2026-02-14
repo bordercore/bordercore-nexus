@@ -18,7 +18,7 @@ from django.db.models.query import QuerySet as QuerySetType
 from django.forms import BaseModelForm
 from django.http import (HttpRequest, HttpResponse, HttpResponseRedirect,
                          JsonResponse)
-from django.shortcuts import redirect
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views.decorators.http import require_POST
 from django.views.generic.detail import DetailView
@@ -521,7 +521,7 @@ def record_response(request: HttpRequest, uuid: str, response: str) -> HttpRespo
         Redirect to the next question in the session.
     """
     user = cast(User, request.user)
-    question = Question.objects.get(user=user, uuid=uuid)
+    question = get_object_or_404(Question, user=user, uuid=uuid)
     question.record_response(response)
 
     return get_next_question(request)
@@ -605,7 +605,7 @@ def pin_tag(request: HttpRequest) -> JsonResponse:
 
     else:
 
-        tag = Tag.objects.get(name=tag_name, user=user)
+        tag = get_object_or_404(Tag, name=tag_name, user=user)
         so = DrillTag(userprofile=user.userprofile, tag=tag)
         so.save()
 
@@ -648,7 +648,7 @@ def unpin_tag(request: HttpRequest) -> JsonResponse:
 
     else:
 
-        so = DrillTag.objects.get(userprofile=user.userprofile, tag__name=tag_name)
+        so = get_object_or_404(DrillTag, userprofile=user.userprofile, tag__name=tag_name)
         so.delete()
 
         return JsonResponse(
@@ -678,7 +678,7 @@ def sort_pinned_tags(request: HttpRequest) -> JsonResponse:
     new_position = int(request.POST["new_position"])
 
     user = cast(User, request.user)
-    so = DrillTag.objects.get(tag__name=tag_name, userprofile=user.userprofile)
+    so = get_object_or_404(DrillTag, tag__name=tag_name, userprofile=user.userprofile)
     DrillTag.reorder(so, new_position)
 
     response = {
@@ -783,7 +783,7 @@ def is_favorite_mutate(request: HttpRequest) -> JsonResponse:
     mutation = request.POST["mutation"]
 
     user = cast(User, request.user)
-    question = Question.objects.get(uuid=question_uuid, user=user)
+    question = get_object_or_404(Question, uuid=question_uuid, user=user)
 
     if mutation == "add":
         question.is_favorite = True
@@ -860,7 +860,7 @@ def get_related_objects(request: HttpRequest, uuid: str) -> JsonResponse:
     """
 
     user = cast(User, request.user)
-    question = Question.objects.get(user=user, uuid=uuid)
+    question = get_object_or_404(Question, user=user, uuid=uuid)
 
     response = {
         "status": "OK",
