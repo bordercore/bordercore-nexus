@@ -56,7 +56,12 @@ export function TodoTable({
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">(defaultSort.direction);
 
   // Sort items based on current sort state
+  // When drag-and-drop is active (sort_order asc + sortable), preserve array order
+  // so optimistic reordering from arrayMove isn't undone by stale sort_order values
   const sortedItems = useMemo(() => {
+    if (isSortable && sortField === "sort_order" && sortDirection === "asc") {
+      return items;
+    }
     return [...items].sort((a, b) => {
       let aVal: string | number;
       let bVal: string | number;
@@ -91,7 +96,7 @@ export function TodoTable({
 
       return sortDirection === "asc" ? comparison : -comparison;
     });
-  }, [items, sortField, sortDirection]);
+  }, [items, sortField, sortDirection, isSortable]);
 
   const handleSort = useCallback(
     (field: SortField) => {
