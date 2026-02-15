@@ -10,9 +10,9 @@ pytestmark = pytest.mark.django_db
 faker = FakerFactory.create()
 
 
-def test_get_unique_artist_letters(auto_login_user):
+def test_get_unique_artist_letters(authenticated_client):
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     artist_1 = ArtistFactory.create(user=user, name="Abba")
     artist_2 = ArtistFactory.create(user=user, name="Beatles")

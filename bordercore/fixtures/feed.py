@@ -5,9 +5,9 @@ from feed.tests.factories import FeedFactory
 
 
 @pytest.fixture()
-def feed(auto_login_user):
+def feed(authenticated_client):
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     feed_0 = FeedFactory(name="Hacker News")
     feed_1 = FeedFactory()

@@ -1,18 +1,21 @@
 from pathlib import Path
 from unittest.mock import Mock
 
+import pytest
 from faker import Factory as FakerFactory
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 from blob.forms import BlobForm
 
+pytestmark = [pytest.mark.django_db]
+
 faker = FakerFactory.create()
 
 
-def test_blob_form_add(auto_login_user, blob_pdf_factory):
+def test_blob_form_add(authenticated_client, blob_pdf_factory):
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     mock_request = Mock()
     mock_request.user = user

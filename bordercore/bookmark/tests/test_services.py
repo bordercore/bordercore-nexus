@@ -1,9 +1,13 @@
+import pytest
+
 from bookmark.services import get_recent_bookmarks
 
+pytestmark = [pytest.mark.django_db]
 
-def test_get_recent_bookmarks(auto_login_user, bookmark):
 
-    user, _ = auto_login_user()
+def test_get_recent_bookmarks(authenticated_client, bookmark):
+
+    user, _ = authenticated_client()
 
     results = get_recent_bookmarks(user)
 

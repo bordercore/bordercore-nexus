@@ -226,9 +226,9 @@ def test_node_update_quote(node, quote):
     ]
 
 
-def test_node_set_quote(auto_login_user, node):
+def test_node_set_quote(authenticated_client, node):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     quotes = QuoteFactory.create_batch(2, user=user)
 
@@ -273,9 +273,9 @@ def test_node_delete_todo_list(node):
     ]
 
 
-def test_node_add_node(auto_login_user, node):
+def test_node_add_node(authenticated_client, node):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     added_node = NodeFactory.create(user=user)
     node.add_component("node", added_node)
@@ -290,9 +290,9 @@ def test_node_add_node(auto_login_user, node):
     ]
 
 
-def test_node_update_node(auto_login_user, node):
+def test_node_update_node(authenticated_client, node):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     added_node = NodeFactory.create(user=user)
     uuid = node.add_component("node", added_node)
@@ -326,9 +326,9 @@ def test_node_update_node(auto_login_user, node):
     ]
 
 
-def test_node_get_preview(auto_login_user, node):
+def test_node_get_preview(authenticated_client, node):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     added_node = NodeFactory.create(user=user)
     node.add_component("node", added_node)

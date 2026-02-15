@@ -1,8 +1,11 @@
+import pytest
 from faker import Factory as FakerFactory
 from feed.tests.factories import FeedFactory
 
 from django import urls
 from django.conf import settings
+
+pytestmark = [pytest.mark.django_db]
 
 from accounts.tests.factories import UserFactory
 from blob.tests.factories import BlobFactory
@@ -16,9 +19,9 @@ from todo.tests.factories import TodoFactory
 faker = FakerFactory.create()
 
 
-def test_album_viewset(auto_login_user, song):
+def test_album_viewset(authenticated_client, song):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("album-list")
     resp = client.get(url)
@@ -29,7 +32,7 @@ def test_album_viewset(auto_login_user, song):
     assert resp.status_code == 200
 
 
-def test_blob_viewset(auto_login_user, blob_image_factory):
+def test_blob_viewset(authenticated_client, blob_image_factory):
 
     # Quiet spurious output
     settings.NPLUSONE_WHITELIST = [
@@ -43,7 +46,7 @@ def test_blob_viewset(auto_login_user, blob_image_factory):
         }
     ]
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("blob-list")
     resp = client.get(url)
@@ -61,9 +64,9 @@ def test_blob_viewset(auto_login_user, blob_image_factory):
     assert resp.status_code == 404
 
 
-def test_sha1sum_viewset(auto_login_user, blob_image_factory):
+def test_sha1sum_viewset(authenticated_client, blob_image_factory):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("sha1sum-list")
     resp = client.get(url)
@@ -74,9 +77,9 @@ def test_sha1sum_viewset(auto_login_user, blob_image_factory):
     assert resp.status_code == 200
 
 
-def test_bookmark_viewset(auto_login_user, bookmark):
+def test_bookmark_viewset(authenticated_client, bookmark):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("bookmark-list")
     resp = client.get(url)
@@ -104,9 +107,9 @@ def test_bookmark_viewset(auto_login_user, bookmark):
     assert resp.status_code == 201
 
 
-def test_collection_viewset(auto_login_user, collection):
+def test_collection_viewset(authenticated_client, collection):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("collection-list")
     resp = client.get(url)
@@ -133,9 +136,9 @@ def test_collection_viewset(auto_login_user, collection):
     assert resp.status_code == 201
 
 
-def test_feed_viewset(auto_login_user, feed):
+def test_feed_viewset(authenticated_client, feed):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("feed-list")
     resp = client.get(url)
@@ -164,9 +167,9 @@ def test_feed_viewset(auto_login_user, feed):
     assert resp.status_code == 201
 
 
-def test_feeditem_viewset(auto_login_user, feed):
+def test_feeditem_viewset(authenticated_client, feed):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("feeditem-list")
     resp = client.get(url)
@@ -177,9 +180,9 @@ def test_feeditem_viewset(auto_login_user, feed):
     assert resp.status_code == 200
 
 
-def test_question_viewset(auto_login_user, question):
+def test_question_viewset(authenticated_client, question):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("question-list")
     resp = client.get(url)
@@ -197,9 +200,9 @@ def test_question_viewset(auto_login_user, question):
     assert resp.status_code == 404
 
 
-def test_playlist_viewset(auto_login_user, playlist):
+def test_playlist_viewset(authenticated_client, playlist):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("playlist-list")
     resp = client.get(url)
@@ -217,9 +220,9 @@ def test_playlist_viewset(auto_login_user, playlist):
     assert resp.status_code == 404
 
 
-def test_playlistitem_viewset(auto_login_user, playlist):
+def test_playlistitem_viewset(authenticated_client, playlist):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("playlistitem-list")
     resp = client.get(url)
@@ -230,9 +233,9 @@ def test_playlistitem_viewset(auto_login_user, playlist):
     assert resp.status_code == 200
 
 
-def test_song_viewset(auto_login_user, song):
+def test_song_viewset(authenticated_client, song):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     different_user = UserFactory(username=faker.user_name())
     song_different_user = SongFactory(user=different_user)
@@ -259,9 +262,9 @@ def test_song_viewset(auto_login_user, song):
     assert resp.status_code == 404
 
 
-def test_songsource_viewset(auto_login_user, song_source):
+def test_songsource_viewset(authenticated_client, song_source):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("songsource-list")
     resp = client.get(url)
@@ -272,9 +275,9 @@ def test_songsource_viewset(auto_login_user, song_source):
     assert resp.status_code == 200
 
 
-def test_tag_viewset(auto_login_user, tag):
+def test_tag_viewset(authenticated_client, tag):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("tag-list")
     resp = client.get(url)
@@ -296,18 +299,18 @@ def test_tag_viewset(auto_login_user, tag):
     assert resp.status_code == 200
 
 
-def test_tagalias_viewset(auto_login_user, tag):
+def test_tagalias_viewset(authenticated_client, tag):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("tagalias-list")
     resp = client.get(url)
     assert resp.status_code == 200
 
 
-def test_todo_viewset(auto_login_user, todo):
+def test_todo_viewset(authenticated_client, todo):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("todo-list")
     resp = client.get(url)

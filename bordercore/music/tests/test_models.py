@@ -10,7 +10,7 @@ from music.tests.factories import AlbumFactory, SongFactory
 pytestmark = pytest.mark.django_db
 
 
-def test_listen_to(auto_login_user, song):
+def test_listen_to(authenticated_client, song):
 
     song[0].listen_to()
     song[0].refresh_from_db()
@@ -19,7 +19,7 @@ def test_listen_to(auto_login_user, song):
     assert Listen.objects.first().song == song[0]
 
 
-def test_get_id3_info(auto_login_user, song):
+def test_get_id3_info(authenticated_client, song):
 
     song_path = Path(__file__).parent / "resources/Mysterious Lights.mp3"
 
@@ -90,9 +90,9 @@ def test_music_scan_zipfile():
     assert songs[1]["length_pretty"] == "0:03"
 
 
-def test_create_album_from_zipfile(s3_resource, s3_bucket, auto_login_user, song_source):
+def test_create_album_from_zipfile(s3_resource, s3_bucket, authenticated_client, song_source):
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     album_zip = Path(__file__).parent / "resources/test-album.zip"
     in_file = open(album_zip, "rb")
@@ -136,9 +136,9 @@ def test_create_album_from_zipfile(s3_resource, s3_bucket, auto_login_user, song
     assert song_2.length == 3
 
 
-def test_create_album_from_zipfile_with_changes(s3_resource, s3_bucket, auto_login_user, song_source):
+def test_create_album_from_zipfile_with_changes(s3_resource, s3_bucket, authenticated_client, song_source):
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     album_zip = Path(__file__).parent / "resources/test-album.zip"
     in_file = open(album_zip, "rb")

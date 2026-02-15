@@ -24,9 +24,9 @@ def monkeypatch_homepage(monkeypatch):
     monkeypatch.setattr(views, "get_random_image", mock)
 
 
-def test_homepage(monkeypatch_homepage, auto_login_user, bookmark, question, todo):
+def test_homepage(monkeypatch_homepage, authenticated_client, bookmark, question, todo):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("homepage:homepage")
     resp = client.get(url)
@@ -34,9 +34,9 @@ def test_homepage(monkeypatch_homepage, auto_login_user, bookmark, question, tod
     assert resp.status_code == 200
 
 
-def test_get_random_image(monkeypatch_collection, auto_login_user):
+def test_get_random_image(monkeypatch_collection, authenticated_client):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     collection = CollectionFactory(user=user)
     blob = BlobFactory(user=user)
@@ -52,9 +52,9 @@ def test_get_random_image(monkeypatch_collection, auto_login_user):
     assert image["uuid"] == blob.uuid
 
 
-def test_sql(auto_login_user):
+def test_sql(authenticated_client):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     blob = BlobFactory(user=user)
 

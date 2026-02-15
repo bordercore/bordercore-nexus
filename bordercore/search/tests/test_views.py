@@ -16,9 +16,9 @@ django.setup()
 
 
 @patch("search.services.get_elasticsearch_connection")
-def test_notes_list(mock_get_es, auto_login_user):
+def test_notes_list(mock_get_es, authenticated_client):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     mock_es = MagicMock()
     mock_es.search.return_value = {

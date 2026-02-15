@@ -7,9 +7,9 @@ from tag.models import TagAlias
 pytestmark = [pytest.mark.django_db]
 
 
-def test_tag_pin(auto_login_user, tag):
+def test_tag_pin(authenticated_client, tag):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("tag:pin")
     resp = client.post(url, {
@@ -19,9 +19,9 @@ def test_tag_pin(auto_login_user, tag):
     assert resp.status_code == 302
 
 
-def test_tag_unpin(auto_login_user, tag):
+def test_tag_unpin(authenticated_client, tag):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     tag[0].pin()
 
@@ -33,9 +33,9 @@ def test_tag_unpin(auto_login_user, tag):
     assert resp.status_code == 302
 
 
-def test_tag_list(auto_login_user, tag):
+def test_tag_list(authenticated_client, tag):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     url = urls.reverse("tag:list")
     resp = client.get(url)
@@ -43,9 +43,9 @@ def test_tag_list(auto_login_user, tag):
     assert resp.status_code == 200
 
 
-def test_tag_add_alias(auto_login_user, tag):
+def test_tag_add_alias(authenticated_client, tag):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     tag_alias_name = "tag alias name"
 
@@ -78,9 +78,9 @@ def test_tag_add_alias(auto_login_user, tag):
     assert resp.json()["message"] == f"A tag with the name '{tag[0]}' already exists"
 
 
-def test_tag_todo_counts(auto_login_user, tag):
+def test_tag_todo_counts(authenticated_client, tag):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     url = urls.reverse("tag:get_todo_counts")
     resp = client.get(url)

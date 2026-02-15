@@ -17,9 +17,9 @@ pytestmark = [pytest.mark.django_db]
 faker = FakerFactory.create()
 
 
-def test_collection_list(auto_login_user, collection):
+def test_collection_list(authenticated_client, collection):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("collection:list")
     resp = client.get(url)
@@ -28,7 +28,7 @@ def test_collection_list(auto_login_user, collection):
     assert resp.status_code == 200
 
 
-def test_collection_detail(auto_login_user, collection):
+def test_collection_detail(authenticated_client, collection):
 
     # Quiet spurious output
     settings.NPLUSONE_WHITELIST = [
@@ -40,7 +40,7 @@ def test_collection_detail(auto_login_user, collection):
     logger = logging.getLogger("bordercore.blob.models")
     logger.propagate = False
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     url = urls.reverse("collection:detail", kwargs={"uuid": collection[0].uuid})
     resp = client.get(url)
@@ -65,9 +65,9 @@ def test_collection_detail(auto_login_user, collection):
     assert resp.status_code == 200
 
 
-def test_sort_collection(auto_login_user, collection):
+def test_sort_collection(authenticated_client, collection):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("collection:sort_objects")
     resp = client.post(url, {
@@ -79,9 +79,9 @@ def test_sort_collection(auto_login_user, collection):
     assert resp.status_code == 200
 
 
-def test_get_blob(auto_login_user, collection):
+def test_get_blob(authenticated_client, collection):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("collection:get_blob", kwargs={
         "collection_uuid": collection[0].uuid
@@ -91,9 +91,9 @@ def test_get_blob(auto_login_user, collection):
     assert resp.status_code == 200
 
 
-def test_create_collection(auto_login_user, collection):
+def test_create_collection(authenticated_client, collection):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("collection:create")
     resp = client.post(url, {
@@ -106,9 +106,9 @@ def test_create_collection(auto_login_user, collection):
     assert Collection.objects.count() == 3
 
 
-def test_update_collection(auto_login_user, collection):
+def test_update_collection(authenticated_client, collection):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     name = faker.text()
 
@@ -123,7 +123,7 @@ def test_update_collection(auto_login_user, collection):
     assert updated_collection.name == name
 
 
-def test_delete_collection(auto_login_user, collection):
+def test_delete_collection(authenticated_client, collection):
 
     # Quiet spurious output
     settings.NPLUSONE_WHITELIST = [
@@ -133,7 +133,7 @@ def test_delete_collection(auto_login_user, collection):
         }
     ]
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("collection-detail", kwargs={"uuid": collection[0].uuid})
     resp = client.delete(url)
@@ -141,9 +141,9 @@ def test_delete_collection(auto_login_user, collection):
     assert resp.status_code == 204
 
 
-def test_search(auto_login_user, collection, blob_image_factory, blob_pdf_factory):
+def test_search(authenticated_client, collection, blob_image_factory, blob_pdf_factory):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("collection:search")
     resp = client.get(f"{url}?query=Display")
@@ -158,7 +158,7 @@ def test_search(auto_login_user, collection, blob_image_factory, blob_pdf_factor
     assert payload[0]["num_objects"] == 1
 
 
-def test_collection_object_list(auto_login_user, collection, blob_image_factory, blob_pdf_factory):
+def test_collection_object_list(authenticated_client, collection, blob_image_factory, blob_pdf_factory):
 
     # Quiet spurious output
     settings.NPLUSONE_WHITELIST = [
@@ -168,7 +168,7 @@ def test_collection_object_list(auto_login_user, collection, blob_image_factory,
         }
     ]
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("collection:get_object_list", kwargs={"collection_uuid": collection[0].uuid})
     resp = client.get(f"{url}?query=Display")
@@ -183,7 +183,7 @@ def test_collection_object_list(auto_login_user, collection, blob_image_factory,
     assert blob_pdf_factory[0].name in [x["name"] for x in payload["object_list"]]
 
 
-def test_collection_get_object_list(auto_login_user, collection):
+def test_collection_get_object_list(authenticated_client, collection):
 
     # Quiet spurious output
     settings.NPLUSONE_WHITELIST = [
@@ -193,7 +193,7 @@ def test_collection_get_object_list(auto_login_user, collection):
         }
     ]
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("collection:get_object_list", kwargs={
         "collection_uuid": collection[0].uuid
@@ -215,9 +215,9 @@ def test_collection_get_object_list(auto_login_user, collection):
     ]
 
 
-def test_add_object(auto_login_user, collection, blob_image_factory):
+def test_add_object(authenticated_client, collection, blob_image_factory):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("collection:add_object")
     resp = client.post(url, {
@@ -236,9 +236,9 @@ def test_add_object(auto_login_user, collection, blob_image_factory):
     assert resp.json()["status"] == "ERROR"
 
 
-def test_remove_object(auto_login_user, collection, blob_image_factory):
+def test_remove_object(authenticated_client, collection, blob_image_factory):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("collection:remove_object")
     resp = client.post(url, {
@@ -250,9 +250,9 @@ def test_remove_object(auto_login_user, collection, blob_image_factory):
 
 
 @patch("collection.views.parse_title_from_url")
-def test_add_new_bookmark(mock_parse_title_from_url, monkeypatch_bookmark, auto_login_user, collection, blob_image_factory):
+def test_add_new_bookmark(mock_parse_title_from_url, monkeypatch_bookmark, authenticated_client, collection, blob_image_factory):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     mock_parse_title_from_url.return_value = None, "Bogus Title"
 

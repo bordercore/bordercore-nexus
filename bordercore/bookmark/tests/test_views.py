@@ -15,9 +15,9 @@ pytestmark = [pytest.mark.django_db]
 faker = FakerFactory.create()
 
 
-def test_bookmark_click(auto_login_user, bookmark):
+def test_bookmark_click(authenticated_client, bookmark):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("bookmark:click", kwargs={"bookmark_uuid": bookmark[0].uuid})
     resp = client.get(url)
@@ -25,9 +25,9 @@ def test_bookmark_click(auto_login_user, bookmark):
     assert resp.status_code == 302
 
 
-def test_bookmark_update(monkeypatch_bookmark, auto_login_user, bookmark):
+def test_bookmark_update(monkeypatch_bookmark, authenticated_client, bookmark):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     # The empty form
     url = urls.reverse("bookmark:update", kwargs={"uuid": bookmark[0].uuid})
@@ -49,9 +49,9 @@ def test_bookmark_update(monkeypatch_bookmark, auto_login_user, bookmark):
     assert resp.status_code == 302
 
 
-def test_bookmark_create(monkeypatch_bookmark, auto_login_user, bookmark):
+def test_bookmark_create(monkeypatch_bookmark, authenticated_client, bookmark):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     # The empty form
     url = urls.reverse("bookmark:create")
@@ -72,9 +72,9 @@ def test_bookmark_create(monkeypatch_bookmark, auto_login_user, bookmark):
     assert resp.status_code == 302
 
 
-def test_bookmark_delete(monkeypatch_bookmark, auto_login_user, bookmark):
+def test_bookmark_delete(monkeypatch_bookmark, authenticated_client, bookmark):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("bookmark:delete", kwargs={"uuid": bookmark[0].uuid})
     resp = client.post(url)
@@ -82,9 +82,9 @@ def test_bookmark_delete(monkeypatch_bookmark, auto_login_user, bookmark):
     assert resp.status_code == 302
 
 
-def test_bookmark_list(auto_login_user, bookmark):
+def test_bookmark_list(authenticated_client, bookmark):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("bookmark:get_bookmarks_by_page", kwargs={"page_number": 1})
     resp = client.get(url)
@@ -97,9 +97,9 @@ def test_bookmark_list(auto_login_user, bookmark):
     assert resp.status_code == 200
 
 
-def test_bookmark_snarf_link(monkeypatch_bookmark, auto_login_user, bookmark):
+def test_bookmark_snarf_link(monkeypatch_bookmark, authenticated_client, bookmark):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("bookmark:snarf")
     resp = client.get(f"{url}?url=http%3A%2F%2Fwww.bordercore.com%2F&name=Sample%2BTitlte")
@@ -107,9 +107,9 @@ def test_bookmark_snarf_link(monkeypatch_bookmark, auto_login_user, bookmark):
     assert resp.status_code == 302
 
 
-def test_bookmark_get_tags_used_by_bookmarks(auto_login_user, bookmark):
+def test_bookmark_get_tags_used_by_bookmarks(authenticated_client, bookmark):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("bookmark:get_tags_used_by_bookmarks")
     resp = client.get(url)
@@ -117,9 +117,9 @@ def test_bookmark_get_tags_used_by_bookmarks(auto_login_user, bookmark):
     assert resp.status_code == 200
 
 
-def test_bookmark_overview(auto_login_user, bookmark):
+def test_bookmark_overview(authenticated_client, bookmark):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("bookmark:overview")
     resp = client.get(url)
@@ -127,9 +127,9 @@ def test_bookmark_overview(auto_login_user, bookmark):
     assert resp.status_code == 200
 
 
-def test_bookmark_get_bookmarks_by_tag(auto_login_user, bookmark):
+def test_bookmark_get_bookmarks_by_tag(authenticated_client, bookmark):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("bookmark:get_bookmarks_by_tag", kwargs={"tag_filter": "django"})
     resp = client.get(url)
@@ -137,9 +137,9 @@ def test_bookmark_get_bookmarks_by_tag(auto_login_user, bookmark):
     assert resp.status_code == 200
 
 
-def test_bookmark_sort_pinned_tags(auto_login_user, sort_order_user_tag, tag):
+def test_bookmark_sort_pinned_tags(authenticated_client, sort_order_user_tag, tag):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("bookmark:sort_pinned_tags")
     resp = client.post(url, {
@@ -150,9 +150,9 @@ def test_bookmark_sort_pinned_tags(auto_login_user, sort_order_user_tag, tag):
     assert resp.status_code == 200
 
 
-def test_bookmark_sort_bookmarks(auto_login_user, tag, bookmark):
+def test_bookmark_sort_bookmarks(authenticated_client, tag, bookmark):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("bookmark:sort")
     resp = client.post(url, {
@@ -164,9 +164,9 @@ def test_bookmark_sort_bookmarks(auto_login_user, tag, bookmark):
     assert resp.status_code == 200
 
 
-def test_bookmark_add_note(auto_login_user, tag, bookmark):
+def test_bookmark_add_note(authenticated_client, tag, bookmark):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("bookmark:add_note")
     resp = client.post(url, {
@@ -178,9 +178,9 @@ def test_bookmark_add_note(auto_login_user, tag, bookmark):
     assert resp.status_code == 200
 
 
-def test_bookmark_get_new_bookmarks_count(auto_login_user, bookmark):
+def test_bookmark_get_new_bookmarks_count(authenticated_client, bookmark):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     timestamp = datetime.datetime.now()
 
@@ -191,9 +191,9 @@ def test_bookmark_get_new_bookmarks_count(auto_login_user, bookmark):
     assert json.loads(resp.content)["count"] == 5
 
 
-def test_bookmark_get_title_from_url(auto_login_user, bookmark):
+def test_bookmark_get_title_from_url(authenticated_client, bookmark):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("bookmark:get_title_from_url")
     resp = client.get(f"{url}?url=http%3A%2F%2Fwww.bordercore.com")
@@ -201,9 +201,9 @@ def test_bookmark_get_title_from_url(auto_login_user, bookmark):
     assert resp.status_code == 200
 
 
-def test_add_tag(auto_login_user, monkeypatch_bookmark):
+def test_add_tag(authenticated_client, monkeypatch_bookmark):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     bookmark = BookmarkFactory(user=user)
     tag = TagFactory(user=user)
@@ -220,9 +220,9 @@ def test_add_tag(auto_login_user, monkeypatch_bookmark):
     assert resp.status_code == 200
 
 
-def test_remove_tag(auto_login_user, monkeypatch_bookmark):
+def test_remove_tag(authenticated_client, monkeypatch_bookmark):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     bookmark = BookmarkFactory(user=user)
     tag = TagFactory(user=user)

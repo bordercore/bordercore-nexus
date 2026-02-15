@@ -8,9 +8,9 @@ from tag.tests.factories import TagFactory
 pytestmark = pytest.mark.django_db
 
 
-def test_tags_last_reviewed(auto_login_user):
+def test_tags_last_reviewed(authenticated_client):
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     question_0 = QuestionFactory()
     tag_0 = TagFactory()
@@ -30,9 +30,9 @@ def test_tags_last_reviewed(auto_login_user):
     assert tags[1] == tag_1
 
 
-def test_total_tag_progress(auto_login_user):
+def test_total_tag_progress(authenticated_client):
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     question_0 = QuestionFactory()
     tag_0 = TagFactory()
@@ -60,9 +60,9 @@ def test_total_tag_progress(auto_login_user):
     assert tag_progress["percentage"] == 100.0
 
 
-def test_favorite_questions_progress(auto_login_user):
+def test_favorite_questions_progress(authenticated_client):
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     question_0 = QuestionFactory()
     tag_0 = TagFactory()
@@ -85,9 +85,9 @@ def test_favorite_questions_progress(auto_login_user):
     assert tag_progress["percentage"] == 50.0
 
 
-def test_get_random_tag(auto_login_user):
+def test_get_random_tag(authenticated_client):
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     question_0 = QuestionFactory()
     tag_0 = TagFactory()
@@ -103,9 +103,9 @@ def test_get_random_tag(auto_login_user):
     assert tag_info["name"] in [x.name for x in (tag_0, tag_1)]
 
 
-def test_get_pinned_tags(auto_login_user):
+def test_get_pinned_tags(authenticated_client):
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     tag_0 = TagFactory()
     so = DrillTag(userprofile=user.userprofile, tag=tag_0)
@@ -123,9 +123,9 @@ def test_get_pinned_tags(auto_login_user):
     assert tag_2.name not in [x["name"] for x in pinned_tags]
 
 
-def test_recent_tags(auto_login_user):
+def test_recent_tags(authenticated_client):
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     question_0 = QuestionFactory()
     tag_0 = TagFactory()

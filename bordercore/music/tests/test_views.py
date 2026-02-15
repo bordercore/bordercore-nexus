@@ -26,9 +26,9 @@ def monkeypatch_song(monkeypatch):
     monkeypatch.setattr(Song, "delete", mock)
 
 
-def test_music_list(auto_login_user, song):
+def test_music_list(authenticated_client, song):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("music:list")
     resp = client.get(url)
@@ -37,9 +37,9 @@ def test_music_list(auto_login_user, song):
 
 
 @factory.django.mute_signals(signals.post_save)
-def test_music_song_update(auto_login_user, song, song_source):
+def test_music_song_update(authenticated_client, song, song_source):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     # The submitted form
     url = urls.reverse("music:update", kwargs={"uuid": song[1].uuid})
@@ -62,9 +62,9 @@ def test_music_song_update(auto_login_user, song, song_source):
     assert resp.status_code == 200
 
 
-def test_music_album_list(auto_login_user, song):
+def test_music_album_list(authenticated_client, song):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("music:album_list")
     resp = client.get(url)
@@ -72,9 +72,9 @@ def test_music_album_list(auto_login_user, song):
     assert resp.status_code == 200
 
 
-def test_music_album_detail(auto_login_user, song):
+def test_music_album_detail(authenticated_client, song):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("music:album_detail", kwargs={"uuid": song[1].album.uuid})
     resp = client.get(url)
@@ -82,9 +82,9 @@ def test_music_album_detail(auto_login_user, song):
     assert resp.status_code == 200
 
 
-def test_music_album_update(auto_login_user, song):
+def test_music_album_update(authenticated_client, song):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("music:album_update", kwargs={"uuid": song[1].album.uuid})
     resp = client.post(url, {
@@ -105,9 +105,9 @@ def test_music_album_update(auto_login_user, song):
     assert "django" in [x.name for x in updated_album.tags.all()]
 
 
-def test_music_artist_detail(auto_login_user, song):
+def test_music_artist_detail(authenticated_client, song):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("music:artist_detail", kwargs={"uuid": song[1].artist.uuid})
     resp = client.get(url)
@@ -116,9 +116,9 @@ def test_music_artist_detail(auto_login_user, song):
 
 
 @factory.django.mute_signals(signals.post_save)
-def test_music_create(s3_resource, s3_bucket, auto_login_user, song_source):
+def test_music_create(s3_resource, s3_bucket, authenticated_client, song_source):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     # The empty form
     url = urls.reverse("music:create")
@@ -151,9 +151,9 @@ def test_music_create(s3_resource, s3_bucket, auto_login_user, song_source):
 
 
 @factory.django.mute_signals(signals.pre_delete)
-def test_music_delete(monkeypatch_song, auto_login_user, song):
+def test_music_delete(monkeypatch_song, authenticated_client, song):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("music:delete", kwargs={"uuid": song[0].uuid})
     resp = client.post(url)
@@ -161,9 +161,9 @@ def test_music_delete(monkeypatch_song, auto_login_user, song):
     assert resp.status_code == 302
 
 
-def test_music_recent_songs(auto_login_user, song):
+def test_music_recent_songs(authenticated_client, song):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("music:recent_songs")
     resp = client.get(url)
@@ -171,9 +171,9 @@ def test_music_recent_songs(auto_login_user, song):
     assert resp.status_code == 200
 
 
-def test_music_search_tag(auto_login_user, song, tag):
+def test_music_search_tag(authenticated_client, song, tag):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("music:search_tag")
     resp = client.get(f"{url}?tag={tag[0].name}")
@@ -181,9 +181,9 @@ def test_music_search_tag(auto_login_user, song, tag):
     assert resp.status_code == 200
 
 
-def test_mark_song_as_listened_to(auto_login_user, song):
+def test_mark_song_as_listened_to(authenticated_client, song):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse(
         "mark_song_as_listened_to",
@@ -194,9 +194,9 @@ def test_mark_song_as_listened_to(auto_login_user, song):
     assert resp.status_code == 200
 
 
-def test_music_playlist_detail(auto_login_user, playlist):
+def test_music_playlist_detail(authenticated_client, playlist):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("music:playlist_detail", kwargs={"uuid": playlist[0].uuid})
     resp = client.get(url)
@@ -204,9 +204,9 @@ def test_music_playlist_detail(auto_login_user, playlist):
     assert resp.status_code == 200
 
 
-def test_music_playlist_create(auto_login_user, song):
+def test_music_playlist_create(authenticated_client, song):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("music:playlist_create")
 
@@ -219,9 +219,9 @@ def test_music_playlist_create(auto_login_user, song):
     assert resp.status_code == 302
 
 
-def test_music_playlist_update(auto_login_user, playlist):
+def test_music_playlist_update(authenticated_client, playlist):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("music:playlist_update", kwargs={"uuid": playlist[0].uuid})
     resp = client.post(url, {
@@ -238,9 +238,9 @@ def test_music_playlist_update(auto_login_user, playlist):
     assert updated_playlist.note == "New Note"
 
 
-def test_music_playlist_delete(auto_login_user, playlist):
+def test_music_playlist_delete(authenticated_client, playlist):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("music:delete_playlist", kwargs={"uuid": playlist[0].uuid})
     resp = client.post(url, {
@@ -250,9 +250,9 @@ def test_music_playlist_delete(auto_login_user, playlist):
     assert resp.status_code == 302
 
 
-def test_music_get_playlist(auto_login_user, playlist):
+def test_music_get_playlist(authenticated_client, playlist):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("music:get_playlist", kwargs={"playlist_uuid": playlist[0].uuid})
     resp = client.get(url)
@@ -263,9 +263,9 @@ def test_music_get_playlist(auto_login_user, playlist):
     assert resp.status_code == 200
 
 
-def test_music_sort_playlist(auto_login_user, playlist):
+def test_music_sort_playlist(authenticated_client, playlist):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("music:sort_playlist")
     resp = client.post(url, {
@@ -277,9 +277,9 @@ def test_music_sort_playlist(auto_login_user, playlist):
     assert resp.json()["status"] == "OK"
 
 
-def test_music_search_playlists(auto_login_user, playlist):
+def test_music_search_playlists(authenticated_client, playlist):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("music:search_playlists")
     resp = client.get(f"{url}?query=playlist")
@@ -289,9 +289,9 @@ def test_music_search_playlists(auto_login_user, playlist):
     assert resp.json()[0]["uuid"] == str(playlist[0].uuid)
 
 
-def test_music_add_to_playlist(auto_login_user, playlist, song):
+def test_music_add_to_playlist(authenticated_client, playlist, song):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("music:add_to_playlist")
     resp = client.post(url, {
@@ -303,9 +303,9 @@ def test_music_add_to_playlist(auto_login_user, playlist, song):
     assert resp.json()["status"] == "OK"
 
 
-def test_music_dupe_song_checker(auto_login_user, song):
+def test_music_dupe_song_checker(authenticated_client, song):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("music:dupe_song_checker")
     resp = client.get(f"{url}?artist=New+Artist&title=New+Title")
@@ -321,9 +321,9 @@ def test_music_dupe_song_checker(auto_login_user, song):
     assert response["dupes"][0]["uuid"] == str(song[0].uuid)
 
 
-def test_music_recent_albums(auto_login_user):
+def test_music_recent_albums(authenticated_client):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     artist = ArtistFactory(user=user)
     albums = AlbumFactory.create_batch(20, artist=artist, user=user)
@@ -347,9 +347,9 @@ def test_music_recent_albums(auto_login_user):
     assert str(albums[0].uuid) in [x["uuid"] for x in album_list]
 
 
-def test_music_set_song_rating(auto_login_user, song):
+def test_music_set_song_rating(authenticated_client, song):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("music:set_song_rating")
     resp = client.post(url, {

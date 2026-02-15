@@ -51,9 +51,9 @@ def monkeypatch_collection(monkeypatch):
     monkeypatch.setattr(Collection, "create_collection_thumbnail", mock)
 
 
-def test_blob_list(auto_login_user, blob_text_factory):
+def test_blob_list(authenticated_client, blob_text_factory):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     # The empty form
     url = urls.reverse("blob:list")
@@ -63,9 +63,9 @@ def test_blob_list(auto_login_user, blob_text_factory):
 
 
 @factory.django.mute_signals(signals.post_save)
-def test_blob_create(monkeypatch_blob, auto_login_user, blob_text_factory):
+def test_blob_create(monkeypatch_blob, authenticated_client, blob_text_factory):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     # The empty form
     url = urls.reverse("blob:create")
@@ -142,7 +142,7 @@ def test_blob_create(monkeypatch_blob, auto_login_user, blob_text_factory):
 
 
 @factory.django.mute_signals(signals.pre_delete)
-def test_blob_delete(monkeypatch_blob, auto_login_user, blob_text_factory):
+def test_blob_delete(monkeypatch_blob, authenticated_client, blob_text_factory):
 
     # Quiet spurious output
     settings.NPLUSONE_WHITELIST = [
@@ -152,7 +152,7 @@ def test_blob_delete(monkeypatch_blob, auto_login_user, blob_text_factory):
         }
     ]
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
     url = urls.reverse("blob-detail", kwargs={"uuid": blob_text_factory[0].uuid})
     resp = client.delete(url)
 
@@ -161,9 +161,9 @@ def test_blob_delete(monkeypatch_blob, auto_login_user, blob_text_factory):
 
 
 @factory.django.mute_signals(signals.post_save)
-def test_blob_update(monkeypatch_blob, auto_login_user, blob_text_factory, blob_pdf_factory):
+def test_blob_update(monkeypatch_blob, authenticated_client, blob_text_factory, blob_pdf_factory):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     s3 = boto3.resource("s3")
     bucket = s3.Bucket(settings.AWS_STORAGE_BUCKET_NAME)
@@ -240,9 +240,9 @@ def resolved_blob(request):
 
 # Indirect parametrization to inject fixture values by name (e.g., 'blob_image_factory')
 @pytest.mark.parametrize("resolved_blob", ["blob_image_factory", "blob_text_factory"], indirect=["resolved_blob"])
-def test_blob_detail(auto_login_user, resolved_blob):
+def test_blob_detail(authenticated_client, resolved_blob):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     mock_info = {}
 
@@ -283,9 +283,9 @@ def test_blob_detail(auto_login_user, resolved_blob):
     assert expected_domain in domains
 
 
-def test_clone(monkeypatch_blob, auto_login_user):
+def test_clone(monkeypatch_blob, authenticated_client):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     blob = BlobFactory.create(user=user)
 
@@ -295,9 +295,9 @@ def test_clone(monkeypatch_blob, auto_login_user):
     assert resp.status_code == 302
 
 
-def test_handle_metadata(auto_login_user, blob_text_factory, blob_image_factory):
+def test_handle_metadata(authenticated_client, blob_text_factory, blob_image_factory):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     request_mock = Mock()
     request_mock.user = user
@@ -340,9 +340,9 @@ def test_handle_metadata(auto_login_user, blob_text_factory, blob_image_factory)
     assert "is_book" in [x.name for x in metadata]
 
 
-def test_handle_linked_collection(monkeypatch_collection, auto_login_user, blob_image_factory):
+def test_handle_linked_collection(monkeypatch_collection, authenticated_client, blob_image_factory):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     collection = CollectionFactory(user=user)
 
@@ -359,9 +359,9 @@ def test_handle_linked_collection(monkeypatch_collection, auto_login_user, blob_
     assert blob_image_factory[0] in [x.blob for x in collection_updated.collectionobject_set.all()]
 
 
-def test_blob_metadata_name_search(auto_login_user, blob_image_factory):
+def test_blob_metadata_name_search(authenticated_client, blob_image_factory):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("blob:metadata_name_search")
     resp = client.get(f"{url}?query=foobar")
@@ -369,9 +369,9 @@ def test_blob_metadata_name_search(auto_login_user, blob_image_factory):
     assert resp.status_code == 200
 
 
-def test_blob_parse_date(auto_login_user):
+def test_blob_parse_date(authenticated_client):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("blob:parse_date", kwargs={"input_date": "2021-01-01"})
     resp = client.get(url)
@@ -385,9 +385,9 @@ def test_blob_parse_date(auto_login_user):
     assert resp.json() == {'output_date': '', 'message': "time data '01/34/2021' does not match format '%m/%d/%Y'"}
 
 
-def test_blob_update_cover_image(s3_resource, s3_bucket, auto_login_user):
+def test_blob_update_cover_image(s3_resource, s3_bucket, authenticated_client):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     blob_1 = BlobFactory.create(user=user)
 
@@ -410,10 +410,10 @@ def test_blob_update_cover_image(s3_resource, s3_bucket, auto_login_user):
 
 
 @patch("blob.models.Blob.get_elasticsearch_info")
-def test_get_elasticsearch_info(mock_get_info, auto_login_user):
+def test_get_elasticsearch_info(mock_get_info, authenticated_client):
     """Test blob:get_elasticsearch_info while mocking the ES query."""
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
     blob = BlobFactory.create(user=user, tags=("django", "linux"))
 
     # First request: simulate no result
@@ -448,7 +448,7 @@ def test_get_elasticsearch_info(mock_get_info, auto_login_user):
     assert resp_json["info"]["doctype"] == "document"
 
 
-def test_related_objects(auto_login_user):
+def test_related_objects(authenticated_client):
 
     # Quiet spurious output
     settings.NPLUSONE_WHITELIST = [
@@ -458,7 +458,7 @@ def test_related_objects(auto_login_user):
         }
     ]
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     blob_1 = BlobFactory.create(user=user)
     blob_2 = BlobFactory.create(user=user)
@@ -476,9 +476,9 @@ def test_related_objects(auto_login_user):
     assert payload["related_objects"][0]["uuid"] == str(blob_2.uuid)
 
 
-def test_blob_add_related_object(auto_login_user):
+def test_blob_add_related_object(authenticated_client):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     blob_1 = BlobFactory.create(user=user)
     blob_2 = BlobFactory.create(user=user)
@@ -497,9 +497,9 @@ def test_blob_add_related_object(auto_login_user):
     assert related_blobs.first().blob == blob_2
 
 
-def test_blob_remove_related_object(auto_login_user):
+def test_blob_remove_related_object(authenticated_client):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     blob_1 = BlobFactory.create(user=user)
     blob_2 = BlobFactory.create(user=user)
@@ -519,9 +519,9 @@ def test_blob_remove_related_object(auto_login_user):
     assert related_blobs.count() == 0
 
 
-def test_blob_update_page_number(auto_login_user):
+def test_blob_update_page_number(authenticated_client):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     blob = BlobFactory.create(user=user)
     page_number = 2
@@ -543,9 +543,9 @@ def test_blob_update_page_number(auto_login_user):
     assert blob_updated.data == {"pdf_page_number": page_number}
 
 
-def test_blob_update_related_object_note(auto_login_user):
+def test_blob_update_related_object_note(authenticated_client):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     blob_1 = BlobFactory.create(user=user)
     blob_2 = BlobFactory.create(user=user)
@@ -568,9 +568,9 @@ def test_blob_update_related_object_note(auto_login_user):
     assert related_object.note == note
 
 
-def test_blob_get_template(auto_login_user):
+def test_blob_get_template(authenticated_client):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     name = faker.text(max_nb_chars=10)
     content = faker.text(max_nb_chars=20)
@@ -592,9 +592,9 @@ def test_blob_get_template(auto_login_user):
 
 
 @patch("blob.services.get_elasticsearch_connection")
-def test_bookshelf_list(mock_get_es, auto_login_user):
+def test_bookshelf_list(mock_get_es, authenticated_client):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     mock_es = MagicMock()
     mock_es.search.return_value = {

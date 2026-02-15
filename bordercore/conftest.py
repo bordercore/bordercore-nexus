@@ -1,8 +1,7 @@
 import logging
 import os
 import tempfile
-from collections.abc import Generator
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import boto3
 import botocore
@@ -71,71 +70,21 @@ faker.add_provider(PdfFileProvider)
 
 
 @pytest.fixture(autouse=True)
-def mock_get_recent_blobs() -> Generator[None, None, None]:
-    """Mock get_recent_blobs to avoid hitting Elasticsearch for every test.
+def mock_elasticsearch(monkeypatch):
+    """Mock all Elasticsearch interactions for every test.
 
-    This fixture mocks the get_recent_blobs function call to prevent
-    Elasticsearch queries during tests. The mock returns empty results.
+    Patches the ES connection, search service indexing/deletion,
+    blob factory indexing, and get_recent_blobs in one place.
     """
-    with patch("blob.services.get_recent_blobs") as mock_get_recent_blobs:
-        # Return empty results to avoid Elasticsearch queries
-        mock_get_recent_blobs.return_value = ([], {})
-        yield
-
-
-@pytest.fixture(autouse=True)
-def mock_elasticsearch_service() -> Generator[dict[str, MagicMock], None, None]:
-    """Auto-mocked Elasticsearch service functions for all tests.
-
-    This pytest fixture automatically patches out the Elasticsearch service
-    layer functions `index_document` and `delete_document` for the duration
-    of each test. This prevents real Elasticsearch interactions during tests
-    and allows assertions on calls if needed.
-
-    Yields:
-        dict: A dictionary containing the mocked functions:
-            - "index_document" (MagicMock): Mock of the index_document function.
-            - "delete_document" (MagicMock): Mock of the delete_document function.
-    """
-    with patch("search.services._index_document"), \
-         patch("search.services._delete_document"), \
-         patch("blob.tests.factories.index_blob"):
-        yield
-
-
-@pytest.fixture(autouse=True)
-def mock_es_client():
-    """
-    Automatically mock the Elasticsearch client if the MOCK_ELASTICSEARCH environment variable is set.
-
-    This fixture patches the `get_elasticsearch_connection` function in the
-    `lib.util` module, replacing it with a `MagicMock` instance. The mock client
-    is configured to return proper dictionary structures instead of nested MagicMocks
-    to avoid issues when code accesses nested dictionary keys.
-
-    If the environment variable `MOCK_ELASTICSEARCH` is not set to "1",
-    the fixture yields without patching, and no mocking is applied.
-
-    Yields:
-        MagicMock: A mock Elasticsearch client, or `None` if mocking is disabled.
-    """
-    if os.getenv("MOCK_ELASTICSEARCH") != "1":
-        yield  # No-op if env var isn't set
-        return
-
-    with patch("lib.util._get_elasticsearch_connection") as mock_get_es:
-        mock_client = MagicMock()
-        # Configure search() to return an empty result by default (no hits)
-        # This prevents MagicMock objects from being returned when code accesses
-        # nested dictionary keys like results["hits"]["hits"][0]["_source"]
-        mock_client.search.return_value = {
-            "hits": {
-                "hits": [],
-                "total": {"value": 0}
-            }
-        }
-        mock_get_es.return_value = mock_client
-        yield mock_client
+    mock_client = MagicMock()
+    mock_client.search.return_value = {
+        "hits": {"hits": [], "total": {"value": 0}}
+    }
+    monkeypatch.setattr("lib.util._get_elasticsearch_connection", lambda: mock_client)
+    monkeypatch.setattr("search.services._index_document", lambda *a, **kw: None)
+    monkeypatch.setattr("search.services._delete_document", lambda *a, **kw: None)
+    monkeypatch.setattr("blob.tests.factories.index_blob", lambda *a, **kw: None)
+    monkeypatch.setattr("blob.services.get_recent_blobs", lambda *a, **kw: ([], {}))
 
 
 @pytest.fixture(scope="session")
@@ -162,16 +111,29 @@ def aws_credentials():
 
 
 @pytest.fixture
-def auto_login_user(client, _seed_data, blob_text_factory):
+def authenticated_client(client, _seed_data):
+    """Logged-in Django test client factory. No blobs."""
 
     def make_auto_login(user=None):
         if user is None:
             user = _seed_data["user"]
-            UserNote.objects.get_or_create(
-                userprofile=user.userprofile, blob=blob_text_factory[0]
-            )
         client.login(username=user.username, password=TEST_PASSWORD)
         return user, client
+
+    return make_auto_login
+
+
+@pytest.fixture
+def auto_login_user(authenticated_client, _seed_data, blob_text_factory):
+    """Logged-in client with 3 pre-created blobs and a UserNote."""
+
+    def make_auto_login(user=None):
+        if user is None:
+            UserNote.objects.get_or_create(
+                userprofile=_seed_data["user"].userprofile,
+                blob=blob_text_factory[0],
+            )
+        return authenticated_client(user)
 
     return make_auto_login
 

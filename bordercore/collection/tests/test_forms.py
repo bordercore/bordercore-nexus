@@ -1,15 +1,18 @@
 from unittest.mock import Mock
 
+import pytest
 from faker import Factory as FakerFactory
 
 from collection.forms import CollectionForm
 
+pytestmark = [pytest.mark.django_db]
+
 faker = FakerFactory.create()
 
 
-def test_collection_form(auto_login_user):
+def test_collection_form(authenticated_client):
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     request_mock = Mock()
     request_mock.user = user

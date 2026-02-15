@@ -8,9 +8,9 @@ from fitness.models import Exercise, ExerciseUser, Muscle, MuscleGroup, Data, Wo
 
 
 @pytest.fixture
-def fitness(auto_login_user):
+def fitness(authenticated_client):
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     muscle_group = MuscleGroup.objects.create(name="Chest")
     muscle = Muscle.objects.create(name="Pectoralis Major", muscle_group=muscle_group)

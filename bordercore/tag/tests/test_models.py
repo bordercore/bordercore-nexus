@@ -16,33 +16,33 @@ pytestmark = pytest.mark.django_db
 faker = FakerFactory.create()
 
 
-def test_tag_check_no_commas_constraint(auto_login_user):
+def test_tag_check_no_commas_constraint(authenticated_client):
     """
     Test the constraint that prohibits tags with commas in their name
     """
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     with pytest.raises(IntegrityError):
         Tag.objects.create(user=user, name="tag,name")
 
 
-def test_tag_check_name_is_lowercase(auto_login_user):
+def test_tag_check_name_is_lowercase(authenticated_client):
     """
     Test the constraint that prohibits tags with uppercase characters
     """
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
     with pytest.raises(IntegrityError):
         Tag.objects.create(user=user, name="Tagname")
 
 
-def test_tag_check_tag_alias(auto_login_user):
+def test_tag_check_tag_alias(authenticated_client):
     """
     Test that there exists no tag with the same name as a tag alias
     """
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     tag_1 = TagFactory(user=user, name=faker.text(max_nb_chars=16).lower())
     alias = TagAlias.objects.create(user=user, tag=tag_1, name=faker.text(max_nb_chars=16).lower())
@@ -124,18 +124,18 @@ def test_delete(bookmark, tag):
     assert tbso.sort_order == 1
 
 
-def test_pin(auto_login_user, tag):
+def test_pin(authenticated_client, tag):
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     tag[0].pin()
 
     assert tag[0] in user.userprofile.pinned_tags.all()
 
 
-def test_unpin(auto_login_user, tag):
+def test_unpin(authenticated_client, tag):
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     tag[0].pin()
     tag[0].unpin()

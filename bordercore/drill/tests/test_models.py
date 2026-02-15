@@ -136,9 +136,9 @@ def test_sql_db(question, blob_image_factory):
     assert question[0].sql_db.blob == blob_image_factory[0]
 
 
-def test_add_related_object(auto_login_user, question):
+def test_add_related_object(authenticated_client, question):
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     # question = QuestionFactory.create(user=user)
     blob = BlobFactory.create(user=user)
@@ -215,9 +215,9 @@ def test_get_tag_progress(question, tag):
     assert tags_info["count"] == 0
 
 
-def test_drill_get_disabled_tags(auto_login_user, tag):
+def test_drill_get_disabled_tags(authenticated_client, tag):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     QuestionFactory(user=user)
     question_1 = QuestionFactory(is_disabled=True)

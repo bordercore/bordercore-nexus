@@ -17,9 +17,9 @@ pytestmark = [pytest.mark.django_db]
 faker = FakerFactory.create()
 
 
-def test_node_listview(auto_login_user, node):
+def test_node_listview(authenticated_client, node):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("node:list")
     resp = client.get(url)
@@ -27,9 +27,9 @@ def test_node_listview(auto_login_user, node):
     assert resp.status_code == 200
 
 
-def test_node_detail(auto_login_user, node, blob_image_factory, blob_pdf_factory):
+def test_node_detail(authenticated_client, node, blob_image_factory, blob_pdf_factory):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("node:detail", kwargs={"uuid": node.uuid})
     resp = client.get(url)
@@ -37,9 +37,9 @@ def test_node_detail(auto_login_user, node, blob_image_factory, blob_pdf_factory
     assert resp.status_code == 200
 
 
-def test_node_create(auto_login_user, node):
+def test_node_create(authenticated_client, node):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     node_name = faker.text(max_nb_chars=32)
 
@@ -53,9 +53,9 @@ def test_node_create(auto_login_user, node):
     assert Node.objects.filter(name=node_name).exists()
 
 
-def test_edit_note(auto_login_user, node):
+def test_edit_note(authenticated_client, node):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("node:edit_note")
     resp = client.post(url, {
@@ -66,9 +66,9 @@ def test_edit_note(auto_login_user, node):
     assert resp.status_code == 200
 
 
-def test_change_layout(auto_login_user, node):
+def test_change_layout(authenticated_client, node):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     layout = [[{"type": "note"}], [{"type": "bookmark"}], [{"type": "blob"}]]
 
@@ -84,9 +84,9 @@ def test_change_layout(auto_login_user, node):
     assert changed_node.layout == layout
 
 
-def test_add_collection(auto_login_user, node):
+def test_add_collection(authenticated_client, node):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("node:add_collection")
     resp = client.post(url, {
@@ -109,9 +109,9 @@ def test_add_collection(auto_login_user, node):
     ]
 
 
-def test_update_collection(auto_login_user, node, quote):
+def test_update_collection(authenticated_client, node, quote):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     collection = node.add_collection()
     name = faker.text(max_nb_chars=32)
@@ -159,9 +159,9 @@ def test_update_collection(auto_login_user, node, quote):
     ]
 
 
-def test_delete_collection(auto_login_user, node):
+def test_delete_collection(authenticated_client, node):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     collection = node.add_collection()
 
@@ -186,9 +186,9 @@ def test_delete_collection(auto_login_user, node):
     ]
 
 
-def test_add_note(monkeypatch_blob, auto_login_user, node):
+def test_add_note(monkeypatch_blob, authenticated_client, node):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("node:add_note")
     resp = client.post(url, {
@@ -210,9 +210,9 @@ def test_add_note(monkeypatch_blob, auto_login_user, node):
     ]
 
 
-def test_delete_note(monkeypatch_blob, auto_login_user, node):
+def test_delete_note(monkeypatch_blob, authenticated_client, node):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     note = node.add_note()
 
@@ -236,9 +236,9 @@ def test_delete_note(monkeypatch_blob, auto_login_user, node):
     ]
 
 
-def test_node_set_note_color(monkeypatch_blob, auto_login_user, node):
+def test_node_set_note_color(monkeypatch_blob, authenticated_client, node):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     note = node.add_note()
     color = 2
@@ -264,9 +264,9 @@ def test_node_set_note_color(monkeypatch_blob, auto_login_user, node):
     ]
 
 
-def test_node_add_image(monkeypatch_blob, auto_login_user, node, blob_image_factory):
+def test_node_add_image(monkeypatch_blob, authenticated_client, node, blob_image_factory):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("node:add_image")
     resp = client.post(url, {
@@ -286,9 +286,9 @@ def test_node_add_image(monkeypatch_blob, auto_login_user, node, blob_image_fact
     ]
 
 
-def test_node_remove_image(monkeypatch_blob, auto_login_user, node, blob_image_factory):
+def test_node_remove_image(monkeypatch_blob, authenticated_client, node, blob_image_factory):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     new_uuid = node.add_component("image", blob_image_factory[0])
 
@@ -310,9 +310,9 @@ def test_node_remove_image(monkeypatch_blob, auto_login_user, node, blob_image_f
     ]
 
 
-def test_node_add_quote(auto_login_user, node, quote):
+def test_node_add_quote(authenticated_client, node, quote):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     url = urls.reverse("node:add_quote")
     resp = client.post(url, {
@@ -331,9 +331,9 @@ def test_node_add_quote(auto_login_user, node, quote):
     ]
 
 
-def test_node_remove_quote(auto_login_user, node, quote):
+def test_node_remove_quote(authenticated_client, node, quote):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     new_uuid = node.add_component("quote", quote)
 
@@ -354,9 +354,9 @@ def test_node_remove_quote(auto_login_user, node, quote):
     ]
 
 
-def test_node_update_quote(auto_login_user, node, quote):
+def test_node_update_quote(authenticated_client, node, quote):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     node_quote_uuid = node.add_component("quote", quote)
     color = 2
@@ -401,9 +401,9 @@ def test_node_update_quote(auto_login_user, node, quote):
     ]
 
 
-def test_node_get_quote(auto_login_user, node, quote):
+def test_node_get_quote(authenticated_client, node, quote):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     url = urls.reverse("node:get_quote")
     resp = client.post(url, {
@@ -417,9 +417,9 @@ def test_node_get_quote(auto_login_user, node, quote):
     assert resp_json["quote"]["quote"] == quote.quote
 
 
-def test_node_add_todo_list(auto_login_user, node):
+def test_node_add_todo_list(authenticated_client, node):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     url = urls.reverse("node:add_todo_list")
     resp = client.post(url, {
@@ -438,9 +438,9 @@ def test_node_add_todo_list(auto_login_user, node):
     ]
 
 
-def test_node_delete_todo_list(auto_login_user, node):
+def test_node_delete_todo_list(authenticated_client, node):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     node.add_todo_list()
 
@@ -460,9 +460,9 @@ def test_node_delete_todo_list(auto_login_user, node):
     ]
 
 
-def test_node_add_node(auto_login_user, node):
+def test_node_add_node(authenticated_client, node):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     added_node = NodeFactory.create(user=user)
 
@@ -484,9 +484,9 @@ def test_node_add_node(auto_login_user, node):
     ]
 
 
-def test_node_remove_node(auto_login_user, node):
+def test_node_remove_node(authenticated_client, node):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     added_node = NodeFactory.create(user=user)
     node.add_component("node", added_node)
@@ -508,9 +508,9 @@ def test_node_remove_node(auto_login_user, node):
     ]
 
 
-def test_node_search(auto_login_user, node):
+def test_node_search(authenticated_client, node):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     url = urls.reverse("node:search")
     resp = client.get(f"{url}?query={node.name}")
@@ -521,9 +521,9 @@ def test_node_search(auto_login_user, node):
     assert resp.json()[0]["name"] == node.name
 
 
-def test_get_todo_list(auto_login_user, node):
+def test_get_todo_list(authenticated_client, node):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     node.add_todo_list()
     todo = TodoFactory(user=user, name="Node todo task")
@@ -542,9 +542,9 @@ def test_get_todo_list(auto_login_user, node):
     assert data["todo_list"][0]["uuid"] == str(todo.uuid)
 
 
-def test_get_todo_list_empty(auto_login_user, node):
+def test_get_todo_list_empty(authenticated_client, node):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("node:get_todo_list", kwargs={"uuid": node.uuid})
     resp = client.get(url)
@@ -555,9 +555,9 @@ def test_get_todo_list_empty(auto_login_user, node):
     assert data["todo_list"] == []
 
 
-def test_add_todo(auto_login_user, node):
+def test_add_todo(authenticated_client, node):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     node.add_todo_list()
     todo = TodoFactory(user=user, name="Todo to add")
@@ -570,9 +570,9 @@ def test_add_todo(auto_login_user, node):
     assert NodeTodo.objects.filter(node=node, todo=todo).exists()
 
 
-def test_remove_todo(auto_login_user, node):
+def test_remove_todo(authenticated_client, node):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     node.add_todo_list()
     todo = TodoFactory(user=user, name="Todo to remove")
@@ -586,9 +586,9 @@ def test_remove_todo(auto_login_user, node):
     assert not NodeTodo.objects.filter(node=node, todo=todo).exists()
 
 
-def test_sort_todos(auto_login_user, node):
+def test_sort_todos(authenticated_client, node):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     node.add_todo_list()
     todo_a = TodoFactory(user=user, name="Todo A")
@@ -613,9 +613,9 @@ def test_sort_todos(auto_login_user, node):
     assert order[1] == todo_a.uuid
 
 
-def test_update_node(auto_login_user, node):
+def test_update_node(authenticated_client, node):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     nested = NodeFactory.create(user=user, name="Nested node")
     component_uuid = node.add_component("node", nested, {"display": "minimal"})
@@ -641,9 +641,9 @@ def test_update_node(auto_login_user, node):
     assert component.get("options", {}).get("rotate") == 90
 
 
-def test_node_preview(auto_login_user, node):
+def test_node_preview(authenticated_client, node):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     url = urls.reverse("node:preview", kwargs={"uuid": node.uuid})
     resp = client.get(url)

@@ -8,6 +8,8 @@ import pytest
 from faker import Factory as FakerFactory
 from instaloader.instaloader import Instaloader
 
+pytestmark = [pytest.mark.django_db]
+
 from blob.models import Blob
 from blob.services import (get_authors, get_blob_naturalsize, get_recent_blobs,
                            get_recent_media, import_artstation,
@@ -18,9 +20,9 @@ faker = FakerFactory.create()
 
 
 @patch("blob.services.get_blob_sizes")
-def test_get_recent_blobs(mock_get_blob_sizes, auto_login_user, blob_image_factory, blob_text_factory):
+def test_get_recent_blobs(mock_get_blob_sizes, authenticated_client, blob_image_factory, blob_text_factory):
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     mock_get_blob_sizes.return_value = {
         blob_image_factory[0].uuid: {
@@ -52,9 +54,9 @@ def test_get_recent_blobs(mock_get_blob_sizes, auto_login_user, blob_image_facto
     ]
 
 
-def test_get_recent_media(auto_login_user, blob_image_factory, blob_text_factory):
+def test_get_recent_media(authenticated_client, blob_image_factory, blob_text_factory):
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     media_list = get_recent_media(user)
 
@@ -102,7 +104,7 @@ class MockInstaloaderPostResponse:
         self.owner_profile.full_name = faker.language_name()
 
 
-def test_import_instagram(auto_login_user, monkeypatch):
+def test_import_instagram(s3_resource, s3_bucket, authenticated_client, monkeypatch):
 
     shortcode = "CUA4IQcARX2"
     url = f"https://www.instagram.com/p/{shortcode}/"
@@ -113,7 +115,7 @@ def test_import_instagram(auto_login_user, monkeypatch):
     def mock_getmtime(*args, **kwargs):
         return faker.unix_time()
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     mock_post = MockInstaloaderPostResponse(url=url, shortcode=shortcode)
 
@@ -139,7 +141,7 @@ def test_import_instagram(auto_login_user, monkeypatch):
 
 @patch("requests.get")
 @patch("blob.services.get_sha1sum")
-def test_import_artstation(mock_get_sha1sum, mock_requests, auto_login_user, monkeypatch):
+def test_import_artstation(mock_get_sha1sum, mock_requests, s3_resource, s3_bucket, authenticated_client, monkeypatch):
 
     shortcode = "QnxsqB"
     url = f"https://www.artstation.com/artwork/{shortcode}/"
@@ -161,7 +163,7 @@ def test_import_artstation(mock_get_sha1sum, mock_requests, auto_login_user, mon
         }
     }
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     mock_requests.return_value.json.return_value = artstation_json
 
@@ -217,9 +219,9 @@ def test_get_authors(byline, expected):
 
 
 @patch("requests.get")
-def test_import_newyorktimes(mock_requests, auto_login_user, monkeypatch):
+def test_import_newyorktimes(mock_requests, authenticated_client, monkeypatch):
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     url = faker.url()
     title = faker.text()

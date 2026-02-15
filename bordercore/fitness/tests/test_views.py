@@ -12,9 +12,9 @@ pytestmark = [pytest.mark.django_db]
 faker = FakerFactory.create()
 
 
-def test_fitness_exercise_detail(auto_login_user, fitness):
+def test_fitness_exercise_detail(authenticated_client, fitness):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("fitness:exercise_detail", kwargs={"uuid": fitness[0].uuid})
     resp = client.get(url)
@@ -29,9 +29,9 @@ def test_fitness_exercise_detail(auto_login_user, fitness):
     assert resp.status_code == 200
 
 
-def test_fitness_add(auto_login_user, fitness):
+def test_fitness_add(authenticated_client, fitness):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("fitness:add", kwargs={"exercise_uuid": fitness[0].uuid})
     resp = client.post(url, {
@@ -47,9 +47,9 @@ def test_fitness_add(auto_login_user, fitness):
     assert resp.status_code == 302
 
 
-def test_fitness_summary(auto_login_user, fitness):
+def test_fitness_summary(authenticated_client, fitness):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("fitness:summary")
     resp = client.get(url)
@@ -57,9 +57,9 @@ def test_fitness_summary(auto_login_user, fitness):
     assert resp.status_code == 200
 
 
-def test_fitness_change_active_status(auto_login_user, fitness):
+def test_fitness_change_active_status(authenticated_client, fitness):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     url = urls.reverse("fitness:change_active_status")
 
@@ -79,9 +79,9 @@ def test_fitness_change_active_status(auto_login_user, fitness):
     assert ExerciseUser.objects.filter(user=user, exercise__uuid=fitness[0].uuid).exists()
 
 
-def test_edit_note(auto_login_user, fitness):
+def test_edit_note(authenticated_client, fitness):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     note = faker.text()
 
@@ -97,9 +97,9 @@ def test_edit_note(auto_login_user, fitness):
     assert updated_exercise.note == note
 
 
-def test_fitness_get_workout_data(auto_login_user, fitness):
+def test_fitness_get_workout_data(authenticated_client, fitness):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("fitness:get_workout_data")
     resp = client.get(f"{url}?uuid={fitness[0].uuid}")
@@ -114,9 +114,9 @@ def test_fitness_get_workout_data(auto_login_user, fitness):
     assert result["workout_data"]["paginator"]["page_number"] == 1
 
 
-def test_fitness_update_schedule(auto_login_user, fitness):
+def test_fitness_update_schedule(authenticated_client, fitness):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     schedule = [False, True, False, False, False, True, False]
 
@@ -132,9 +132,9 @@ def test_fitness_update_schedule(auto_login_user, fitness):
     assert updated_exercise_user.schedule == schedule
 
 
-def test_fitness_update_rest_period(auto_login_user, fitness):
+def test_fitness_update_rest_period(authenticated_client, fitness):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     rest_period = 5
 

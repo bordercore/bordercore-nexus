@@ -19,9 +19,9 @@ from todo.tests.factories import TodoFactory
 pytestmark = pytest.mark.django_db
 
 
-def test_get_missing_blob_ids(auto_login_user):
+def test_get_missing_blob_ids(authenticated_client):
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     found = {
         "hits": {
@@ -83,9 +83,9 @@ def test_get_missing_blob_ids(auto_login_user):
     assert get_missing_blob_ids(expected, found) == {"d77befd1-9172-4872-b527-628217f25d89"}
 
 
-def test_get_missing_bookmark_ids(auto_login_user, monkeypatch):
+def test_get_missing_bookmark_ids(authenticated_client, monkeypatch):
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     found = {
         "hits": {
@@ -362,9 +362,9 @@ def test_favicon_url():
     assert 'height="16"' in result
 
 
-def test_get_field(auto_login_user):
+def test_get_field(authenticated_client):
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     tag_1 = TagFactory(name="linux")
     tag_2 = TagFactory(name="django")

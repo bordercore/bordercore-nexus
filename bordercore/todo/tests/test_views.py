@@ -23,9 +23,9 @@ def monkeypatch_todo(monkeypatch):
     monkeypatch.setattr(Todo, "delete", mock)
 
 
-def test_todo_list_empty(auto_login_user):
+def test_todo_list_empty(authenticated_client):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("todo:list")
     resp = client.get(url)
@@ -33,9 +33,9 @@ def test_todo_list_empty(auto_login_user):
     assert resp.status_code == 200
 
 
-def test_todo_list(auto_login_user, todo):
+def test_todo_list(authenticated_client, todo):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("todo:list")
     resp = client.get(url)
@@ -44,9 +44,9 @@ def test_todo_list(auto_login_user, todo):
 
 
 @factory.django.mute_signals(signals.post_save)
-def test_todo_create(auto_login_user, todo):
+def test_todo_create(authenticated_client, todo):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("todo-list")
     resp = client.post(url, {
@@ -65,7 +65,7 @@ def test_todo_create(auto_login_user, todo):
 
 
 @factory.django.mute_signals(signals.post_save)
-def test_todo_update(auto_login_user, todo):
+def test_todo_update(authenticated_client, todo):
 
     # Quiet spurious output
     settings.NPLUSONE_WHITELIST = [
@@ -75,7 +75,7 @@ def test_todo_update(auto_login_user, todo):
         }
     ]
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("todo-detail", kwargs={"uuid": todo.uuid})
     resp = client.put(
@@ -130,9 +130,9 @@ def test_sort_todo_success():
             mock_reorder.assert_called_once_with(mock_tag_todo, 2)
 
 
-def test_sort_todo(auto_login_user, todo):
+def test_sort_todo(authenticated_client, todo):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("todo:sort")
     resp = client.post(url, {
@@ -144,9 +144,9 @@ def test_sort_todo(auto_login_user, todo):
     assert resp.status_code == 200
 
 
-def test_move_to_top(auto_login_user, todo):
+def test_move_to_top(authenticated_client, todo):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("todo:move_to_top")
     resp = client.post(url, {

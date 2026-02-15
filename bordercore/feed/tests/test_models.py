@@ -13,16 +13,16 @@ from feed.models import Feed, FeedItem  # isort:skip
 pytestmark = pytest.mark.django_db
 
 
-def test_feed_str(auto_login_user, feed):
+def test_feed_str(authenticated_client, feed):
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     assert str(feed[0]) == "Hacker News"
 
 
-def test_get_current_feed_id(auto_login_user, feed):
+def test_get_current_feed_id(authenticated_client, feed):
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     session = {}
     assert Feed.get_current_feed_id(user, session) == feed[2].id
@@ -38,9 +38,9 @@ def test_get_current_feed_id(auto_login_user, feed):
     assert Feed.get_current_feed_id(user, session) == feed[2].id
 
 
-def test_get_first_feed(auto_login_user, feed):
+def test_get_first_feed(authenticated_client, feed):
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     assert Feed.get_first_feed(user) == {
         "id": feed[2].id
@@ -48,9 +48,9 @@ def test_get_first_feed(auto_login_user, feed):
 
 
 @responses.activate
-def test_update(auto_login_user, feed):
+def test_update(authenticated_client, feed):
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     with open(Path(__file__).parent / "resources/rss.xml") as f:
         xml = f.read()

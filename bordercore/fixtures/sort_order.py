@@ -4,9 +4,9 @@ from accounts.models import UserTag
 
 
 @pytest.fixture()
-def sort_order_user_tag(auto_login_user, tag):
+def sort_order_user_tag(authenticated_client, tag):
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     sort_order = UserTag(userprofile=user.userprofile, tag=tag[0])
     sort_order.save()

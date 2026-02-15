@@ -26,9 +26,9 @@ def monkeypatch_drill(monkeypatch):
     monkeypatch.setattr(Question, "delete", mock)
 
 
-def test_drill_list(auto_login_user, question, django_assert_num_queries):
+def test_drill_list(authenticated_client, question, django_assert_num_queries):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("drill:list")
     resp = client.get(url)
@@ -36,9 +36,9 @@ def test_drill_list(auto_login_user, question, django_assert_num_queries):
     assert resp.status_code == 200
 
 
-def test_drill_create(auto_login_user, question):
+def test_drill_create(authenticated_client, question):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     # The empty form
     url = urls.reverse("drill:add")
@@ -57,9 +57,9 @@ def test_drill_create(auto_login_user, question):
     assert resp.status_code == 302
 
 
-def test_drill_handle_related_objects(monkeypatch_drill, auto_login_user, question, bookmark):
+def test_drill_handle_related_objects(monkeypatch_drill, authenticated_client, question, bookmark):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     mock_request = Mock()
     mock_request.user = user
@@ -79,9 +79,9 @@ def test_drill_handle_related_objects(monkeypatch_drill, auto_login_user, questi
     assert QuestionToObject.objects.filter(node=question[1], bookmark=bookmark[0]).exists()
 
 
-def test_drill_delete(monkeypatch_drill, auto_login_user, question):
+def test_drill_delete(monkeypatch_drill, authenticated_client, question):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("drill:delete", kwargs={"uuid": question[0].uuid})
     resp = client.post(url, {})
@@ -89,9 +89,9 @@ def test_drill_delete(monkeypatch_drill, auto_login_user, question):
     assert resp.status_code == 302
 
 
-def test_drill_detail(auto_login_user, question):
+def test_drill_detail(authenticated_client, question):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("drill:detail", kwargs={"uuid": question[0].uuid})
     resp = client.get(url)
@@ -99,9 +99,9 @@ def test_drill_detail(auto_login_user, question):
     assert resp.status_code == 200
 
 
-def test_drill_update(auto_login_user, question):
+def test_drill_update(authenticated_client, question):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     # The empty form
     url = urls.reverse("drill:update", kwargs={"uuid": question[0].uuid})
@@ -120,9 +120,9 @@ def test_drill_update(auto_login_user, question):
     assert resp.status_code == 302
 
 
-def test_drill_start_study_session(auto_login_user, question):
+def test_drill_start_study_session(authenticated_client, question):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("drill:start_study_session")
     resp = client.get(url + "?study_method=favorites&filter=review")
@@ -130,9 +130,9 @@ def test_drill_start_study_session(auto_login_user, question):
     assert resp.status_code == 302
 
 
-def test_drill_study(auto_login_user, question):
+def test_drill_study(authenticated_client, question):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     session = client.session
 
@@ -172,9 +172,9 @@ def test_drill_study(auto_login_user, question):
     assert "drill_study_session" not in session
 
 
-def test_drill_get_current_question(auto_login_user, question):
+def test_drill_get_current_question(authenticated_client, question):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     session = client.session
 
@@ -194,9 +194,9 @@ def test_drill_get_current_question(auto_login_user, question):
     assert resp.status_code == 302
 
 
-def test_drill_record_response(auto_login_user, question):
+def test_drill_record_response(authenticated_client, question):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse(
         "drill:record_response",
@@ -210,9 +210,9 @@ def test_drill_record_response(auto_login_user, question):
     assert resp.status_code == 302
 
 
-def test_drill_get_pinned_tags(auto_login_user, question):
+def test_drill_get_pinned_tags(authenticated_client, question):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse(
         "drill:get_pinned_tags"
@@ -222,9 +222,9 @@ def test_drill_get_pinned_tags(auto_login_user, question):
     assert resp.status_code == 200
 
 
-def test_drill_pin_tag(auto_login_user, question, tag):
+def test_drill_pin_tag(authenticated_client, question, tag):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("drill:pin_tag")
     resp = client.post(url, {
@@ -243,9 +243,9 @@ def test_drill_pin_tag(auto_login_user, question, tag):
     assert resp.status_code == 400
 
 
-def test_drill_unpin_tag(auto_login_user, question, tag):
+def test_drill_unpin_tag(authenticated_client, question, tag):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("drill:unpin_tag")
     resp = client.post(url, {
@@ -263,9 +263,9 @@ def test_drill_unpin_tag(auto_login_user, question, tag):
     assert resp.status_code == 400
 
 
-def test_sort_pinned_tags(auto_login_user, question, tag):
+def test_sort_pinned_tags(authenticated_client, question, tag):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("drill:sort_pinned_tags")
     resp = client.post(url, {
@@ -277,9 +277,9 @@ def test_sort_pinned_tags(auto_login_user, question, tag):
     assert resp.status_code == 200
 
 
-def test_drill_get_disabled_tags(auto_login_user, tag):
+def test_drill_get_disabled_tags(authenticated_client, tag):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     QuestionFactory(user=user)
     question_1 = QuestionFactory(user=user, is_disabled=True)
@@ -295,9 +295,9 @@ def test_drill_get_disabled_tags(auto_login_user, tag):
     assert tag[0].name in [x["name"] for x in resp.json()["tag_list"]]
 
 
-def test_drill_disable_tag(auto_login_user, tag):
+def test_drill_disable_tag(authenticated_client, tag):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     question_0 = QuestionFactory(user=user)
     question_0.tags.add(tag[0])
@@ -323,9 +323,9 @@ def test_drill_disable_tag(auto_login_user, tag):
     assert resp.status_code == 400
 
 
-def test_drill_enable_tag(auto_login_user, tag):
+def test_drill_enable_tag(authenticated_client, tag):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     question_0 = QuestionFactory(user=user, is_disabled=True)
     question_0.tags.add(tag[0])
@@ -351,9 +351,9 @@ def test_drill_enable_tag(auto_login_user, tag):
     assert resp.status_code == 400
 
 
-def test_drill_is_favorite_mutate(auto_login_user, question, tag):
+def test_drill_is_favorite_mutate(authenticated_client, question, tag):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("drill:is_favorite_mutate")
     resp = client.post(url, {
@@ -383,9 +383,9 @@ def test_drill_is_favorite_mutate(auto_login_user, question, tag):
 
 
 @responses.activate
-def test_get_title_from_url(auto_login_user, bookmark):
+def test_get_title_from_url(authenticated_client, bookmark):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     with open(Path(__file__).parent / "resources/bordercore.html") as f:
         html = f.read()
@@ -411,9 +411,9 @@ def test_get_title_from_url(auto_login_user, bookmark):
     assert content["title"] == "Bordercore Bookmarks"
 
 
-def test_drill_get_related_objects(auto_login_user, question, blob_note):
+def test_drill_get_related_objects(authenticated_client, question, blob_note):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     question[0].add_related_object(blob_note[0].uuid)
 
@@ -428,9 +428,9 @@ def test_drill_get_related_objects(auto_login_user, question, blob_note):
     assert content["related_objects"][0]["uuid"] == str(blob_note[0].uuid)
 
 
-def test_drill_add_object(auto_login_user, question, blob_note):
+def test_drill_add_object(authenticated_client, question, blob_note):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("blob:add_related_object")
     resp = client.post(url, {
@@ -444,9 +444,9 @@ def test_drill_add_object(auto_login_user, question, blob_note):
     assert QuestionToObject.objects.filter(node=question[0]).count() == 3
 
 
-def test_drill_remove_object(auto_login_user, question, blob_note):
+def test_drill_remove_object(authenticated_client, question, blob_note):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     question[0].add_related_object(blob_note[0].uuid)
 
@@ -462,9 +462,9 @@ def test_drill_remove_object(auto_login_user, question, blob_note):
     assert QuestionToObject.objects.filter(node=question[0]).count() == 2
 
 
-def test_drill_update_related_object_note(auto_login_user, question, blob_note):
+def test_drill_update_related_object_note(authenticated_client, question, blob_note):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     question[0].add_related_object(blob_note[0].uuid)
 

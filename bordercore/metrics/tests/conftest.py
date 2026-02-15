@@ -7,9 +7,9 @@ from metrics.models import Metric, MetricData
 
 
 @pytest.fixture()
-def metrics(auto_login_user):
+def metrics(authenticated_client):
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     m_0 = Metric.objects.create(name="Bordercore Unit Tests", user=user)
     m_1 = Metric.objects.create(name="Bordercore Functional Tests", user=user)

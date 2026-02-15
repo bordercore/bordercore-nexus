@@ -8,6 +8,8 @@ import boto3
 import pytest
 from faker import Factory as FakerFactory
 
+pytestmark = [pytest.mark.django_db]
+
 import django
 from django.conf import settings
 from django.db import IntegrityError
@@ -28,9 +30,9 @@ from node.tests.factories import NodeFactory
 faker = FakerFactory.create()
 
 
-def test_node_unique_constraints(auto_login_user):
+def test_node_unique_constraints(authenticated_client):
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     node = BlobFactory.create(user=user)
     blob = BlobFactory.create(user=user)
@@ -88,9 +90,9 @@ def test_get_metadata(blob_image_factory):
     assert urls[0]["domain"] == urlparse(url.value).netloc
 
 
-def test_has_been_modified(auto_login_user, blob_image_factory):
+def test_has_been_modified(authenticated_client, blob_image_factory):
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     blob = BlobFactory.create(user=user)
     assert blob.has_been_modified is False
@@ -105,9 +107,9 @@ def test_has_been_modified(auto_login_user, blob_image_factory):
     assert blob.has_been_modified is True
 
 
-def test_related_blobs(auto_login_user):
+def test_related_blobs(authenticated_client):
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     blob_1 = BlobFactory.create(user=user)
     blob_2 = BlobFactory.create(user=user)
@@ -153,9 +155,9 @@ def test_get_tags(blob_image_factory):
     assert blob_image_factory[0].tags_string == "django, linux, video"
 
 
-def test_add_related_object(auto_login_user):
+def test_add_related_object(authenticated_client):
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     question = QuestionFactory.create(user=user)
     blob = BlobFactory.create(user=user)
@@ -176,12 +178,12 @@ def test_add_related_object(auto_login_user):
         add_related_object("invalid", question.uuid, blob.uuid, user)
 
 
-def test_get_nodes(auto_login_user, monkeypatch):
+def test_get_nodes(authenticated_client, monkeypatch):
 
     def mock(*args, **kwargs):
         pass
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     monkeypatch.setattr(Blob, "index_blob", mock)
     node = NodeFactory.create(user=user)
@@ -357,9 +359,9 @@ def test_parse_nodes(blob_text_factory):
     assert tree[2]["nodes"][0]["nodes"] == []
 
 
-def test_recently_viewed_blob_add(auto_login_user):
+def test_recently_viewed_blob_add(authenticated_client):
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     blob_1 = BlobFactory.create(user=user)
     blob_2 = BlobFactory.create(user=user)

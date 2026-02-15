@@ -5,9 +5,9 @@ from django import urls
 pytestmark = [pytest.mark.django_db]
 
 
-def test_accounts_prefs(auto_login_user):
+def test_accounts_prefs(authenticated_client):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     # The empty form
     url = urls.reverse("accounts:prefs")
@@ -26,9 +26,9 @@ def test_accounts_prefs(auto_login_user):
     assert resp.status_code == 200
 
 
-def test_accounts_password(auto_login_user):
+def test_accounts_password(authenticated_client):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     # The empty form
     url = urls.reverse("accounts:password")
@@ -60,9 +60,9 @@ def test_accounts_sort_pinned_notes(auto_login_user, blob_text_factory):
     assert resp.status_code == 200
 
 
-def test_accounts_pin_note(auto_login_user, blob_image_factory):
+def test_accounts_pin_note(authenticated_client, blob_image_factory):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("accounts:pin_note")
     resp = client.post(url, {
@@ -85,9 +85,9 @@ def test_accounts_unpin_note(auto_login_user, blob_text_factory):
     assert resp.status_code == 200
 
 
-def test_accounts_store_in_session(auto_login_user):
+def test_accounts_store_in_session(authenticated_client):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("accounts:store_in_session")
     resp = client.post(url, {
@@ -97,9 +97,9 @@ def test_accounts_store_in_session(auto_login_user):
     assert resp.status_code == 200
 
 
-def test_accounts_login(auto_login_user):
+def test_accounts_login(authenticated_client):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("accounts:login")
     resp = client.post(url, {
@@ -110,9 +110,9 @@ def test_accounts_login(auto_login_user):
     assert resp.status_code == 302
 
 
-def test_accounts_logout(auto_login_user):
+def test_accounts_logout(authenticated_client):
 
-    _, client = auto_login_user()
+    _, client = authenticated_client()
 
     url = urls.reverse("accounts:logout")
     resp = client.get(url)

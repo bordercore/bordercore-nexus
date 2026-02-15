@@ -9,11 +9,11 @@ pytestmark = [pytest.mark.django_db]
 
 
 @pytest.fixture
-def token(auto_login_user):
+def token(authenticated_client):
     """
     Get a DRF authentication token.
     """
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
     return Token.objects.create(user=user)
 
 

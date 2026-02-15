@@ -5,7 +5,7 @@ from music.tests.factories import SongFactory, AlbumFactory, PlaylistFactory
 
 
 @pytest.fixture()
-def song_source(auto_login_user):
+def song_source(authenticated_client):
 
     song_source, _ = SongSource.objects.get_or_create(name=SongSource.DEFAULT)
     return song_source
@@ -28,9 +28,9 @@ def song(song_source, tag):
 
 
 @pytest.fixture()
-def playlist(auto_login_user, song, tag):
+def playlist(authenticated_client, song, tag):
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     # Create a "manual" playlist
     playlist_0 = PlaylistFactory(user=user)

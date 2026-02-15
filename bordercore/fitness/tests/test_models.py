@@ -6,9 +6,9 @@ from fitness.services import get_overdue_exercises
 pytestmark = pytest.mark.django_db
 
 
-def test_fitness_str(auto_login_user, fitness):
+def test_fitness_str(authenticated_client, fitness):
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     assert str(fitness[0]) == "Bench Press"
     assert "Pectoralis Major" in [str(x) for x in fitness[0].muscle.all()]
@@ -20,7 +20,7 @@ def test_fitness_str(auto_login_user, fitness):
     )) == "ExerciseMuscle: Bench Press, Pectoralis Major"
 
 
-def test_get_targeted_muscles(auto_login_user, fitness):
+def test_get_targeted_muscles(authenticated_client, fitness):
 
     muscles = fitness[0].get_targeted_muscles()
     assert "primary" in [x for x in muscles]
@@ -30,9 +30,9 @@ def test_get_targeted_muscles(auto_login_user, fitness):
     assert muscle in muscles.pop("primary")
 
 
-def test_last_workout(auto_login_user, fitness):
+def test_last_workout(authenticated_client, fitness):
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     workout = fitness[0].last_workout(user)
 
@@ -42,9 +42,9 @@ def test_last_workout(auto_login_user, fitness):
     assert workout["delta_days"] == 1
 
 
-def test_get_plot_data(auto_login_user, fitness):
+def test_get_plot_data(authenticated_client, fitness):
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     plot_data = fitness[0].get_plot_info()
     reps = plot_data["plot_data"]["reps"]
@@ -92,7 +92,7 @@ def test_get_plot_data(auto_login_user, fitness):
     assert paginator["next_page_number"] == 1
 
 
-def test_get_related_exercises(auto_login_user, fitness):
+def test_get_related_exercises(authenticated_client, fitness):
 
     exercise = Exercise.objects.get(name="Push Ups")
     related_exercises = fitness[0].get_related_exercises()
@@ -101,9 +101,9 @@ def test_get_related_exercises(auto_login_user, fitness):
     assert exercise in related_exercises
 
 
-def test_get_overdue_exercises(auto_login_user, fitness):
+def test_get_overdue_exercises(authenticated_client, fitness):
 
-    user, _ = auto_login_user()
+    user, _ = authenticated_client()
 
     overdue = get_overdue_exercises(user)
 

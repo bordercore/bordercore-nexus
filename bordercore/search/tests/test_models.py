@@ -7,9 +7,9 @@ from search.models import RecentSearch
 pytestmark = pytest.mark.django_db
 
 
-def test_recent_search_add(auto_login_user):
+def test_recent_search_add(authenticated_client):
 
-    user, client = auto_login_user()
+    user, client = authenticated_client()
 
     RecentSearch.add(user, "first search")
     RecentSearch.add(user, "second search")
