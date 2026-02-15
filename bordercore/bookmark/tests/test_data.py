@@ -10,7 +10,6 @@ import re
 import boto3
 import pytest
 
-import django
 from django.conf import settings
 from django.db.models import Q
 
@@ -18,8 +17,6 @@ from bookmark.models import Bookmark
 from lib.util import get_elasticsearch_connection, get_missing_bookmark_ids
 
 pytestmark = pytest.mark.data_quality
-
-django.setup()
 
 bucket_name = settings.AWS_STORAGE_BUCKET_NAME
 

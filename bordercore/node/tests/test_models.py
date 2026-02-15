@@ -2,15 +2,11 @@ import json
 
 import pytest
 
-import django
-
 from blob.models import Blob
 from collection.models import Collection
 from node.models import Node
 from node.tests.factories import NodeFactory
 from quote.tests.factories import QuoteFactory
-
-django.setup()
 
 
 pytestmark = pytest.mark.django_db

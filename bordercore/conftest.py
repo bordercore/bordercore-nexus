@@ -11,7 +11,6 @@ from faker_file.providers.pdf_file import PdfFileProvider
 from faker_file.providers.pdf_file.generators.reportlab_generator import \
     ReportlabPdfGenerator
 
-import django
 from django.conf import settings
 
 try:
@@ -24,12 +23,10 @@ except ModuleNotFoundError:
 logging.getLogger("botocore").setLevel(logging.WARNING)
 logging.getLogger("boto3").setLevel(logging.WARNING)
 
-django.setup()
-
-from accounts.models import UserNote, DrillTag  # isort:skip
-from accounts.tests.factories import TEST_PASSWORD, UserFactory  # isort:skip
-from django.contrib.auth.models import Group  # isort:skip
-from tag.models import Tag  # isort:skip
+from accounts.models import UserNote, DrillTag
+from accounts.tests.factories import TEST_PASSWORD, UserFactory
+from django.contrib.auth.models import Group
+from tag.models import Tag
 
 # Load fixture modules so all tests can use them without per-app conftest imports
 pytest_plugins = [

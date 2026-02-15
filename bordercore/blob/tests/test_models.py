@@ -1,6 +1,6 @@
 import datetime
-import time
 import uuid
+from datetime import timedelta
 from pathlib import Path
 from urllib.parse import quote_plus, urlparse
 
@@ -10,16 +10,13 @@ from faker import Factory as FakerFactory
 
 pytestmark = [pytest.mark.django_db]
 
-import django
 from django.conf import settings
 from django.db import IntegrityError
+from django.db.models import F
 
-from collection.models import Collection
-
-django.setup()
-
-from blob.models import Blob, BlobToObject, RecentlyViewedBlob  # isort:skip
+from blob.models import Blob, BlobToObject, RecentlyViewedBlob
 from blob.services import add_related_object
+from collection.models import Collection
 from blob.tests.factories import BlobFactory
 from drill.tests.factories import QuestionFactory
 from lib.exceptions import (NodeNotFoundError, ObjectAlreadyRelatedError,
@@ -98,12 +95,9 @@ def test_has_been_modified(authenticated_client, blob_image_factory):
     assert blob.has_been_modified is False
 
     blob.name = faker.text(max_nb_chars=10)
-
-    # The resolution of has_been_modified is one second, so
-    #  we need to wait at least that long to see a difference.
-    time.sleep(1)
-
     blob.save()
+    Blob.objects.filter(pk=blob.pk).update(created=F('created') - timedelta(seconds=2))
+    blob.refresh_from_db()
     assert blob.has_been_modified is True
 
 

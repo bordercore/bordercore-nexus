@@ -4,11 +4,7 @@ from pathlib import Path
 import pytest
 import responses
 
-import django
-
-django.setup()
-
-from feed.models import Feed, FeedItem  # isort:skip
+from feed.models import Feed, FeedItem
 
 pytestmark = pytest.mark.django_db
 

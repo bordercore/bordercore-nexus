@@ -3,7 +3,6 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
-import django
 from django import urls
 from django.test import RequestFactory
 
@@ -11,8 +10,6 @@ from search.views import (SearchTagDetailView, get_doctypes_from_request,
                           get_doctype, get_name, is_cached, sort_results)
 
 pytestmark = [pytest.mark.django_db]
-
-django.setup()
 
 
 @patch("search.services.get_elasticsearch_connection")

@@ -1,15 +1,11 @@
 import pytest
 from faker import Factory as FakerFactory
 
-import django
 from django.core.exceptions import ValidationError
 from django.db.utils import IntegrityError
 
+from tag.models import Tag, TagAlias, TagBookmark
 from tag.tests.factories import TagFactory
-
-django.setup()
-
-from tag.models import TagBookmark, Tag, TagAlias  # isort:skip
 
 pytestmark = pytest.mark.django_db
 

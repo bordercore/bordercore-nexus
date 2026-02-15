@@ -1,5 +1,4 @@
 import datetime
-import random
 from datetime import timedelta
 
 import pytest
@@ -28,10 +27,10 @@ def fitness(authenticated_client):
     #  testing pagination
     for i in range(10):
         workout = Workout.objects.create(user=user, exercise=exercise_0)
-        Data.objects.create(workout=workout, weight=random.randint(200, 220), reps=random.randint(7, 12))
-        Data.objects.create(workout=workout, weight=random.randint(200, 220), reps=random.randint(7, 12))
-        Data.objects.create(workout=workout, weight=random.randint(200, 220), reps=random.randint(7, 12))
-        Data.objects.create(workout=workout, weight=random.randint(200, 220), reps=random.randint(7, 12))
+        Data.objects.create(workout=workout, weight=210, reps=10)
+        Data.objects.create(workout=workout, weight=210, reps=10)
+        Data.objects.create(workout=workout, weight=210, reps=10)
+        Data.objects.create(workout=workout, weight=210, reps=10)
 
     workout = Workout.objects.create(user=user, exercise=exercise_0)
     Data.objects.create(workout=workout, weight=200, reps=8)
@@ -82,9 +81,9 @@ def fitness(authenticated_client):
     exercise_4.muscle.add(muscle)
     for i in range(10):
         workout = Workout.objects.create(user=user, exercise=exercise_4)
-        Data.objects.create(workout=workout, duration=random.randint(90, 120), weight=0, reps=random.randint(1, 2))
-        Data.objects.create(workout=workout, duration=random.randint(90, 120), weight=0, reps=random.randint(1, 2))
-        Data.objects.create(workout=workout, duration=random.randint(90, 120), weight=0, reps=random.randint(1, 2))
-        Data.objects.create(workout=workout, duration=random.randint(90, 120), weight=0, reps=random.randint(1, 2))
+        Data.objects.create(workout=workout, duration=105, weight=0, reps=1)
+        Data.objects.create(workout=workout, duration=105, weight=0, reps=1)
+        Data.objects.create(workout=workout, duration=105, weight=0, reps=1)
+        Data.objects.create(workout=workout, duration=105, weight=0, reps=1)
 
     yield [exercise_0, exercise_1, exercise_2, exercise_3, exercise_4]

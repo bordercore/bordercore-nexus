@@ -2,17 +2,12 @@
 
 import pytest
 
-import django
-
-from lib.util import (favicon_url, get_missing_blob_ids, get_missing_bookmark_ids,
-                      get_pagination_range, is_audio, is_image, is_pdf,
-                      is_video, remove_non_ascii_characters, truncate)
-
-django.setup()
-
-from bookmark.models import Bookmark  # isort:skip
-from blob.models import Blob  # isort:skip
-from lib.util import get_field
+from blob.models import Blob
+from bookmark.models import Bookmark
+from lib.util import (favicon_url, get_field, get_missing_blob_ids,
+                      get_missing_bookmark_ids, get_pagination_range,
+                      is_audio, is_image, is_pdf, is_video,
+                      remove_non_ascii_characters, truncate)
 from tag.tests.factories import TagFactory
 from todo.tests.factories import TodoFactory
 

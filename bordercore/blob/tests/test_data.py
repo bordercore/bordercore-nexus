@@ -15,22 +15,18 @@ from pwd import getpwuid
 import boto3
 import pytest
 
-import django
 from django.conf import settings
 from django.db.models import Q
 
+from blob.models import Blob, ILLEGAL_FILENAMES, MetaData
+from drill.models import Question
 from lib.util import (get_elasticsearch_connection, get_missing_blob_ids,
                       is_image)
+from tag.models import Tag
 
 logging.getLogger("elasticsearch").setLevel(logging.ERROR)
 
 pytestmark = pytest.mark.data_quality
-
-django.setup()
-
-from blob.models import Blob, ILLEGAL_FILENAMES, MetaData   # isort:skip
-from drill.models import Question  # isort:skip
-from tag.models import Tag  # isort:skip
 
 
 BLOB_DIR = "/home/media"

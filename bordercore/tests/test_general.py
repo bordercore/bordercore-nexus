@@ -4,12 +4,9 @@ import re
 import pytest
 from bs4 import BeautifulSoup
 
-import django
 from django.conf import settings
 
 pytestmark = pytest.mark.data_quality
-
-django.setup()
 
 
 def test_html():

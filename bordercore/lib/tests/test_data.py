@@ -9,13 +9,10 @@ duplicate values.
 
 import pytest
 
-import django
 from django.apps import apps
 from django.db.models import Count, Max, Min
 
 pytestmark = pytest.mark.data_quality
-
-django.setup()
 
 
 def test_sort_order_mixin():

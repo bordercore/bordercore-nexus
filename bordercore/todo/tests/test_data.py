@@ -1,17 +1,13 @@
 import pytest
 
-import django
 from django.conf import settings
 from django.db.models import Count
 
 from lib.util import get_elasticsearch_connection
+from tag.models import TagTodo
+from todo.models import Todo
 
 pytestmark = pytest.mark.data_quality
-
-django.setup()
-
-from todo.models import Todo  # isort:skip
-from tag.models import TagTodo  # isort:skip
 
 
 @pytest.fixture()
