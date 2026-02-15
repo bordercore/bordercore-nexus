@@ -11,7 +11,7 @@ from lib.util import (favicon_url, get_field, get_missing_blob_ids,
 from tag.tests.factories import TagFactory
 from todo.tests.factories import TodoFactory
 
-pytestmark = pytest.mark.django_db
+pytestmark = [pytest.mark.django_db]
 
 
 def test_get_missing_blob_ids(authenticated_client):

@@ -7,7 +7,7 @@ from lib.util import get_elasticsearch_connection
 from tag.models import TagTodo
 from todo.models import Todo
 
-pytestmark = pytest.mark.data_quality
+pytestmark = [pytest.mark.django_db, pytest.mark.data_quality]
 
 
 @pytest.fixture()
@@ -102,7 +102,7 @@ def test_todo_tags_match_elasticsearch(es):
         for i, task in enumerate(todos_list):
             response = results["responses"][i]
             if "error" in response:
-                assert False, f"Elasticsearch error for todo {task.uuid}: {response["error"]}"
+                pytest.fail(f"Elasticsearch error for todo {task.uuid}: {response['error']}")
 
             found = response["hits"]["total"]["value"]
             assert found == 1, f"todo's tags don't match those found in Elasticsearch, id={task.uuid}"

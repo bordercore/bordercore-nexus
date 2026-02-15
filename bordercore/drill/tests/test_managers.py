@@ -5,7 +5,7 @@ from drill.models import Question
 from drill.tests.factories import QuestionFactory
 from tag.tests.factories import TagFactory
 
-pytestmark = pytest.mark.django_db
+pytestmark = [pytest.mark.django_db]
 
 
 def test_tags_last_reviewed(authenticated_client):

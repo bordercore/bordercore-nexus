@@ -12,7 +12,7 @@ from blob.models import Blob
 from collection.models import Collection
 from node.models import Node
 
-pytestmark = pytest.mark.data_quality
+pytestmark = [pytest.mark.django_db, pytest.mark.data_quality]
 
 
 def test_node_layout_notes_exist_in_db():
@@ -66,7 +66,7 @@ def test_node_layout_notes_exist_in_db():
             error_details.append(f"note uuid={missing_uuid} (referenced by nodes: {', '.join(referencing_nodes)})")
 
         error_msg = "Blob notes found in node layouts but not in the database: " + "\n".join(error_details)
-        assert False, error_msg
+        pytest.fail(error_msg)
 
 
 def test_node_layout_collections_exist_in_db_new() -> None:

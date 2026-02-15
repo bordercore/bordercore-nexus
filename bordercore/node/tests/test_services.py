@@ -3,7 +3,7 @@ import pytest
 from node.models import Node
 from node.services import delete_note_from_nodes
 
-pytestmark = pytest.mark.django_db
+pytestmark = [pytest.mark.django_db]
 
 
 def test_delete_note_from_nodes(monkeypatch_blob, node):

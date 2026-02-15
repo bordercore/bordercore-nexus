@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from accounts.models import UserTag
 from accounts.tests.factories import TEST_USERNAME
 
-pytestmark = pytest.mark.django_db
+pytestmark = [pytest.mark.django_db]
 
 
 def test_get_tags(sort_order_user_tag):

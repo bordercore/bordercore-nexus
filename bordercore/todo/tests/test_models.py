@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from accounts.tests.factories import TEST_USERNAME
 from todo.models import Todo
 
-pytestmark = pytest.mark.django_db
+pytestmark = [pytest.mark.django_db]
 
 
 def test_get_tags(todo):

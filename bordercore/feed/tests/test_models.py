@@ -6,7 +6,7 @@ import responses
 
 from feed.models import Feed, FeedItem
 
-pytestmark = pytest.mark.django_db
+pytestmark = [pytest.mark.django_db]
 
 
 def test_feed_str(authenticated_client, feed):

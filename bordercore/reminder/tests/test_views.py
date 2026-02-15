@@ -8,7 +8,7 @@ from reminder.tests.factories import ReminderFactory
 
 from accounts.tests.factories import UserFactory
 
-pytestmark = pytest.mark.django_db
+pytestmark = [pytest.mark.django_db]
 
 
 @pytest.fixture

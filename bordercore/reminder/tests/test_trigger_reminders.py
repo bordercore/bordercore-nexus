@@ -12,7 +12,7 @@ from accounts.tests.factories import UserFactory
 from reminder.tests.factories import ReminderFactory
 from todo.models import Todo
 
-pytestmark = pytest.mark.django_db
+pytestmark = [pytest.mark.django_db]
 
 
 def test_dry_run_finds_due_reminders_but_makes_no_changes():

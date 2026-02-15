@@ -26,7 +26,7 @@ from tag.models import Tag
 
 logging.getLogger("elasticsearch").setLevel(logging.ERROR)
 
-pytestmark = pytest.mark.data_quality
+pytestmark = [pytest.mark.django_db, pytest.mark.data_quality]
 
 
 BLOB_DIR = "/home/media"
@@ -311,7 +311,7 @@ def test_books_with_contents(es):
 
     for match in found["hits"]:
         if match["_source"]["filename"].endswith("pdf") and match["_id"] not in blobs_not_indexed:
-            assert False, f"Book has no content, uuid={match['_id']}"
+            pytest.fail(f"Book has no content, uuid={match['_id']}")
 
 
 def test_tags_all_lowercase():
@@ -460,7 +460,7 @@ def test_images_have_thumbnails():
             missing_thumbnails.append(blob_uuid)
 
     if missing_thumbnails:
-        assert False, (
+        pytest.fail(
             f"Found {len(missing_thumbnails)} image blobs without thumbnails: "
             f"{missing_thumbnails[:10]}{'...' if len(missing_thumbnails) > 10 else ''}"
         )
@@ -507,7 +507,7 @@ def test_elasticsearch_blobs_exist_in_s3(es):
 
     for blob in found:
         if not blob["_source"]["uuid"] in unique_uuids:
-            assert False, f"blob {blob['_source']['uuid']} exists in Elasticsearch but not in S3"
+            pytest.fail(f"blob {blob['_source']['uuid']} exists in Elasticsearch but not in S3")
 
 @pytest.mark.wumpus
 def test_blobs_in_s3_exist_on_filesystem():
@@ -525,7 +525,7 @@ def test_blobs_in_s3_exist_on_filesystem():
                 file_path = f"{BLOB_DIR}/{key['Key']}"
                 filename = m.group(1)
                 if not Path(file_path).exists() and filename not in ILLEGAL_FILENAMES:
-                    assert False, f"blob {key['Key']} exists in S3 but not on the filesystem"
+                    pytest.fail(f"blob {key['Key']} exists in S3 but not on the filesystem")
 
 
 @pytest.mark.wumpus
@@ -549,7 +549,7 @@ def test_blobs_on_filesystem_exist_in_s3():
 
     for x in Path(f"{BLOB_DIR}/blobs").rglob("*"):
         if x.is_file() and blobs.get(str(x), None) is None and x.name not in ILLEGAL_FILENAMES:
-            assert False, f"{x} found on the filesystem but not in S3"
+            pytest.fail(f"{x} found on the filesystem but not in S3")
 
 
 def test_elasticsearch_blobs_exist_in_db(es):
@@ -583,7 +583,7 @@ def test_elasticsearch_blobs_exist_in_db(es):
     missing_from_db = set(es_uuids) - existing_uuids
 
     if missing_from_db:
-        assert False, f"Blobs found in Elasticsearch but not in the database: {missing_from_db}"
+        pytest.fail(f"Blobs found in Elasticsearch but not in the database: {missing_from_db}")
 
 
 @pytest.mark.wumpus
@@ -667,7 +667,7 @@ def test_blob_metadata_exists_in_elasticsearch(es):
             errors.append(f"Elasticsearch error for batch {i}-{i+batch_size}: {str(e)}")
 
     if errors:
-        assert False, "Metadata validation errors:" + "\n".join(errors)
+        pytest.fail("Metadata validation errors:" + "\n".join(errors))
 
 
 def test_elasticsearch_search(es):
@@ -776,12 +776,12 @@ def test_blobs_have_proper_metadata():
         try:
             obj.metadata["file-modified"]
         except KeyError:
-            assert False, f"blob uuid={blob.uuid} has no 'file-modified' S3 metadata"
+            pytest.fail(f"blob uuid={blob.uuid} has no 'file-modified' S3 metadata")
 
         assert obj.metadata["file-modified"] != "None", f"blob uuid={blob.uuid} has 'file-modified' = 'None'"
 
         if obj.content_type == "binary/octet-stream":
-            assert False, f"blob uuid={blob.uuid} has no proper 'Content-Type' metadata"
+            pytest.fail(f"blob uuid={blob.uuid} has no proper 'Content-Type' metadata")
 
 
 def test_no_empty_blob_metadata():

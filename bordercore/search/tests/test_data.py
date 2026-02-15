@@ -11,7 +11,7 @@ from django.db.models import Count, Max, Min
 
 from search.models import RecentSearch
 
-pytestmark = pytest.mark.data_quality
+pytestmark = [pytest.mark.django_db, pytest.mark.data_quality]
 
 
 def test_recent_searches_sort_order_mixin():

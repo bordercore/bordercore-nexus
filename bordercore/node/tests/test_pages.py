@@ -18,7 +18,7 @@ except (ModuleNotFoundError, NameError):
     # Don't worry if these imports don't exist in production
     pass
 
-pytestmark = pytest.mark.functional
+pytestmark = [pytest.mark.functional]
 
 
 def _delete_input(action, search_input):

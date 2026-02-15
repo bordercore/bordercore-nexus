@@ -7,7 +7,7 @@ from django.db.utils import IntegrityError
 from tag.models import Tag, TagAlias, TagBookmark
 from tag.tests.factories import TagFactory
 
-pytestmark = pytest.mark.django_db
+pytestmark = [pytest.mark.django_db]
 
 faker = FakerFactory.create()
 

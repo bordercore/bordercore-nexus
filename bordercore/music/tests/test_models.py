@@ -7,7 +7,7 @@ from music.services import (create_album_from_zipfile, get_id3_info,
                             scan_zipfile)
 from music.tests.factories import AlbumFactory, SongFactory
 
-pytestmark = pytest.mark.django_db
+pytestmark = [pytest.mark.django_db]
 
 
 def test_listen_to(authenticated_client, song):

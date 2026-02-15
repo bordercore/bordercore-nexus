@@ -9,7 +9,7 @@ from node.tests.factories import NodeFactory
 from quote.tests.factories import QuoteFactory
 
 
-pytestmark = pytest.mark.django_db
+pytestmark = [pytest.mark.django_db]
 
 
 def test_node_add_collection(node):

@@ -4,7 +4,7 @@ from blob.tests.factories import BlobFactory
 from collection.models import CollectionObject
 from lib.exceptions import DuplicateObjectError
 
-pytestmark = pytest.mark.django_db
+pytestmark = [pytest.mark.django_db]
 
 
 def test_sort_collection(collection, blob_image_factory, blob_pdf_factory):

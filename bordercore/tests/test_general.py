@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 
 from django.conf import settings
 
-pytestmark = pytest.mark.data_quality
+pytestmark = [pytest.mark.data_quality]
 
 
 def test_html():

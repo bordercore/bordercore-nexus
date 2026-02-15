@@ -4,7 +4,7 @@ from django.db.models import Max, Min
 
 from search.models import RecentSearch
 
-pytestmark = pytest.mark.django_db
+pytestmark = [pytest.mark.django_db]
 
 
 def test_recent_search_add(authenticated_client):

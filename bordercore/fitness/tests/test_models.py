@@ -3,7 +3,7 @@ import pytest
 from fitness.models import Exercise, ExerciseMuscle, ExerciseUser, Muscle
 from fitness.services import get_overdue_exercises
 
-pytestmark = pytest.mark.django_db
+pytestmark = [pytest.mark.django_db]
 
 
 def test_fitness_str(authenticated_client, fitness):

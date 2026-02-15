@@ -5,7 +5,7 @@ import pytest
 from reminder.forms import ReminderForm
 from reminder.models import Reminder
 
-pytestmark = pytest.mark.django_db
+pytestmark = [pytest.mark.django_db]
 
 
 def _base_form_data():

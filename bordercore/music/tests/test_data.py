@@ -17,7 +17,7 @@ from django.conf import settings
 from lib.util import get_elasticsearch_connection, get_missing_blob_ids
 from music.models import Song
 
-pytestmark = pytest.mark.data_quality
+pytestmark = [pytest.mark.django_db, pytest.mark.data_quality]
 
 bucket_name = settings.AWS_BUCKET_NAME_MUSIC
 s3_client = boto3.client("s3")

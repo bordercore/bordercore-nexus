@@ -4,7 +4,7 @@ from faker import Factory as FakerFactory
 from music.services import get_unique_artist_letters
 from music.tests.factories import AlbumFactory, ArtistFactory
 
-pytestmark = pytest.mark.django_db
+pytestmark = [pytest.mark.django_db]
 
 
 faker = FakerFactory.create()

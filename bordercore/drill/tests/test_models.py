@@ -12,7 +12,7 @@ from .factories import QuestionFactory
 
 from drill.models import Question, QuestionToObject  # isort:skip
 
-pytestmark = pytest.mark.django_db
+pytestmark = [pytest.mark.django_db]
 
 
 def test_str(question):

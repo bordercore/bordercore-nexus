@@ -8,7 +8,7 @@ from django.utils import timezone
 from reminder.models import Reminder
 from reminder.tests.factories import ReminderFactory
 
-pytestmark = pytest.mark.django_db
+pytestmark = [pytest.mark.django_db]
 
 
 def test_reminder_str():

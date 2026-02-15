@@ -12,7 +12,7 @@ import pytest
 from django.apps import apps
 from django.db.models import Count, Max, Min
 
-pytestmark = pytest.mark.data_quality
+pytestmark = [pytest.mark.django_db, pytest.mark.data_quality]
 
 
 def test_sort_order_mixin():

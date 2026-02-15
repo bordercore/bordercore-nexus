@@ -16,7 +16,7 @@ from django.db.models import Q
 from bookmark.models import Bookmark
 from lib.util import get_elasticsearch_connection, get_missing_bookmark_ids
 
-pytestmark = pytest.mark.data_quality
+pytestmark = [pytest.mark.django_db, pytest.mark.data_quality]
 
 bucket_name = settings.AWS_STORAGE_BUCKET_NAME
 
@@ -70,7 +70,7 @@ def test_bookmarks_in_db_exist_in_elasticsearch(es):
         if found["hits"]["total"]["value"] != batch_size:
             missing_uuids = get_missing_bookmark_ids(bookmarks[batch:batch + step], found)
             uuid_list = "\nuuid:".join(sorted(missing_uuids))
-            assert False, f"bookmarks found in the database but not in Elasticsearch, uuid:{uuid_list}"
+            pytest.fail(f"bookmarks found in the database but not in Elasticsearch, uuid:{uuid_list}")
 
 
 def test_bookmark_tags_match_elasticsearch(es):
@@ -202,7 +202,7 @@ def test_elasticsearch_bookmarks_exist_in_db(es):
     missing_from_db = [uuid for uuid in es_uuids if uuid not in existing_uuids]
 
     if missing_from_db:
-        assert False, f"Bookmarks found in Elasticsearch but not in database: {missing_from_db}"
+        pytest.fail(f"Bookmarks found in Elasticsearch but not in database: {missing_from_db}")
 
 
 def test_bookmark_fields_are_trimmed():
@@ -269,4 +269,4 @@ def test_bookmark_thumbnails_in_s3_exist_in_db():
     missing_from_db = unique_uuids - existing_uuids
 
     if missing_from_db:
-        assert False, f"Bookmark thumbnails found in S3 but not in DB: {missing_from_db}"
+        pytest.fail(f"Bookmark thumbnails found in S3 but not in DB: {missing_from_db}")

@@ -3,7 +3,7 @@ import pytest
 from bookmark.models import Bookmark
 from bookmark.tests.factories import BookmarkFactory
 
-pytestmark = pytest.mark.django_db
+pytestmark = [pytest.mark.django_db]
 
 
 def test_get_tags(bookmark):
