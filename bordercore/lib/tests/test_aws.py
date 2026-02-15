@@ -6,7 +6,11 @@ from unittest.mock import patch, MagicMock
 
 import boto3
 import pytest
-from moto import mock_aws
+try:
+    from moto import mock_aws
+except (ModuleNotFoundError, NameError):
+    # Don't worry if these imports don't exist in production
+    pass
 
 from lib.aws import (
     lambda_invoke_async,

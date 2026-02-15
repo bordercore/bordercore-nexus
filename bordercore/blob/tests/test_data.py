@@ -830,7 +830,8 @@ def test_blobs_have_size_field(es):
 def test_questions_no_tags():
     "Assert that all drill questions have at least one tag"
     t = Question.objects.filter(Q(tags__isnull=True))
-    assert len(t) == 0, f"{len(t)} questions have no tags; example: {t.first().question}"
+    first = t.first()
+    assert len(t) == 0, f"{len(t)} questions have no tags; example uuid={first.uuid}"
 
 
 def test_no_test_data_in_elasticsearch(es):

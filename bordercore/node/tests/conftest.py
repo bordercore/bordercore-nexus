@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from blob.models import Blob
+from quote.tests.factories import QuoteFactory
 
 
 def _create_es_search_response(hits, total=None):
@@ -188,3 +189,9 @@ def mock_es_for_node_test(node, bookmark):
             })
         }
 
+
+@pytest.fixture()
+def quote():
+
+    quote = QuoteFactory()
+    yield quote
