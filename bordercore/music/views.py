@@ -38,7 +38,7 @@ from django.views.generic.edit import (CreateView, DeleteView, ModelFormMixin,
 from django.views.generic.list import ListView
 
 from lib.decorators import validate_post_data
-from lib.mixins import FormRequestMixin
+from lib.mixins import FormRequestMixin, UserScopedQuerysetMixin
 from lib.time_utils import convert_seconds
 from music.services import (create_album_from_zipfile, get_id3_info,
                             get_song_tags, list_artist_image_keys,
@@ -154,21 +154,12 @@ def music_list(request: HttpRequest) -> HttpResponse:
                   })
 
 
-class ArtistDetailView(LoginRequiredMixin, DetailView):
+class ArtistDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView):
     """Display detailed information about a specific artist."""
 
     model = Artist
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
-
-    def get_queryset(self) -> QuerySetType[Artist]:
-        """Scope artists to the current user.
-
-        Returns:
-            QuerySet of Artist objects for this user.
-        """
-        user = cast(User, self.request.user)
-        return Artist.objects.filter(user=user)
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         """Get context data for the artist detail view.
@@ -357,7 +348,7 @@ class AlbumListView(LoginRequiredMixin, ListView):
         }
 
 
-class AlbumDetailView(LoginRequiredMixin, FormRequestMixin, ModelFormMixin, DetailView):
+class AlbumDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, FormRequestMixin, ModelFormMixin, DetailView):
     """Display detailed information about a specific album."""
 
     model = Album
@@ -455,8 +446,7 @@ class AlbumDetailView(LoginRequiredMixin, FormRequestMixin, ModelFormMixin, Deta
         Returns:
             QuerySet of Album objects filtered by user.
         """
-        user = cast(User, self.request.user)
-        return Album.objects.filter(user=user).prefetch_related("tags")
+        return super().get_queryset().prefetch_related("tags")
 
 
 class AlbumUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView):
@@ -523,7 +513,7 @@ class AlbumUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView):
         upload_album_artwork(str(self.object.uuid), cover_image.file, "image/jpeg")
 
 
-class SongUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView):
+class SongUpdateView(LoginRequiredMixin, UserScopedQuerysetMixin, FormRequestMixin, UpdateView):
     """Handle updating song information and metadata."""
 
     model = Song
@@ -539,8 +529,7 @@ class SongUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView):
         Returns:
             QuerySet of Song objects for this user.
         """
-        user = cast(User, self.request.user)
-        return Song.objects.filter(user=user).prefetch_related("tags")
+        return super().get_queryset().prefetch_related("tags")
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         """Get context data for the song update view.
@@ -594,7 +583,7 @@ class SongUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView):
         return HttpResponseRedirect(success_url)
 
 
-class SongFormAjaxView(LoginRequiredMixin, DetailView):
+class SongFormAjaxView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView):
     """Return song form data as JSON for React form.
 
     This view provides a single song's data in JSON format for populating
@@ -611,8 +600,7 @@ class SongFormAjaxView(LoginRequiredMixin, DetailView):
         Returns:
             QuerySet filtered to songs owned by the authenticated user.
         """
-        user = cast(User, self.request.user)
-        return Song.objects.filter(user=user).prefetch_related("tags")
+        return super().get_queryset().prefetch_related("tags")
 
     def render_to_response(
         self, context: dict[str, Any], **response_kwargs: Any
@@ -736,23 +724,13 @@ class SongCreateView(LoginRequiredMixin, FormRequestMixin, CreateView):
         return super().form_valid(form)
 
 
-class MusicDeleteView(LoginRequiredMixin, DeleteView):
+class MusicDeleteView(LoginRequiredMixin, UserScopedQuerysetMixin, DeleteView):
     """Handle deletion of songs."""
 
     model = Song
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
     success_url = reverse_lazy("music:list")
-
-    def get_queryset(self) -> QuerySetType[Song]:
-        """Get the queryset of songs for the current user.
-
-        Returns:
-            QuerySet of Song objects filtered by user.
-        """
-        # Filter the queryset to only include objects owned by the logged-in user
-        user = cast(User, self.request.user)
-        return self.model.objects.filter(user=user)
 
     def form_valid(self, form: Any) -> HttpResponse:
         """Process valid form submission for song deletion.
@@ -1084,23 +1062,13 @@ class UpdatePlaylistView(LoginRequiredMixin, FormRequestMixin, UpdateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
-class PlaylistDeleteView(LoginRequiredMixin, DeleteView):
+class PlaylistDeleteView(LoginRequiredMixin, UserScopedQuerysetMixin, DeleteView):
     """Handle deletion of playlists."""
 
     model = Playlist
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
     success_url = reverse_lazy("music:list")
-
-    def get_queryset(self) -> QuerySetType[Playlist]:
-        """Get the queryset of playlists for the current user.
-
-        Returns:
-            QuerySet of Playlist objects filtered by user.
-        """
-        # Filter the queryset to only include objects owned by the logged-in user
-        user = cast(User, self.request.user)
-        return self.model.objects.filter(user=user)
 
     def form_valid(self, form: Any) -> HttpResponse:
         """Process valid form submission for playlist deletion.

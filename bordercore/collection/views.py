@@ -35,7 +35,7 @@ from collection.forms import CollectionForm
 from collection.models import Collection, CollectionObject
 from lib.decorators import validate_post_data
 from lib.exceptions import DuplicateObjectError
-from lib.mixins import FormRequestMixin
+from lib.mixins import FormRequestMixin, UserScopedQuerysetMixin
 from lib.util import calculate_sha1sum, parse_title_from_url
 from tag.models import Tag
 
@@ -104,7 +104,7 @@ class CollectionListView(LoginRequiredMixin, FormRequestMixin, FormMixin, ListVi
         return context
 
 
-class CollectionDetailView(LoginRequiredMixin, FormRequestMixin, FormMixin, DetailView):
+class CollectionDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, FormRequestMixin, FormMixin, DetailView):
     """View for displaying a collection detail page.
 
     Shows a single collection with its tags, object tags with counts,
@@ -115,15 +115,6 @@ class CollectionDetailView(LoginRequiredMixin, FormRequestMixin, FormMixin, Deta
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
     form_class = CollectionForm
-
-    def get_queryset(self) -> QuerySet[Collection]:
-        """Get the queryset of collections for the current user.
-
-        Returns:
-            QuerySet of Collection objects filtered by user.
-        """
-        user = cast(User, self.request.user)
-        return Collection.objects.filter(user=user)
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         """Get context data for the collection detail view.
@@ -213,7 +204,7 @@ class CollectionCreateView(LoginRequiredMixin, FormRequestMixin, CreateView):
         return reverse("collection:list")
 
 
-class CollectionUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView):
+class CollectionUpdateView(LoginRequiredMixin, UserScopedQuerysetMixin, FormRequestMixin, UpdateView):
     """View for updating an existing collection.
 
     Handles editing of collections, including updating tags.
@@ -224,16 +215,6 @@ class CollectionUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView):
     form_class = CollectionForm
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
-
-    def get_queryset(self) -> QuerySet[Collection]:
-        """Get the queryset filtered to the current user's collections.
-
-        Returns:
-            Collections owned by the logged-in user.
-        """
-        base_qs = super().get_queryset()
-        user = cast(User, self.request.user)
-        return base_qs.filter(user=user)
 
     def form_valid(self, form: BaseModelForm) -> HttpResponseRedirect:
         """Handle a valid form submission.
@@ -259,7 +240,7 @@ class CollectionUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
-class CollectionDeleteView(LoginRequiredMixin, DeleteView):
+class CollectionDeleteView(LoginRequiredMixin, UserScopedQuerysetMixin, DeleteView):
     """View for deleting a collection.
 
     Allows users to delete their own collections. Filters collections to
@@ -270,16 +251,6 @@ class CollectionDeleteView(LoginRequiredMixin, DeleteView):
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
     success_url = reverse_lazy("collection:list")
-
-    def get_queryset(self) -> QuerySet[Collection]:
-        """Get the queryset filtered to the current user's collections.
-
-        Returns:
-            Collections owned by the logged-in user.
-        """
-        # Filter the queryset to only include objects owned by the logged-in user
-        user = cast(User, self.request.user)
-        return self.model.objects.filter(user=user)
 
     def form_valid(self, form: BaseModelForm) -> HttpResponse:
         """Handle a valid deletion form submission.

@@ -6,10 +6,9 @@ require authentication and automatically filter to the current user's reminders.
 """
 
 from datetime import datetime
-from typing import Any, Dict, cast
+from typing import Any, Dict
 
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.models import User
 from django.db.models.query import QuerySet
 from django.forms import BaseModelForm
 from django.http import HttpResponse, JsonResponse
@@ -17,6 +16,8 @@ from django.urls import reverse, reverse_lazy
 from django.utils import dateformat, timezone
 from django.views.generic import (CreateView, DeleteView, DetailView, ListView,
                                   TemplateView, UpdateView)
+
+from lib.mixins import UserScopedQuerysetMixin
 
 from .forms import ReminderForm
 from .models import Reminder
@@ -47,7 +48,7 @@ class ReminderAppView(LoginRequiredMixin, TemplateView):
         return context
 
 
-class ReminderDetailView(LoginRequiredMixin, DetailView):
+class ReminderDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView):
     """Display details of a single reminder.
 
     Shows full details for one reminder, including its schedule, status,
@@ -77,17 +78,8 @@ class ReminderDetailView(LoginRequiredMixin, DetailView):
         )
         return context
 
-    def get_queryset(self) -> QuerySet[Reminder]:
-        """Limit queryset to current user's reminders only.
 
-        Returns:
-            QuerySet filtered to reminders owned by the authenticated user.
-        """
-        user = cast(User, self.request.user)
-        return Reminder.objects.filter(user=user)
-
-
-class ReminderDetailAjaxView(LoginRequiredMixin, DetailView):
+class ReminderDetailAjaxView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView):
     """Serve reminder detail as JSON for AJAX requests.
 
     This view provides a single reminder's data in JSON format, allowing the client
@@ -97,15 +89,6 @@ class ReminderDetailAjaxView(LoginRequiredMixin, DetailView):
     model = Reminder
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
-
-    def get_queryset(self) -> QuerySet[Reminder]:
-        """Limit queryset to current user's reminders only.
-
-        Returns:
-            QuerySet filtered to reminders owned by the authenticated user.
-        """
-        user = cast(User, self.request.user)
-        return Reminder.objects.filter(user=user)
 
     def render_to_response(
         self, context: Dict[str, Any], **response_kwargs: Any
@@ -170,7 +153,7 @@ class ReminderDetailAjaxView(LoginRequiredMixin, DetailView):
         return JsonResponse(data)
 
 
-class ReminderFormAjaxView(LoginRequiredMixin, DetailView):
+class ReminderFormAjaxView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView):
     """Serve reminder form data as JSON for AJAX requests (edit mode).
 
     This view provides a single reminder's data in JSON format for populating
@@ -180,15 +163,6 @@ class ReminderFormAjaxView(LoginRequiredMixin, DetailView):
     model = Reminder
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
-
-    def get_queryset(self) -> QuerySet[Reminder]:
-        """Limit queryset to current user's reminders only.
-
-        Returns:
-            QuerySet filtered to reminders owned by the authenticated user.
-        """
-        user = cast(User, self.request.user)
-        return Reminder.objects.filter(user=user)
 
     def render_to_response(
         self, context: Dict[str, Any], **response_kwargs: Any
@@ -289,7 +263,7 @@ class ReminderCreateView(LoginRequiredMixin, CreateView):
         return super().form_invalid(form)
 
 
-class ReminderUpdateView(LoginRequiredMixin, UpdateView):
+class ReminderUpdateView(LoginRequiredMixin, UserScopedQuerysetMixin, UpdateView):
     """Update an existing reminder.
 
     Allows editing of reminder properties. Automatically recalculates
@@ -357,17 +331,8 @@ class ReminderUpdateView(LoginRequiredMixin, UpdateView):
             return JsonResponse({"errors": errors}, status=400)
         return super().form_invalid(form)
 
-    def get_queryset(self) -> QuerySet[Reminder]:
-        """Limit queryset to current user's reminders only.
 
-        Returns:
-            QuerySet filtered to reminders owned by the authenticated user.
-        """
-        user = cast(User, self.request.user)
-        return Reminder.objects.filter(user=user)
-
-
-class ReminderDeleteView(LoginRequiredMixin, DeleteView):
+class ReminderDeleteView(LoginRequiredMixin, UserScopedQuerysetMixin, DeleteView):
     """Delete a reminder.
 
     Handles deletion of reminder objects with confirmation. Access is limited
@@ -380,17 +345,8 @@ class ReminderDeleteView(LoginRequiredMixin, DeleteView):
     slug_url_kwarg = "uuid"
     success_url = reverse_lazy("reminder:app")
 
-    def get_queryset(self) -> QuerySet[Reminder]:
-        """Limit queryset to current user's reminders only.
 
-        Returns:
-            QuerySet filtered to reminders owned by the authenticated user.
-        """
-        user = cast(User, self.request.user)
-        return Reminder.objects.filter(user=user)
-
-
-class ReminderListAjaxView(LoginRequiredMixin, ListView):
+class ReminderListAjaxView(LoginRequiredMixin, UserScopedQuerysetMixin, ListView):
     """Serve reminders list as JSON for AJAX requests.
 
     This view provides reminder data in JSON format, allowing the client
@@ -410,8 +366,7 @@ class ReminderListAjaxView(LoginRequiredMixin, ListView):
             ordered by next_trigger_at ascending (soonest first), then by
             created descending.
         """
-        user = cast(User, self.request.user)
-        return Reminder.objects.filter(user=user).order_by(
+        return super().get_queryset().order_by(
             "next_trigger_at", "-created"
         )
 

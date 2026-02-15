@@ -34,7 +34,7 @@ from bookmark.forms import BookmarkForm
 from bookmark.models import Bookmark
 from lib.decorators import validate_post_data
 from lib.exceptions import BookmarkSearchDeleteError
-from lib.mixins import FormRequestMixin
+from lib.mixins import FormRequestMixin, UserScopedQuerysetMixin
 from lib.util import get_pagination_range, parse_title_from_url
 from tag.models import Tag, TagBookmark
 
@@ -183,7 +183,7 @@ class BookmarkCreateView(LoginRequiredMixin, FormRequestMixin, BookmarkFormValid
         return context
 
 
-class BookmarkDeleteView(LoginRequiredMixin, DeleteView):
+class BookmarkDeleteView(LoginRequiredMixin, UserScopedQuerysetMixin, DeleteView):
     """View for deleting a bookmark.
 
     Allows users to delete their own bookmarks.
@@ -193,16 +193,6 @@ class BookmarkDeleteView(LoginRequiredMixin, DeleteView):
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
     success_url = reverse_lazy("bookmark:overview")
-
-    def get_queryset(self) -> QuerySet[Bookmark]:
-        """Get the queryset filtered to the current user's bookmarks.
-
-        Returns:
-            Bookmarks owned by the logged-in user.
-        """
-        # Filter the queryset to only include objects owned by the logged-in user
-        user = cast(User, self.request.user)
-        return self.model.objects.filter(user=user)
 
     def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         """Handle delete POST and surface ES errors nicely."""

@@ -39,6 +39,25 @@ class TimeStampedModel(models.Model):
         abstract = True
 
 
+class UserScopedQuerysetMixin:
+    """Mixin that scopes get_queryset() to the authenticated user.
+
+    Filters the queryset returned by get_queryset() to only include objects
+    belonging to the currently authenticated user. Use this mixin in
+    class-based views to automatically enforce user-level access control.
+
+    Attributes:
+        user_field: The name of the model field that references the user.
+            Defaults to "user".
+    """
+
+    request: HttpRequest
+    user_field: str = "user"
+
+    def get_queryset(self) -> QuerySet:
+        return super().get_queryset().filter(**{self.user_field: self.request.user})  # type: ignore[misc]
+
+
 class FormRequestMixin():
     """Mixin to pass the request object to a form.
 

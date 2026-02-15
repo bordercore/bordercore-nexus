@@ -17,7 +17,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.db import transaction
-from django.db.models.query import QuerySet as QuerySetType
+
 from django.http import (HttpRequest, HttpResponse, HttpResponseRedirect,
                          JsonResponse)
 from django.shortcuts import get_object_or_404
@@ -31,7 +31,7 @@ from django.views.generic.list import ListView
 from blob.models import Blob, RecentlyViewedBlob
 from collection.models import Collection
 from lib.decorators import validate_post_data
-from lib.mixins import FormRequestMixin
+from lib.mixins import FormRequestMixin, UserScopedQuerysetMixin
 from node.forms import NodeForm
 from quote.models import Quote
 from todo.models import Todo
@@ -97,21 +97,12 @@ class NodeListView(LoginRequiredMixin, ListView, FormMixin):
         return context
 
 
-class NodeDetailView(LoginRequiredMixin, DetailView):
+class NodeDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView):
     """Detail view for a single node."""
 
     model = Node
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
-
-    def get_queryset(self) -> QuerySetType[Node]:
-        """Scope nodes to the current user.
-
-        Returns:
-            QuerySet of Node objects for this user.
-        """
-        user = cast(User, self.request.user)
-        return Node.objects.filter(user=user)
 
     def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
         """Get context data for the node detail view.

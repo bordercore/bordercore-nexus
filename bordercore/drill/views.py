@@ -13,7 +13,6 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
-from django.db.models import QuerySet
 from django.db.models.query import QuerySet as QuerySetType
 from django.forms import BaseModelForm
 from django.http import (HttpRequest, HttpResponse, HttpResponseRedirect,
@@ -29,7 +28,7 @@ from accounts.models import DrillTag
 from blob.models import Blob
 from bookmark.models import Bookmark
 from drill.forms import QuestionForm
-from lib.mixins import FormRequestMixin
+from lib.mixins import FormRequestMixin, UserScopedQuerysetMixin
 from lib.util import parse_title_from_url
 from tag.models import Tag
 
@@ -180,7 +179,7 @@ class QuestionCreateView(LoginRequiredMixin, FormRequestMixin, CreateView):
         return reverse("drill:add")
 
 
-class QuestionDeleteView(LoginRequiredMixin, DeleteView):
+class QuestionDeleteView(LoginRequiredMixin, UserScopedQuerysetMixin, DeleteView):
     """View for deleting a question.
 
     Allows users to delete their own questions. Filters questions to
@@ -191,16 +190,6 @@ class QuestionDeleteView(LoginRequiredMixin, DeleteView):
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
     success_url = reverse_lazy("drill:add")
-
-    def get_queryset(self) -> QuerySet[Question]:
-        """Get the queryset filtered to the current user's questions.
-
-        Returns:
-            Questions owned by the logged-in user.
-        """
-        # Filter the queryset to only include objects owned by the logged-in user
-        user = cast(User, self.request.user)
-        return self.model.objects.filter(user=user)
 
     def form_valid(self, form: BaseModelForm) -> HttpResponse:
         """Handle a valid deletion form submission.
@@ -238,7 +227,7 @@ def handle_related_objects(question: Question, request: HttpRequest) -> None:
         question.add_related_object(object_info["uuid"])
 
 
-class QuestionDetailView(LoginRequiredMixin, DetailView):
+class QuestionDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView):
     """View for displaying a question detail page.
 
     Shows a single question with its tags, progress information, intervals,
@@ -249,15 +238,6 @@ class QuestionDetailView(LoginRequiredMixin, DetailView):
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
     template_name = "drill/question.html"
-
-    def get_queryset(self) -> QuerySetType[Question]:
-        """Get the queryset of questions for the current user.
-
-        Returns:
-            QuerySet of Question objects filtered by user.
-        """
-        user = cast(User, self.request.user)
-        return Question.objects.filter(user=user)
 
     def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
         """Get context data for the question detail view.
@@ -327,7 +307,7 @@ class QuestionDetailView(LoginRequiredMixin, DetailView):
         }
 
 
-class QuestionUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView):
+class QuestionUpdateView(LoginRequiredMixin, UserScopedQuerysetMixin, FormRequestMixin, UpdateView):
     """View for updating an existing question.
 
     Handles editing of drill questions, including updating tags
@@ -347,8 +327,7 @@ class QuestionUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView):
         Returns:
             QuerySet of Question objects for this user.
         """
-        user = cast(User, self.request.user)
-        return Question.objects.filter(user=user).prefetch_related("tags")
+        return super().get_queryset().prefetch_related("tags")
 
     def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
         """Get context data for the question edit form.

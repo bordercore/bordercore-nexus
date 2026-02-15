@@ -18,7 +18,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
-from django.db.models import Count, Q, QuerySet
+from django.db.models import Count, Q
 from django.forms import BaseModelForm
 from django.http import (HttpRequest, HttpResponse, HttpResponseRedirect,
                          JsonResponse, StreamingHttpResponse)
@@ -43,7 +43,7 @@ from lib.exceptions import (InvalidNodeTypeError, NodeNotFoundError,
                             ObjectAlreadyRelatedError,
                             RelatedObjectNotFoundError,
                             UnsupportedNodeTypeError)
-from lib.mixins import FormRequestMixin
+from lib.mixins import FormRequestMixin, UserScopedQuerysetMixin
 from lib.time_utils import parse_date_from_string
 
 log = logging.getLogger(f"bordercore.{__name__}")
@@ -353,7 +353,7 @@ class BlobCreateView(LoginRequiredMixin, FormRequestMixin, CreateView, FormValid
         return form
 
 
-class BlobDetailView(LoginRequiredMixin, DetailView):
+class BlobDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView):
     """View for displaying a blob detail page.
 
     Shows a single blob with its metadata, relationships, collections,
@@ -530,15 +530,6 @@ class BlobDetailView(LoginRequiredMixin, DetailView):
         ]
 
         return context
-
-    def get_queryset(self) -> QuerySet[Blob]:
-        """Get the queryset filtered to the current user's blobs.
-
-        Returns:
-            Blobs owned by the logged-in user.
-        """
-        user = cast(User, self.request.user)
-        return Blob.objects.filter(user=user)
 
 
 class BlobUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView, FormValidMixin):
