@@ -20,6 +20,8 @@ from django.db.models.query import QuerySet
 from django.http import HttpRequest, JsonResponse
 from django.http.response import HttpResponseBase
 from django.shortcuts import get_object_or_404
+
+from lib.mixins import get_user_object_or_404
 from django.test import RequestFactory
 from django.utils import dateformat, timezone
 from django.views.decorators.http import require_POST
@@ -181,8 +183,8 @@ class TodoTaskList(LoginRequiredMixin, ListView):
 
         elif tag_name:
 
-            queryset = get_object_or_404(
-                Tag, user=user, name=tag_name
+            queryset = get_user_object_or_404(
+                user, Tag, name=tag_name
             ).todos.filter(
                 nodetodo__isnull=True
             ).order_by(
@@ -342,7 +344,7 @@ def reschedule_task(request: HttpRequest) -> JsonResponse:
     todo_uuid = request.POST.get("todo_uuid", "").strip()
 
     user = cast(User, request.user)
-    todo = get_object_or_404(Todo, uuid=todo_uuid, user=user)
+    todo = get_user_object_or_404(user, Todo, uuid=todo_uuid)
     todo.due_date = timezone.now() + timedelta(days=1)
     todo.save()
 

@@ -38,7 +38,7 @@ from django.views.generic.edit import (CreateView, DeleteView, ModelFormMixin,
 from django.views.generic.list import ListView
 
 from lib.decorators import validate_post_data
-from lib.mixins import FormRequestMixin, UserScopedQuerysetMixin
+from lib.mixins import FormRequestMixin, UserScopedQuerysetMixin, get_user_object_or_404
 from lib.time_utils import convert_seconds
 from music.services import (create_album_from_zipfile, get_id3_info,
                             get_song_tags, list_artist_image_keys,
@@ -837,7 +837,7 @@ def mark_song_as_listened_to(request: Request, song_uuid: str) -> JsonResponse:
     Returns:
         JSON response with status and play count.
     """
-    song = get_object_or_404(Song, user=request.user, uuid=song_uuid)
+    song = get_user_object_or_404(request.user, Song, uuid=song_uuid)
     if not settings.DEBUG:
         song.listen_to()
 
@@ -1213,7 +1213,7 @@ def get_playlist(request: HttpRequest, playlist_uuid: str) -> JsonResponse:
     Returns:
         JSON response with playlist songs, total time, and status.
     """
-    playlist = get_object_or_404(Playlist, uuid=playlist_uuid, user=request.user)
+    playlist = get_user_object_or_404(request.user, Playlist, uuid=playlist_uuid)
 
     playlist_data = get_playlist_songs(playlist)
     playtime_seconds: float = float(cast(int, playlist_data["playtime"]))
@@ -1297,8 +1297,8 @@ def add_to_playlist(request: HttpRequest) -> JsonResponse:
     playlist_uuid = request.POST.get("playlist_uuid", "").strip()
     song_uuid = request.POST.get("song_uuid", "").strip()
 
-    playlist = get_object_or_404(Playlist, uuid=playlist_uuid, user=request.user)
-    song = get_object_or_404(Song, uuid=song_uuid, user=request.user)
+    playlist = get_user_object_or_404(request.user, Playlist, uuid=playlist_uuid)
+    song = get_user_object_or_404(request.user, Song, uuid=song_uuid)
 
     existing_item = PlaylistItem.objects.filter(playlist=playlist, song=song).first()
 
@@ -1343,7 +1343,7 @@ def update_artist_image(request: HttpRequest) -> JsonResponse:
     """
     artist_uuid = request.POST.get("artist_uuid", "").strip()
 
-    get_object_or_404(Artist, uuid=artist_uuid, user=request.user)
+    get_user_object_or_404(request.user, Artist, uuid=artist_uuid)
     image = cast(UploadedFile, request.FILES["image"])
 
     upload_artist_image(artist_uuid, image.file)
@@ -1468,7 +1468,7 @@ def set_song_rating(request: HttpRequest) -> JsonResponse:
     else:
         rating = int(request.POST.get("rating", "").strip())
 
-    song = get_object_or_404(Song, uuid=song_uuid, user=request.user)
+    song = get_user_object_or_404(request.user, Song, uuid=song_uuid)
     song.rating = rating
     song.save()
 

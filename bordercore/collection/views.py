@@ -35,7 +35,7 @@ from collection.forms import CollectionForm
 from collection.models import Collection, CollectionObject
 from lib.decorators import validate_post_data
 from lib.exceptions import DuplicateObjectError
-from lib.mixins import FormRequestMixin, UserScopedQuerysetMixin
+from lib.mixins import FormRequestMixin, UserScopedQuerysetMixin, get_user_object_or_404
 from lib.util import calculate_sha1sum, parse_title_from_url
 from tag.models import Tag
 
@@ -288,7 +288,7 @@ def get_blob(request: HttpRequest, collection_uuid: str) -> JsonResponse:
         JSON response containing blob information.
     """
     user = cast(User, request.user)
-    collection = get_object_or_404(Collection, uuid=collection_uuid, user=user)
+    collection = get_user_object_or_404(user, Collection, uuid=collection_uuid)
     direction = request.GET.get("direction", "next")
     blob_position = int(request.GET.get("position", 0))
     tag_name = request.GET.get("tag", None)
@@ -430,7 +430,7 @@ def create_blob(request: HttpRequest) -> JsonResponse:
             blob.sha1sum = sha1sum
             blob.save()
 
-            collection = get_object_or_404(Collection, uuid=collection_uuid, user=user)
+            collection = get_user_object_or_404(user, Collection, uuid=collection_uuid)
             collection.add_object(blob)
 
         blob.index_blob()
@@ -461,7 +461,7 @@ def get_object_list(request: HttpRequest, collection_uuid: str) -> JsonResponse:
         JSON response containing paginated object list data.
     """
     user = cast(User, request.user)
-    collection = get_object_or_404(Collection, uuid=collection_uuid, user=user)
+    collection = get_user_object_or_404(user, Collection, uuid=collection_uuid)
     random_order = request.GET.get("random_order", "").lower() == "true"
     tag = request.GET.get("tag") or None
     page_number = int(request.GET.get("pageNumber", 1))
@@ -501,13 +501,13 @@ def add_object(request: HttpRequest) -> JsonResponse:
     bookmark_uuid = request.POST.get("bookmark_uuid", None)
 
     user = cast(User, request.user)
-    collection = get_object_or_404(Collection, uuid=collection_uuid, user=user)
+    collection = get_user_object_or_404(user, Collection, uuid=collection_uuid)
 
     item: Blob | Bookmark
     if blob_uuid:
-        item = get_object_or_404(Blob, uuid=blob_uuid, user=user)
+        item = get_user_object_or_404(user, Blob, uuid=blob_uuid)
     elif bookmark_uuid:
-        item = get_object_or_404(Bookmark, uuid=bookmark_uuid, user=user)
+        item = get_user_object_or_404(user, Bookmark, uuid=bookmark_uuid)
     else:
         return JsonResponse(
             {
@@ -552,7 +552,7 @@ def remove_object(request: HttpRequest) -> JsonResponse:
     object_uuid = request.POST["object_uuid"]
 
     user = cast(User, request.user)
-    collection = get_object_or_404(Collection, uuid=collection_uuid, user=user)
+    collection = get_user_object_or_404(user, Collection, uuid=collection_uuid)
     collection.remove_object(object_uuid)
 
     response = {
@@ -680,7 +680,7 @@ def add_new_bookmark(request: HttpRequest) -> JsonResponse:
         )
         bookmark.index_bookmark()
 
-    collection = get_object_or_404(Collection, uuid=collection_uuid, user=user)
+    collection = get_user_object_or_404(user, Collection, uuid=collection_uuid)
 
     if CollectionObject.objects.filter(
             collection=collection,

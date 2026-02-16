@@ -17,6 +17,8 @@ from django.contrib.auth.models import User
 from django.db import transaction
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+
+from lib.mixins import get_user_object_or_404
 from django.views.decorators.http import require_POST
 from django.views.generic.detail import DetailView
 
@@ -228,7 +230,7 @@ def change_active_status(request: HttpRequest) -> JsonResponse:
 
     user = cast(User, request.user)
     if remove == "true":
-        eu = get_object_or_404(ExerciseUser, user=user, exercise__uuid=uuid)
+        eu = get_user_object_or_404(user, ExerciseUser, exercise__uuid=uuid)
         eu.delete()
         info = {}
     else:
@@ -320,7 +322,7 @@ def update_schedule(request: HttpRequest) -> JsonResponse:
     boolean_values = [s.lower() == "true" for s in schedule.split(",")]
 
     user = cast(User, request.user)
-    eu = get_object_or_404(ExerciseUser, user=user, exercise__uuid=uuid)
+    eu = get_user_object_or_404(user, ExerciseUser, exercise__uuid=uuid)
     eu.schedule = boolean_values
     eu.save()
 
@@ -347,7 +349,7 @@ def update_rest_period(request: HttpRequest) -> JsonResponse:
     rest_period = request.POST["rest_period"]
 
     user = cast(User, request.user)
-    eu = get_object_or_404(ExerciseUser, user=user, exercise__uuid=uuid)
+    eu = get_user_object_or_404(user, ExerciseUser, exercise__uuid=uuid)
     # Assign as string; Django model field will coerce/validate at save time.
     eu.rest_period = rest_period
     eu.save()

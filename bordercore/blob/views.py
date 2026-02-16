@@ -43,7 +43,7 @@ from lib.exceptions import (InvalidNodeTypeError, NodeNotFoundError,
                             ObjectAlreadyRelatedError,
                             RelatedObjectNotFoundError,
                             UnsupportedNodeTypeError)
-from lib.mixins import FormRequestMixin, UserScopedQuerysetMixin
+from lib.mixins import FormRequestMixin, UserScopedQuerysetMixin, get_user_object_or_404
 from lib.time_utils import parse_date_from_string
 
 log = logging.getLogger(f"bordercore.{__name__}")
@@ -124,13 +124,13 @@ class FormValidMixin(ModelFormMixin):
 
             if new_object:
                 if "linked_blob_uuid" in self.request.POST:
-                    linked_blob = get_object_or_404(Blob, uuid=self.request.POST["linked_blob_uuid"], user=user)
+                    linked_blob = get_user_object_or_404(user, Blob, uuid=self.request.POST["linked_blob_uuid"])
                     BlobToObject.objects.create(node=linked_blob, blob=blob)
 
                 handle_linked_collection(blob, self.request)
 
                 if "collection_uuid" in self.request.POST:
-                    collection = get_object_or_404(Collection, uuid=self.request.POST["collection_uuid"], user=user)
+                    collection = get_user_object_or_404(user, Collection, uuid=self.request.POST["collection_uuid"])
                     collection.add_object(blob)
 
         # Call index_blob outside the transaction since it's an external service call
@@ -240,7 +240,7 @@ class BlobCreateView(LoginRequiredMixin, FormRequestMixin, CreateView, FormValid
         user = cast(User, self.request.user)
 
         if "linked_blob_uuid" in self.request.GET:
-            linked_blob = get_object_or_404(Blob, user=user, uuid=self.request.GET["linked_blob_uuid"])
+            linked_blob = get_user_object_or_404(user, Blob, uuid=self.request.GET["linked_blob_uuid"])
             context["linked_blob"] = {
                 "name": linked_blob.name,
                 "thumbnail_url": linked_blob.cover_url_small,
@@ -251,8 +251,8 @@ class BlobCreateView(LoginRequiredMixin, FormRequestMixin, CreateView, FormValid
             context["tags"] = [x["name"] for x in linked_blob.tags.all().values()]
 
         if "linked_collection" in self.request.GET:
-            context["linked_collection"] = get_object_or_404(
-                Collection, user=user, uuid=self.request.GET["linked_collection"]
+            context["linked_collection"] = get_user_object_or_404(
+                user, Collection, uuid=self.request.GET["linked_collection"]
             )
             collection_object = CollectionObject.objects.filter(
                 collection__user=user,
@@ -283,7 +283,7 @@ class BlobCreateView(LoginRequiredMixin, FormRequestMixin, CreateView, FormValid
             del self.request.session["imported_blob_data"]
 
         if "collection_uuid" in self.request.GET:
-            context["collection_info"] = get_object_or_404(Collection, user=user, uuid=self.request.GET["collection_uuid"])
+            context["collection_info"] = get_user_object_or_404(user, Collection, uuid=self.request.GET["collection_uuid"])
 
         context["template_list"] = [
             {
@@ -321,7 +321,7 @@ class BlobCreateView(LoginRequiredMixin, FormRequestMixin, CreateView, FormValid
         user = cast(User, self.request.user)
 
         if "linked_blob" in self.request.GET:
-            blob = get_object_or_404(Blob, user=user, pk=int(self.request.GET["linked_blob"]))
+            blob = get_user_object_or_404(user, Blob, pk=int(self.request.GET["linked_blob"]))
             form.initial["tags"] = ",".join([x.name for x in blob.tags.all()])
             form.initial["date"] = blob.date
             form.initial["name"] = blob.name
@@ -608,7 +608,7 @@ class BlobCloneView(LoginRequiredMixin, View):
             Redirect to the cloned blob's detail page.
         """
         user = cast(User, request.user)
-        original_blob = get_object_or_404(Blob, uuid=kwargs["uuid"], user=user)
+        original_blob = get_user_object_or_404(user, Blob, uuid=kwargs["uuid"])
         new_blob = original_blob.clone()
         messages.add_message(request, messages.INFO, "New blob successfully cloned")
         return HttpResponseRedirect(reverse("blob:detail", kwargs={"uuid": new_blob.uuid}))
@@ -713,7 +713,7 @@ def handle_linked_collection(blob: Blob, request: HttpRequest) -> None:
     """
     if "linked_collection" in request.POST:
         user = cast(User, request.user)
-        collection = get_object_or_404(Collection, user=user, uuid=request.POST["linked_collection"])
+        collection = get_user_object_or_404(user, Collection, uuid=request.POST["linked_collection"])
         collection.add_object(blob)
 
 
@@ -796,7 +796,7 @@ def update_cover_image(request: HttpRequest) -> JsonResponse:
     image = image_file.read()
 
     user = cast(User, request.user)
-    blob = get_object_or_404(Blob, uuid=blob_uuid, user=user)
+    blob = get_user_object_or_404(user, Blob, uuid=blob_uuid)
     blob.update_cover_image(image)
 
     response = {
@@ -823,7 +823,7 @@ def get_elasticsearch_info(request: HttpRequest, uuid: str) -> JsonResponse:
             - status: "OK"
     """
     user = cast(User, request.user)
-    blob = get_object_or_404(Blob, uuid=uuid, user=user)
+    blob = get_user_object_or_404(user, Blob, uuid=uuid)
 
     try:
         info = blob.get_elasticsearch_info()
@@ -855,7 +855,7 @@ def get_related_objects(request: HttpRequest, uuid: str) -> JsonResponse:
             - related_objects: List of related objects
     """
     user = cast(User, request.user)
-    blob = get_object_or_404(Blob, user=user, uuid=uuid)
+    blob = get_user_object_or_404(user, Blob, uuid=uuid)
 
     response = {
         "status": "OK",
@@ -1037,7 +1037,7 @@ def update_page_number(request: HttpRequest) -> JsonResponse:
     page_number = int(request.POST["page_number"])
 
     user = cast(User, request.user)
-    blob = get_object_or_404(Blob, uuid=blob_uuid, user=user)
+    blob = get_user_object_or_404(user, Blob, uuid=blob_uuid)
     blob.update_page_number(page_number)
 
     response = {

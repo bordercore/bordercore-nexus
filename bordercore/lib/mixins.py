@@ -8,14 +8,19 @@ This module provides reusable mixin classes for common Django patterns:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from django.apps import apps
 from django.db import models, transaction
-from django.db.models import F, QuerySet
+from django.db.models import F, Model, QuerySet
+from django.shortcuts import get_object_or_404
 
 if TYPE_CHECKING:
+    from django.contrib.auth.base_user import AbstractBaseUser
+    from django.contrib.auth.models import AnonymousUser
     from django.http import HttpRequest
+
+_M = TypeVar("_M", bound=Model)
 
 
 class TimeStampedModel(models.Model):
@@ -56,6 +61,15 @@ class UserScopedQuerysetMixin:
 
     def get_queryset(self) -> QuerySet:
         return super().get_queryset().filter(**{self.user_field: self.request.user})  # type: ignore[misc]
+
+
+def get_user_object_or_404(
+    user: AbstractBaseUser | AnonymousUser,
+    model: type[_M] | QuerySet[_M],
+    **kwargs: Any,
+) -> _M:
+    """Shortcut for get_object_or_404 scoped to the given user."""
+    return get_object_or_404(model, user=user, **kwargs)
 
 
 class FormRequestMixin():

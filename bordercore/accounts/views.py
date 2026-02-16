@@ -27,7 +27,7 @@ from accounts.models import UserNote, UserProfile
 from accounts.services import delete_profile_image, upload_profile_image
 from blob.models import Blob
 from lib.decorators import validate_post_data
-from lib.mixins import FormRequestMixin
+from lib.mixins import FormRequestMixin, get_user_object_or_404
 
 
 class UserProfileUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView):
@@ -77,7 +77,7 @@ class UserProfileUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView):
             The UserProfile instance for the current user.
         """
         user = cast(User, self.request.user)
-        return get_object_or_404(UserProfile, user=user)
+        return get_user_object_or_404(user, UserProfile)
 
     def form_valid(self, form: BaseModelForm) -> HttpResponse:
         """Handle a valid form submission.
@@ -300,7 +300,7 @@ def pin_note(request: HttpRequest) -> JsonResponse:
     remove = request.POST.get("remove", False)
 
     user = cast(User, request.user)
-    note = get_object_or_404(Blob, user=user, uuid=uuid)
+    note = get_user_object_or_404(user, Blob, uuid=uuid)
 
     message = ""
     status = ""

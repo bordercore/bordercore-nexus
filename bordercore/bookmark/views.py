@@ -34,7 +34,7 @@ from bookmark.forms import BookmarkForm
 from bookmark.models import Bookmark
 from lib.decorators import validate_post_data
 from lib.exceptions import BookmarkSearchDeleteError
-from lib.mixins import FormRequestMixin, UserScopedQuerysetMixin
+from lib.mixins import FormRequestMixin, UserScopedQuerysetMixin, get_user_object_or_404
 from lib.util import get_pagination_range, parse_title_from_url
 from tag.models import Tag, TagBookmark
 
@@ -58,7 +58,7 @@ def click(request: HttpRequest, bookmark_uuid: str | None = None) -> HttpRespons
     user = cast(User, request.user)
     if not bookmark_uuid:
         raise Http404("Bookmark UUID is required")
-    b = get_object_or_404(Bookmark, user=user, uuid=bookmark_uuid)
+    b = get_user_object_or_404(user, Bookmark, uuid=bookmark_uuid)
     if b.daily is None:
         b.daily = {}
     b.daily["viewed"] = "true"
@@ -525,7 +525,7 @@ def sort_pinned_tags(request: HttpRequest) -> JsonResponse:
     else:
 
         user = cast(User, request.user)
-        tag = get_object_or_404(Tag, user=user, id=tag_id)
+        tag = get_user_object_or_404(user, Tag, id=tag_id)
 
         s = get_object_or_404(UserTag, userprofile=user.userprofile, tag=tag)
         UserTag.reorder(s, new_position)
@@ -679,8 +679,8 @@ def add_tag(request: HttpRequest) -> JsonResponse:
     tag_id = request.POST["tag_id"]
 
     user = cast(User, request.user)
-    bookmark = get_object_or_404(Bookmark, uuid=bookmark_uuid, user=user)
-    tag = get_object_or_404(Tag, user=user, id=tag_id)
+    bookmark = get_user_object_or_404(user, Bookmark, uuid=bookmark_uuid)
+    tag = get_user_object_or_404(user, Tag, id=tag_id)
 
     if tag in bookmark.tags.all():
         return JsonResponse(
@@ -723,8 +723,8 @@ def remove_tag(request: HttpRequest) -> JsonResponse:
     tag_name = request.POST["tag_name"]
 
     user = cast(User, request.user)
-    bookmark = get_object_or_404(Bookmark, uuid=bookmark_uuid, user=user)
-    tag = get_object_or_404(Tag, user=user, name=tag_name)
+    bookmark = get_user_object_or_404(user, Bookmark, uuid=bookmark_uuid)
+    tag = get_user_object_or_404(user, Tag, name=tag_name)
 
     if tag not in bookmark.tags.all():
         return JsonResponse(

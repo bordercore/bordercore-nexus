@@ -28,7 +28,7 @@ from accounts.models import DrillTag
 from blob.models import Blob
 from bookmark.models import Bookmark
 from drill.forms import QuestionForm
-from lib.mixins import FormRequestMixin, UserScopedQuerysetMixin
+from lib.mixins import FormRequestMixin, UserScopedQuerysetMixin, get_user_object_or_404
 from lib.util import parse_title_from_url
 from tag.models import Tag
 
@@ -500,7 +500,7 @@ def record_response(request: HttpRequest, uuid: str, response: str) -> HttpRespo
         Redirect to the next question in the session.
     """
     user = cast(User, request.user)
-    question = get_object_or_404(Question, user=user, uuid=uuid)
+    question = get_user_object_or_404(user, Question, uuid=uuid)
     question.record_response(response)
 
     return get_next_question(request)
@@ -584,7 +584,7 @@ def pin_tag(request: HttpRequest) -> JsonResponse:
 
     else:
 
-        tag = get_object_or_404(Tag, name=tag_name, user=user)
+        tag = get_user_object_or_404(user, Tag, name=tag_name)
         so = DrillTag(userprofile=user.userprofile, tag=tag)
         so.save()
 
@@ -762,7 +762,7 @@ def is_favorite_mutate(request: HttpRequest) -> JsonResponse:
     mutation = request.POST["mutation"]
 
     user = cast(User, request.user)
-    question = get_object_or_404(Question, uuid=question_uuid, user=user)
+    question = get_user_object_or_404(user, Question, uuid=question_uuid)
 
     if mutation == "add":
         question.is_favorite = True
@@ -839,7 +839,7 @@ def get_related_objects(request: HttpRequest, uuid: str) -> JsonResponse:
     """
 
     user = cast(User, request.user)
-    question = get_object_or_404(Question, user=user, uuid=uuid)
+    question = get_user_object_or_404(user, Question, uuid=uuid)
 
     response = {
         "status": "OK",

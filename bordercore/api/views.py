@@ -7,6 +7,8 @@ such as fetching untagged bookmarks and pinned tags.
 
 from elasticsearch.exceptions import NotFoundError
 from feed.models import Feed, FeedItem
+from typing import cast
+
 from rest_framework.request import Request
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -14,11 +16,13 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from django.contrib import messages
+from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models import Count
 from django.db.models import QuerySet
 
 from accounts.models import UserFeed
+from lib.mixins import UserScopedQuerysetMixin
 from blob.models import Blob
 from bookmark.models import Bookmark
 from collection.models import Collection
@@ -42,24 +46,21 @@ from .serializers import (AlbumSerializer, BlobSerializer,
                           TagSerializer, TodoSerializer)
 
 
-class AlbumViewSet(viewsets.ModelViewSet):
+class AlbumViewSet(UserScopedQuerysetMixin, viewsets.ModelViewSet):
     """CRUD viewset for albums."""
 
     permission_classes = [IsAuthenticated]
     serializer_class = AlbumSerializer
+    queryset = Album.objects.all()
     lookup_field = "uuid"
 
     def get_queryset(self) -> QuerySet[Album]:
-        """Return albums owned by the current user.
+        """Return albums owned by the current user with prefetched tags.
 
         Returns:
             QuerySet of Album objects for the authenticated user.
         """
-        return Album.objects.filter(
-            user=self.request.user
-        ).prefetch_related(
-            "tags"
-        )
+        return super().get_queryset().prefetch_related("tags")
 
     def perform_destroy(self, instance: Album) -> None:
         """Delete the album and display a success message.
@@ -168,22 +169,15 @@ class BlobSha1sumViewSet(viewsets.ModelViewSet):
         instance.index_blob()
 
 
-class BookmarkViewSet(viewsets.ModelViewSet):
+class BookmarkViewSet(UserScopedQuerysetMixin, viewsets.ModelViewSet):
     """CRUD viewset for bookmarks with Elasticsearch indexing and custom actions."""
 
     permission_classes = [IsAuthenticated]
     serializer_class = BookmarkSerializer
+    queryset = Bookmark.objects.all()
     lookup_field = "uuid"
     ordering_fields = ["created, modified"]
     ordering = ["-created"]
-
-    def get_queryset(self) -> QuerySet[Bookmark]:
-        """Return bookmarks owned by the current user.
-
-        Returns:
-            QuerySet of Bookmark objects for the authenticated user.
-        """
-        return Bookmark.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer: BookmarkSerializer) -> None:
         """Save the bookmark and index it in Elasticsearch.
@@ -245,24 +239,21 @@ class BookmarkViewSet(viewsets.ModelViewSet):
         return Response(data)
 
 
-class CollectionViewSet(viewsets.ModelViewSet):
+class CollectionViewSet(UserScopedQuerysetMixin, viewsets.ModelViewSet):
     """CRUD viewset for collections."""
 
     permission_classes = [IsAuthenticated]
     serializer_class = CollectionSerializer
+    queryset = Collection.objects.all()
     lookup_field = "uuid"
 
     def get_queryset(self) -> QuerySet[Collection]:
-        """Return collections owned by the current user.
+        """Return collections owned by the current user with prefetched tags.
 
         Returns:
             QuerySet of Collection objects with prefetched tags.
         """
-        return Collection.objects.filter(
-            user=self.request.user
-        ).prefetch_related(
-            "tags"
-        )
+        return super().get_queryset().prefetch_related("tags")
 
     def perform_create(self, serializer: CollectionSerializer) -> None:
         """Save the collection with the current user as owner.
@@ -295,20 +286,13 @@ class CollectionViewSet(viewsets.ModelViewSet):
         return response
 
 
-class FeedViewSet(viewsets.ModelViewSet):
+class FeedViewSet(UserScopedQuerysetMixin, viewsets.ModelViewSet):
     """CRUD viewset for RSS/Atom feeds."""
 
     permission_classes = [IsAuthenticated]
     serializer_class = FeedSerializer
+    queryset = Feed.objects.all()
     lookup_field = "uuid"
-
-    def get_queryset(self) -> QuerySet[Feed]:
-        """Return feeds owned by the current user.
-
-        Returns:
-            QuerySet of Feed objects for the authenticated user.
-        """
-        return Feed.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer: FeedSerializer) -> None:
         """Save the feed, create a UserFeed link, and stash the instance.
@@ -317,7 +301,8 @@ class FeedViewSet(viewsets.ModelViewSet):
             serializer: The validated FeedSerializer.
         """
         instance = serializer.save(user=self.request.user)
-        so = UserFeed(userprofile=self.request.user.userprofile, feed=instance)
+        user = cast(User, self.request.user)
+        so = UserFeed(userprofile=user.userprofile, feed=instance)
         so.save()
 
         # Save a copy of the new object so we can reference it in create()
@@ -378,76 +363,56 @@ class FeedItemViewSet(viewsets.ModelViewSet):
         return FeedItem.objects.all().select_related("feed")
 
 
-class NodeViewSet(viewsets.ModelViewSet):
+class NodeViewSet(UserScopedQuerysetMixin, viewsets.ModelViewSet):
     """CRUD viewset for nodes."""
 
     permission_classes = [IsAuthenticated]
     serializer_class = NodeSerializer
+    queryset = Node.objects.all()
     lookup_field = "uuid"
 
-    def get_queryset(self) -> QuerySet[Node]:
-        """Return nodes owned by the current user.
 
-        Returns:
-            QuerySet of Node objects for the authenticated user.
-        """
-        return Node.objects.filter(user=self.request.user)
-
-
-class QuestionViewSet(viewsets.ModelViewSet):
+class QuestionViewSet(UserScopedQuerysetMixin, viewsets.ModelViewSet):
     """CRUD viewset for spaced-repetition drill questions."""
 
     permission_classes = [IsAuthenticated]
     serializer_class = QuestionSerializer
+    queryset = Question.objects.all()
     lookup_field = "uuid"
 
     def get_queryset(self) -> QuerySet[Question]:
-        """Return questions owned by the current user.
+        """Return questions owned by the current user with prefetched tags.
 
         Returns:
             QuerySet of Question objects with prefetched tags.
         """
-        return Question.objects.filter(
-            user=self.request.user
-        ).prefetch_related(
-            "tags"
-        )
+        return super().get_queryset().prefetch_related("tags")
 
 
-class QuoteViewSet(viewsets.ModelViewSet):
+class QuoteViewSet(UserScopedQuerysetMixin, viewsets.ModelViewSet):
     """CRUD viewset for quotes."""
 
     permission_classes = [IsAuthenticated]
     serializer_class = QuoteSerializer
+    queryset = Quote.objects.all()
     lookup_field = "uuid"
 
-    def get_queryset(self) -> QuerySet[Quote]:
-        """Return quotes owned by the current user.
 
-        Returns:
-            QuerySet of Quote objects for the authenticated user.
-        """
-        return Quote.objects.filter(user=self.request.user)
-
-
-class SongViewSet(viewsets.ModelViewSet):
+class SongViewSet(UserScopedQuerysetMixin, viewsets.ModelViewSet):
     """CRUD viewset for songs."""
 
     permission_classes = [IsAuthenticated]
     serializer_class = SongSerializer
+    queryset = Song.objects.all()
     lookup_field = "uuid"
 
     def get_queryset(self) -> QuerySet[Song]:
-        """Return songs owned by the current user.
+        """Return songs owned by the current user with prefetched tags.
 
         Returns:
             QuerySet of Song objects with prefetched tags.
         """
-        return Song.objects.filter(
-            user=self.request.user
-        ).prefetch_related(
-            "tags"
-        )
+        return super().get_queryset().prefetch_related("tags")
 
 
 class SongSourceViewSet(viewsets.ModelViewSet):
@@ -465,20 +430,13 @@ class SongSourceViewSet(viewsets.ModelViewSet):
         return SongSource.objects.all()
 
 
-class PlaylistViewSet(viewsets.ModelViewSet):
+class PlaylistViewSet(UserScopedQuerysetMixin, viewsets.ModelViewSet):
     """CRUD viewset for playlists."""
 
     permission_classes = [IsAuthenticated]
     serializer_class = PlaylistSerializer
+    queryset = Playlist.objects.all()
     lookup_field = "uuid"
-
-    def get_queryset(self) -> QuerySet[Playlist]:
-        """Return playlists owned by the current user.
-
-        Returns:
-            QuerySet of Playlist objects for the authenticated user.
-        """
-        return Playlist.objects.filter(user=self.request.user)
 
 
 class PlaylistItemViewSet(viewsets.ModelViewSet):
@@ -497,19 +455,12 @@ class PlaylistItemViewSet(viewsets.ModelViewSet):
         return PlaylistItem.objects.filter(playlist__user=self.request.user)
 
 
-class TagViewSet(viewsets.ModelViewSet):
+class TagViewSet(UserScopedQuerysetMixin, viewsets.ModelViewSet):
     """CRUD viewset for tags with a pinned-tags action."""
 
     permission_classes = [IsAuthenticated]
     serializer_class = TagSerializer
-
-    def get_queryset(self) -> QuerySet[Tag]:
-        """Return tags owned by the current user.
-
-        Returns:
-            QuerySet of Tag objects for the authenticated user.
-        """
-        return Tag.objects.filter(user=self.request.user)
+    queryset = Tag.objects.all()
 
     @action(detail=False, methods=["get"])
     def pinned(self, request: Request) -> Response:
@@ -521,20 +472,13 @@ class TagViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-class TagNameViewSet(viewsets.ModelViewSet):
+class TagNameViewSet(UserScopedQuerysetMixin, viewsets.ModelViewSet):
     """Tag viewset that uses the tag name as the lookup field."""
 
     permission_classes = [IsAuthenticated]
     serializer_class = TagSerializer
+    queryset = Tag.objects.all()
     lookup_field = "name"
-
-    def get_queryset(self) -> QuerySet[Tag]:
-        """Return tags owned by the current user.
-
-        Returns:
-            QuerySet of Tag objects for the authenticated user.
-        """
-        return Tag.objects.filter(user=self.request.user)
 
 
 class TagAliasViewSet(viewsets.ModelViewSet):
@@ -557,11 +501,12 @@ class TagAliasViewSet(viewsets.ModelViewSet):
         )
 
 
-class TodoViewSet(viewsets.ModelViewSet):
+class TodoViewSet(UserScopedQuerysetMixin, viewsets.ModelViewSet):
     """CRUD viewset for todos with optional priority filtering."""
 
     permission_classes = [IsAuthenticated]
     serializer_class = TodoSerializer
+    queryset = Todo.objects.all()
     lookup_field = "uuid"
     ordering_fields = ["priority"]
 
@@ -579,13 +524,10 @@ class TodoViewSet(viewsets.ModelViewSet):
         Returns:
             QuerySet of Todo objects with prefetched tags.
         """
-        queryset = Todo.objects.filter(
-            user=self.request.user
-        ).prefetch_related(
-            "tags"
-        )
+        queryset = super().get_queryset().prefetch_related("tags")
 
-        priority = self.request.query_params.get("priority")
+        request = cast(Request, self.request)
+        priority = request.query_params.get("priority")
         if priority is not None:
             queryset = queryset.filter(priority=priority)
 
