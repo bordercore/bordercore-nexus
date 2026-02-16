@@ -15,7 +15,7 @@ PYTHONPATH=/var/www/django/bordercore
 echo "Starting $NAME as `whoami`"
 
 # Activate the virtual environment
-source $DJANGODIR/env/bin/activate
+source $DJANGODIR/bordercore/.venv/bin/activate
 export DJANGO_SETTINGS_MODULE=$DJANGO_SETTINGS_MODULE
 export PYTHONPATH=$PYTHONPATH
 
@@ -23,7 +23,7 @@ export PYTHONPATH=$PYTHONPATH
 source /var/www/.env
 
 # Install Python packages
-uv sync --group prod
+/var/www/.local/bin/uv sync --group prod
 
 # Start your Django Unicorn
 # Programs meant to be run under supervisor should not daemonize themselves (do not use --daemon)
