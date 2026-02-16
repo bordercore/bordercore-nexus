@@ -32,6 +32,7 @@ def get_fitness_summary(user: User, count_only: bool = False) -> Tuple[List[Exer
         ),
         is_active=Subquery(newest.values("started")[:1]),
         schedule=Subquery(newest.values("schedule")[:1]),
+        frequency=Subquery(newest.values("frequency")[:1]),
     ).order_by(F("last_active"))
 
     if not count_only:
@@ -48,6 +49,7 @@ def get_fitness_summary(user: User, count_only: bool = False) -> Tuple[List[Exer
         schedule_val = getattr(e, "schedule", None)
 
         e.overdue = 0  # type: ignore[attr-defined]
+        e.schedule_days = ExerciseUser.schedule_days(schedule_val) if schedule_val is not None else ""  # type: ignore[attr-defined]
 
         if last_active:
             # Calculate days since last activity (date-only comparison)
@@ -66,8 +68,6 @@ def get_fitness_summary(user: User, count_only: bool = False) -> Tuple[List[Exer
                 e.overdue = 1  # type: ignore[attr-defined]  # Due today
             elif days_since > OVERDUE_THRESHOLD_DAYS:
                 e.overdue = 2  # type: ignore[attr-defined]  # OverdueDue today
-
-            e.schedule_days = ExerciseUser.schedule_days(schedule_val)  # type: ignore[attr-defined]
 
         if is_active_marker is not None:
             active_exercises.append(e)

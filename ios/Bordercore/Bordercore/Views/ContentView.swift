@@ -17,6 +17,7 @@ struct ContentView: View {
 private enum SplashDestination {
     case bookmarks
     case todo
+    case fitness
 }
 
 struct SplashView: View {
@@ -31,6 +32,10 @@ struct SplashView: View {
                 }
             case .todo:
                 TodoMainView {
+                    destination = nil
+                }
+            case .fitness:
+                FitnessMainView {
                     destination = nil
                 }
             case nil:
@@ -74,6 +79,14 @@ struct SplashView: View {
                     gradient: [Color.orange, Color.pink]
                 ) {
                     destination = .todo
+                }
+
+                SplashLinkButton(
+                    title: "Fitness",
+                    subtitle: "Review workouts",
+                    gradient: [Color.green, Color.teal]
+                ) {
+                    destination = .fitness
                 }
             }
             .padding(.top, 8)

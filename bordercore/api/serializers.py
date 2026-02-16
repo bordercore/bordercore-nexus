@@ -15,6 +15,7 @@ from blob.models import Blob, MetaData
 from bookmark.models import Bookmark
 from collection.models import Collection
 from drill.models import Question
+from fitness.models import Exercise
 from music.models import Album, Playlist, PlaylistItem, Song, SongSource
 from node.models import Node
 from quote.models import Quote
@@ -232,6 +233,52 @@ class PinnedTagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
         fields = ["name", "bookmark_count"]
+
+
+class FitnessExerciseSerializer(serializers.ModelSerializer):
+    last_active = serializers.DateTimeField(required=False, allow_null=True)
+    muscle_group = serializers.SerializerMethodField()
+    schedule_days = serializers.SerializerMethodField()
+    frequency = serializers.SerializerMethodField()
+    delta_days = serializers.SerializerMethodField()
+    overdue = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Exercise
+        fields = [
+            "uuid",
+            "name",
+            "muscle_group",
+            "last_active",
+            "delta_days",
+            "overdue",
+            "schedule_days",
+            "frequency",
+        ]
+
+    def get_muscle_group(self, obj: Exercise) -> str:
+        muscle = obj.muscle.first()
+        if not muscle:
+            return ""
+        return str(muscle.muscle_group)
+
+    def get_schedule_days(self, obj: Exercise) -> str:
+        return str(getattr(obj, "schedule_days", ""))
+
+    def get_frequency(self, obj: Exercise) -> str:
+        frequency = getattr(obj, "frequency", None)
+        if not frequency:
+            return ""
+        days = getattr(frequency, "days", 0)
+        if days <= 0:
+            return ""
+        return f"{days} day{'s' if days != 1 else ''}"
+
+    def get_delta_days(self, obj: Exercise) -> int | None:
+        return getattr(obj, "delta_days", None)
+
+    def get_overdue(self, obj: Exercise) -> int:
+        return int(getattr(obj, "overdue", 0))
 
 
 class TagSerializer(serializers.ModelSerializer):

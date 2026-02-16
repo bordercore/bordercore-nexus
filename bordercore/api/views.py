@@ -14,6 +14,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from django.contrib import messages
+from django.db import transaction
 from django.db.models import Count
 from django.db.models import QuerySet
 
@@ -22,6 +23,8 @@ from blob.models import Blob
 from bookmark.models import Bookmark
 from collection.models import Collection
 from drill.models import Question
+from fitness.models import Data, Exercise, Workout
+from fitness.services import get_fitness_summary
 from music.models import Album, Playlist, PlaylistItem, Song, SongSource
 from node.models import Node
 from quote.models import Quote
@@ -31,8 +34,8 @@ from todo.models import Todo
 from .serializers import (AlbumSerializer, BlobSerializer,
                           BlobSha1sumSerializer, BookmarkSerializer,
                           CollectionSerializer, FeedItemSerializer,
-                          FeedSerializer, MobileBookmarkSerializer,
-                          NodeSerializer, PinnedTagSerializer,
+                          FeedSerializer, FitnessExerciseSerializer,
+                          MobileBookmarkSerializer, NodeSerializer, PinnedTagSerializer,
                           PlaylistItemSerializer, PlaylistSerializer,
                           QuestionSerializer, QuoteSerializer, SongSerializer,
                           SongSourceSerializer, TagAliasSerializer,
@@ -587,3 +590,95 @@ class TodoViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(priority=priority)
 
         return queryset
+
+
+class FitnessViewSet(viewsets.ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    @action(detail=False, methods=["get"])
+    def summary(self, request: Request) -> Response:
+        """GET /api/fitness/summary/ - Active and inactive exercises for the user."""
+        active_exercises, inactive_exercises = get_fitness_summary(request.user)
+
+        active = FitnessExerciseSerializer(active_exercises, many=True).data
+        inactive = FitnessExerciseSerializer(inactive_exercises, many=True).data
+
+        return Response({
+            "active": active,
+            "inactive": inactive,
+        })
+
+    @action(detail=False, methods=["get"], url_path=r"exercise/(?P<exercise_uuid>[^/.]+)")
+    def exercise(self, request: Request, exercise_uuid: str | None = None) -> Response:
+        """GET /api/fitness/exercise/<uuid>/ - Detail data for a single exercise."""
+        if not exercise_uuid:
+            return Response({"detail": "Exercise UUID required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        exercise = Exercise.objects.filter(uuid=exercise_uuid).first()
+        if not exercise:
+            return Response({"detail": "Exercise not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        last_workout = exercise.last_workout(request.user)
+        recent_data = last_workout.get("recent_data", [])
+
+        return Response({
+            "uuid": str(exercise.uuid),
+            "name": exercise.name,
+            "has_weight": exercise.has_weight,
+            "has_duration": exercise.has_duration,
+            "description": exercise.description,
+            "note": exercise.note,
+            "last_workout_date": recent_data[0].date if recent_data else None,
+            "latest_weight": last_workout.get("latest_weight", []),
+            "latest_reps": last_workout.get("latest_reps", []),
+            "latest_duration": last_workout.get("latest_duration", []),
+        })
+
+    @action(detail=False, methods=["post"], url_path=r"exercise/(?P<exercise_uuid>[^/.]+)/workouts")
+    def add_workout(self, request: Request, exercise_uuid: str | None = None) -> Response:
+        """POST /api/fitness/exercise/<uuid>/workouts/ - Add a workout with one or more sets."""
+        if not exercise_uuid:
+            return Response({"detail": "Exercise UUID required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        exercise = Exercise.objects.filter(uuid=exercise_uuid).first()
+        if not exercise:
+            return Response({"detail": "Exercise not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        sets = request.data.get("sets", [])
+        note = request.data.get("note", "")
+
+        if not isinstance(sets, list) or len(sets) == 0:
+            return Response({"detail": "At least one set is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        parsed_sets = []
+        for item in sets:
+            if not isinstance(item, dict):
+                return Response({"detail": "Invalid set payload"}, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                parsed_sets.append({
+                    "weight": float(item.get("weight") or 0),
+                    "duration": int(item.get("duration") or 0),
+                    "reps": int(item.get("reps") or 0),
+                })
+            except (TypeError, ValueError):
+                return Response({"detail": "Invalid numeric values in sets"}, status=status.HTTP_400_BAD_REQUEST)
+
+        with transaction.atomic():
+            workout = Workout.objects.create(
+                user=request.user,
+                exercise=exercise,
+                note=note or "",
+            )
+            Data.objects.bulk_create(
+                [
+                    Data(
+                        workout=workout,
+                        weight=item["weight"],
+                        duration=item["duration"],
+                        reps=item["reps"],
+                    )
+                    for item in parsed_sets
+                ]
+            )
+
+        return Response({"status": "OK"}, status=status.HTTP_201_CREATED)
