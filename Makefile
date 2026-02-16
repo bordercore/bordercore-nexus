@@ -1,6 +1,7 @@
 EC2_HOST=ec2
 EC2_PATH=/var/www/django/static/
 MAX_AGE=2592000
+PYTHON=.venv/bin/python3
 ELASTICSEARCH_INDEX_TEST=bordercore_test
 ELASTICSEARCH_ENDPOINT_TEST=http://localhost:9201
 MAPPINGS=$(BORDERCORE_HOME)/../config/elasticsearch/mappings.json
@@ -37,22 +38,22 @@ test:
 	python -m pytest -vv --cov=lib --cov=cli tests/*.py
 
 test_data:
-	python3 $(BORDERCORE_HOME)/../bin/test_runner.py --test data
+	$(PYTHON) $(BORDERCORE_HOME)/../bin/test_runner.py --test data
 
 test_unit:
 	MOCK_ELASTICSEARCH=1 \
-	python3 $(BORDERCORE_HOME)/../bin/test_runner.py --test unit
+	$(PYTHON) $(BORDERCORE_HOME)/../bin/test_runner.py --test unit
 
 test_wumpus:
-	python3 $(BORDERCORE_HOME)/../bin/test_runner.py --test wumpus
+	$(PYTHON) $(BORDERCORE_HOME)/../bin/test_runner.py --test wumpus
 
 test_functional:
 	MOCK_ELASTICSEARCH=1 \
-	python3 $(BORDERCORE_HOME)/../bin/test_runner.py --test functional
+	$(PYTHON) $(BORDERCORE_HOME)/../bin/test_runner.py --test functional
 
 test_coverage:
 	MOCK_ELASTICSEARCH=1 \
-	python3 $(BORDERCORE_HOME)/../bin/test_runner.py --test coverage
+	$(PYTHON) $(BORDERCORE_HOME)/../bin/test_runner.py --test coverage
 
 
 reset_elasticsearch:

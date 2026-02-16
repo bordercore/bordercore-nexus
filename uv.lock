@@ -208,7 +208,7 @@ requires-dist = [
     { name = "faker-file", specifier = "==0.15.1" },
     { name = "feedparser", specifier = "==6.0.12" },
     { name = "google-api-python-client", specifier = "==2.184.0" },
-    { name = "httplib2", specifier = "==0.21.0" },
+    { name = "httplib2", specifier = ">=0.31.2" },
     { name = "humanize", specifier = "==4.13.0" },
     { name = "instaloader", specifier = "==4.9.5" },
     { name = "isodate", specifier = "==0.6.1" },
@@ -922,14 +922,14 @@ wheels = [
 
 [[package]]
 name = "httplib2"
-version = "0.21.0"
+version = "0.31.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pyparsing" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c2/37/a093aaa902f6b2301f0f2cff5285548dbc4ab9b9a29215eb440381cbb32b/httplib2-0.21.0.tar.gz", hash = "sha256:fc144f091c7286b82bec71bdbd9b27323ba709cc612568d3000893bfd9cb4b34", size = 350463, upload-time = "2022-10-29T12:34:22.865Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c1/1f/e86365613582c027dda5ddb64e1010e57a3d53e99ab8a72093fa13d565ec/httplib2-0.31.2.tar.gz", hash = "sha256:385e0869d7397484f4eab426197a4c020b606edd43372492337c0b4010ae5d24", size = 250800, upload-time = "2026-01-23T11:04:44.165Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/31/c9/4720a06cc961415e49735e672071b1da1621a347e14a9b1f3728a59a2cbd/httplib2-0.21.0-py3-none-any.whl", hash = "sha256:987c8bb3eb82d3fa60c68699510a692aa2ad9c4bd4f123e51dfb1488c14cdd01", size = 96796, upload-time = "2022-10-29T12:34:20.519Z" },
+    { url = "https://files.pythonhosted.org/packages/2f/90/fd509079dfcab01102c0fdd87f3a9506894bc70afcf9e9785ef6b2b3aff6/httplib2-0.31.2-py3-none-any.whl", hash = "sha256:dbf0c2fa3862acf3c55c078ea9c0bc4481d7dc5117cae71be9514912cf9f8349", size = 91099, upload-time = "2026-01-23T11:04:42.78Z" },
 ]
 
 [[package]]

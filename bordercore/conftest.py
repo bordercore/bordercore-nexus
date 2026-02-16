@@ -11,7 +11,10 @@ from faker_file.providers.pdf_file import PdfFileProvider
 from faker_file.providers.pdf_file.generators.reportlab_generator import \
     ReportlabPdfGenerator
 
+import django
 from django.conf import settings
+
+django.setup()
 
 try:
     from moto import mock_aws
@@ -77,7 +80,7 @@ def mock_elasticsearch(monkeypatch):
     mock_client.search.return_value = {
         "hits": {"hits": [], "total": {"value": 0}}
     }
-    monkeypatch.setattr("lib.util._get_elasticsearch_connection", lambda: mock_client)
+    monkeypatch.setattr("lib.util._get_elasticsearch_connection", lambda *a, **kw: mock_client)
     monkeypatch.setattr("search.services._index_document", lambda *a, **kw: None)
     monkeypatch.setattr("search.services._delete_document", lambda *a, **kw: None)
     monkeypatch.setattr("blob.tests.factories.index_blob", lambda *a, **kw: None)
@@ -143,22 +146,21 @@ def _pdf_file_bytes():
         return fh.read()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture()
 def _seed_data(fast_password_hashers, django_db_setup, django_db_blocker):
-    """Create the user and tag graph once per session.
+    """Create the user and tag graph for each test.
 
-    Blobs are intentionally NOT session-scoped because S3 state
-    (session-scoped mock_aws) doesn't roll back with per-test DB
-    transactions, causing cross-test interference.
+    Function-scoped because live_server tests flush all tables after each
+    test (TransactionTestCase semantics), destroying session-scoped data.
     """
     with django_db_blocker.unblock():
         user = UserFactory()
         admin_group, _ = Group.objects.get_or_create(name="Admin")
         admin_group.user_set.add(user)
 
-        tag_0, _ = Tag.objects.get_or_create(name="django", defaults={"user": user})
-        tag_1, _ = Tag.objects.get_or_create(name="video", defaults={"user": user, "is_meta": True})
-        tag_2, _ = Tag.objects.get_or_create(name="linux", defaults={"user": user})
+        tag_0, _ = Tag.objects.get_or_create(name="django", user=user)
+        tag_1, _ = Tag.objects.get_or_create(name="video", user=user, defaults={"is_meta": True})
+        tag_2, _ = Tag.objects.get_or_create(name="linux", user=user)
 
         DrillTag.objects.get_or_create(userprofile=user.userprofile, tag=tag_0)
         DrillTag.objects.get_or_create(userprofile=user.userprofile, tag=tag_1)
