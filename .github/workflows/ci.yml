@@ -28,19 +28,17 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
       with:
-        python-version: "3.12"
+        python-version: "3.13"
 
     - name: Install dependencies
-      run: |
-        pip install -r requirements/dev.txt
-        pip install pytest
+      run: uv sync --group dev
 
     - name: Run mypy
       run: |
-        mypy --config-file pyproject.toml bordercore/
+        uv run mypy --config-file pyproject.toml bordercore/
 
     - name: Run tests
       env:
@@ -50,4 +48,4 @@ jobs:
         DATABASE_USER: postgres
         DATABASE_PASSWORD: postgres
       run: |
-        pytest -m "not data_quality and not functional" ./bordercore/ -v -n auto
+        uv run pytest -m "not data_quality and not functional" ./bordercore/ -v -n auto

@@ -23,7 +23,7 @@ export PYTHONPATH=$PYTHONPATH
 source /var/www/.env
 
 # Install Python packages
-pip install -r $PYTHONPATH/requirements/prod.txt
+uv sync --group prod
 
 # Start your Django Unicorn
 # Programs meant to be run under supervisor should not daemonize themselves (do not use --daemon)

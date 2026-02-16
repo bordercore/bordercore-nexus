@@ -37,7 +37,7 @@ To run the development environment:
 
 1.  **Backend**:
     ```bash
-    pip install -r requirements/dev.txt
+    uv sync --group dev
     python manage.py runserver
     ```
 

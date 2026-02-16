@@ -17,7 +17,8 @@ RUN git config pull.rebase false
 RUN git config --global user.email "testuser@bordercore.com"
 RUN git config --global user.name "Test User"
 
-RUN pip install -r /bordercore/requirements/dev.txt
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+RUN uv sync --group dev
 
 WORKDIR /bordercore/bordercore
 
