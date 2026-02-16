@@ -6,24 +6,23 @@ and related operations in the collection system.
 from io import BytesIO
 from typing import Any, cast
 
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 from django.conf import settings
 from django.contrib import messages
 from django.db import transaction
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.uploadedfile import UploadedFile
 from django.db.models import Count, Exists, OuterRef, Q, QuerySet
 from django.forms import BaseModelForm
-from django.http import (HttpRequest, HttpResponse, HttpResponseRedirect,
-                         JsonResponse)
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
-from django.views.decorators.http import require_POST
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import (CreateView, DeleteView, FormMixin,
                                        UpdateView)
@@ -269,8 +268,8 @@ class CollectionDeleteView(LoginRequiredMixin, UserScopedQuerysetMixin, DeleteVi
         return super().form_valid(form)
 
 
-@login_required
-def get_blob(request: HttpRequest, collection_uuid: str) -> JsonResponse:
+@api_view(["GET"])
+def get_blob(request: HttpRequest, collection_uuid: str) -> Response:
     """Get a blob from a collection.
 
     Retrieves a blob from the specified collection based on position,
@@ -294,11 +293,12 @@ def get_blob(request: HttpRequest, collection_uuid: str) -> JsonResponse:
     tag_name = request.GET.get("tag", None)
     randomize = request.GET.get("randomize", "") == "true"
 
-    return JsonResponse(collection.get_blob(blob_position, direction, randomize, tag_name))
+    return Response(collection.get_blob(blob_position, direction, randomize, tag_name))
 
 
 @api_view(["GET"])
-def get_images(request: HttpRequest, collection_uuid: str) -> JsonResponse:
+@permission_classes([IsAuthenticated])
+def get_images(request: HttpRequest, collection_uuid: str) -> Response:
     """Get four recent images from a collection.
 
     Retrieves recent images from a collection to be used in creating
@@ -316,20 +316,19 @@ def get_images(request: HttpRequest, collection_uuid: str) -> JsonResponse:
     # However, collections should still be user-scoped for security
     blob_list = get_object_or_404(Collection, uuid=str(collection_uuid)).get_recent_images()
 
-    return JsonResponse(
+    return Response(
         [
             {
                 "uuid": x["uuid"],
                 "filename": x["file"]
             }
             for x in blob_list
-        ],
-        safe=False
+        ]
     )
 
 
-@login_required
-def search(request: HttpRequest) -> JsonResponse:
+@api_view(["GET"])
+def search(request: HttpRequest) -> Response:
     """Search for collections.
 
     Searches collections for the current user with optional filters by
@@ -363,7 +362,7 @@ def search(request: HttpRequest) -> JsonResponse:
 
     collection_list = query.order_by("-modified")
 
-    return JsonResponse(
+    return Response(
         [
             {
                 "name": x.name,
@@ -374,15 +373,13 @@ def search(request: HttpRequest) -> JsonResponse:
                 "contains_blob": getattr(x, "contains_blob", None)
             }
             for x in collection_list
-        ],
-        safe=False
+        ]
     )
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("collection_uuid")
-def create_blob(request: HttpRequest) -> JsonResponse:
+def create_blob(request: HttpRequest) -> Response:
     """Create a new blob and add it to a collection.
 
     Creates a new blob from uploaded file contents, checks for duplicates
@@ -412,7 +409,7 @@ def create_blob(request: HttpRequest) -> JsonResponse:
     if existing_blob:
 
         blob_url = reverse("blob:detail", kwargs={"uuid": existing_blob.uuid})
-        return JsonResponse({
+        return Response({
             "status": "ERROR",
             "message": f"This blob <a href='{blob_url}'>already exists</a>."
         }, status=400)
@@ -440,11 +437,11 @@ def create_blob(request: HttpRequest) -> JsonResponse:
             "blob_uuid": str(blob.uuid)
         }
 
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-def get_object_list(request: HttpRequest, collection_uuid: str) -> JsonResponse:
+@api_view(["GET"])
+def get_object_list(request: HttpRequest, collection_uuid: str) -> Response:
     """Get a paginated list of objects in a collection.
 
     Retrieves objects from the specified collection with optional
@@ -472,13 +469,12 @@ def get_object_list(request: HttpRequest, collection_uuid: str) -> JsonResponse:
         tag=tag
     )
 
-    return JsonResponse(object_list, safe=False)
+    return Response(object_list)
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("collection_uuid")
-def add_object(request: HttpRequest) -> JsonResponse:
+def add_object(request: HttpRequest) -> Response:
     """Add an object (blob or bookmark) to a collection.
 
     Adds a blob or bookmark to the specified collection. Returns an error
@@ -509,7 +505,7 @@ def add_object(request: HttpRequest) -> JsonResponse:
     elif bookmark_uuid:
         item = get_user_object_or_404(user, Bookmark, uuid=bookmark_uuid)
     else:
-        return JsonResponse(
+        return Response(
             {
                 "status": "ERROR",
                 "message": "You must specify a blob_uuid or bookmark_uuid"
@@ -523,18 +519,17 @@ def add_object(request: HttpRequest) -> JsonResponse:
             "status": "OK",
         }
     except DuplicateObjectError:
-        return JsonResponse({
+        return Response({
             "status": "ERROR",
             "message": "That object already belongs to this collection."
         }, status=400)
 
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("collection_uuid", "object_uuid")
-def remove_object(request: HttpRequest) -> JsonResponse:
+def remove_object(request: HttpRequest) -> Response:
     """Remove an object from a collection.
 
     Removes a blob or bookmark from the specified collection.
@@ -559,13 +554,12 @@ def remove_object(request: HttpRequest) -> JsonResponse:
         "status": "OK",
     }
 
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("collection_uuid", "object_uuid", "new_position")
-def sort_objects(request: HttpRequest) -> JsonResponse:
+def sort_objects(request: HttpRequest) -> Response:
     """Move an object to a new position in a collection.
 
     Reorders an object (blob or bookmark) to a new position in the
@@ -598,13 +592,12 @@ def sort_objects(request: HttpRequest) -> JsonResponse:
         "status": "OK",
     }
 
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("collection_uuid", "object_uuid", "note")
-def update_object_note(request: HttpRequest) -> JsonResponse:
+def update_object_note(request: HttpRequest) -> Response:
     """Update the note for an object in a collection.
 
     Updates the note field for a blob or bookmark in the specified collection.
@@ -637,13 +630,12 @@ def update_object_note(request: HttpRequest) -> JsonResponse:
         "status": "OK",
     }
 
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("collection_uuid", "url")
-def add_new_bookmark(request: HttpRequest) -> JsonResponse:
+def add_new_bookmark(request: HttpRequest) -> Response:
     """Add a new bookmark to a collection.
 
     Creates a new bookmark from a URL (or uses an existing one if found)
@@ -686,10 +678,10 @@ def add_new_bookmark(request: HttpRequest) -> JsonResponse:
             collection=collection,
             bookmark=bookmark
     ).exists():
-        return JsonResponse({
+        return Response({
             "status": "ERROR",
             "message": "This bookmark is already a member of the collection."
         }, status=400)
 
     collection.add_object(bookmark)
-    return JsonResponse({"status": "OK"})
+    return Response({"status": "OK"})

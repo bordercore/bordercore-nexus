@@ -5,6 +5,9 @@ password changes, and user-related operations.
 """
 from typing import Any, cast
 
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+
 from django.contrib import messages
 from django.contrib.auth import (authenticate, login, logout,
                                  update_session_auth_hash)
@@ -15,11 +18,9 @@ from django.contrib.auth.models import User
 from django.contrib.auth.views import PasswordChangeView
 from django.core.files.uploadedfile import UploadedFile
 from django.forms import BaseModelForm
-from django.http import (HttpRequest, HttpResponse, HttpResponseRedirect,
-                         JsonResponse)
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
-from django.views.decorators.http import require_POST
 from django.views.generic.edit import UpdateView
 
 from accounts.forms import UserProfileForm
@@ -251,10 +252,9 @@ class ChangePasswordView(LoginRequiredMixin, PasswordChangeView):
         return super().form_invalid(form)
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("note_uuid", "new_position")
-def sort_pinned_notes(request: HttpRequest) -> JsonResponse:
+def sort_pinned_notes(request: HttpRequest) -> Response:
     """Reorder a pinned note to a new position.
 
     Moves a pinned note to a new position in the sorted list of pinned notes.
@@ -274,13 +274,12 @@ def sort_pinned_notes(request: HttpRequest) -> JsonResponse:
     user_note = get_object_or_404(UserNote, userprofile=user.userprofile, blob__uuid=note_uuid)
     UserNote.reorder(user_note, new_position)
 
-    return JsonResponse({"status": "OK"})
+    return Response({"status": "OK"})
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("uuid")
-def pin_note(request: HttpRequest) -> JsonResponse:
+def pin_note(request: HttpRequest) -> Response:
     """Pin or unpin a note for the current user.
 
     Creates or removes a UserNote association to pin or unpin a note.
@@ -318,12 +317,11 @@ def pin_note(request: HttpRequest) -> JsonResponse:
             user_note.save()
             status = "OK"
 
-    return JsonResponse({"status": status, "message": message})
+    return Response({"status": status, "message": message})
 
 
-@login_required
-@require_POST
-def store_in_session(request: HttpRequest) -> JsonResponse:
+@api_view(["POST"])
+def store_in_session(request: HttpRequest) -> Response:
     """Store POST data in the session.
 
     Saves all POST parameters to the session for later retrieval.
@@ -336,7 +334,7 @@ def store_in_session(request: HttpRequest) -> JsonResponse:
     """
     for key in request.POST:
         request.session[key] = request.POST[key]
-    return JsonResponse({"status": "OK"})
+    return Response({"status": "OK"})
 
 
 def bordercore_login(request: HttpRequest) -> HttpResponse:
@@ -400,8 +398,8 @@ def bordercore_logout(request: HttpRequest) -> HttpResponseRedirect:
     return redirect("accounts:login")
 
 
-@login_required
-def get_weather(request: HttpRequest) -> JsonResponse:
+@api_view(["GET"])
+def get_weather(request: HttpRequest) -> Response:
     """Get the current user's weather data.
 
     Returns the weather information stored in the user's profile.
@@ -416,4 +414,4 @@ def get_weather(request: HttpRequest) -> JsonResponse:
     user = cast(User, request.user)
     weather_data = user.userprofile.weather if hasattr(user, "userprofile") else None
 
-    return JsonResponse({"weather": weather_data})
+    return Response({"weather": weather_data})

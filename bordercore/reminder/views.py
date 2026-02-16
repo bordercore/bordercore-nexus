@@ -6,15 +6,21 @@ require authentication and automatically filter to the current user's reminders.
 """
 
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any, Dict, cast
+
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models.query import QuerySet
+from django.contrib.auth.models import User
 from django.forms import BaseModelForm
+from rest_framework.request import Request
+
 from django.http import HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404
 from django.urls import reverse, reverse_lazy
 from django.utils import dateformat, timezone
-from django.views.generic import (CreateView, DeleteView, DetailView, ListView,
+from django.views.generic import (CreateView, DeleteView, DetailView,
                                   TemplateView, UpdateView)
 
 from lib.mixins import UserScopedQuerysetMixin
@@ -79,47 +85,32 @@ class ReminderDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView
         return context
 
 
-class ReminderDetailAjaxView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView):
+class ReminderDetailAjaxView(APIView):
     """Serve reminder detail as JSON for AJAX requests.
 
     This view provides a single reminder's data in JSON format, allowing the client
     to handle rendering.
     """
 
-    model = Reminder
-    slug_field = "uuid"
-    slug_url_kwarg = "uuid"
-
-    def render_to_response(
-        self, context: Dict[str, Any], **response_kwargs: Any
-    ) -> JsonResponse:
+    def get(self, request: Request, uuid: str) -> Response:
         """Return reminder data as JSON.
 
         Args:
-            context: Template context dictionary containing the reminder.
-            **response_kwargs: Additional keyword arguments for the response.
+            request: The HTTP request object.
+            uuid: UUID of the reminder to retrieve.
 
         Returns:
-            JsonResponse containing reminder data.
+            Response containing reminder data.
         """
-        reminder = context["reminder"]
+        user = cast(User, request.user)
+        reminder = get_object_or_404(Reminder, uuid=uuid, user=user)
 
         def format_time_with_ampm(dt: datetime | None) -> str | None:
-            """Format datetime as 'M d, Y 8pm' or 'M d, Y 3:30am'.
-
-            Args:
-                dt: Datetime object to format, or None.
-
-            Returns:
-                Formatted datetime string with 12-hour format and lowercase am/pm,
-                or None if dt is None.
-            """
+            """Format datetime as 'M d, Y 8pm' or 'M d, Y 3:30am'."""
             if not dt:
                 return None
-            # Convert to local timezone before formatting
             local_dt = timezone.localtime(dt)
             formatted = dateformat.format(local_dt, "M d, Y g:i a")
-            # Remove space before am/pm and remove :00 if on the hour
             formatted = formatted.replace(" :00 ", " ").replace(" :00", "").replace(" am", "am").replace(" pm", "pm")
             return formatted
 
@@ -150,33 +141,28 @@ class ReminderDetailAjaxView(LoginRequiredMixin, UserScopedQuerysetMixin, Detail
             "delete_url": reverse("reminder:delete", kwargs={"uuid": reminder.uuid}),
             "app_url": reverse("reminder:app"),
         }
-        return JsonResponse(data)
+        return Response(data)
 
 
-class ReminderFormAjaxView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView):
+class ReminderFormAjaxView(APIView):
     """Serve reminder form data as JSON for AJAX requests (edit mode).
 
     This view provides a single reminder's data in JSON format for populating
     the edit form.
     """
 
-    model = Reminder
-    slug_field = "uuid"
-    slug_url_kwarg = "uuid"
-
-    def render_to_response(
-        self, context: Dict[str, Any], **response_kwargs: Any
-    ) -> JsonResponse:
+    def get(self, request: Request, uuid: str) -> Response:
         """Return reminder form data as JSON.
 
         Args:
-            context: Template context dictionary containing the reminder.
-            **response_kwargs: Additional keyword arguments for the response.
+            request: The HTTP request object.
+            uuid: UUID of the reminder to retrieve.
 
         Returns:
-            JsonResponse containing reminder form data.
+            Response containing reminder form data.
         """
-        reminder = context["reminder"]
+        user = cast(User, request.user)
+        reminder = get_object_or_404(Reminder, uuid=uuid, user=user)
         # Format start_at for datetime-local input (ISO format)
         start_at_iso = reminder.start_at.isoformat() if reminder.start_at else None
         # Format trigger_time for time input (HH:MM format)
@@ -196,7 +182,7 @@ class ReminderFormAjaxView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailVi
             "interval_value": reminder.interval_value,
             "interval_unit": reminder.interval_unit,
         }
-        return JsonResponse(data)
+        return Response(data)
 
 
 class ReminderCreateView(LoginRequiredMixin, CreateView):
@@ -346,7 +332,7 @@ class ReminderDeleteView(LoginRequiredMixin, UserScopedQuerysetMixin, DeleteView
     success_url = reverse_lazy("reminder:app")
 
 
-class ReminderListAjaxView(LoginRequiredMixin, UserScopedQuerysetMixin, ListView):
+class ReminderListAjaxView(APIView):
     """Serve reminders list as JSON for AJAX requests.
 
     This view provides reminder data in JSON format, allowing the client
@@ -354,34 +340,27 @@ class ReminderListAjaxView(LoginRequiredMixin, UserScopedQuerysetMixin, ListView
     pagination controls.
     """
 
-    model = Reminder
-    context_object_name = "reminders"
     paginate_by = 20
 
-    def get_queryset(self) -> QuerySet[Reminder]:
-        """Get reminders for the current user, ordered by next trigger time.
-
-        Returns:
-            QuerySet of Reminder objects filtered by the logged-in user,
-            ordered by next_trigger_at ascending (soonest first), then by
-            created descending.
-        """
-        return super().get_queryset().order_by(
-            "next_trigger_at", "-created"
-        )
-
-    def render_to_response(
-        self, context: Dict[str, Any], **response_kwargs: Any
-    ) -> JsonResponse:
+    def get(self, request: Request) -> Response:
         """Return reminder data as JSON.
 
         Args:
-            context: Template context dictionary containing reminders and pagination data.
-            **response_kwargs: Additional keyword arguments for the response.
+            request: The HTTP request object.
 
         Returns:
-            JsonResponse containing reminders list and pagination metadata.
+            Response containing reminders list and pagination metadata.
         """
+        user = cast(User, request.user)
+        queryset = Reminder.objects.filter(user=user).order_by(
+            "next_trigger_at", "-created"
+        )
+
+        from django.core.paginator import Paginator
+        paginator = Paginator(queryset, self.paginate_by)
+        page_number = request.query_params.get("page", 1)
+        page_obj = paginator.get_page(page_number)
+
         reminders_data = [
             {
                 "uuid": str(reminder.uuid),
@@ -402,19 +381,18 @@ class ReminderListAjaxView(LoginRequiredMixin, UserScopedQuerysetMixin, ListView
                 "update_url": reverse("reminder:update", kwargs={"uuid": reminder.uuid}),
                 "delete_url": reverse("reminder:delete", kwargs={"uuid": reminder.uuid}),
             }
-            for reminder in context["reminders"]
+            for reminder in page_obj
         ]
 
-        page_obj = context.get("page_obj")
-        return JsonResponse({
+        return Response({
             "reminders": reminders_data,
             "pagination": {
-                "current_page": page_obj.number if page_obj else 1,
-                "total_pages": page_obj.paginator.num_pages if page_obj else 1,
-                "total_count": page_obj.paginator.count if page_obj else len(reminders_data),
-                "has_previous": page_obj.has_previous() if page_obj else False,
-                "has_next": page_obj.has_next() if page_obj else False,
-                "previous_page_number": page_obj.previous_page_number() if page_obj and page_obj.has_previous() else None,
-                "next_page_number": page_obj.next_page_number() if page_obj and page_obj.has_next() else None,
+                "current_page": page_obj.number,
+                "total_pages": page_obj.paginator.num_pages,
+                "total_count": page_obj.paginator.count,
+                "has_previous": page_obj.has_previous(),
+                "has_next": page_obj.has_next(),
+                "previous_page_number": page_obj.previous_page_number() if page_obj.has_previous() else None,
+                "next_page_number": page_obj.next_page_number() if page_obj.has_next() else None,
             },
         })

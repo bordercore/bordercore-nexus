@@ -10,12 +10,15 @@ from __future__ import annotations
 import json
 from typing import Any, Dict, cast
 
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.db import transaction
-from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
 from lib.mixins import get_user_object_or_404
@@ -208,10 +211,9 @@ def fitness_summary(request: HttpRequest) -> HttpResponse:
     )
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("uuid")
-def change_active_status(request: HttpRequest) -> JsonResponse:
+def change_active_status(request: HttpRequest) -> Response:
     """Toggle a user's active status for an exercise, or remove it entirely.
 
     Expects a POST with:
@@ -243,13 +245,12 @@ def change_active_status(request: HttpRequest) -> JsonResponse:
         eu.save()
         info = eu.activity_info()
 
-    return JsonResponse({"info": info, "status": "OK"})
+    return Response({"info": info, "status": "OK"})
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("uuid", "note")
-def edit_note(request: HttpRequest) -> JsonResponse:
+def edit_note(request: HttpRequest) -> Response:
     """Update the ``note`` field for an :class:`Exercise`.
 
     Expects a POST with:
@@ -270,11 +271,11 @@ def edit_note(request: HttpRequest) -> JsonResponse:
     exercise.save()
 
     response = {"status": "OK"}
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-def get_workout_data(request: HttpRequest) -> JsonResponse:
+@api_view(["GET"])
+def get_workout_data(request: HttpRequest) -> Response:
     """Return paginated plot data for an exercise's workouts.
 
     Accepts a GET with:
@@ -295,13 +296,12 @@ def get_workout_data(request: HttpRequest) -> JsonResponse:
     workout_data = exercise.get_plot_info(page_number=page_number)
 
     response = {"status": "OK", "workout_data": workout_data}
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("uuid", "schedule")
-def update_schedule(request: HttpRequest) -> JsonResponse:
+def update_schedule(request: HttpRequest) -> Response:
     """Update the weekly schedule for a user's :class:`ExerciseUser` record.
 
     Expects a POST with:
@@ -326,13 +326,12 @@ def update_schedule(request: HttpRequest) -> JsonResponse:
     eu.schedule = boolean_values
     eu.save()
 
-    return JsonResponse({"status": "OK"})
+    return Response({"status": "OK"})
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("uuid", "rest_period")
-def update_rest_period(request: HttpRequest) -> JsonResponse:
+def update_rest_period(request: HttpRequest) -> Response:
     """Update the ``rest_period`` (in seconds/minutes as defined by the model).
 
     Expects a POST with:
@@ -354,4 +353,4 @@ def update_rest_period(request: HttpRequest) -> JsonResponse:
     eu.rest_period = rest_period
     eu.save()
 
-    return JsonResponse({"status": "OK"})
+    return Response({"status": "OK"})

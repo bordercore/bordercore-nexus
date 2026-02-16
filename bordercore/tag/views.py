@@ -6,11 +6,14 @@ This module provides Django views for pinning/unpinning tags, searching tags, ma
 
 from typing import cast
 
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.db.models import QuerySet
-from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
 from django.views.decorators.http import require_POST
 from django.views.generic.list import ListView
@@ -71,8 +74,8 @@ def unpin(request: HttpRequest) -> HttpResponse:
     return redirect("bookmark:overview")
 
 
-@login_required
-def search(request: HttpRequest) -> JsonResponse:
+@api_view(["GET"])
+def search(request: HttpRequest) -> Response:
     """
     Search for tags matching a query for the current user.
 
@@ -95,7 +98,7 @@ def search(request: HttpRequest) -> JsonResponse:
 
     matches = search_service(user, tag_name, doctype, skip_tag_aliases)
 
-    return JsonResponse(matches, safe=False)
+    return Response(matches)
 
 
 class TagListView(LoginRequiredMixin, ListView):
@@ -115,9 +118,8 @@ class TagListView(LoginRequiredMixin, ListView):
         return TagAlias.objects.none()
 
 
-@login_required
-@require_POST
-def add_alias(request: HttpRequest) -> JsonResponse:
+@api_view(["POST"])
+def add_alias(request: HttpRequest) -> Response:
     """
     Add an alias for a tag for the current user.
 
@@ -153,11 +155,11 @@ def add_alias(request: HttpRequest) -> JsonResponse:
             "message": ""
         }
 
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-def get_todo_counts(request: HttpRequest) -> JsonResponse:
+@api_view(["GET"])
+def get_todo_counts(request: HttpRequest) -> Response:
     """
     Returns todo count information for a tag associated with the current user.
 
@@ -176,7 +178,7 @@ def get_todo_counts(request: HttpRequest) -> JsonResponse:
     else:
         tag_obj = Tag.objects.filter(user=user).order_by("?").first()
         if tag_obj is None:
-            return JsonResponse({"status": "ERROR", "message": "No tags found for user."}, status=404)
+            return Response({"status": "ERROR", "message": "No tags found for user."}, status=404)
         tag_name = tag_obj.name
 
     tag = get_user_object_or_404(user, Tag, name=tag_name)
@@ -189,11 +191,11 @@ def get_todo_counts(request: HttpRequest) -> JsonResponse:
         }
     }
 
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-def get_related_tags(request: HttpRequest) -> JsonResponse:
+@api_view(["GET"])
+def get_related_tags(request: HttpRequest) -> Response:
     """
     Retrieve tags related to a given tag for a specific document type.
 
@@ -216,4 +218,4 @@ def get_related_tags(request: HttpRequest) -> JsonResponse:
         "info": info
     }
 
-    return JsonResponse(response)
+    return Response(response)

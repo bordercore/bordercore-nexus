@@ -8,6 +8,9 @@ import random
 from typing import Any, Dict, cast
 from urllib.parse import unquote
 
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+
 from django import urls
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -15,11 +18,9 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.db.models.query import QuerySet as QuerySetType
 from django.forms import BaseModelForm
-from django.http import (HttpRequest, HttpResponse, HttpResponseRedirect,
-                         JsonResponse)
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
-from django.views.decorators.http import require_POST
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.views.generic.list import ListView
@@ -506,8 +507,8 @@ def record_response(request: HttpRequest, uuid: str, response: str) -> HttpRespo
     return get_next_question(request)
 
 
-@login_required
-def get_pinned_tags(request: HttpRequest) -> JsonResponse:
+@api_view(["GET"])
+def get_pinned_tags(request: HttpRequest) -> Response:
     """Get a list of pinned tags for the current user.
 
     Args:
@@ -526,11 +527,11 @@ def get_pinned_tags(request: HttpRequest) -> JsonResponse:
         "tag_list": tags
     }
 
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-def get_disabled_tags(request: HttpRequest) -> JsonResponse:
+@api_view(["GET"])
+def get_disabled_tags(request: HttpRequest) -> Response:
     """Get a list of disabled tags for the current user.
 
     Args:
@@ -549,12 +550,11 @@ def get_disabled_tags(request: HttpRequest) -> JsonResponse:
         "tag_list": tags
     }
 
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-@require_POST
-def pin_tag(request: HttpRequest) -> JsonResponse:
+@api_view(["POST"])
+def pin_tag(request: HttpRequest) -> Response:
     """Pin a tag for the current user.
 
     Creates a DrillTag association to pin a tag. Returns an error if
@@ -574,7 +574,7 @@ def pin_tag(request: HttpRequest) -> JsonResponse:
     user = cast(User, request.user)
     if DrillTag.objects.filter(userprofile=user.userprofile, tag__name=tag_name).exists():
 
-        return JsonResponse(
+        return Response(
             {
                 "status": "ERROR",
                 "message": "Duplicate: that tag is already pinned."
@@ -588,16 +588,15 @@ def pin_tag(request: HttpRequest) -> JsonResponse:
         so = DrillTag(userprofile=user.userprofile, tag=tag)
         so.save()
 
-        return JsonResponse(
+        return Response(
             {
                 "status": "OK"
             }
         )
 
 
-@login_required
-@require_POST
-def unpin_tag(request: HttpRequest) -> JsonResponse:
+@api_view(["POST"])
+def unpin_tag(request: HttpRequest) -> Response:
     """Unpin a tag for the current user.
 
     Removes the DrillTag association to unpin a tag. Returns an error
@@ -617,7 +616,7 @@ def unpin_tag(request: HttpRequest) -> JsonResponse:
     user = cast(User, request.user)
     if not DrillTag.objects.filter(userprofile=user.userprofile, tag__name=tag_name).exists():
 
-        return JsonResponse(
+        return Response(
             {
                 "status": "ERROR",
                 "message": "That tag is not pinned."
@@ -630,16 +629,15 @@ def unpin_tag(request: HttpRequest) -> JsonResponse:
         so = get_object_or_404(DrillTag, userprofile=user.userprofile, tag__name=tag_name)
         so.delete()
 
-        return JsonResponse(
+        return Response(
             {
                 "status": "OK"
             }
         )
 
 
-@login_required
-@require_POST
-def sort_pinned_tags(request: HttpRequest) -> JsonResponse:
+@api_view(["POST"])
+def sort_pinned_tags(request: HttpRequest) -> Response:
     """Reorder a pinned tag to a new position.
 
     Moves a pinned tag to a new position in the sorted list of pinned tags.
@@ -664,12 +662,11 @@ def sort_pinned_tags(request: HttpRequest) -> JsonResponse:
         "status": "OK"
     }
 
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-@require_POST
-def disable_tag(request: HttpRequest) -> JsonResponse:
+@api_view(["POST"])
+def disable_tag(request: HttpRequest) -> Response:
     """Disable all questions with a given tag.
 
     Marks all questions with the specified tag as disabled. Returns an
@@ -688,7 +685,7 @@ def disable_tag(request: HttpRequest) -> JsonResponse:
 
     user = cast(User, request.user)
     if tag_name in {x["name"] for x in Question.objects.get_disabled_tags(user)}:
-        return JsonResponse(
+        return Response(
             {
                 "status": "ERROR",
                 "message": "Questions with that tag are already disabled."
@@ -697,16 +694,15 @@ def disable_tag(request: HttpRequest) -> JsonResponse:
         )
     else:
         Question.objects.filter(tags__name=tag_name, user=user).update(is_disabled=True)
-        return JsonResponse(
+        return Response(
             {
                 "status": "OK"
             }
         )
 
 
-@login_required
-@require_POST
-def enable_tag(request: HttpRequest) -> JsonResponse:
+@api_view(["POST"])
+def enable_tag(request: HttpRequest) -> Response:
     """Enable all questions with a given tag.
 
     Marks all questions with the specified tag as enabled. Returns an
@@ -725,7 +721,7 @@ def enable_tag(request: HttpRequest) -> JsonResponse:
 
     user = cast(User, request.user)
     if tag_name not in {x["name"] for x in Question.objects.get_disabled_tags(user)}:
-        return JsonResponse(
+        return Response(
             {
                 "status": "ERROR",
                 "message": "No question with that tag is disabled."
@@ -735,16 +731,15 @@ def enable_tag(request: HttpRequest) -> JsonResponse:
     else:
         Question.objects.filter(tags__name=tag_name, user=user).update(is_disabled=False)
 
-        return JsonResponse(
+        return Response(
             {
                 "status": "OK"
             }
         )
 
 
-@login_required
-@require_POST
-def is_favorite_mutate(request: HttpRequest) -> JsonResponse:
+@api_view(["POST"])
+def is_favorite_mutate(request: HttpRequest) -> Response:
     """Add or remove a question from favorites.
 
     Updates the favorite status of a question based on the mutation type.
@@ -771,11 +766,11 @@ def is_favorite_mutate(request: HttpRequest) -> JsonResponse:
 
     question.save()
 
-    return JsonResponse({"status": "OK"})
+    return Response({"status": "OK"})
 
 
-@login_required
-def get_title_from_url(request: HttpRequest) -> JsonResponse:
+@api_view(["GET"])
+def get_title_from_url(request: HttpRequest) -> Response:
     """Extract the title from a URL.
 
     Attempts to get the title from a URL by first checking if it exists
@@ -809,7 +804,7 @@ def get_title_from_url(request: HttpRequest) -> JsonResponse:
         try:
             title = parse_title_from_url(url)[1]
         except Exception as e:
-            return JsonResponse({"status": "ERROR", "message": str(e)})
+            return Response({"status": "ERROR", "message": str(e)})
 
     response = {
         "status": "OK",
@@ -818,11 +813,11 @@ def get_title_from_url(request: HttpRequest) -> JsonResponse:
         "message": message
     }
 
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-def get_related_objects(request: HttpRequest, uuid: str) -> JsonResponse:
+@api_view(["GET"])
+def get_related_objects(request: HttpRequest, uuid: str) -> Response:
     """Get all related objects for a given question.
 
     Retrieves all objects (blobs, bookmarks, etc.) that are related
@@ -846,4 +841,4 @@ def get_related_objects(request: HttpRequest, uuid: str) -> JsonResponse:
         "related_objects": Blob.related_objects("drill", "QuestionToObject", question)
     }
 
-    return JsonResponse(response)
+    return Response(response)

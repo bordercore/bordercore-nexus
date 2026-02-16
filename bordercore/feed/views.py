@@ -13,17 +13,17 @@ from urllib.parse import unquote
 import feedparser
 import requests
 from feed.models import Feed
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 from lib.constants import USER_AGENT
 
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.db.models import QuerySet
 from django.http import HttpRequest, JsonResponse
 from django.shortcuts import get_object_or_404
-from django.views.decorators.http import require_POST
 from django.views.generic.list import ListView
 
 from accounts.models import UserFeed
@@ -120,10 +120,9 @@ class FeedListView(LoginRequiredMixin, ListView):
         return context
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("feed_id", "position")
-def sort_feed(request: HttpRequest) -> JsonResponse:
+def sort_feed(request: HttpRequest) -> Response:
     """Reorder a feed within the current user's list.
 
     Args:
@@ -139,10 +138,11 @@ def sort_feed(request: HttpRequest) -> JsonResponse:
     s = get_object_or_404(UserFeed, userprofile=user.userprofile, feed__id=feed_id)
     UserFeed.reorder(s, new_position)
 
-    return JsonResponse({"status": "OK"})
+    return Response({"status": "OK"})
 
 
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def update_feed_list(request: HttpRequest, feed_uuid: str) -> JsonResponse:
     """Trigger a network refresh for a feed and return counts.
 
@@ -167,8 +167,8 @@ def update_feed_list(request: HttpRequest, feed_uuid: str) -> JsonResponse:
     return JsonResponse(status)
 
 
-@login_required
-def check_url(request: HttpRequest, url: str) -> JsonResponse:
+@api_view(["GET"])
+def check_url(request: HttpRequest, url: str) -> Response:
     """Validate a URL as an RSS/Atom feed by fetching and parsing it.
 
     The URL is unquoted, fetched, and parsed with ``feedparser`` to count
@@ -187,14 +187,14 @@ def check_url(request: HttpRequest, url: str) -> JsonResponse:
     headers: Dict[str, str] = {"user-agent": USER_AGENT}
     r = requests.get(url, headers=headers, timeout=10)
     if r.status_code != HTTPStatus.OK   :
-        return JsonResponse({
+        return Response({
             "status": "ERROR",
             "status_code": r.status_code,
             "message": r.text,
         }, status=400)
 
     d: Any = feedparser.parse(r.text)
-    return JsonResponse({
+    return Response({
         "status": "OK",
         "status_code": r.status_code,
         "entry_count": len(d.entries),

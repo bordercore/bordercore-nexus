@@ -11,6 +11,9 @@ from typing import Any, Generator, cast
 
 from botocore.exceptions import BotoCoreError, ClientError
 
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -717,8 +720,8 @@ def handle_linked_collection(blob: Blob, request: HttpRequest) -> None:
         collection.add_object(blob)
 
 
-@login_required
-def metadata_name_search(request: HttpRequest) -> JsonResponse:
+@api_view(["GET"])
+def metadata_name_search(request: HttpRequest) -> Response:
     """Search for metadata names matching a query.
 
     Returns a list of distinct metadata names that contain the query string,
@@ -734,7 +737,7 @@ def metadata_name_search(request: HttpRequest) -> JsonResponse:
     user = cast(User, request.user)
     query = request.GET.get("query", "").strip()
     if not query:
-        return JsonResponse([], safe=False)
+        return Response([])
 
     m = (
         MetaData.objects.filter(user=user, name__icontains=query)
@@ -744,11 +747,11 @@ def metadata_name_search(request: HttpRequest) -> JsonResponse:
     )
 
     return_data = [{"label": x["name"]} for x in m]
-    return JsonResponse(return_data, safe=False)
+    return Response(return_data)
 
 
-@login_required
-def parse_date(request: HttpRequest, input_date: str) -> JsonResponse:
+@api_view(["GET"])
+def parse_date(request: HttpRequest, input_date: str) -> Response:
     """Parse a date string and return formatted output.
 
     Attempts to parse the input date string and returns either a formatted
@@ -771,14 +774,13 @@ def parse_date(request: HttpRequest, input_date: str) -> JsonResponse:
     except ValueError as e:
         error = str(e)
 
-    return JsonResponse({"output_date": response,
-                         "message": error})
+    return Response({"output_date": response,
+                     "message": error})
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("blob_uuid")
-def update_cover_image(request: HttpRequest) -> JsonResponse:
+def update_cover_image(request: HttpRequest) -> Response:
     """Update the blob's cover image.
 
     Updates the cover image for a blob from uploaded image data.
@@ -803,11 +805,11 @@ def update_cover_image(request: HttpRequest) -> JsonResponse:
         "status": "OK"
     }
 
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-def get_elasticsearch_info(request: HttpRequest, uuid: str) -> JsonResponse:
+@api_view(["GET"])
+def get_elasticsearch_info(request: HttpRequest, uuid: str) -> Response:
     """Get the Elasticsearch entry for a blob.
 
     Retrieves Elasticsearch document information for a blob. Returns an
@@ -835,11 +837,11 @@ def get_elasticsearch_info(request: HttpRequest, uuid: str) -> JsonResponse:
         "status": "OK"
     }
 
-    return JsonResponse(response, safe=False)
+    return Response(response)
 
 
-@login_required
-def get_related_objects(request: HttpRequest, uuid: str) -> JsonResponse:
+@api_view(["GET"])
+def get_related_objects(request: HttpRequest, uuid: str) -> Response:
     """Get all related objects to a given blob.
 
     Retrieves all objects (blobs, bookmarks, etc.) that are related
@@ -862,13 +864,12 @@ def get_related_objects(request: HttpRequest, uuid: str) -> JsonResponse:
         "related_objects": Blob.related_objects("blob", "BlobToObject", blob),
     }
 
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("node_uuid", "object_uuid")
-def add_related_object(request: HttpRequest) -> JsonResponse:
+def add_related_object(request: HttpRequest) -> Response:
     """Link a node (Blob or Question) to a Blob or Bookmark by its UUID.
 
     Called during new question creation, not during question update.
@@ -889,23 +890,22 @@ def add_related_object(request: HttpRequest) -> JsonResponse:
     try:
         user = cast(User, request.user)
         result = add_related_object_service(node_type, node_uuid, object_uuid, user)
-        return JsonResponse(result, status=200)
+        return Response(result, status=200)
     except UnsupportedNodeTypeError as e:
-        return JsonResponse({"status": "ERROR", "message": str(e)}, status=400)
+        return Response({"status": "ERROR", "message": str(e)}, status=400)
     except InvalidNodeTypeError as e:
-        return JsonResponse({"status": "ERROR", "message": str(e)}, status=400)
+        return Response({"status": "ERROR", "message": str(e)}, status=400)
     except NodeNotFoundError as e:
-        return JsonResponse({"status": "ERROR", "message": str(e)}, status=404)
+        return Response({"status": "ERROR", "message": str(e)}, status=404)
     except RelatedObjectNotFoundError as e:
-        return JsonResponse({"status": "ERROR", "message": str(e)}, status=400)
+        return Response({"status": "ERROR", "message": str(e)}, status=400)
     except ObjectAlreadyRelatedError as e:
-        return JsonResponse({"status": "ERROR", "message": str(e)}, status=400)
+        return Response({"status": "ERROR", "message": str(e)}, status=400)
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("node_uuid", "object_uuid")
-def remove_related_object(request: HttpRequest) -> JsonResponse:
+def remove_related_object(request: HttpRequest) -> Response:
     """Remove a relationship between a node and another object.
 
     Deletes the relationship between a node (Blob or Question) and a
@@ -935,13 +935,12 @@ def remove_related_object(request: HttpRequest) -> JsonResponse:
         "status": "OK",
     }
 
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("node_uuid", "object_uuid", "new_position")
-def sort_related_objects(request: HttpRequest) -> JsonResponse:
+def sort_related_objects(request: HttpRequest) -> Response:
     """Change the sort order of a node and a related object.
 
     Updates the position of a related object within a node's list of
@@ -974,13 +973,12 @@ def sort_related_objects(request: HttpRequest) -> JsonResponse:
         "status": "OK",
     }
 
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("node_uuid", "object_uuid", "note")
-def update_related_object_note(request: HttpRequest) -> JsonResponse:
+def update_related_object_note(request: HttpRequest) -> Response:
     """Update the note for a related object.
 
     Updates the note field on a relationship between a node and a
@@ -1014,13 +1012,12 @@ def update_related_object_note(request: HttpRequest) -> JsonResponse:
         "status": "OK",
     }
 
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("blob_uuid", "page_number")
-def update_page_number(request: HttpRequest) -> JsonResponse:
+def update_page_number(request: HttpRequest) -> Response:
     """Update the page number for a PDF that represents its cover image.
 
     Sets the page number of a PDF blob to use as its cover image.
@@ -1045,7 +1042,7 @@ def update_page_number(request: HttpRequest) -> JsonResponse:
         "status": "OK"
     }
 
-    return JsonResponse(response)
+    return Response(response)
 
 
 @login_required
@@ -1102,8 +1099,8 @@ def blob_file_serve(request: HttpRequest, uuid: str) -> HttpResponse | Streaming
         return HttpResponse("Error serving file", status=500)
 
 
-@login_required
-def get_template(request: HttpRequest) -> JsonResponse:
+@api_view(["GET"])
+def get_template(request: HttpRequest) -> Response:
     """Get a blob template by UUID.
 
     Retrieves a blob template for the current user and returns its
@@ -1124,7 +1121,7 @@ def get_template(request: HttpRequest) -> JsonResponse:
     blob_template = BlobTemplate.objects.filter(uuid=template_uuid, user=user).first()
 
     if not blob_template:
-        return JsonResponse({
+        return Response({
             "message": "Template not found"
         }, status=HTTPStatus.NOT_FOUND)
 
@@ -1133,7 +1130,7 @@ def get_template(request: HttpRequest) -> JsonResponse:
         "status": "OK"
     }
 
-    return JsonResponse(response)
+    return Response(response)
 
 
 @login_required

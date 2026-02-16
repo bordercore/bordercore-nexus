@@ -14,8 +14,8 @@ from urllib.parse import unquote
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
+from rest_framework.response import Response
 
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.http import HttpRequest, JsonResponse
 
@@ -30,8 +30,8 @@ from .services import (build_base_query, execute_search, get_cover_url,
 SEARCH_LIMIT = 100
 
 
-@login_required
-def search_tags_and_names(request: HttpRequest) -> JsonResponse:
+@api_view(["GET"])
+def search_tags_and_names(request: HttpRequest) -> Response:
     """Endpoint for top-search autocomplete matching tags and names.
 
     Performs parallel searches for matching document names and tags,
@@ -55,7 +55,7 @@ def search_tags_and_names(request: HttpRequest) -> JsonResponse:
     # Add tag search results to the list of matches
     matches.extend(search_tags_es(user, search_term, doctypes))
 
-    return JsonResponse(sort_results(matches), safe=False)
+    return Response(sort_results(matches))
 
 
 def search_tags_es(user: User, search_term: str, doctypes: list[str]) -> list[dict[str, Any]]:
@@ -149,8 +149,8 @@ def search_tags_es(user: User, search_term: str, doctypes: list[str]) -> list[di
     return matches
 
 
-@login_required
-def search_names(request: HttpRequest) -> JsonResponse:
+@api_view(["GET"])
+def search_names(request: HttpRequest) -> Response:
     """Endpoint for searching document names via autocomplete.
 
     Performs a name-based search with special handling for ngram tokenizer
@@ -183,7 +183,7 @@ def search_names(request: HttpRequest) -> JsonResponse:
 
     user = cast(User, request.user)
     matches = search_names_es(user, search_term, doctypes)
-    return JsonResponse(matches, safe=False)
+    return Response(matches)
 
 
 def search_names_es(user: User, search_term: str, doctypes: list[str]) -> list[dict[str, Any]]:

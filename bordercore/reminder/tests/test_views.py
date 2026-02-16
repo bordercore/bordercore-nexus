@@ -40,8 +40,7 @@ def test_list_ajax_requires_login(client):
     """List AJAX view requires authentication."""
     url = reverse("reminder:list-ajax")
     resp = client.get(url)
-    assert resp.status_code == 302
-    assert resp.url.startswith("/accounts/login/")
+    assert resp.status_code == 403
 
 
 def test_list_ajax_returns_json_and_only_user_reminders(reminder_client):
@@ -96,8 +95,7 @@ def test_detail_ajax_requires_login(client):
     reminder = ReminderFactory()
     url = reverse("reminder:detail-ajax", kwargs={"uuid": reminder.uuid})
     resp = client.get(url)
-    assert resp.status_code == 302
-    assert resp.url.startswith("/accounts/login/")
+    assert resp.status_code == 403
 
 
 def test_detail_ajax_returns_json_with_expected_fields(reminder_client):
@@ -132,8 +130,7 @@ def test_form_ajax_requires_login(client):
     reminder = ReminderFactory()
     url = reverse("reminder:form-ajax", kwargs={"uuid": reminder.uuid})
     resp = client.get(url)
-    assert resp.status_code == 302
-    assert resp.url.startswith("/accounts/login/")
+    assert resp.status_code == 403
 
 
 def test_form_ajax_returns_json_with_form_fields(reminder_client):

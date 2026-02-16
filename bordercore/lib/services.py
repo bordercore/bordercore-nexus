@@ -10,7 +10,8 @@ from urllib.parse import urlparse
 
 import requests
 import trafilatura
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 
 from django.http import JsonResponse
@@ -20,6 +21,7 @@ from drill.models import Question
 
 
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def site_stats(request: Request) -> JsonResponse:
     """Get site statistics for the current user.
 
@@ -49,6 +51,7 @@ def site_stats(request: Request) -> JsonResponse:
 
 
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def extract_text(request: Request) -> JsonResponse:
     """Extract text content from a URL.
 

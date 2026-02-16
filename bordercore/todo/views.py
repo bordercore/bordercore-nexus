@@ -12,19 +12,19 @@ import re
 from datetime import timedelta
 from typing import Any, Dict, Iterable, Optional, Union, cast
 
-from django.contrib.auth.decorators import login_required
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models.query import QuerySet
-from django.http import HttpRequest, JsonResponse
-from django.http.response import HttpResponseBase
+from rest_framework.request import Request
 from django.shortcuts import get_object_or_404
 
 from lib.mixins import get_user_object_or_404
-from django.test import RequestFactory
 from django.utils import dateformat, timezone
-from django.views.decorators.http import require_POST
 from django.views.generic.list import ListView
 
 from lib.decorators import validate_post_data
@@ -138,34 +138,34 @@ class TodoListView(LoginRequiredMixin, ListView):
         }
 
 
-class TodoTaskList(LoginRequiredMixin, ListView):
+class TodoTaskList(APIView):
     """Provide a JSON endpoint listing todos filtered by priority, time, tag, or search."""
 
-    model = Todo
-    context_object_name = "info"
-
-    def get_queryset(self) -> QuerySet[Todo]:
+    def get_queryset(self, request: Request) -> QuerySet[Todo]:
         """Build a queryset of Todo objects based on GET parameters and session state.
 
-        Reads 'priority', 'time', and 'tag' from request.GET, saves them in session,
-        and filters the base Todo queryset accordingly.
+        Reads 'priority', 'time', and 'tag' from request.query_params, saves them
+        in session, and filters the base Todo queryset accordingly.
+
+        Args:
+            request: The DRF request with query parameters.
 
         Returns:
             QuerySet of filtered and ordered Todo instances.
         """
-        priority = self.request.GET.get("priority", None)
+        priority = request.query_params.get("priority", None)
         if priority is not None:
-            self.request.session["todo_filter_priority"] = priority
+            request.session["todo_filter_priority"] = priority
 
-        time = self.request.GET.get("time", None)
+        time = request.query_params.get("time", None)
         if time is not None:
-            self.request.session["todo_filter_time"] = time
+            request.session["todo_filter_time"] = time
 
-        tag_name = self.request.GET.get("tag", None)
+        tag_name = request.query_params.get("tag", None)
         if tag_name is not None:
-            self.request.session["todo_filter_tag"] = tag_name
+            request.session["todo_filter_tag"] = tag_name
 
-        user = cast(User, self.request.user)
+        user = cast(User, request.user)
 
         if priority or time:
 
@@ -205,11 +205,11 @@ class TodoTaskList(LoginRequiredMixin, ListView):
 
         return queryset
 
-    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> JsonResponse:
+    def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """Handle GET requests: return a JSON response with todo data and statistics.
 
-        If 'search' is provided in request.GET, uses the search service; otherwise,
-        uses the filtered queryset.
+        If 'search' is provided in request.query_params, uses the search service;
+        otherwise, uses the filtered queryset.
 
         Args:
             request: The HTTP request object.
@@ -217,19 +217,19 @@ class TodoTaskList(LoginRequiredMixin, ListView):
             **kwargs: Additional keyword arguments.
 
         Returns:
-            JsonResponse containing:
+            Response containing:
               - 'status': always "OK"
               - 'priority_counts': list of (priority, count) tuples
               - 'created_counts': list of (date, count) tuples
               - 'todo_list': list of dicts with fields for each todo
         """
-        user = cast(User, self.request.user)
-        search_term = self.request.GET.get("search", None)
+        user = cast(User, request.user)
+        search_term = request.query_params.get("search", None)
 
         if search_term:
             tasks: Iterable[Todo | Dict[str, Any]] = search_service(user, search_term)
         else:
-            tasks = self.get_queryset()
+            tasks = self.get_queryset(request)
 
         todo_list = []
         for sort_order, todo in enumerate(tasks, 1):
@@ -238,20 +238,42 @@ class TodoTaskList(LoginRequiredMixin, ListView):
         priority_counts = list(Todo.objects.priority_counts(user))
         created_counts = list(Todo.objects.created_counts(user))
 
-        response = {
+        return Response({
             "status": "OK",
             "priority_counts": priority_counts,
             "created_counts": created_counts,
             "todo_list": todo_list
-        }
-
-        return JsonResponse(response)
+        })
 
 
-@login_required
-@require_POST
+def _reorder_todo(user: User, tag_name: str, todo_uuid: str, new_position: int) -> dict:
+    """Shared logic for reordering a Todo within its tag-specific list.
+
+    Args:
+        user: The authenticated user.
+        tag_name: Name of the tag.
+        todo_uuid: UUID of the todo.
+        new_position: New integer position (must be >= 1).
+
+    Returns:
+        Dict with status and new_position.
+    """
+    with transaction.atomic():
+        tag_todo = get_object_or_404(
+            TagTodo.objects.select_for_update(),
+            tag__name=tag_name,
+            tag__user=user,
+            todo__uuid=todo_uuid,
+            todo__user=user,
+        )
+        TagTodo.reorder(tag_todo, new_position)
+
+    return {"status": "OK", "new_position": new_position}
+
+
+@api_view(["POST"])
 @validate_post_data("tag", "todo_uuid", "position")
-def sort_todo(request: HttpRequest) -> JsonResponse:
+def sort_todo(request: Request) -> Response:
     """Reorder a Todo within its tag-specific list and return status.
 
     Expects POST parameters:
@@ -263,7 +285,7 @@ def sort_todo(request: HttpRequest) -> JsonResponse:
         request: The HTTP request with POST data.
 
     Returns:
-        JsonResponse with {"status": "OK"}.
+        Response with {"status": "OK"}.
     """
     tag_name = request.POST.get("tag", "").strip()
     todo_uuid = request.POST.get("todo_uuid", "").strip()
@@ -272,64 +294,42 @@ def sort_todo(request: HttpRequest) -> JsonResponse:
     try:
         new_position = int(position_str)
     except (ValueError, TypeError):
-        return JsonResponse({
+        return Response({
             "status": "ERROR",
             "message": "Position must be a valid integer"
         }, status=400)
 
     if new_position < 1:
-        return JsonResponse({
+        return Response({
             "status": "ERROR",
             "message": "Position must be a positive integer"
         }, status=400)
 
-    with transaction.atomic():
-        user = cast(User, request.user)
-        tag_todo = get_object_or_404(
-            TagTodo.objects.select_for_update(),
-            tag__name=tag_name,
-            tag__user=user,
-            todo__uuid=todo_uuid,
-            todo__user=user,
-        )
-        TagTodo.reorder(tag_todo, new_position)
-
-    return JsonResponse({"status": "OK", "new_position": new_position})
+    user = cast(User, request.user)
+    return Response(_reorder_todo(user, tag_name, todo_uuid, new_position))
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("tag", "todo_uuid")
-def move_to_top(request: HttpRequest) -> HttpResponseBase:
+def move_to_top(request: Request) -> Response:
     """Move a Todo to the top position in its tag list.
-
-    Modifies request.POST to set 'position' to 1 and delegates to `sort_todo`.
 
     Args:
         request: The HTTP request.
 
     Returns:
-        JsonResponse from `sort_todo`, indicating success.
+        Response indicating success.
     """
     tag_name = request.POST.get("tag", "").strip()
     todo_uuid = request.POST.get("todo_uuid", "").strip()
 
-    # Create a new HttpRequest with the modified POST data
-    factory = RequestFactory()
-    new_request = factory.post("/", {
-        "tag": tag_name,
-        "todo_uuid": todo_uuid,
-        "position": "1"
-    })
-    new_request.user = request.user
-
-    return sort_todo(new_request)
+    user = cast(User, request.user)
+    return Response(_reorder_todo(user, tag_name, todo_uuid, 1))
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("todo_uuid")
-def reschedule_task(request: HttpRequest) -> JsonResponse:
+def reschedule_task(request: Request) -> Response:
     """Set a Todo's due date to one day from now and save.
 
     Expects POST parameter:
@@ -339,7 +339,7 @@ def reschedule_task(request: HttpRequest) -> JsonResponse:
         request: The HTTP request with POST data.
 
     Returns:
-        JsonResponse with {"status": "OK"}.
+        Response with {"status": "OK"}.
     """
     todo_uuid = request.POST.get("todo_uuid", "").strip()
 
@@ -348,4 +348,4 @@ def reschedule_task(request: HttpRequest) -> JsonResponse:
     todo.due_date = timezone.now() + timedelta(days=1)
     todo.save()
 
-    return JsonResponse({"status": "OK"})
+    return Response({"status": "OK"})

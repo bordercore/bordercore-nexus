@@ -12,18 +12,18 @@ import json
 import random
 from typing import Any, Dict, cast
 
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.db import transaction
 
-from django.http import (HttpRequest, HttpResponse, HttpResponseRedirect,
-                         JsonResponse)
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
-from django.views.decorators.http import require_POST
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, FormMixin
 from django.views.generic.list import ListView
@@ -170,9 +170,8 @@ class NodeCreateView(LoginRequiredMixin, FormRequestMixin, CreateView):
         return reverse("node:list")
 
 
-@login_required
-@require_POST
-def edit_note(request: HttpRequest) -> JsonResponse:
+@api_view(["POST"])
+def edit_note(request: HttpRequest) -> Response:
     """Edit a node's freeform note.
 
     Args:
@@ -194,11 +193,11 @@ def edit_note(request: HttpRequest) -> JsonResponse:
         "status": "OK"
     }
 
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-def get_todo_list(request: HttpRequest, uuid: str) -> JsonResponse:
+@api_view(["GET"])
+def get_todo_list(request: HttpRequest, uuid: str) -> Response:
     """Return the serialized todo list for a node.
 
     Args:
@@ -213,13 +212,12 @@ def get_todo_list(request: HttpRequest, uuid: str) -> JsonResponse:
     todo_list = node.get_todo_list()
 
     response = {"status": "OK", "todo_list": todo_list}
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("node_uuid", "todo_uuid")
-def add_todo(request: HttpRequest) -> JsonResponse:
+def add_todo(request: HttpRequest) -> Response:
     """Attach a ``Todo`` to a node.
 
     Args:
@@ -247,13 +245,12 @@ def add_todo(request: HttpRequest) -> JsonResponse:
         so.node.save()
 
     response = {"status": "OK"}
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("node_uuid", "todo_uuid")
-def remove_todo(request: HttpRequest) -> JsonResponse:
+def remove_todo(request: HttpRequest) -> Response:
     """Detach a ``Todo`` from a node.
 
     Args:
@@ -280,13 +277,12 @@ def remove_todo(request: HttpRequest) -> JsonResponse:
         node.save()
 
     response = {"status": "OK"}
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("node_uuid", "todo_uuid", "new_position")
-def sort_todos(request: HttpRequest) -> JsonResponse:
+def sort_todos(request: HttpRequest) -> Response:
     """Reorder a node's todo item to a new position.
 
     Args:
@@ -313,13 +309,12 @@ def sort_todos(request: HttpRequest) -> JsonResponse:
         so.node.save()
 
     response = {"status": "OK"}
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("node_uuid", "layout")
-def change_layout(request: HttpRequest) -> JsonResponse:
+def change_layout(request: HttpRequest) -> Response:
     """Replace a node's layout JSON.
 
     Args:
@@ -337,13 +332,12 @@ def change_layout(request: HttpRequest) -> JsonResponse:
     node.save()
 
     response = {"status": "OK"}
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("node_uuid")
-def add_collection(request: HttpRequest) -> JsonResponse:
+def add_collection(request: HttpRequest) -> Response:
     """Add a collection component to a node.
 
     Args:
@@ -361,7 +355,7 @@ def add_collection(request: HttpRequest) -> JsonResponse:
     try:
         rotate = int(rotate_raw)
     except ValueError:
-        return JsonResponse(
+        return Response(
             {"status": "ERROR", "message": "Rotate must be an integer"},
             status=400,
         )
@@ -379,13 +373,12 @@ def add_collection(request: HttpRequest) -> JsonResponse:
         "collection_uuid": collection.uuid,
         "layout": node.get_layout(),
     }
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("node_uuid", "collection_uuid")
-def update_collection(request: HttpRequest) -> JsonResponse:
+def update_collection(request: HttpRequest) -> Response:
     """Edit collection metadata and node options.
 
     Args:
@@ -403,7 +396,7 @@ def update_collection(request: HttpRequest) -> JsonResponse:
     try:
         rotate = int(rotate_raw)
     except ValueError:
-        return JsonResponse(
+        return Response(
             {"status": "ERROR", "message": "Rotate must be an integer"},
             status=400,
         )
@@ -420,13 +413,12 @@ def update_collection(request: HttpRequest) -> JsonResponse:
         node.update_collection(collection_uuid, display, random_order, rotate, limit)
 
     response = {"status": "OK"}
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("node_uuid", "collection_uuid", "collection_type")
-def delete_collection(request: HttpRequest) -> JsonResponse:
+def delete_collection(request: HttpRequest) -> Response:
     """Remove a collection component from a node.
 
     Args:
@@ -444,13 +436,12 @@ def delete_collection(request: HttpRequest) -> JsonResponse:
     node.delete_collection(collection_uuid, collection_type)
 
     response = {"status": "OK", "layout": node.get_layout()}
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("node_uuid", "note_name", "color")
-def add_note(request: HttpRequest) -> JsonResponse:
+def add_note(request: HttpRequest) -> Response:
     """Create a note component and set its color.
 
     Args:
@@ -474,13 +465,12 @@ def add_note(request: HttpRequest) -> JsonResponse:
         "note_uuid": note.uuid,
         "layout": node.get_layout(),
     }
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("node_uuid", "note_uuid")
-def delete_note(request: HttpRequest) -> JsonResponse:
+def delete_note(request: HttpRequest) -> Response:
     """Delete a note component from a node.
 
     Args:
@@ -497,13 +487,12 @@ def delete_note(request: HttpRequest) -> JsonResponse:
     node.delete_note(note_uuid)
 
     response = {"status": "OK", "layout": node.get_layout()}
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("node_uuid", "note_uuid", "color")
-def set_note_color(request: HttpRequest) -> JsonResponse:
+def set_note_color(request: HttpRequest) -> Response:
     """Set the color index for a note on a node.
 
     Args:
@@ -521,13 +510,12 @@ def set_note_color(request: HttpRequest) -> JsonResponse:
     node.set_note_color(note_uuid, color)
 
     response = {"status": "OK"}
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("node_uuid", "image_uuid")
-def add_image(request: HttpRequest) -> JsonResponse:
+def add_image(request: HttpRequest) -> Response:
     """Add an image component to a node.
 
     Args:
@@ -547,13 +535,12 @@ def add_image(request: HttpRequest) -> JsonResponse:
     node.populate_image_info()
 
     response = {"status": "OK", "layout": node.get_layout()}
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("node_uuid")
-def add_quote(request: HttpRequest) -> JsonResponse:
+def add_quote(request: HttpRequest) -> Response:
     """Add a quote component to a node.
 
     Args:
@@ -571,18 +558,17 @@ def add_quote(request: HttpRequest) -> JsonResponse:
     # Choose a random quote
     quote = Quote.objects.filter(user=user).order_by("?").first()
     if not quote:
-        return JsonResponse({"status": "ERROR", "message": "No quotes available."}, status=404)
+        return Response({"status": "ERROR", "message": "No quotes available."}, status=404)
 
     node.add_component("quote", quote, options)
 
     response = {"status": "OK", "layout": node.get_layout()}
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("node_uuid", "uuid")
-def update_quote(request: HttpRequest) -> JsonResponse:
+def update_quote(request: HttpRequest) -> Response:
     """Edit options for an existing quote component.
 
     Args:
@@ -601,13 +587,12 @@ def update_quote(request: HttpRequest) -> JsonResponse:
     node.update_component(uuid, options)
 
     response = {"status": "OK", "layout": node.get_layout()}
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("node_uuid")
-def get_quote(request: HttpRequest) -> JsonResponse:
+def get_quote(request: HttpRequest) -> Response:
     """Fetch a (possibly favorite-only) random quote and set it on the node.
 
     Args:
@@ -625,7 +610,7 @@ def get_quote(request: HttpRequest) -> JsonResponse:
         quote_qs = quote_qs.filter(is_favorite=True)
     quote = quote_qs.order_by("?").first()
     if not quote:
-        return JsonResponse({"status": "ERROR", "message": "No quotes available."}, status=404)
+        return Response({"status": "ERROR", "message": "No quotes available."}, status=404)
 
     node = get_user_object_or_404(user, Node, uuid=node_uuid)
     node.set_quote(quote.uuid)
@@ -639,13 +624,12 @@ def get_quote(request: HttpRequest) -> JsonResponse:
             "source": quote.source,
         },
     }
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("node_uuid")
-def add_todo_list(request: HttpRequest) -> JsonResponse:
+def add_todo_list(request: HttpRequest) -> Response:
     """Create a todo list component for the node.
 
     Args:
@@ -661,13 +645,12 @@ def add_todo_list(request: HttpRequest) -> JsonResponse:
     node.add_todo_list()
 
     response = {"status": "OK", "layout": node.get_layout()}
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("node_uuid")
-def delete_todo_list(request: HttpRequest) -> JsonResponse:
+def delete_todo_list(request: HttpRequest) -> Response:
     """Delete the todo list component from the node.
 
     Args:
@@ -683,13 +666,12 @@ def delete_todo_list(request: HttpRequest) -> JsonResponse:
     node.delete_todo_list()
 
     response = {"status": "OK", "layout": node.get_layout()}
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("parent_node_uuid", "node_uuid")
-def add_node(request: HttpRequest) -> JsonResponse:
+def add_node(request: HttpRequest) -> Response:
     """Nest an existing node as a component of another node.
 
     Args:
@@ -708,13 +690,12 @@ def add_node(request: HttpRequest) -> JsonResponse:
     parent_node.add_component("node", node, options)
 
     response = {"status": "OK", "layout": parent_node.get_layout()}
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("parent_node_uuid", "uuid")
-def update_node(request: HttpRequest) -> JsonResponse:
+def update_node(request: HttpRequest) -> Response:
     """Edit options for a nested node component.
 
     Args:
@@ -732,11 +713,11 @@ def update_node(request: HttpRequest) -> JsonResponse:
     node.update_component(uuid, options)
 
     response = {"status": "OK", "layout": node.get_layout()}
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-def search(request: HttpRequest) -> JsonResponse:
+@api_view(["GET"])
+def search(request: HttpRequest) -> Response:
     """Search nodes by name.
 
     Args:
@@ -752,11 +733,11 @@ def search(request: HttpRequest) -> JsonResponse:
     node_list = Node.objects.filter(user=user, name__icontains=query)
 
     response = [{"uuid": x.uuid, "name": x.name} for x in node_list]
-    return JsonResponse(response, safe=False)
+    return Response(response)
 
 
-@login_required
-def node_preview(request: HttpRequest, uuid: str) -> JsonResponse:
+@api_view(["GET"])
+def node_preview(request: HttpRequest, uuid: str) -> Response:
     """Return a lightweight preview payload for a node.
 
     Includes image UUIDs, counts, and random selections (when available) for notes and todos.
@@ -794,13 +775,12 @@ def node_preview(request: HttpRequest, uuid: str) -> JsonResponse:
             "todo_count": len(preview["todos"]),
         },
     }
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("node_uuid", "uuid")
-def remove_component(request: HttpRequest) -> JsonResponse:
+def remove_component(request: HttpRequest) -> Response:
     """Remove a component (by its component UUID) from a node.
 
     Args:
@@ -817,4 +797,4 @@ def remove_component(request: HttpRequest) -> JsonResponse:
     node.remove_component(uuid)
 
     response = {"status": "OK", "layout": node.get_layout()}
-    return JsonResponse(response)
+    return Response(response)

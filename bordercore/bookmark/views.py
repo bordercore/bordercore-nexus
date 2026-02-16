@@ -11,6 +11,10 @@ from urllib.parse import unquote
 
 import pytz
 
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -21,11 +25,10 @@ from django.db import transaction
 from django.db.models import Count, QuerySet
 from django.forms import BaseModelForm
 from django.http import (Http404, HttpRequest, HttpResponse,
-                         HttpResponseRedirect, JsonResponse)
+                         HttpResponseRedirect)
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
-from django.views.decorators.http import require_POST
-from django.views.generic import CreateView, DeleteView, ListView, UpdateView
+from django.views.generic import CreateView, DeleteView, UpdateView
 from django.views.generic.edit import ModelFormMixin
 
 from accounts.models import UserTag
@@ -249,8 +252,8 @@ def snarf_link(request: HttpRequest) -> HttpResponseRedirect:
     return redirect("bookmark:update", b.uuid)
 
 
-@login_required
-def get_tags_used_by_bookmarks(request: HttpRequest) -> JsonResponse:
+@api_view(["GET"])
+def get_tags_used_by_bookmarks(request: HttpRequest) -> Response:
     """Get tags that are used by bookmarks.
 
     Returns a list of tags that are associated with bookmarks, optionally
@@ -273,7 +276,7 @@ def get_tags_used_by_bookmarks(request: HttpRequest) -> JsonResponse:
         bookmark__isnull=False
     ).distinct("name")
 
-    return JsonResponse([{"label": x.name, "is_meta": x.is_meta} for x in tags], safe=False)
+    return Response([{"label": x.name, "is_meta": x.is_meta} for x in tags])
 
 
 @login_required
@@ -313,7 +316,7 @@ def overview(request: HttpRequest) -> HttpResponse:
                   })
 
 
-class BookmarkListView(LoginRequiredMixin, ListView):
+class BookmarkListView(APIView):
     """View for listing bookmarks as JSON.
 
     Returns a paginated list of bookmarks filtered by search query, tag,
@@ -321,6 +324,7 @@ class BookmarkListView(LoginRequiredMixin, ListView):
     """
 
     model = Bookmark
+    paginate_by = BOOKMARKS_PER_PAGE
 
     def get_queryset(self) -> Any:
         """Get the queryset of bookmarks for the current user.
@@ -352,7 +356,7 @@ class BookmarkListView(LoginRequiredMixin, ListView):
 
         return page_obj
 
-    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> JsonResponse:
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> Response:
         """Handle GET request for bookmark list.
 
         Returns a JSON response with bookmarks and pagination information.
@@ -363,7 +367,7 @@ class BookmarkListView(LoginRequiredMixin, ListView):
             **kwargs: Additional keyword arguments.
 
         Returns:
-            JSON response containing:
+            Response containing:
                 - bookmarks: List of bookmark dictionaries with metadata
                 - pagination: Pagination information including page numbers
         """
@@ -411,7 +415,7 @@ class BookmarkListView(LoginRequiredMixin, ListView):
                 }
             )
 
-        return JsonResponse(
+        return Response(
             {
                 "bookmarks": bookmarks,
                 "pagination": pagination
@@ -426,7 +430,7 @@ class BookmarkListTagView(BookmarkListView):
     sort order. Includes tag-specific notes.
     """
 
-    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> JsonResponse:
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> Response:
         """Handle GET request for tag-filtered bookmark list.
 
         Returns a JSON response with bookmarks filtered by tag and
@@ -467,7 +471,7 @@ class BookmarkListTagView(BookmarkListView):
                 }
             )
 
-        return JsonResponse(
+        return Response(
             {
                 "bookmarks": bookmarks,
                 "pagination": pagination
@@ -493,10 +497,9 @@ class BookmarkListTagView(BookmarkListView):
                                   .order_by("sort_order")
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("tag_id", "new_position")
-def sort_pinned_tags(request: HttpRequest) -> JsonResponse:
+def sort_pinned_tags(request: HttpRequest) -> Response:
     """Move a pinned tag to a new position in the sorted list.
 
     Reorders a pinned tag to a new position. Returns an error if the
@@ -532,13 +535,12 @@ def sort_pinned_tags(request: HttpRequest) -> JsonResponse:
 
         response = {"status": "OK"}
 
-    return JsonResponse(response, status=400 if new_position < 1 else 200)
+    return Response(response, status=400 if new_position < 1 else 200)
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("tag", "bookmark_uuid", "position")
-def sort_bookmarks(request: HttpRequest) -> JsonResponse:
+def sort_bookmarks(request: HttpRequest) -> Response:
     """Move a bookmark to a new position within a tag's bookmark list.
 
     Reorders a bookmark within the ordered list of bookmarks for a
@@ -561,13 +563,12 @@ def sort_bookmarks(request: HttpRequest) -> JsonResponse:
     tb = get_object_or_404(TagBookmark, tag__name=tag_name, tag__user=user, bookmark__uuid=bookmark_uuid, bookmark__user=user)
     TagBookmark.reorder(tb, new_position)
 
-    return JsonResponse({"status": "OK"})
+    return Response({"status": "OK"})
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("tag", "bookmark_uuid", "note")
-def add_note(request: HttpRequest) -> JsonResponse:
+def add_note(request: HttpRequest) -> Response:
     """Add or update a note for a bookmark-tag association.
 
     Updates the note field for a specific bookmark-tag relationship.
@@ -596,11 +597,11 @@ def add_note(request: HttpRequest) -> JsonResponse:
         bookmark__user=user
     ).update(note=note)
 
-    return JsonResponse({"status": "OK"})
+    return Response({"status": "OK"})
 
 
-@login_required
-def get_new_bookmarks_count(request: HttpRequest, timestamp: int) -> JsonResponse:
+@api_view(["GET"])
+def get_new_bookmarks_count(request: HttpRequest, timestamp: int) -> Response:
     """Get a count of bookmarks created after the specified timestamp.
 
     Counts all bookmarks for the current user that were created after
@@ -620,7 +621,7 @@ def get_new_bookmarks_count(request: HttpRequest, timestamp: int) -> JsonRespons
     time = datetime.datetime.fromtimestamp(timestamp / 1000, pytz.timezone("US/Eastern"))
     count = Bookmark.objects.filter(user=user, created__gte=time).count()
 
-    return JsonResponse(
+    return Response(
         {
             "status": "OK",
             "count": count
@@ -628,8 +629,8 @@ def get_new_bookmarks_count(request: HttpRequest, timestamp: int) -> JsonRespons
     )
 
 
-@login_required
-def get_title_from_url(request: HttpRequest) -> JsonResponse:
+@api_view(["GET"])
+def get_title_from_url(request: HttpRequest) -> Response:
     """Parse the title from the HTML page pointed to by a URL.
 
     Extracts the title from a web page by fetching and parsing the HTML.
@@ -648,7 +649,7 @@ def get_title_from_url(request: HttpRequest) -> JsonResponse:
 
     title = parse_title_from_url(url)
 
-    return JsonResponse(
+    return Response(
         {
             "status": "OK",
             "title": title[1]
@@ -656,10 +657,9 @@ def get_title_from_url(request: HttpRequest) -> JsonResponse:
     )
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("bookmark_uuid", "tag_id")
-def add_tag(request: HttpRequest) -> JsonResponse:
+def add_tag(request: HttpRequest) -> Response:
     """Add a tag to a bookmark.
 
     Associates a tag with a bookmark. Returns an error if the bookmark
@@ -683,7 +683,7 @@ def add_tag(request: HttpRequest) -> JsonResponse:
     tag = get_user_object_or_404(user, Tag, id=tag_id)
 
     if tag in bookmark.tags.all():
-        return JsonResponse(
+        return Response(
             {
                 "status": "ERROR",
                 "message": f"Bookmark already has tag {tag}"
@@ -693,17 +693,16 @@ def add_tag(request: HttpRequest) -> JsonResponse:
     else:
         bookmark.tags.add(tag)
         bookmark.index_bookmark()
-        return JsonResponse(
+        return Response(
             {
                 "status": "OK",
             }
         )
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("bookmark_uuid", "tag_name")
-def remove_tag(request: HttpRequest) -> JsonResponse:
+def remove_tag(request: HttpRequest) -> Response:
     """Remove a tag from a bookmark.
 
     Removes a tag association from a bookmark. Returns an error if the
@@ -727,7 +726,7 @@ def remove_tag(request: HttpRequest) -> JsonResponse:
     tag = get_user_object_or_404(user, Tag, name=tag_name)
 
     if tag not in bookmark.tags.all():
-        return JsonResponse(
+        return Response(
             {
                 "status": "ERROR",
                 "message": f"Bookmark does not have tag {tag}"
@@ -736,7 +735,7 @@ def remove_tag(request: HttpRequest) -> JsonResponse:
         )
     else:
         bookmark.delete_tag(tag)
-        return JsonResponse(
+        return Response(
             {
                 "status": "OK",
             }

@@ -99,15 +99,14 @@ def test_todo_update(authenticated_client, todo):
 
 def test_sort_todo_success():
     """Test successful todo reordering."""
-    import json
     import uuid
     from unittest.mock import Mock, patch
 
-    from django.http import JsonResponse
-    from django.test import RequestFactory
+    from rest_framework.response import Response
+    from rest_framework.test import APIRequestFactory
 
     from todo.views import sort_todo
-    factory = RequestFactory()
+    factory = APIRequestFactory()
     user = Mock()
     user.id = 1
     request = factory.post("/sort/", {
@@ -123,10 +122,9 @@ def test_sort_todo_success():
         with patch("todo.views.TagTodo.reorder") as mock_reorder:
             response = sort_todo(request)
 
-            assert isinstance(response, JsonResponse)
-            data = json.loads(response.content)
-            assert data["status"] == "OK"
-            assert data["new_position"] == 2
+            assert isinstance(response, Response)
+            assert response.data["status"] == "OK"
+            assert response.data["new_position"] == 2
             mock_reorder.assert_called_once_with(mock_tag_todo, 2)
 
 

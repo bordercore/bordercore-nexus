@@ -15,6 +15,8 @@ import humanize
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from django.conf import settings
 from django.contrib import messages
@@ -26,11 +28,9 @@ from django.db import transaction
 from django.db.models import F, Q
 from django.db.models.query import QuerySet as QuerySetType
 from django.forms.models import model_to_dict
-from django.http import (HttpRequest, HttpResponse, HttpResponseRedirect,
-                         JsonResponse)
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
-from django.views.decorators.http import require_POST
 from django.views.generic.base import TemplateView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import (CreateView, DeleteView, ModelFormMixin,
@@ -583,38 +583,24 @@ class SongUpdateView(LoginRequiredMixin, UserScopedQuerysetMixin, FormRequestMix
         return HttpResponseRedirect(success_url)
 
 
-class SongFormAjaxView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView):
+class SongFormAjaxView(APIView):
     """Return song form data as JSON for React form.
 
     This view provides a single song's data in JSON format for populating
     the edit form in the React SongEditPage component.
     """
 
-    model = Song
-    slug_field = "uuid"
-    slug_url_kwarg = "uuid"
-
-    def get_queryset(self) -> QuerySetType[Song]:
-        """Limit queryset to current user's songs only.
-
-        Returns:
-            QuerySet filtered to songs owned by the authenticated user.
-        """
-        return super().get_queryset().prefetch_related("tags")
-
-    def render_to_response(
-        self, context: dict[str, Any], **response_kwargs: Any
-    ) -> JsonResponse:
+    def get(self, request: HttpRequest, uuid: str) -> Response:
         """Return song form data as JSON.
 
         Args:
-            context: Template context dictionary containing the song.
-            **response_kwargs: Additional keyword arguments for the response.
+            request: The HTTP request object.
+            uuid: UUID of the song to retrieve.
 
         Returns:
-            JsonResponse containing song form data.
+            Response containing song form data.
         """
-        song = self.object
+        song = get_user_object_or_404(request.user, Song, uuid=uuid)
         # Get all available song sources
         source_options = [
             {"id": s.id, "name": s.name}
@@ -641,7 +627,7 @@ class SongFormAjaxView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView):
             "source": song.source.id if song.source else None,
             "source_options": source_options,
         }
-        return JsonResponse(data)
+        return Response(data)
 
 
 class SongCreateView(LoginRequiredMixin, FormRequestMixin, CreateView):
@@ -749,8 +735,8 @@ class MusicDeleteView(LoginRequiredMixin, UserScopedQuerysetMixin, DeleteView):
         return super().form_valid(form)
 
 
-@login_required
-def search_artists(request: HttpRequest) -> JsonResponse:
+@api_view(["GET"])
+def search_artists(request: HttpRequest) -> Response:
     """Search for artists matching a given term.
 
     Args:
@@ -764,20 +750,20 @@ def search_artists(request: HttpRequest) -> JsonResponse:
 
     matches = search_service(user, artist)
 
-    return JsonResponse(matches, safe=False)
+    return Response(matches)
 
 
-class RecentSongsListView(LoginRequiredMixin, ListView):
+class RecentSongsListView(APIView):
     """Return a JSON list of recent songs, optionally filtered by tag."""
 
-    def get_queryset(self) -> QuerySetType[Song]:
+    def get_queryset(self, request: HttpRequest) -> QuerySetType[Song]:
         """Get the queryset of recent songs, optionally filtered.
 
         Returns:
             QuerySet of Song objects ordered by creation date.
         """
-        search_term = self.request.GET.get("tag", "").strip()
-        user = cast(User, self.request.user)
+        search_term = request.GET.get("tag", "").strip()
+        user = cast(User, request.user)
 
         queryset = Song.objects.filter(user=user, album__isnull=True) \
                                .select_related("artist")
@@ -790,18 +776,16 @@ class RecentSongsListView(LoginRequiredMixin, ListView):
 
         return queryset.order_by("-created", "artist__name", "title")[:SEARCH_RESULTS_LIMIT]
 
-    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> JsonResponse:
+    def get(self, request: HttpRequest) -> Response:
         """Handle GET requests for recent songs.
 
         Args:
             request: The HTTP request object.
-            *args: Additional positional arguments.
-            **kwargs: Additional keyword arguments.
 
         Returns:
-            JSON response with song list and status.
+            Response with song list and status.
         """
-        queryset = self.get_queryset()
+        queryset = self.get_queryset(request)
 
         song_list = []
 
@@ -822,12 +806,12 @@ class RecentSongsListView(LoginRequiredMixin, ListView):
             "song_list": song_list
         }
 
-        return JsonResponse(response)
+        return Response(response)
 
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
-def mark_song_as_listened_to(request: Request, song_uuid: str) -> JsonResponse:
+def mark_song_as_listened_to(request: Request, song_uuid: str) -> Response:
     """Mark a song as having been listened to (production only).
 
     Args:
@@ -841,7 +825,7 @@ def mark_song_as_listened_to(request: Request, song_uuid: str) -> JsonResponse:
     if not settings.DEBUG:
         song.listen_to()
 
-    return JsonResponse(
+    return Response(
         {
             "status": "OK",
             "times_played": song.times_played
@@ -849,8 +833,8 @@ def mark_song_as_listened_to(request: Request, song_uuid: str) -> JsonResponse:
     )
 
 
-@login_required
-def get_song_id3_info(request: HttpRequest) -> JsonResponse:
+@api_view(["GET"])
+def get_song_id3_info(request: HttpRequest) -> Response:
     """Extract ID3 information from an uploaded song file.
 
     Args:
@@ -862,7 +846,7 @@ def get_song_id3_info(request: HttpRequest) -> JsonResponse:
     song_file = cast(UploadedFile, request.FILES["song"])
     song = song_file.read()
     id3_info = get_id3_info(song)
-    return JsonResponse({**id3_info})
+    return Response({**id3_info})
 
 
 class SearchTagListView(LoginRequiredMixin, ListView):
@@ -1125,8 +1109,8 @@ class CreateAlbumView(LoginRequiredMixin, TemplateView):
         }
 
 
-@login_required
-def scan_album_from_zipfile(request: HttpRequest) -> JsonResponse:
+@api_view(["POST"])
+def scan_album_from_zipfile(request: HttpRequest) -> Response:
     """Scan a ZIP file to extract album information without creating the album.
 
     Args:
@@ -1136,7 +1120,7 @@ def scan_album_from_zipfile(request: HttpRequest) -> JsonResponse:
         JSON response with scanned album information and status.
     """
     if "zipfile" not in request.FILES:
-        return JsonResponse({
+        return Response({
             "status": "ERROR",
             "message": "No ZIP file provided"
         }, status=400)
@@ -1150,13 +1134,12 @@ def scan_album_from_zipfile(request: HttpRequest) -> JsonResponse:
         "status": "OK",
     }
 
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("artist", "source")
-def add_album_from_zipfile(request: HttpRequest) -> JsonResponse:
+def add_album_from_zipfile(request: HttpRequest) -> Response:
     """Create an album from a ZIP file containing audio tracks.
 
     Args:
@@ -1169,7 +1152,7 @@ def add_album_from_zipfile(request: HttpRequest) -> JsonResponse:
     source_id = request.POST.get("source", "").strip()
 
     if "zipfile" not in request.FILES:
-        return JsonResponse({
+        return Response({
             "status": "ERROR",
             "message": "No ZIP file provided"
         }, status=400)
@@ -1189,7 +1172,7 @@ def add_album_from_zipfile(request: HttpRequest) -> JsonResponse:
             json.loads(request.POST.get("songListChanges", "{}"))
         )
     except Exception as e:
-        return JsonResponse({"status": "ERROR", "message": str(e)}, status=400)
+        return Response({"status": "ERROR", "message": str(e)}, status=400)
 
     # Save the song source in the session
     request.session["song_source"] = SongSource.objects.get(id=request.POST["source"]).name
@@ -1199,11 +1182,11 @@ def add_album_from_zipfile(request: HttpRequest) -> JsonResponse:
         "url": reverse("music:album_detail", kwargs={"uuid": album_uuid}),
     }
 
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-def get_playlist(request: HttpRequest, playlist_uuid: str) -> JsonResponse:
+@api_view(["GET"])
+def get_playlist(request: HttpRequest, playlist_uuid: str) -> Response:
     """Get playlist contents and metadata.
 
     Args:
@@ -1230,13 +1213,12 @@ def get_playlist(request: HttpRequest, playlist_uuid: str) -> JsonResponse:
         "playlistitems": playlist_data["song_list"]
     }
 
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("playlistitem_uuid", "position")
-def sort_playlist(request: HttpRequest) -> JsonResponse:
+def sort_playlist(request: HttpRequest) -> Response:
     """Move a song to a new position within a playlist.
 
     Args:
@@ -1256,11 +1238,11 @@ def sort_playlist(request: HttpRequest) -> JsonResponse:
         )
         playlistitem.reorder(new_position)
 
-    return JsonResponse({"status": "OK"})
+    return Response({"status": "OK"})
 
 
-@login_required
-def search_playlists(request: HttpRequest) -> JsonResponse:
+@api_view(["GET"])
+def search_playlists(request: HttpRequest) -> Response:
     """Search for manual playlists by name.
 
     Args:
@@ -1276,13 +1258,12 @@ def search_playlists(request: HttpRequest) -> JsonResponse:
         name__icontains=request.GET.get("query", "")
     )
 
-    return JsonResponse([{"value": x.name, "uuid": x.uuid} for x in playlists], safe=False)
+    return Response([{"value": x.name, "uuid": x.uuid} for x in playlists])
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("playlist_uuid", "song_uuid")
-def add_to_playlist(request: HttpRequest) -> JsonResponse:
+def add_to_playlist(request: HttpRequest) -> Response:
     """Toggle a song's membership in a playlist.
 
     If the song is already on the playlist, remove it.
@@ -1323,13 +1304,12 @@ def add_to_playlist(request: HttpRequest) -> JsonResponse:
             "action": "added"
         }
 
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("artist_uuid")
-def update_artist_image(request: HttpRequest) -> JsonResponse:
+def update_artist_image(request: HttpRequest) -> Response:
     """Edit the image displayed on the artist detail page.
 
     Args:
@@ -1348,11 +1328,11 @@ def update_artist_image(request: HttpRequest) -> JsonResponse:
 
     upload_artist_image(artist_uuid, image.file)
 
-    return JsonResponse({"status": "OK"})
+    return Response({"status": "OK"})
 
 
-@login_required
-def dupe_song_checker(request: HttpRequest) -> JsonResponse:
+@api_view(["GET"])
+def dupe_song_checker(request: HttpRequest) -> Response:
     """Check for potential duplicate songs based on artist name and song title.
 
     Args:
@@ -1387,7 +1367,7 @@ def dupe_song_checker(request: HttpRequest) -> JsonResponse:
     else:
         dupes = []
 
-    return JsonResponse({"dupes": dupes})
+    return Response({"dupes": dupes})
 
 
 @login_required
@@ -1422,8 +1402,8 @@ def missing_artist_images(request: HttpRequest) -> HttpResponse:
     return render(request, "music/index.html")
 
 
-@login_required
-def recent_albums(request: HttpRequest, page_number: Union[str, int]) -> JsonResponse:
+@api_view(["GET"])
+def recent_albums(request: HttpRequest, page_number: Union[str, int]) -> Response:
     """Get a paginated list of recently added albums.
 
     Args:
@@ -1446,13 +1426,12 @@ def recent_albums(request: HttpRequest, page_number: Union[str, int]) -> JsonRes
         "paginator": paginator
     }
 
-    return JsonResponse(response)
+    return Response(response)
 
 
-@login_required
-@require_POST
+@api_view(["POST"])
 @validate_post_data("song_uuid")
-def set_song_rating(request: HttpRequest) -> JsonResponse:
+def set_song_rating(request: HttpRequest) -> Response:
     """Edit the rating for a specific song.
 
     Args:
@@ -1476,4 +1455,4 @@ def set_song_rating(request: HttpRequest) -> JsonResponse:
         "status": "OK"
     }
 
-    return JsonResponse(response)
+    return Response(response)
