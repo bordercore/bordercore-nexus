@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faStickyNote, faPencilAlt, faTimes } from "@fortawesome/free-solid-svg-icons";
+import MarkdownIt from "markdown-it";
 import { Card } from "../common/Card";
 import { DropDownMenu } from "../common/DropDownMenu";
 import { doGet, doPost, doPut } from "../utils/reactUtils";
@@ -30,6 +31,7 @@ export default function NodeNote({
   onOpenNoteMetadataModal,
   onEditLayout,
 }: NodeNoteProps) {
+  const markdown = new MarkdownIt();
   const [nodeNote, setNodeNote] = useState<NoteLayoutItem>(noteInitial);
   const [note, setNote] = useState<Note | null>(null);
   const [noteContents, setNoteContents] = useState("");
@@ -245,7 +247,11 @@ export default function NodeNote({
             />
           ) : (
             <div onClick={() => setIsEditingContent(true)} className="cursor-pointer">
-              {noteContents || <span className="text-muted">No content</span>}
+              {noteContents ? (
+                <div dangerouslySetInnerHTML={{ __html: markdown.render(noteContents) }} />
+              ) : (
+                <span className="text-muted">No content</span>
+              )}
             </div>
           )}
         </div>
