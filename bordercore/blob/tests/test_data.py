@@ -5,6 +5,7 @@ This module contains integration tests that verify data consistency across multi
 storage systems for blob records. These tests ensure that blob data remains synchronized between the database, S3 object storage, Elasticsearch index, and local filesystem.
 """
 
+import django
 import logging
 import re
 from collections import defaultdict
@@ -26,7 +27,9 @@ from tag.models import Tag
 
 logging.getLogger("elasticsearch").setLevel(logging.ERROR)
 
-pytestmark = [pytest.mark.django_db, pytest.mark.data_quality]
+pytestmark = [pytest.mark.data_quality]
+
+django.setup()
 
 
 BLOB_DIR = "/home/media"

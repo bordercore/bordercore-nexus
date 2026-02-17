@@ -6,13 +6,16 @@ referenced within the `layout` field of `Node` objects correspond to actual rows
 in their respective database tables (`Blob` for notes, `Collection` for collections).
 """
 
+import django
 import pytest
 
 from blob.models import Blob
 from collection.models import Collection
 from node.models import Node
 
-pytestmark = [pytest.mark.django_db, pytest.mark.data_quality]
+pytestmark = [pytest.mark.data_quality]
+
+django.setup()
 
 
 def test_node_layout_notes_exist_in_db():

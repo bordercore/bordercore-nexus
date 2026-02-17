@@ -6,6 +6,7 @@ storage systems for question records. These tests ensure that question data rema
 between the database and the Elasticsearch index.
 """
 
+import django
 import pytest
 
 from django.conf import settings
@@ -13,7 +14,9 @@ from django.conf import settings
 from drill.models import Question
 from lib.util import get_elasticsearch_connection, get_missing_blob_ids
 
-pytestmark = [pytest.mark.django_db, pytest.mark.data_quality]
+pytestmark = [pytest.mark.data_quality]
+
+django.setup()
 
 
 @pytest.fixture()

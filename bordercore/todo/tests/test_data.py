@@ -1,5 +1,6 @@
 import pytest
 
+import django
 from django.conf import settings
 from django.db.models import Count
 
@@ -7,7 +8,9 @@ from lib.util import get_elasticsearch_connection
 from tag.models import TagTodo
 from todo.models import Todo
 
-pytestmark = [pytest.mark.django_db, pytest.mark.data_quality]
+pytestmark = [pytest.mark.data_quality]
+
+django.setup()
 
 
 @pytest.fixture()

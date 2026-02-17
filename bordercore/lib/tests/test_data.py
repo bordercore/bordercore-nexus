@@ -7,12 +7,15 @@ that for any given group of objects, the sort order forms a dense,
 duplicate values.
 """
 
+import django
 import pytest
 
 from django.apps import apps
 from django.db.models import Count, Max, Min
 
-pytestmark = [pytest.mark.django_db, pytest.mark.data_quality]
+pytestmark = [pytest.mark.data_quality]
+
+django.setup()
 
 
 def test_sort_order_mixin():

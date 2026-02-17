@@ -4,6 +4,7 @@ Data integrity tests for RecentSearch model.
 Tests that verify database constraints and business rules are properly maintained.
 """
 
+import django
 import pytest
 
 from django.contrib.auth.models import User
@@ -11,7 +12,9 @@ from django.db.models import Count, Max, Min
 
 from search.models import RecentSearch
 
-pytestmark = [pytest.mark.django_db, pytest.mark.data_quality]
+pytestmark = [pytest.mark.data_quality]
+
+django.setup()
 
 
 def test_recent_searches_sort_order_mixin():

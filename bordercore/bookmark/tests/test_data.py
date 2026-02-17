@@ -5,6 +5,7 @@ This module contains integration tests that verify data consistency across multi
 storage systems for bookmark records. These tests ensure that bookmark data remains synchronized between the database, S3 object storage, Elasticsearch index, and local filesystem.
 """
 
+import django
 import re
 
 import boto3
@@ -16,7 +17,9 @@ from django.db.models import Q
 from bookmark.models import Bookmark
 from lib.util import get_elasticsearch_connection, get_missing_bookmark_ids
 
-pytestmark = [pytest.mark.django_db, pytest.mark.data_quality]
+pytestmark = [pytest.mark.data_quality]
+
+django.setup()
 
 bucket_name = settings.AWS_STORAGE_BUCKET_NAME
 
