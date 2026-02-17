@@ -325,21 +325,21 @@ def test_tags_all_lowercase():
 
 def test_blobs_in_db_exist_in_elasticsearch(es):
     """Assert that all blobs in the database exist in Elasticsearch"""
-    blob_uuids = list(
+    db_uuids = list(
         Blob.objects.filter(is_indexed=True)
         .values_list("uuid", flat=True)
         .iterator(chunk_size=1000)  # Use iterator for memory efficiency
     )
 
-    if not blob_uuids:
-        return
+    if not db_uuids:
+        pytest.fail("Expected non-empty UUIDs from database; none found.")
 
     step_size = 500
-    total_count = len(blob_uuids)
+    total_count = len(db_uuids)
 
     for batch_start in range(0, total_count, step_size):
         batch_end = min(batch_start + step_size, total_count)
-        batch_uuids = blob_uuids[batch_start:batch_end]
+        batch_uuids = db_uuids[batch_start:batch_end]
         batch_size = len(batch_uuids)
 
         search_object = {
@@ -392,7 +392,7 @@ def test_blobs_in_s3_exist_in_db():
                 s3_uuids.add(match.group(1))
 
     if not s3_uuids:
-        return
+        pytest.fail("Expected non-empty UUIDs from S3; none found.")
 
     batch_size = 1000
     missing_uuids = []
@@ -402,13 +402,13 @@ def test_blobs_in_s3_exist_in_db():
         batch_uuids = s3_uuid_list[i:i + batch_size]
 
         # Single query to check which UUIDs exist in this batch
-        existing_uuids = set(
+        db_uuids = set(
             str(uuid) for uuid in Blob.objects.filter(uuid__in=batch_uuids)
             .values_list("uuid", flat=True)
         )
 
         # Find missing UUIDs in this batch
-        batch_missing = [uuid for uuid in batch_uuids if uuid not in existing_uuids]
+        batch_missing = [uuid for uuid in batch_uuids if uuid not in db_uuids]
         missing_uuids.extend(batch_missing)
 
     if missing_uuids:
@@ -429,7 +429,7 @@ def test_images_have_thumbnails():
             image_blobs.append(blob)
 
     if not image_blobs:
-        return
+        pytest.fail("Expected non-empty image blobs from database; none found.")
 
     # Step 2: Build all expected thumbnail keys
     expected_thumbnails = {}
@@ -494,22 +494,29 @@ def test_elasticsearch_blobs_exist_in_s3(es):
     }
 
     found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)["hits"]["hits"]
+    if not found:
+        pytest.fail("Expected non-empty UUIDs from Elasticsearch; none found.")
 
     s3_resource = boto3.resource("s3")
 
-    unique_uuids = {}
+    s3_uuids = set()
 
     paginator = s3_resource.meta.client.get_paginator("list_objects_v2")
     page_iterator = paginator.paginate(Bucket=bucket_name)
 
     for page in page_iterator:
+        if "Contents" not in page:
+            continue
         for key in page["Contents"]:
             m = re.search(r"^blobs/(.*?)/", str(key["Key"]))
             if m:
-                unique_uuids[m.group(1)] = True
+                s3_uuids.add(m.group(1))
+
+    if not s3_uuids:
+        pytest.fail("Expected non-empty UUIDs from S3; none found.")
 
     for blob in found:
-        if not blob["_source"]["uuid"] in unique_uuids:
+        if blob["_source"]["uuid"] not in s3_uuids:
             pytest.fail(f"blob {blob['_source']['uuid']} exists in Elasticsearch but not in S3")
 
 @pytest.mark.wumpus
@@ -571,19 +578,19 @@ def test_elasticsearch_blobs_exist_in_db(es):
     found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)["hits"]["hits"]
 
     if not found:
-        return
+        pytest.fail("Expected non-empty UUIDs from Elasticsearch; none found.")
 
     # Extract all UUIDs from ES
     es_uuids = [blob["_source"]["uuid"] for blob in found]
 
     # Single database query to get all existing UUIDs
-    existing_uuids = set(
+    db_uuids = set(
         str(uuid) for uuid in Blob.objects.filter(uuid__in=es_uuids)
-        .values_list('uuid', flat=True)
+        .values_list("uuid", flat=True)
     )
 
     # Find missing UUIDs
-    missing_from_db = set(es_uuids) - existing_uuids
+    missing_from_db = set(es_uuids) - db_uuids
 
     if missing_from_db:
         pytest.fail(f"Blobs found in Elasticsearch but not in the database: {missing_from_db}")
@@ -614,7 +621,7 @@ def test_blob_metadata_exists_in_elasticsearch(es):
     )
 
     if not metadata_qs.exists():
-        return
+        pytest.fail("Expected non-empty metadata from database; none found.")
 
     # Group metadata by blob UUID to reduce ES queries
     blob_metadata = defaultdict(list)
@@ -625,12 +632,14 @@ def test_blob_metadata_exists_in_elasticsearch(es):
         })
 
     # Test in smaller, more manageable batches
-    blob_uuids = list(blob_metadata.keys())
+    db_uuids = list(blob_metadata.keys())
+    if not db_uuids:
+        pytest.fail("Expected non-empty UUIDs from database; none found.")
     batch_size = 200
     errors = []
 
-    for i in range(0, len(blob_uuids), batch_size):
-        batch_uuids = blob_uuids[i:i + batch_size]
+    for i in range(0, len(db_uuids), batch_size):
+        batch_uuids = db_uuids[i:i + batch_size]
 
         # Single ES query to get all blobs in this batch
         search_body = {

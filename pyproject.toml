@@ -166,6 +166,7 @@ disable = ["imported-auth-user"]
 
 [tool.pytest.ini_options]
 addopts = "--reuse-db --capture=no --tb=line -p no:cacheprovider --ignore=node_modules"
+log_cli_level = "WARNING"
 markers = [
     "data_quality: tests that measure data integrity",
     "django_db: Access the Django database (provided by pytest-django)",

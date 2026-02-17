@@ -25,7 +25,7 @@ def test_todo_tasks_in_db_exist_in_elasticsearch(es):
     todos = list(Todo.objects.all().only("uuid"))
 
     if not todos:
-        return
+        pytest.fail("Expected non-empty UUIDs from database; none found.")
 
     db_uuids = [task.uuid for task in todos]
 
@@ -60,7 +60,7 @@ def test_todo_tags_match_elasticsearch(es):
     todos_list = list(todos)
 
     if not todos_list:
-        return
+        pytest.fail("Expected non-empty todos with tags from database; none found.")
 
     # Batch all searches into one multi-search request
     search_requests = []
@@ -127,7 +127,7 @@ def test_elasticsearch_todo_tasks_exist_in_db(es):
     found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)["hits"]["hits"]
 
     if not found:
-        return
+        pytest.fail("Expected non-empty IDs from Elasticsearch; none found.")
 
     # Extract all bordercore_ids from Elasticsearch results
     es_bordercore_ids = [task["_source"]["bordercore_id"] for task in found]

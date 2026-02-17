@@ -65,6 +65,8 @@ def test_all_songs_exist_in_s3():
     "Assert that all songs in the database exist in S3"
     songs = Song.objects.all().only("uuid")
     db_uuids = [str(song.uuid) for song in songs]
+    if not db_uuids:
+        pytest.fail("Expected non-empty UUIDs from database; none found.")
 
     # Get all objects with the songs/ prefix in one call
     paginator = s3_client.get_paginator("list_objects_v2")
@@ -73,6 +75,9 @@ def test_all_songs_exist_in_s3():
     for page in paginator.paginate(Bucket=bucket_name, Prefix="songs/"):
         if "Contents" in page:
             s3_uuids.update(obj["Key"] for obj in page["Contents"])
+
+    if not s3_uuids:
+        pytest.fail("Expected non-empty UUIDs from S3; none found.")
 
     # Check which songs are missing
     missing_from_s3 = []
@@ -89,6 +94,8 @@ def test_songs_in_db_exist_in_elasticsearch(es):
     songs = Song.objects.all().only("uuid")
     step_size = 100
     song_count = songs.count()
+    if song_count == 0:
+        pytest.fail("Expected non-empty UUIDs from database; none found.")
 
     for batch in range(0, song_count, step_size):
 
@@ -127,9 +134,13 @@ def test_songs_in_s3_exist_in_db():
     # Get all song UUIDs from database in one query
     songs = Song.objects.all().only("uuid")
     db_uuids = {str(song.uuid) for song in songs}
+    if not db_uuids:
+        pytest.fail("Expected non-empty UUIDs from database; none found.")
 
     # Get all song UUIDs from S3
     s3_uuids = set(get_s3_song_uuids())
+    if not s3_uuids:
+        pytest.fail("Expected non-empty UUIDs from S3; none found.")
 
     # Check which S3 songs are missing from database
     missing_from_db = []
@@ -160,9 +171,13 @@ def test_elasticsearch_songs_exist_in_s3(es):
     }
     songs_in_elasticsearch = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)["hits"]["hits"]
     es_uuids = [song["_source"]["uuid"] for song in songs_in_elasticsearch]
+    if not es_uuids:
+        pytest.fail("Expected non-empty UUIDs from Elasticsearch; none found.")
 
     # Get all song UUIDs from S3
     s3_uuids = set(get_s3_song_uuids())
+    if not s3_uuids:
+        pytest.fail("Expected non-empty UUIDs from S3; none found.")
 
     # Check which Elasticsearch songs are missing from S3
     missing_from_s3 = []
@@ -203,6 +218,8 @@ def test_song_in_s3_exist_on_filesystem():
 
     # Get all song UUIDs from S3
     s3_uuids = set(get_s3_song_uuids())
+    if not s3_uuids:
+        pytest.fail("Expected non-empty UUIDs from S3; none found.")
 
     # Check filesystem existence for all S3 songs
     missing_from_filesystem = []

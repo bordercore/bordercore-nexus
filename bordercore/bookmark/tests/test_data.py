@@ -5,12 +5,12 @@ This module contains integration tests that verify data consistency across multi
 storage systems for bookmark records. These tests ensure that bookmark data remains synchronized between the database, S3 object storage, Elasticsearch index, and local filesystem.
 """
 
-import django
 import re
 
 import boto3
 import pytest
 
+import django
 from django.conf import settings
 from django.db.models import Q
 
@@ -44,6 +44,8 @@ def test_bookmarks_in_db_exist_in_elasticsearch(es):
             are missing from the Elasticsearch index.
     """
     bookmarks = Bookmark.objects.all().only("uuid")
+    if bookmarks.count() == 0:
+        pytest.fail("Expected non-empty UUIDs from database; none found.")
 
     step = 50
     for batch in range(0, len(bookmarks), step):
@@ -190,19 +192,19 @@ def test_elasticsearch_bookmarks_exist_in_db(es):
     found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)["hits"]["hits"]
 
     if not found:
-        return
+        pytest.fail("Expected non-empty UUIDs from Elasticsearch; none found.")
 
     # Extract ES UUIDs
     es_uuids = [bookmark["_source"]["uuid"] for bookmark in found]
 
     # Single database query to get all existing UUIDs
-    existing_uuids = set(
+    db_uuids = set(
         str(uuid) for uuid in Bookmark.objects.filter(uuid__in=es_uuids)
         .values_list("uuid", flat=True)
     )
 
     # Find missing UUIDs
-    missing_from_db = [uuid for uuid in es_uuids if uuid not in existing_uuids]
+    missing_from_db = [uuid for uuid in es_uuids if uuid not in db_uuids]
 
     if missing_from_db:
         pytest.fail(f"Bookmarks found in Elasticsearch but not in database: {missing_from_db}")
@@ -242,7 +244,7 @@ def test_bookmark_thumbnails_in_s3_exist_in_db():
             database. The error message includes the list of missing UUIDs.
     """
     s3_resource = boto3.resource("s3")
-    unique_uuids = set()
+    s3_uuids = set()
 
     # Compile regex once for better performance
     uuid_pattern = re.compile(r"^bookmarks/(\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b)")
@@ -258,18 +260,18 @@ def test_bookmark_thumbnails_in_s3_exist_in_db():
         for obj in page["Contents"]:
             match = uuid_pattern.search(obj["Key"])
             if match:
-                unique_uuids.add(match.group(1))
+                s3_uuids.add(match.group(1))
 
-    if not unique_uuids:
-        return
+    if not s3_uuids:
+        pytest.fail("Expected non-empty UUIDs from S3; none found.")
 
-    existing_uuids = set(
-        str(uuid) for uuid in Bookmark.objects.filter(uuid__in=unique_uuids)
+    db_uuids = set(
+        str(uuid) for uuid in Bookmark.objects.filter(uuid__in=s3_uuids)
         .values_list("uuid", flat=True)
     )
 
     # Find missing UUIDs
-    missing_from_db = unique_uuids - existing_uuids
+    missing_from_db = s3_uuids - db_uuids
 
     if missing_from_db:
         pytest.fail(f"Bookmark thumbnails found in S3 but not in DB: {missing_from_db}")

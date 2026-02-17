@@ -70,12 +70,18 @@ faker.add_provider(PdfFileProvider)
 
 
 @pytest.fixture(autouse=True)
-def mock_elasticsearch(monkeypatch):
+def mock_elasticsearch(request, monkeypatch):
     """Mock all Elasticsearch interactions for every test.
 
     Patches the ES connection, search service indexing/deletion,
     blob factory indexing, and get_recent_blobs in one place.
+
+    Does not apply to tests marked data_quality; those use a real
+    Elasticsearch connection.
     """
+    if request.node.get_closest_marker("data_quality") is not None:
+        yield
+        return
     mock_client = MagicMock()
     mock_client.search.return_value = {
         "hits": {"hits": [], "total": {"value": 0}}

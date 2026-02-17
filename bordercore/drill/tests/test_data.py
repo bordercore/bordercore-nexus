@@ -31,6 +31,8 @@ def test_questions_in_db_exist_in_elasticsearch(es):
     questions = Question.objects.all().only("uuid")
     step_size = 100
     question_count = questions.count()
+    if question_count == 0:
+        pytest.fail("Expected non-empty UUIDs from database; none found.")
 
     for batch in range(0, question_count, step_size):
         # The batch_size will always be equal to "step_size", except probably
@@ -78,6 +80,8 @@ def test_elasticsearch_questions_exist_in_db(es):
 
     found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)["hits"]["hits"]
     es_uuids = [question["_source"]["uuid"] for question in found]
+    if not es_uuids:
+        pytest.fail("Expected non-empty UUIDs from Elasticsearch; none found.")
 
     # Single database query to get all existing UUIDs
     db_uuids = set(

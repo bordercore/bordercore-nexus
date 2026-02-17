@@ -53,7 +53,7 @@ def test_node_layout_notes_exist_in_db():
                     note_uuids_to_nodes[note_uuid].append(str(node.uuid))
 
     if not all_note_uuids:
-        return
+        pytest.fail("Expected non-empty note UUIDs from node layouts; none found.")
 
     existing_note_uuids = set(
         str(uuid) for uuid in Blob.objects.filter(uuid__in=all_note_uuids)
@@ -94,7 +94,7 @@ def test_node_layout_collections_exist_in_db_new() -> None:
     }
 
     if not referenced_collection_uuids:
-        return
+        pytest.fail("Expected non-empty collection UUIDs from node layouts; none found.")
 
     existing_collection_uuids = {
         str(u)
