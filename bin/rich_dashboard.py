@@ -9,8 +9,13 @@ Run with:
 """
 
 import os
+import queue
 import subprocess
+import sys
+import termios
+import threading
 import time
+import tty
 from itertools import cycle
 from typing import Any
 
@@ -27,10 +32,85 @@ from rich.style import Style
 from rich.syntax import Syntax
 from rich.table import Table
 from rich.text import Text
+from bordercore.lib.scrollable_panel import ScrollablePanel
 
 BOOKMARKS_URL = "https://www.bordercore.com/api/bookmarks/?ordering=-created"
 TODOS_URL = "https://www.bordercore.com/api/todos/?priority=1"
 STATS_URL = "https://www.bordercore.com/api/site/stats"
+
+
+class KeyReader:
+    """Reads keyboard input in a background thread using cbreak mode.
+
+    Parses escape sequences for arrow keys and Page Up/Down, and puts
+    key names into a queue for non-blocking consumption by the main loop.
+    """
+
+    # Escape sequences for special keys
+    _ESCAPE_SEQUENCES = {
+        "[A": "up",
+        "[B": "down",
+        "[5~": "page_up",
+        "[6~": "page_down",
+    }
+
+    def __init__(self) -> None:
+        self._queue: queue.Queue[str] = queue.Queue()
+        self._running = False
+        self._thread: threading.Thread | None = None
+        self._old_settings: list | None = None
+
+    def start(self) -> None:
+        """Start reading keys in a background daemon thread."""
+        if self._running:
+            return
+        self._old_settings = termios.tcgetattr(sys.stdin)
+        tty.setcbreak(sys.stdin.fileno())
+        self._running = True
+        self._thread = threading.Thread(target=self._read_loop, daemon=True)
+        self._thread.start()
+
+    def stop(self) -> None:
+        """Stop reading and restore terminal settings."""
+        self._running = False
+        if self._old_settings is not None:
+            termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self._old_settings)
+            self._old_settings = None
+
+    def get_key(self) -> str | None:
+        """Return the next key name or None if the queue is empty."""
+        try:
+            return self._queue.get_nowait()
+        except queue.Empty:
+            return None
+
+    def _read_loop(self) -> None:
+        """Background loop that reads stdin and enqueues key names."""
+        while self._running:
+            try:
+                ch = sys.stdin.read(1)
+                if not ch:
+                    continue
+
+                if ch == "\x1b":
+                    # Start of escape sequence — read more characters
+                    seq = ""
+                    for _ in range(5):  # max sequence length
+                        next_ch = sys.stdin.read(1)
+                        if not next_ch:
+                            break
+                        seq += next_ch
+                        if seq in self._ESCAPE_SEQUENCES:
+                            self._queue.put(self._ESCAPE_SEQUENCES[seq])
+                            break
+                        # Check if we've hit a letter (end of CSI sequence)
+                        if next_ch.isalpha() or next_ch == "~":
+                            break
+                elif ch == "q":
+                    self._queue.put("quit")
+            except Exception:
+                if not self._running:
+                    break
 
 
 class Dashboard():
@@ -92,6 +172,8 @@ class Dashboard():
             text,
             title=Text("Bordercore")
         ))
+
+        self.code_echoes_scroller = ScrollablePanel()
 
         self.layout["bookmarks"].update(Panel("Recent bookmarks", title="Bookmarks"))
         self.layout["code_echoes"].update(Panel("", title="Code Echoes"))
@@ -399,7 +481,7 @@ class Dashboard():
         sampler = GitHubCodeSampler(
             token=self.github_token,
             max_events=100,
-            num_lines=50
+            num_lines=None
         )
         sample_dict = sampler.get_sample()
         code_preview = sample_dict.get("code_preview", "No code preview available")
@@ -477,12 +559,13 @@ class Dashboard():
             self._write_debug(error_msg)
             syntax = Text(f"Syntax highlighting error: {e}\nLanguage: {raw_language} -> {language}\n\n{code_preview}")
 
-        # Combine header and syntax
+        # Combine header and syntax, wrap in scrollable panel
         content = Group(header, syntax)
+        self.code_echoes_scroller.update(content)
 
         self.layout["code_echoes"].update(Panel(
-            content,
-            title=Text("Code Echoes")
+            self.code_echoes_scroller,
+            title=Text("Code Echoes [↑↓ PgUp/PgDn q=quit]", style="dim")
         ))
         self.update_timers["code_echoes"]["last_update"] = time.time()
 
@@ -491,66 +574,88 @@ def main() -> None:
     """Run the live Bordercore dashboard loop.
 
     Sets up the session, initializes the Dashboard, and continuously updates
-    each section of the UI at its own independent interval.
+    each section of the UI at its own independent interval. Supports keyboard
+    scrolling of the Code Echoes panel via arrow keys and Page Up/Down.
     """
     session: Session = requests.Session()
     session.trust_env = False  # Ignore .netrc, useful for local dev
 
     dash = Dashboard(session=session)
+    keys = KeyReader()
     current_time = time.time()
 
     # Initialize all timers to current time so they'll trigger on first loop
     for timer in dash.update_timers.values():
         timer["last_update"] = current_time - timer["interval"]
 
-    with Live(dash.layout, screen=True):
-        while True:
-            current_time = time.time()
+    keys.start()
+    try:
+        with Live(dash.layout, screen=True):
+            while True:
+                current_time = time.time()
 
-            # Check and update bookmarks if its timer has elapsed
-            if current_time - dash.update_timers["bookmarks"]["last_update"] >= dash.update_timers["bookmarks"]["interval"]:
-                try:
-                    dash.update_bookmarks()
-                except Exception as e:
-                    dash.update_status(str(e), error=True)
+                # Process keyboard input (non-blocking)
+                while True:
+                    key = keys.get_key()
+                    if key is None:
+                        break
+                    if key == "quit":
+                        return
+                    elif key == "up":
+                        dash.code_echoes_scroller.scroll_up()
+                    elif key == "down":
+                        dash.code_echoes_scroller.scroll_down()
+                    elif key == "page_up":
+                        dash.code_echoes_scroller.page_up()
+                    elif key == "page_down":
+                        dash.code_echoes_scroller.page_down()
 
-            # Check and update todos if its timer has elapsed
-            if current_time - dash.update_timers["todos"]["last_update"] >= dash.update_timers["todos"]["interval"]:
-                try:
-                    dash.update_todos()
-                except Exception as e:
-                    dash.update_status(str(e), error=True)
+                # Check and update bookmarks if its timer has elapsed
+                if current_time - dash.update_timers["bookmarks"]["last_update"] >= dash.update_timers["bookmarks"]["interval"]:
+                    try:
+                        dash.update_bookmarks()
+                    except Exception as e:
+                        dash.update_status(str(e), error=True)
 
-            # Check and update stats if its timer has elapsed
-            if current_time - dash.update_timers["stats"]["last_update"] >= dash.update_timers["stats"]["interval"]:
-                try:
-                    dash.update_stats()
-                except Exception as e:
-                    dash.update_status(str(e), error=True)
+                # Check and update todos if its timer has elapsed
+                if current_time - dash.update_timers["todos"]["last_update"] >= dash.update_timers["todos"]["interval"]:
+                    try:
+                        dash.update_todos()
+                    except Exception as e:
+                        dash.update_status(str(e), error=True)
 
-            # Check and update status if its timer has elapsed
-            if current_time - dash.update_timers["status"]["last_update"] >= dash.update_timers["status"]["interval"]:
-                try:
-                    dash.update_status("All subsystems normal")
-                except Exception as e:
-                    dash.update_status(str(e), error=True)
+                # Check and update stats if its timer has elapsed
+                if current_time - dash.update_timers["stats"]["last_update"] >= dash.update_timers["stats"]["interval"]:
+                    try:
+                        dash.update_stats()
+                    except Exception as e:
+                        dash.update_status(str(e), error=True)
 
-            # Check and update code_echoes if its timer has elapsed
-            if current_time - dash.update_timers["code_echoes"]["last_update"] >= dash.update_timers["code_echoes"]["interval"]:
-                try:
-                    dash.update_code_echoes()
-                except Exception as e:
-                    dash.update_status(str(e), error=True)
+                # Check and update status if its timer has elapsed
+                if current_time - dash.update_timers["status"]["last_update"] >= dash.update_timers["status"]["interval"]:
+                    try:
+                        dash.update_status("All subsystems normal")
+                    except Exception as e:
+                        dash.update_status(str(e), error=True)
 
-            # Check and update ups if its timer has elapsed
-            if current_time - dash.update_timers["ups"]["last_update"] >= dash.update_timers["ups"]["interval"]:
-                try:
-                    dash.update_ups()
-                except Exception as e:
-                    dash.update_status(str(e), error=True)
+                # Check and update code_echoes if its timer has elapsed
+                if current_time - dash.update_timers["code_echoes"]["last_update"] >= dash.update_timers["code_echoes"]["interval"]:
+                    try:
+                        dash.update_code_echoes()
+                    except Exception as e:
+                        dash.update_status(str(e), error=True)
 
-            # Sleep for a short interval to avoid busy-waiting
-            time.sleep(0.1)
+                # Check and update ups if its timer has elapsed
+                if current_time - dash.update_timers["ups"]["last_update"] >= dash.update_timers["ups"]["interval"]:
+                    try:
+                        dash.update_ups()
+                    except Exception as e:
+                        dash.update_status(str(e), error=True)
+
+                # Sleep for a short interval to avoid busy-waiting
+                time.sleep(0.1)
+    finally:
+        keys.stop()
 
 if __name__ == "__main__":
     main()
