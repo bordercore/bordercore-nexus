@@ -158,7 +158,7 @@ function NoteCard({
               </div>
             )}
           </div>
-          {note.source.tags.map(tag => (
+          {(note.source.tags ?? []).map(tag => (
             <span key={tag} className="me-2">
               <a className="tag" href={`${urls.notesSearch}?tagsearch=${tag}`}>
                 {tag}
@@ -205,7 +205,7 @@ function SearchResultItem({ note, isSelected, onClick, urls }: SearchResultItemP
         />
       </div>
       <div className="mt-2">
-        {note.source.tags.map(tag => (
+        {(note.source.tags ?? []).map(tag => (
           <span key={tag} className="me-2">
             <a className="tag" href={`${urls.notesSearch}?tagsearch=${tag}`}>
               {tag}
