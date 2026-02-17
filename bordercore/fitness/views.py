@@ -188,6 +188,7 @@ def fitness_summary(request: HttpRequest) -> HttpResponse:
         }
         if include_schedule:
             data["schedule_days"] = e.schedule_days if hasattr(e, "schedule_days") else ""
+            data["schedule"] = e.schedule if hasattr(e, "schedule") else []
             data["frequency"] = (
                 f"{e.frequency.days} day{'s' if e.frequency.days != 1 else ''}"
                 if hasattr(e, "frequency") and e.frequency

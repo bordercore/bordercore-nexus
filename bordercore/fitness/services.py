@@ -74,7 +74,13 @@ def get_fitness_summary(user: User, count_only: bool = False) -> Tuple[List[Exer
         else:
             inactive_exercises.append(e)
 
-    active_exercises.sort(key=lambda x: x.overdue, reverse=True)  # type: ignore[attr-defined]
+    active_exercises.sort(
+        key=lambda x: (
+            x.overdue == 1,  # type: ignore[attr-defined]
+            getattr(x, "last_active", None) or timezone.make_aware(datetime.datetime.min),
+        ),
+        reverse=True,
+    )
 
     return cast(Tuple[List[Exercise], List[Exercise]], (active_exercises, inactive_exercises))
 

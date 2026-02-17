@@ -29,7 +29,6 @@
 
 .overdue {
   color: var(--error-color);
-  font-weight: 600;
 }
 
 // Fitness table - uses .data-table-container + .data-table; overrides below
@@ -37,25 +36,25 @@
   tbody tr {
     &.selected {
       td {
-        background-color: var(--selected-bg);
-        color: var(--selected-color);
+        background-color: var(--hover-bg);
+
+        // color: var(--selected-color); // Removed to use default text color
       }
 
-      a {
-        color: var(--selected-color);
-      }
+      // a {
+      //   color: var(--selected-color); // Removed to use default link color
+      // }
     }
 
-    &.overdue {
-      td {
-        background-color: var(--fitness-overdue-bg);
-        color: var(--fitness-overdue-color);
-      }
-
-      a {
-        color: var(--fitness-overdue-color);
-      }
-    }
+    // &.overdue {
+    //   td {
+    //     // background-color: var(--fitness-overdue-bg); // Removed per user request
+    //     // color: var(--fitness-overdue-color); // Removed per user request
+    //   }
+    //   a {
+    //     // color: var(--fitness-overdue-color); // Removed per user request
+    //   }
+    // }
   }
 }
 
@@ -74,17 +73,9 @@
     }
   }
 
-  tr.overdue {
-    td {
-      background-color: var(--fitness-overdue-bg);
-      color: var(--fitness-overdue-color);
-    }
 
-    a {
-      color: var(--fitness-overdue-color);
-    }
-  }
 }
+
 /* stylelint-enable no-descending-specificity */
 
 // Increase font size for panel titles
@@ -105,7 +96,7 @@
 
 // Style hr in description panel and workout form
 #description hr,
-#form-workout + .row hr {
+#form-workout+.row hr {
   height: 1px;
   border-color: transparent;
   background-color: var(--surface3);
@@ -113,7 +104,7 @@
 }
 
 // Workout data table styling to match todo list
-#form-workout + .row .table {
+#form-workout+.row .table {
   th {
     color: var(--text2);
   }
@@ -137,16 +128,16 @@
   background-color: var(--surface2);
   border-radius: var(--border-radius1);
   transition: background-color 0.2s ease;
-  
+
   &:hover {
     background-color: var(--hover-bg);
   }
-  
+
   .exercise-name {
     color: var(--text1);
     font-weight: 600;
   }
-  
+
   .exercise-stats {
     margin-top: 0.25rem;
     color: var(--text2);
@@ -159,16 +150,16 @@
   margin-bottom: 1rem;
   background-color: var(--surface3);
   border-radius: var(--border-radius1);
-  
+
   .summary-stat {
     display: flex;
     justify-content: space-between;
     padding: 0.5rem 0;
-    
+
     .stat-label {
       color: var(--text2);
     }
-    
+
     .stat-value {
       color: var(--text1);
       font-weight: 600;

@@ -9,6 +9,7 @@ export interface Exercise {
   last_active_unixtime?: string;
   delta_days?: number;
   frequency?: string;
+  schedule?: boolean[]; // 7 booleans, index 0 = Monday
   overdue: number; // 0=normal, 1=selected, 2=overdue
 }
 
