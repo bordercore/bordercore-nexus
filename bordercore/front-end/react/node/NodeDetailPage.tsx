@@ -21,7 +21,9 @@ import {
   useSensors,
   DragEndEvent,
   DragOverEvent,
+  DragOverlay,
   DragStartEvent,
+  useDroppable,
 } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -29,6 +31,8 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
   useSortable,
+  defaultAnimateLayoutChanges,
+  type AnimateLayoutChanges,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { DropDownMenu, DropDownMenuHandle } from "../common/DropDownMenu";
@@ -114,6 +118,20 @@ interface NodeDetailPageProps {
 
 const UUID_PLACEHOLDER = "00000000-0000-0000-0000-000000000000";
 
+function getLayoutItemKey(item: LayoutItem): string {
+  if (item.type === "todo") return "todo";
+  return (item as { uuid: string }).uuid;
+}
+
+function findItemPosition(layout: Layout, id: string): [number, number] | null {
+  for (let col = 0; col < layout.length; col++) {
+    for (let row = 0; row < layout[col].length; row++) {
+      if (getLayoutItemKey(layout[col][row]) === id) return [col, row];
+    }
+  }
+  return null;
+}
+
 export default function NodeDetailPage({
   nodeUuid,
   initialNodeName,
@@ -183,38 +201,110 @@ export default function NodeDetailPage({
     setLayout(newLayout);
   };
 
+  const [activeLayoutId, setActiveLayoutId] = useState<string | null>(null);
+  const dragOverlayNodeRef = useRef<Node | null>(null);
+  const layoutRef = useRef(layout);
+  layoutRef.current = layout;
+
   // Sync layout to backend
-  const syncLayout = (newLayout: Layout) => {
-    doPost(
-      urls.changeLayout,
-      {
-        node_uuid: nodeUuid,
-        layout: JSON.stringify(newLayout),
-      },
-      () => {}
-    );
-  };
+  const syncLayout = useCallback(
+    (newLayout: Layout) => {
+      doPost(
+        urls.changeLayout,
+        {
+          node_uuid: nodeUuid,
+          layout: JSON.stringify(newLayout),
+        },
+        () => {}
+      );
+    },
+    [urls.changeLayout, nodeUuid]
+  );
+
+  const handleLayoutDragStart = useCallback((event: DragStartEvent) => {
+    const id = event.active.id as string;
+    setActiveLayoutId(id);
+    const el = document.querySelector(`[data-layout-item-id="${id}"]`);
+    dragOverlayNodeRef.current = el ? el.cloneNode(true) : null;
+  }, []);
+
+  const handleDragOver = useCallback((event: DragOverEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const activeId = active.id as string;
+    const overId = over.id as string;
+
+    setLayout(prev => {
+      const activePos = findItemPosition(prev, activeId);
+      if (!activePos) return prev;
+
+      // Dragged over a column droppable (for empty columns)
+      if (overId.startsWith("column-")) {
+        const targetCol = parseInt(overId.split("-")[1]);
+        if (activePos[0] === targetCol) return prev;
+        const newLayout = cloneDeep(prev);
+        const [item] = newLayout[activePos[0]].splice(activePos[1], 1);
+        newLayout[targetCol].push(item);
+        return newLayout;
+      }
+
+      // Dragged over another item
+      const overPos = findItemPosition(prev, overId);
+      if (!overPos) return prev;
+      if (activePos[0] === overPos[0]) return prev; // same column — sortable handles it
+
+      const newLayout = cloneDeep(prev);
+      const [item] = newLayout[activePos[0]].splice(activePos[1], 1);
+      newLayout[overPos[0]].splice(overPos[1], 0, item);
+      return newLayout;
+    });
+  }, []);
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
+      setActiveLayoutId(null);
       const { active, over } = event;
 
-      if (over && active.id !== over.id) {
-        const activeId = active.id as string;
-        const overId = over.id as string;
+      if (!over || active.id === over.id) {
+        // Dropped in place — sync in case dragOver changed columns
+        syncLayout(layoutRef.current);
+        return;
+      }
 
-        const [activeCol, activeRow] = activeId.split("-").map(Number);
-        const [overCol, overRow] = overId.split("-").map(Number);
+      const activeId = active.id as string;
+      const overId = over.id as string;
 
-        const newLayout = cloneDeep(layout);
-        const [item] = newLayout[activeCol].splice(activeRow, 1);
-        newLayout[overCol].splice(overRow, 0, item);
+      // Column target — dragOver already moved it
+      if (overId.startsWith("column-")) {
+        syncLayout(layoutRef.current);
+        return;
+      }
 
+      const currentLayout = layoutRef.current;
+      const activePos = findItemPosition(currentLayout, activeId);
+      const overPos = findItemPosition(currentLayout, overId);
+
+      if (!activePos || !overPos) {
+        syncLayout(currentLayout);
+        return;
+      }
+
+      const [activeCol, activeRow] = activePos;
+      const [overCol, overRow] = overPos;
+
+      if (activeCol === overCol && activeRow !== overRow) {
+        // Same column reorder
+        const newLayout = cloneDeep(currentLayout);
+        newLayout[activeCol] = arrayMove(newLayout[activeCol], activeRow, overRow);
         setLayout(newLayout);
         syncLayout(newLayout);
+      } else {
+        // Cross-column was handled by dragOver
+        syncLayout(currentLayout);
       }
     },
-    [layout, syncLayout]
+    [syncLayout]
   );
 
   // Node name editing (editNode URL is the API node detail endpoint; use PUT to update)
@@ -409,8 +499,8 @@ export default function NodeDetailPage({
   };
 
   // Render a single layout item
-  const renderLayoutItem = (item: LayoutItem, colIndex: number, rowIndex: number) => {
-    const key = `${item.type}-${colIndex}-${rowIndex}`;
+  const renderLayoutItem = (item: LayoutItem) => {
+    const key = getLayoutItemKey(item);
 
     switch (item.type) {
       case "collection": {
@@ -730,27 +820,36 @@ export default function NodeDetailPage({
       </div>
 
       {/* 3-column layout */}
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleLayoutDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+      >
         <div className="row px-3">
           {layout.map((column, colIndex) => (
-            <div key={colIndex} className={`col-lg-4 ${editLayout ? "edit-layout-mode" : ""}`}>
+            <DroppableColumn key={colIndex} colId={`column-${colIndex}`} editLayout={editLayout}>
               <SortableContext
-                items={column.map((_, rowIndex) => `${colIndex}-${rowIndex}`)}
+                items={column.map(item => getLayoutItemKey(item))}
                 strategy={verticalListSortingStrategy}
               >
-                {column.map((item, rowIndex) => (
+                {column.map(item => (
                   <SortableLayoutItem
-                    key={`${colIndex}-${rowIndex}`}
-                    id={`${colIndex}-${rowIndex}`}
+                    key={getLayoutItemKey(item)}
+                    id={getLayoutItemKey(item)}
                     editLayout={editLayout}
                   >
-                    {renderLayoutItem(item, colIndex, rowIndex)}
+                    {renderLayoutItem(item)}
                   </SortableLayoutItem>
                 ))}
               </SortableContext>
-            </div>
+            </DroppableColumn>
           ))}
         </div>
+        <DragOverlay>
+          {activeLayoutId ? <LayoutDragOverlay nodeRef={dragOverlayNodeRef} /> : null}
+        </DragOverlay>
       </DndContext>
 
       {/* Modals */}
@@ -843,6 +942,12 @@ export default function NodeDetailPage({
   );
 }
 
+const animateLayoutChanges: AnimateLayoutChanges = args => {
+  const { wasDragging } = args;
+  if (wasDragging) return false;
+  return defaultAnimateLayoutChanges(args);
+};
+
 interface SortableLayoutItemProps {
   id: string;
   editLayout: boolean;
@@ -853,6 +958,7 @@ function SortableLayoutItem({ id, editLayout, children }: SortableLayoutItemProp
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id,
     disabled: !editLayout,
+    animateLayoutChanges,
   });
   const elRef = useRef<HTMLDivElement | null>(null);
 
@@ -869,7 +975,7 @@ function SortableLayoutItem({ id, editLayout, children }: SortableLayoutItemProp
     if (el) {
       el.style.setProperty(
         "--sortable-transform",
-        transform ? CSS.Transform.toString(transform) : "none"
+        transform ? CSS.Transform.toString({ ...transform, scaleX: 1, scaleY: 1 }) : "none"
       );
       el.style.setProperty("--sortable-transition", transition ?? "none");
     }
@@ -878,10 +984,39 @@ function SortableLayoutItem({ id, editLayout, children }: SortableLayoutItemProp
   return (
     <div
       ref={refCallback}
+      data-layout-item-id={id}
       className={`mb-gutter sortable-layout-item ${editLayout ? "draggable-item" : ""} ${isDragging ? "dragging" : ""}`}
+      style={isDragging ? { opacity: 0 } : undefined}
       {...(editLayout ? { ...attributes, ...listeners } : {})}
     >
       {children}
     </div>
   );
+}
+
+interface DroppableColumnProps {
+  colId: string;
+  editLayout: boolean;
+  children: React.ReactNode;
+}
+
+function DroppableColumn({ colId, editLayout, children }: DroppableColumnProps) {
+  const { setNodeRef } = useDroppable({ id: colId });
+  return (
+    <div ref={setNodeRef} className={`col-lg-4 ${editLayout ? "edit-layout-mode" : ""}`}>
+      {children}
+    </div>
+  );
+}
+
+function LayoutDragOverlay({ nodeRef }: { nodeRef: React.RefObject<Node | null> }) {
+  const containerRef = useCallback(
+    (el: HTMLDivElement | null) => {
+      if (el && nodeRef.current) {
+        el.appendChild(nodeRef.current);
+      }
+    },
+    [nodeRef]
+  );
+  return <div className="layout-drag-overlay" ref={containerRef} />;
 }

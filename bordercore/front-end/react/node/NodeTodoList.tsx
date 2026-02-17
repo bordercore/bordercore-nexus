@@ -4,7 +4,9 @@ import React, {
   forwardRef,
   useImperativeHandle,
   useRef,
+  useCallback,
   useLayoutEffect,
+  useMemo,
 } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -22,6 +24,8 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
 } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -29,12 +33,20 @@ import {
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
+  defaultAnimateLayoutChanges,
+  type AnimateLayoutChanges,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Card } from "../common/Card";
 import { DropDownMenu } from "../common/DropDownMenu";
 import { doGet, doPost, doDelete } from "../utils/reactUtils";
 import type { NodeTodoItem } from "./types";
+
+const animateLayoutChanges: AnimateLayoutChanges = args => {
+  const { wasDragging } = args;
+  if (wasDragging) return false;
+  return defaultAnimateLayoutChanges(args);
+};
 
 interface SortableTodoItemProps {
   element: NodeTodoItem;
@@ -45,6 +57,7 @@ interface SortableTodoItemProps {
 function SortableTodoItem({ element, onEdit, onRemove }: SortableTodoItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: element.uuid,
+    animateLayoutChanges,
   });
 
   const nodeRef = useRef<HTMLDivElement | null>(null);
@@ -56,7 +69,9 @@ function SortableTodoItem({ element, onEdit, onRemove }: SortableTodoItemProps) 
   useLayoutEffect(() => {
     const el = nodeRef.current;
     if (!el) return;
-    el.style.transform = CSS.Transform.toString(transform);
+    el.style.transform = transform
+      ? CSS.Transform.toString({ ...transform, scaleX: 1, scaleY: 1 })
+      : "";
     el.style.transition = transition;
   }, [transform, transition]);
 
@@ -153,6 +168,7 @@ const NodeTodoList = forwardRef<NodeTodoListHandle, NodeTodoListProps>(function 
   ref
 ) {
   const [todoList, setTodoList] = useState<NodeTodoItem[]>([]);
+  const [activeId, setActiveId] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -229,7 +245,12 @@ const NodeTodoList = forwardRef<NodeTodoListHandle, NodeTodoListProps>(function 
     );
   };
 
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  }, []);
+
   const handleDragEnd = (event: DragEndEvent) => {
+    setActiveId(null);
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
@@ -252,6 +273,11 @@ const NodeTodoList = forwardRef<NodeTodoListHandle, NodeTodoListProps>(function 
       );
     }
   };
+
+  const activeTodo = useMemo(
+    () => (activeId ? todoList.find(item => item.uuid === activeId) : null),
+    [activeId, todoList]
+  );
 
   const headerDropdownContent = (
     <ul className="dropdown-menu-list">
@@ -304,7 +330,12 @@ const NodeTodoList = forwardRef<NodeTodoListHandle, NodeTodoListProps>(function 
     <div className="hover-reveal-target">
       <Card cardClassName="backdrop-filter node-color-1 position-relative" titleSlot={titleSlot}>
         <hr className="divider" />
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+        >
           <SortableContext
             items={todoList.map(item => item.uuid)}
             strategy={verticalListSortingStrategy}
@@ -321,6 +352,27 @@ const NodeTodoList = forwardRef<NodeTodoListHandle, NodeTodoListProps>(function 
               {todoList.length === 0 && <div className="text-muted">No tasks</div>}
             </ul>
           </SortableContext>
+          <DragOverlay>
+            {activeTodo ? (
+              <div className="slicklist-item dragging">
+                <div className="slicklist-list-item-inner">
+                  <li className="list-group-item pe-0">
+                    <div className="dropdown-height d-flex align-items-start">
+                      <div className="drag-handle pe-2">
+                        <FontAwesomeIcon icon={faBars} />
+                      </div>
+                      <div>
+                        {activeTodo.name}
+                        {activeTodo.note && (
+                          <div className="node-object-note">{activeTodo.note}</div>
+                        )}
+                      </div>
+                    </div>
+                  </li>
+                </div>
+              </div>
+            ) : null}
+          </DragOverlay>
         </DndContext>
       </Card>
     </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback, useLayoutEffect, useMemo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faSplotch,
@@ -18,6 +18,8 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
 } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -25,6 +27,8 @@ import {
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
+  defaultAnimateLayoutChanges,
+  type AnimateLayoutChanges,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Card } from "../common/Card";
@@ -32,6 +36,12 @@ import { DropDownMenu } from "../common/DropDownMenu";
 import { doGet, doPost } from "../utils/reactUtils";
 import type { CollectionLayoutItem } from "./types";
 import type { CollectionSettings } from "./NodeCollectionModal";
+
+const animateLayoutChanges: AnimateLayoutChanges = args => {
+  const { wasDragging } = args;
+  if (wasDragging) return false;
+  return defaultAnimateLayoutChanges(args);
+};
 
 function pluralize(word: string, count: number): string {
   return count === 1 ? word : `${word}s`;
@@ -65,6 +75,7 @@ function SortableItem({
 }: SortableItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: element.uuid,
+    animateLayoutChanges,
   });
 
   const nodeRef = useRef<HTMLDivElement | null>(null);
@@ -76,7 +87,9 @@ function SortableItem({
   useLayoutEffect(() => {
     const el = nodeRef.current;
     if (!el) return;
-    el.style.transform = CSS.Transform.toString(transform);
+    el.style.transform = transform
+      ? CSS.Transform.toString({ ...transform, scaleX: 1, scaleY: 1 })
+      : "";
     el.style.transition = transition;
   }, [transform, transition]);
 
@@ -212,6 +225,7 @@ export default function NodeCollectionCard({
   const [currentObjectIndex, setCurrentObjectIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const [editingNoteUuid, setEditingNoteUuid] = useState<string | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(null);
 
   const rotateIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -376,7 +390,12 @@ export default function NodeCollectionCard({
     }
   };
 
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  }, []);
+
   const handleDragEnd = (event: DragEndEvent) => {
+    setActiveId(null);
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
@@ -399,6 +418,11 @@ export default function NodeCollectionCard({
       );
     }
   };
+
+  const activeObject = useMemo(
+    () => (activeId ? objectList.find(item => item.uuid === activeId) : null),
+    [activeId, objectList]
+  );
 
   const handleObjectDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -548,6 +572,7 @@ export default function NodeCollectionCard({
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
           >
             <SortableContext
@@ -568,6 +593,36 @@ export default function NodeCollectionCard({
                 {objectList.length === 0 && <div className="text-muted">No objects</div>}
               </ul>
             </SortableContext>
+            <DragOverlay>
+              {activeObject ? (
+                <div className="slicklist-item dragging">
+                  <div className="slicklist-list-item-inner">
+                    <li className="list-group-item pe-0">
+                      <div className="dropdown-height d-flex align-items-start">
+                        <div className="drag-handle pe-2">
+                          <FontAwesomeIcon icon={faBars} />
+                        </div>
+                        {activeObject.type === "blob" ? (
+                          <div className="pe-2">
+                            <img src={activeObject.cover_url} height="75" width="70" alt="" />
+                          </div>
+                        ) : (
+                          <div className="pe-2">
+                            <FontAwesomeIcon icon={faBookmark} className="text-secondary" />
+                          </div>
+                        )}
+                        <div>
+                          <a href={activeObject.url}>{activeObject.name}</a>
+                          {activeObject.note && (
+                            <div className="node-object-note">{activeObject.note}</div>
+                          )}
+                        </div>
+                      </div>
+                    </li>
+                  </div>
+                </div>
+              ) : null}
+            </DragOverlay>
           </DndContext>
         )}
       </Card>

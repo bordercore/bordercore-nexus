@@ -103,6 +103,7 @@
 
   &.dragging {
     z-index: 1000;
+    opacity: 0.4;
   }
 }
 
@@ -139,7 +140,7 @@
 
     &.dragging {
       z-index: 1;
-      opacity: 0.5;
+      opacity: 1;
     }
   }
 }
@@ -150,4 +151,11 @@
   margin-bottom: var(--column-gutter);
   background-color: var(--link-color);
   border-radius: 2px;
+}
+
+// Layout drag overlay - rendered outside normal flow via portal (dnd-kit DragOverlay)
+.layout-drag-overlay {
+  .card {
+    box-shadow: 0 0 20px rgb(var(--bs-primary-rgb) / 50%);
+  }
 }
