@@ -32,6 +32,7 @@ export function TreeMenu({ item, depth = 1, initialOpen = false }: TreeMenuProps
               &#9656;
             </span>
           )}
+          {!isFolder && <span className="tree-leaf-prefix">- </span>}
           <a href={`#section_${item.id}`}>{item.label}</a>
         </div>
       )}
