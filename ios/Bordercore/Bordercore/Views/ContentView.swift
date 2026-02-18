@@ -91,6 +91,16 @@ struct SplashView: View {
             }
             .padding(.top, 8)
 
+            Button("Logout") {
+                AuthManager.shared.logout()
+            }
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(.secondary)
+            .accessibilityLabel("Log out of Bordercore")
+            .buttonStyle(.plain)
+            .padding(.top, 4)
+            .frame(maxWidth: .infinity, alignment: .center)
+
             Spacer()
         }
         .padding(.horizontal, 24)
@@ -167,12 +177,6 @@ struct MainView: View {
                                 onBack()
                             } label: {
                                 Label("Back", systemImage: "chevron.left")
-                            }
-
-                            Button(role: .destructive) {
-                                AuthManager.shared.logout()
-                            } label: {
-                                Label("Logout", systemImage: "rectangle.portrait.and.arrow.right")
                             }
                         } label: {
                             Image(systemName: "ellipsis.circle")

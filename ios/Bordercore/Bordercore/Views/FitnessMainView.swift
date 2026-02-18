@@ -20,12 +20,6 @@ struct FitnessMainView: View {
                             } label: {
                                 Label("Back", systemImage: "chevron.left")
                             }
-
-                            Button(role: .destructive) {
-                                AuthManager.shared.logout()
-                            } label: {
-                                Label("Logout", systemImage: "rectangle.portrait.and.arrow.right")
-                            }
                         } label: {
                             Image(systemName: "ellipsis.circle")
                         }
