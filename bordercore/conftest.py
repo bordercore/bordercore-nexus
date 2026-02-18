@@ -26,9 +26,10 @@ except ModuleNotFoundError:
 logging.getLogger("botocore").setLevel(logging.WARNING)
 logging.getLogger("boto3").setLevel(logging.WARNING)
 
-from accounts.models import UserNote, DrillTag
-from accounts.tests.factories import TEST_PASSWORD, UserFactory
 from django.contrib.auth.models import Group
+
+from accounts.models import DrillTag, UserNote
+from accounts.tests.factories import TEST_PASSWORD, UserFactory
 from tag.models import Tag
 
 # Load fixture modules so all tests can use them without per-app conftest imports
@@ -91,6 +92,8 @@ def mock_elasticsearch(request, monkeypatch):
     monkeypatch.setattr("search.services._delete_document", lambda *a, **kw: None)
     monkeypatch.setattr("blob.tests.factories.index_blob", lambda *a, **kw: None)
     monkeypatch.setattr("blob.services.get_recent_blobs", lambda *a, **kw: ([], {}))
+
+    yield
 
 
 @pytest.fixture(scope="session")

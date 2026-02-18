@@ -119,8 +119,8 @@ def run_test(test_kind: TestKind, is_verbose: bool = False) -> int:
         args: dict[str, Any] = {
             "name": "Bordercore Unit Tests",
             "command": [
-                sys.executable,
-                "-m",
+                "uv",
+                "run",
                 "pytest",
                 "-n",
                 "5",
@@ -137,8 +137,8 @@ def run_test(test_kind: TestKind, is_verbose: bool = False) -> int:
         args = {
             "name": "Bordercore Coverage Report",
             "command": [
-                sys.executable,
-                "-m",
+                "uv",
+                "run",
                 "pytest",
                 "-n",
                 "5",
@@ -158,8 +158,8 @@ def run_test(test_kind: TestKind, is_verbose: bool = False) -> int:
         args = {
             "name": "Bordercore Functional Tests",
             "command": [
-                sys.executable,
-                "-m",
+                "uv",
+                "run",
                 "pytest",
                 "-m",
                 "functional",
@@ -174,8 +174,8 @@ def run_test(test_kind: TestKind, is_verbose: bool = False) -> int:
         args = {
             "name": "Bordercore Wumpus Tests",
             "command": [
-                sys.executable,
-                "-m",
+                "uv",
+                "run",
                 "pytest",
                 "-m",
                 "wumpus",
@@ -194,13 +194,15 @@ def run_test(test_kind: TestKind, is_verbose: bool = False) -> int:
         args = {
             "name": "Bordercore Data Quality Tests",
             "command": [
-                sys.executable,
-                "-m",
+                "uv",
+                "run",
                 "pytest",
                 "-n",
                 "3",
                 "-m",
                 "not wumpus and data_quality",
+                "-p", "no:django",
+                "-o", "addopts=",
                 f"--junitxml={TEST_REPORT}",
                 f"{os.environ.get('BORDERCORE_HOME')}/"
             ]
