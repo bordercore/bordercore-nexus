@@ -66,8 +66,8 @@ final class FitnessExerciseDetailViewModel: ObservableObject {
         sets.remove(atOffsets: offsets)
     }
 
-    func submit() async {
-        guard canSubmit, let token = authManager.getToken() else { return }
+    func submit() async -> Bool {
+        guard canSubmit, let token = authManager.getToken() else { return false }
 
         isSubmitting = true
         errorMessage = nil
@@ -83,8 +83,10 @@ final class FitnessExerciseDetailViewModel: ObservableObject {
             sets.removeAll()
             note = ""
             await load()
+            return true
         } catch {
             handleError(error)
+            return false
         }
     }
 

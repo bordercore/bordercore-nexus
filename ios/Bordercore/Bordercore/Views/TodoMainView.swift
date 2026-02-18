@@ -5,6 +5,8 @@ struct TodoMainView: View {
     @State private var showSidebar = false
     @State private var showNewTodo = false
     @State private var editingTodo: TodoItem?
+    @State private var successToastMessage: String?
+    @State private var toastDismissTask: Task<Void, Never>?
     let onBack: () -> Void
 
     init(onBack: @escaping () -> Void = {}) {
@@ -53,7 +55,7 @@ struct TodoMainView: View {
                     saveButtonTitle: "Create",
                     suggestedTags: viewModel.tagCounts.map(\.name)
                 ) { name, note, urlString, tagsCSV, priority, dueDate in
-                    await viewModel.createTodo(
+                    let error = await viewModel.createTodo(
                         name: name,
                         note: note,
                         urlString: urlString,
@@ -61,6 +63,10 @@ struct TodoMainView: View {
                         priority: priority,
                         dueDate: dueDate
                     )
+                    if error == nil {
+                        showSuccessToast("Todo added")
+                    }
+                    return error
                 }
             }
             .sheet(item: $editingTodo) { todo in
@@ -89,8 +95,43 @@ struct TodoMainView: View {
                 }
             }
         }
+        .overlay(alignment: .bottom) {
+            if let message = successToastMessage {
+                Text(message)
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(Color.green.opacity(0.95))
+                    .clipShape(Capsule())
+                    .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
+                    .padding(.bottom, 14)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .allowsHitTesting(false)
+            }
+        }
+        .onDisappear {
+            toastDismissTask?.cancel()
+        }
         .task {
             await viewModel.loadInitialData()
+        }
+    }
+
+    private func showSuccessToast(_ message: String) {
+        toastDismissTask?.cancel()
+        withAnimation {
+            successToastMessage = message
+        }
+
+        toastDismissTask = Task {
+            try? await Task.sleep(nanoseconds: 3_000_000_000)
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                withAnimation {
+                    successToastMessage = nil
+                }
+            }
         }
     }
 }

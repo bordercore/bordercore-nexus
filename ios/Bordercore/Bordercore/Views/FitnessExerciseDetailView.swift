@@ -3,6 +3,8 @@ import UIKit
 
 struct FitnessExerciseDetailView: View {
     @StateObject private var viewModel: FitnessExerciseDetailViewModel
+    @State private var successToastMessage: String?
+    @State private var toastDismissTask: Task<Void, Never>?
 
     init(exerciseUUID: UUID) {
         _viewModel = StateObject(wrappedValue: FitnessExerciseDetailViewModel(exerciseUUID: exerciseUUID))
@@ -86,7 +88,10 @@ struct FitnessExerciseDetailView: View {
                     Section {
                         Button {
                             Task {
-                                await viewModel.submit()
+                                let didSubmit = await viewModel.submit()
+                                if didSubmit {
+                                    showSuccessToast("Workout saved")
+                                }
                             }
                         } label: {
                             if viewModel.isSubmitting {
@@ -105,18 +110,55 @@ struct FitnessExerciseDetailView: View {
         }
         .navigationTitle(viewModel.detail?.name ?? "Exercise")
         .overlay(alignment: .bottom) {
-            if let error = viewModel.errorMessage {
-                Text(error)
-                    .font(.footnote)
-                    .foregroundStyle(.white)
-                    .padding()
-                    .background(Color.red.opacity(0.9))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .padding()
+            VStack(spacing: 8) {
+                if let message = successToastMessage {
+                    Text(message)
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
+                        .background(Color.green.opacity(0.95))
+                        .clipShape(Capsule())
+                        .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                        .allowsHitTesting(false)
+                }
+
+                if let error = viewModel.errorMessage {
+                    Text(error)
+                        .font(.footnote)
+                        .foregroundStyle(.white)
+                        .padding()
+                        .background(Color.red.opacity(0.9))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                        .allowsHitTesting(false)
+                }
             }
+            .padding()
+        }
+        .onDisappear {
+            toastDismissTask?.cancel()
         }
         .task {
             await viewModel.load()
+        }
+    }
+
+    private func showSuccessToast(_ message: String) {
+        toastDismissTask?.cancel()
+        withAnimation {
+            successToastMessage = message
+        }
+
+        toastDismissTask = Task {
+            try? await Task.sleep(nanoseconds: 3_000_000_000)
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                withAnimation {
+                    successToastMessage = nil
+                }
+            }
         }
     }
 }
