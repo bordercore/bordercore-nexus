@@ -5,6 +5,7 @@ struct FitnessExerciseDetailView: View {
     @StateObject private var viewModel: FitnessExerciseDetailViewModel
     @State private var successToastMessage: String?
     @State private var toastDismissTask: Task<Void, Never>?
+    @State private var isLastWorkoutExpanded = false
 
     init(exerciseUUID: UUID) {
         _viewModel = StateObject(wrappedValue: FitnessExerciseDetailViewModel(exerciseUUID: exerciseUUID))
@@ -16,6 +17,55 @@ struct FitnessExerciseDetailView: View {
                 ProgressView("Loading...")
             } else {
                 Form {
+                    Section("Last Workout") {
+                        if let detail = viewModel.detail, hasLastWorkoutData(detail: detail) {
+                            DisclosureGroup(isExpanded: $isLastWorkoutExpanded) {
+                                if let lastWorkoutDate = detail.lastWorkoutDate {
+                                    LabeledContent("Date") {
+                                        Text(lastWorkoutDate.formatted(date: .abbreviated, time: .shortened))
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+
+                                ForEach(0..<lastWorkoutSetCount, id: \.self) { index in
+                                    HStack {
+                                        Text("Set \(index + 1)")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+
+                                        Spacer()
+
+                                        if detail.hasWeight {
+                                            Text("W \(valueAt(detail.latestWeight, index, formatter: formatNumeric))")
+                                                .font(.caption)
+                                        }
+
+                                        if detail.hasDuration {
+                                            Text("D \(valueAt(detail.latestDuration, index, formatter: { String($0) }))")
+                                                .font(.caption)
+                                        }
+
+                                        Text("R \(valueAt(detail.latestReps, index, formatter: { String($0) }))")
+                                            .font(.caption)
+                                    }
+                                }
+                            } label: {
+                                HStack {
+                                    Text("Show last workout")
+                                    Spacer()
+                                    if let lastWorkoutDate = detail.lastWorkoutDate {
+                                        Text(lastWorkoutDate.formatted(date: .abbreviated, time: .omitted))
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                            }
+                        } else {
+                            Text("No previous workout recorded")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
                     Section("New Workout Data") {
                         if viewModel.detail?.hasWeight ?? true {
                             HStack {
@@ -160,6 +210,27 @@ struct FitnessExerciseDetailView: View {
                 }
             }
         }
+    }
+
+    private var lastWorkoutSetCount: Int {
+        guard let detail = viewModel.detail else { return 0 }
+        return max(detail.latestReps.count, detail.latestWeight.count, detail.latestDuration.count)
+    }
+
+    private func hasLastWorkoutData(detail: FitnessExerciseDetail) -> Bool {
+        detail.lastWorkoutDate != nil || lastWorkoutSetCount > 0
+    }
+
+    private func valueAt<T>(_ values: [T], _ index: Int, formatter: (T) -> String) -> String {
+        guard values.indices.contains(index) else { return "-" }
+        return formatter(values[index])
+    }
+
+    private func formatNumeric(_ value: Double) -> String {
+        if value.rounded() == value {
+            return String(Int(value))
+        }
+        return String(value)
     }
 }
 
