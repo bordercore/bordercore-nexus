@@ -127,7 +127,7 @@ class MetricListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
                 "test_failures": str(metric.latest_result.get("test_failures", "0")),  # type: ignore[attr-defined]
                 "test_overdue": getattr(metric, "overdue", False),
                 "test_time_elapsed": str(metric.latest_result.get("test_time_elapsed", "")),  # type: ignore[attr-defined]
-                "test_runtime": metric.created.strftime("%b %d, %Y, %I:%M %p") if metric.created else "",  # type: ignore[attr-defined]
+                "test_runtime": timezone.localtime(metric.created).strftime("%b %d, %Y, %I:%M %p") if metric.created else "",  # type: ignore[attr-defined]
                 "test_output": linebreaksbr(metric.latest_result.get("test_output", "")),  # type: ignore[attr-defined]
             }
 
@@ -141,7 +141,7 @@ class MetricListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
             return {
                 "line_rate": metric.latest_result.get("line_rate", 0),  # type: ignore[attr-defined]
                 "test_overdue": getattr(metric, "overdue", False),
-                "test_runtime": metric.created.strftime("%b %d, %Y, %I:%M %p") if metric.created else "",  # type: ignore[attr-defined]
+                "test_runtime": timezone.localtime(metric.created).strftime("%b %d, %Y, %I:%M %p") if metric.created else "",  # type: ignore[attr-defined]
             }
 
         return {
