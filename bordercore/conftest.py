@@ -40,6 +40,7 @@ pytest_plugins = [
     "fixtures.node",
     "fixtures.functional",
     "fixtures.feed",
+    "fixtures.habit",
     "fixtures.todo",
     "fixtures.sort_order",
 ]
@@ -93,7 +94,7 @@ def mock_elasticsearch(request, monkeypatch):
     monkeypatch.setattr("blob.tests.factories.index_blob", lambda *a, **kw: None)
     monkeypatch.setattr("blob.services.get_recent_blobs", lambda *a, **kw: ([], {}))
 
-    yield
+    yield mock_client
 
 
 @pytest.fixture(scope="session")

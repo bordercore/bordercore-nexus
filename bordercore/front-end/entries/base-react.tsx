@@ -330,6 +330,12 @@ function SidebarContent() {
         icon: { element: "font-awesome-icon", attributes: { icon: "clock" }, class: "sidebar-icon-1" },
       },
       {
+        href: "/habit/",
+        title: "Habits",
+        alias: "/habit/*",
+        icon: { element: "font-awesome-icon", attributes: { icon: "check-double" }, class: "sidebar-icon-2" },
+      },
+      {
         href: "/tag/list",
         title: "Tags",
         alias: "/tag/list",

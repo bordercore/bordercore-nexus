@@ -4,7 +4,7 @@ from faker import Factory as FakerFactory
 from django.core.exceptions import ValidationError
 from django.db.utils import IntegrityError
 
-from tag.models import Tag, TagAlias, TagBookmark
+from tag.models import Tag, TagAlias, TagBookmark, TagHabit, TagTodo
 from tag.tests.factories import TagFactory
 
 pytestmark = [pytest.mark.django_db]
@@ -137,3 +137,128 @@ def test_unpin(authenticated_client, tag):
     tag[0].unpin()
 
     assert tag[0] not in user.userprofile.pinned_tags.all()
+
+
+def test_tag_unique_together(authenticated_client):
+    """Tag name must be unique per user."""
+
+    user, _ = authenticated_client()
+
+    Tag.objects.create(user=user, name="unique-tag")
+
+    with pytest.raises(IntegrityError):
+        Tag.objects.create(user=user, name="unique-tag")
+
+
+def test_tag_str(tag):
+    assert str(tag[0]) == tag[0].name
+
+
+def test_get_meta_tags(authenticated_client, tag):
+    """get_meta_tags returns names of tags where is_meta=True."""
+
+    user, _ = authenticated_client()
+
+    # tag[1] ("video") is created with is_meta=True in _seed_data,
+    # but get_meta_tags also requires blob__user=user, so create a blob.
+    from blob.tests.factories import BlobFactory
+    blob = BlobFactory(user=user)
+    blob.tags.add(tag[1])
+
+    meta_tags = Tag.get_meta_tags(user)
+    assert "video" in meta_tags
+    assert "django" not in meta_tags
+
+
+def test_get_todo_counts(authenticated_client, tag):
+    """get_todo_counts returns annotated counts for a tag."""
+
+    user, _ = authenticated_client()
+
+    result = tag[0].get_todo_counts().first()
+    assert result is not None
+    assert "name" in result
+    assert "bookmark__count" in result
+    assert "todo__count" in result
+
+
+def test_tag_todo_sort_order(todo):
+    """TagTodo entries maintain sort order on create and delete."""
+
+    # The `todo` fixture adds task_3 to tag_0 and tag_1.
+    # Get the tags from the todo's own tag set.
+    todo_tag = todo.tags.first()
+    entries = TagTodo.objects.filter(tag=todo_tag)
+    assert entries.exists()
+
+    # Deleting a TagTodo adjusts remaining sort orders
+    first = entries.order_by("sort_order").first()
+    first_order = first.sort_order
+    first.delete()
+
+    remaining = TagTodo.objects.filter(tag=todo_tag).order_by("sort_order")
+    if remaining.exists():
+        assert remaining.first().sort_order <= first_order
+
+
+def test_tag_habit_sort_order(habit):
+    """TagHabit entries are created with sort order."""
+
+    habit_tag = habit.tags.first()
+    entries = TagHabit.objects.filter(tag=habit_tag)
+    assert entries.exists()
+
+    # Verify sort_order is set
+    for entry in entries:
+        assert entry.sort_order >= 1
+
+
+def test_tag_habit_delete_adjusts_sort_order(authenticated_client):
+    """Deleting a TagHabit adjusts sort order for remaining entries."""
+
+    user, _ = authenticated_client()
+
+    from habit.tests.factories import HabitFactory
+    tag = TagFactory(user=user, name="habit-sort-test")
+    h1 = HabitFactory(user=user)
+    h2 = HabitFactory(user=user)
+    h3 = HabitFactory(user=user)
+
+    h1.tags.add(tag)
+    h2.tags.add(tag)
+    h3.tags.add(tag)
+
+    entries = TagHabit.objects.filter(tag=tag).order_by("sort_order")
+    assert entries.count() == 3
+
+    # Delete the first entry
+    entries.first().delete()
+
+    remaining = TagHabit.objects.filter(tag=tag).order_by("sort_order")
+    assert remaining.count() == 2
+    assert remaining[0].sort_order == 1
+    assert remaining[1].sort_order == 2
+
+
+def test_tag_alias_unique_name(authenticated_client):
+    """TagAlias name must be globally unique."""
+
+    user, _ = authenticated_client()
+
+    tag1 = TagFactory(user=user, name="alias-test-1")
+    tag2 = TagFactory(user=user, name="alias-test-2")
+
+    TagAlias.objects.create(user=user, tag=tag1, name="shared-alias")
+
+    with pytest.raises(IntegrityError):
+        TagAlias.objects.create(user=user, tag=tag2, name="shared-alias")
+
+
+def test_tag_alias_str(authenticated_client):
+
+    user, _ = authenticated_client()
+
+    tag = TagFactory(user=user, name="alias-str-test")
+    alias = TagAlias.objects.create(user=user, tag=tag, name="my alias")
+
+    assert str(alias) == "my alias"

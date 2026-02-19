@@ -16,6 +16,7 @@ import {
   faTags,
   faRunning,
   faClock,
+  faCheckDouble,
   faArrowsAltH,
 } from "@fortawesome/free-solid-svg-icons";
 
@@ -68,6 +69,7 @@ const iconMap: Record<string, any> = {
   tags: faTags,
   running: faRunning,
   clock: faClock,
+  "check-double": faCheckDouble,
 };
 
 // Helper function to get the current path

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load vite_tags %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+    <div id="react-root"
+        data-habit="{{ habit_json }}"
+        data-log-url="{% url 'habit:log' %}"
+        data-list-url="{% url 'habit:list' %}"
+    ></div>
+{% endblock %}
+
+{% block javascript_bundles %}
+    {{ block.super }}
+    {% vite_asset "dist/js/habit-detail" %}
+{% endblock %}

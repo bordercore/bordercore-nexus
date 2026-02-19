@@ -1,9 +1,9 @@
 """
-Models for tagging system including tags, tag-todo and tag-bookmark relations, and tag aliases.
+Models for tagging system including tags, tag-todo, tag-bookmark, tag-habit relations, and tag aliases.
 
 This module defines:
-- `Tag`: A label assigned to items such as bookmarks and todos.
-- `TagTodo` / `TagBookmark`: Intermediate models to assign and sort tags on todos/bookmarks.
+- `Tag`: A label assigned to items such as bookmarks, todos, and habits.
+- `TagTodo` / `TagBookmark` / `TagHabit`: Intermediate models to assign and sort tags.
 - `TagAlias`: An alternate name for a tag.
 It includes logic for ensuring lowercase names, preventing name collisions, and user pinning.
 """
@@ -28,6 +28,7 @@ from lib.mixins import SortOrderMixin
 
 if TYPE_CHECKING:
     from bookmark.models import Bookmark
+    from habit.models import Habit
     from todo.models import Todo
 
 
@@ -46,6 +47,9 @@ class Tag(models.Model):
     )
     todos: models.ManyToManyField["Todo", "TagTodo"] = models.ManyToManyField(
         "todo.Todo", through="TagTodo"
+    )
+    habits: models.ManyToManyField["Habit", "TagHabit"] = models.ManyToManyField(
+        "habit.Habit", through="TagHabit"
     )
 
     def __str__(self) -> str:
@@ -177,6 +181,33 @@ class TagBookmark(SortOrderMixin):
 def remove_bookmark(sender: type[Model], instance: TagBookmark, **kwargs: Any) -> None:
     """
     Signal handler to clean up when a TagBookmark is deleted.
+    """
+    instance.handle_delete()
+
+
+class TagHabit(SortOrderMixin):
+    """
+    Intermediate model linking Tags and Habits with sortable ordering.
+    """
+    tag = models.ForeignKey(Tag, on_delete=models.CASCADE)
+    habit = models.ForeignKey("habit.Habit", on_delete=models.CASCADE)
+
+    field_name = "tag"
+
+    def __str__(self) -> str:
+        return f"SortOrder: {self.tag}, {self.habit}"
+
+    class Meta:
+        ordering = ("sort_order",)
+        unique_together = (
+            ("tag", "habit")
+        )
+
+
+@receiver(pre_delete, sender=TagHabit)
+def remove_habit(sender: type[Model], instance: TagHabit, **kwargs: Any) -> None:
+    """
+    Signal handler to clean up when a TagHabit is deleted.
     """
     instance.handle_delete()
 

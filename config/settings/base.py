@@ -148,6 +148,7 @@ INSTALLED_APPS = (
     "drill",
     "feed",
     "fitness",
+    "habit",
     "lib",
     "node",
     "tag",
