@@ -114,6 +114,7 @@
 
 .tree-menu {
   padding: 1rem;
+  padding-left: 0;
   background-color: var(--surface2);
   border-radius: var(--border-radius1);
   list-style: none;
@@ -277,6 +278,36 @@ $blob-detail-gutter: 1rem;
 
   .hover-reveal-target:hover .collections-dropdown {
     opacity: 1;
+  }
+
+  // Markdown-rendered tables (blob content & note)
+  table {
+    overflow: hidden;
+    width: 100%;
+    border: 1px solid color-mix(in srgb, var(--border-color) 50%, $blob-heading-pink);
+    margin: 0.5rem 0;
+    border-collapse: collapse;
+    border-radius: var(--border-radius1);
+
+    th,
+    td {
+      padding: 0.5rem 0.75rem;
+      border: 1px solid color-mix(in srgb, var(--border-color) 50%, $blob-heading-pink);
+    }
+
+    thead {
+      background-color: var(--surface3);
+
+      th {
+        color: var(--text6);
+        font-weight: 600;
+        text-align: left;
+      }
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
   }
 }
 

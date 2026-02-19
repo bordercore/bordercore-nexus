@@ -256,7 +256,7 @@ export const TopSearch = forwardRef<TopSearchHandle, TopSearchProps>(function To
                           <FontAwesomeIcon icon={faHeart} className="text-danger me-1" />
                         )}
                         {option.doctype && (
-                          <em className="search-object-type">{option.doctype} - </em>
+                          <em className="search-object-type text-nowrap">{option.doctype} - </em>
                         )}
                         <span
                           className="d-inline"

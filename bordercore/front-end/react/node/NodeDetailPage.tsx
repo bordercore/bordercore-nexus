@@ -985,8 +985,7 @@ function SortableLayoutItem({ id, editLayout, children }: SortableLayoutItemProp
     <div
       ref={refCallback}
       data-layout-item-id={id}
-      className={`mb-gutter sortable-layout-item ${editLayout ? "draggable-item" : ""} ${isDragging ? "dragging" : ""}`}
-      style={isDragging ? { opacity: 0 } : undefined}
+      className={`mb-gutter sortable-layout-item ${editLayout ? "draggable-item" : ""} ${isDragging ? "dragging opacity-0" : ""}`}
       {...(editLayout ? { ...attributes, ...listeners } : {})}
     >
       {children}

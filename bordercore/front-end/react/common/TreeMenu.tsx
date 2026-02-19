@@ -60,7 +60,7 @@ export function TreeMenuRoot({ tree }: TreeMenuRootProps) {
   }
 
   return (
-    <ul className="tree-menu mb-0 ps-4">
+    <ul className="tree-menu mb-0">
       {tree.nodes.map((node, index) => (
         <TreeMenu key={index} item={node} depth={1} />
       ))}
