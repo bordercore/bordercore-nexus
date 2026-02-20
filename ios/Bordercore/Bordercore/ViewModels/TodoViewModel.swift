@@ -33,37 +33,69 @@ final class TodoViewModel: ObservableObject {
     @Published var errorMessage: String?
 
     private let authManager: AuthManager
+    private let userDefaults: UserDefaults
 
-    init(authManager: AuthManager = .shared) {
+    private enum PersistedFilterType: String {
+        case all
+        case priority
+        case tag
+    }
+
+    private enum DefaultsKey {
+        static let filterType = "todo.filter.type"
+        static let filterPriority = "todo.filter.priority"
+        static let filterTag = "todo.filter.tag"
+    }
+
+    init(authManager: AuthManager = .shared, userDefaults: UserDefaults = .standard) {
         self.authManager = authManager
+        self.userDefaults = userDefaults
+        self.viewState = restoreViewState()
     }
 
     func loadInitialData() async {
         isLoading = true
         errorMessage = nil
-        await reloadTodos()
+        await reloadAllTodos()
         isLoading = false
     }
 
     func refresh() async {
         isRefreshing = true
-        await reloadTodos()
+        switch viewState {
+        case .all:
+            await reloadAllTodos()
+        case .priority, .tag:
+            await reloadFilteredTodos(for: viewState)
+        }
         isRefreshing = false
     }
 
     func selectAll() {
         viewState = .all
+        persistViewState(.all)
         applyFilter()
+        Task {
+            await reloadAllTodos()
+        }
     }
 
     func selectPriority(_ priority: Int) {
         viewState = .priority(priority)
+        persistViewState(.priority(priority))
         applyFilter()
+        Task {
+            await reloadFilteredTodos(for: .priority(priority))
+        }
     }
 
     func selectTag(_ tagName: String) {
         viewState = .tag(tagName)
+        persistViewState(.tag(tagName))
         applyFilter()
+        Task {
+            await reloadFilteredTodos(for: .tag(tagName))
+        }
     }
 
     func createTodo(
@@ -87,7 +119,12 @@ final class TodoViewModel: ObservableObject {
                 token: token
             )
 
-            await reloadTodos()
+            await reloadAllTodos()
+            if case .priority = viewState {
+                await reloadFilteredTodos(for: viewState)
+            } else if case .tag = viewState {
+                await reloadFilteredTodos(for: viewState)
+            }
             return nil
         } catch {
             handleError(error)
@@ -118,7 +155,12 @@ final class TodoViewModel: ObservableObject {
                 token: token
             )
 
-            await reloadTodos()
+            await reloadAllTodos()
+            if case .priority = viewState {
+                await reloadFilteredTodos(for: viewState)
+            } else if case .tag = viewState {
+                await reloadFilteredTodos(for: viewState)
+            }
             return nil
         } catch {
             handleError(error)
@@ -137,7 +179,12 @@ final class TodoViewModel: ObservableObject {
 
         do {
             try await TodoService.shared.deleteTodo(uuid: todo.uuid, token: token)
-            recalculateFacets()
+            await reloadAllTodos()
+            if case .priority = viewState {
+                await reloadFilteredTodos(for: viewState)
+            } else if case .tag = viewState {
+                await reloadFilteredTodos(for: viewState)
+            }
         } catch {
             allTodos = originalAll
             todos = originalFiltered
@@ -145,7 +192,7 @@ final class TodoViewModel: ObservableObject {
         }
     }
 
-    private func reloadTodos() async {
+    private func reloadAllTodos() async {
         guard let token = authManager.getToken() else { return }
 
         do {
@@ -155,6 +202,32 @@ final class TodoViewModel: ObservableObject {
             }
             recalculateFacets()
             applyFilter()
+        } catch {
+            handleError(error)
+        }
+    }
+
+    private func reloadFilteredTodos(for state: TodoViewState) async {
+        guard let token = authManager.getToken() else { return }
+
+        do {
+            let fetched: [TodoItem]
+            switch state {
+            case .all:
+                fetched = try await TodoService.shared.fetchTodos(token: token)
+            case .priority(let priority):
+                fetched = try await TodoService.shared.fetchTodos(token: token, priority: priority)
+            case .tag(let tagName):
+                fetched = try await TodoService.shared.fetchTodos(token: token, tag: tagName)
+            }
+
+            let sorted = fetched.sorted { lhs, rhs in
+                lhs.priority < rhs.priority
+            }
+
+            if viewState == state {
+                todos = sorted
+            }
         } catch {
             handleError(error)
         }
@@ -201,6 +274,47 @@ final class TodoViewModel: ObservableObject {
             }
         } else {
             errorMessage = error.localizedDescription
+        }
+    }
+
+    private func persistViewState(_ state: TodoViewState) {
+        switch state {
+        case .all:
+            userDefaults.set(PersistedFilterType.all.rawValue, forKey: DefaultsKey.filterType)
+            userDefaults.removeObject(forKey: DefaultsKey.filterPriority)
+            userDefaults.removeObject(forKey: DefaultsKey.filterTag)
+        case .priority(let value):
+            userDefaults.set(PersistedFilterType.priority.rawValue, forKey: DefaultsKey.filterType)
+            userDefaults.set(value, forKey: DefaultsKey.filterPriority)
+            userDefaults.removeObject(forKey: DefaultsKey.filterTag)
+        case .tag(let name):
+            userDefaults.set(PersistedFilterType.tag.rawValue, forKey: DefaultsKey.filterType)
+            userDefaults.set(name, forKey: DefaultsKey.filterTag)
+            userDefaults.removeObject(forKey: DefaultsKey.filterPriority)
+        }
+    }
+
+    private func restoreViewState() -> TodoViewState {
+        guard let rawType = userDefaults.string(forKey: DefaultsKey.filterType),
+              let type = PersistedFilterType(rawValue: rawType) else {
+            return .all
+        }
+
+        switch type {
+        case .all:
+            return .all
+        case .priority:
+            let value = userDefaults.integer(forKey: DefaultsKey.filterPriority)
+            if [1, 2, 3].contains(value) {
+                return .priority(value)
+            }
+            return .all
+        case .tag:
+            guard let name = userDefaults.string(forKey: DefaultsKey.filterTag),
+                  !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                return .all
+            }
+            return .tag(name)
         }
     }
 }

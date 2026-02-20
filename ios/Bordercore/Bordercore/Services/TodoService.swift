@@ -23,8 +23,9 @@ actor TodoService {
 
     private init() {}
 
-    func fetchTodos(token: String) async throws -> [TodoItem] {
-        try await APIClient.shared.getList("/api/todos/", token: token)
+    func fetchTodos(token: String, priority: Int? = nil, tag: String? = nil) async throws -> [TodoItem] {
+        let endpoint = buildTodosEndpoint(priority: priority, tag: tag)
+        return try await APIClient.shared.getList(endpoint, token: token)
     }
 
     func createTodo(
@@ -132,5 +133,24 @@ actor TodoService {
             tagsCSV: cleanedTags,
             dueDate: dueDateString
         )
+    }
+
+    private func buildTodosEndpoint(priority: Int?, tag: String?) -> String {
+        var queryItems: [String] = []
+
+        if let priority {
+            queryItems.append("priority=\(priority)")
+        }
+
+        if let tag, !tag.isEmpty {
+            let encodedTag = tag.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? tag
+            queryItems.append("tag=\(encodedTag)")
+        }
+
+        guard !queryItems.isEmpty else {
+            return "/api/todos/"
+        }
+
+        return "/api/todos/?\(queryItems.joined(separator: "&"))"
     }
 }

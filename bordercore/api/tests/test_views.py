@@ -326,3 +326,42 @@ def test_todo_viewset(authenticated_client, todo):
     url = urls.reverse("todo-detail", kwargs={"uuid": todo.uuid})
     resp = client.get(url)
     assert resp.status_code == 404
+
+
+def test_todo_viewset_filters_by_priority(authenticated_client):
+    user, client = authenticated_client()
+
+    high = TodoFactory(user=user, priority=1)
+    medium = TodoFactory(user=user, priority=2)
+    low = TodoFactory(user=user, priority=3)
+
+    url = urls.reverse("todo-list")
+    resp = client.get(url, {"priority": 1})
+    assert resp.status_code == 200
+
+    result = resp.json()
+    returned_uuids = {item["uuid"] for item in result}
+    assert str(high.uuid) in returned_uuids
+    assert str(medium.uuid) not in returned_uuids
+    assert str(low.uuid) not in returned_uuids
+
+
+def test_todo_viewset_filters_by_tag(authenticated_client):
+    user, client = authenticated_client()
+
+    work_tag = TagFactory(user=user, name="work")
+    home_tag = TagFactory(user=user, name="home")
+    work_todo = TodoFactory(user=user, priority=1)
+    home_todo = TodoFactory(user=user, priority=2)
+
+    work_todo.tags.add(work_tag)
+    home_todo.tags.add(home_tag)
+
+    url = urls.reverse("todo-list")
+    resp = client.get(url, {"tag": "work"})
+    assert resp.status_code == 200
+
+    result = resp.json()
+    returned_uuids = {item["uuid"] for item in result}
+    assert str(work_todo.uuid) in returned_uuids
+    assert str(home_todo.uuid) not in returned_uuids

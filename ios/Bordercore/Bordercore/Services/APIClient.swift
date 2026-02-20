@@ -40,28 +40,22 @@ enum APIError: LocalizedError {
 actor APIClient {
     static let shared = APIClient()
 
-    private let baseURL: String = {
-        if let configuredURL = Bundle.main.object(forInfoDictionaryKey: "API_BASE_URL") as? String {
-            let trimmed = configuredURL.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !trimmed.isEmpty {
-                return trimmed
-            }
-        }
-
-        #if DEBUG
-        return "http://127.0.0.1:8000"
-        #else
-        return "https://www.bordercore.com"
-        #endif
-    }()
+    private let baseURL: String
 
     private let session: URLSession
 
     private init() {
+        self.baseURL = APIClient.resolveBaseURL()
+
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 30
         config.timeoutIntervalForResource = 60
-        session = URLSession(configuration: config)
+        self.session = URLSession(configuration: config)
+    }
+
+    init(baseURL: String, session: URLSession) {
+        self.baseURL = baseURL
+        self.session = session
     }
 
     // MARK: - Authentication
@@ -87,10 +81,7 @@ actor APIClient {
             throw APIError.invalidURL
         }
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("Token \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        let request = makeAuthorizedGETRequest(url: url, token: token)
 
         let data = try await performRawRequest(request)
 
@@ -105,6 +96,42 @@ actor APIClient {
                 throw APIError.decodingError(error)
             }
         }
+    }
+
+    func getAllPaginatedList<T: Decodable>(_ endpoint: String, token: String) async throws -> [T] {
+        guard let initialURL = URL(string: "\(baseURL)\(endpoint)") else {
+            throw APIError.invalidURL
+        }
+
+        let decoder = JSONDecoder()
+        let data = try await performRawRequest(makeAuthorizedGETRequest(url: initialURL, token: token))
+
+        if let list = try? decoder.decode([T].self, from: data) {
+            return list
+        }
+
+        var page: PaginatedResponse<T>
+        do {
+            page = try decoder.decode(PaginatedResponse<T>.self, from: data)
+        } catch {
+            throw APIError.decodingError(error)
+        }
+
+        var allResults = page.results
+        var nextURL = page.next
+
+        while let url = nextURL {
+            let pageData = try await performRawRequest(makeAuthorizedGETRequest(url: url, token: token))
+            do {
+                page = try decoder.decode(PaginatedResponse<T>.self, from: pageData)
+            } catch {
+                throw APIError.decodingError(error)
+            }
+            allResults.append(contentsOf: page.results)
+            nextURL = page.next
+        }
+
+        return allResults
     }
 
     func get<T: Decodable>(_ endpoint: String, token: String) async throws -> T {
@@ -286,6 +313,29 @@ actor APIClient {
             throw APIError.serverError(httpResponse.statusCode, responseBodyString(data))
         }
         return data
+    }
+
+    private static func resolveBaseURL() -> String {
+        if let configuredURL = Bundle.main.object(forInfoDictionaryKey: "API_BASE_URL") as? String {
+            let trimmed = configuredURL.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty {
+                return trimmed
+            }
+        }
+
+        #if DEBUG
+        return "http://127.0.0.1:8000"
+        #else
+        return "https://www.bordercore.com"
+        #endif
+    }
+
+    private func makeAuthorizedGETRequest(url: URL, token: String) -> URLRequest {
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Token \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        return request
     }
 
     private func responseBodyString(_ data: Data) -> String? {

@@ -3,8 +3,20 @@ import XCTest
 
 @MainActor
 final class TodoViewModelTests: XCTestCase {
+    private let defaultsSuiteName = "TodoViewModelTests"
+
+    override func setUp() {
+        super.setUp()
+        UserDefaults(suiteName: defaultsSuiteName)?.removePersistentDomain(forName: defaultsSuiteName)
+    }
+
+    override func tearDown() {
+        UserDefaults(suiteName: defaultsSuiteName)?.removePersistentDomain(forName: defaultsSuiteName)
+        super.tearDown()
+    }
+
     func testSelectPriorityFiltersTodos() throws {
-        let viewModel = TodoViewModel()
+        let viewModel = makeViewModel()
         viewModel.allTodos = [
             try makeTodo(uuid: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", name: "High one", priority: 1, tags: ["work"]),
             try makeTodo(uuid: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", name: "Low one", priority: 3, tags: ["home"])
@@ -18,7 +30,7 @@ final class TodoViewModelTests: XCTestCase {
     }
 
     func testSelectTagFiltersTodos() throws {
-        let viewModel = TodoViewModel()
+        let viewModel = makeViewModel()
         viewModel.allTodos = [
             try makeTodo(uuid: "cccccccc-cccc-cccc-cccc-cccccccccccc", name: "Task A", priority: 2, tags: ["ios", "work"]),
             try makeTodo(uuid: "dddddddd-dddd-dddd-dddd-dddddddddddd", name: "Task B", priority: 2, tags: ["personal"])
@@ -32,7 +44,7 @@ final class TodoViewModelTests: XCTestCase {
     }
 
     func testSelectAllReturnsAllTodos() throws {
-        let viewModel = TodoViewModel()
+        let viewModel = makeViewModel()
         viewModel.allTodos = [
             try makeTodo(uuid: "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee", name: "Task 1", priority: 1, tags: ["one"]),
             try makeTodo(uuid: "ffffffff-ffff-ffff-ffff-ffffffffffff", name: "Task 2", priority: 3, tags: ["two"])
@@ -45,6 +57,27 @@ final class TodoViewModelTests: XCTestCase {
 
         XCTAssertEqual(viewModel.viewState, .all)
         XCTAssertEqual(viewModel.todos.count, 2)
+    }
+
+    func testSelectedPriorityPersistsAcrossViewModelInstances() {
+        let viewModel = makeViewModel()
+        viewModel.selectPriority(2)
+
+        let restored = makeViewModel()
+        XCTAssertEqual(restored.viewState, .priority(2))
+    }
+
+    func testSelectedTagPersistsAcrossViewModelInstances() {
+        let viewModel = makeViewModel()
+        viewModel.selectTag("work")
+
+        let restored = makeViewModel()
+        XCTAssertEqual(restored.viewState, .tag("work"))
+    }
+
+    private func makeViewModel() -> TodoViewModel {
+        let defaults = UserDefaults(suiteName: defaultsSuiteName)!
+        return TodoViewModel(userDefaults: defaults)
     }
 
     private func makeTodo(uuid: String, name: String, priority: Int, tags: [String]) throws -> TodoItem {

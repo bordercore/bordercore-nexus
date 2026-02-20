@@ -189,7 +189,10 @@ class MobileBookmarkSerializer(serializers.ModelSerializer):
         Returns:
             List of tag name strings.
         """
-        return list(obj.tags.values_list("name", flat=True))
+        prefetched = getattr(obj, "_prefetched_objects_cache", {})
+        if "tags" in prefetched:
+            return [tag.name for tag in prefetched["tags"]]
+        return [tag.name for tag in obj.tags.all()]
 
     def get_thumbnail_url(self, obj: Bookmark) -> str:
         """Return the bookmark's thumbnail URL, or empty string if absent.

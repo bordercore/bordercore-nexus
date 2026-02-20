@@ -179,6 +179,10 @@ class BookmarkViewSet(UserScopedQuerysetMixin, viewsets.ModelViewSet):
     ordering_fields = ["created, modified"]
     ordering = ["-created"]
 
+    def get_queryset(self) -> QuerySet[Bookmark]:
+        """Return bookmarks owned by the current user with prefetched tags."""
+        return super().get_queryset().prefetch_related("tags")
+
     def perform_create(self, serializer: BookmarkSerializer) -> None:
         """Save the bookmark and index it in Elasticsearch.
 
@@ -214,7 +218,7 @@ class BookmarkViewSet(UserScopedQuerysetMixin, viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def untagged(self, request: Request) -> Response:
         """GET /api/bookmarks/untagged/ - Bare bookmarks without tags."""
-        queryset = Bookmark.objects.bare_bookmarks(request.user, limit=None)
+        queryset = Bookmark.objects.bare_bookmarks(request.user, limit=None).prefetch_related("tags")
         page = self.paginate_queryset(queryset)
         serializer = MobileBookmarkSerializer(page or queryset, many=True)
         if page:
@@ -224,15 +228,17 @@ class BookmarkViewSet(UserScopedQuerysetMixin, viewsets.ModelViewSet):
     @action(detail=False, methods=["get"], url_path="by-tag/(?P<tag_name>[^/.]+)")
     def by_tag(self, request: Request, tag_name: str | None = None) -> Response:
         """GET /api/bookmarks/by-tag/<tag_name>/ - Bookmarks for a tag."""
-        tag_bookmarks = TagBookmark.objects.filter(
+        tag_bookmarks = list(TagBookmark.objects.filter(
             tag__name=tag_name,
             tag__user=request.user,
             bookmark__user=request.user,
-        ).select_related("bookmark").order_by("sort_order")
-        # Return bookmarks with sort_order
+        ).select_related("bookmark").prefetch_related("bookmark__tags").order_by("sort_order"))
+
+        bookmarks = [tb.bookmark for tb in tag_bookmarks]
+        serialized = MobileBookmarkSerializer(bookmarks, many=True).data
+
         data = []
-        for tb in tag_bookmarks:
-            bookmark_data = MobileBookmarkSerializer(tb.bookmark).data
+        for bookmark_data, tb in zip(serialized, tag_bookmarks):
             bookmark_data["sort_order"] = tb.sort_order
             bookmark_data["tag_note"] = tb.note
             data.append(bookmark_data)
@@ -507,6 +513,7 @@ class TodoViewSet(UserScopedQuerysetMixin, viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = TodoSerializer
     queryset = Todo.objects.all()
+    pagination_class = None
     lookup_field = "uuid"
     ordering_fields = ["priority"]
 
@@ -528,8 +535,11 @@ class TodoViewSet(UserScopedQuerysetMixin, viewsets.ModelViewSet):
 
         request = cast(Request, self.request)
         priority = request.query_params.get("priority")
+        tag = request.query_params.get("tag")
         if priority is not None:
             queryset = queryset.filter(priority=priority)
+        if tag is not None:
+            queryset = queryset.filter(tags__name=tag).distinct()
 
         return queryset
 
