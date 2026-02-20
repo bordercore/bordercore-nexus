@@ -61,7 +61,7 @@ export default function HabitDetailPage({ habit, logUrl, listUrl }: HabitDetailP
   }
 
   return (
-    <div>
+    <div className="habit-detail-page">
       <div className="mb-3">
         <a href={listUrl}>&larr; All Habits</a>
       </div>
@@ -116,11 +116,10 @@ export default function HabitDetailPage({ habit, logUrl, listUrl }: HabitDetailP
                   <input
                     type="number"
                     step="any"
-                    className="form-control form-control-sm"
+                    className="form-control form-control-sm value-input"
                     value={value}
                     onChange={e => setValue(e.target.value)}
                     placeholder="Optional"
-                    style={{ width: "100px" }}
                   />
                 </div>
                 <div className="col">

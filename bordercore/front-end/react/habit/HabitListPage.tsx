@@ -112,7 +112,7 @@ export default function HabitListPage({
   }
 
   return (
-    <div>
+    <div className="habit-list-page">
       <h4>Active Habits</h4>
       {activeHabits.length === 0 ? (
         <p className="text-muted">No active habits. Create one in the admin.</p>
@@ -165,13 +165,13 @@ export default function HabitListPage({
           <table className="table table-sm">
             <thead>
               <tr>
-                <th style={{ cursor: "pointer" }} onClick={() => handleInactiveSort("name")}>
+                <th className="sortable-header" onClick={() => handleInactiveSort("name")}>
                   Habit{getInactiveSortIndicator("name")}
                 </th>
-                <th style={{ cursor: "pointer" }} onClick={() => handleInactiveSort("start_date")}>
+                <th className="sortable-header" onClick={() => handleInactiveSort("start_date")}>
                   Start Date{getInactiveSortIndicator("start_date")}
                 </th>
-                <th style={{ cursor: "pointer" }} onClick={() => handleInactiveSort("end_date")}>
+                <th className="sortable-header" onClick={() => handleInactiveSort("end_date")}>
                   End Date{getInactiveSortIndicator("end_date")}
                 </th>
                 <th className="text-center">Completed</th>

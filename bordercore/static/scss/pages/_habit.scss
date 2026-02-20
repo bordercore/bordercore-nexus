@@ -1,0 +1,21 @@
+// =============================================================================
+// HABIT PAGE STYLES
+// =============================================================================
+
+// Habit Detail Page
+.habit-detail-page {
+  .value-input {
+    width: 100px;
+  }
+}
+
+// Habit List Page
+.habit-list-page {
+  .sortable-header {
+    cursor: pointer;
+    
+    &:hover {
+      background-color: rgb(0 0 0 / 5%);
+    }
+  }
+}
