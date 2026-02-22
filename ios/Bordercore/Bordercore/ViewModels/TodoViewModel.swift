@@ -57,6 +57,12 @@ final class TodoViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
         await reloadAllTodos()
+        switch viewState {
+        case .all:
+            break
+        case .priority, .tag:
+            await reloadFilteredTodos(for: viewState)
+        }
         isLoading = false
     }
 
