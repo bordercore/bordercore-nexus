@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
+import MarkdownIt from "markdown-it";
 import { doPost } from "../utils/reactUtils";
 
 interface HabitLog {
@@ -27,6 +28,7 @@ interface HabitDetailPageProps {
 }
 
 export default function HabitDetailPage({ habit, logUrl, listUrl }: HabitDetailPageProps) {
+  const markdown = useMemo(() => new MarkdownIt(), []);
   const [logs, setLogs] = useState<HabitLog[]>(habit.logs);
   const [logDate, setLogDate] = useState(new Date().toISOString().split("T")[0]);
   const [completed, setCompleted] = useState(true);
@@ -67,10 +69,22 @@ export default function HabitDetailPage({ habit, logUrl, listUrl }: HabitDetailP
       </div>
 
       <div className="mb-4">
-        {habit.purpose && <p className="text-muted">{habit.purpose}</p>}
+        {/* User-owned content rendered with markdown-it - safe to render */}
+        {habit.purpose && (
+          <div
+            className="text-muted"
+            dangerouslySetInnerHTML={{ __html: markdown.render(habit.purpose) }}
+          />
+        )}
         <div className="d-flex gap-3 text-muted small">
-          <span>Started: {habit.start_date}</span>
-          {habit.end_date && <span>Ended: {habit.end_date}</span>}
+          <span>
+            <span className="text-info">Started:</span> {habit.start_date}
+          </span>
+          {habit.end_date && (
+            <span>
+              <span className="text-info">Ended:</span> {habit.end_date}
+            </span>
+          )}
           {habit.tags.length > 0 && (
             <span>
               Tags:{" "}
@@ -168,7 +182,8 @@ export default function HabitDetailPage({ habit, logUrl, listUrl }: HabitDetailP
                   )}
                 </td>
                 <td>{log.value ?? ""}</td>
-                <td>{log.note}</td>
+                {/* User-owned content rendered with markdown-it - safe to render */}
+                <td dangerouslySetInnerHTML={{ __html: markdown.render(log.note) }} />
               </tr>
             ))}
           </tbody>

@@ -49,7 +49,7 @@ class Habit(TimeStampedModel):
     start_date = models.DateField()
     end_date = models.DateField(null=True, blank=True)
     user = models.ForeignKey(User, on_delete=models.PROTECT)
-    tags = models.ManyToManyField(Tag)
+    tags = models.ManyToManyField(Tag, blank=True)
 
     objects = HabitManager()
 
