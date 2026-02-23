@@ -453,45 +453,56 @@ class Dashboard():
 
         return language_map.get(language, language)
 
-    def _write_debug(self, message: str) -> None:
-        """Write debug message to /tmp/rich_dashboard_debug.log.
-
-        Args:
-            message: Debug message to write
-        """
-        debug_file = "/tmp/rich_dashboard_debug.log"
-        try:
-            with open(debug_file, "a") as f:
-                f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {message}\n")
-        except Exception:
-            pass  # Silently fail if we can't write debug file
+    def _is_minified_code(self, code: str) -> bool:
+        """Detect minified/compressed code that would be expensive to syntax highlight."""
+        lines = [line for line in code.split("\n") if line.strip()]
+        if not lines:
+            return False
+        max_len = max(len(line) for line in lines)
+        avg_len = sum(len(line) for line in lines) / len(lines)
+        return max_len > 500 or avg_len > 200
 
     def update_code_echoes(self) -> None:
         """Updates the Code echoes panel with code samples from GitHub.
 
         Fetches code samples using GitHubCodeSampler and displays the code_preview
-        with syntax highlighting based on the language field.
+        with syntax highlighting based on the language field. Retries automatically
+        if the fetched code is minified/compressed.
         """
-        # Show "Retrieving code..." while fetching
-        self.layout["code_echoes"].update(Panel(
-            "Retrieving code...",
-            title=Text("Code Echoes")
-        ))
+        max_retries = 5
+        retry_delay = 3  # seconds
 
-        sampler = GitHubCodeSampler(
-            token=self.github_token,
-            max_events=100,
-            num_lines=None
-        )
-        sample_dict = sampler.get_sample()
-        code_preview = sample_dict.get("code_preview", "No code preview available")
-        repo = sample_dict.get("repo", {})
-        raw_language = repo.get("language", "text")
-        language = self._normalize_language(raw_language)
+        for attempt in range(max_retries):
+            # Show status while fetching
+            if attempt == 0:
+                status_msg = "Retrieving code..."
+            else:
+                status_msg = f"Skipped minified code, retrying... ({attempt + 1}/{max_retries})"
+            self.layout["code_echoes"].update(Panel(
+                status_msg,
+                title=Text("Code Echoes")
+            ))
 
-        # Debug: Write to file instead of console
-        debug_msg = f"Raw language: {raw_language!r}, Normalized: {language!r}, Code preview length: {len(code_preview)}"
-        self._write_debug(debug_msg)
+            sampler = GitHubCodeSampler(
+                token=self.github_token,
+                max_events=100,
+                num_lines=None
+            )
+            sample_dict = sampler.get_sample()
+            code_preview = sample_dict.get("code_preview", "No code preview available")
+            repo = sample_dict.get("repo", {})
+            raw_language = repo.get("language", "text")
+            language = self._normalize_language(raw_language)
+
+            file_info = sample_dict.get("file", {})
+            is_minified = self._is_minified_code(code_preview)
+
+            if is_minified:
+                if attempt < max_retries - 1:
+                    time.sleep(retry_delay)
+                    continue
+
+            break
 
         # Build header with repo name and description
         header_parts = []
@@ -515,7 +526,6 @@ class Dashboard():
             header_parts.append(Text(first_line, style="green"))
 
         # Filename (base filename and enclosing directory) in dim yellow
-        file_info = sample_dict.get("file", {})
         filename = file_info.get("filename", "")
         if filename:
             # Extract directory and base filename
@@ -543,8 +553,6 @@ class Dashboard():
                 header.append("\n")
             header.append(part)
 
-        # Create syntax-highlighted code
-        # Use word_wrap=True to handle long lines better
         try:
             syntax = Syntax(
                 code_preview,
@@ -554,9 +562,6 @@ class Dashboard():
                 word_wrap=True
             )
         except Exception as e:
-            # If syntax highlighting fails, fall back to plain text with error info
-            error_msg = f"Syntax highlighting error: {e}"
-            self._write_debug(error_msg)
             syntax = Text(f"Syntax highlighting error: {e}\nLanguage: {raw_language} -> {language}\n\n{code_preview}")
 
         # Combine header and syntax, wrap in scrollable panel
@@ -565,7 +570,7 @@ class Dashboard():
 
         self.layout["code_echoes"].update(Panel(
             self.code_echoes_scroller,
-            title=Text("Code Echoes [↑↓ PgUp/PgDn q=quit]", style="dim")
+            title=Text("Code Echoes")
         ))
         self.update_timers["code_echoes"]["last_update"] = time.time()
 
