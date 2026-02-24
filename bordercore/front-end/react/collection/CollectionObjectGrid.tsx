@@ -9,6 +9,7 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
+  DragStartEvent,
 } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -44,8 +45,13 @@ export function CollectionObjectGrid({
     })
   );
 
+  const handleDragStart = useCallback((_event: DragStartEvent) => {
+    setIsDragOverContainer(true);
+  }, []);
+
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
+      setIsDragOverContainer(false);
       const { active, over } = event;
 
       if (over && active.id !== over.id) {
@@ -60,13 +66,14 @@ export function CollectionObjectGrid({
     [objects, onReorder]
   );
 
+  const handleDragCancel = useCallback(() => {
+    setIsDragOverContainer(false);
+  }, []);
+
   // Container drag handlers for file drops
   const handleContainerDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    // Only show drag over state if there are files being dragged
-    if (e.dataTransfer.types.includes("Files")) {
-      setIsDragOverContainer(true);
-    }
+    setIsDragOverContainer(true);
   }, []);
 
   const handleContainerDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
@@ -92,12 +99,18 @@ export function CollectionObjectGrid({
 
   return (
     <div
-      className={`drag-target d-flex flex-wrap w-100 ${isDragOverContainer ? "collection-drag-over" : ""}`}
+      className={`drag-target d-flex flex-wrap w-100 ${isDragOverContainer ? "drag-over" : ""}`}
       onDragOver={handleContainerDragOver}
       onDragLeave={handleContainerDragLeave}
       onDrop={handleContainerDrop}
     >
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
+      >
         <SortableContext items={objects.map(obj => obj.uuid)} strategy={rectSortingStrategy}>
           {objects.map(object => (
             <SortableCollectionItem
