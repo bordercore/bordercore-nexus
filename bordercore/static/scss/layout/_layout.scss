@@ -51,7 +51,7 @@
 .top-title-container {
   position: relative;
   display: flex;
-  overflow: hidden;
+  overflow: visible;
   min-width: 0;
   flex: 1 1 auto;
   align-items: center;
@@ -74,15 +74,34 @@
   #top-title-text {
     position: relative;
     overflow: hidden;
-    background: linear-gradient(135deg, #67e8f9 0%, #9c42f5 100%);
+    padding-bottom: 0.15em;
+    animation: gradient-shift 16s ease-in-out infinite;
+    background: linear-gradient(
+      90deg,
+      #67e8f9 0%,
+      #9c42f5 25%,
+      #f97316 50%,
+      #9c42f5 75%,
+      #67e8f9 100%
+    );
     background-clip: text;
+    background-size: 300% auto;
     font-family: Roboto, sans-serif;
     font-size: 2.5rem;
     font-weight: 600;
     -webkit-text-fill-color: transparent;
     text-overflow: ellipsis;
-    text-shadow: 0 0 30px rgb(103 232 249 / 30%);
     white-space: nowrap;
+  }
+}
+
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% center;
+  }
+
+  50% {
+    background-position: 100% center;
   }
 }
 
