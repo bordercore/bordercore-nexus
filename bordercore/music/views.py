@@ -833,7 +833,7 @@ def mark_song_as_listened_to(request: Request, song_uuid: str) -> Response:
     )
 
 
-@api_view(["GET"])
+@api_view(["POST"])
 def get_song_id3_info(request: HttpRequest) -> Response:
     """Extract ID3 information from an uploaded song file.
 

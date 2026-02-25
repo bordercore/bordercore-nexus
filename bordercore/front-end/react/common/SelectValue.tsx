@@ -57,7 +57,7 @@ export const SelectValue = forwardRef<SelectValueHandle, SelectValueProps>(funct
 ) {
   const [value, setValue] = useState<Option | null>(initialValue || null);
   const [options, setOptions] = useState<Option[]>([]);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(initialValue?.[label] || initialValue?.name || "");
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
@@ -169,6 +169,7 @@ export const SelectValue = forwardRef<SelectValueHandle, SelectValueProps>(funct
       search: search,
       setValue: (val: string) => {
         setValue({ [label]: val });
+        setSearch(val);
       },
       clear: () => {
         setValue(null);
