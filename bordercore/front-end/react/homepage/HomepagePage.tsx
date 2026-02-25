@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Card } from "../common/Card";
 import { DrillTagProgress } from "./DrillTagProgress";
 import { CalendarCard } from "./CalendarCard";
+import { tagStyle } from "../utils/tagColors";
 import type {
   Task,
   DrillProgress,
@@ -118,7 +119,11 @@ export function HomepagePage({
                   <li key={task.uuid} className="list-group-item list-group-item-secondary">
                     {task.name}
                     {task.tags.map(tag => (
-                      <span key={tag} className="tag">
+                      <span
+                        key={tag}
+                        className="tag"
+                        style={tagStyle(tag)} // must remain inline
+                      >
                         {tag}
                       </span>
                     ))}

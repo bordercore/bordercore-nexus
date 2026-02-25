@@ -2,6 +2,7 @@ import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart } from "@fortawesome/free-solid-svg-icons";
 import type { TagDetailMatch } from "./types";
+import { tagStyle } from "../utils/tagColors";
 
 interface TagSearchResultProps {
   docType: string;
@@ -109,7 +110,12 @@ export function TagSearchResult({ docType, matches, isActive = false }: TagSearc
                     )}
                     <div className="d-flex flex-wrap mt-2">
                       {match.tags.map(tag => (
-                        <a key={tag.name} href={tag.url} className="tag">
+                        <a
+                          key={tag.name}
+                          href={tag.url}
+                          className="tag"
+                          style={tagStyle(tag.name)} // must remain inline
+                        >
                           {tag.name}
                         </a>
                       ))}

@@ -8,6 +8,12 @@
   --text3: #ffffff;
   --text3-transparent: #fffffff0;
 
+  // Per-tag coloring
+  --tag-saturation: 65%;
+  --tag-text-lightness: 80%;
+  --tag-bg-lightness: 55%;
+  --tag-border-lightness: 65%;
+
   --text4-hue: 281;
   --text4-saturation: 62%;
   --text4-lightness: 82%;
@@ -83,6 +89,8 @@
   --form-border-color-hover: var(--text3);
   --form-color: var(--text5);
   --border-color: var(--surface4);
+  --btn-active-border: var(--text4);
+  --btn-active-bg: var(--surface5);
   --hover-bg: var(--surface4);
   --link-color: var(--text5);
   --notice-color: var(--text1);

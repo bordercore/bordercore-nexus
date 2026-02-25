@@ -67,44 +67,53 @@ input[type="checkbox"] {
   opacity: 0.7;
 }
 
-// Tags
-a.tag {
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  margin: 0.125rem;
-  background-color: var(--tag-bg);
-  border-radius: var(--border-radius1);
-  color: var(--tag-text);
-  font-size: 0.875rem;
+// Tags — deterministic per-tag coloring via --tag-hue (set inline by JS)
+.tag,
+a.tag,
+.ti-input .ti-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.625rem;
+  border: 1px solid hsl(var(--tag-hue, 0) var(--tag-saturation) var(--tag-border-lightness) / 40%);
+  margin: 0 0.125rem;
+  background-color: hsl(var(--tag-hue, 0) var(--tag-saturation) var(--tag-bg-lightness) / 15%);
+  border-radius: 0.375rem;
+  color: hsl(var(--tag-hue, 0) var(--tag-saturation) var(--tag-text-lightness));
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.25rem;
   text-decoration: none;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
 
   &:link,
   &:visited {
-    color: var(--text4);
+    color: hsl(var(--tag-hue, 0) var(--tag-saturation) var(--tag-text-lightness));
   }
 
   &:hover {
-    background-color: var(--tag-hover-bg);
-    color: var(--surface6);
+    border-color: hsl(var(--tag-hue, 0) var(--tag-saturation) var(--tag-border-lightness) / 60%);
+    background-color: hsl(var(--tag-hue, 0) var(--tag-saturation) var(--tag-bg-lightness) / 25%);
+    color: hsl(var(--tag-hue, 0) var(--tag-saturation) var(--tag-text-lightness));
     text-decoration: none;
   }
 }
 
-.tag, .ti-input .ti-tag {
-  padding: 0 0.3rem 0.18rem !important;
-  border: 0.12rem solid var(--surface5);
-  margin: 0 0.12rem !important;
-  background-color: var(--surface6) !important;
-  border-radius: 1.5rem !important;
-  color: var(--text4) !important;
-  line-height: 1.5rem;
-  white-space: nowrap;
+// UI chrome tags (filter pills, selected tag chips) — keep theme accent color
+.tag-accent {
+  border-color: color-mix(in srgb, var(--text3) 25%, transparent);
+  background-color: color-mix(in srgb, var(--text3) 10%, transparent);
+  color: var(--text3);
+
+  &:link,
+  &:visited {
+    color: var(--text3);
+  }
 
   &:hover {
-    background-color: var(--text4) !important;
-    color: var(--surface6) !important;
-    text-decoration: none;
+    border-color: color-mix(in srgb, var(--text3) 40%, transparent);
+    background-color: color-mix(in srgb, var(--text3) 20%, transparent);
+    color: var(--text3);
   }
 }
 

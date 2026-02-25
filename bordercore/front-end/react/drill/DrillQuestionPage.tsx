@@ -83,6 +83,7 @@ import RelatedObjects, { RelatedObjectsHandle } from "../common/RelatedObjects";
 import ObjectSelectModal, { ObjectSelectModalHandle } from "../common/ObjectSelectModal";
 import PythonConsole, { PythonConsoleHandle } from "../common/PythonConsole";
 import { doGet, doPost, EventBus } from "../utils/reactUtils";
+import { tagStyle } from "../utils/tagColors";
 import { animateCSS } from "../../util.js";
 
 // Initialize markdown parser
@@ -553,6 +554,7 @@ export function DrillQuestionPage({
                       <a
                         key={tag.name}
                         className="tag me-1"
+                        style={tagStyle(tag.name)} // must remain inline
                         href={`${urls.startStudySession}?study_method=tag&tags=${tag.name}`}
                       >
                         {tag.name}

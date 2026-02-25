@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faQuestion, faCopy } from "@fortawesome/free-solid-svg-icons";
 import markdownit from "markdown-it";
 import { Card } from "./Card";
+import { tagStyle } from "../utils/tagColors";
 
 interface BackReference {
   uuid: string;
@@ -58,7 +59,8 @@ export function BackReferences({ backReferences }: BackReferencesProps) {
                   />
                   <div className="pt-2">
                     {node.tags.map(tag => (
-                      <span key={tag} className="tag me-2">
+                      // must remain inline
+                      <span key={tag} className="tag me-2" style={tagStyle(tag)}>
                         {tag}
                       </span>
                     ))}
@@ -81,7 +83,8 @@ export function BackReferences({ backReferences }: BackReferencesProps) {
                   />
                   <div className="pt-2">
                     {node.tags.map(tag => (
-                      <span key={tag} className="tag me-2">
+                      // must remain inline
+                      <span key={tag} className="tag me-2" style={tagStyle(tag)}>
                         {tag}
                       </span>
                     ))}

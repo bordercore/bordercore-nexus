@@ -12,6 +12,7 @@ import {
   faTasks,
 } from "@fortawesome/free-solid-svg-icons";
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import { tagStyle } from "../utils/tagColors";
 
 // Map icon names to FontAwesome icons
 const ICON_MAP: Record<string, IconDefinition> = {
@@ -78,7 +79,12 @@ export function SearchResult({
         {extraSlot}
         <div>
           {tags.map(tag => (
-            <a key={tag} href={tagUrl.replace("666", tag)} className="tag">
+            <a
+              key={tag}
+              href={tagUrl.replace("666", tag)}
+              className="tag"
+              style={tagStyle(tag)} // must remain inline
+            >
               {tag}
             </a>
           ))}

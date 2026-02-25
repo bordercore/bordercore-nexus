@@ -39,22 +39,6 @@
     background-color: var(--surface2);
   }
 
-  .tag {
-    padding: 0 0.3rem 0.18rem;
-    border: 0.12rem solid var(--surface5);
-    margin: 0 0.12rem;
-    background-color: var(--surface6);
-    border-radius: 1.5rem;
-    color: var(--text4);
-    line-height: 1.5rem;
-    white-space: nowrap;
-
-    &:hover {
-      background-color: var(--text4);
-      color: var(--surface6);
-      text-decoration: none;
-    }
-  }
 
   .progress-circle {
     circle.circle-partial {

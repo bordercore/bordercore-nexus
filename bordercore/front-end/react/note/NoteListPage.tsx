@@ -20,6 +20,7 @@ import MarkdownIt from "markdown-it";
 import { Card } from "../common/Card";
 import { Pagination } from "../search/Pagination";
 import { doPost } from "../utils/reactUtils";
+import { tagStyle } from "../utils/tagColors";
 import type { NoteListPageProps, NoteResult, PinnedNote } from "./types";
 
 // Should match CSS class "note-content"
@@ -160,7 +161,11 @@ function NoteCard({
           </div>
           {(note.source.tags ?? []).map(tag => (
             <span key={tag} className="me-2">
-              <a className="tag" href={`${urls.notesSearch}?tagsearch=${tag}`}>
+              <a
+                className="tag"
+                style={tagStyle(tag)} // must remain inline
+                href={`${urls.notesSearch}?tagsearch=${tag}`}
+              >
                 {tag}
               </a>
             </span>
@@ -207,7 +212,11 @@ function SearchResultItem({ note, isSelected, onClick, urls }: SearchResultItemP
       <div className="mt-2">
         {(note.source.tags ?? []).map(tag => (
           <span key={tag} className="me-2">
-            <a className="tag" href={`${urls.notesSearch}?tagsearch=${tag}`}>
+            <a
+              className="tag"
+              style={tagStyle(tag)} // must remain inline
+              href={`${urls.notesSearch}?tagsearch=${tag}`}
+            >
               {tag}
             </a>
           </span>

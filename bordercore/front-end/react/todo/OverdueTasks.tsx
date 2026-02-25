@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faList, faCalendarAlt, faTrashAlt, faCheck } from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
+import { tagStyle } from "../utils/tagColors";
 
 interface Task {
   uuid: string;
@@ -109,7 +110,11 @@ export function OverdueTasks({
                     <div>
                       {task.name}
                       {task.tags.map(tag => (
-                        <span key={tag} className="tag ms-2">
+                        <span
+                          key={tag}
+                          className="tag ms-2"
+                          style={tagStyle(tag)} // must remain inline
+                        >
                           {tag}
                         </span>
                       ))}

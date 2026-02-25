@@ -13,6 +13,12 @@
   --text3: hsl(var(--text3-hue), var(--text3-saturation), var(--text3-lightness));
   --text3-transparent: hsl(var(--text3-hue), var(--text3-saturation), var(--text3-lightness), 0.25);
 
+  // Per-tag coloring
+  --tag-saturation: 70%;
+  --tag-text-lightness: 75%;
+  --tag-bg-lightness: 50%;
+  --tag-border-lightness: 60%;
+
   --text4-hue: 211;
   --text4-saturation: 65%;
   --text4-lightness: 65%;
@@ -95,6 +101,8 @@
   --form-border-color-hover: var(--text3);
   --form-color: var(--text4);
   --border-color: var(--surface5);
+  --btn-active-border: var(--text4);
+  --btn-active-bg: var(--surface3);
   --hover-bg: var(--surface3);
   --link-color: var(--text3);
   --notice-color: var(--text1);

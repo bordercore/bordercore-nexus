@@ -41,6 +41,7 @@ import { BlobDetailCover } from "./BlobDetailCover";
 import { CollectionsCard } from "./CollectionsCard";
 import { AddToCollectionModal, AddToCollectionModalHandle } from "./AddToCollectionModal";
 import { doGet, doPost, EventBus } from "../utils/reactUtils";
+import { tagStyle } from "../utils/tagColors";
 import type { BlobDetailPageProps, Collection, ElasticsearchInfo } from "./types";
 
 // Add copy button to code blocks after Prism highlighting
@@ -439,7 +440,12 @@ export function BlobDetailPage({
                   <div className="ms-2">
                     <div id="blob-tag-list">
                       {blob.tags.map(tag => (
-                        <a key={tag.name} className="tag" href={tag.url}>
+                        <a
+                          key={tag.name}
+                          className="tag"
+                          style={tagStyle(tag.name)} // must remain inline
+                          href={tag.url}
+                        >
                           {tag.name}
                         </a>
                       ))}

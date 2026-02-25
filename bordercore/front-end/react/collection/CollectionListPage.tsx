@@ -91,7 +91,7 @@ export function CollectionListPage({ collections, urls, csrfToken }: CollectionL
             )}
 
             {filter && (
-              <div className="tag d-flex align-items-center me-3">
+              <div className="tag tag-accent d-flex align-items-center me-3">
                 <div>
                   Filter: <strong>{filter}</strong>
                 </div>

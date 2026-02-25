@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTags } from "@fortawesome/free-solid-svg-icons";
 import { Card } from "./Card";
 import { doGet } from "../utils/reactUtils";
+import { tagStyle } from "../utils/tagColors";
 
 interface RelatedTagInfo {
   tag_name: string;
@@ -105,7 +106,12 @@ export const RelatedTags = forwardRef<RelatedTagsHandle, RelatedTagsProps>(funct
                 className="mt-3 cursor-pointer"
                 onClick={() => handleTagClick(tag.tag_name)}
               >
-                <span className="tag">{tag.tag_name}</span>
+                <span
+                  className="tag"
+                  style={tagStyle(tag.tag_name)} // must remain inline
+                >
+                  {tag.tag_name}
+                </span>
                 <span className="count text-white ms-1">{tag.count}</span>
               </li>
             ))}
