@@ -1,9 +1,12 @@
+from datetime import timedelta
+
 import pytest
 from faker import Factory as FakerFactory
 from feed.tests.factories import FeedFactory
 
 from django import urls
 from django.conf import settings
+from django.utils import timezone
 
 pytestmark = [pytest.mark.django_db]
 
@@ -13,6 +16,8 @@ from bookmark.tests.factories import BookmarkFactory
 from collection.tests.factories import CollectionFactory
 from drill.tests.factories import QuestionFactory
 from music.tests.factories import PlaylistFactory, SongFactory
+from reminder.models import Reminder
+from reminder.tests.factories import ReminderFactory
 from tag.tests.factories import TagFactory
 from todo.tests.factories import TodoFactory
 
@@ -365,3 +370,55 @@ def test_todo_viewset_filters_by_tag(authenticated_client):
     returned_uuids = {item["uuid"] for item in result}
     assert str(work_todo.uuid) in returned_uuids
     assert str(home_todo.uuid) not in returned_uuids
+
+
+def test_reminder_viewset(authenticated_client):
+    """Reminder viewset exposes only the authenticated user's reminders."""
+    user, client = authenticated_client()
+
+    reminder = ReminderFactory(user=user)
+    url = urls.reverse("reminder-list")
+    resp = client.get(url)
+    assert resp.status_code == 200
+
+    result = resp.json()
+    assert isinstance(result, list)
+    assert str(reminder.uuid) in [x["uuid"] for x in result]
+
+    url = urls.reverse("reminder-detail", kwargs={"uuid": reminder.uuid})
+    resp = client.get(url)
+    assert resp.status_code == 200
+
+    different_user = UserFactory(username=faker.user_name())
+    other_reminder = ReminderFactory(user=different_user)
+    url = urls.reverse("reminder-detail", kwargs={"uuid": other_reminder.uuid})
+    resp = client.get(url)
+    assert resp.status_code == 404
+
+
+def test_reminder_viewset_uses_web_list_ordering(authenticated_client):
+    """Reminder list ordering matches the web reminders page ordering."""
+    user, client = authenticated_client()
+
+    now = timezone.now()
+    early_trigger = now + timedelta(hours=1)
+    shared_trigger = now + timedelta(hours=4)
+
+    oldest = ReminderFactory(user=user, next_trigger_at=shared_trigger)
+    newest = ReminderFactory(user=user, next_trigger_at=shared_trigger)
+    earliest = ReminderFactory(user=user, next_trigger_at=early_trigger)
+
+    Reminder.objects.filter(pk=oldest.pk).update(created=now - timedelta(days=2))
+    Reminder.objects.filter(pk=newest.pk).update(created=now - timedelta(days=1))
+
+    url = urls.reverse("reminder-list")
+    resp = client.get(url)
+    assert resp.status_code == 200
+
+    returned_uuids = [item["uuid"] for item in resp.json()]
+    earliest_index = returned_uuids.index(str(earliest.uuid))
+    newest_index = returned_uuids.index(str(newest.uuid))
+    oldest_index = returned_uuids.index(str(oldest.uuid))
+
+    assert earliest_index < newest_index
+    assert newest_index < oldest_index

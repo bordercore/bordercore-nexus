@@ -32,6 +32,7 @@ from fitness.services import get_fitness_summary
 from music.models import Album, Playlist, PlaylistItem, Song, SongSource
 from node.models import Node
 from quote.models import Quote
+from reminder.models import Reminder
 from tag.models import Tag, TagAlias, TagBookmark
 from todo.models import Todo
 
@@ -41,7 +42,7 @@ from .serializers import (AlbumSerializer, BlobSerializer,
                           FeedSerializer, FitnessExerciseSerializer,
                           MobileBookmarkSerializer, NodeSerializer, PinnedTagSerializer,
                           PlaylistItemSerializer, PlaylistSerializer,
-                          QuestionSerializer, QuoteSerializer, SongSerializer,
+                          QuestionSerializer, QuoteSerializer, ReminderSerializer, SongSerializer,
                           SongSourceSerializer, TagAliasSerializer,
                           TagSerializer, TodoSerializer)
 
@@ -542,6 +543,27 @@ class TodoViewSet(UserScopedQuerysetMixin, viewsets.ModelViewSet):
             queryset = queryset.filter(tags__name=tag).distinct()
 
         return queryset
+
+
+class ReminderViewSet(UserScopedQuerysetMixin, viewsets.ReadOnlyModelViewSet):
+    """Read-only reminders endpoint for mobile clients.
+
+    Returns reminders in the same ordering as the web reminders list.
+    """
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = ReminderSerializer
+    queryset = Reminder.objects.all()
+    pagination_class = None
+    lookup_field = "uuid"
+
+    def get_queryset(self) -> QuerySet[Reminder]:
+        """Return reminders ordered like the web reminders list.
+
+        Returns:
+            User-scoped reminder queryset ordered by next trigger then recency.
+        """
+        return super().get_queryset().order_by("next_trigger_at", "-created")
 
 
 class FitnessViewSet(viewsets.ViewSet):

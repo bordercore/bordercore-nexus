@@ -17,6 +17,7 @@ struct ContentView: View {
 private enum SplashDestination {
     case bookmarks
     case todo
+    case reminders
     case fitness
 }
 
@@ -32,6 +33,10 @@ struct SplashView: View {
                 }
             case .todo:
                 TodoMainView {
+                    destination = nil
+                }
+            case .reminders:
+                ReminderMainView {
                     destination = nil
                 }
             case .fitness:
@@ -79,6 +84,14 @@ struct SplashView: View {
                     gradient: [Color.orange, Color.pink]
                 ) {
                     destination = .todo
+                }
+
+                SplashLinkButton(
+                    title: "Reminders",
+                    subtitle: "See upcoming triggers",
+                    gradient: [Color.indigo, Color.blue]
+                ) {
+                    destination = .reminders
                 }
 
                 SplashLinkButton(
@@ -146,6 +159,193 @@ private struct SplashLinkButton: View {
             .shadow(color: .black.opacity(0.2), radius: 12, y: 6)
         }
         .buttonStyle(.plain)
+    }
+}
+
+@MainActor
+private final class ReminderViewModel: ObservableObject {
+    @Published var reminders: [ReminderItem] = []
+    @Published var isLoading = false
+    @Published var errorMessage: String?
+
+    private let authManager: AuthManager
+    private let notificationService: ReminderNotificationService
+
+    init(
+        authManager: AuthManager = .shared,
+        notificationService: ReminderNotificationService = .shared
+    ) {
+        self.authManager = authManager
+        self.notificationService = notificationService
+    }
+
+    func load() async {
+        isLoading = true
+        defer { isLoading = false }
+        _ = await notificationService.requestAuthorizationIfNeeded()
+        await reload()
+    }
+
+    func reload() async {
+        guard let token = authManager.getToken() else {
+            errorMessage = "Not authenticated"
+            reminders = []
+            return
+        }
+
+        do {
+            reminders = try await APIClient.shared.getList("/api/reminders/", token: token)
+            errorMessage = nil
+            await notificationService.sync(reminders: reminders)
+        } catch {
+            errorMessage = (error as? APIError)?.errorDescription ?? error.localizedDescription
+            reminders = []
+        }
+    }
+}
+
+private struct ReminderRowView: View {
+    let reminder: ReminderItem
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top, spacing: 10) {
+                Circle()
+                    .fill(reminder.isActive ? Color.green : Color.gray)
+                    .frame(width: 10, height: 10)
+                    .padding(.top, 5)
+
+                Text(reminder.name)
+                    .font(.headline)
+
+                Spacer(minLength: 0)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(reminder.scheduleDescription)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                if let triggerAt = reminder.nextTriggerAt {
+                    TimelineView(.periodic(from: .now, by: 60)) { context in
+                        Text(relativeTriggerText(for: triggerAt, now: context.date))
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                } else {
+                    Text("No next trigger")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            .padding(.leading, 20)
+        }
+        .padding(.vertical, 4)
+    }
+
+    private func relativeTriggerText(for date: Date, now: Date) -> String {
+        let isFuture = date >= now
+        let interval = abs(date.timeIntervalSince(now))
+
+        let minute: TimeInterval = 60
+        let hour: TimeInterval = 60 * minute
+        let day: TimeInterval = 24 * hour
+
+        let value: Int
+        let unit: String
+        if interval < hour {
+            value = max(1, Int(interval / minute))
+            unit = value == 1 ? "minute" : "minutes"
+        } else if interval < day {
+            value = max(1, Int(interval / hour))
+            unit = value == 1 ? "hour" : "hours"
+        } else {
+            value = max(1, Int(interval / day))
+            unit = value == 1 ? "day" : "days"
+        }
+
+        return isFuture ? "\(value) \(unit) from now" : "\(value) \(unit) ago"
+    }
+}
+
+private struct ReminderListView: View {
+    @ObservedObject var viewModel: ReminderViewModel
+
+    var body: some View {
+        Group {
+            if viewModel.isLoading && viewModel.reminders.isEmpty {
+                ProgressView("Loading...")
+            } else if viewModel.reminders.isEmpty {
+                ContentUnavailableView(
+                    "No Reminders",
+                    systemImage: "bell.slash",
+                    description: Text("No reminders found")
+                )
+            } else {
+                List {
+                    ForEach(viewModel.reminders) { reminder in
+                        ReminderRowView(reminder: reminder)
+                    }
+                }
+                .listStyle(.plain)
+                .refreshable {
+                    await viewModel.reload()
+                }
+            }
+        }
+        .overlay(alignment: .bottom) {
+            if let error = viewModel.errorMessage {
+                Text(error)
+                    .font(.footnote)
+                    .foregroundStyle(.white)
+                    .padding()
+                    .background(Color.red.opacity(0.9))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .padding()
+                    .transition(.move(edge: .bottom))
+            }
+        }
+        .animation(.easeInOut, value: viewModel.errorMessage)
+    }
+}
+
+private struct ReminderMainView: View {
+    @StateObject private var viewModel = ReminderViewModel()
+    @Environment(\.scenePhase) private var scenePhase
+    let onBack: () -> Void
+
+    init(onBack: @escaping () -> Void = {}) {
+        self.onBack = onBack
+    }
+
+    var body: some View {
+        NavigationStack {
+            ReminderListView(viewModel: viewModel)
+                .navigationTitle("Reminders")
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Menu {
+                            Button {
+                                onBack()
+                            } label: {
+                                Label("Back", systemImage: "chevron.left")
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis.circle")
+                        }
+                    }
+                }
+        }
+        .task {
+            await viewModel.load()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            guard newPhase == .active else { return }
+            Task { await viewModel.reload() }
+        }
     }
 }
 

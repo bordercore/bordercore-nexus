@@ -19,6 +19,7 @@ from fitness.models import Exercise
 from music.models import Album, Playlist, PlaylistItem, Song, SongSource
 from node.models import Node
 from quote.models import Quote
+from reminder.models import Reminder
 from tag.models import Tag, TagAlias
 from todo.models import Todo
 
@@ -466,3 +467,33 @@ class TodoSerializer(serializers.ModelSerializer):
         )
         instance.save()
         return instance
+
+
+class ReminderSerializer(serializers.ModelSerializer):
+    """Serialize reminder objects for mobile reminder list/detail views."""
+
+    schedule_description = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Reminder
+        fields = [
+            "uuid",
+            "name",
+            "note",
+            "is_active",
+            "schedule_type",
+            "schedule_description",
+            "next_trigger_at",
+            "created",
+        ]
+
+    def get_schedule_description(self, obj: Reminder) -> str:
+        """Return a human-readable schedule description.
+
+        Args:
+            obj: Reminder instance being serialized.
+
+        Returns:
+            Human-readable schedule text.
+        """
+        return obj.get_schedule_description()
