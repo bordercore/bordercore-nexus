@@ -1,7 +1,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import BookmarkListPage from "../react/bookmark/BookmarkListPage";
-import type { PinnedTag, ViewType } from "../react/bookmark/types";
+import type { BookmarkStats, PinnedTag, ViewType } from "../react/bookmark/types";
 
 const container = document.getElementById("react-root");
 if (container) {
@@ -51,6 +51,23 @@ if (container) {
     }
   }
 
+  // Parse bookmark stats from JSON script tag
+  let stats: BookmarkStats = {
+    total_count: 0,
+    untagged_count: 0,
+    broken_count: 0,
+    top_domain: "\u2014",
+    tag_coverage_pct: 0,
+  };
+  const statsScript = document.getElementById("bookmarkStats");
+  if (statsScript) {
+    try {
+      stats = JSON.parse(statsScript.textContent || "{}");
+    } catch (e) {
+      console.error("Error parsing bookmark stats:", e);
+    }
+  }
+
   const root = createRoot(container);
   root.render(
     <BookmarkListPage
@@ -58,6 +75,7 @@ if (container) {
       initialPinnedTags={initialPinnedTags}
       untaggedCount={untaggedCount}
       initialViewType={initialViewType}
+      stats={stats}
       urls={{
         getBookmarksByPage: getBookmarksByPageUrl,
         getBookmarksByTag: getBookmarksByTagUrl,

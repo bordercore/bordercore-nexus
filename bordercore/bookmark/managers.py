@@ -5,12 +5,13 @@ custom queryset methods for querying bookmarks that are not associated with
 tags, blobs, or collections.
 """
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypedDict
 
 from django.apps import apps
 from django.contrib.auth.models import User
 from django.db import models
-from django.db.models import QuerySet
+from django.db.models import Count, QuerySet
+from django.db.models.expressions import RawSQL
 
 if TYPE_CHECKING:
     from .models import Bookmark
@@ -78,6 +79,36 @@ class BookmarkManager(models.Manager["Bookmark"]):
         if limit is not None:
             qs = qs[:limit]
         return qs
+
+    def total_count(self, user: User) -> int:
+        return self.filter(user=user).count()
+
+    def broken_count(self, user: User) -> int:
+        return self.filter(user=user, last_response_code__gte=400).count()
+
+    def top_domain(self, user: User) -> str | None:
+        result = (
+            self.filter(user=user)
+            .annotate(hostname=RawSQL("substring(url from '://([^/]*)')", []))
+            .values("hostname")
+            .annotate(cnt=Count("id"))
+            .order_by("-cnt")
+            .first()
+        )
+        return result["hostname"] if result else None
+
+    class TagCoverage(TypedDict):
+        total: int
+        tagged: int
+        untagged: int
+        percentage: int
+
+    def tag_coverage(self, user: User) -> "BookmarkManager.TagCoverage":
+        total = self.filter(user=user).count()
+        untagged = self._bare_bookmarks_qs(user=user, sort=False).count()
+        tagged = total - untagged
+        percentage = round((tagged / total) * 100) if total else 0
+        return {"total": total, "tagged": tagged, "untagged": untagged, "percentage": percentage}
 
     def bare_bookmarks_count(self, user: User) -> int:
         """Count the number of bare bookmarks for a user.

@@ -1,21 +1,32 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTags, faTimes, faThumbTack, faPlus } from "@fortawesome/free-solid-svg-icons";
+import {
+  faTags,
+  faTimes,
+  faThumbTack,
+  faPlus,
+  faList,
+  faBars,
+  faSearch,
+} from "@fortawesome/free-solid-svg-icons";
 import hotkeys from "hotkeys-js";
 import { SelectValue, SelectValueHandle } from "../common/SelectValue";
+import { tagStyle } from "../utils/tagColors";
 import { DropDownMenu } from "../common/DropDownMenu";
 import { doGet, doDelete, doPost } from "../utils/reactUtils";
 import { EventBus } from "../utils/reactUtils";
 import BookmarkPinnedTags from "./BookmarkPinnedTags";
+import BookmarkStatsCards from "./BookmarkStatsCards";
 import BookmarkList from "./BookmarkList";
 import BookmarkPagination from "./BookmarkPagination";
-import type { Bookmark, PinnedTag, Pagination, ViewType } from "./types";
+import type { Bookmark, BookmarkStats, PinnedTag, Pagination, ViewType } from "./types";
 
 interface BookmarkListPageProps {
   initialTag: string | null;
   initialPinnedTags: PinnedTag[];
   untaggedCount: number;
   initialViewType: ViewType;
+  stats: BookmarkStats;
   urls: {
     getBookmarksByPage: string;
     getBookmarksByTag: string;
@@ -39,6 +50,7 @@ export function BookmarkListPage({
   initialPinnedTags,
   untaggedCount,
   initialViewType,
+  stats,
   urls,
 }: BookmarkListPageProps) {
   const [bookmarkList, setBookmarkList] = useState<Bookmark[]>([]);
@@ -259,6 +271,7 @@ export function BookmarkListPage({
       const searchTermParam = typeof query === "string" ? query : query.label || "";
       if (searchTermParam) {
         getBookmarkList({ searchTermParam: searchTermParam });
+        selectValueRef.current?.clear();
       } else {
         getBookmarkList({ pageNumber: 1 });
       }
@@ -269,6 +282,7 @@ export function BookmarkListPage({
   const selectTag = useCallback(
     (tagInfo: { label?: string }) => {
       searchTag(tagInfo.label || "");
+      selectValueRef.current?.clear();
     },
     [searchTag]
   );
@@ -277,6 +291,26 @@ export function BookmarkListPage({
     setSearchTerm(null);
     searchTag("Untagged");
   }, [searchTag]);
+
+  const removeTagFilter = useCallback(() => {
+    if (searchTerm) {
+      // Keep the search term active, just clear the tag
+      setSelectedTagName(null);
+      getBookmarkList({ searchTermParam: searchTerm });
+    } else {
+      removeFilter();
+    }
+  }, [searchTerm, removeFilter, getBookmarkList]);
+
+  const removeSearchTermFilter = useCallback(() => {
+    setSearchTerm(null);
+    if (selectedTagName && selectedTagName !== "Untagged") {
+      // Keep the tag filter active, just clear the search term
+      getBookmarkList({ searchTag: selectedTagName });
+    } else {
+      searchTag("Untagged");
+    }
+  }, [selectedTagName, searchTag, getBookmarkList]);
 
   const handleDeleteBookmark = useCallback(
     (uuid: string) => {
@@ -377,6 +411,7 @@ export function BookmarkListPage({
         <BookmarkPinnedTags
           tags={pinnedTags}
           selectedTagName={selectedTagName}
+          tagCoveragePct={stats.tag_coverage_pct}
           addTagUrl={urls.addTag}
           removeTagUrl={urls.removeTag}
           sortTagsUrl={urls.sortPinnedTags}
@@ -387,6 +422,7 @@ export function BookmarkListPage({
       </div>
 
       <div className="col-lg-9 ps-gutter">
+        <BookmarkStatsCards stats={stats} />
         <div>
           <div id="bookmark-search-form" className="d-flex flex-column me-2 p-3">
             <div>
@@ -401,61 +437,81 @@ export function BookmarkListPage({
                   <FontAwesomeIcon icon={faTags} className="me-2" />
                   Tags
                 </button>
-                <form
-                  className="form-inline"
-                  role="form"
-                  method="get"
-                  onSubmit={e => e.preventDefault()}
+                <div
+                  className="bookmark-search-bar"
+                  onClick={() => selectValueRef.current?.focus()}
                 >
-                  <input
-                    type="hidden"
-                    name="csrfmiddlewaretoken"
-                    value={(window as any).BASE_TEMPLATE_DATA?.csrfToken || ""}
-                  />
-                  <input value={selectedTagName || ""} type="hidden" name="tag" />
-                  <div className="position-relative">
+                  <FontAwesomeIcon icon={faSearch} className="bookmark-search-bar-icon" />
+                  {tagIsSelected && (
+                    <span className="tag bookmark-search-chip" style={tagStyle(selectedTagName!)}>
+                      {selectedTagName}
+                      <a
+                        href="#"
+                        onClick={e => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          removeTagFilter();
+                        }}
+                      >
+                        <FontAwesomeIcon icon={faTimes} />
+                      </a>
+                    </span>
+                  )}
+                  {searchTerm && (
+                    <span className="bookmark-search-chip">
+                      {searchTerm}
+                      <a
+                        href="#"
+                        onClick={e => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          removeSearchTermFilter();
+                        }}
+                      >
+                        <FontAwesomeIcon icon={faTimes} />
+                      </a>
+                    </span>
+                  )}
+                  <form
+                    className="bookmark-search-bar-form"
+                    role="form"
+                    method="get"
+                    onSubmit={e => e.preventDefault()}
+                  >
+                    <input
+                      type="hidden"
+                      name="csrfmiddlewaretoken"
+                      value={(window as any).BASE_TEMPLATE_DATA?.csrfToken || ""}
+                    />
+                    <input value={selectedTagName || ""} type="hidden" name="tag" />
                     <SelectValue
                       ref={selectValueRef}
                       id="bookmarkSearch"
                       searchUrl={`${urls.getTagsUsedByBookmarks}?query=`}
-                      placeHolder="Filter by keyword or tag"
-                      searchIcon={true}
+                      placeHolder={tagIsSelected || searchTerm ? "" : "Filter by keyword or tag"}
                       onSelect={selectTag}
                       onSearch={handleSearch}
                     />
-                  </div>
-                </form>
+                  </form>
+                </div>
                 <div className="btn-group ms-3" role="group" aria-label="List View">
                   <button
                     type="button"
                     className={`btn btn-primary ${viewType === "normal" ? "active" : ""}`}
                     onClick={() => switchViewType("normal")}
+                    title="Normal view"
                   >
-                    Normal
+                    <FontAwesomeIcon icon={faList} />
                   </button>
                   <button
                     type="button"
                     className={`btn btn-primary ${viewType === "compact" ? "active" : ""}`}
                     onClick={() => switchViewType("compact")}
+                    title="Compact view"
                   >
-                    Compact
+                    <FontAwesomeIcon icon={faBars} />
                   </button>
                 </div>
-                {tagIsSelected && (
-                  <div className="tag d-flex align-items-center bookmark-selected-tag-chip">
-                    {selectedTagName}
-                    <a
-                      className="ms-2"
-                      href="#"
-                      onClick={e => {
-                        e.preventDefault();
-                        removeFilter();
-                      }}
-                    >
-                      <FontAwesomeIcon icon={faTimes} />
-                    </a>
-                  </div>
-                )}
                 <div className="ms-auto">
                   <DropDownMenu
                     dropdownSlot={
@@ -487,30 +543,6 @@ export function BookmarkListPage({
                 </div>
               </div>
             </div>
-            {searchTerm && (
-              <div className="d-flex mt-1 ms-3">
-                <div
-                  id="bookmark-search-filter"
-                  className="tag label label-info d-flex align-items-center"
-                >
-                  <div>
-                    Term: <span className="text-white">{searchTerm}</span>
-                  </div>
-                  <div>
-                    <a
-                      className="ms-1"
-                      href="#"
-                      onClick={e => {
-                        e.preventDefault();
-                        removeFilter();
-                      }}
-                    >
-                      <FontAwesomeIcon icon={faTimes} className="text-primary" />
-                    </a>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
 

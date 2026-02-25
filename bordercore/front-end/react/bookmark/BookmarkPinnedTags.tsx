@@ -113,6 +113,7 @@ function SortableTagItem({
 interface BookmarkPinnedTagsProps {
   tags: PinnedTag[];
   selectedTagName: string | null;
+  tagCoveragePct?: number;
   addTagUrl: string;
   removeTagUrl: string;
   sortTagsUrl: string;
@@ -124,6 +125,7 @@ interface BookmarkPinnedTagsProps {
 export function BookmarkPinnedTags({
   tags,
   selectedTagName,
+  tagCoveragePct,
   addTagUrl,
   removeTagUrl,
   sortTagsUrl,
@@ -221,6 +223,19 @@ export function BookmarkPinnedTags({
 
   return (
     <div className="card-body backdrop-filter h-100 bookmark-pinned-tags">
+      {tagCoveragePct !== undefined && (
+        <div className="tag-coverage-bar">
+          <div className="tag-coverage-label">
+            Tag Coverage <span className="tag-coverage-value">{tagCoveragePct}%</span>
+          </div>
+          <div className="tag-coverage-track">
+            <div
+              className="tag-coverage-fill"
+              style={{ width: `${tagCoveragePct}%` }} // must remain inline
+            />
+          </div>
+        </div>
+      )}
       <div className="card-title-large">Pinned Tags</div>
       <hr className="divider" />
       <ul className="list-group flex-column w-100">

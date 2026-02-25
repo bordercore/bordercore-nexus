@@ -301,6 +301,14 @@ def overview(request: HttpRequest) -> HttpResponse:
 
     bare_count = Bookmark.objects.bare_bookmarks_count(user)
 
+    stats = {
+        "total_count": Bookmark.objects.total_count(user),
+        "untagged_count": bare_count,
+        "broken_count": Bookmark.objects.broken_count(user),
+        "top_domain": Bookmark.objects.top_domain(user) or "\u2014",
+        "tag_coverage_pct": Bookmark.objects.tag_coverage(user)["percentage"],
+    }
+
     pinned_tags = user.userprofile.pinned_tags.all().annotate(
         bookmark_count=Count("tagbookmark")
     ).order_by(
@@ -311,6 +319,7 @@ def overview(request: HttpRequest) -> HttpResponse:
                   {
                       "untagged_count": bare_count,
                       "pinned_tags": list(pinned_tags),
+                      "stats": stats,
                       "tag": request.GET.get("tag", None),
                       "title": "Bookmarks"
                   })

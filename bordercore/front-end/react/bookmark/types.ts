@@ -58,4 +58,12 @@ export interface TagListItem {
   related: RelatedTagInfo[];
 }
 
+export interface BookmarkStats {
+  total_count: number;
+  untagged_count: number;
+  broken_count: number;
+  top_domain: string;
+  tag_coverage_pct: number;
+}
+
 export type ViewType = "normal" | "compact";

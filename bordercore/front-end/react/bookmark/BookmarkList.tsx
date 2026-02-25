@@ -23,6 +23,7 @@ import { CSS } from "@dnd-kit/utilities";
 import markdownit from "markdown-it";
 import { DropDownMenu } from "../common/DropDownMenu";
 import { doPost } from "../utils/reactUtils";
+import { tagStyle } from "../utils/tagColors";
 import type { Bookmark, ViewType } from "./types";
 
 // Unescape HTML entities in bookmark names
@@ -32,6 +33,15 @@ function unescapeHtml(html: string): string {
     el.innerHTML = enc;
     return el.innerText;
   });
+}
+
+// Extract hostname from URL, returning empty string for malformed URLs
+function getHostname(url: string): string {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return "";
+  }
 }
 
 interface SortableBookmarkRowProps {
@@ -85,15 +95,17 @@ function SortableBookmarkRow({
     }
   }, [transform, transition]);
 
-  // Filter out the currently selected tag from display
-  const filteredTags = bookmark.tags.filter(tag => tag !== selectedTagName);
-
-  const getNote = (note: string): string => {
-    return markdown.render(note);
-  };
+  const filteredTags = bookmark.tags;
 
   const isYouTubeVideo =
     bookmark.url.startsWith("https://www.youtube.com/watch") && viewType === "normal";
+
+  const hostname = getHostname(bookmark.url);
+
+  // Favicon HTML is a trusted server-rendered <img> tag from the app's own database
+  const faviconHtml = bookmark.favicon_url || "";
+  // Note is trusted user-created markdown from the app's own database
+  const noteHtml = bookmark.note ? markdown.render(bookmark.note) : "";
 
   return (
     <div
@@ -121,32 +133,22 @@ function SortableBookmarkRow({
         </div>
       </div>
 
-      {/* Date */}
-      <div role="cell" className="bookmark-col-date date-cell">
-        {bookmark.created || "\u00A0"}
-      </div>
-
-      {/* Thumbnail - only in normal view */}
-      {viewType !== "compact" && (
-        <div role="cell" className="bookmark-col-thumbnail thumbnail-cell">
-          {bookmark.thumbnail_url && (
-            <img width="120" height="67" src={bookmark.thumbnail_url} alt="" />
-          )}
-        </div>
-      )}
-
-      {/* Content: title, tags, note */}
-      <div role="cell" className="bookmark-col-content content-cell h-100 pt-3 align-items-start">
-        <div className="position-relative d-flex align-items-start">
-          {bookmark.favicon_url && (
-            <div
-              className="favicon-container me-2 mt-2"
-              dangerouslySetInnerHTML={{ __html: bookmark.favicon_url }}
-            />
-          )}
-          <div>
+      {/* Content: icon box + title + hostname + note */}
+      <div role="cell" className="bookmark-col-content content-cell">
+        <div className="d-flex align-items-center gap-2 overflow-hidden position-relative">
+          <div className="bookmark-icon-box">
+            {bookmark.thumbnail_url ? (
+              <img src={bookmark.thumbnail_url} alt="" />
+            ) : faviconHtml ? (
+              <div
+                className="favicon-container"
+                dangerouslySetInnerHTML={{ __html: faviconHtml }}
+              />
+            ) : null}
+          </div>
+          <div className="overflow-hidden">
             <a
-              className="me-2"
+              className="bookmark-title-link"
               href={bookmark.url}
               id={bookmark.linkId}
               target="_blank"
@@ -155,34 +157,51 @@ function SortableBookmarkRow({
             >
               {unescapeHtml(bookmark.name)}
             </a>
-            {filteredTags.map(tag => (
+            {hostname && (
               <a
-                key={tag}
-                className="tag ms-2 d-inline-block"
-                onClick={e => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onClickTag(tag);
-                }}
-                href="#"
+                className="bookmark-hostname"
+                href={bookmark.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
               >
-                {tag}
+                {hostname}
               </a>
-            ))}
+            )}
             {isYouTubeVideo && showYtDuration && bookmark.video_duration && (
               <div className="yt-hover-target position-absolute text-secondary">
                 {bookmark.video_duration}
               </div>
             )}
-            {/* note is trusted user-created markdown from the app's own database */}
-            {bookmark.note && (
-              <div
-                className="table-note"
-                dangerouslySetInnerHTML={{ __html: getNote(bookmark.note) }}
-              />
+            {noteHtml && (
+              <div className="table-note" dangerouslySetInnerHTML={{ __html: noteHtml }} />
             )}
           </div>
         </div>
+      </div>
+
+      {/* Tags */}
+      <div role="cell" className="bookmark-col-tags tags-cell">
+        {filteredTags.map(tag => (
+          <a
+            key={tag}
+            className="tag me-2"
+            style={tagStyle(tag)} // must remain inline
+            onClick={e => {
+              e.preventDefault();
+              e.stopPropagation();
+              onClickTag(tag);
+            }}
+            href="#"
+          >
+            {tag}
+          </a>
+        ))}
+      </div>
+
+      {/* Date */}
+      <div role="cell" className="bookmark-col-date date-cell">
+        {bookmark.created || "\u00A0"}
       </div>
 
       {/* Actions */}
@@ -309,6 +328,9 @@ export function BookmarkList({
     }
   };
 
+  // Trusted server-rendered favicon HTML for drag overlay
+  const activeFaviconHtml = activeBookmark?.favicon_url || "";
+
   return (
     <DndContext
       sensors={sensors}
@@ -328,17 +350,11 @@ export function BookmarkList({
             role="row"
           >
             <div role="columnheader"></div>
+            <div role="columnheader">Name &amp; URL</div>
+            <div role="columnheader" className="bookmark-tags-col">
+              {viewType !== "compact" ? "Tags" : ""}
+            </div>
             <div role="columnheader">Date</div>
-            {viewType !== "compact" && (
-              <div role="columnheader" className="bookmark-link-col">
-                Link
-              </div>
-            )}
-            {viewType === "compact" && (
-              <div role="columnheader" className="bookmark-link-col">
-                Link
-              </div>
-            )}
             <div role="columnheader"></div>
           </div>
           <div className="data-grid-body bookmark-grid-body" role="rowgroup">
@@ -375,38 +391,34 @@ export function BookmarkList({
             <div role="cell" className="bookmark-col-drag drag-handle-cell">
               <FontAwesomeIcon icon={faBars} />
             </div>
+            <div role="cell" className="bookmark-col-content content-cell">
+              <div className="d-flex align-items-center gap-2 overflow-hidden">
+                <div className="bookmark-icon-box">
+                  {activeBookmark.thumbnail_url ? (
+                    <img src={activeBookmark.thumbnail_url} alt="" />
+                  ) : activeFaviconHtml ? (
+                    <div
+                      className="favicon-container"
+                      dangerouslySetInnerHTML={{ __html: activeFaviconHtml }}
+                    />
+                  ) : null}
+                </div>
+                <span className="text-truncate">{unescapeHtml(activeBookmark.name)}</span>
+              </div>
+            </div>
+            <div role="cell" className="bookmark-col-tags tags-cell">
+              {activeBookmark.tags.map(tag => (
+                <span
+                  key={tag}
+                  className="tag me-2"
+                  style={tagStyle(tag)} // must remain inline
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
             <div role="cell" className="bookmark-col-date date-cell">
               {activeBookmark.created || "\u00A0"}
-            </div>
-            {viewType !== "compact" && (
-              <div role="cell" className="bookmark-col-thumbnail thumbnail-cell">
-                {activeBookmark.thumbnail_url && (
-                  <img width="120" height="67" src={activeBookmark.thumbnail_url} alt="" />
-                )}
-              </div>
-            )}
-            <div
-              role="cell"
-              className="bookmark-col-content content-cell h-100 pt-3 align-items-start"
-            >
-              <div className="position-relative d-flex align-items-start">
-                {activeBookmark.favicon_url && (
-                  <div
-                    className="favicon-container me-2"
-                    dangerouslySetInnerHTML={{ __html: activeBookmark.favicon_url }}
-                  />
-                )}
-                <div>
-                  <span>{unescapeHtml(activeBookmark.name)}</span>
-                  {activeBookmark.tags
-                    .filter(tag => tag !== selectedTagName)
-                    .map(tag => (
-                      <span key={tag} className="tag ms-2">
-                        {tag}
-                      </span>
-                    ))}
-                </div>
-              </div>
             </div>
             <div role="cell" className="bookmark-col-actions actions-cell"></div>
           </div>

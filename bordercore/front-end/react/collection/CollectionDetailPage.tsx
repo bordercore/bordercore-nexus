@@ -497,7 +497,7 @@ export function CollectionDetailPage({
 
             <div className="d-flex ms-2">
               <div>
-                <ul className="text-center list-unstyled collection-sortable">
+                <ul className="text-center list-unstyled collection-sortable m-2">
                   <CollectionObjectGrid
                     objects={objects}
                     onImageClick={handleImageClick}
