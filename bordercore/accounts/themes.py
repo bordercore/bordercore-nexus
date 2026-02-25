@@ -49,6 +49,11 @@ THEMES: Dict[str, Theme] = {
         display_name="Cyberpunk",
         description="Neon pinks and cyans on dark purple",
     ),
+    "cobalt-abyss": Theme(
+        css_id="cobalt-abyss",
+        display_name="Cobalt Abyss",
+        description="Deep charcoal with cobalt blue accents",
+    ),
 }
 
 # Default theme for new users

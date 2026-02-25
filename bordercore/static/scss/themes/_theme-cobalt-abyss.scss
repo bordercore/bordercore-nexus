@@ -1,0 +1,174 @@
+:root[color-mode="cobalt-abyss"] {
+  --brand-hue: 222;
+  --brand-saturation: 15%;
+  --brand-lightness: 7%;
+
+  --text1: #ffffff;
+  --text2: hsl(220, 8%, 65%);
+
+  // highlight (cobalt blue primary)
+  --text3-hue: 219;
+  --text3-saturation: 91%;
+  --text3-lightness: 55%;
+  --text3: hsl(var(--text3-hue), var(--text3-saturation), var(--text3-lightness));
+  --text3-transparent: hsl(var(--text3-hue), var(--text3-saturation), var(--text3-lightness), 0.25);
+
+  // Per-tag coloring
+  --tag-saturation: 65%;
+  --tag-text-lightness: 70%;
+  --tag-bg-lightness: 50%;
+  --tag-border-lightness: 55%;
+
+  // secondary (steel blue)
+  --text4-hue: 210;
+  --text4-saturation: 35%;
+  --text4-lightness: 56%;
+  --text4: hsl(var(--text4-hue), var(--text4-saturation), var(--text4-lightness));
+  --text4-1: hsl(var(--text4-hue), calc(var(--text4-saturation) + 20%), calc(var(--text4-lightness) + 20%));
+  --text4-2: hsl(var(--text4-hue), calc(var(--text4-saturation) - 20%), calc(var(--text4-lightness) - 20%));
+
+  // "on hover" links (electric blue)
+  --text5: #4da6ff;
+
+  --text6: #256af4;
+  --text7: #8899bb;
+
+  --text-disabled: #2a2d33;
+  --text-em: #b8d4f0;
+  --text-notice: var(--text6);
+  --text-error: #ff4444;
+  --favorite-color: #ff4444;
+
+  // Deep charcoal body
+  --surface1: #0f1115;
+  --surface1-transparent: #0f111500;
+
+  // Obsidian (cards/panels)
+  --surface2: #1a1d23;
+  --surface2-transparent: #1a1d2300;
+
+  // Elevated surface
+  --surface3: #22262e;
+  --surface4: #282e39;
+  --surface5: #3b4354;
+  --surface5-transparent: #3b435400;
+
+  // Slightly lighter than body
+  --surface6: #161a20;
+
+  --surface7: #256af4;
+
+  // Body background
+  --body-bg: #0f1115;
+
+  // Node colors (cobalt spectrum)
+  --node-color-1: hsl(222 15% 7%);
+  --node-color-1-tinted: hsl(222 15% 12%);
+  --node-color-2: hsl(219 91% 35%);
+  --node-color-2-tinted: hsl(219 91% 40%);
+  --node-color-3: hsl(215 30% 35%);
+  --node-color-3-tinted: hsl(215 30% 40%);
+  --node-color-4: hsl(219 70% 30%);
+  --node-color-4-tinted: hsl(219 70% 35%);
+
+  // Chatbot
+  --chatbot-container-bg: #1a3a5c;
+
+  // Chart colors (cobalt-to-blue)
+  --chart-title-color: var(--text2);
+  --chart-bg: var(--surface5);
+  --chart-fill-color: var(--text1);
+  --chart-tick-color: var(--text4);
+  --chart-gradient-start: #256af4;
+  --chart-gradient-end: #0a1e4a;
+
+  // Background sphere (cobalt blues)
+  --sphere-color-1: #256af4;
+  --sphere-color-2: #4da6ff;
+  --sphere-color-3: #0a3d8f;
+
+  --blob-file-upload-gradient-start: var(--surface6);
+  --blob-file-upload-gradient-end: var(--surface1);
+  --btn-close-filter: invert(1) grayscale(100%) brightness(200%);
+  --btn-primary-hover-color: var(--text1);
+  --drill-progress-circle-full: var(--surface5);
+  --drill-progress-circle-partial: var(--text3);
+  --drag-color: var(--text3);
+  --dropdown-item-extra-color: var(--text2);
+  --fitness-overdue-bg: var(--surface7);
+  --fitness-overdue-color: var(--text1);
+  --form-bg: var(--surface5);
+  --form-bg-disabled: var(--surface2);
+  --form-bg-focus: var(--surface6);
+  --form-border-color-hover: var(--text3);
+  --form-color: var(--text4);
+  --border-color: var(--surface5);
+  --btn-active-border: var(--text3);
+  --btn-active-bg: var(--surface3);
+  --hover-bg: var(--surface3);
+  --link-color: var(--text3);
+  --notice-color: var(--text1);
+  --notice-title-color: var(--text1);
+  --search-splitter-bg: var(--surface6);
+  --search-splitter-color: var(--text6);
+  --selected-bg: var(--surface5);
+  --selected-color: var(--text1);
+  --selected-secondary-color: var(--text4);
+  --sidebar-active-bg: var(--surface5);
+  --sidebar-active-color: var(--text3);
+  --sidebar-bg: var(--surface6);
+  --sidebar-color: var(--text1);
+  --sidebar-gradient-start: var(--surface5);
+  --sidebar-gradient-end: var(--surface1);
+  --sidebar-hover-bg: var(--surface3);
+  --sidebar-hover-color: var(--text3);
+  --sidebar-icon-color1: var(--text4);
+  --sidebar-icon-color2: var(--text3);
+  --sidebar-icon-color3: var(--text6);
+  --title-gradient-end: hsl(219 91% 60%);
+  --title-gradient-start: hsl(200 100% 55%);
+  --toggle-button-color-toggled: var(--text4);
+  --tooltip-bg: var(--surface3);
+  --tooltip-color: var(--color1);
+
+  // Override Bootstrap CSS properties
+  --bs-body-color: var(--text1);
+  --bs-body-bg: var(--surface1);
+  --bs-list-group-bg: var(--surface6);
+  --bs-list-group-color: var(--text3);
+  --bs-list-group-item-padding-x: 1.25rem;
+  --bs-list-group-item-padding-y: .75rem;
+  --bs-list-group-item-secondary: var(--text3);
+  --bs-modal-header-border-color: var(--text3);
+  --bs-secondary: var(--text3);
+  --card-spacer-y: 1.25;
+  --card-spacer-x: 1.25;
+
+  // Oruga
+  --oruga-table-color: var(--text1);
+  --oruga-table-background-color: transparent;
+  --oruga-table-hoverable-background-color: var(--hover-bg);
+  --oruga-table-td-border: var(--text1);
+
+  // Vue MultiSelect
+  --vms-controls-color: var(--text2);
+  --vms-controls-color-hover: var(--text1);
+  --vms-selected-bg: var(--surface2);
+  --vms-selected-color: var(--text4);
+
+  // Vue 3 Datepicker
+  --vdp-bg-color: var(--surface1);
+  --vdp-heading-hover-color: var(--surface4);
+  --vdp-hover-bg-color: var(--surface3);
+  --vdp-text-color: var(--text1);
+  --vdp-selected-bg-color: var(--surface5);
+
+  .list-group {
+    --bs-list-group-border-color: var(--surface5);
+  }
+
+  // Media Chrome
+  --media-control-background: var(--surface1);
+  --media-background-color: var(--surface2);
+  --media-icon-color: var(--text1);
+}
