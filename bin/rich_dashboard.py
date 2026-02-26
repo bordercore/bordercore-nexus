@@ -34,6 +34,8 @@ from rich.table import Table
 from rich.text import Text
 from bordercore.lib.scrollable_panel import ScrollablePanel
 
+CODE_ECHOES_MAX_LINES = 200
+
 BOOKMARKS_URL = "https://www.bordercore.com/api/bookmarks/?ordering=-created"
 TODOS_URL = "https://www.bordercore.com/api/todos/?priority=1"
 STATS_URL = "https://www.bordercore.com/api/site/stats"
@@ -490,6 +492,9 @@ class Dashboard():
             )
             sample_dict = sampler.get_sample()
             code_preview = sample_dict.get("code_preview", "No code preview available")
+            lines = code_preview.split("\n")
+            if len(lines) > CODE_ECHOES_MAX_LINES:
+                code_preview = "\n".join(lines[:CODE_ECHOES_MAX_LINES])
             repo = sample_dict.get("repo", {})
             raw_language = repo.get("language", "text")
             language = self._normalize_language(raw_language)
