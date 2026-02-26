@@ -45,9 +45,18 @@ else
 fi
 
 # ----------------------------------------------------------------------
-# 3. Frontend Formatting (Prettier)
+# 3. Template & Component Quality (inline styles, naming conventions)
+# ----------------------------------------------------------------------
+echo "Checking templates and React components for quality violations..."
+cd "$REPO_ROOT"
+.venv/bin/python3 -m pytest -x -q --no-header bordercore/tests/test_general.py::test_html
+echo "✅ Template quality checks passed."
+
+# ----------------------------------------------------------------------
+# 4. Frontend Formatting (Prettier)
 # ----------------------------------------------------------------------
 echo "Formatting React components with Prettier..."
+cd "$BORDERCORE_DIR"
 npm run -s format:react
 echo "✅ Frontend formatting complete."
 
