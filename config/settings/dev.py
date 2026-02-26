@@ -32,7 +32,6 @@ INSTALLED_APPS += (
     "django_extensions",
     "django_watchfiles",
     "nplusone.ext.django",
-    "template_timings_panel",
 )
 
 # Use a dummy cache for dev
@@ -44,7 +43,6 @@ CACHES = {
 
 
 DEBUG_TOOLBAR_PANELS = (
-    "template_timings_panel.panels.TemplateTimings.TemplateTimings",
     "debug_toolbar.panels.cache.CachePanel",
     "debug_toolbar.panels.headers.HeadersPanel",
     "debug_toolbar.panels.profiling.ProfilingPanel",
