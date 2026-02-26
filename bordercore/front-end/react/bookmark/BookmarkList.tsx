@@ -135,7 +135,7 @@ function SortableBookmarkRow({
 
       {/* Content: icon box + title + hostname + note */}
       <div role="cell" className="bookmark-col-content content-cell">
-        <div className="d-flex align-items-center gap-2 overflow-hidden position-relative">
+        <div className="d-flex align-items-center gap-2 overflow-hidden position-relative w-100">
           <div className="bookmark-icon-box">
             {bookmark.thumbnail_url ? (
               <img src={bookmark.thumbnail_url} alt="" />
@@ -168,15 +168,15 @@ function SortableBookmarkRow({
                 {hostname}
               </a>
             )}
-            {isYouTubeVideo && showYtDuration && bookmark.video_duration && (
-              <div className="yt-hover-target position-absolute text-secondary">
-                {bookmark.video_duration}
-              </div>
-            )}
             {noteHtml && (
               <div className="table-note" dangerouslySetInnerHTML={{ __html: noteHtml }} />
             )}
           </div>
+          {isYouTubeVideo && showYtDuration && bookmark.video_duration && (
+            <div className="yt-hover-target position-absolute text-secondary">
+              {bookmark.video_duration}
+            </div>
+          )}
         </div>
       </div>
 
@@ -288,7 +288,8 @@ export function BookmarkList({
     })
   );
 
-  const dragDisabled = selectedTagName === "Untagged";
+  const isUntagged = selectedTagName === "Untagged";
+  const dragDisabled = isUntagged;
 
   const activeBookmark = useMemo(() => {
     return activeId ? bookmarks.find(b => b.uuid === activeId) : null;
@@ -342,7 +343,7 @@ export function BookmarkList({
         id="bookmark-list-container"
         className="scrollable-panel-scrollbar-hover h-100 data-grid-container bookmark-grid-container"
       >
-        <div className="data-grid bookmark-grid" role="table">
+        <div className={`data-grid bookmark-grid ${isUntagged ? "hide-tags" : ""}`} role="table">
           <div
             className={`data-grid-header bookmark-grid-header ${
               viewType === "compact" ? "compact" : ""
@@ -384,7 +385,7 @@ export function BookmarkList({
       <DragOverlay>
         {activeBookmark ? (
           <div
-            className={`data-grid-row bookmark-grid-row data-table-drag-overlay ${
+            className={`data-grid-row bookmark-grid-row bookmark-row data-table-drag-overlay ${
               viewType === "compact" ? "compact" : ""
             }`}
           >
@@ -403,7 +404,13 @@ export function BookmarkList({
                     />
                   ) : null}
                 </div>
-                <span className="text-truncate">{unescapeHtml(activeBookmark.name)}</span>
+                <div className="overflow-hidden">
+                  <span className="bookmark-title-link">{unescapeHtml(activeBookmark.name)}</span>
+                  {(() => {
+                    const h = getHostname(activeBookmark.url);
+                    return h ? <span className="bookmark-hostname">{h}</span> : null;
+                  })()}
+                </div>
               </div>
             </div>
             <div role="cell" className="bookmark-col-tags tags-cell">

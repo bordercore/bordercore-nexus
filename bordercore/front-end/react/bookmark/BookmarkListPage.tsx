@@ -443,7 +443,10 @@ export function BookmarkListPage({
                 >
                   <FontAwesomeIcon icon={faSearch} className="bookmark-search-bar-icon" />
                   {tagIsSelected && (
-                    <span className="tag bookmark-search-chip" style={tagStyle(selectedTagName!)}>
+                    <span
+                      className="tag bookmark-search-chip"
+                      style={tagStyle(selectedTagName!)} // must remain inline
+                    >
                       {selectedTagName}
                       <a
                         href="#"

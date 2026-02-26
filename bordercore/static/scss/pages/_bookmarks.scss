@@ -330,6 +330,17 @@
     display: none;
   }
 
+  // Untagged view: hide tags column (same 4-column layout)
+  .bookmark-grid.hide-tags .bookmark-grid-header,
+  .bookmark-grid.hide-tags .bookmark-grid-row {
+    grid-template-columns: 30px minmax(0, 5fr) minmax(120px, auto) 50px;
+  }
+
+  .bookmark-grid.hide-tags .bookmark-tags-col,
+  .bookmark-grid.hide-tags .tags-cell {
+    display: none;
+  }
+
   // Shared cell styles
   .date-cell {
     color: var(--text2);
@@ -490,20 +501,73 @@
     display: none;
   }
 
-  // Drag overlay: style as card
-  .data-table-drag-overlay.bookmark-grid-row {
-    border: 1px solid var(--bookmark-row-hover-border);
-    background-color: var(--bookmark-row-bg);
-    border-radius: 0.5rem;
-    box-shadow: var(--bookmark-row-hover-shadow);
-  }
-
   // YouTube duration tooltip
   .yt-hover-target {
     position: absolute;
     right: 0.5rem;
     bottom: 0.25rem;
     font-size: 0.75rem;
+  }
+}
+
+// Drag overlay: portaled outside .bookmark-grid-container, needs top-level styles
+.data-table-drag-overlay.bookmark-grid-row {
+  border: 1px solid var(--bookmark-row-hover-border);
+  background-color: var(--bookmark-row-bg);
+  border-radius: 0.5rem;
+  box-shadow: var(--bookmark-row-hover-shadow);
+
+  [role="cell"] {
+    display: flex;
+    padding: 0.6rem 0.75rem;
+  }
+
+  .content-cell {
+    overflow: hidden;
+
+    .bookmark-title-link {
+      display: block;
+      overflow: hidden;
+      color: var(--text1);
+      font-weight: 500;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bookmark-hostname {
+      display: block;
+      overflow: hidden;
+      color: var(--text7);
+      font-family: var(--font-monospace);
+      font-size: 0.8rem;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  .date-cell {
+    color: var(--text2);
+    font-family: var(--font-monospace);
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+
+  .bookmark-icon-box {
+    display: flex;
+    overflow: hidden;
+    width: 96px;
+    height: 96px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.375rem;
+
+    img {
+      display: block;
+      max-width: 92px;
+      max-height: 92px;
+      object-fit: contain;
+    }
   }
 }
 
