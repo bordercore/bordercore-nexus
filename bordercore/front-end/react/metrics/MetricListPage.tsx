@@ -98,7 +98,7 @@ export function MetricListPage({ testResults }: MetricListPageProps) {
     <div className="h-100" id="metric-list-page">
       <div className="h-100 row g-0 mx-2">
         {/* Left column - Methodology description */}
-        <div className="col-lg-3 d-flex flex-column flex-grow-1 pe-gutter">
+        <div className="col d-flex flex-column pe-gutter">
           <div className="card-body h-100">
             <h3 className="mb-4">Bordercore Testing Methodology</h3>
             <h4 className="text-secondary mt-4">Unit Testing</h4>
@@ -114,7 +114,7 @@ export function MetricListPage({ testResults }: MetricListPageProps) {
         </div>
 
         {/* Second column - Unit Tests and Wumpus Tests */}
-        <div className="col-lg-3 d-flex flex-column pe-gutter">
+        <div className="col d-flex flex-column pe-gutter">
           <Card title="Unit Tests" cardClassName="hoverable flex-grow-0 mb-gutter">
             <hr className="divider" />
             <div className="d-flex" onClick={() => showTestResults("unit")}>
@@ -159,15 +159,15 @@ export function MetricListPage({ testResults }: MetricListPageProps) {
               <div className="flex-grow-1">
                 <div className="d-flex">
                   <div className="item-name fw-bold">Test Count</div>
-                  <div className="ms-auto">{testResults.wumpus.test_count}</div>
+                  <div className="item-value ms-auto">{testResults.wumpus.test_count}</div>
                 </div>
                 <div className="d-flex">
                   <div className="item-name fw-bold">Errors</div>
-                  <div className="ms-auto">{testResults.wumpus.test_errors}</div>
+                  <div className="item-value ms-auto">{testResults.wumpus.test_errors}</div>
                 </div>
                 <div className="d-flex">
                   <div className="item-name fw-bold">Failures</div>
-                  <div className="ms-auto">{testResults.wumpus.test_failures}</div>
+                  <div className="item-value ms-auto">{testResults.wumpus.test_failures}</div>
                 </div>
                 <div className="d-flex">
                   <div className="item-name fw-bold">Runtime</div>
@@ -193,7 +193,7 @@ export function MetricListPage({ testResults }: MetricListPageProps) {
         </div>
 
         {/* Third column - Functional Tests and Code Coverage */}
-        <div className="col-lg-3 d-flex flex-column pe-gutter">
+        <div className="col d-flex flex-column pe-gutter">
           <Card title="Functional Tests" cardClassName="hoverable flex-grow-0 mb-gutter">
             <hr className="divider" />
             <div className="d-flex" onClick={() => showTestResults("functional")}>
@@ -262,9 +262,9 @@ export function MetricListPage({ testResults }: MetricListPageProps) {
         </div>
 
         {/* Fourth column - Data Quality Tests */}
-        <div className="col-lg-3 d-flex flex-column">
+        <div className="col d-flex flex-column pe-gutter">
           <div className="d-flex flex-grow-1">
-            <Card title="Data Quality Tests" cardClassName="hoverable">
+            <Card title="Data Quality Tests" cardClassName="hoverable w-100">
               <hr className="divider" />
               <div className="d-flex" onClick={() => showTestResults("data")}>
                 <div className="flex-grow-1">
