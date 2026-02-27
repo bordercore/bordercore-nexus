@@ -194,7 +194,7 @@ def run_test(test_kind: TestKind, is_verbose: bool = False) -> int:
         args = {
             "name": "Bordercore Data Quality Tests",
             "command": [
-                "uv",
+                "/var/www/.local/bin/uv",
                 "run",
                 "pytest",
                 "-n",
