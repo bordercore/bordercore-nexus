@@ -26,7 +26,7 @@ module.exports = defineConfig({
   },
   build: {
     outDir: path.resolve(__dirname, "static", "vite"),
-    emptyOutDir: false,
+    emptyOutDir: true,
     manifest: true,
     rollupOptions: {
       input: {
