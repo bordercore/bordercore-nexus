@@ -257,7 +257,7 @@ class Dashboard():
         )
         text = Text()
 
-        for todo in info["results"]:
+        for todo in info:
             text.append("• " + todo["name"] + "\n", style=Style(color=next(colors)))
             self.layout["todo"].update(Panel(
                 text,
