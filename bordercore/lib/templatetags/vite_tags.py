@@ -18,6 +18,7 @@ register = template.Library()
 
 logger = logging.getLogger(__name__)
 _MANIFEST_CACHE: dict[str, dict[str, Any]] | None = None
+_MANIFEST_MTIME: float = 0.0
 
 def _manifest_path() -> str | None:
     """Locate the Vite manifest.json file on disk.
@@ -48,14 +49,12 @@ def _manifest_path() -> str | None:
     return None
 
 def _load_manifest() -> dict[str, dict[str, Any]]:
-    """Load and cache the Vite manifest.json.
+    """Load and cache the Vite manifest.json, reloading when the file changes.
 
     Returns:
         Parsed manifest dict mapping entry names to their build metadata.
     """
-    global _MANIFEST_CACHE
-    if _MANIFEST_CACHE is not None:
-        return _MANIFEST_CACHE
+    global _MANIFEST_CACHE, _MANIFEST_MTIME
     path = _manifest_path()
     if not path:
         logger.error("Manifest path is None, returning empty manifest")
@@ -65,9 +64,20 @@ def _load_manifest() -> dict[str, dict[str, Any]]:
         logger.error(f"Manifest file does not exist: {path}")
         _MANIFEST_CACHE = {}
         return _MANIFEST_CACHE
+
+    # Reload only when the file has been modified
+    try:
+        mtime = os.path.getmtime(path)
+    except OSError:
+        mtime = 0.0
+
+    if _MANIFEST_CACHE is not None and mtime == _MANIFEST_MTIME:
+        return _MANIFEST_CACHE
+
     try:
         with open(path, "r") as fh:
             _MANIFEST_CACHE = json.load(fh)
+        _MANIFEST_MTIME = mtime
         assert _MANIFEST_CACHE is not None
         logger.info(f"Successfully loaded manifest from {path} with {len(_MANIFEST_CACHE)} entries")
     except json.JSONDecodeError as e:
