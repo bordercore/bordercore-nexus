@@ -7,8 +7,9 @@ import React, {
   useCallback,
 } from "react";
 import AsyncCreatableSelect from "react-select/async-creatable";
-import type { MultiValue, ActionMeta } from "react-select";
+import type { MultiValue, ActionMeta, StylesConfig } from "react-select";
 import axios from "axios";
+import { tagStyle } from "../utils/tagColors";
 
 interface TagOption {
   label: string;
@@ -191,6 +192,12 @@ export const TagsInput = forwardRef<TagsInputHandle, TagsInputProps>(function Ta
         formatCreateLabel={inputValue => `Create "${inputValue}"`}
         classNamePrefix="react-select"
         className="react-select-container"
+        styles={{
+          multiValue: (base, state) => ({
+            ...base,
+            ...tagStyle(state.data.label),
+          }),
+        } as StylesConfig<TagOption, true>}
       />
       {/* Hidden input for form submission */}
       <input type="hidden" name={name} value={tagsCommaSeparated} />
