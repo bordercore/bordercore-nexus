@@ -23,6 +23,8 @@ private enum SplashDestination {
 
 struct SplashView: View {
     @State private var destination: SplashDestination?
+    @StateObject private var navigationRouter = AppNavigationRouter.shared
+    @State private var deepLinkedReminderUUID: UUID?
 
     var body: some View {
         Group {
@@ -36,7 +38,7 @@ struct SplashView: View {
                     destination = nil
                 }
             case .reminders:
-                ReminderMainView {
+                ReminderMainView(deepLinkedReminderUUID: deepLinkedReminderUUID) {
                     destination = nil
                 }
             case .fitness:
@@ -46,6 +48,12 @@ struct SplashView: View {
             case nil:
                 splashContent
             }
+        }
+        .onAppear {
+            applyPendingRoute()
+        }
+        .onChange(of: navigationRouter.pendingRoute) { _, _ in
+            applyPendingRoute()
         }
     }
 
@@ -117,6 +125,21 @@ struct SplashView: View {
             Spacer()
         }
         .padding(.horizontal, 24)
+    }
+
+    private func applyPendingRoute() {
+        guard let route = navigationRouter.pendingRoute else { return }
+
+        switch route {
+        case .reminders:
+            deepLinkedReminderUUID = nil
+            destination = .reminders
+            navigationRouter.consume(.reminders)
+        case .reminderDetail(let uuid):
+            deepLinkedReminderUUID = uuid
+            destination = .reminders
+            navigationRouter.consume(.reminderDetail(uuid))
+        }
     }
 }
 
@@ -271,6 +294,66 @@ private struct ReminderRowView: View {
     }
 }
 
+private struct ReminderDetailView: View {
+    let reminder: ReminderItem
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                Label(reminder.isActive ? "Active" : "Inactive", systemImage: reminder.isActive ? "checkmark.circle.fill" : "pause.circle.fill")
+                    .foregroundStyle(reminder.isActive ? .green : .secondary)
+                    .font(.subheadline.weight(.semibold))
+
+                Text(reminder.name)
+                    .font(.title2.weight(.bold))
+
+                detailRow(title: "Schedule", value: reminder.scheduleDescription.isEmpty ? "Not set" : reminder.scheduleDescription)
+
+                if !reminder.scheduleType.isEmpty {
+                    detailRow(title: "Type", value: reminder.scheduleType)
+                }
+
+                if let nextTriggerAt = reminder.nextTriggerAt {
+                    detailRow(title: "Next Trigger", value: dateText(nextTriggerAt))
+                } else {
+                    detailRow(title: "Next Trigger", value: "No next trigger")
+                }
+
+                if let note = reminder.note, !note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Note")
+                            .font(.headline)
+                        Text(note)
+                            .font(.body)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .padding(.top, 8)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding()
+        }
+        .navigationTitle("Reminder")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func detailRow(title: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.secondary)
+            Text(value)
+                .font(.body)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func dateText(_ date: Date) -> String {
+        date.formatted(date: .complete, time: .shortened)
+    }
+}
+
 private struct ReminderListView: View {
     @ObservedObject var viewModel: ReminderViewModel
 
@@ -287,7 +370,9 @@ private struct ReminderListView: View {
             } else {
                 List {
                     ForEach(viewModel.reminders) { reminder in
-                        ReminderRowView(reminder: reminder)
+                        NavigationLink(value: reminder.uuid) {
+                            ReminderRowView(reminder: reminder)
+                        }
                     }
                 }
                 .listStyle(.plain)
@@ -315,14 +400,18 @@ private struct ReminderListView: View {
 private struct ReminderMainView: View {
     @StateObject private var viewModel = ReminderViewModel()
     @Environment(\.scenePhase) private var scenePhase
+    @State private var navigationPath: [UUID] = []
+    @State private var pendingReminderUUID: UUID?
+    let deepLinkedReminderUUID: UUID?
     let onBack: () -> Void
 
-    init(onBack: @escaping () -> Void = {}) {
+    init(deepLinkedReminderUUID: UUID? = nil, onBack: @escaping () -> Void = {}) {
+        self.deepLinkedReminderUUID = deepLinkedReminderUUID
         self.onBack = onBack
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             ReminderListView(viewModel: viewModel)
                 .navigationTitle("Reminders")
                 .toolbar {
@@ -338,14 +427,48 @@ private struct ReminderMainView: View {
                         }
                     }
                 }
+                .navigationDestination(for: UUID.self) { reminderID in
+                    if let reminder = reminder(for: reminderID) {
+                        ReminderDetailView(reminder: reminder)
+                    } else {
+                        ContentUnavailableView(
+                            "Reminder Not Found",
+                            systemImage: "bell.slash",
+                            description: Text("This reminder is no longer available")
+                        )
+                    }
+                }
         }
         .task {
+            pendingReminderUUID = deepLinkedReminderUUID
             await viewModel.load()
+            openPendingReminderIfPossible()
         }
         .onChange(of: scenePhase) { _, newPhase in
             guard newPhase == .active else { return }
-            Task { await viewModel.reload() }
+            Task {
+                await viewModel.reload()
+                openPendingReminderIfPossible()
+            }
         }
+        .onChange(of: deepLinkedReminderUUID) { _, newValue in
+            pendingReminderUUID = newValue
+            openPendingReminderIfPossible()
+        }
+        .onChange(of: viewModel.reminders) { _, _ in
+            openPendingReminderIfPossible()
+        }
+    }
+
+    private func reminder(for uuid: UUID) -> ReminderItem? {
+        viewModel.reminders.first { $0.uuid == uuid }
+    }
+
+    private func openPendingReminderIfPossible() {
+        guard let reminderUUID = pendingReminderUUID else { return }
+        guard reminder(for: reminderUUID) != nil else { return }
+        navigationPath = [reminderUUID]
+        pendingReminderUUID = nil
     }
 }
 
