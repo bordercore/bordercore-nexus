@@ -1,11 +1,12 @@
 #!/bin/bash
 # Short pytest wrapper that excludes data_quality and functional tests
-# Usage: pt [-d] [-f] <test_substring>
+# Usage: pt [-b] [-d] [-f] <test_substring>
+#   -b: allow database access (do not use -p no:django)
 #   -d: exclude data_quality tests
 #   -f: exclude functional tests
-#   If no options are passed, no tests are excluded
+#   If no options are passed, runs with -p no:django (no DB) for speed
 # Example: pt test_get_cover_info
-# Example: pt -d test_get_cover_info  # exclude data_quality only
+# Example: pt -b test_blob_metadata_exists_in_elasticsearch  # with DB
 
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -18,9 +19,13 @@ fi
 
 EXCLUDE_DATA_QUALITY=false
 EXCLUDE_FUNCTIONAL=false
+INCLUDE_DB=false
 
-while getopts "df" opt; do
+while getopts "bdf" opt; do
     case $opt in
+        b)
+            INCLUDE_DB=true
+            ;;
         d)
             EXCLUDE_DATA_QUALITY=true
             ;;
@@ -28,7 +33,8 @@ while getopts "df" opt; do
             EXCLUDE_FUNCTIONAL=true
             ;;
         \?)
-            echo "Usage: $0 [-d] [-f] <test_substring>"
+            echo "Usage: $0 [-b] [-d] [-f] <test_substring>"
+            echo "  -b: allow database access (required for tests that use django_db)"
             echo "  -d: exclude data_quality tests"
             echo "  -f: exclude functional tests"
             exit 1
@@ -39,26 +45,35 @@ done
 shift $((OPTIND - 1))
 
 if [ $# -eq 0 ]; then
-    echo "Usage: $0 [-d] [-f] <test_substring>"
+    echo "Usage: $0 [-b] [-d] [-f] <test_substring>"
+    echo "  -b: allow database access (required for tests that use django_db)"
     echo "  -d: exclude data_quality tests"
     echo "  -f: exclude functional tests"
     echo "Example: $0 test_get_cover_info"
+    echo "Example: $0 -b test_blob_metadata_exists_in_elasticsearch"
     exit 1
 fi
 
-# Build the marker expression
+# When not including DB, disable django plugin for faster runs (avoids "Database access not allowed")
+if [ "$INCLUDE_DB" = true ]; then
+    NO_DJANGO_OPTS=()
+else
+    NO_DJANGO_OPTS=(-p no:django -o addopts=)
+fi
+
+# Build the marker expression and run pytest
 if [ "$EXCLUDE_DATA_QUALITY" = true ] && [ "$EXCLUDE_FUNCTIONAL" = true ]; then
     # Both flags passed: exclude both
     MARKER_EXPR="not data_quality and not functional"
-    uv run pytest -m "$MARKER_EXPR" "$PROJECT_DIR/bordercore/" -k "$1"
+    uv run pytest "${NO_DJANGO_OPTS[@]}" -m "$MARKER_EXPR" "$PROJECT_DIR/bordercore/" -k "$1"
 elif [ "$EXCLUDE_DATA_QUALITY" = true ]; then
     # Only -d: exclude data_quality only
-    uv run pytest -m "not data_quality" "$PROJECT_DIR/bordercore/" -k "$1"
+    uv run pytest "${NO_DJANGO_OPTS[@]}" -m "not data_quality" "$PROJECT_DIR/bordercore/" -k "$1"
 elif [ "$EXCLUDE_FUNCTIONAL" = true ]; then
     # Only -f: exclude functional only
-    uv run pytest -m "not functional" "$PROJECT_DIR/bordercore/" -k "$1"
+    uv run pytest "${NO_DJANGO_OPTS[@]}" -m "not functional" "$PROJECT_DIR/bordercore/" -k "$1"
 else
-    # No flags: don't exclude anything
-    uv run pytest "$PROJECT_DIR/bordercore/" -k "$1"
+    # No flags: don't exclude any markers
+    uv run pytest "${NO_DJANGO_OPTS[@]}" "$PROJECT_DIR/bordercore/" -k "$1"
 fi
 
