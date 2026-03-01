@@ -123,7 +123,7 @@
                     csrfToken: "{{ csrf_token }}",
                     initialSidebarCollapsed: {% if request.session.show_sidebar == "false" %}true{% else %}false{% endif %},
                     failedTestCount: {{ failed_test_count }},
-                    title: "{{ title|default:'' }}",
+                    title: "",
                     username: "{{ user.get_username }}",
                     userMenuItems: [
                         {
@@ -238,4 +238,3 @@
     </body>
 
 </html>
-

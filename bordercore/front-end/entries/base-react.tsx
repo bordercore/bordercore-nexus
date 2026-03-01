@@ -449,26 +449,11 @@ if (toastContainer) {
 
 const topBarContainer = document.getElementById("top-bar");
 if (topBarContainer) {
-  // Extract title from original HTML element before React replaces it
-  let extractedTitle = "";
+  // Read title from server-rendered span before React replaces it
   const originalTitleEl = document.getElementById("top-title-text");
-  if (originalTitleEl && originalTitleEl.textContent) {
-    const titleText = originalTitleEl.textContent.trim();
-    // Check if it has "Bordercore ::" prefix and extract just the title
-    const match = titleText.match(/Bordercore\s*::\s*(.+)/);
-    if (match && match[1]) {
-      extractedTitle = match[1].trim();
-    } else if (titleText) {
-      // Otherwise use the text as-is
-      extractedTitle = titleText;
-    }
-  }
-  // Store it in BASE_TEMPLATE_DATA if not already there
-  if (extractedTitle && (!window.BASE_TEMPLATE_DATA || !window.BASE_TEMPLATE_DATA.title)) {
-    if (!window.BASE_TEMPLATE_DATA) {
-      window.BASE_TEMPLATE_DATA = {};
-    }
-    window.BASE_TEMPLATE_DATA.title = extractedTitle;
+  if (originalTitleEl?.textContent?.trim()) {
+    window.BASE_TEMPLATE_DATA = window.BASE_TEMPLATE_DATA || {};
+    window.BASE_TEMPLATE_DATA.title = originalTitleEl.textContent.trim();
   }
 
   const topBarRoot = createRoot(topBarContainer);

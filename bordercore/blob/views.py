@@ -432,7 +432,7 @@ class BlobDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView):
         context["back_references"] = Blob.back_references(self.object.uuid)
         context["collection_list"] = self.object.collections
         context["node_list"] = self.object.get_nodes()
-        context["title"] = self.object
+        context["title"] = str(self.object)
 
         elasticsearch_info = context.get("elasticsearch_info") or {}
         context["show_metadata"] = (
