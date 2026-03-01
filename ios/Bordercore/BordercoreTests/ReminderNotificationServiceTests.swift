@@ -2,6 +2,18 @@ import XCTest
 @testable import Bordercore
 
 final class ReminderNotificationServiceTests: XCTestCase {
+    func testReminderUUIDFromNotificationIdentifierParsesManagedIdentifier() {
+        let uuid = UUID(uuidString: "dddddddd-dddd-dddd-dddd-dddddddddddd")!
+        let identifier = ReminderNotificationService.notificationIdentifier(for: uuid)
+
+        XCTAssertEqual(ReminderNotificationService.reminderUUID(fromNotificationIdentifier: identifier), uuid)
+    }
+
+    func testReminderUUIDFromNotificationIdentifierReturnsNilForInvalidIdentifier() {
+        XCTAssertNil(ReminderNotificationService.reminderUUID(fromNotificationIdentifier: "reminder.not-a-uuid"))
+        XCTAssertNil(ReminderNotificationService.reminderUUID(fromNotificationIdentifier: "other.prefix"))
+    }
+
     func testBuildPlanIncludesOnlyActiveFutureReminders() {
         let now = Date(timeIntervalSince1970: 1_700_000_000)
         let activeFuture = ReminderItem(

@@ -123,11 +123,11 @@ actor ReminderNotificationService {
             }
 
             let identifier = notificationIdentifier(for: reminder.uuid)
-            let trimmedBody = reminder.note?.trimmingCharacters(in: .whitespacesAndNewlines)
-            let body = (trimmedBody?.isEmpty == false) ? trimmedBody ?? "" : "Reminder is due now"
+            let title = renderedMarkdownText(reminder.name) ?? "Reminder"
+            let body = renderedMarkdownText(reminder.note) ?? "Reminder is due now"
             let notification = ScheduledReminderNotification(
                 identifier: identifier,
-                title: reminder.name,
+                title: title,
                 body: body,
                 triggerDate: nextTriggerAt
             )
@@ -149,6 +149,27 @@ actor ReminderNotificationService {
 
     static func notificationIdentifier(for uuid: UUID) -> String {
         "\(managedPrefix)\(uuid.uuidString.lowercased())"
+    }
+
+    static func reminderUUID(fromNotificationIdentifier identifier: String) -> UUID? {
+        guard identifier.hasPrefix(managedPrefix) else { return nil }
+        let uuidString = String(identifier.dropFirst(managedPrefix.count))
+        return UUID(uuidString: uuidString)
+    }
+
+    private static func renderedMarkdownText(_ source: String?) -> String? {
+        guard let source else { return nil }
+        let trimmed = source.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+
+        if let attributed = try? AttributedString(markdown: trimmed) {
+            let plain = String(attributed.characters).trimmingCharacters(in: .whitespacesAndNewlines)
+            if !plain.isEmpty {
+                return plain
+            }
+        }
+
+        return trimmed
     }
 
     private func notificationAuthorizationStatus() async -> UNAuthorizationStatus {
