@@ -27,7 +27,7 @@ from tag.models import Tag
 
 logging.getLogger("elasticsearch").setLevel(logging.ERROR)
 
-pytestmark = [pytest.mark.data_quality]
+pytestmark = [pytest.mark.data_quality, pytest.mark.django_db]
 
 django.setup()
 
@@ -668,6 +668,11 @@ def test_blob_metadata_exists_in_elasticsearch(es):
                 for meta_item in expected_metadata:
                     field_name = meta_item["name"]
                     expected_value = meta_item["value"]
+                    if field_name not in es_metadata:
+                        errors.append(
+                            f"Blob {uuid} missing ES field '{field_name}'"
+                        )
+                        continue
                     es_value = es_metadata[field_name]
                     if expected_value not in es_value:
                         errors.append(
@@ -676,7 +681,7 @@ def test_blob_metadata_exists_in_elasticsearch(es):
                         )
 
         except Exception as e:
-            errors.append(f"Elasticsearch error for batch {i}-{i+batch_size}: {str(e)}")
+            errors.append(f"Elasticsearch error for batch {i}-{i+batch_size}: {e}")
 
     if errors:
         pytest.fail("Metadata validation errors:" + "\n".join(errors))

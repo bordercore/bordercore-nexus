@@ -14,7 +14,7 @@ from django.conf import settings
 from drill.models import Question
 from lib.util import get_elasticsearch_connection, get_missing_blob_ids
 
-pytestmark = [pytest.mark.data_quality]
+pytestmark = [pytest.mark.data_quality, pytest.mark.django_db]
 
 django.setup()
 
