@@ -57,17 +57,11 @@ def search(user: User, todo_name: str) -> List[Dict[str, Any]]:
                         }
                     },
                     {
-                        "bool": {
-                            "should": [
-                                {
-                                    "match": {
-                                        "name.autocomplete": {
-                                            "query": search_term,
-                                            "operator": "and"
-                                        }
-                                    }
-                                }
-                            ]
+                        "match": {
+                            "name.autocomplete": {
+                                "query": search_term,
+                                "operator": "and"
+                            }
                         }
                     }
                 ]

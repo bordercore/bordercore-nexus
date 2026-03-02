@@ -30,9 +30,9 @@ urlpatterns = [
         name="get_tasks"
     ),
     path(
-        route="reschedule_task",
-        view=views.reschedule_task,
-        name="reschedule_task"
+        route="snooze_task",
+        view=views.snooze_task,
+        name="snooze_task"
     ),
     path(
         route="<uuid:uuid>",

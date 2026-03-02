@@ -195,16 +195,14 @@ def tags_changed(sender: Type[Todo], **kwargs: Any) -> None:
     if kwargs["action"] == "post_add":
         todo = kwargs["instance"]
 
-        for tag_id in kwargs["pk_set"]:
-            so = TagTodo(tag=Tag.objects.get(user=todo.user, pk=tag_id), todo=todo)
-            so.save()
+        tags = Tag.objects.filter(user=todo.user, pk__in=kwargs["pk_set"])
+        TagTodo.objects.bulk_create([TagTodo(tag=tag, todo=todo) for tag in tags])
 
     elif kwargs["action"] == "post_remove":
         todo = kwargs["instance"]
 
         for tag_id in kwargs["pk_set"]:
-            so = TagTodo.objects.get(tag__id=tag_id, todo=todo)
-            so.delete()
+            TagTodo.objects.filter(tag__id=tag_id, todo=todo).delete()
 
 
 m2m_changed.connect(tags_changed, sender=Todo.tags.through)

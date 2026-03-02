@@ -404,7 +404,7 @@ class TodoSerializer(serializers.ModelSerializer):
     """Serializer for the Todo model with tag creation on write."""
 
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
-    tags = BlobTagsField(queryset=Tag.objects.all(), many=True)
+    tags = BlobTagsField(queryset=Tag.objects.all(), many=True, required=False)
     due_date = serializers.DateTimeField(required=False, input_formats=["%Y-%m-%d"])
 
     class Meta:
@@ -451,20 +451,23 @@ class TodoSerializer(serializers.ModelSerializer):
         Returns:
             The updated Todo instance.
         """
+        tags = validated_data.pop("tags", None)
+
         instance.name = validated_data.get("name", instance.name)
         instance.note = validated_data.get("note", instance.note)
         instance.priority = validated_data.get("priority", instance.priority)
         instance.url = validated_data.get("url", instance.url)
         instance.due_date = validated_data.get("due_date", instance.due_date)
 
-        instance.tags.set(
-            [
-                Tag.objects.get_or_create(name=x, user=instance.user)[0]
-                for x in
-                validated_data["tags"][0].split(",")
-                if x != ""
-            ]
-        )
+        if tags:
+            instance.tags.set(
+                [
+                    Tag.objects.get_or_create(name=x, user=instance.user)[0]
+                    for x in
+                    tags[0].split(",")
+                    if x != ""
+                ]
+            )
         instance.save()
         return instance
 

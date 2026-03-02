@@ -176,7 +176,7 @@
                         csrfToken: "{{ csrf_token }}",
                     },
                     overdueTasksConfig: {
-                        rescheduleTaskUrl: "{% url 'todo:reschedule_task' %}",
+                        rescheduleTaskUrl: "{% url 'todo:snooze_task' %}",
                         deleteTodoUrl: "{% url 'todo-detail' '00000000-0000-0000-0000-000000000000' %}",
                     },
                     recentBlobsConfig: {

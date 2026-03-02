@@ -4,7 +4,7 @@ Views for managing Todo items, including HTML list display and JSON-based task A
 This module provides:
 - `TodoListView`: Renders the main todo list page with filtering and context data.
 - `TodoTaskList`: Returns a JSON list of todos based on query parameters or search.
-- `sort_todo`, `move_to_top`, `reschedule_task`: Function-based views for AJAX task operations.
+- `sort_todo`, `move_to_top`, `snooze_task`: Function-based views for AJAX task operations.
 """
 
 import json
@@ -111,19 +111,18 @@ class TodoListView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
 
         current_filter = self.get_filter()
+        user = cast(User, self.request.user)
 
         # If a uuid is given in the url, store the associated task and
         #  set one of its tags to be the filter. Also reset priority and
         #  time filters so that the task isn't filtered out.
         if "uuid" in self.kwargs:
             context["uuid"] = self.kwargs["uuid"]
-            todo = get_object_or_404(Todo, uuid=self.kwargs["uuid"])
+            todo = get_user_object_or_404(user, Todo, uuid=self.kwargs["uuid"])
             tag = todo.tags.first()
             current_filter["todo_filter_tag"] = tag.name if tag else None
             current_filter["todo_filter_priority"] = None
             current_filter["todo_filter_time"] = None
-
-        user = cast(User, self.request.user)
         tags = Todo.get_todo_counts(user)
         # Convert tags to JSON format for React: list of {name, count} objects
         tags_json = json.dumps([{"name": tag["name"], "count": tag["count"]} for tag in tags])
@@ -194,9 +193,7 @@ class TodoTaskList(APIView):
         else:
 
             queryset = Todo.objects.filter(
-                user=user
-            ).filter(
-                nodetodo__isnull=True
+                user=user, nodetodo__isnull=True
             ).order_by(
                 "-created"
             )
@@ -329,11 +326,11 @@ def move_to_top(request: Request) -> Response:
 
 @api_view(["POST"])
 @validate_post_data("todo_uuid")
-def reschedule_task(request: Request) -> Response:
+def snooze_task(request: Request) -> Response:
     """Set a Todo's due date to one day from now and save.
 
     Expects POST parameter:
-      - 'todo_uuid': UUID of the todo to reschedule.
+      - 'todo_uuid': UUID of the todo to snooze.
 
     Args:
         request: The HTTP request with POST data.
