@@ -243,7 +243,7 @@ export default function NodeNote({
               value={noteContents}
               onChange={e => setNoteContents(e.target.value)}
               onBlur={handleContentBlur}
-              rows={5}
+              rows={Math.max(5, noteContents.split("\n").length + 1)}
             />
           ) : (
             <div onClick={() => setIsEditingContent(true)} className="cursor-pointer">
