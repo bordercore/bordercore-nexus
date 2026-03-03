@@ -177,7 +177,7 @@ def test_collection_object_list(authenticated_client, collection, blob_image_fac
 
     payload = resp.json()
 
-    assert len(payload) == 2
+    assert len(payload["object_list"]) == 2
 
     assert blob_image_factory[0].name in [x["name"] for x in payload["object_list"]]
     assert blob_pdf_factory[0].name in [x["name"] for x in payload["object_list"]]

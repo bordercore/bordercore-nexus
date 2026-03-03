@@ -178,7 +178,15 @@ export function CollectionDetailPage({
       }
     } catch (error: any) {
       console.error("Error uploading file:", error);
-      alert(error.response?.data?.message || "Error uploading file");
+      const data = error.response?.data;
+      if (data?.existing_blob_url) {
+        if (confirm(`${data.message} View existing blob?`)) {
+          window.location.href = data.existing_blob_url;
+          return;
+        }
+      } else {
+        alert(data?.message || "Error uploading file");
+      }
       processingModal.hide();
       setIsProcessing(false);
     }

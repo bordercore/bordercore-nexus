@@ -25,7 +25,7 @@ class CollectionForm(ModelForm):
         request: The HTTP request object, used for user-specific tag filtering.
     """
 
-    request: HttpRequest | None
+    request: HttpRequest
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the CollectionForm instance.
@@ -37,11 +37,16 @@ class CollectionForm(ModelForm):
 
         Args:
             *args: Variable length argument list passed to parent ModelForm.
-            **kwargs: Arbitrary keyword arguments. May contain 'request' key
+            **kwargs: Arbitrary keyword arguments. Must contain 'request' key
                 which is extracted and stored as self.request.
+
+        Raises:
+            ValueError: If 'request' is not provided in kwargs.
         """
         # The request object is passed in from a view's get_form_kwargs() method
         self.request = kwargs.pop("request", None)
+        if self.request is None:
+            raise ValueError("CollectionForm requires a 'request' kwarg.")
 
         super().__init__(*args, **kwargs)
 

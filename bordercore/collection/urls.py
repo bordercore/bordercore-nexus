@@ -45,11 +45,6 @@ urlpatterns = [
         name="search"
     ),
     path(
-        route="get_object_list/<uuid:collection_uuid>/",
-        view=views.get_object_list,
-        name="get_object_list"
-    ),
-    path(
         route="create_blob",
         view=views.create_blob,
         name="create_blob"

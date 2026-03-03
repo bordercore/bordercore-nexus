@@ -22,6 +22,7 @@ from django.forms import BaseModelForm
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse, reverse_lazy
+from django.utils.html import format_html
 from django.utils import timezone
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import (CreateView, DeleteView, FormMixin,
@@ -263,7 +264,7 @@ class CollectionDeleteView(LoginRequiredMixin, UserScopedQuerysetMixin, DeleteVi
         messages.add_message(
             self.request,
             messages.INFO,
-            f"Collection <strong>{self.object.name}</strong> deleted"
+            format_html("Collection <strong>{}</strong> deleted", self.object.name)
         )
         return super().form_valid(form)
 
@@ -289,7 +290,10 @@ def get_blob(request: HttpRequest, collection_uuid: str) -> Response:
     user = cast(User, request.user)
     collection = get_user_object_or_404(user, Collection, uuid=collection_uuid)
     direction = request.GET.get("direction", "next")
-    blob_position = int(request.GET.get("position", 0))
+    try:
+        blob_position = int(request.GET.get("position", 0))
+    except (ValueError, TypeError):
+        return Response({"status": "ERROR", "message": "Invalid position value."}, status=400)
     tag_name = request.GET.get("tag", None)
     randomize = request.GET.get("randomize", "") == "true"
 
@@ -312,9 +316,8 @@ def get_images(request: HttpRequest, collection_uuid: str) -> Response:
         JSON response containing a list of image dictionaries with
         uuid and filename fields.
     """
-    # Note: This is an API view that may be called by AWS Lambda, so user filtering may not apply
-    # However, collections should still be user-scoped for security
-    blob_list = get_object_or_404(Collection, uuid=str(collection_uuid)).get_recent_images()
+    user = cast(User, request.user)
+    blob_list = get_user_object_or_404(user, Collection, uuid=collection_uuid).get_recent_images()
 
     return Response(
         [
@@ -408,10 +411,11 @@ def create_blob(request: HttpRequest) -> Response:
 
     if existing_blob:
 
-        blob_url = reverse("blob:detail", kwargs={"uuid": existing_blob.uuid})
         return Response({
             "status": "ERROR",
-            "message": f"This blob <a href='{blob_url}'>already exists</a>."
+            "message": "This blob already exists.",
+            "existing_blob_uuid": str(existing_blob.uuid),
+            "existing_blob_url": reverse("blob:detail", kwargs={"uuid": existing_blob.uuid}),
         }, status=400)
 
     else:
@@ -461,7 +465,10 @@ def get_object_list(request: HttpRequest, collection_uuid: str) -> Response:
     collection = get_user_object_or_404(user, Collection, uuid=collection_uuid)
     random_order = request.GET.get("random_order", "").lower() == "true"
     tag = request.GET.get("tag") or None
-    page_number = int(request.GET.get("pageNumber", 1))
+    try:
+        page_number = int(request.GET.get("pageNumber", 1))
+    except (ValueError, TypeError):
+        return Response({"status": "ERROR", "message": "Invalid page number."}, status=400)
 
     object_list = collection.get_object_list(
         page_number=page_number,
@@ -548,13 +555,16 @@ def remove_object(request: HttpRequest) -> Response:
 
     user = cast(User, request.user)
     collection = get_user_object_or_404(user, Collection, uuid=collection_uuid)
-    collection.remove_object(object_uuid)
 
-    response = {
-        "status": "OK",
-    }
+    try:
+        collection.remove_object(object_uuid)
+    except CollectionObject.DoesNotExist:
+        return Response(
+            {"status": "ERROR", "message": "Object not found in this collection."},
+            status=404
+        )
 
-    return Response(response)
+    return Response({"status": "OK"})
 
 
 @api_view(["POST"])
@@ -577,7 +587,10 @@ def sort_objects(request: HttpRequest) -> Response:
     """
     collection_uuid = request.POST["collection_uuid"]
     object_uuid = request.POST["object_uuid"]
-    new_position = int(request.POST["new_position"])
+    try:
+        new_position = int(request.POST["new_position"])
+    except (ValueError, TypeError):
+        return Response({"status": "ERROR", "message": "Invalid position value."}, status=400)
 
     user = cast(User, request.user)
     so = get_object_or_404(

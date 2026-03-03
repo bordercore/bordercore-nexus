@@ -1,10 +1,10 @@
 """
 Models for the collection system.
 
-This module defines Collection (a user-created grouping of Blobs and Bookmarks),
-CollectionObject (the through-table linking Collections to their contents), and
-BCObject (a generic base for related objects). Collections support tags, favorites,
-thumbnails, and paginated browsing of their contents.
+This module defines Collection (a user-created grouping of Blobs and Bookmarks)
+and CollectionObject (the through-table linking Collections to their contents).
+Collections support tags, favorites, thumbnails, and paginated browsing of their
+contents.
 """
 
 from __future__ import unicode_literals
@@ -54,7 +54,6 @@ class Collection(TimeStampedModel):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=200)
     user = models.ForeignKey(User, on_delete=models.PROTECT)
-    bc_objects: models.ManyToManyField = models.ManyToManyField("collection.BCObject", through="CollectionObject")
     tags = models.ManyToManyField(Tag)
     description = models.TextField(blank=True, default="")
     is_favorite = models.BooleanField(default=False)
@@ -140,7 +139,7 @@ class Collection(TimeStampedModel):
         co.delete()
 
         self.modified = timezone.now()
-        self.save()
+        self.save(update_fields=["modified"])
 
         self.create_collection_thumbnail()
 
@@ -275,11 +274,8 @@ class Collection(TimeStampedModel):
             return None
 
         if randomize:
-            count = so.count()
-            if count == 0:
-                return None
             position = randint(0, count - 1)
-            blob = so[position]
+            collection_object = so[position]
         else:
             if direction == "next":
                 position = 0 if position == count - 1 else position + 1
@@ -287,12 +283,12 @@ class Collection(TimeStampedModel):
                 position = count - 1 if position == 0 else position - 1
             if not 0 <= position < count:
                 position = 0
-            blob = so[position]
+            collection_object = so[position]
 
-        if blob.blob is None:
+        if collection_object.blob is None:
             return None
 
-        blob_obj = blob.blob
+        blob_obj = collection_object.blob
 
         content_type = None
         try:
@@ -382,7 +378,7 @@ class Collection(TimeStampedModel):
             will be evaluated when iterated or converted to a list.
         """
         queryset = self.collectionobject_set.filter(
-            blob__file__iregex=r"\.(gif|jpg|jpeg|pdf|png)$"
+            blob__file__iregex=r"\.(gif|jpg|jpeg|png)$"
         ).values(
             uuid=F("blob__uuid"),
             file=F("blob__file")
@@ -414,7 +410,6 @@ class CollectionObject(SortOrderMixin):
         collection: The Collection this object belongs to.
         blob: Optional Blob in this collection.
         bookmark: Optional Bookmark in this collection.
-        object: Optional generic BCObject reference.
         created: Timestamp when this object was added to the collection.
         sort_order: (inherited from SortOrderMixin) used for ordering items.
     """
@@ -422,7 +417,6 @@ class CollectionObject(SortOrderMixin):
     collection = models.ForeignKey("collection.Collection", null=True, on_delete=models.CASCADE)
     blob = models.ForeignKey("blob.Blob", null=True, on_delete=models.CASCADE)
     bookmark = models.ForeignKey("bookmark.Bookmark", null=True, on_delete=models.CASCADE)
-    object = models.ForeignKey("collection.BCObject", on_delete=models.CASCADE, null=True)
     created = models.DateTimeField(auto_now_add=True)
 
     field_name = "collection"
@@ -514,19 +508,6 @@ class CollectionObject(SortOrderMixin):
                 "favicon_url": self.bookmark.get_favicon_img_tag(size=16)
             }
         raise ValueError(f"Unsupported object: {self}")
-
-
-class BCObject(TimeStampedModel):
-    """Generic related object wrapper.
-
-    This is a minimal model used to attach arbitrary objects to Collections via
-    CollectionObject. It inherits timestamp fields from TimeStampedModel.
-
-    Attributes:
-        uuid: Stable identifier for this object.
-    """
-
-    uuid = models.UUIDField(default=uuid.uuid4, editable=False)
 
 
 @receiver(pre_delete, sender=CollectionObject)
