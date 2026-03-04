@@ -11,8 +11,9 @@ from __future__ import annotations
 import calendar
 import uuid
 from collections import defaultdict
+from collections.abc import Sequence
 from datetime import timedelta
-from typing import Any, DefaultDict, Dict, List
+from typing import Any
 
 from django.contrib.auth.models import User
 from django.contrib.postgres.aggregates import ArrayAgg
@@ -69,12 +70,12 @@ class Exercise(models.Model):
     class Meta:
         ordering = ["name"]
 
-    def get_targeted_muscles(self) -> DefaultDict[str, List[Muscle]]:
+    def get_targeted_muscles(self) -> defaultdict[str, list[Muscle]]:
         """Return muscles targeted by this exercise, grouped by role.
 
         Returns:
-            DefaultDict[str, List[Muscle]]: A mapping from target role
-            (e.g., "primary", "secondary") to a list of muscles.
+            A mapping from target role (e.g., "primary", "secondary")
+            to a list of muscles.
         """
         muscles = defaultdict(list)
 
@@ -83,14 +84,14 @@ class Exercise(models.Model):
 
         return muscles
 
-    def last_workout(self, user: User) -> Dict[str, Any]:
-        """Return summary stats for the user's most recent workout of this exercise.
+    def last_workout(self, user: User) -> dict[str, Any]:
+        """Return summary stats for the user’s most recent workout of this exercise.
 
         Args:
             user: The Django user to query for.
 
         Returns:
-            Dict[str, Any]: A dictionary with keys:
+            A dictionary with keys:
                 - "recent_data": list[Data] for that workout (order is the model’s default)
                 - "latest_reps": list[int] (reps for each set, 0 when null)
                 - "latest_weight": list[float] (weight for each set, 0.0 when null)
@@ -111,6 +112,13 @@ class Exercise(models.Model):
 
         recent_data = list(workout.data_set.all())  # realize for indexing below
 
+        if not recent_data:
+            return {
+                "latest_duration": [],
+                "latest_reps": [],
+                "latest_weight": [],
+            }
+
         info = {
             "recent_data": recent_data,
             "latest_reps": [x.reps or 0 for x in recent_data],
@@ -120,23 +128,24 @@ class Exercise(models.Model):
         }
         return info
 
-    def get_plot_info(self, count: int = 12, page_number: int = 1) -> Dict[str, Any]:
+    def get_plot_info(self, user: User, count: int = 12, page_number: int = 1) -> dict[str, Any]:
         """Build plotting payloads (labels, series, notes, pagination) for this exercise.
 
         Args:
+            user: The Django user to query for.
             count: Number of workout entries per page.
             page_number: 1-based page to fetch.
 
         Returns:
-            Dict[str, Any]: A dictionary with:
+            A dictionary with:
                 - "labels": list[str] of date labels (newest first)
-                - "plot_data": dict[str, list[list[int|float|None]]] keyed by "reps", "weight", "duration"
+                - "plot_data": dict keyed by "reps", "weight", "duration"
                 - "notes": list[str|None] of workout notes
-                - "initial_plot_type": str of preferred plot series ("reps", "weight", or "duration")
-                - "paginator": dict with reversed paging semantics (we page newest → older):
+                - "initial_plot_type": str of preferred plot series
+                - "paginator": dict with reversed paging semantics (newest → older)
         """
         raw_data = (
-            Workout.objects.filter(exercise__id=self.id)
+            Workout.objects.filter(exercise__id=self.id, user=user)
             .annotate(reps=ArrayAgg("data__reps", order_by="-date"))
             .annotate(weight=ArrayAgg("data__weight", order_by="-date"))
             .annotate(duration=ArrayAgg("data__duration", order_by="-date"))
@@ -158,7 +167,7 @@ class Exercise(models.Model):
             initial_plot_type = "duration"
 
         labels = [x.date.strftime("%b %d") for x in page_data]
-        notes= [x.note for x in page_data]
+        notes = [x.note for x in page_data]
 
         # Note: has_previous and has_next are reversed because we want to show the last
         #  set of workout data first in the pagination.
@@ -216,7 +225,12 @@ class ExerciseMuscle(models.Model):
         return f"ExerciseMuscle: {self.exercise}, {self.muscle}"
 
     class Meta:
-        unique_together = (("exercise", "muscle"))
+        constraints = [
+            models.UniqueConstraint(
+                fields=["exercise", "muscle"],
+                name="unique_exercise_muscle",
+            ),
+        ]
 
 
 class Workout(models.Model):
@@ -227,6 +241,10 @@ class Workout(models.Model):
     date = models.DateTimeField(auto_now_add=True)
     note = models.TextField(blank=True, null=True)
 
+    def __str__(self) -> str:
+        """Return string representation of the workout."""
+        return f"{self.user} - {self.exercise} ({self.date:%Y-%m-%d})"
+
 
 class Data(models.Model):
     """Per-set data recorded within a Workout."""
@@ -236,6 +254,10 @@ class Data(models.Model):
     weight = models.FloatField(blank=True, null=True)
     reps = models.PositiveIntegerField()
     duration = models.PositiveIntegerField(blank=True, null=True)
+
+    def __str__(self) -> str:
+        """Return string representation of the data entry."""
+        return f"Set: {self.reps} reps @ {self.weight}"
 
     class Meta:
         verbose_name_plural = "Data"
@@ -254,13 +276,18 @@ class ExerciseUser(models.Model):
     schedule = ArrayField(models.BooleanField(blank=True, null=True), size=7)
 
     class Meta:
-        unique_together = ("user", "exercise")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "exercise"],
+                name="unique_user_exercise",
+            ),
+        ]
 
     def __str__(self) -> str:
         """Return string representation of the exercise user."""
         return f"Exercise '{self.exercise.name}' for user {self.user.username}"
 
-    def activity_info(self) -> Dict[str, Any]:
+    def activity_info(self) -> dict[str, Any]:
         """Return a small info bundle describing the user's cadence and start date.
 
         Returns:
@@ -278,7 +305,7 @@ class ExerciseUser(models.Model):
         }
 
     @staticmethod
-    def schedule_days(schedule: List[bool | None] | None) -> str:
+    def schedule_days(schedule: Sequence[bool | None] | None) -> str:
         """Convert a 7-length boolean schedule to weekday abbreviations.
 
         The schedule is expected to be a list of seven truthy/falsey values,

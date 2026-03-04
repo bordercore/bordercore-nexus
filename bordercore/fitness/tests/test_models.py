@@ -20,7 +20,7 @@ def test_fitness_str(authenticated_client, fitness):
     )) == "ExerciseMuscle: Bench Press, Pectoralis Major"
 
 
-def test_get_targeted_muscles(authenticated_client, fitness):
+def test_get_targeted_muscles(fitness):
 
     muscles = fitness[0].get_targeted_muscles()
     assert "primary" in [x for x in muscles]
@@ -46,7 +46,7 @@ def test_get_plot_data(authenticated_client, fitness):
 
     user, _ = authenticated_client()
 
-    plot_data = fitness[0].get_plot_info()
+    plot_data = fitness[0].get_plot_info(user=user)
     reps = plot_data["plot_data"]["reps"]
     weight = plot_data["plot_data"]["weight"]
     paginator = plot_data["paginator"]
@@ -61,7 +61,7 @@ def test_get_plot_data(authenticated_client, fitness):
     assert paginator["previous_page_number"] is None
     assert paginator["next_page_number"] is None
 
-    plot_data = fitness[0].get_plot_info(count=4)
+    plot_data = fitness[0].get_plot_info(user=user, count=4)
     reps = plot_data["plot_data"]["reps"]
     weight = plot_data["plot_data"]["weight"]
     paginator = plot_data["paginator"]
@@ -76,7 +76,7 @@ def test_get_plot_data(authenticated_client, fitness):
     assert paginator["previous_page_number"] == 2
     assert paginator["next_page_number"] is None
 
-    plot_data = fitness[4].get_plot_info(count=4, page_number=2)
+    plot_data = fitness[4].get_plot_info(user=user, count=4, page_number=2)
     reps = plot_data["plot_data"]["reps"]
     duration = plot_data["plot_data"]["duration"]
     paginator = plot_data["paginator"]
@@ -92,7 +92,7 @@ def test_get_plot_data(authenticated_client, fitness):
     assert paginator["next_page_number"] == 1
 
 
-def test_get_related_exercises(authenticated_client, fitness):
+def test_get_related_exercises(fitness):
 
     exercise = Exercise.objects.get(name="Push Ups")
     related_exercises = fitness[0].get_related_exercises()

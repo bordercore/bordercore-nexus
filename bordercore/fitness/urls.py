@@ -35,17 +35,17 @@ urlpatterns = [
         name="edit_note"
     ),
     path(
-        route="get_workout_data",
+        route="get_workout_data/",
         view=views.get_workout_data,
         name="get_workout_data"
     ),
     path(
-        route="update_schedule",
+        route="update_schedule/",
         view=views.update_schedule,
         name="update_schedule"
     ),
     path(
-        route="update_rest_period",
+        route="update_rest_period/",
         view=views.update_rest_period,
         name="update_rest_period"
     ),

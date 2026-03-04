@@ -8,7 +8,7 @@ and notes, and fetch paginated plot data for workouts.
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, cast
+from typing import Any, cast
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -43,7 +43,7 @@ class ExerciseDetailView(LoginRequiredMixin, DetailView):
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
 
-    def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         """Build the template context for the exercise detail page.
 
         Args:
@@ -132,7 +132,17 @@ def fitness_add(request: HttpRequest, exercise_uuid: str) -> HttpResponse:
     """
     exercise = get_object_or_404(Exercise, uuid=exercise_uuid)
     user = cast(User, request.user)
-    payload = json.loads(request.POST["workout-data"])
+
+    try:
+        payload = json.loads(request.POST["workout-data"])
+    except json.JSONDecodeError:
+        messages.error(request, "Invalid workout data format.")
+        return redirect("fitness:summary")
+
+    sets = [datum for datum in payload if isinstance(datum, dict)]
+    if not sets:
+        messages.error(request, "At least one valid set is required.")
+        return redirect("fitness:summary")
 
     with transaction.atomic():
         workout = Workout.objects.create(user=user, exercise=exercise, note=request.POST.get("note", ""))
@@ -144,8 +154,7 @@ def fitness_add(request: HttpRequest, exercise_uuid: str) -> HttpResponse:
                     duration=datum.get("duration") or 0,
                     reps=datum.get("reps") or 0,
                 )
-                for datum in payload
-                if isinstance(datum, dict)
+                for datum in sets
             ],
             ignore_conflicts=False,
         )
@@ -180,7 +189,7 @@ def fitness_summary(request: HttpRequest) -> HttpResponse:
         data = {
             "exercise_url": reverse("fitness:exercise_detail", args=[e.uuid]),
             "exercise": e.name,
-            "muscle_group": str(e.muscle.all()[0].muscle_group) if e.muscle.exists() else "",
+            "muscle_group": str(muscles[0].muscle_group) if (muscles := e.muscle.all()) else "",
             "last_active": last_active.strftime("%Y-%m-%d") if last_active else None,
             "last_active_unixtime": str(int(last_active.timestamp())) if last_active else "0",
             "delta_days": e.delta_days if hasattr(e, "delta_days") else None,
@@ -238,12 +247,11 @@ def change_active_status(request: HttpRequest) -> Response:
         info = {}
     else:
         exercise = get_object_or_404(Exercise, uuid=uuid)
-        eu = ExerciseUser(
+        eu, _ = ExerciseUser.objects.get_or_create(
             user=user,
             exercise=exercise,
-            schedule=[True, False, False, False, False, False, False],
+            defaults={"schedule": [True, False, False, False, False, False, False]},
         )
-        eu.save()
         info = eu.activity_info()
 
     return Response({"info": info, "status": "OK"})
@@ -267,6 +275,9 @@ def edit_note(request: HttpRequest) -> Response:
     exercise_uuid = request.POST["uuid"]
     note = request.POST["note"]
 
+    user = cast(User, request.user)
+    get_user_object_or_404(user, ExerciseUser, exercise__uuid=exercise_uuid)
+
     exercise = get_object_or_404(Exercise, uuid=exercise_uuid)
     exercise.note = note
     exercise.save()
@@ -289,12 +300,21 @@ def get_workout_data(request: HttpRequest) -> Response:
     Returns:
         Json response with ``workout_data`` payload and status.
     """
-    exercise_uuid = request.GET["uuid"]
-    page_number = int(request.GET.get("page_number", 1))
+    exercise_uuid = request.GET.get("uuid")
+    if not exercise_uuid:
+        return Response({"status": "ERROR", "message": "Missing required parameter: uuid"}, status=400)
 
+    try:
+        page_number = int(request.GET.get("page_number", 1))
+        if page_number < 1:
+            page_number = 1
+    except (ValueError, TypeError):
+        page_number = 1
+
+    user = cast(User, request.user)
     exercise = get_object_or_404(Exercise, uuid=exercise_uuid)
 
-    workout_data = exercise.get_plot_info(page_number=page_number)
+    workout_data = exercise.get_plot_info(user=user, page_number=page_number)
 
     response = {"status": "OK", "workout_data": workout_data}
     return Response(response)

@@ -1,4 +1,3 @@
-import datetime
 from datetime import timedelta
 
 import pytest
@@ -19,7 +18,6 @@ def fitness(authenticated_client):
     ExerciseUser.objects.create(
         user=user,
         exercise=exercise_0,
-        started=datetime.datetime.now(),
         schedule=[True, False, False, False, False, False, False]
     )
 

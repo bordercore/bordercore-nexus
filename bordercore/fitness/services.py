@@ -8,7 +8,7 @@ overdue status) and return data suitable for rendering UI lists and badges.
 from __future__ import annotations
 
 import datetime
-from typing import List, Tuple, Union, cast
+from typing import cast
 
 from django.contrib.auth.models import User
 from django.db.models import F, Max, OuterRef, Q, Subquery
@@ -18,7 +18,7 @@ from fitness.models import Exercise, ExerciseUser
 
 OVERDUE_THRESHOLD_DAYS = 6
 
-def get_fitness_summary(user: User, count_only: bool = False) -> Tuple[List[Exercise], List[Exercise]]:
+def get_fitness_summary(user: User, count_only: bool = False) -> tuple[list[Exercise], list[Exercise]]:
     """Return active and inactive exercises for a user, annotated with status."""
 
     newest = ExerciseUser.objects.filter(
@@ -67,7 +67,7 @@ def get_fitness_summary(user: User, count_only: bool = False) -> Tuple[List[Exer
             if is_scheduled_today and days_since > 0:
                 e.overdue = 1  # type: ignore[attr-defined]  # Due today
             elif days_since > OVERDUE_THRESHOLD_DAYS:
-                e.overdue = 2  # type: ignore[attr-defined]  # OverdueDue today
+                e.overdue = 2  # type: ignore[attr-defined]  # Overdue
 
         if is_active_marker is not None:
             active_exercises.append(e)
@@ -76,22 +76,23 @@ def get_fitness_summary(user: User, count_only: bool = False) -> Tuple[List[Exer
 
     active_exercises.sort(
         key=lambda x: (
-            x.overdue == 1,  # type: ignore[attr-defined]
+            x.overdue,  # type: ignore[attr-defined]
             getattr(x, "last_active", None) or timezone.make_aware(datetime.datetime.min),
         ),
         reverse=True,
     )
 
-    return cast(Tuple[List[Exercise], List[Exercise]], (active_exercises, inactive_exercises))
+    return cast(tuple[list[Exercise], list[Exercise]], (active_exercises, inactive_exercises))
 
 
-def get_overdue_exercises(user: User, count_only: bool = False) -> Union[int, List[Exercise]]:
+def get_overdue_exercises(user: User, count_only: bool = False) -> int | list[Exercise]:
     """Return overdue (or due today) exercises for a user, or just the count.
 
     An exercise is considered:
       - ``1`` (due today) if it's scheduled for the current weekday and the
         last activity was not today; or
-      - ``2`` (overdue) if the last activity was more than 8 days ago.
+      - ``2`` (overdue) if the last activity was more than
+        ``OVERDUE_THRESHOLD_DAYS`` days ago.
     These flags are computed in :func:`get_fitness_summary`.
 
     Args:
