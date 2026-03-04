@@ -27,7 +27,7 @@ from tag.models import Tag
 
 logging.getLogger("elasticsearch").setLevel(logging.ERROR)
 
-pytestmark = [pytest.mark.data_quality, pytest.mark.django_db]
+pytestmark = [pytest.mark.data_quality]
 
 django.setup()
 

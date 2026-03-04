@@ -12,7 +12,7 @@ from django.db.models import Count, Max, Min
 
 from search.models import RecentSearch
 
-pytestmark = [pytest.mark.data_quality, pytest.mark.django_db]
+pytestmark = [pytest.mark.data_quality]
 
 django.setup()
 

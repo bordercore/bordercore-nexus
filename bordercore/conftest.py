@@ -72,6 +72,23 @@ faker.add_provider(PdfFileProvider)
 
 
 @pytest.fixture(autouse=True)
+def unblock_db_for_data_quality(request):
+    """Allow data_quality tests to access the real (non-test) database."""
+    try:
+        blocker = request.getfixturevalue("django_db_blocker")
+    except pytest.FixtureLookupError:
+        # pytest-django not loaded (e.g. wumpus tests with -p no:django)
+        yield
+        return
+    if request.node.get_closest_marker("data_quality") is not None:
+        blocker.unblock()
+        yield
+        blocker.restore()
+    else:
+        yield
+
+
+@pytest.fixture(autouse=True)
 def mock_elasticsearch(request, monkeypatch):
     """Mock all Elasticsearch interactions for every test.
 

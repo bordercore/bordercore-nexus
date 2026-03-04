@@ -13,7 +13,7 @@ import pytest
 from django.apps import apps
 from django.db.models import Count, Max, Min
 
-pytestmark = [pytest.mark.data_quality, pytest.mark.django_db]
+pytestmark = [pytest.mark.data_quality]
 
 django.setup()
 

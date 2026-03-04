@@ -13,7 +13,7 @@ from blob.models import Blob
 from collection.models import Collection
 from node.models import Node
 
-pytestmark = [pytest.mark.data_quality, pytest.mark.django_db]
+pytestmark = [pytest.mark.data_quality]
 
 django.setup()
 

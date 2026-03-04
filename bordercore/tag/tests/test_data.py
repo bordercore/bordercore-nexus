@@ -6,7 +6,7 @@ from django.db.models import OuterRef, Q, Subquery
 from bookmark.models import Bookmark
 from tag.models import Tag, TagAlias, TagBookmark
 
-pytestmark = [pytest.mark.data_quality, pytest.mark.django_db]
+pytestmark = [pytest.mark.data_quality]
 
 django.setup()
 

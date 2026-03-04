@@ -8,7 +8,7 @@ from lib.util import get_elasticsearch_connection
 from tag.models import TagTodo
 from todo.models import Todo
 
-pytestmark = [pytest.mark.data_quality, pytest.mark.django_db]
+pytestmark = [pytest.mark.data_quality]
 
 django.setup()
 
