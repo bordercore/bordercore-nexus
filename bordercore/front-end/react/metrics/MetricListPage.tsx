@@ -115,7 +115,7 @@ export function MetricListPage({ testResults }: MetricListPageProps) {
 
         {/* Second column - Unit Tests and Wumpus Tests */}
         <div className="col d-flex flex-column pe-gutter">
-          <Card title="Unit Tests" cardClassName="hoverable flex-grow-0 mb-gutter">
+          <Card title="Unit Tests" cardClassName="dashboard-card flex-grow-0 mb-gutter">
             <hr className="divider" />
             <div className="d-flex" onClick={() => showTestResults("unit")}>
               <div className="flex-grow-1">
@@ -143,17 +143,12 @@ export function MetricListPage({ testResults }: MetricListPageProps) {
                 />
               </div>
             </div>
-            <div className="d-flex">
-              <div className="item-name fw-bold">Date</div>
-              <div
-                className={`item-value ms-auto${testResults.unit.test_overdue ? " text-danger" : ""}`}
-              >
-                {testResults.unit.test_runtime}
-              </div>
+            <div className={`item-value${testResults.unit.test_overdue ? " text-danger" : ""}`}>
+              {testResults.unit.test_runtime}
             </div>
           </Card>
 
-          <Card title="Wumpus Tests" cardClassName="hoverable flex-grow-1">
+          <Card title="Wumpus Tests" cardClassName="dashboard-card flex-grow-1">
             <hr className="divider" />
             <div className="d-flex" onClick={() => showTestResults("wumpus")}>
               <div className="flex-grow-1">
@@ -181,20 +176,15 @@ export function MetricListPage({ testResults }: MetricListPageProps) {
                 />
               </div>
             </div>
-            <div className="d-flex">
-              <div className="item-name fw-bold">Date</div>
-              <div
-                className={`item-value ms-auto${testResults.wumpus.test_overdue ? " text-danger" : ""}`}
-              >
-                {testResults.wumpus.test_runtime}
-              </div>
+            <div className={`item-value${testResults.wumpus.test_overdue ? " text-danger" : ""}`}>
+              {testResults.wumpus.test_runtime}
             </div>
           </Card>
         </div>
 
         {/* Third column - Functional Tests and Code Coverage */}
         <div className="col d-flex flex-column pe-gutter">
-          <Card title="Functional Tests" cardClassName="hoverable flex-grow-0 mb-gutter">
+          <Card title="Functional Tests" cardClassName="dashboard-card flex-grow-0 mb-gutter">
             <hr className="divider" />
             <div className="d-flex" onClick={() => showTestResults("functional")}>
               <div className="flex-grow-1">
@@ -224,17 +214,14 @@ export function MetricListPage({ testResults }: MetricListPageProps) {
                 />
               </div>
             </div>
-            <div className="d-flex">
-              <div className="item-name fw-bold">Date</div>
-              <div
-                className={`item-value ms-auto${testResults.functional.test_overdue ? " text-danger" : ""}`}
-              >
-                {testResults.functional.test_runtime}
-              </div>
+            <div
+              className={`item-value${testResults.functional.test_overdue ? " text-danger" : ""}`}
+            >
+              {testResults.functional.test_runtime}
             </div>
           </Card>
 
-          <Card title="Code Coverage" cardClassName="flex-grow-1">
+          <Card title="Code Coverage" cardClassName="dashboard-card flex-grow-1">
             <hr className="divider" />
             <div className="d-flex">
               <div className="flex-grow-1">
@@ -250,13 +237,8 @@ export function MetricListPage({ testResults }: MetricListPageProps) {
                 />
               </div>
             </div>
-            <div className="d-flex">
-              <div className="item-name fw-bold">Date</div>
-              <div
-                className={`item-value ms-auto${testResults.coverage.test_overdue ? " text-danger" : ""}`}
-              >
-                {testResults.coverage.test_runtime}
-              </div>
+            <div className={`item-value${testResults.coverage.test_overdue ? " text-danger" : ""}`}>
+              {testResults.coverage.test_runtime}
             </div>
           </Card>
         </div>
@@ -264,7 +246,7 @@ export function MetricListPage({ testResults }: MetricListPageProps) {
         {/* Fourth column - Data Quality Tests */}
         <div className="col d-flex flex-column pe-gutter">
           <div className="d-flex flex-grow-1">
-            <Card title="Data Quality Tests" cardClassName="hoverable w-100">
+            <Card title="Data Quality Tests" cardClassName="dashboard-card w-100">
               <hr className="divider" />
               <div className="d-flex" onClick={() => showTestResults("data")}>
                 <div className="flex-grow-1">
@@ -292,13 +274,8 @@ export function MetricListPage({ testResults }: MetricListPageProps) {
                   />
                 </div>
               </div>
-              <div className="d-flex">
-                <div className="item-name fw-bold">Date</div>
-                <div
-                  className={`item-value ms-auto${testResults.data.test_overdue ? " text-danger" : ""}`}
-                >
-                  {testResults.data.test_runtime}
-                </div>
+              <div className={`item-value${testResults.data.test_overdue ? " text-danger" : ""}`}>
+                {testResults.data.test_runtime}
               </div>
             </Card>
           </div>

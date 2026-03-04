@@ -58,12 +58,16 @@
     position: relative;
     z-index: 1;
     padding: 32px 24px;
+
+    > .item-value {
+      margin-left: 0;
+    }
   }
 
   .card-title {
     margin-bottom: 1.5rem;
     color: var(--text-primary, #e7ecff);
-    font-size: 1.4rem;
+    font-size: 1.1rem;
     font-weight: 700;
     letter-spacing: -0.01em;
   }
