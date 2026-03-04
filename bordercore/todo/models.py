@@ -196,7 +196,8 @@ def tags_changed(sender: Type[Todo], **kwargs: Any) -> None:
         todo = kwargs["instance"]
 
         tags = Tag.objects.filter(user=todo.user, pk__in=kwargs["pk_set"])
-        TagTodo.objects.bulk_create([TagTodo(tag=tag, todo=todo) for tag in tags])
+        for tag in tags:
+            TagTodo(tag=tag, todo=todo).save()
 
     elif kwargs["action"] == "post_remove":
         todo = kwargs["instance"]
