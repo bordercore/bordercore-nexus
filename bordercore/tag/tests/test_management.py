@@ -1,6 +1,7 @@
 import pytest
 
 from django.core.management import call_command
+from django.core.management.base import CommandError
 
 pytestmark = [pytest.mark.django_db]
 
@@ -18,18 +19,18 @@ def test_tag_summary(authenticated_client, capsys):
 
 
 def test_tag_summary_missing_user(capsys):
-    """tag_summary exits with error for nonexistent user."""
+    """tag_summary raises CommandError for nonexistent user."""
 
-    with pytest.raises(SystemExit):
+    with pytest.raises(CommandError):
         call_command("tag_summary", "django", username="nonexistent-user")
 
 
 def test_tag_summary_missing_tag(authenticated_client, capsys):
-    """tag_summary exits with error for nonexistent tag."""
+    """tag_summary raises CommandError for nonexistent tag."""
 
     user, _ = authenticated_client()
 
-    with pytest.raises(SystemExit):
+    with pytest.raises(CommandError):
         call_command("tag_summary", "zzz-no-such-tag", username=user.username)
 
 

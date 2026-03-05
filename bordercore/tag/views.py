@@ -88,7 +88,10 @@ def search(request: HttpRequest) -> Response:
         JsonResponse: A JSON response containing the search results.
     """
     user = cast(User, request.user)
-    tag_name = request.GET["query"].lower()
+    query = request.GET.get("query")
+    if not query:
+        return Response({"error": "Missing required parameter: query"}, status=400)
+    tag_name = query.lower()
     skip_tag_aliases = request.GET.get("skip_tag_aliases", "false").lower() in {"1", "true", "yes", "on"}
 
     if "doctype" in request.GET:
@@ -119,6 +122,7 @@ class TagListView(LoginRequiredMixin, ListView):
 
 
 @api_view(["POST"])
+@validate_post_data("tag_name", "alias_name")
 def add_alias(request: HttpRequest) -> Response:
     """
     Add an alias for a tag for the current user.
@@ -131,22 +135,22 @@ def add_alias(request: HttpRequest) -> Response:
     Returns:
         JsonResponse: A JSON response with the status and message.
     """
+    user = cast(User, request.user)
     tag_name = request.POST["tag_name"]
     alias_name = request.POST["alias_name"]
 
-    # Check that the alias doesn't already exist
-    if TagAlias.objects.filter(name=alias_name):
+    # Check that the alias doesn't already exist for this user
+    if TagAlias.objects.filter(name=alias_name, user=user).exists():
         response = {
             "status": "WARNING",
             "message": "Alias already exists"
         }
-    elif Tag.objects.filter(name=alias_name):
+    elif Tag.objects.filter(name=alias_name, user=user).exists():
         response = {
             "status": "WARNING",
             "message": f"A tag with the name '{alias_name}' already exists"
         }
     else:
-        user = cast(User, request.user)
         tag = get_user_object_or_404(user, Tag, name=tag_name)
         tag_alias = TagAlias(name=alias_name, tag=tag, user=user)
         tag_alias.save()
@@ -182,7 +186,7 @@ def get_todo_counts(request: HttpRequest) -> Response:
         tag_name = tag_obj.name
 
     tag = get_user_object_or_404(user, Tag, name=tag_name)
-    info = tag.get_todo_counts().first() or {}
+    info = tag.get_related_counts().first() or {}
 
     response = {
         "status": "OK",
@@ -208,7 +212,9 @@ def get_related_tags(request: HttpRequest) -> Response:
         JsonResponse: A JSON response containing a status and a list of related tags with their counts.
     """
     user = cast(User, request.user)
-    tag_name = request.GET["tag_name"]
+    tag_name = request.GET.get("tag_name")
+    if not tag_name:
+        return Response({"error": "Missing required parameter: tag_name"}, status=400)
     doc_type = request.GET.get("doc_type", None)
 
     info = find_related_tags(tag_name, user, doc_type)

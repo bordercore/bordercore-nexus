@@ -11,7 +11,7 @@ It includes logic for ensuring lowercase names, preventing name collisions, and 
 from __future__ import annotations
 
 import uuid
-from typing import TYPE_CHECKING, Any, List
+from typing import TYPE_CHECKING, Any
 
 from django.apps import apps
 from django.contrib.auth.models import User
@@ -56,10 +56,11 @@ class Tag(models.Model):
         return self.name
 
     class Meta:
-        unique_together = (
-            ("name", "user")
-        )
         constraints = [
+            models.UniqueConstraint(
+                fields=["name", "user"],
+                name="tag_unique_name_user",
+            ),
             models.CheckConstraint(
                 name="check_no_commas",
                 condition=~Q(name__contains=",")
@@ -72,13 +73,13 @@ class Tag(models.Model):
 
     def save(self, *args: Any, **kwargs: Any) -> None:
         """
-        Validates that no TagAlias exists with the same name before saving.
+        Validates that no TagAlias exists with the same name for this user before saving.
         """
-        if TagAlias.objects.filter(name=self.name).exists():
+        if TagAlias.objects.filter(name=self.name, user=self.user).exists():
             raise ValidationError(f"An alias with this same name already exists: {self}")
         super().save(*args, **kwargs)
 
-    def get_todo_counts(self) -> QuerySet:
+    def get_related_counts(self) -> QuerySet:
         """
         Returns a QuerySet with annotation counts of all related models for this tag.
 
@@ -113,7 +114,7 @@ class Tag(models.Model):
         sort_order_user_tag.delete()
 
     @staticmethod
-    def get_meta_tags(user: User) -> List[str]:
+    def get_meta_tags(user: User) -> list[str]:
         """
         Get all distinct meta tags for the given user, using cache if available.
 
@@ -124,11 +125,15 @@ class Tag(models.Model):
             A list of tag names marked as meta.
         """
         cache_key = f"meta_tags_{user.id}"
-        tags = cache.get(cache_key)
-        if not tags:
-            tags = Tag.objects.filter(user=user, blob__user=user, is_meta=True).distinct("name")
-            cache.set(cache_key, tags)
-        return [x.name for x in tags]
+        tag_names = cache.get(cache_key)
+        if tag_names is None:
+            tag_names = list(
+                Tag.objects.filter(user=user, blob__user=user, is_meta=True)
+                .distinct("name")
+                .values_list("name", flat=True)
+            )
+            cache.set(cache_key, tag_names, timeout=300)
+        return tag_names
 
 
 class TagTodo(SortOrderMixin):
@@ -145,9 +150,12 @@ class TagTodo(SortOrderMixin):
 
     class Meta:
         ordering = ("sort_order",)
-        unique_together = (
-            ("tag", "todo")
-        )
+        constraints = [
+            models.UniqueConstraint(
+                fields=["tag", "todo"],
+                name="tagtodo_unique_tag_todo",
+            ),
+        ]
 
 
 @receiver(pre_delete, sender=TagTodo)
@@ -172,9 +180,12 @@ class TagBookmark(SortOrderMixin):
 
     class Meta:
         ordering = ("sort_order",)
-        unique_together = (
-            ("tag", "bookmark")
-        )
+        constraints = [
+            models.UniqueConstraint(
+                fields=["tag", "bookmark"],
+                name="tagbookmark_unique_tag_bookmark",
+            ),
+        ]
 
 
 @receiver(pre_delete, sender=TagBookmark)
@@ -199,9 +210,12 @@ class TagHabit(SortOrderMixin):
 
     class Meta:
         ordering = ("sort_order",)
-        unique_together = (
-            ("tag", "habit")
-        )
+        constraints = [
+            models.UniqueConstraint(
+                fields=["tag", "habit"],
+                name="taghabit_unique_tag_habit",
+            ),
+        ]
 
 
 @receiver(pre_delete, sender=TagHabit)

@@ -8,13 +8,12 @@ Usage:
     python manage.py tag_summary <tag_name> --verbose
 """
 
-import sys
 from argparse import ArgumentParser
 from typing import Any, cast
 
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Model
 
 from tag.models import Tag
@@ -51,17 +50,13 @@ class Command(BaseCommand):
         try:
             user = User.objects.get(username=username)
         except ObjectDoesNotExist:
-            self.stderr.write(self.style.ERROR(f"User does not exist: {username}"))
-            sys.exit(1)
+            raise CommandError(f"User does not exist: {username}")
 
         # Look up the tag
         try:
             tag = Tag.objects.get(name=tag_name, user=user)
         except ObjectDoesNotExist:
-            self.stderr.write(
-                self.style.ERROR(f"Tag '{tag_name}' does not exist for user '{username}'")
-            )
-            sys.exit(1)
+            raise CommandError(f"Tag '{tag_name}' does not exist for user '{username}'")
 
         # Discover all models with ManyToMany relationships to Tag
         related_models = self._discover_related_models()

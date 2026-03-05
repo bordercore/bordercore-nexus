@@ -170,12 +170,12 @@ def test_get_meta_tags(authenticated_client, tag):
     assert "django" not in meta_tags
 
 
-def test_get_todo_counts(authenticated_client, tag):
-    """get_todo_counts returns annotated counts for a tag."""
+def test_get_related_counts(authenticated_client, tag):
+    """get_related_counts returns annotated counts for a tag."""
 
     user, _ = authenticated_client()
 
-    result = tag[0].get_todo_counts().first()
+    result = tag[0].get_related_counts().first()
     assert result is not None
     assert "name" in result
     assert "bookmark__count" in result

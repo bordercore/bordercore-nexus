@@ -13,7 +13,9 @@ Core capabilities include:
 - Finding related tags by analyzing co-occurrence patterns in Elasticsearch.
 """
 
-from typing import Any, Dict, List, Optional, Union
+from __future__ import annotations
+
+from typing import Any
 from urllib.parse import unquote
 
 from django.conf import settings
@@ -28,7 +30,7 @@ from .models import TagAlias
 SEARCH_LIMIT = 1000
 
 
-def get_additional_info(doc_types: List[str], user: User, tag_name: str) -> Dict[str, Any]:
+def get_additional_info(doc_types: list[str], user: User, tag_name: str) -> dict[str, Any]:
     """
     Return additional information for a given tag based on the document types.
 
@@ -48,7 +50,7 @@ def get_additional_info(doc_types: List[str], user: User, tag_name: str) -> Dict
     return {}
 
 
-def get_tag_link(tag: str, doc_types: Optional[List[str]] = None) -> str:
+def get_tag_link(tag: str, doc_types: list[str] | None = None) -> str:
     """
     Return the appropriate link URL for a tag depending on its document type.
 
@@ -73,7 +75,7 @@ def get_tag_link(tag: str, doc_types: Optional[List[str]] = None) -> str:
     return reverse("search:kb_search_tag_detail", kwargs={"taglist": tag})
 
 
-def get_tag_aliases(user: User, name: str, doc_types: Optional[List[str]] = None) -> List[Dict[str, Any]]:
+def get_tag_aliases(user: User, name: str, doc_types: list[str] | None = None) -> list[dict[str, Any]]:
     """
     Find tag aliases that contain the search string and return enriched tag data.
 
@@ -87,7 +89,7 @@ def get_tag_aliases(user: User, name: str, doc_types: Optional[List[str]] = None
     """
     doc_types = doc_types or []
 
-    tag_aliases = TagAlias.objects.filter(name__contains=name).select_related("tag")
+    tag_aliases = TagAlias.objects.filter(name__contains=name, user=user).select_related("tag")
 
     # Some fields contain the same value since two different searches call
     #  this method and expect different field names for the same data.
@@ -108,9 +110,9 @@ def get_tag_aliases(user: User, name: str, doc_types: Optional[List[str]] = None
 def search(
     user: User,
     tag_name: str,
-    doc_types: Optional[List[str]] = None,
+    doc_types: list[str] | None = None,
     skip_tag_aliases: bool = False
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """
     Search for tags matching a given name in Elasticsearch, with optional filtering by document types.
 
@@ -131,7 +133,7 @@ def search(
 
     search_term = unquote(tag_name)
 
-    search_object: Dict[str, Any] = {
+    search_object: dict[str, Any] = {
         "query": {
             "bool": {
                 "must": [
@@ -199,7 +201,7 @@ def search(
     return matches
 
 
-def find_related_tags(tag_name: str, user: User, doc_type: Optional[str]) -> List[Dict[str, Union[str, int]]]:
+def find_related_tags(tag_name: str, user: User, doc_type: str | None) -> list[dict[str, str | int]]:
     """
     Find tags that frequently co-occur with the given tag for a specific document type.
 
@@ -215,7 +217,7 @@ def find_related_tags(tag_name: str, user: User, doc_type: Optional[str]) -> Lis
 
     tag_name = unquote(tag_name.lower())
 
-    search_object: Dict[str, Any] = {
+    search_object: dict[str, Any] = {
         "query": {
             "bool": {
                 "must": [
