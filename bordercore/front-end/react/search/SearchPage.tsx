@@ -4,7 +4,8 @@ import SearchResult from "./SearchResult";
 import SearchNoResult from "./SearchNoResult";
 import Pagination from "./Pagination";
 import SearchSidebar from "./SearchSidebar";
-import type { SearchMatch, Aggregation, Paginator } from "./types";
+import { doGet } from "../utils/reactUtils";
+import type { SearchMatch, Aggregation, Paginator, SearchApiResponse } from "./types";
 
 interface SearchPageProps {
   results: SearchMatch[];
@@ -16,6 +17,7 @@ interface SearchPageProps {
   searchSemantic: string;
   exactMatchInitial: string;
   sortByInitial: string;
+  searchApiUrl: string;
   tagSearchUrl: string;
   tagsChangedUrl: string;
   termSearchUrl: string;
@@ -30,26 +32,42 @@ type ViewMode = "list" | "grid";
 type SearchMode = "term" | "tag" | "semantic";
 
 export function SearchPage({
-  results,
-  aggregations,
-  paginator,
-  count,
-  currentDoctype,
-  searchTerm,
-  searchSemantic,
+  results: initialResults,
+  aggregations: initialAggregations,
+  paginator: initialPaginator,
+  count: initialCount,
+  currentDoctype: initialDoctype,
+  searchTerm: initialSearchTerm,
+  searchSemantic: initialSearchSemantic,
   exactMatchInitial,
   sortByInitial,
+  searchApiUrl,
   tagSearchUrl,
   tagsChangedUrl,
   termSearchUrl,
   semanticSearchUrl,
   tagUrl,
   imagesUrl,
-  hasRequest,
-  activeTags,
+  hasRequest: initialHasRequest,
+  activeTags: initialActiveTags,
 }: SearchPageProps) {
   const searchBarRef = useRef<SearchBarHandle>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
+
+  // Search state — initialized from server-rendered props
+  const [results, setResults] = useState<SearchMatch[]>(initialResults);
+  const [aggregations, setAggregations] = useState<Aggregation[]>(initialAggregations);
+  const [paginator, setPaginator] = useState<Paginator>(initialPaginator);
+  const [count, setCount] = useState(initialCount);
+  const [searchTermState, setSearchTermState] = useState(initialSearchTerm);
+  const [searchSemanticState, setSearchSemanticState] = useState(initialSearchSemantic);
+  const [sortBy, setSortBy] = useState(sortByInitial);
+  const [currentDoctype, setCurrentDoctype] = useState(initialDoctype);
+  const [exactMatch, setExactMatch] = useState(exactMatchInitial);
+  const [activeTagsState, setActiveTagsState] = useState<string[]>(initialActiveTags);
+  const [currentPage, setCurrentPage] = useState(initialPaginator?.page_number || 1);
+  const [hasRequest, setHasRequest] = useState(initialHasRequest);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Determine initial search mode from URL params
   const getInitialSearchMode = (): SearchMode => {
@@ -60,17 +78,207 @@ export function SearchPage({
   };
   const [searchMode, setSearchMode] = useState<SearchMode>(getInitialSearchMode);
 
+  // Build URLSearchParams from current state
+  const buildSearchParams = useCallback(
+    (overrides: Record<string, string | string[] | undefined> = {}) => {
+      const params = new URLSearchParams();
+
+      const term = overrides.term_search !== undefined ? overrides.term_search as string : searchTermState;
+      const semantic = overrides.semantic_search !== undefined ? overrides.semantic_search as string : searchSemanticState;
+      const sort = overrides.sort !== undefined ? overrides.sort as string : sortBy;
+      const doctype = overrides.doctype !== undefined ? overrides.doctype as string : currentDoctype;
+      const exact = overrides.exact_match !== undefined ? overrides.exact_match as string : exactMatch;
+      const tags = overrides.tags !== undefined ? overrides.tags as string[] : activeTagsState;
+      const page = overrides.page !== undefined ? overrides.page as string : String(currentPage);
+
+      if (term) params.set("term_search", term);
+      if (semantic) params.set("semantic_search", semantic);
+      if (sort && sort !== "_score") params.set("sort", sort);
+      if (doctype) params.set("doctype", doctype);
+      if (exact === "Yes") params.set("exact_match", "Yes");
+      if (tags) {
+        for (const tag of tags) {
+          params.append("tags", tag);
+        }
+      }
+      if (page && page !== "1") params.set("page", page);
+
+      return params;
+    },
+    [searchTermState, searchSemanticState, sortBy, currentDoctype, exactMatch, activeTagsState, currentPage]
+  );
+
+  // Fetch results from API and update state
+  const fetchResults = useCallback(
+    (params: URLSearchParams, pushHistory = true) => {
+      setIsLoading(true);
+
+      const url = `${searchApiUrl}?${params.toString()}`;
+      doGet(url, (response: { data: SearchApiResponse }) => {
+        const data = response.data;
+        setResults(data.results);
+        setAggregations(data.aggregations);
+        setPaginator(data.paginator);
+        setCount(data.count);
+        setHasRequest(true);
+        setIsLoading(false);
+
+        // Sync URL
+        const newUrl = `${window.location.pathname}?${params.toString()}`;
+        if (pushHistory) {
+          history.pushState({ searchParams: params.toString() }, "", newUrl);
+        }
+      }, "Search failed");
+    },
+    [searchApiUrl]
+  );
+
+  // Capture initial state for popstate
+  useEffect(() => {
+    history.replaceState(
+      { searchParams: new URLSearchParams(window.location.search).toString() },
+      "",
+      window.location.href
+    );
+  }, []);
+
+  // Handle browser back/forward
+  useEffect(() => {
+    const handlePopState = (e: PopStateEvent) => {
+      if (e.state?.searchParams !== undefined) {
+        const params = new URLSearchParams(e.state.searchParams);
+
+        // Update local state from params
+        setSearchTermState(params.get("term_search") || "");
+        setSearchSemanticState(params.get("semantic_search") || "");
+        setSortBy(params.get("sort") || "_score");
+        setCurrentDoctype(params.get("doctype") || "");
+        setExactMatch(params.get("exact_match") || "No");
+        setActiveTagsState(params.getAll("tags"));
+        setCurrentPage(parseInt(params.get("page") || "1", 10));
+
+        if (params.has("semantic_search")) {
+          setSearchMode("semantic");
+        } else {
+          setSearchMode("term");
+        }
+
+        // Only fetch if there's actually a search to perform
+        if (params.get("term_search") || params.get("semantic_search") || params.get("search")) {
+          fetchResults(params, false);
+        } else {
+          // Reset to empty state
+          setResults([]);
+          setAggregations([]);
+          setPaginator(initialPaginator);
+          setCount(0);
+          setHasRequest(false);
+        }
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [fetchResults, initialPaginator]);
+
   useEffect(() => {
     searchBarRef.current?.focusTermSearch();
   }, []);
 
+  // --- Callbacks for child components ---
+
+  const handleSearch = useCallback(
+    (term: string) => {
+      setSearchTermState(term);
+      setSearchSemanticState("");
+      setCurrentPage(1);
+      const params = buildSearchParams({ term_search: term, semantic_search: "", page: "1" });
+      fetchResults(params);
+    },
+    [buildSearchParams, fetchResults]
+  );
+
+  const handleSemanticSearch = useCallback(
+    (term: string) => {
+      setSearchSemanticState(term);
+      setSearchTermState("");
+      setCurrentPage(1);
+      const params = buildSearchParams({ semantic_search: term, term_search: "", page: "1" });
+      fetchResults(params);
+    },
+    [buildSearchParams, fetchResults]
+  );
+
   const handleDoctypeSelect = useCallback(
     (selectedDoctype: string) => {
-      const searchParams = new URLSearchParams(window.location.search);
-      searchParams.set("doctype", selectedDoctype === currentDoctype ? "" : selectedDoctype);
-      window.location.search = searchParams.toString();
+      const newDoctype = selectedDoctype === currentDoctype ? "" : selectedDoctype;
+      setCurrentDoctype(newDoctype);
+      setCurrentPage(1);
+      const params = buildSearchParams({ doctype: newDoctype, page: "1" });
+      fetchResults(params);
     },
-    [currentDoctype]
+    [currentDoctype, buildSearchParams, fetchResults]
+  );
+
+  const handleSortChange = useCallback(
+    (sort: string) => {
+      setSortBy(sort);
+      setCurrentPage(1);
+      const params = buildSearchParams({ sort, page: "1" });
+      fetchResults(params);
+    },
+    [buildSearchParams, fetchResults]
+  );
+
+  const handleExactMatchChange = useCallback(
+    (enabled: boolean) => {
+      const value = enabled ? "Yes" : "No";
+      setExactMatch(value);
+      setCurrentPage(1);
+      const params = buildSearchParams({ exact_match: value, page: "1" });
+      fetchResults(params);
+    },
+    [buildSearchParams, fetchResults]
+  );
+
+  const handleTagToggle = useCallback(
+    (tag: string, checked: boolean) => {
+      const newTags = checked
+        ? [...activeTagsState, tag]
+        : activeTagsState.filter(t => t !== tag);
+      setActiveTagsState(newTags);
+      setCurrentPage(1);
+      const params = buildSearchParams({ tags: newTags, page: "1" });
+      fetchResults(params);
+    },
+    [activeTagsState, buildSearchParams, fetchResults]
+  );
+
+  const handleReset = useCallback(() => {
+    setCurrentDoctype("");
+    setExactMatch("No");
+    setSortBy("_score");
+    setActiveTagsState([]);
+    setCurrentPage(1);
+    const params = buildSearchParams({
+      doctype: "",
+      exact_match: "No",
+      sort: "_score",
+      tags: [],
+      page: "1",
+    });
+    fetchResults(params);
+  }, [buildSearchParams, fetchResults]);
+
+  const handlePageChange = useCallback(
+    (page: number) => {
+      setCurrentPage(page);
+      const params = buildSearchParams({ page: String(page) });
+      fetchResults(params);
+      // Scroll to top of results
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    },
+    [buildSearchParams, fetchResults]
   );
 
   const handleSearchModeChange = useCallback((mode: SearchMode) => {
@@ -101,9 +309,6 @@ export function SearchPage({
     )
   ).slice(0, 20);
 
-  // Note: dangerouslySetInnerHTML is used for highlighted search terms from the
-  // trusted backend (Elasticsearch). This is the established pattern in this codebase.
-
   return (
     <div className="search-page-layout">
       <SearchSidebar
@@ -112,30 +317,37 @@ export function SearchPage({
         aggregations={aggregations}
         currentDoctype={currentDoctype}
         onDoctypeSelect={handleDoctypeSelect}
-        exactMatchInitial={exactMatchInitial}
-        sortByInitial={sortByInitial}
+        exactMatchInitial={exactMatch}
+        sortByInitial={sortBy}
         allTags={allTags}
-        activeTags={activeTags}
+        activeTags={activeTagsState}
         hasResults={hasResults}
         filtersDisabled={!hasRequest}
+        onSortChange={handleSortChange}
+        onExactMatchChange={handleExactMatchChange}
+        onTagToggle={handleTagToggle}
+        onReset={handleReset}
       />
       <div className="search-main-content">
         <SearchBar
           ref={searchBarRef}
-          exactMatchInitial={exactMatchInitial}
-          searchTermInitial={searchTerm}
-          searchSemanticInitial={searchSemantic}
-          sortByInitial={sortByInitial}
+          exactMatchInitial={exactMatch}
+          searchTermInitial={searchTermState}
+          searchSemanticInitial={searchSemanticState}
+          sortByInitial={sortBy}
           tagSearchUrl={tagSearchUrl}
           tagsChangedUrl={tagsChangedUrl}
           termSearchUrl={termSearchUrl}
           semanticSearchUrl={semanticSearchUrl}
           searchMode={searchMode}
+          onSearch={handleSearch}
+          onSemanticSearch={handleSemanticSearch}
         />
-        <div>
+        <div className={`search-results-area ${isLoading ? "search-loading" : ""}`}>
+          {isLoading && <div className="search-loading-overlay"><div className="search-loading-spinner" /></div>}
           {hasRequest && (
             <>
-              {!hasResults ? (
+              {!hasResults && !isLoading ? (
                 <SearchNoResult />
               ) : (
                 <>
@@ -386,7 +598,7 @@ export function SearchPage({
                   </div>
 
                   <div className="d-flex justify-content-center">
-                    <Pagination paginator={paginator} />
+                    <Pagination paginator={paginator} onPageChange={handlePageChange} />
                   </div>
                 </>
               )}

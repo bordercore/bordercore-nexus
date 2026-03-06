@@ -709,6 +709,40 @@
 }
 
 // =============================================================================
+// LOADING STATE
+// =============================================================================
+
+.search-results-area {
+  position: relative;
+}
+
+.search-loading-overlay {
+  position: absolute;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(0 0 0 / 30%);
+  border-radius: 12px;
+  inset: 0;
+}
+
+.search-loading-spinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid rgb(103 232 249 / 30%);
+  border-top-color: #67e8f9;
+  animation: search-spin 0.8s linear infinite;
+  border-radius: 50%;
+}
+
+@keyframes search-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// =============================================================================
 // NO RESULTS
 // =============================================================================
 

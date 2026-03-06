@@ -11,6 +11,7 @@ if (container) {
   const termSearchUrl = container.getAttribute("data-term-search-url") || "";
   const semanticSearchUrl = container.getAttribute("data-semantic-search-url") || "";
   const tagUrl = container.getAttribute("data-tag-url") || "";
+  const searchApiUrl = container.getAttribute("data-search-api-url") || "";
   const imagesUrl = container.getAttribute("data-images-url") || "";
   const currentDoctype = container.getAttribute("data-current-doctype") || "";
   const exactMatchInitial = container.getAttribute("data-exact-match") || "No";
@@ -90,6 +91,7 @@ if (container) {
       searchSemantic={searchSemantic}
       exactMatchInitial={exactMatchInitial}
       sortByInitial={sortByInitial}
+      searchApiUrl={searchApiUrl}
       tagSearchUrl={tagSearchUrl}
       tagsChangedUrl={tagsChangedUrl}
       termSearchUrl={termSearchUrl}

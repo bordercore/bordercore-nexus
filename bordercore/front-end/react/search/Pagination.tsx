@@ -5,9 +5,10 @@ import type { Paginator } from "./types";
 
 interface PaginationProps {
   paginator: Paginator;
+  onPageChange?: (page: number) => void;
 }
 
-export function Pagination({ paginator }: PaginationProps) {
+export function Pagination({ paginator, onPageChange }: PaginationProps) {
   const getSearchArgs = useCallback(() => {
     const urlSearchParams = new URLSearchParams(window.location.search);
     urlSearchParams.delete("page");
@@ -20,6 +21,16 @@ export function Pagination({ paginator }: PaginationProps) {
       return `?page=${pageNumber}${getSearchArgs()}`;
     },
     [getSearchArgs]
+  );
+
+  const handleClick = useCallback(
+    (e: React.MouseEvent, page: number) => {
+      if (onPageChange) {
+        e.preventDefault();
+        onPageChange(page);
+      }
+    },
+    [onPageChange]
   );
 
   if (!paginator || !paginator.range || paginator.num_pages <= 1) {
@@ -56,6 +67,7 @@ export function Pagination({ paginator }: PaginationProps) {
       <a
         className={`search-pagination-btn ${!hasPrevious ? "disabled" : ""}`}
         href={hasPrevious ? pageLink(paginator.previous_page_number!) : "#"}
+        onClick={hasPrevious ? e => handleClick(e, paginator.previous_page_number!) : undefined}
       >
         <FontAwesomeIcon icon={faChevronLeft} />
       </a>
@@ -70,6 +82,7 @@ export function Pagination({ paginator }: PaginationProps) {
             key={page}
             className={`search-pagination-btn ${paginator.page_number === page ? "active" : ""}`}
             href={paginator.page_number === page ? "#" : pageLink(page)}
+            onClick={paginator.page_number !== page ? e => handleClick(e, page) : undefined}
           >
             {page}
           </a>
@@ -79,6 +92,7 @@ export function Pagination({ paginator }: PaginationProps) {
       <a
         className={`search-pagination-btn ${!hasNext ? "disabled" : ""}`}
         href={hasNext ? pageLink(paginator.next_page_number!) : "#"}
+        onClick={hasNext ? e => handleClick(e, paginator.next_page_number!) : undefined}
       >
         <FontAwesomeIcon icon={faChevronRight} />
       </a>

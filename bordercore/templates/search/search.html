@@ -20,6 +20,7 @@
         data-term-search-url="{% url 'search:search' %}"
         data-semantic-search-url="{% url 'search:semantic' %}"
         data-tag-url="{% url 'search:kb_search_tag_detail' 666 %}"
+        data-search-api-url="{% url 'search:search_results_api' %}"
         data-images-url="{{ IMAGES_URL }}"
         data-current-doctype="{{ doctype_filter.0|default:'' }}"
         data-exact-match="{{ request.GET.exact_match|default:'No' }}"

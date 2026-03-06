@@ -25,7 +25,6 @@ from django.urls import reverse
 from django.views.generic.list import ListView
 
 from blob.models import Blob
-from lib.embeddings import len_safe_get_embedding
 from lib.time_utils import get_date_from_pattern, get_relative_date
 from lib.util import favicon_url, get_pagination_range, truncate
 from tag.models import Tag
@@ -35,7 +34,7 @@ from .api import (search_music, search_names, search_names_es,
 from .helpers import (get_creators, get_doctype, get_doctypes_from_request,
                       get_link, get_name, is_cached, sort_results)
 from .models import RecentSearch
-from .services import build_base_query, execute_search, get_cover_url
+from .services import build_base_query, execute_search, get_cover_url, perform_search
 
 # Re-export helpers and API functions so existing imports keep working.
 __all__ = [
@@ -179,16 +178,12 @@ class SearchListView(LoginRequiredMixin, ListView):
                 match["source"]["name"] = markdown.markdown(match["source"]["name"])
 
     def get_queryset(self) -> Any:
-        """Build and execute the Elasticsearch query.
-
-        Constructs an Elasticsearch query based on request parameters,
-        including search term, sorting, filtering, and pagination.
-        Handles both regular text search and semantic search.
+        """Build and execute the Elasticsearch query via perform_search().
 
         Returns:
-            Elasticsearch search results dictionary with keys like "hits",
-            "aggregations", etc., or empty list if no search parameters
-            are provided (unless is_notes_search is True).
+            A dict with keys ``results``, ``aggregations``,
+            ``paginator``, and ``count``, or an empty list if no search
+            parameters are provided.
         """
         if not any(key in self.request.GET for key in [
                 "search",
@@ -198,6 +193,61 @@ class SearchListView(LoginRequiredMixin, ListView):
             return []
 
         # Store the "sort" field in the user's session
+        self.request.session["search_sort_by"] = self.request.GET.get("sort", None)
+
+        return perform_search(
+            cast(User, self.request.user),
+            self.request.GET,
+        )
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        """Get context data for the search results template.
+
+        Unpacks the dict returned by ``perform_search()`` into
+        individual template context variables (``results``,
+        ``aggregations``, ``paginator``, ``count``).
+
+        Returns:
+            Template context dict.
+        """
+        context = super().get_context_data(**kwargs)
+
+        context["doctype_filter"] = self.request.GET.get("doctype", "").split(",")
+        context["active_tags"] = self.request.GET.getlist("tags")
+        context["title"] = "Search"
+
+        search_data = context["object_list"]
+        if search_data and isinstance(search_data, dict):
+            context["aggregations"] = search_data["aggregations"]
+            context["paginator"] = json.dumps(search_data["paginator"])
+            context["count"] = search_data["count"]
+            context["results"] = search_data["results"]
+
+        return context
+
+
+class NoteListView(SearchListView):
+    """View for displaying note search results.
+
+    A specialized search view that filters results to only show notes
+    and supports tag-based filtering.
+    """
+
+    template_name = "blob/note_list.html"
+    RESULT_COUNT_PER_PAGE = 10
+    is_notes_search = True
+
+    def get_queryset(self) -> Any:
+        """Build and execute an ES query scoped to notes.
+
+        Unlike the parent class, this builds the query directly rather
+        than delegating to ``perform_search()``, because it needs
+        note-specific adjustments (``contents`` source field, doctype
+        filter, optional tag-search).
+
+        Returns:
+            Raw Elasticsearch response dict, or an empty list on error.
+        """
         self.request.session["search_sort_by"] = self.request.GET.get("sort", None)
 
         search_term = (
@@ -212,65 +262,49 @@ class SearchListView(LoginRequiredMixin, ListView):
             user = cast(User, self.request.user)
             RecentSearch.add(user, search_term)
 
-        offset = (int(self.request.GET.get("page", 1)) - 1) * self.RESULT_COUNT_PER_PAGE
+        page = int(self.request.GET.get("page", 1))
+        offset = (page - 1) * self.RESULT_COUNT_PER_PAGE
+
+        source_fields = [
+            "album_uuid", "artist", "artist_uuid", "author", "bordercore_id",
+            "date", "date_unixtime", "description", "doctype", "filename",
+            "importance", "last_modified", "metadata.*", "name", "question",
+            "sha1sum", "tags", "title", "url", "uuid", "contents",
+        ]
 
         search_object = build_base_query(
             cast(int, self.request.user.id),
             size=self.RESULT_COUNT_PER_PAGE,
             offset=offset,
-            source_fields=[
-                "album_uuid",
-                "artist",
-                "artist_uuid",
-                "author",
-                "bordercore_id",
-                "date",
-                "date_unixtime",
-                "description",
-                "doctype",
-                "filename",
-                "importance",
-                "last_modified",
-                "metadata.*",
-                "name",
-                "question",
-                "sha1sum",
-                "tags",
-                "title",
-                "url",
-                "uuid"
-            ],
+            source_fields=source_fields,
         )
         search_object["aggs"] = {
-            "Doctype Filter": {
-                "terms": {
-                    "field": "doctype",
-                    "size": 10,
-                }
-            }
+            "Doctype Filter": {"terms": {"field": "doctype", "size": 10}}
         }
         search_object["highlight"] = {
-            "fields": {
-                "attachment.content": {},
-                "contents": {},
-            },
+            "fields": {"attachment.content": {}, "contents": {}},
             "number_of_fragments": 1,
             "fragment_size": 200,
-            "order": "score"
+            "order": "score",
         }
         search_object["sort"] = {sort_field: {"order": "desc"}}
 
-        # Let subclasses modify the query
-        search_object = self.refine_search(search_object)
+        # Note-specific: reset offset from page, add note doctype filter
+        search_object["from_"] = (page - 1) * self.RESULT_COUNT_PER_PAGE
+
+        search_object["query"]["function_score"]["query"]["bool"]["must"].append(
+            {"term": {"doctype": "note"}}
+        )
+
+        tagsearch = self.request.GET.get("tagsearch", None)
+        if tagsearch:
+            search_object["query"]["function_score"]["query"]["bool"]["must"].append(
+                {"term": {"tags.keyword": tagsearch}}
+            )
 
         if doctype:
-            search_object["post_filter"] = {
-                "term": {
-                    "doctype": doctype
-                }
-            }
+            search_object["post_filter"] = {"term": {"doctype": doctype}}
 
-        # Filter by tags if provided
         filter_tags = self.request.GET.getlist("tags")
         if filter_tags:
             for tag in filter_tags:
@@ -278,24 +312,15 @@ class SearchListView(LoginRequiredMixin, ListView):
                     {"term": {"tags.keyword": tag}}
                 )
 
-        # Skip this for semantic searches
         if search_term:
             search_object["query"]["function_score"]["query"]["bool"]["must"].append(
                 {
                     "multi_match": {
-                        "type": "phrase" if self.request.GET.get("exact_match", None) in ["Yes"] else "best_fields",
+                        "type": "phrase" if self.request.GET.get("exact_match") == "Yes" else "best_fields",
                         "query": search_term,
                         "fields": [
-                            "answer",
-                            "metadata.*",
-                            "attachment.content",
-                            "contents",
-                            "description",
-                            "name",
-                            "question",
-                            "sha1sum",
-                            "title",
-                            "uuid"
+                            "answer", "metadata.*", "attachment.content", "contents",
+                            "description", "name", "question", "sha1sum", "title", "uuid",
                         ],
                         "operator": boolean_type,
                     }
@@ -313,123 +338,32 @@ class SearchListView(LoginRequiredMixin, ListView):
 
         return results
 
-    def refine_search(self, search_object: dict[str, Any]) -> dict[str, Any]:
-        """Allow subclasses to modify the search query.
-
-        This method can be overridden by subclasses to customize the
-        Elasticsearch query before execution.
-
-        Args:
-            search_object: The Elasticsearch query dictionary.
-
-        Returns:
-            The (possibly modified) search query dictionary.
-        """
-        return search_object
-
-    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        """Get context data for the search results template.
-
-        Args:
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            Context dictionary containing:
-                - doctype_filter: List of selected document types
-                - title: Page title
-                - aggregations: Document type aggregation data
-                - paginator: JSON-encoded pagination data
-                - count: Total number of results
-                - results: List of search result hits
-        """
-        context = super().get_context_data(**kwargs)
-
-        context["doctype_filter"] = self.request.GET.get("doctype", "").split(",")
-        context["active_tags"] = self.request.GET.getlist("tags")
-        context["title"] = "Search"
-
-        if context["object_list"]:
-            object_list_dict = cast(dict[str, Any], context["object_list"])
-            context["aggregations"] = self.get_aggregations(object_list_dict, "Doctype Filter")
-
-            page = int(self.request.GET.get("page", 1))
-            context["paginator"] = json.dumps(
-                self.build_pagination_dict(page, object_list_dict["hits"]["total"]["value"])
-            )
-
-            context["count"] = object_list_dict["hits"]["total"]["value"]
-            context["results"] = object_list_dict["hits"]["hits"]
-
-        return context
-
-
-class NoteListView(SearchListView):
-    """View for displaying note search results.
-
-    A specialized search view that filters results to only show notes
-    and supports tag-based filtering.
-    """
-
-    template_name = "blob/note_list.html"
-    RESULT_COUNT_PER_PAGE = 10
-    is_notes_search = True
-
-    def refine_search(self, search_object: dict[str, Any]) -> dict[str, Any]:
-        """Refine the search query for note-specific searches.
-
-        Adds filters to restrict results to notes and optionally filter
-        by tag. Also ensures the "contents" field is included in results.
-
-        Args:
-            search_object: The Elasticsearch query dictionary.
-
-        Returns:
-            The modified search query dictionary with note-specific filters.
-        """
-
-        page = int(self.request.GET.get("page", 1))
-        search_object["from_"] = (page - 1) * self.RESULT_COUNT_PER_PAGE
-
-        search_object["_source"].append("contents")
-
-        search_object["query"]["function_score"]["query"]["bool"]["must"].append(
-            {
-                "term": {
-                    "doctype": "note"
-                }
-            }
-        )
-
-        tagsearch = self.request.GET.get("tagsearch", None)
-        if tagsearch:
-            search_object["query"]["function_score"]["query"]["bool"]["must"].append(
-                {
-                    "term": {
-                        "tags.keyword": tagsearch
-                    }
-                }
-            )
-
-        return search_object
-
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         """Get context data for the note list template.
 
-        Includes pinned notes when no search is performed, and ensures
-        pagination data is properly formatted.
-
-        Args:
-            **kwargs: Additional keyword arguments.
+        Bypasses ``SearchListView.get_context_data`` (which expects the
+        ``perform_search`` dict shape) and reads directly from the raw
+        ES response returned by this class's ``get_queryset``.
 
         Returns:
-            Context dictionary with note-specific data:
-                - pinned_notes: List of pinned notes (when no search)
-                - pinned_notes_json: JSON serialized pinned notes for React
-                - paginator: JSON-encoded pagination data
-                - Other fields from parent class
+            Template context dict with note-specific data including
+            pinned notes, paginator, and aggregations.
         """
-        context = super().get_context_data(**kwargs)
+        context = super(SearchListView, self).get_context_data(**kwargs)
+        context["doctype_filter"] = self.request.GET.get("doctype", "").split(",")
+        context["active_tags"] = self.request.GET.getlist("tags")
         context["title"] = "Notes"
+
+        if context["object_list"] and isinstance(context["object_list"], dict):
+            object_list_dict = cast(dict[str, Any], context["object_list"])
+            context["aggregations"] = self.get_aggregations(object_list_dict, "Doctype Filter")
+            context["count"] = object_list_dict["hits"]["total"]["value"]
+            context["results"] = object_list_dict["hits"]["hits"]
+
+            page = int(self.request.GET.get("page", 1))
+            context["paginator"] = json.dumps(
+                self.build_pagination_dict(page, context["count"])
+            )
 
         if "search" not in self.request.GET:
             user = cast(User, self.request.user)
@@ -445,13 +379,6 @@ class NoteListView(SearchListView):
             ]
         else:
             context["pinned_notes_json"] = []
-
-        if "results" in context:
-            page = int(self.request.GET.get("page", 1))
-
-            context["paginator"] = json.dumps(
-                self.build_pagination_dict(page, context["count"])
-            )
 
         return context
 
@@ -657,41 +584,23 @@ class SearchTagDetailView(LoginRequiredMixin, ListView):
 
 
 class SemanticSearchListView(SearchListView):
-    """View for semantic/vector-based search.
+    """View for semantic/vector-based search."""
 
-    Performs similarity search using embeddings vectors to find documents
-    semantically similar to the search query.
-    """
-
-    def refine_search(self, search_object: dict[str, Any]) -> dict[str, Any]:
-        """Refine the search query for semantic search.
-
-        Replaces the text-based query with a cosine similarity search
-        using embeddings vectors. Removes importance-based scoring in
-        favor of similarity scoring.
-
-        Args:
-            search_object: The Elasticsearch query dictionary.
+    def get_queryset(self) -> Any:
+        """Execute a semantic (cosine-similarity) search via perform_search().
 
         Returns:
-            The modified search query dictionary configured for semantic
-            similarity search.
+            A dict with keys ``results``, ``aggregations``,
+            ``paginator``, and ``count``, or an empty list if the
+            ``semantic_search`` parameter is missing.
         """
-        embeddings = len_safe_get_embedding(self.request.GET["semantic_search"])
+        if "semantic_search" not in self.request.GET:
+            return []
 
-        search_object["sort"] = {"_score": {"order": "desc"}}
+        self.request.session["search_sort_by"] = self.request.GET.get("sort", None)
 
-        search_object["query"]["function_score"]["functions"] = [
-            {
-                "script_score": {
-                    "script": {
-                        "source": "doc['embeddings_vector'].size() == 0 ? 0 : cosineSimilarity(params.query_vector, 'embeddings_vector') + 1.0",
-                        "params": {
-                            "query_vector": embeddings
-                        }
-                    }
-                }
-            }
-        ]
-
-        return search_object
+        return perform_search(
+            cast(User, self.request.user),
+            self.request.GET,
+            is_semantic=True,
+        )

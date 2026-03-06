@@ -25,7 +25,7 @@ from tag.services import get_tag_aliases, get_tag_link
 from .helpers import (get_doctype, get_doctypes_from_request, get_link,
                       get_name, is_cached, sort_results)
 from .services import (build_base_query, execute_search, get_cover_url,
-                       get_elasticsearch_source_fields)
+                       get_elasticsearch_source_fields, perform_search)
 
 SEARCH_LIMIT = 100
 
@@ -499,3 +499,23 @@ def search_music(request: Request) -> JsonResponse:
         ],
         safe=False
     )
+
+
+@api_view(["GET"])
+def search_results(request: Request) -> Response:
+    """JSON API for search results — used by AJAX search on the frontend.
+
+    Delegates to ``perform_search()`` so that the API and the
+    server-rendered page share identical query logic.
+
+    Args:
+        request: DRF request whose query parameters are forwarded
+            directly to ``perform_search()``.
+
+    Returns:
+        JSON response with keys ``results``, ``aggregations``,
+        ``paginator``, and ``count``.
+    """
+    is_semantic = "semantic_search" in request.GET
+    data = perform_search(request.user, request.GET, is_semantic=is_semantic)
+    return Response(data)

@@ -326,3 +326,108 @@ def test_search_music_empty(mock_execute, authenticated_client):
 def test_search_music_requires_auth(client):
     resp = client.get("/api/search/music/")
     assert resp.status_code == 403
+
+
+# --- search_results (AJAX API) ---
+
+
+@patch("search.api.perform_search")
+def test_search_results_api_basic(mock_perform, authenticated_client):
+    """The API endpoint delegates to perform_search and returns its dict."""
+    _, client = authenticated_client()
+
+    mock_perform.return_value = {
+        "results": [{"source": {"doctype": "note", "name": "My Note"}}],
+        "aggregations": [{"doctype": "note", "count": 1}],
+        "paginator": {"page_number": 1, "num_pages": 1},
+        "count": 1,
+    }
+
+    url = urls.reverse("search:search_results_api")
+    resp = client.get(url, {"term_search": "My Note"})
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["count"] == 1
+    assert len(data["results"]) == 1
+    assert data["aggregations"][0]["doctype"] == "note"
+    mock_perform.assert_called_once()
+
+
+@patch("search.api.perform_search")
+def test_search_results_api_semantic(mock_perform, authenticated_client):
+    """Passing semantic_search triggers is_semantic=True."""
+    _, client = authenticated_client()
+
+    mock_perform.return_value = {
+        "results": [],
+        "aggregations": [],
+        "paginator": {},
+        "count": 0,
+    }
+
+    url = urls.reverse("search:search_results_api")
+    resp = client.get(url, {"semantic_search": "meaning"})
+
+    assert resp.status_code == 200
+    _, kwargs = mock_perform.call_args
+    assert kwargs["is_semantic"] is True
+
+
+@patch("search.api.perform_search")
+def test_search_results_api_passes_query_params(mock_perform, authenticated_client):
+    """All query params are forwarded to perform_search."""
+    _, client = authenticated_client()
+
+    mock_perform.return_value = {
+        "results": [],
+        "aggregations": [],
+        "paginator": {},
+        "count": 0,
+    }
+
+    url = urls.reverse("search:search_results_api")
+    resp = client.get(url, {
+        "term_search": "django",
+        "sort": "_score",
+        "doctype": "note",
+        "exact_match": "Yes",
+        "page": "2",
+        "tags": ["python", "web"],
+    })
+
+    assert resp.status_code == 200
+    args, _ = mock_perform.call_args
+    params = args[1]  # The QueryDict
+    assert params["term_search"] == "django"
+    assert params["sort"] == "_score"
+    assert params["doctype"] == "note"
+    assert params["exact_match"] == "Yes"
+    assert params["page"] == "2"
+    assert params.getlist("tags") == ["python", "web"]
+
+
+@patch("search.api.perform_search")
+def test_search_results_api_empty(mock_perform, authenticated_client):
+    _, client = authenticated_client()
+
+    mock_perform.return_value = {
+        "results": [],
+        "aggregations": [],
+        "paginator": {},
+        "count": 0,
+    }
+
+    url = urls.reverse("search:search_results_api")
+    resp = client.get(url, {"term_search": "nonexistent"})
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["count"] == 0
+    assert data["results"] == []
+
+
+def test_search_results_api_requires_auth(client):
+    url = urls.reverse("search:search_results_api")
+    resp = client.get(url)
+    assert resp.status_code == 403

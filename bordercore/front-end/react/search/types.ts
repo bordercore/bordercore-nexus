@@ -46,6 +46,14 @@ export interface Paginator {
   range: number[];
 }
 
+// API response shape from /search/api/results/
+export interface SearchApiResponse {
+  results: SearchMatch[];
+  aggregations: Aggregation[];
+  paginator: Paginator;
+  count: number;
+}
+
 // Tag count tuple [tag_name, count]
 export type TagCount = [string, number];
 

@@ -18,6 +18,10 @@ interface SearchSidebarProps {
   activeTags: string[];
   hasResults: boolean;
   filtersDisabled?: boolean;
+  onSortChange: (sort: string) => void;
+  onExactMatchChange: (enabled: boolean) => void;
+  onTagToggle: (tag: string, checked: boolean) => void;
+  onReset: () => void;
 }
 
 export function SearchSidebar({
@@ -32,56 +36,25 @@ export function SearchSidebar({
   activeTags,
   hasResults,
   filtersDisabled = false,
+  onSortChange,
+  onExactMatchChange,
+  onTagToggle,
+  onReset,
 }: SearchSidebarProps) {
   const aggList = Array.isArray(aggregations) ? aggregations : [];
 
-  const handleReset = useCallback(() => {
-    // Reset all filters by navigating to the base search URL
-    const baseUrl = window.location.pathname;
-    const params = new URLSearchParams(window.location.search);
-    // Keep only the search term
-    const term = params.get("term_search") || params.get("search") || "";
-    const semantic = params.get("semantic_search") || "";
-    if (term) {
-      window.location.href = `${baseUrl}?term_search=${encodeURIComponent(term)}`;
-    } else if (semantic) {
-      window.location.href = `${baseUrl}?semantic_search=${encodeURIComponent(semantic)}`;
-    } else {
-      window.location.href = baseUrl;
-    }
-  }, []);
-
-  const handleSortChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    const params = new URLSearchParams(window.location.search);
-    params.set("sort", e.target.value);
-    window.location.search = params.toString();
-  }, []);
+  const handleSortChange = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      onSortChange(e.target.value);
+    },
+    [onSortChange]
+  );
 
   const handleDoctypeChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
       onDoctypeSelect(e.target.value);
     },
     [onDoctypeSelect]
-  );
-
-  const handleTagToggle = useCallback(
-    (tag: string, checked: boolean) => {
-      const params = new URLSearchParams(window.location.search);
-      // Remove all existing tags params
-      params.delete("tags");
-      // Build new tag list
-      let newTags = [...activeTags];
-      if (checked) {
-        if (!newTags.includes(tag)) newTags.push(tag);
-      } else {
-        newTags = newTags.filter(t => t !== tag);
-      }
-      // Re-add each tag as a separate param
-      newTags.forEach(t => params.append("tags", t));
-      params.delete("page");
-      window.location.search = params.toString();
-    },
-    [activeTags]
   );
 
   const searchModes = [
@@ -113,7 +86,7 @@ export function SearchSidebar({
       <div className={`search-sidebar-section ${filtersDisabled ? "search-filters-disabled" : ""}`}>
         <div className="search-sidebar-filter-header">
           <h6 className="search-sidebar-label">FILTERS</h6>
-          <button className="search-sidebar-reset" onClick={handleReset} disabled={filtersDisabled}>
+          <button className="search-sidebar-reset" onClick={onReset} disabled={filtersDisabled}>
             RESET
           </button>
         </div>
@@ -142,13 +115,7 @@ export function SearchSidebar({
             checked={exactMatchInitial === "Yes"}
             onChange={checked => {
               if (filtersDisabled) return;
-              const params = new URLSearchParams(window.location.search);
-              if (checked) {
-                params.set("exact_match", "Yes");
-              } else {
-                params.delete("exact_match");
-              }
-              window.location.search = params.toString();
+              onExactMatchChange(checked);
             }}
             disabled={filtersDisabled}
             className="search-tag-toggle"
@@ -194,7 +161,7 @@ export function SearchSidebar({
                     checked={activeTags.includes(tag)}
                     onChange={checked => {
                       if (filtersDisabled) return;
-                      handleTagToggle(tag, checked);
+                      onTagToggle(tag, checked);
                     }}
                     disabled={filtersDisabled}
                     className="search-tag-toggle"

@@ -18,6 +18,8 @@ interface SearchBarProps {
   semanticSearchUrl?: string;
   initialTags?: string[];
   searchMode?: SearchMode;
+  onSearch?: (term: string) => void;
+  onSemanticSearch?: (term: string) => void;
 }
 
 export interface SearchBarHandle {
@@ -36,6 +38,8 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(function Se
     semanticSearchUrl = "",
     initialTags = [],
     searchMode = "term",
+    onSearch,
+    onSemanticSearch,
   },
   ref
 ) {
@@ -80,6 +84,27 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(function Se
     [handleTagSearch, initialTags]
   );
 
+  const handleTermSubmit = useCallback(
+    (e: React.FormEvent) => {
+      if (onSearch) {
+        e.preventDefault();
+        onSearch(searchTerm);
+      }
+      // If no onSearch callback, let the form submit normally (progressive enhancement)
+    },
+    [onSearch, searchTerm]
+  );
+
+  const handleSemanticSubmit = useCallback(
+    (e: React.FormEvent) => {
+      if (onSemanticSearch) {
+        e.preventDefault();
+        onSemanticSearch(searchSemantic);
+      }
+    },
+    [onSemanticSearch, searchSemantic]
+  );
+
   const termSearchDisabled = searchTerm === "";
   const semanticSearchDisabled = searchSemantic === "";
 
@@ -87,7 +112,7 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(function Se
     <div className="search-bar-container">
       {/* Term Search Form */}
       {searchMode === "term" && (
-        <form action={termSearchUrl} method="get" autoComplete="off" className="search-bar-form">
+        <form action={termSearchUrl} method="get" autoComplete="off" className="search-bar-form" onSubmit={handleTermSubmit}>
           <div className="search-bar-input-group">
             <div className="search-bar-input-wrap has-search">
               <FontAwesomeIcon icon={faMagnifyingGlass} className="search-icon" />
@@ -154,6 +179,7 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(function Se
           method="get"
           autoComplete="off"
           className="search-bar-form"
+          onSubmit={handleSemanticSubmit}
         >
           <div className="search-bar-input-group">
             <div className="search-bar-input-wrap has-search">

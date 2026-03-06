@@ -10,6 +10,11 @@ app_name = "search"
 
 urlpatterns = [
     path(
+        route="api/results/",
+        view=api.search_results,
+        name="search_results_api",
+    ),
+    path(
         route="tagstitle/",
         view=api.search_tags_and_names,
         name="search_tags_and_names"

@@ -1,3 +1,4 @@
+import json
 import uuid
 from unittest.mock import MagicMock, Mock, patch
 
@@ -158,3 +159,174 @@ def test_get_doc_counts():
     assert len(result) == 2
     assert result[0] == ("document", 3)
     assert result[1] == ("blob", 2)
+
+
+# ---------------------------------------------------------------------------
+# SearchListView — delegates to perform_search
+# ---------------------------------------------------------------------------
+
+
+def _make_hit(doctype="note", name="Test", score=1.0, **extra_source):
+    source = {
+        "uuid": str(uuid.uuid4()),
+        "doctype": doctype,
+        "name": name,
+        "last_modified": "2025-08-01T17:04:23.788834-04:00",
+        "tags": [],
+        "importance": 1,
+        **extra_source,
+    }
+    return {"_score": score, "_source": source, "_id": str(uuid.uuid4())}
+
+
+def _mock_perform_search_return(hits=None, agg_buckets=None):
+    """Build a return value matching perform_search's dict shape."""
+    hits = hits or []
+    # Simulate _filter_results renaming _source → source
+    results = []
+    for h in hits:
+        r = {**h}
+        r["source"] = r.pop("_source", r.get("source", {}))
+        r["score"] = r.pop("_score", r.get("score", 0))
+        r["tags_json"] = json.dumps(r["source"].get("tags", []))
+        results.append(r)
+    return {
+        "results": results,
+        "aggregations": [
+            {"doctype": b["key"], "count": b["doc_count"]}
+            for b in (agg_buckets or [])
+        ],
+        "paginator": {
+            "page_number": 1,
+            "num_pages": 1,
+            "total_results": len(results),
+            "range": [1],
+            "has_previous": False,
+            "has_next": False,
+            "previous_page_number": 0,
+            "next_page_number": 2,
+        },
+        "count": len(results),
+    }
+
+
+@patch("search.views.perform_search")
+def test_search_list_view_delegates_to_perform_search(mock_perform, authenticated_client):
+    """SearchListView.get_queryset delegates to perform_search."""
+    _, client = authenticated_client()
+
+    mock_perform.return_value = _mock_perform_search_return(
+        hits=[_make_hit(doctype="note", name="Found It")],
+        agg_buckets=[{"key": "note", "doc_count": 1}],
+    )
+
+    url = urls.reverse("search:search")
+    resp = client.get(url, {"term_search": "Found"})
+
+    assert resp.status_code == 200
+    mock_perform.assert_called_once()
+    context = resp.context
+    assert context["count"] == 1
+    assert len(context["results"]) == 1
+
+
+@patch("search.views.perform_search")
+def test_search_list_view_no_params_returns_empty(mock_perform, authenticated_client):
+    """Without search params, the view returns empty (no ES call)."""
+    _, client = authenticated_client()
+
+    url = urls.reverse("search:search")
+    resp = client.get(url)
+
+    assert resp.status_code == 200
+    mock_perform.assert_not_called()
+
+
+@patch("search.views.perform_search")
+def test_search_list_view_stores_sort_in_session(mock_perform, authenticated_client):
+    _, client = authenticated_client()
+
+    mock_perform.return_value = _mock_perform_search_return()
+
+    url = urls.reverse("search:search")
+    client.get(url, {"term_search": "test", "sort": "_score"})
+
+    assert client.session["search_sort_by"] == "_score"
+
+
+@patch("search.views.perform_search")
+def test_search_list_view_context_has_paginator_json(mock_perform, authenticated_client):
+    _, client = authenticated_client()
+
+    mock_perform.return_value = _mock_perform_search_return(
+        hits=[_make_hit()],
+    )
+
+    url = urls.reverse("search:search")
+    resp = client.get(url, {"term_search": "test"})
+
+    context = resp.context
+    # paginator should be a JSON string
+    assert isinstance(context["paginator"], str)
+    parsed = json.loads(context["paginator"])
+    assert "page_number" in parsed
+
+
+@patch("search.views.perform_search")
+def test_search_list_view_context_doctype_filter(mock_perform, authenticated_client):
+    _, client = authenticated_client()
+
+    mock_perform.return_value = _mock_perform_search_return()
+
+    url = urls.reverse("search:search")
+    resp = client.get(url, {"term_search": "test", "doctype": "note"})
+
+    context = resp.context
+    assert "note" in context["doctype_filter"]
+
+
+@patch("search.views.perform_search")
+def test_search_list_view_context_active_tags(mock_perform, authenticated_client):
+    _, client = authenticated_client()
+
+    mock_perform.return_value = _mock_perform_search_return()
+
+    url = urls.reverse("search:search")
+    resp = client.get(url, {"term_search": "test", "tags": ["python", "django"]})
+
+    context = resp.context
+    assert context["active_tags"] == ["python", "django"]
+
+
+# ---------------------------------------------------------------------------
+# SemanticSearchListView — delegates to perform_search(is_semantic=True)
+# ---------------------------------------------------------------------------
+
+
+@patch("search.views.perform_search")
+def test_semantic_search_view_delegates(mock_perform, authenticated_client):
+    _, client = authenticated_client()
+
+    mock_perform.return_value = _mock_perform_search_return(
+        hits=[_make_hit(doctype="note", name="Semantic Hit")],
+    )
+
+    url = urls.reverse("search:semantic")
+    resp = client.get(url, {"semantic_search": "concept"})
+
+    assert resp.status_code == 200
+    _, kwargs = mock_perform.call_args
+    assert kwargs["is_semantic"] is True
+    context = resp.context
+    assert context["count"] == 1
+
+
+@patch("search.views.perform_search")
+def test_semantic_search_view_no_param_returns_empty(mock_perform, authenticated_client):
+    _, client = authenticated_client()
+
+    url = urls.reverse("search:semantic")
+    resp = client.get(url)
+
+    assert resp.status_code == 200
+    mock_perform.assert_not_called()
