@@ -26,6 +26,25 @@ from quote.models import Quote
 from todo.models import Todo
 
 
+def validate_layout(layout: Any) -> None:
+    """Validate that a layout conforms to the expected schema.
+
+    Args:
+        layout: The layout data to validate.
+
+    Raises:
+        ValueError: If the layout is not a list of lists of dicts.
+    """
+    if not isinstance(layout, list):
+        raise ValueError("Layout must be a list")
+    for col in layout:
+        if not isinstance(col, list):
+            raise ValueError("Each column in layout must be a list")
+        for item in col:
+            if not isinstance(item, dict):
+                raise ValueError("Each item in a layout column must be a dict")
+
+
 def default_layout() -> List[List[Dict[str, Any]]]:
     """Return the default layout structure for a new node.
 
@@ -85,7 +104,7 @@ class Node(TimeStampedModel):
             collection = Collection.objects.create(name=name, user=self.user)
             collection_type = "ad-hoc"
 
-        layout = self.layout or []
+        layout = self.layout or default_layout()
         layout[0].insert(0, {
             "type": "collection",
             "uuid": str(collection.uuid),
@@ -168,7 +187,7 @@ class Node(TimeStampedModel):
         )
         note.index_blob()
 
-        layout = self.layout or []
+        layout = self.layout or default_layout()
         layout[0].insert(
             0,
             {
@@ -242,21 +261,35 @@ class Node(TimeStampedModel):
         for column in self.layout:
             for row in column:
                 if row.get("type") in ["collection", "note"]:
-                    row["name"] = lookup[row["uuid"]]["name"]
-                    if "count" in lookup[row["uuid"]]:
-                        row["count"] = lookup[row["uuid"]]["count"]
+                    info = lookup.get(row["uuid"])
+                    if info:
+                        row["name"] = info["name"]
+                        if "count" in info:
+                            row["count"] = info["count"]
 
     def populate_image_info(self) -> None:
         """Populate image information for image components in the layout."""
         if not self.layout:
             return
 
+        image_uuids = [
+            row["image_uuid"]
+            for col in self.layout
+            for row in col
+            if row.get("type") == "image"
+        ]
+        if not image_uuids:
+            return
+
+        blobs = {str(b.uuid): b for b in Blob.objects.filter(uuid__in=image_uuids)}
+
         for column in self.layout:
             for row in column:
                 if row.get("type") == "image":
-                    blob = Blob.objects.get(uuid=row["image_uuid"])
-                    row["image_url"] = blob.get_cover_url()
-                    row["image_title"] = blob.name
+                    blob = blobs.get(row["image_uuid"])
+                    if blob:
+                        row["image_url"] = blob.get_cover_url()
+                        row["image_title"] = blob.name
 
     def set_note_color(self, note_uuid: str, color: int) -> None:
         """Set the color for a note component in the layout.
@@ -293,7 +326,7 @@ class Node(TimeStampedModel):
 
     def add_todo_list(self) -> None:
         """Add a todo list component to the layout."""
-        layout = self.layout or []
+        layout = self.layout or default_layout()
         layout[0].insert(
             0,
             {
@@ -434,7 +467,7 @@ class Node(TimeStampedModel):
 
         new_uuid = str(uuid.uuid4())
 
-        layout = self.layout or []
+        layout = self.layout or default_layout()
         layout[0].insert(
             0,
             {

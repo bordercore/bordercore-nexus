@@ -33,6 +33,9 @@ interface SearchResultProps {
   url: string;
   tags: string[];
   tagUrl: string;
+  metadata?: string;
+  metadataExtra?: string;
+  highlightHtml?: string;
   imageSlot?: ReactNode;
   extraSlot?: ReactNode;
 }
@@ -44,40 +47,70 @@ export function SearchResult({
   url,
   tags,
   tagUrl,
+  metadata,
+  metadataExtra,
+  highlightHtml,
   imageSlot,
   extraSlot,
 }: SearchResultProps) {
   const iconDefinition = ICON_MAP[icon] || faBook;
 
-  // Note: dangerouslySetInnerHTML is used here because the title may contain
-  // highlighted search terms (e.g., <em>search term</em>). This is the same
-  // pattern for backend HTML. The content is from the
-  // backend search engine and is trusted.
+  // dangerouslySetInnerHTML usage: title and highlight contain backend-generated HTML
+  // with search term highlighting (e.g. <em>term</em>). Content is from the trusted
+  // Elasticsearch backend only - never from user input rendered directly.
   return (
-    <div className="d-flex my-1">
-      <div className="search-result-icon">
-        <FontAwesomeIcon icon={iconDefinition} className="fa-lg text-light" />
+    <div className="search-result-inner">
+      <div className="search-result-top">
+        <div className="search-result-icon-wrap">
+          <FontAwesomeIcon icon={iconDefinition} className="search-result-icon-fa" />
+        </div>
+        <div className="search-result-header-info">
+          <h4 className="search-result-title-text">
+            <a
+              href={url}
+              dangerouslySetInnerHTML={{ __html: title || "No Title" }}
+            />
+            {importance > 1 && (
+              <FontAwesomeIcon
+                icon={faHeart}
+                className="favorite mx-2"
+                data-bs-toggle="tooltip"
+                data-placement="bottom"
+                title="Favorite"
+              />
+            )}
+          </h4>
+          <div className="search-result-meta-line">
+            {metadata && <span>{metadata}</span>}
+            {metadataExtra && (
+              <>
+                <span className="search-result-meta-sep">&bull;</span>
+                <span>{metadataExtra}</span>
+              </>
+            )}
+          </div>
+        </div>
       </div>
-      {imageSlot}
-      <div className="d-flex flex-column ms-2">
-        <h4 className="d-flex align-items-center">
-          <a
-            className="truncate-text"
-            href={url}
-            dangerouslySetInnerHTML={{ __html: title || "No Title" }}
-          />
-          {importance > 1 && (
-            <FontAwesomeIcon
-              icon={faHeart}
-              className="favorite mx-2"
-              data-bs-toggle="tooltip"
-              data-placement="bottom"
-              title="Favorite"
+
+      <div className="search-result-body">
+        {imageSlot && (
+          <div className="search-result-image-wrap">
+            {imageSlot}
+          </div>
+        )}
+        <div className="search-result-body-text">
+          {highlightHtml && (
+            <p
+              className="search-result-description"
+              dangerouslySetInnerHTML={{ __html: highlightHtml }}
             />
           )}
-        </h4>
-        {extraSlot}
-        <div>
+          {extraSlot}
+        </div>
+      </div>
+
+      {tags.length > 0 && (
+        <div className="search-result-tags">
           {tags.map(tag => (
             <a
               key={tag}
@@ -89,7 +122,7 @@ export function SearchResult({
             </a>
           ))}
         </div>
-      </div>
+      )}
     </div>
   );
 }

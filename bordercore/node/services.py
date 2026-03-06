@@ -16,12 +16,15 @@ from django.db.models.query import QuerySet
 def get_node_list(user: Any) -> QuerySet:
     """Return the user's nodes with useful counts.
 
+    The queryset is eagerly evaluated to compute ``collection_count``
+    from each node's JSON layout in Python.
+
     Args:
         user: Authenticated user instance used to filter nodes.
 
     Returns:
-        A queryset of nodes, typically annotated with counts (e.g.,
-        blob/bookmark/todo counts) and ordered for display.
+        An evaluated queryset of nodes annotated with ``todo_count``
+        and ``collection_count``, ordered by most recently modified.
     """
 
     Node = apps.get_model("node", "Node")

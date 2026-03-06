@@ -21,6 +21,7 @@ from django.contrib.auth.models import User
 from django.db import transaction
 
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
+from django.utils.html import format_html
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
@@ -36,7 +37,7 @@ from node.forms import NodeForm
 from quote.models import Quote
 from todo.models import Todo
 
-from .models import Node, NodeTodo
+from .models import Node, NodeTodo, validate_layout
 from .services import get_node_list
 
 
@@ -156,7 +157,7 @@ class NodeCreateView(LoginRequiredMixin, FormRequestMixin, CreateView):
         messages.add_message(
             self.request,
             messages.INFO,
-            f"New node created: <strong>{node.name}</strong>",
+            format_html("New node created: <strong>{}</strong>", node.name),
         )
 
         return HttpResponseRedirect(self.get_success_url())
@@ -293,7 +294,13 @@ def sort_todos(request: HttpRequest) -> Response:
     """
     node_uuid = request.POST.get("node_uuid", "").strip()
     todo_uuid = request.POST.get("todo_uuid", "").strip()
-    new_position = int(request.POST["new_position"])
+    try:
+        new_position = int(request.POST["new_position"])
+    except ValueError:
+        return Response(
+            {"status": "ERROR", "message": "new_position must be an integer"},
+            status=400,
+        )
     user = cast(User, request.user)
 
     with transaction.atomic():
@@ -324,12 +331,29 @@ def change_layout(request: HttpRequest) -> Response:
         JSON response with operation status.
     """
     node_uuid = request.POST.get("node_uuid", "").strip()
-    layout = request.POST.get("layout", "").strip()
+    layout_raw = request.POST.get("layout", "").strip()
     user = cast(User, request.user)
 
-    node = get_user_object_or_404(user, Node, uuid=node_uuid)
-    node.layout = json.loads(layout)
-    node.save()
+    try:
+        layout = json.loads(layout_raw)
+    except json.JSONDecodeError:
+        return Response(
+            {"status": "ERROR", "message": "Invalid JSON in layout"},
+            status=400,
+        )
+
+    try:
+        validate_layout(layout)
+    except ValueError as e:
+        return Response(
+            {"status": "ERROR", "message": str(e)},
+            status=400,
+        )
+
+    with transaction.atomic():
+        node = get_user_object_or_404(user, Node, uuid=node_uuid)
+        node.layout = layout
+        node.save()
 
     response = {"status": "OK"}
     return Response(response)
@@ -359,14 +383,24 @@ def add_collection(request: HttpRequest) -> Response:
             {"status": "ERROR", "message": "Rotate must be an integer"},
             status=400,
         )
-    limit_raw = request.POST.get("limit", "")
-    limit = None if limit_raw.strip().lower() in ("", "null") else int(limit_raw)
+    limit_raw = request.POST.get("limit", "").strip().lower()
+    if limit_raw in ("", "null"):
+        limit = None
+    else:
+        try:
+            limit = int(limit_raw)
+        except ValueError:
+            return Response(
+                {"status": "ERROR", "message": "Limit must be an integer"},
+                status=400,
+            )
     user = cast(User, request.user)
 
-    node = get_user_object_or_404(user, Node, uuid=node_uuid)
-    collection = node.add_collection(
-        collection_name, collection_uuid, display, rotate, random_order, limit
-    )
+    with transaction.atomic():
+        node = get_user_object_or_404(user, Node, uuid=node_uuid)
+        collection = node.add_collection(
+            collection_name, collection_uuid, display, rotate, random_order, limit
+        )
 
     response = {
         "status": "OK",
@@ -400,8 +434,17 @@ def update_collection(request: HttpRequest) -> Response:
             {"status": "ERROR", "message": "Rotate must be an integer"},
             status=400,
         )
-    limit_raw = request.POST.get("limit", "")
-    limit = None if limit_raw.strip().lower() in ("", "null") else int(limit_raw)
+    limit_raw = request.POST.get("limit", "").strip().lower()
+    if limit_raw in ("", "null"):
+        limit = None
+    else:
+        try:
+            limit = int(limit_raw)
+        except ValueError:
+            return Response(
+                {"status": "ERROR", "message": "Limit must be an integer"},
+                status=400,
+            )
     user = cast(User, request.user)
 
     with transaction.atomic():
@@ -432,8 +475,9 @@ def delete_collection(request: HttpRequest) -> Response:
     collection_type = request.POST.get("collection_type", "").strip()
     user = cast(User, request.user)
 
-    node = get_user_object_or_404(user, Node, uuid=node_uuid)
-    node.delete_collection(collection_uuid, collection_type)
+    with transaction.atomic():
+        node = get_user_object_or_404(user, Node, uuid=node_uuid)
+        node.delete_collection(collection_uuid, collection_type)
 
     response = {"status": "OK", "layout": node.get_layout()}
     return Response(response)
@@ -452,13 +496,19 @@ def add_note(request: HttpRequest) -> Response:
     """
     node_uuid = request.POST.get("node_uuid", "").strip()
     note_name = request.POST.get("note_name", "").strip()
-    color = int(request.POST.get("color", "").strip())
+    try:
+        color = int(request.POST.get("color", "").strip())
+    except ValueError:
+        return Response(
+            {"status": "ERROR", "message": "Color must be an integer"},
+            status=400,
+        )
     user = cast(User, request.user)
 
-    node = get_user_object_or_404(user, Node, uuid=node_uuid)
-    note = node.add_note(note_name)
-
-    node.set_note_color(str(note.uuid), color)
+    with transaction.atomic():
+        node = get_user_object_or_404(user, Node, uuid=node_uuid)
+        note = node.add_note(note_name)
+        node.set_note_color(str(note.uuid), color)
 
     response = {
         "status": "OK",
@@ -483,8 +533,9 @@ def delete_note(request: HttpRequest) -> Response:
     note_uuid = request.POST.get("note_uuid", "").strip()
     user = cast(User, request.user)
 
-    node = get_user_object_or_404(user, Node, uuid=node_uuid)
-    node.delete_note(note_uuid)
+    with transaction.atomic():
+        node = get_user_object_or_404(user, Node, uuid=node_uuid)
+        node.delete_note(note_uuid)
 
     response = {"status": "OK", "layout": node.get_layout()}
     return Response(response)
@@ -503,11 +554,18 @@ def set_note_color(request: HttpRequest) -> Response:
     """
     node_uuid = request.POST.get("node_uuid", "").strip()
     note_uuid = request.POST.get("note_uuid", "").strip()
-    color = int(request.POST.get("color", "").strip())
+    try:
+        color = int(request.POST.get("color", "").strip())
+    except ValueError:
+        return Response(
+            {"status": "ERROR", "message": "Color must be an integer"},
+            status=400,
+        )
     user = cast(User, request.user)
 
-    node = get_user_object_or_404(user, Node, uuid=node_uuid)
-    node.set_note_color(note_uuid, color)
+    with transaction.atomic():
+        node = get_user_object_or_404(user, Node, uuid=node_uuid)
+        node.set_note_color(note_uuid, color)
 
     response = {"status": "OK"}
     return Response(response)
@@ -528,9 +586,10 @@ def add_image(request: HttpRequest) -> Response:
     image_uuid = request.POST.get("image_uuid", "").strip()
     user = cast(User, request.user)
 
-    node = get_user_object_or_404(user, Node, uuid=node_uuid)
-    image = get_user_object_or_404(user, Blob, uuid=image_uuid)
-    node.add_component("image", image)
+    with transaction.atomic():
+        node = get_user_object_or_404(user, Node, uuid=node_uuid)
+        image = get_user_object_or_404(user, Blob, uuid=image_uuid)
+        node.add_component("image", image)
 
     node.populate_image_info()
 
@@ -560,7 +619,8 @@ def add_quote(request: HttpRequest) -> Response:
     if not quote:
         return Response({"status": "ERROR", "message": "No quotes available."}, status=404)
 
-    node.add_component("quote", quote, options)
+    with transaction.atomic():
+        node.add_component("quote", quote, options)
 
     response = {"status": "OK", "layout": node.get_layout()}
     return Response(response)
@@ -580,11 +640,12 @@ def update_quote(request: HttpRequest) -> Response:
     node_uuid = request.POST.get("node_uuid", "").strip()
     uuid = request.POST.get("uuid", "").strip()
     options = json.loads(request.POST.get("options", "").strip())
-    options["favorites_only"] = options.get("favorites_only", "false").strip() == "true"
+    options["favorites_only"] = str(options.get("favorites_only", "false")).strip().lower() == "true"
     user = cast(User, request.user)
 
-    node = get_user_object_or_404(user, Node, uuid=node_uuid)
-    node.update_component(uuid, options)
+    with transaction.atomic():
+        node = get_user_object_or_404(user, Node, uuid=node_uuid)
+        node.update_component(uuid, options)
 
     response = {"status": "OK", "layout": node.get_layout()}
     return Response(response)
@@ -612,8 +673,9 @@ def get_quote(request: HttpRequest) -> Response:
     if not quote:
         return Response({"status": "ERROR", "message": "No quotes available."}, status=404)
 
-    node = get_user_object_or_404(user, Node, uuid=node_uuid)
-    node.set_quote(quote.uuid)
+    with transaction.atomic():
+        node = get_user_object_or_404(user, Node, uuid=node_uuid)
+        node.set_quote(quote.uuid)
 
     response = {
         "status": "OK",
@@ -641,8 +703,9 @@ def add_todo_list(request: HttpRequest) -> Response:
     node_uuid = request.POST.get("node_uuid", "").strip()
     user = cast(User, request.user)
 
-    node = get_user_object_or_404(user, Node, uuid=node_uuid)
-    node.add_todo_list()
+    with transaction.atomic():
+        node = get_user_object_or_404(user, Node, uuid=node_uuid)
+        node.add_todo_list()
 
     response = {"status": "OK", "layout": node.get_layout()}
     return Response(response)
@@ -662,8 +725,9 @@ def delete_todo_list(request: HttpRequest) -> Response:
     node_uuid = request.POST.get("node_uuid", "").strip()
     user = cast(User, request.user)
 
-    node = get_user_object_or_404(user, Node, uuid=node_uuid)
-    node.delete_todo_list()
+    with transaction.atomic():
+        node = get_user_object_or_404(user, Node, uuid=node_uuid)
+        node.delete_todo_list()
 
     response = {"status": "OK", "layout": node.get_layout()}
     return Response(response)
@@ -685,9 +749,10 @@ def add_node(request: HttpRequest) -> Response:
     options = json.loads(request.POST.get("options", "{}").strip())
     user = cast(User, request.user)
 
-    parent_node = get_user_object_or_404(user, Node, uuid=parent_node_uuid)
-    node = get_user_object_or_404(user, Node, uuid=node_uuid)
-    parent_node.add_component("node", node, options)
+    with transaction.atomic():
+        parent_node = get_user_object_or_404(user, Node, uuid=parent_node_uuid)
+        node = get_user_object_or_404(user, Node, uuid=node_uuid)
+        parent_node.add_component("node", node, options)
 
     response = {"status": "OK", "layout": parent_node.get_layout()}
     return Response(response)
@@ -709,8 +774,9 @@ def update_node(request: HttpRequest) -> Response:
     options = json.loads(request.POST.get("options", "").strip())
     user = cast(User, request.user)
 
-    node = get_user_object_or_404(user, Node, uuid=parent_node_uuid)
-    node.update_component(uuid, options)
+    with transaction.atomic():
+        node = get_user_object_or_404(user, Node, uuid=parent_node_uuid)
+        node.update_component(uuid, options)
 
     response = {"status": "OK", "layout": node.get_layout()}
     return Response(response)
@@ -793,8 +859,9 @@ def remove_component(request: HttpRequest) -> Response:
     uuid = request.POST.get("uuid", "").strip()
     user = cast(User, request.user)
 
-    node = get_user_object_or_404(user, Node, uuid=node_uuid)
-    node.remove_component(uuid)
+    with transaction.atomic():
+        node = get_user_object_or_404(user, Node, uuid=node_uuid)
+        node.remove_component(uuid)
 
     response = {"status": "OK", "layout": node.get_layout()}
     return Response(response)
