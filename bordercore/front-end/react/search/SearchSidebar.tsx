@@ -1,10 +1,8 @@
 import React, { useCallback } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faMagnifyingGlass, faTag, faBrain } from "@fortawesome/free-solid-svg-icons";
 import ToggleSwitch from "../common/ToggleSwitch";
+import SearchModeNav from "./SearchModeNav";
+import type { SearchMode } from "./SearchModeNav";
 import type { Aggregation } from "./types";
-
-type SearchMode = "term" | "tag" | "semantic";
 
 interface SearchSidebarProps {
   searchMode: SearchMode;
@@ -57,29 +55,9 @@ export function SearchSidebar({
     [onDoctypeSelect]
   );
 
-  const searchModes = [
-    { key: "term" as SearchMode, label: "Term Search", icon: faMagnifyingGlass },
-    { key: "tag" as SearchMode, label: "Tag Search", icon: faTag },
-    { key: "semantic" as SearchMode, label: "Semantic", icon: faBrain },
-  ];
-
   return (
     <aside className="search-sidebar">
-      <div className="search-sidebar-section">
-        <h6 className="search-sidebar-label">SEARCH MODE</h6>
-        <div className="search-mode-list">
-          {searchModes.map(mode => (
-            <button
-              key={mode.key}
-              className={`search-mode-btn ${searchMode === mode.key ? "active" : ""}`}
-              onClick={() => onSearchModeChange(mode.key)}
-            >
-              <FontAwesomeIcon icon={mode.icon} className="search-mode-icon" />
-              <span>{mode.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
+      <SearchModeNav activeMode={searchMode} onModeChange={onSearchModeChange} />
 
       <hr className="search-sidebar-divider" />
 

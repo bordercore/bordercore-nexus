@@ -194,9 +194,27 @@ export const TagsInput = forwardRef<TagsInputHandle, TagsInputProps>(function Ta
         className="react-select-container"
         styles={
           {
+            placeholder: base => ({
+              ...base,
+              color: "var(--form-color)",
+            }),
             multiValue: (base, state) => ({
               ...base,
               ...tagStyle(state.data.label),
+              backgroundColor:
+                "hsl(var(--tag-hue, 0) var(--tag-saturation) var(--tag-bg-lightness) / 15%)",
+              border:
+                "1px solid hsl(var(--tag-hue, 0) var(--tag-saturation) var(--tag-border-lightness) / 40%)",
+              borderRadius: "0.375rem",
+            }),
+            multiValueLabel: base => ({
+              ...base,
+              color: "hsl(var(--tag-hue, 0) var(--tag-saturation) var(--tag-text-lightness))",
+              padding: "2px 4px",
+            }),
+            multiValueRemove: base => ({
+              ...base,
+              color: "hsl(var(--tag-hue, 0) var(--tag-saturation) var(--tag-text-lightness))",
             }),
           } as StylesConfig<TagOption, true>
         }

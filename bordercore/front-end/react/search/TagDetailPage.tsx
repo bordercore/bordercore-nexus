@@ -1,5 +1,7 @@
 import React, { useState, useRef, useCallback } from "react";
 import SearchBar, { SearchBarHandle } from "./SearchBar";
+import SearchModeNav from "./SearchModeNav";
+import type { SearchMode } from "./SearchModeNav";
 import SearchResult from "./SearchResult";
 import { doPost } from "../utils/reactUtils";
 import type { TagDetailResults, TagDetailMatch, DoctypeCount, TagCount } from "./types";
@@ -15,6 +17,7 @@ interface TagDetailPageProps {
   tagSearchUrl: string;
   tagsChangedUrl: string;
   termSearchUrl: string;
+  semanticSearchUrl: string;
   storeInSessionUrl: string;
 }
 
@@ -49,6 +52,7 @@ export function TagDetailPage({
   tagSearchUrl,
   tagsChangedUrl,
   termSearchUrl,
+  semanticSearchUrl,
   storeInSessionUrl,
 }: TagDetailPageProps) {
   const enrichedDoctypeCounts = doctypeCounts.map(doctype => ({
@@ -73,6 +77,18 @@ export function TagDetailPage({
     [storeInSessionUrl]
   );
 
+  const handleSearchModeChange = useCallback(
+    (mode: SearchMode) => {
+      if (mode === "term") {
+        window.location.href = termSearchUrl;
+      } else if (mode === "semantic") {
+        window.location.href = semanticSearchUrl;
+      }
+      // "tag" is current page — no navigation needed
+    },
+    [termSearchUrl, semanticSearchUrl]
+  );
+
   const totalCount = enrichedDoctypeCounts.reduce((sum, d) => sum + d.count, 0);
   const currentMatches: TagDetailMatch[] =
     (results as Record<string, TagDetailMatch[]>)[selectedDoctype] || [];
@@ -82,14 +98,7 @@ export function TagDetailPage({
   return (
     <div className="search-page-layout">
       <aside className="search-sidebar">
-        <div className="search-sidebar-section">
-          <h6 className="search-sidebar-label">SEARCH MODE</h6>
-          <div className="search-mode-list">
-            <button className="search-mode-btn active">
-              <span>Tag Search</span>
-            </button>
-          </div>
-        </div>
+        <SearchModeNav activeMode="tag" onModeChange={handleSearchModeChange} />
 
         <hr className="search-sidebar-divider" />
 

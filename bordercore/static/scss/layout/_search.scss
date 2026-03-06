@@ -34,9 +34,10 @@
 
   .search-icon {
     position: absolute;
+    z-index: 1;
     top: 50%;
     left: 1rem;
-    color: white;
+    color: var(--form-color);
     pointer-events: none;
     transform: translateY(-50%);
   }
@@ -354,7 +355,7 @@
 
 .search-bar-input {
   width: 100%;
-  padding: 0.6rem 1rem 0.6rem 2.5rem;
+  padding: 0.75rem 1rem 0.75rem 2.5rem;
   border: 1px solid var(--border-color);
   background: var(--form-bg);
   border-radius: 0.5rem;
@@ -372,7 +373,19 @@
 }
 
 .search-bar-tag-input-wrap {
-  flex: 1;
+  min-width: 0;
+  flex: 3;
+
+  /* stylelint-disable selector-class-pattern */
+  .react-select__control {
+    padding-left: 2rem !important;
+  }
+  /* stylelint-enable selector-class-pattern */
+}
+
+.search-bar-input-group .search-filter-select {
+  width: auto;
+  flex: 0 1 auto;
 }
 
 .search-bar-submit {

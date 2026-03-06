@@ -18,6 +18,7 @@
         data-tag-search-url="{% url 'tag:search' %}?query="
         data-tags-changed-url="{% url 'search:kb_search_tag_detail' 666 %}"
         data-term-search-url="{% url 'search:search' %}"
+        data-semantic-search-url="{% url 'search:semantic' %}"
         data-store-in-session-url="{% url 'accounts:store_in_session' %}"
         data-saved-tab="{{ search_tag_detail_current_tab|default:'' }}"
     ></div>

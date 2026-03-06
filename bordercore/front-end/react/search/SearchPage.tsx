@@ -83,13 +83,19 @@ export function SearchPage({
     (overrides: Record<string, string | string[] | undefined> = {}) => {
       const params = new URLSearchParams();
 
-      const term = overrides.term_search !== undefined ? overrides.term_search as string : searchTermState;
-      const semantic = overrides.semantic_search !== undefined ? overrides.semantic_search as string : searchSemanticState;
-      const sort = overrides.sort !== undefined ? overrides.sort as string : sortBy;
-      const doctype = overrides.doctype !== undefined ? overrides.doctype as string : currentDoctype;
-      const exact = overrides.exact_match !== undefined ? overrides.exact_match as string : exactMatch;
-      const tags = overrides.tags !== undefined ? overrides.tags as string[] : activeTagsState;
-      const page = overrides.page !== undefined ? overrides.page as string : String(currentPage);
+      const term =
+        overrides.term_search !== undefined ? (overrides.term_search as string) : searchTermState;
+      const semantic =
+        overrides.semantic_search !== undefined
+          ? (overrides.semantic_search as string)
+          : searchSemanticState;
+      const sort = overrides.sort !== undefined ? (overrides.sort as string) : sortBy;
+      const doctype =
+        overrides.doctype !== undefined ? (overrides.doctype as string) : currentDoctype;
+      const exact =
+        overrides.exact_match !== undefined ? (overrides.exact_match as string) : exactMatch;
+      const tags = overrides.tags !== undefined ? (overrides.tags as string[]) : activeTagsState;
+      const page = overrides.page !== undefined ? (overrides.page as string) : String(currentPage);
 
       if (term) params.set("term_search", term);
       if (semantic) params.set("semantic_search", semantic);
@@ -105,7 +111,15 @@ export function SearchPage({
 
       return params;
     },
-    [searchTermState, searchSemanticState, sortBy, currentDoctype, exactMatch, activeTagsState, currentPage]
+    [
+      searchTermState,
+      searchSemanticState,
+      sortBy,
+      currentDoctype,
+      exactMatch,
+      activeTagsState,
+      currentPage,
+    ]
   );
 
   // Fetch results from API and update state
@@ -114,21 +128,25 @@ export function SearchPage({
       setIsLoading(true);
 
       const url = `${searchApiUrl}?${params.toString()}`;
-      doGet(url, (response: { data: SearchApiResponse }) => {
-        const data = response.data;
-        setResults(data.results);
-        setAggregations(data.aggregations);
-        setPaginator(data.paginator);
-        setCount(data.count);
-        setHasRequest(true);
-        setIsLoading(false);
+      doGet(
+        url,
+        (response: { data: SearchApiResponse }) => {
+          const data = response.data;
+          setResults(data.results);
+          setAggregations(data.aggregations);
+          setPaginator(data.paginator);
+          setCount(data.count);
+          setHasRequest(true);
+          setIsLoading(false);
 
-        // Sync URL
-        const newUrl = `${window.location.pathname}?${params.toString()}`;
-        if (pushHistory) {
-          history.pushState({ searchParams: params.toString() }, "", newUrl);
-        }
-      }, "Search failed");
+          // Sync URL
+          const newUrl = `${window.location.pathname}?${params.toString()}`;
+          if (pushHistory) {
+            history.pushState({ searchParams: params.toString() }, "", newUrl);
+          }
+        },
+        "Search failed"
+      );
     },
     [searchApiUrl]
   );
@@ -243,9 +261,7 @@ export function SearchPage({
 
   const handleTagToggle = useCallback(
     (tag: string, checked: boolean) => {
-      const newTags = checked
-        ? [...activeTagsState, tag]
-        : activeTagsState.filter(t => t !== tag);
+      const newTags = checked ? [...activeTagsState, tag] : activeTagsState.filter(t => t !== tag);
       setActiveTagsState(newTags);
       setCurrentPage(1);
       const params = buildSearchParams({ tags: newTags, page: "1" });
@@ -344,7 +360,11 @@ export function SearchPage({
           onSemanticSearch={handleSemanticSearch}
         />
         <div className={`search-results-area ${isLoading ? "search-loading" : ""}`}>
-          {isLoading && <div className="search-loading-overlay"><div className="search-loading-spinner" /></div>}
+          {isLoading && (
+            <div className="search-loading-overlay">
+              <div className="search-loading-spinner" />
+            </div>
+          )}
           {hasRequest && (
             <>
               {!hasResults && !isLoading ? (

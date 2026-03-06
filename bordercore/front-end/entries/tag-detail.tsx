@@ -9,6 +9,7 @@ if (container) {
   const tagSearchUrl = container.getAttribute("data-tag-search-url") || "";
   const tagsChangedUrl = container.getAttribute("data-tags-changed-url") || "";
   const termSearchUrl = container.getAttribute("data-term-search-url") || "";
+  const semanticSearchUrl = container.getAttribute("data-semantic-search-url") || "";
   const storeInSessionUrl = container.getAttribute("data-store-in-session-url") || "";
   const savedTab = container.getAttribute("data-saved-tab") || "";
 
@@ -86,6 +87,7 @@ if (container) {
       tagSearchUrl={tagSearchUrl}
       tagsChangedUrl={tagsChangedUrl}
       termSearchUrl={termSearchUrl}
+      semanticSearchUrl={semanticSearchUrl}
       storeInSessionUrl={storeInSessionUrl}
     />
   );

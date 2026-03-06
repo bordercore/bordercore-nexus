@@ -2,9 +2,8 @@ import React, { useState, useRef, forwardRef, useImperativeHandle, useCallback }
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
 import TagsInput, { TagsInputHandle } from "../common/TagsInput";
+import type { SearchMode } from "./SearchModeNav";
 import type { TagCount } from "./types";
-
-type SearchMode = "term" | "tag" | "semantic";
 
 interface SearchBarProps {
   exactMatchInitial?: string;
@@ -112,7 +111,13 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(function Se
     <div className="search-bar-container">
       {/* Term Search Form */}
       {searchMode === "term" && (
-        <form action={termSearchUrl} method="get" autoComplete="off" className="search-bar-form" onSubmit={handleTermSubmit}>
+        <form
+          action={termSearchUrl}
+          method="get"
+          autoComplete="off"
+          className="search-bar-form"
+          onSubmit={handleTermSubmit}
+        >
           <div className="search-bar-input-group">
             <div className="search-bar-input-wrap has-search">
               <FontAwesomeIcon icon={faMagnifyingGlass} className="search-icon" />
@@ -137,7 +142,8 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(function Se
       {searchMode === "tag" && (
         <form className="search-bar-form">
           <div className="search-bar-input-group">
-            <div className="search-bar-tag-input-wrap">
+            <div className="search-bar-tag-input-wrap has-search">
+              <FontAwesomeIcon icon={faMagnifyingGlass} className="search-icon" />
               <TagsInput
                 ref={tagsInputRef}
                 name="tag-search"
