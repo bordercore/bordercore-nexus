@@ -66,10 +66,7 @@ export function SearchResult({
         </div>
         <div className="search-result-header-info">
           <h4 className="search-result-title-text">
-            <a
-              href={url}
-              dangerouslySetInnerHTML={{ __html: title || "No Title" }}
-            />
+            <a href={url} dangerouslySetInnerHTML={{ __html: title || "No Title" }} />
             {importance > 1 && (
               <FontAwesomeIcon
                 icon={faHeart}
@@ -93,11 +90,7 @@ export function SearchResult({
       </div>
 
       <div className="search-result-body">
-        {imageSlot && (
-          <div className="search-result-image-wrap">
-            {imageSlot}
-          </div>
-        )}
+        {imageSlot && <div className="search-result-image-wrap">{imageSlot}</div>}
         <div className="search-result-body-text">
           {highlightHtml && (
             <p

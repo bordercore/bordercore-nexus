@@ -17,6 +17,8 @@ if (container) {
   const sortByInitial = container.getAttribute("data-sort-by") || "_score";
   const hasRequest = container.getAttribute("data-has-request") === "true";
   const count = parseInt(container.getAttribute("data-count") || "0", 10);
+  const activeTagsAttr = container.getAttribute("data-active-tags") || "";
+  const activeTags = activeTagsAttr ? activeTagsAttr.split(",") : [];
 
   // Parse JSON data from script tags
   let results: SearchMatch[] = [];
@@ -95,6 +97,7 @@ if (container) {
       tagUrl={tagUrl}
       imagesUrl={imagesUrl}
       hasRequest={hasRequest}
+      activeTags={activeTags}
     />
   );
 }

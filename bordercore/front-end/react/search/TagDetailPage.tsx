@@ -1,14 +1,9 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import SearchBar, { SearchBarHandle } from "./SearchBar";
-import TagSearchResult from "./TagSearchResult";
+import SearchResult from "./SearchResult";
 import { doPost } from "../utils/reactUtils";
-import type { TagDetailResults, DoctypeCount, TagCount } from "./types";
+import type { TagDetailResults, TagDetailMatch, DoctypeCount, TagCount } from "./types";
 import { DOCTYPE_MAPPING } from "./types";
-
-// Declare bootstrap Tab type
-declare const bootstrap: {
-  Tab: new (element: Element) => { show: () => void };
-};
 
 interface TagDetailPageProps {
   results: TagDetailResults;
@@ -23,6 +18,27 @@ interface TagDetailPageProps {
   storeInSessionUrl: string;
 }
 
+// Map doctypes to icons (same mapping as SearchResult)
+const ICON_MAP: Record<string, string> = {
+  blob: "book",
+  book: "book",
+  bookmark: "bookmark",
+  collection: "folder",
+  document: "copy",
+  drill: "graduation-cap",
+  note: "sticky-note",
+  song: "music",
+  album: "music",
+  todo: "tasks",
+};
+
+function getTitle(docType: string, match: TagDetailMatch): string {
+  if (docType === "drill") return match.question || "";
+  if (docType === "song") return match.title || "";
+  if (docType === "album") return match.title || "";
+  return match.name || "No Title";
+}
+
 export function TagDetailPage({
   results,
   doctypeCounts,
@@ -35,18 +51,14 @@ export function TagDetailPage({
   termSearchUrl,
   storeInSessionUrl,
 }: TagDetailPageProps) {
-  // Add display names to doctype counts
   const enrichedDoctypeCounts = doctypeCounts.map(doctype => ({
     key: doctype[0],
     count: doctype[1],
     displayName: DOCTYPE_MAPPING[doctype[0]] || doctype[0],
   }));
 
-  // Initialize with saved tab or first available doctype
   const getInitialDoctype = () => {
-    if (savedTab && doctypes.includes(savedTab)) {
-      return savedTab;
-    }
+    if (savedTab && doctypes.includes(savedTab)) return savedTab;
     return enrichedDoctypeCounts[0]?.key || "";
   };
 
@@ -56,72 +68,49 @@ export function TagDetailPage({
   const handleDoctypeSelect = useCallback(
     (doctype: string) => {
       setSelectedDoctype(doctype);
-
-      // Store the selected tab in session
       doPost(storeInSessionUrl, { search_tag_detail_current_tab: doctype }, () => {});
     },
     [storeInSessionUrl]
   );
 
-  useEffect(() => {
-    // On mount, set up the initial tab
-    if (enrichedDoctypeCounts.length > 0) {
-      let tabToShow: string;
-      let triggerEl: Element | null;
+  const totalCount = enrichedDoctypeCounts.reduce((sum, d) => sum + d.count, 0);
+  const currentMatches: TagDetailMatch[] =
+    (results as Record<string, TagDetailMatch[]>)[selectedDoctype] || [];
 
-      // If there's a saved tab that matches a current doctype, use it
-      if (savedTab && doctypes.includes(savedTab)) {
-        tabToShow = savedTab;
-        triggerEl = document.querySelector(`div#${savedTab}-tab`);
-      } else {
-        // Otherwise, select the first tab
-        triggerEl = document.querySelector(".nav div:first-child");
-        tabToShow = enrichedDoctypeCounts[0]?.key || "";
-      }
-
-      if (triggerEl && typeof bootstrap !== "undefined") {
-        const tabTrigger = new bootstrap.Tab(triggerEl);
-        tabTrigger.show();
-        setSelectedDoctype(tabToShow);
-      }
-
-      // Focus the tag search input
-      searchBarRef.current?.focusTagSearch();
-    }
-  }, [enrichedDoctypeCounts, savedTab, doctypes]);
+  const tagUrl = tagsChangedUrl;
 
   return (
-    <div className="row g-0 h-100 mx-2">
-      <div className="col-lg-3 d-flex flex-column">
-        <div className="card-body flex-grow-1">
-          {enrichedDoctypeCounts.length > 0 && (
-            <>
-              <h4 className="text4 border-bottom pb-2">Doctypes</h4>
-              <ul className="list-unstyled">
-                {enrichedDoctypeCounts.map(doctype => {
-                  const isSelected = doctype.key === selectedDoctype;
-                  return (
-                    <li
-                      key={doctype.key}
-                      id={`${doctype.key}-tab`}
-                      className={`list-with-counts rounded d-flex ps-2 py-1 pe-1 ${isSelected ? "selected" : ""}`}
-                      onClick={() => handleDoctypeSelect(doctype.key)}
-                      data-bs-toggle="tab"
-                      data-bs-target={`#${doctype.key}`}
-                    >
-                      <div className="ps-2">{doctype.displayName}</div>
-                      <div className="ms-auto pe-2">
-                        <span className="px-2 badge rounded-pill">{doctype.count}</span>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            </>
-          )}
+    <div className="search-page-layout">
+      <aside className="search-sidebar">
+        <div className="search-sidebar-section">
+          <h6 className="search-sidebar-label">SEARCH MODE</h6>
+          <div className="search-mode-list">
+            <button className="search-mode-btn active">
+              <span>Tag Search</span>
+            </button>
+          </div>
         </div>
-      </div>
-      <div className="col-lg-9 ps-4">
+
+        <hr className="search-sidebar-divider" />
+
+        <div className="search-sidebar-section">
+          <h6 className="search-sidebar-label">CONTENT TYPE</h6>
+          <div className="search-mode-list">
+            {enrichedDoctypeCounts.map(doctype => (
+              <button
+                key={doctype.key}
+                className={`search-mode-btn ${selectedDoctype === doctype.key ? "active" : ""}`}
+                onClick={() => handleDoctypeSelect(doctype.key)}
+              >
+                <span>{doctype.displayName}</span>
+                <span className="ms-auto badge rounded-pill bg-secondary">{doctype.count}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </aside>
+
+      <div className="search-main-content">
         <SearchBar
           ref={searchBarRef}
           tagCounts={tagCounts}
@@ -129,53 +118,60 @@ export function TagDetailPage({
           tagsChangedUrl={tagsChangedUrl}
           termSearchUrl={termSearchUrl}
           initialTags={initialTags}
+          searchMode="tag"
         />
-        <div className="tab-content ps-3 h-100 mb-3">
-          <TagSearchResult
-            docType="blob"
-            matches={results.blob || []}
-            isActive={selectedDoctype === "blob"}
-          />
-          <TagSearchResult
-            docType="book"
-            matches={results.book || []}
-            isActive={selectedDoctype === "book"}
-          />
-          <TagSearchResult
-            docType="bookmark"
-            matches={results.bookmark || []}
-            isActive={selectedDoctype === "bookmark"}
-          />
-          <TagSearchResult
-            docType="document"
-            matches={results.document || []}
-            isActive={selectedDoctype === "document"}
-          />
-          <TagSearchResult
-            docType="note"
-            matches={results.note || []}
-            isActive={selectedDoctype === "note"}
-          />
-          <TagSearchResult
-            docType="drill"
-            matches={results.drill || []}
-            isActive={selectedDoctype === "drill"}
-          />
-          <TagSearchResult
-            docType="song"
-            matches={results.song || []}
-            isActive={selectedDoctype === "song"}
-          />
-          <TagSearchResult
-            docType="todo"
-            matches={results.todo || []}
-            isActive={selectedDoctype === "todo"}
-          />
-          <TagSearchResult
-            docType="album"
-            matches={results.album || []}
-            isActive={selectedDoctype === "album"}
-          />
+
+        <div className="search-results-header">
+          <div className="search-results-header-left">
+            <h4 className="search-results-title">Tag Results</h4>
+            <span className="search-results-count">
+              Showing {currentMatches.length} of {totalCount} result
+              {totalCount !== 1 ? "s" : ""}
+            </span>
+          </div>
+        </div>
+
+        <div className="search-results-list">
+          {currentMatches.map(match => (
+            <div key={match.uuid} className="search-result-card">
+              <SearchResult
+                icon={ICON_MAP[selectedDoctype] || "book"}
+                importance={match.importance || 1}
+                title={getTitle(selectedDoctype, match)}
+                url={match.object_url}
+                tags={match.tags.map(t => t.name)}
+                tagUrl={tagUrl}
+                metadata={match.date || undefined}
+                metadataExtra={selectedDoctype === "bookmark" ? match.url_domain : undefined}
+                imageSlot={
+                  selectedDoctype === "album" && match.album_artwork_url ? (
+                    <img src={match.album_artwork_url} className="search-result-thumbnail" alt="" />
+                  ) : (selectedDoctype === "blob" || selectedDoctype === "book") &&
+                    match.cover_url ? (
+                    <img src={match.cover_url} className="search-result-thumbnail" alt="" />
+                  ) : undefined
+                }
+                extraSlot={
+                  <>
+                    {selectedDoctype === "song" && match.artist && (
+                      <div className="search-result-description">{match.artist}</div>
+                    )}
+                    {selectedDoctype === "album" && match.artist && (
+                      <div className="search-result-description">{match.artist}</div>
+                    )}
+                    {(selectedDoctype === "note" || selectedDoctype === "document") &&
+                      match.contents && (
+                        <p className="search-result-description">{match.contents}</p>
+                      )}
+                    {(selectedDoctype === "blob" || selectedDoctype === "book") &&
+                      match.creators && (
+                        <div className="search-result-creators">{match.creators}</div>
+                      )}
+                  </>
+                }
+              />
+            </div>
+          ))}
         </div>
       </div>
     </div>

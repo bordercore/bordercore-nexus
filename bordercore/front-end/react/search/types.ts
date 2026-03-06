@@ -7,6 +7,7 @@ export interface SearchSource {
   url: string;
   importance?: number;
   date?: string;
+  last_modified?: string;
   domain?: string;
   creators?: string;
   cover_url?: string;
@@ -14,6 +15,7 @@ export interface SearchSource {
   artist?: string;
   artist_uuid?: string;
   uuid?: string;
+  filename?: string;
 }
 
 export interface SearchHighlight {

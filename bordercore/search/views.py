@@ -270,6 +270,14 @@ class SearchListView(LoginRequiredMixin, ListView):
                 }
             }
 
+        # Filter by tags if provided
+        filter_tags = self.request.GET.getlist("tags")
+        if filter_tags:
+            for tag in filter_tags:
+                search_object["query"]["function_score"]["query"]["bool"]["must"].append(
+                    {"term": {"tags.keyword": tag}}
+                )
+
         # Skip this for semantic searches
         if search_term:
             search_object["query"]["function_score"]["query"]["bool"]["must"].append(
@@ -337,6 +345,7 @@ class SearchListView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
 
         context["doctype_filter"] = self.request.GET.get("doctype", "").split(",")
+        context["active_tags"] = self.request.GET.getlist("tags")
         context["title"] = "Search"
 
         if context["object_list"]:

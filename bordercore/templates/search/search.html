@@ -26,6 +26,7 @@
         data-sort-by="{{ request.session.search_sort_by|default:'_score' }}"
         data-has-request="{% if request.GET %}true{% else %}false{% endif %}"
         data-count="{{ count|default:0 }}"
+        data-active-tags="{{ active_tags|join:',' }}"
     ></div>
 
     {{ results|json_script:"results" }}

@@ -8,10 +8,8 @@ interface PaginationProps {
 }
 
 export function Pagination({ paginator }: PaginationProps) {
-  // Build URL preserving existing search params
   const getSearchArgs = useCallback(() => {
     const urlSearchParams = new URLSearchParams(window.location.search);
-    // The Pagination component will add the "page" searcharg, so we need to delete it first
     urlSearchParams.delete("page");
     const params = urlSearchParams.toString();
     return params ? `&${params}` : "";
@@ -24,7 +22,6 @@ export function Pagination({ paginator }: PaginationProps) {
     [getSearchArgs]
   );
 
-  // Handle missing or incomplete paginator
   if (!paginator || !paginator.range || paginator.num_pages <= 1) {
     return null;
   }
@@ -32,43 +29,59 @@ export function Pagination({ paginator }: PaginationProps) {
   const hasPrevious = paginator.has_previous;
   const hasNext = paginator.has_next;
 
+  // Build page numbers with ellipsis
+  const buildPageNumbers = () => {
+    const pages: (number | "ellipsis")[] = [];
+    const current = paginator.page_number;
+    const total = paginator.num_pages;
+
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (current > 3) pages.push("ellipsis");
+      for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) {
+        pages.push(i);
+      }
+      if (current < total - 2) pages.push("ellipsis");
+      pages.push(total);
+    }
+    return pages;
+  };
+
+  const pageNumbers = buildPageNumbers();
+
   return (
-    <div className="pagination-container">
-      <nav className="mb-5 navigation">
-        <ul className="pagination justify-content-center">
-          <li className={`page-item ${!hasPrevious ? "disabled" : ""}`}>
-            <a
-              className="page-link"
-              href={hasPrevious ? pageLink(paginator.previous_page_number!) : "#"}
-            >
-              <FontAwesomeIcon icon={faChevronLeft} className="text-emphasis" />
-            </a>
-          </li>
-          <li className="pagination-divider">
-            <div className="w-100 h-75" />
-          </li>
+    <div className="search-pagination">
+      <a
+        className={`search-pagination-btn ${!hasPrevious ? "disabled" : ""}`}
+        href={hasPrevious ? pageLink(paginator.previous_page_number!) : "#"}
+      >
+        <FontAwesomeIcon icon={faChevronLeft} />
+      </a>
 
-          {paginator.range.map(page => (
-            <li
-              key={page}
-              className={`page-item ${paginator.page_number === page ? "disabled" : ""}`}
-            >
-              <a className="page-link" href={pageLink(page)}>
-                {page}
-              </a>
-            </li>
-          ))}
+      {pageNumbers.map((page, idx) =>
+        page === "ellipsis" ? (
+          <span key={`ellipsis-${idx}`} className="search-pagination-ellipsis">
+            ...
+          </span>
+        ) : (
+          <a
+            key={page}
+            className={`search-pagination-btn ${paginator.page_number === page ? "active" : ""}`}
+            href={paginator.page_number === page ? "#" : pageLink(page)}
+          >
+            {page}
+          </a>
+        )
+      )}
 
-          <li className="pagination-divider">
-            <div className="w-100 h-75" />
-          </li>
-          <li className={`page-item ${!hasNext ? "disabled" : ""}`}>
-            <a className="page-link" href={hasNext ? pageLink(paginator.next_page_number!) : "#"}>
-              <FontAwesomeIcon icon={faChevronRight} className="text-emphasis" />
-            </a>
-          </li>
-        </ul>
-      </nav>
+      <a
+        className={`search-pagination-btn ${!hasNext ? "disabled" : ""}`}
+        href={hasNext ? pageLink(paginator.next_page_number!) : "#"}
+      >
+        <FontAwesomeIcon icon={faChevronRight} />
+      </a>
     </div>
   );
 }
