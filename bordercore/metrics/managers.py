@@ -87,7 +87,7 @@ class MetricsManager(models.Manager):
             frequency = metric["frequency"]
             latest_result = metric.get("latest_result") or {}
 
-            if now - created > frequency:
+            if created is not None and now - created > frequency:
                 failed_test_count += 1
 
             if "test_errors" in latest_result:

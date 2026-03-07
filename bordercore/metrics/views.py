@@ -7,7 +7,7 @@ import json
 from typing import Any, cast
 
 from django.contrib.auth.mixins import (LoginRequiredMixin,
-                                        PermissionRequiredMixin)
+                                        UserPassesTestMixin)
 from django.contrib.auth.models import User
 from django.db.models import QuerySet
 from django.template.defaultfilters import linebreaksbr
@@ -17,7 +17,7 @@ from django.views.generic.list import ListView
 from .models import Metric
 
 
-class MetricListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
+class MetricListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     """View for displaying the metrics list page.
 
     Shows the latest metrics for the current user, including test results,
@@ -27,7 +27,6 @@ class MetricListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     model = Metric
     template_name = "metrics/metric_list.html"
     context_object_name = "metrics"
-    permission_required = "metrics.view_metric"
 
     test_types = {
         Metric.UNIT_TESTS_NAME: "unit",
@@ -39,12 +38,17 @@ class MetricListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     }
 
     def test_func(self) -> bool:
-        """Check if the current user is an admin.
+        """Check if the current user is an admin with the required permission.
 
         Returns:
-            True if the user belongs to the "Admin" group, False otherwise.
+            True if the user belongs to the "Admin" group and has the
+            view_metric permission, False otherwise.
         """
-        return self.request.user.groups.filter(name="Admin").exists()
+        user = self.request.user
+        return (
+            user.has_perm("metrics.view_metric")
+            and user.groups.filter(name="Admin").exists()
+        )
 
     def get_queryset(self) -> QuerySet[Metric]:
         """Get the queryset of latest metrics for the current user.
@@ -74,7 +78,7 @@ class MetricListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
                 - data: Data quality test metric (if available)
                 - wumpus: Wumpus test metric (if available)
                 - coverage: Test coverage metric (if available)
-                - coverage_repot: Coverage report metric (if available)
+                - coverage_report: Coverage report metric (if available)
                 - test_results_json: JSON string of all test results for React
         """
         context = super().get_context_data(**kwargs)
@@ -93,7 +97,7 @@ class MetricListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
                 if test_type:
                     context[test_type] = metric
                 if metric.name == Metric.COVERAGE_METRIC_NAME:
-                    metric.latest_result["line_rate"] = int(round(float(metric.latest_result["line_rate"]) * 100, 0))  # type: ignore[attr-defined]
+                    metric.coverage_line_rate_pct = int(round(float(metric.latest_result["line_rate"]) * 100, 0))  # type: ignore[attr-defined]
 
         # Build JSON data for React component
         test_results = self._build_test_results_json(context)
@@ -139,7 +143,7 @@ class MetricListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
                     "test_runtime": "",
                 }
             return {
-                "line_rate": metric.latest_result.get("line_rate", 0),  # type: ignore[attr-defined]
+                "line_rate": getattr(metric, "coverage_line_rate_pct", metric.latest_result.get("line_rate", 0)),  # type: ignore[attr-defined]
                 "test_overdue": getattr(metric, "overdue", False),
                 "test_runtime": timezone.localtime(metric.created).strftime("%b %d, %Y, %I:%M %p") if metric.created else "",  # type: ignore[attr-defined]
             }
