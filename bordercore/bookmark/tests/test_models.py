@@ -7,7 +7,7 @@ pytestmark = [pytest.mark.django_db]
 
 
 def test_get_tags(bookmark):
-
+    """Bookmark returns comma-separated tag names."""
     tags = bookmark[0].get_tags()
     assert tags == "django, video"
 
@@ -16,24 +16,24 @@ def test_get_tags(bookmark):
 
 
 def test_bookmark_delete_tag(bookmark):
-
+    """Deleting a tag removes it from the bookmark."""
     bookmark[0].delete_tag(bookmark[0].tags.first())
     updated_bookmark = Bookmark.objects.get(uuid=bookmark[0].uuid)
     assert updated_bookmark.tags.count() == 1
 
 
 def test_bookmark_thumbnail_url_static(bookmark):
-
+    """Static thumbnail URL returns the small PNG variant."""
     assert Bookmark.thumbnail_url_static(bookmark[0].uuid, bookmark[0].url) == f"https://blobs.bordercore.com/bookmarks/{bookmark[0].uuid}-small.png"
 
 
 def test_bookmark_thumbnail_url(bookmark):
-
+    """Thumbnail URL property returns the correct path."""
     assert bookmark[0].thumbnail_url == f"https://blobs.bordercore.com/bookmarks/{bookmark[0].uuid}-small.png"
 
 
 def test_get_favicon_img_tag(monkeypatch_bookmark):
-
+    """Favicon img tag is generated from the bookmark URL domain."""
     bookmark = BookmarkFactory(url="https://www.bordercore.com")
 
     url = bookmark.get_favicon_img_tag()
@@ -53,7 +53,7 @@ def test_get_favicon_img_tag(monkeypatch_bookmark):
 
 
 def test_related_nodes(monkeypatch_bookmark, node):
-
+    """Related nodes returns nodes containing collections with this bookmark."""
     bookmark = BookmarkFactory(user=node.user)
     collection = node.add_collection()
     collection.add_object(bookmark)

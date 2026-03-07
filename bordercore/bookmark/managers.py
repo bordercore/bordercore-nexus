@@ -81,12 +81,15 @@ class BookmarkManager(models.Manager["Bookmark"]):
         return qs
 
     def total_count(self, user: User) -> int:
+        """Return the total number of bookmarks for a user."""
         return self.filter(user=user).count()
 
     def broken_count(self, user: User) -> int:
+        """Return the number of bookmarks with HTTP error response codes."""
         return self.filter(user=user, last_response_code__gte=400).count()
 
     def top_domain(self, user: User) -> str | None:
+        """Return the most frequently bookmarked domain for a user."""
         result = (
             self.filter(user=user)
             .annotate(hostname=RawSQL("substring(url from '://([^/]*)')", []))

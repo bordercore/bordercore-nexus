@@ -34,6 +34,7 @@ from .managers import BookmarkManager
 
 log = logging.getLogger(f"bordercore.{__name__}")
 IMPORTANCE_HIGH = 10
+FAVICON_URL_RE = re.compile("https?://([^/]*)")
 
 
 class DailyBookmarkJSONField(JSONField):
@@ -238,7 +239,7 @@ class Bookmark(TimeStampedModel):
             # Store the video duration
             try:
                 duration = video_info["items"][0]["contentDetails"]["duration"]
-                duration_secs = isodate.parse_duration(duration).seconds
+                duration_secs = int(isodate.parse_duration(duration).total_seconds())
                 if self.data:
                     self.data["video_duration"] = duration_secs
                 else:
@@ -368,9 +369,7 @@ class Bookmark(TimeStampedModel):
         if not url:
             return None
 
-        p = re.compile("https?://([^/]*)")
-
-        m = p.match(url)
+        m = FAVICON_URL_RE.match(url)
 
         if m:
             domain = m.group(1)
@@ -469,8 +468,9 @@ def tags_changed(sender: type[Bookmark], **kwargs: Any) -> None:
         bookmark = kwargs["instance"]
 
         for tag_id in kwargs["pk_set"]:
-            tb = TagBookmark(tag=Tag.objects.get(pk=tag_id), bookmark=bookmark)
-            tb.save()
+            TagBookmark.objects.get_or_create(
+                tag=Tag.objects.get(pk=tag_id), bookmark=bookmark
+            )
 
 
 m2m_changed.connect(tags_changed, sender=Bookmark.tags.through)

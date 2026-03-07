@@ -5,9 +5,11 @@ editing, deleting, importing, and organizing bookmarks with tags.
 """
 import datetime
 import html
+import ipaddress
 import re
+import socket
 from typing import TYPE_CHECKING, Any, cast
-from urllib.parse import unquote
+from urllib.parse import unquote, urlparse
 
 import pytz
 
@@ -120,7 +122,7 @@ class BookmarkFormValidMixin(ModelFormMixin):
         return super().form_valid(form)
 
 
-class BookmarkUpdateView(FormRequestMixin, BookmarkFormValidMixin, UpdateView):
+class BookmarkUpdateView(LoginRequiredMixin, FormRequestMixin, BookmarkFormValidMixin, UpdateView):
     """View for updating an existing bookmark.
 
     Handles editing of bookmarks, including updating tags and related
@@ -229,8 +231,11 @@ def snarf_link(request: HttpRequest) -> HttpResponseRedirect:
     Returns:
         Redirect to the bookmark's update page.
     """
-    url = request.GET["url"]
-    name = html.unescape(request.GET["name"])
+    url = request.GET.get("url")
+    name = request.GET.get("name")
+    if not url or not name:
+        return redirect("bookmark:overview")
+    name = html.unescape(name)
 
     user = cast(User, request.user)
 
@@ -418,7 +423,7 @@ class BookmarkListView(APIView):
                     "last_response_code": x.last_response_code,
                     "note": x.note,
                     "favicon_url": x.get_favicon_img_tag(size=16),
-                    "tags": [x.name for x in x.tags.all()],
+                    "tags": [tag.name for tag in x.tags.all()],
                     "thumbnail_url": x.thumbnail_url,
                     "video_duration": x.video_duration
                 }
@@ -525,26 +530,25 @@ def sort_pinned_tags(request: HttpRequest) -> Response:
             - message: Error message if status is "ERROR"
     """
     tag_id = request.POST["tag_id"]
-    new_position = int(request.POST["new_position"])
+
+    try:
+        new_position = int(request.POST["new_position"])
+    except (TypeError, ValueError):
+        return Response({"status": "ERROR", "message": "Invalid position value"}, status=400)
 
     if new_position < 1:
+        return Response(
+            {"status": "ERROR", "message": f"Position cannot be < 1: {new_position}"},
+            status=400,
+        )
 
-        response = {
-            "status": "ERROR",
-            "message": f"Position cannot be < 1: {new_position}"
-        }
+    user = cast(User, request.user)
+    tag = get_user_object_or_404(user, Tag, id=tag_id)
 
-    else:
+    s = get_object_or_404(UserTag, userprofile=user.userprofile, tag=tag)
+    UserTag.reorder(s, new_position)
 
-        user = cast(User, request.user)
-        tag = get_user_object_or_404(user, Tag, id=tag_id)
-
-        s = get_object_or_404(UserTag, userprofile=user.userprofile, tag=tag)
-        UserTag.reorder(s, new_position)
-
-        response = {"status": "OK"}
-
-    return Response(response, status=400 if new_position < 1 else 200)
+    return Response({"status": "OK"})
 
 
 @api_view(["POST"])
@@ -566,7 +570,11 @@ def sort_bookmarks(request: HttpRequest) -> Response:
     """
     tag_name = request.POST["tag"]
     bookmark_uuid = request.POST["bookmark_uuid"]
-    new_position = int(request.POST["position"])
+
+    try:
+        new_position = int(request.POST["position"])
+    except (TypeError, ValueError):
+        return Response({"status": "ERROR", "message": "Invalid position value"}, status=400)
 
     user = cast(User, request.user)
     tb = get_object_or_404(TagBookmark, tag__name=tag_name, tag__user=user, bookmark__uuid=bookmark_uuid, bookmark__user=user)
@@ -654,7 +662,23 @@ def get_title_from_url(request: HttpRequest) -> Response:
             - status: "OK"
             - title: The extracted title from the page
     """
-    url = unquote(request.GET["url"])
+    url = unquote(request.GET.get("url", ""))
+    if not url:
+        return Response({"status": "ERROR", "message": "URL parameter is required"}, status=400)
+
+    parsed = urlparse(url)
+    if parsed.scheme not in {"http", "https"}:
+        return Response({"status": "ERROR", "message": "Invalid URL scheme"}, status=400)
+
+    hostname = parsed.hostname
+    if hostname:
+        try:
+            ip = socket.gethostbyname(hostname)
+            ip_obj = ipaddress.ip_address(ip)
+            if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local or ip_obj.is_reserved:
+                return Response({"status": "ERROR", "message": "Access to private/internal IPs is not allowed"}, status=400)
+        except (socket.gaierror, ValueError):
+            pass
 
     title = parse_title_from_url(url)
 

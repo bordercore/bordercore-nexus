@@ -6,7 +6,7 @@ pytestmark = [pytest.mark.django_db]
 
 
 def test_get_recent_bookmarks(authenticated_client, bookmark):
-
+    """Recent bookmarks returns the 5 most recent bookmarks for the user."""
     user, _ = authenticated_client()
 
     results = get_recent_bookmarks(user)
