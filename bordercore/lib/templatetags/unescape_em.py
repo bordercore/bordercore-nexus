@@ -6,6 +6,8 @@ Elasticsearch, which surrounds matched terms in escaped <em> tags.
 """
 
 from django import template
+from django.utils.html import escape
+from django.utils.safestring import mark_safe
 
 register = template.Library()
 
@@ -14,15 +16,17 @@ register = template.Library()
 def unescape_em(text: str) -> str:
     """Unescape HTML-encoded <em> tags in text.
 
-    Converts HTML-encoded <em> tags (e.g., "&lt;em&gt;") back to regular
-    HTML tags (e.g., "<em>"). This is typically used to display highlighted
-    search results from Elasticsearch, which surrounds matched terms in
-    escaped <em> tags.
+    Escapes all HTML first to prevent XSS, then selectively unescapes
+    only ``<em>`` and ``</em>`` tags. This is typically used to display
+    highlighted search results from Elasticsearch, which surrounds
+    matched terms in escaped <em> tags.
 
     Args:
         text: String containing HTML-encoded <em> tags.
 
     Returns:
-        String with <em> tags unescaped and ready for HTML rendering.
+        SafeString with only <em> tags unescaped, safe for HTML rendering.
     """
-    return text.replace("&lt;em&gt;", "<em>").replace("&lt;/em&gt;", "</em>")
+    escaped = escape(text)
+    result = escaped.replace("&amp;lt;em&amp;gt;", "<em>").replace("&amp;lt;/em&amp;gt;", "</em>")
+    return mark_safe(result)

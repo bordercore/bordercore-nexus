@@ -1,4 +1,4 @@
-# pylint: disable=missing-function-docstring,missing-class-docstring,missing-module-docstring
+# pylint: disable=missing-class-docstring,missing-module-docstring
 
 import pytest
 
@@ -15,6 +15,7 @@ pytestmark = [pytest.mark.django_db]
 
 
 def test_get_missing_blob_ids(authenticated_client):
+    """Test that get_missing_blob_ids identifies blob UUIDs missing from search results."""
 
     user, _ = authenticated_client()
 
@@ -79,6 +80,7 @@ def test_get_missing_blob_ids(authenticated_client):
 
 
 def test_get_missing_bookmark_ids(authenticated_client, monkeypatch):
+    """Test that get_missing_bookmark_ids identifies bookmark UUIDs missing from search results."""
 
     user, _ = authenticated_client()
 
@@ -152,6 +154,7 @@ def test_get_missing_bookmark_ids(authenticated_client, monkeypatch):
 
 
 def test_truncate():
+    """Test that truncate shortens strings to the specified limit with ellipsis."""
 
     string = "foobar"
     assert truncate(string) == "foobar"
@@ -181,6 +184,7 @@ def test_truncate():
 
 
 def test_remove_non_ascii_characters():
+    """Test that remove_non_ascii_characters strips non-ASCII characters from strings."""
 
     string = "foobar"
     assert remove_non_ascii_characters(string) == string
@@ -201,6 +205,7 @@ def test_remove_non_ascii_characters():
 
 
 def test_util_is_image():
+    """Test that is_image correctly identifies image file extensions."""
 
     file = "path/to/file.png"
     assert is_image(file) is True
@@ -228,6 +233,7 @@ def test_util_is_image():
 
 
 def test_util_is_pdf():
+    """Test that is_pdf correctly identifies PDF file extensions."""
 
     file = "path/to/file.pdf"
     assert is_pdf(file) is True
@@ -243,6 +249,7 @@ def test_util_is_pdf():
 
 
 def test_util_is_video():
+    """Test that is_video correctly identifies video file extensions."""
 
     file = "path/to/file.mp4"
     assert is_video(file) is True
@@ -258,6 +265,7 @@ def test_util_is_video():
 
 
 def test_util_is_audio():
+    """Test that is_audio correctly identifies audio file extensions."""
 
     file = "path/to/file.mp3"
     assert is_audio(file) is True
@@ -273,6 +281,7 @@ def test_util_is_audio():
 
 
 def test_get_pagination_range():
+    """Test that get_pagination_range returns the correct page number window."""
 
     x = get_pagination_range(1, 60, 2)
     assert x == [1, 2, 3, 4, 5]
@@ -322,6 +331,7 @@ def test_get_pagination_range():
 
 
 def test_favicon_url():
+    """Test that favicon_url generates correct favicon image tags from URLs."""
 
     # Test normal multi-component domain
     result = favicon_url("https://www.example.com/page")
@@ -358,6 +368,7 @@ def test_favicon_url():
 
 
 def test_get_field(authenticated_client):
+    """Test that get_field retrieves field values from both model instances and dicts."""
 
     user, _ = authenticated_client()
 

@@ -32,6 +32,20 @@ JUST_NOW_THRESHOLD_SECONDS = 10
 TWO_MINUTES_SECONDS = 120
 TWO_HOURS_SECONDS = 7200
 
+# Pre-compiled patterns for get_date_from_pattern
+_RE_DATE_FULL = re.compile(r'^\d{4}-\d{2}-\d{2}$')
+_RE_DATE_MONTH = re.compile(r'^\d{4}-\d{2}$')
+_RE_DATE_YEAR = re.compile(r'^\d{4}$')
+_RE_DATE_DATETIME_T = re.compile(r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}')
+_RE_DATE_DATETIME_SPACE = re.compile(r'^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}')
+_RE_DATE_RANGE = re.compile(r'^\[([-\d]*) TO ([-\d]*)\]$')
+
+# Pre-compiled patterns for convert_seconds
+_RE_LEADING_ZEROS = re.compile(r"00:0?(\d{1,2}:\d{2})")
+
+# Pre-compiled patterns for parse_date_from_string
+_RE_ORDINAL_SUFFIX = re.compile(r"(\d+)(?:nd|rd|st|th)")
+
 
 def cleanup(interval: float | int, time_unit: str) -> str:
     """Format a time interval as a human-readable string.
@@ -169,17 +183,17 @@ def get_date_from_pattern(pattern: dict[str, str | None] | None) -> str | None:
     if date is None:
         return None
 
-    if re.compile(r'^\d{4}-\d{2}-\d{2}$').match(date):
+    if _RE_DATE_FULL.match(date):
         return datetime.datetime.strptime(date, '%Y-%m-%d').strftime('%B %d, %Y')
-    if re.compile(r'^\d{4}-\d{2}$').match(date):
+    if _RE_DATE_MONTH.match(date):
         return datetime.datetime.strptime(date, '%Y-%m').strftime('%B %Y')
-    if re.compile(r'^\d{4}$').match(date):
+    if _RE_DATE_YEAR.match(date):
         return date
-    if re.compile(r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}').match(date):
+    if _RE_DATE_DATETIME_T.match(date):
         return datetime.datetime.strptime(date, '%Y-%m-%dT%H:%M:%S').strftime('%B %d, %Y')
-    if re.compile(r'^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}').match(date):
+    if _RE_DATE_DATETIME_SPACE.match(date):
         return datetime.datetime.strptime(date, '%Y-%m-%d %H:%M:%S').strftime('%B %d, %Y')
-    matches = re.compile(r'^\[([-\d]*) TO ([-\d]*)\]$').match(date)
+    matches = _RE_DATE_RANGE.match(date)
     if matches:
         return f"{matches.group(1)} to {matches.group(2)}"
 
@@ -200,14 +214,13 @@ def convert_seconds(seconds: int | float | None) -> str:
         A formatted time string (e.g., "05:39", "1:23:45"), or "N/A" if seconds
         is None or falsy.
     """
-    if not seconds:
+    if seconds is None:
         return "N/A"
 
     time_string = time.strftime("%H:%M:%S", time.gmtime(seconds))
 
     # Ignore any leading '0's
-    pattern = re.compile(r"00:0?(\d{1,2}:\d{2})")
-    matches = pattern.match(time_string)
+    matches = _RE_LEADING_ZEROS.match(time_string)
 
     if matches:
         return matches.group(1)
@@ -300,28 +313,11 @@ def parse_date_from_string(input_date: str) -> str:
     Raises:
         ValueError: If the input date format is not recognized.
     """
-    # The order of these regexes is important!
-    # We need 'Feb' to match before 'February', for example, so that the
-    #  right 'parse_date_' function is called
-
-    pdict: dict[str, Callable[..., datetime.datetime]] = {
-        # 01/01/99
-        r"(\d+)/(\d+)/(\d{2})$": parse_date_format_1,
-        # 01/01/1999
-        r"(\d+)/(\d+)/(\d{4})$": parse_date_format_2,
-        # Jan 1, 1999
-        r"(\w\w\w)\.?\s+(\d+),?\s+(\d+)$": parse_date_format_3,
-        # January 1, 1999
-        r"(\w+)\.?\s+(\d+),?\s+(\d+)$": parse_date_format_4,
-        # 1999-01-01
-        r"(\d{4})-(\d+)-(\d+)$": parse_date_format_5,
-    }
-
     # Remove extraneous characters
     # eg "August 12th, 2001" becomes "August 12, 2001"
-    input_date = re.sub(r"(\d+)(?:nd|rd|st|th)", r"\1", input_date)
-    for key, value in pdict.items():
-        m = re.compile(key).match(input_date)
+    input_date = _RE_ORDINAL_SUFFIX.sub(r"\1", input_date)
+    for pattern, value in _PARSE_DATE_PATTERNS:
+        m = pattern.match(input_date)
         if m:
             # Add hour and minute to force JavaScript to use localtime rather than UTC
             # parse_date_format_1 and parse_date_format_2 don't need the matcher
@@ -330,6 +326,23 @@ def parse_date_from_string(input_date: str) -> str:
             return value(input_date, m).strftime("%Y-%m-%dT00:00")
 
     raise ValueError(f"Unknown date format: {input_date}")
+
+
+# The order of these patterns is important!
+# We need 'Feb' (3-char) to match before 'February' (full word), so that
+# the right parse_date_ function is called.
+_PARSE_DATE_PATTERNS: list[tuple[re.Pattern[str], Callable[..., datetime.datetime]]] = [
+    # 01/01/99
+    (re.compile(r"(\d+)/(\d+)/(\d{2})$"), parse_date_format_1),
+    # 01/01/1999
+    (re.compile(r"(\d+)/(\d+)/(\d{4})$"), parse_date_format_2),
+    # Jan 1, 1999
+    (re.compile(r"(\w\w\w)\.?\s+(\d+),?\s+(\d+)$"), parse_date_format_3),
+    # January 1, 1999
+    (re.compile(r"(\w+)\.?\s+(\d+),?\s+(\d+)$"), parse_date_format_4),
+    # 1999-01-01
+    (re.compile(r"(\d{4})-(\d+)-(\d+)$"), parse_date_format_5),
+]
 
 
 def get_javascript_date(date: str) -> str:
@@ -347,9 +360,9 @@ def get_javascript_date(date: str) -> str:
         A sanitized date string with "T00:00" appended (e.g., "2023-01-15T00:00"),
         or the original string if it's a year-only format (e.g., "2023").
     """
-    if re.compile(r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}").match(date):
+    if _RE_DATE_DATETIME_SPACE.match(date):
         # If the date has a time, remove it. Datepicker widgets reject dates with times.
         return datetime.datetime.strptime(date, "%Y-%m-%d %H:%M:%S").strftime("%Y-%m-%dT00:00")
-    if re.compile(r"^\d{4}$").match(date):
+    if _RE_DATE_YEAR.match(date):
         return date
     return date + "T00:00"

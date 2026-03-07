@@ -217,7 +217,7 @@ class SortOrderMixin(models.Model):
                 )
 
             self.sort_order = new_order
-            self.save()
+            super().save(update_fields=["sort_order"])
 
     def get_queryset(self) -> QuerySet[models.Model]:
         """Get the queryset for this model class.

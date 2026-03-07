@@ -11,7 +11,7 @@ register = template.Library()
 
 
 @register.filter(name="title_custom")
-def object_attrib(name: str) -> str:
+def title_custom(name: str) -> str:
     """Convert a snake_case string to Title Case with spaces.
 
     Converts underscores to spaces and applies title case formatting.
@@ -23,4 +23,4 @@ def object_attrib(name: str) -> str:
     Returns:
         Title Case string with underscores replaced by spaces.
     """
-    return name.title().replace("_", " ")
+    return name.replace("_", " ").title()

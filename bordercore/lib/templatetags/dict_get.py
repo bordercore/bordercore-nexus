@@ -12,14 +12,14 @@ register = template.Library()
 
 
 @register.filter(name="dict_get")
-def object_attrib(dict: dict[str, Any], key: str) -> Any:
+def dict_get(d: dict[str, Any], key: str) -> Any:
     """Retrieve a value from a dictionary by key.
 
     Args:
-        dict: Dictionary to search for the key.
+        d: Dictionary to search for the key.
         key: Key to look up in the dictionary.
 
     Returns:
         The value associated with the key, or None if the key doesn't exist.
     """
-    return dict.get(key)
+    return d.get(key)

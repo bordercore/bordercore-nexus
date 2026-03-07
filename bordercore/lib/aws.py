@@ -211,6 +211,16 @@ def s3_put_object(
 # SNS
 # ---------------------------------------------------------------------------
 
+_sns_client = None
+
+
+def _get_sns_client() -> Any:
+    global _sns_client
+    if _sns_client is None:
+        _sns_client = boto3.client("sns")
+    return _sns_client
+
+
 def sns_publish(topic_arn: str, message: dict[str, Any]) -> None:
     """Publish a JSON-serialised message to an SNS topic.
 
@@ -218,13 +228,22 @@ def sns_publish(topic_arn: str, message: dict[str, Any]) -> None:
         topic_arn: The ARN of the SNS topic to publish to.
         message: Dictionary payload that will be JSON-serialised.
     """
-    client = boto3.client("sns")
-    client.publish(TopicArn=topic_arn, Message=json.dumps(message))
+    _get_sns_client().publish(TopicArn=topic_arn, Message=json.dumps(message))
 
 
 # ---------------------------------------------------------------------------
 # Lambda
 # ---------------------------------------------------------------------------
+
+_lambda_client = None
+
+
+def _get_lambda_client() -> Any:
+    global _lambda_client
+    if _lambda_client is None:
+        _lambda_client = boto3.client("lambda")
+    return _lambda_client
+
 
 def lambda_invoke_async(function_name: str, payload: dict[str, Any]) -> None:
     """Invoke a Lambda function asynchronously (fire-and-forget).
@@ -234,8 +253,7 @@ def lambda_invoke_async(function_name: str, payload: dict[str, Any]) -> None:
         payload: Dictionary payload that will be JSON-serialised and sent
             to the function.
     """
-    client = boto3.client("lambda")
-    client.invoke(
+    _get_lambda_client().invoke(
         FunctionName=function_name,
         InvocationType="Event",
         Payload=json.dumps(payload),

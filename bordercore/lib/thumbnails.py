@@ -103,20 +103,26 @@ def create_thumbnail_from_video(infile: str, output_base: str) -> None:
     """
     thumbnail_filename = f"{output_base}-cover-large.jpg"
 
-    subprocess.run(
-        [
-            "/usr/local/bin/ffmpeg",
-            "-ss",
-            "00:00:01",
-            "-i",
-            infile,
-            "-vframes",
-            "1",
-            "-q:v",
-            "2",
-            thumbnail_filename
-        ]
-    )
+    try:
+        subprocess.run(
+            [
+                "/usr/local/bin/ffmpeg",
+                "-ss",
+                "00:00:01",
+                "-i",
+                infile,
+                "-vframes",
+                "1",
+                "-q:v",
+                "2",
+                thumbnail_filename
+            ],
+            check=True,
+            capture_output=True,
+        )
+    except subprocess.CalledProcessError as err:
+        log.error("ffmpeg failed for %s; returncode=%s, stderr=%s", infile, err.returncode, err.stderr)
+        return
 
     create_small_cover_image(thumbnail_filename, output_base)
 

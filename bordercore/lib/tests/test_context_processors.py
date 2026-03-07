@@ -3,6 +3,7 @@ from lib.context_processors import (convert_django_to_bootstrap,
 
 
 def test_convert_django_to_bootstrap():
+    """Test that Django message tags are correctly mapped to Bootstrap alert classes."""
 
     assert convert_django_to_bootstrap("error") == "danger"
     assert convert_django_to_bootstrap("error noAutoHide") == "danger"
@@ -14,6 +15,7 @@ def test_convert_django_to_bootstrap():
 
 
 def test_has_no_autohide_tag():
+    """Test that the noAutoHide tag is correctly detected in message tag strings."""
 
     assert has_no_autohide_tag("noAutoHide") is True
     assert has_no_autohide_tag("noAutoHide info") is True

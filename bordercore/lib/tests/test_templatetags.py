@@ -4,6 +4,7 @@ from lib.templatetags.unescape_em import unescape_em
 
 
 def test_domain():
+    """Test that the domain template filter extracts the domain from a URL."""
 
     assert domain("") == ""
 
@@ -12,6 +13,7 @@ def test_domain():
 
 
 def test_favicon():
+    """Test that the favicon template filter generates correct favicon img tags."""
 
     assert favicon("") == ""
 
@@ -21,5 +23,6 @@ def test_favicon():
 
 
 def test_unescape_em():
+    """Test that the unescape_em filter converts escaped em tags back to HTML."""
 
     assert unescape_em("&lt;em&gt;Match&lt;/em&gt;") == "<em>Match</em>"

@@ -12,6 +12,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 import requests
+from django.utils.html import format_html
 
 ELASTICSEARCH_TIMEOUT = 20
 
@@ -376,7 +377,10 @@ def favicon_url(url: str | None, size: int = 32) -> str:
         # Multi-component domain: strip the first component (www.example.com -> example.com)
         domain = ".".join(parts[1:])
 
-    return f"<img src=\"https://www.bordercore.com/favicons/{domain}.ico\" width=\"{size}\" height=\"{size}\" />"
+    return format_html(
+        '<img src="https://www.bordercore.com/favicons/{}.ico" width="{}" height="{}" />',
+        domain, size, size
+    )
 
 
 def get_field(obj: dict[str, Any] | Any, field_name: str) -> Any:

@@ -80,6 +80,10 @@ def extract_text(request: Request) -> JsonResponse:
 
     # Security: Block private/internal IPs to prevent SSRF attacks against
     # internal services (localhost, private networks, etc.)
+    # Note: This check is not fully resistant to DNS rebinding attacks —
+    # the hostname is resolved here for validation, but requests.get()
+    # resolves it again independently. A sophisticated attacker could
+    # return a public IP on the first lookup and 127.0.0.1 on the second.
     hostname = parsed.hostname
     if hostname:
         try:

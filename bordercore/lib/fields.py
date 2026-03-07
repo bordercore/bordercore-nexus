@@ -82,9 +82,7 @@ class ModelCommaSeparatedChoiceField(ModelMultipleChoiceField):
             if self.request is None:
                 raise ValidationError("Request must be provided to ModelCommaSeparatedChoiceField")
             for tag in value:
-                newtag, created = Tag.objects.get_or_create(user=self.request.user, name=tag)
-                if created:
-                    newtag.save()
+                Tag.objects.get_or_create(user=self.request.user, name=tag)
         return super().clean(value)
 
 

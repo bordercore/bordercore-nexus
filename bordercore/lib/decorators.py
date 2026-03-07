@@ -60,7 +60,7 @@ def validate_post_data(*required_fields: str) -> Callable[
                 result of calling the original view function.
             """
             missing_fields = [field for field in required_fields
-                              if not request.POST.get(field)]
+                              if field not in request.POST]
 
             if missing_fields:
                 return JsonResponse(

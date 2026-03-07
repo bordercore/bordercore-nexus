@@ -22,7 +22,7 @@ DEFAULT_LEVEL = "info"
 
 
 @register.filter(name="get_message_level")
-def object_attrib(string: str) -> str:
+def get_message_level(string: str) -> str:
     """Convert a Django message level to a Bootstrap alert level.
 
     Maps Django message levels to Bootstrap alert CSS classes. If the level

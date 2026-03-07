@@ -28,7 +28,7 @@ class AWSSecurityScannerFilter(logging.Filter):
         Returns:
             False if the record is from AWS Security Scanner, True otherwise.
         """
-        if record.request.META.get("HTTP_USER_AGENT", None) == "AWS Security Scanner":
-            return False
-
-        return True
+        request = getattr(record, "request", None)
+        if request is None:
+            return True
+        return request.META.get("HTTP_USER_AGENT") != "AWS Security Scanner"

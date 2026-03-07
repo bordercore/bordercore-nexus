@@ -183,18 +183,19 @@ def get_overdue_tasks(request: HttpRequest) -> dict[str, list[dict[str, Any]]]:
     if not request.user.is_authenticated:
         return {}
 
+    overdue_qs = Todo.objects.filter(user=request.user, due_date__lt=timezone.now())
     tasks = [
         {
             "uuid": x.uuid,
             "name": x.name,
-            "tags": [x.name for x in x.tags.all()]
+            "tags": [tag.name for tag in x.tags.all()]
         }
-        for x in
-        Todo.objects.filter(user=request.user, due_date__lt=timezone.now())
+        for x in overdue_qs
     ]
 
-    # Once retrieved, remove the due dates for all overdue tasks
-    Todo.objects.filter(user=request.user, uuid__in=[x["uuid"] for x in tasks]).update(due_date=None)
+    # Once retrieved, clear the due dates so they don't reappear as overdue
+    if tasks:
+        overdue_qs.update(due_date=None)
 
     return {
         "overdue_tasks": tasks

@@ -1,8 +1,10 @@
+import pytest
+
 from lib.embeddings import batched
 
 
 def test_batched():
-
+    """Test batching an iterable into tuples of specified length."""
     # Normal use case
     result = list(batched("ABCDEFG", 3))
     assert result == [('A', 'B', 'C'), ('D', 'E', 'F'), ('G',)]
@@ -24,13 +26,9 @@ def test_batched():
     assert result == [('A', 'B', 'C')]
 
     # Error case: n is zero
-    try:
-        result = list(batched("ABC", 0))
-    except ValueError as e:
-        assert str(e) == "n must be at least one"
+    with pytest.raises(ValueError, match="n must be at least one"):
+        list(batched("ABC", 0))
 
     # Error case: n is negative
-    try:
-        result = list(batched("ABC", -1))
-    except ValueError as e:
-        assert str(e) == "n must be at least one"
+    with pytest.raises(ValueError, match="n must be at least one"):
+        list(batched("ABC", -1))
