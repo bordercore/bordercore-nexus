@@ -10,14 +10,14 @@ pytestmark = [pytest.mark.django_db]
 
 
 def test_feed_str(authenticated_client, feed):
-
+    """Test that Feed.__str__ returns the feed name."""
     user, _ = authenticated_client()
 
     assert str(feed[0]) == "Hacker News"
 
 
 def test_get_current_feed_id(authenticated_client, feed):
-
+    """Test that get_current_feed_id returns the correct feed for different session states."""
     user, _ = authenticated_client()
 
     session = {}
@@ -35,7 +35,7 @@ def test_get_current_feed_id(authenticated_client, feed):
 
 
 def test_get_first_feed(authenticated_client, feed):
-
+    """Test that get_first_feed returns the first feed ordered by sort order."""
     user, _ = authenticated_client()
 
     assert Feed.get_first_feed(user) == {
@@ -45,7 +45,7 @@ def test_get_first_feed(authenticated_client, feed):
 
 @responses.activate
 def test_update(authenticated_client, feed):
-
+    """Test that update fetches, parses, and stores feed items correctly."""
     user, _ = authenticated_client()
 
     with open(Path(__file__).parent / "resources/rss.xml") as f:

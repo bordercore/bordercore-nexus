@@ -10,7 +10,7 @@ from __future__ import annotations
 import html
 import logging
 import uuid
-from typing import Any, Dict, List, MutableMapping, TypedDict
+from typing import Any, MutableMapping, TypedDict
 
 import feedparser
 import requests
@@ -73,10 +73,10 @@ class Feed(TimeStampedModel):
             requests.HTTPError: If the HTTP response status is not 200.
         """
         r: requests.Response | None = None
-        feed_list: List[Any] = []
+        feed_list: list[Any] = []
 
         try:
-            headers: Dict[str, str] = {"user-agent": USER_AGENT}
+            headers: dict[str, str] = {"user-agent": USER_AGENT}
             r = requests.get(self.url, headers=headers, verify=self.verify_ssl_certificate, timeout=10)
 
             if r.status_code != 200:

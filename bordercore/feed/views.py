@@ -5,10 +5,12 @@ Views for listing, sorting, updating, and validating RSS/Atom feeds.
 from __future__ import annotations
 
 import http.client
+import ipaddress
 import json
+import socket
 from http import HTTPStatus
-from typing import Any, Dict, List, TypedDict, cast
-from urllib.parse import unquote
+from typing import Any, TypedDict, cast
+from urllib.parse import unquote, urlparse
 
 import feedparser
 import requests
@@ -22,7 +24,7 @@ from lib.constants import USER_AGENT
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.db.models import QuerySet
-from django.http import HttpRequest, JsonResponse
+from django.http import HttpRequest
 from django.shortcuts import get_object_or_404
 from django.views.generic.list import ListView
 
@@ -48,7 +50,7 @@ class FeedPayload(TypedDict, total=False):
     lastResponse: str | int | None
     homepage: str | None
     url: str
-    feedItems: List[FeedItemPayload]
+    feedItems: list[FeedItemPayload]
 
 
 class FeedListView(LoginRequiredMixin, ListView):
@@ -69,7 +71,7 @@ class FeedListView(LoginRequiredMixin, ListView):
             .prefetch_related("feeditem_set")
         )
 
-    def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         """Build template context with serialized feeds and the active feed.
 
         Args:
@@ -82,7 +84,7 @@ class FeedListView(LoginRequiredMixin, ListView):
 
         context["title"] = "Feed List"
 
-        feed_list: List[FeedPayload] = [
+        feed_list: list[FeedPayload] = [
             {
                 "id": feed.id,
                 "uuid": feed.uuid,
@@ -131,8 +133,11 @@ def sort_feed(request: HttpRequest) -> Response:
     Returns:
         JSON response with operation status.
     """
-    feed_id = int(request.POST.get("feed_id", "").strip())
-    new_position = int(request.POST.get("position", "").strip())
+    try:
+        feed_id = int(request.POST.get("feed_id", "").strip())
+        new_position = int(request.POST.get("position", "").strip())
+    except (TypeError, ValueError):
+        return Response({"status": "ERROR", "message": "Invalid feed_id or position"}, status=400)
 
     user = cast(User, request.user)
     s = get_object_or_404(UserFeed, userprofile=user.userprofile, feed__id=feed_id)
@@ -143,7 +148,7 @@ def sort_feed(request: HttpRequest) -> Response:
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
-def update_feed_list(request: HttpRequest, feed_uuid: str) -> JsonResponse:
+def update_feed_list(request: HttpRequest, feed_uuid: str) -> Response:
     """Trigger a network refresh for a feed and return counts.
 
     Args:
@@ -151,7 +156,7 @@ def update_feed_list(request: HttpRequest, feed_uuid: str) -> JsonResponse:
         feed_uuid: The UUID of the feed to refresh.
 
     Returns:
-        Json response with updated count and status.
+        JSON response with updated count and status.
     """
     # We do not need to filter the feed by a user because this endpoint
     #  is only called by an AWS Lambda function using a service account.
@@ -160,11 +165,9 @@ def update_feed_list(request: HttpRequest, feed_uuid: str) -> JsonResponse:
     try:
         updated_count = feed.update()
     except Exception as e:
-        return JsonResponse({"status": "ERROR", "message": str(e)}, status=HTTPStatus.SERVICE_UNAVAILABLE)
+        return Response({"status": "ERROR", "message": str(e)}, status=HTTPStatus.SERVICE_UNAVAILABLE)
 
-    status: Dict[str, Any] = {"status": "OK", "updated_count": updated_count}
-
-    return JsonResponse(status)
+    return Response({"status": "OK", "updated_count": updated_count})
 
 
 @api_view(["GET"])
@@ -184,13 +187,33 @@ def check_url(request: HttpRequest, url: str) -> Response:
     """
     url = unquote(url)
 
-    headers: Dict[str, str] = {"user-agent": USER_AGENT}
-    r = requests.get(url, headers=headers, timeout=10)
-    if r.status_code != HTTPStatus.OK   :
+    parsed = urlparse(url)
+    if parsed.scheme not in {"http", "https"}:
+        return Response({"status": "ERROR", "message": "Invalid URL scheme"}, status=400)
+
+    hostname = parsed.hostname
+    if hostname:
+        try:
+            ip = socket.gethostbyname(hostname)
+            ip_obj = ipaddress.ip_address(ip)
+            if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local or ip_obj.is_reserved:
+                return Response(
+                    {"status": "ERROR", "message": "Access to private/internal IPs is not allowed"},
+                    status=400,
+                )
+        except (socket.gaierror, ValueError):
+            pass
+
+    try:
+        headers: dict[str, str] = {"user-agent": USER_AGENT}
+        r = requests.get(url, headers=headers, timeout=10)
+    except requests.RequestException as e:
+        return Response({"status": "ERROR", "message": str(e)}, status=400)
+
+    if r.status_code != HTTPStatus.OK:
         return Response({
             "status": "ERROR",
             "status_code": r.status_code,
-            "message": r.text,
         }, status=400)
 
     d: Any = feedparser.parse(r.text)
