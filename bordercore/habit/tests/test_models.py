@@ -46,11 +46,15 @@ def test_habit_is_inactive_past_end_date(habit):
 
 def test_habit_log_str(habit):
 
-    log = HabitLog.objects.filter(habit=habit, completed=True).first()
-    assert "done" in str(log)
+    done_log = HabitLog.objects.create(
+        habit=habit, date=date.today() + timedelta(days=10), completed=True,
+    )
+    assert "done" in str(done_log)
 
-    log = HabitLog.objects.filter(habit=habit, completed=False).first()
-    assert "missed" in str(log)
+    missed_log = HabitLog.objects.create(
+        habit=habit, date=date.today() + timedelta(days=11), completed=False,
+    )
+    assert "missed" in str(missed_log)
 
 
 def test_habit_log_unique_constraint(habit):

@@ -15,7 +15,7 @@ urlpatterns = [
         name="log"
     ),
     path(
-        route="get_habits",
+        route="get_habits/",
         view=views.get_habits,
         name="get_habits"
     ),

@@ -13,7 +13,7 @@ from __future__ import annotations
 import json
 from datetime import date
 from decimal import Decimal, InvalidOperation
-from typing import Any, Dict, cast
+from typing import Any, cast
 
 from rest_framework.decorators import api_view
 from rest_framework.request import Request
@@ -37,7 +37,7 @@ class HabitListView(LoginRequiredMixin, UserScopedQuerysetMixin, ListView):
     template_name = "habit/list.html"
     context_object_name = "habits"
 
-    def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         """Add serialized habit data to template context.
 
         Args:
@@ -65,7 +65,7 @@ class HabitDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView):
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
 
-    def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         """Add serialized habit detail data to template context.
 
         Args:

@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import date
-from typing import Any, Type
+from typing import Any
 
 from django.contrib.auth.models import User
 from django.db import models
@@ -97,11 +97,13 @@ class HabitLog(TimeStampedModel):
         return f"{self.habit.name} - {self.date} ({status})"
 
     class Meta:
-        unique_together = ("habit", "date")
+        constraints = [
+            models.UniqueConstraint(fields=["habit", "date"], name="unique_habit_date"),
+        ]
         ordering = ("-date", "-created")
 
 
-def tags_changed(sender: Type[Habit], **kwargs: Any) -> None:
+def tags_changed(sender: type[Habit], **kwargs: Any) -> None:
     """Handle m2m 'tags' changes by adding/removing TagHabit relations.
 
     Triggered on post_add and post_remove of Habit.tags.
@@ -114,15 +116,14 @@ def tags_changed(sender: Type[Habit], **kwargs: Any) -> None:
         habit = kwargs["instance"]
 
         for tag_id in kwargs["pk_set"]:
-            so = TagHabit(tag=Tag.objects.get(user=habit.user, pk=tag_id), habit=habit)
-            so.save()
+            tag = Tag.objects.get(pk=tag_id)
+            TagHabit.objects.get_or_create(tag=tag, habit=habit)
 
     elif kwargs["action"] == "post_remove":
         habit = kwargs["instance"]
 
         for tag_id in kwargs["pk_set"]:
-            so = TagHabit.objects.get(tag__id=tag_id, habit=habit)
-            so.delete()
+            TagHabit.objects.filter(tag_id=tag_id, habit=habit).delete()
 
 
 m2m_changed.connect(tags_changed, sender=Habit.tags.through)
