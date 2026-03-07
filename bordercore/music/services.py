@@ -7,8 +7,7 @@ and search functionality using Django ORM and Elasticsearch.
 import string
 import zipfile
 from io import BytesIO
-from typing import (Any, Dict, Iterable, List, Optional, Set, Tuple, TypedDict,
-                    Union, cast)
+from typing import Any, Iterable, Optional, TypedDict, Union, cast
 from urllib.parse import unquote
 from uuid import UUID
 
@@ -72,7 +71,7 @@ def get_playlist_counts(user: User) -> QuerySet[Playlist]:
     )
 
 
-def get_playlist_songs(playlist: Playlist) -> Dict[str, Union[List[Dict[str, Any]], int]]:
+def get_playlist_songs(playlist: Playlist) -> dict[str, Union[list[dict[str, Any]], int]]:
     """Get all songs in a playlist with metadata and total playtime.
 
     Retrieves all songs in the specified playlist along with their metadata
@@ -100,7 +99,7 @@ def get_playlist_songs(playlist: Playlist) -> Dict[str, Union[List[Dict[str, Any
         total_time=Coalesce(Sum("song__length"), 0)
     )["total_time"]
 
-    song_list: List[Dict[str, Any]] = [
+    song_list: list[dict[str, Any]] = [
         {
             "playlistitem_uuid": x.uuid,
             "uuid": x.song.uuid,
@@ -122,7 +121,7 @@ def get_playlist_songs(playlist: Playlist) -> Dict[str, Union[List[Dict[str, Any
     }
 
 
-def get_recent_albums(user: User, page_number: int = 1) -> Tuple[List[Dict[str, Any]], Dict[str, Union[int, bool, Optional[int]]]]:
+def get_recent_albums(user: User, page_number: int = 1) -> tuple[list[dict[str, Any]], dict[str, Union[int, bool, Optional[int]]]]:
     """Get paginated recent albums for a user.
 
     Retrieves the most recently created albums for a user with pagination
@@ -164,7 +163,7 @@ def get_recent_albums(user: User, page_number: int = 1) -> Tuple[List[Dict[str, 
     paginator: Paginator = Paginator(query, albums_per_page)
     page: Page = paginator.get_page(page_number)
 
-    paginator_info: Dict[str, Union[int, bool, Optional[int]]] = {
+    paginator_info: dict[str, Union[int, bool, Optional[int]]] = {
         "page_number": page_number,
         "has_next": page.has_next(),
         "has_previous": page.has_previous(),
@@ -173,7 +172,7 @@ def get_recent_albums(user: User, page_number: int = 1) -> Tuple[List[Dict[str, 
         "count": paginator.count
     }
 
-    recent_albums: List[Dict[str, Any]] = [
+    recent_albums: list[dict[str, Any]] = [
         {
             "uuid": x.uuid,
             "title": x.title,
@@ -208,7 +207,7 @@ def get_song_tags(user: User) -> Iterable[TagCount]:
     return cast(Iterable[TagCount], tags_query)
 
 
-def search(user: User, artist_name: str) -> List[Dict[str, str]]:
+def search(user: User, artist_name: str) -> list[dict[str, str]]:
     """Search for artists using Elasticsearch.
 
     Searches for artists in Elasticsearch based on a substring match.
@@ -231,7 +230,7 @@ def search(user: User, artist_name: str) -> List[Dict[str, str]]:
 
     search_term: str = unquote(artist_name.lower())
 
-    search_object: Dict[str, Any] = {
+    search_object: dict[str, Any] = {
         "query": {
             "bool": {
                 "must": [
@@ -270,7 +269,7 @@ def search(user: User, artist_name: str) -> List[Dict[str, str]]:
         "_source": [""]
     }
 
-    results: Dict[str, Any] = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
+    results: dict[str, Any] = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
 
     return [
         {
@@ -282,7 +281,7 @@ def search(user: User, artist_name: str) -> List[Dict[str, str]]:
     ]
 
 
-def get_unique_artist_letters(user: User) -> Set[str]:
+def get_unique_artist_letters(user: User) -> set[str]:
     """Get unique first letters of all artist names for a user.
 
     Retrieves a set of unique first letters from all artist names in the
@@ -300,14 +299,15 @@ def get_unique_artist_letters(user: User) -> Set[str]:
         Artists without albums are excluded from the results to ensure
         only meaningful entries are included.
     """
-    unique_letters: Set[str] = set()
+    ascii_letters = set(string.ascii_lowercase)
+    unique_letters: set[str] = set()
     queryset: QuerySet[Artist] = Artist.objects.filter(user=user) \
                                                .filter(album__isnull=False) \
                                                .distinct("name")
 
     for artist in queryset:
         first_letter: str = artist.name.lower()[0]
-        if first_letter not in list(string.ascii_lowercase):
+        if first_letter not in ascii_letters:
             unique_letters.add("other")
         else:
             unique_letters.add(first_letter)
@@ -315,7 +315,7 @@ def get_unique_artist_letters(user: User) -> Set[str]:
     return unique_letters
 
 
-def get_artist_counts(user: User, letter: str) -> Dict[str, Dict[str, int]]:
+def get_artist_counts(user: User, letter: str) -> dict[str, dict[str, int]]:
     """Get album and song counts for artists starting with a specific letter.
 
     Retrieves count statistics for all artists whose names start with the
@@ -343,12 +343,12 @@ def get_artist_counts(user: User, letter: str) -> Dict[str, Dict[str, int]]:
         .filter(user=user) \
         .annotate(song_count=Count("song"))
 
-    album_counts_dict: Dict[str, int] = {}
+    album_counts_dict: dict[str, int] = {}
     for artist in album_counts:
         # mypy doesn't understand Django's annotate(), so we use getattr with type ignore
         album_counts_dict[str(artist.uuid)] = getattr(artist, "album_count")  # type: ignore[attr-defined]
 
-    song_counts_dict: Dict[str, int] = {}
+    song_counts_dict: dict[str, int] = {}
     for artist in song_counts:
         # mypy doesn't understand Django's annotate(), so we use getattr with type ignore
         song_counts_dict[str(artist.uuid)] = getattr(artist, "song_count")  # type: ignore[attr-defined]
@@ -415,6 +415,9 @@ def create_album_from_zipfile(
     """
     info = scan_zipfile(zipfile_obj, include_song_data=True)
 
+    if not info["song_info"]:
+        raise ValueError("ZIP file contains no MP3 files")
+
     with transaction.atomic():
         artist, _ = Artist.objects.get_or_create(name=artist_name, user=user)
 
@@ -475,10 +478,13 @@ def get_id3_info(song: bytes) -> dict[str, Any]:
     """
     info = MP3(fileobj=BytesIO(song), ID3=EasyID3)
 
-    data = {
+    data: dict[str, Any] = {
         "filesize": humanize.naturalsize(len(song)),
         "bit_rate": info.info.bitrate,
-        "sample_rate": info.info.sample_rate
+        "sample_rate": info.info.sample_rate,
+        "album_name": None,
+        "year": None,
+        "track": None,
     }
 
     for field in ("artist", "title"):

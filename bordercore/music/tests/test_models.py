@@ -11,7 +11,7 @@ pytestmark = [pytest.mark.django_db]
 
 
 def test_listen_to(authenticated_client, song):
-
+    """Test that listen_to increments play count and creates a Listen record."""
     song[0].listen_to()
     song[0].refresh_from_db()
     assert song[0].times_played == 1
@@ -20,7 +20,7 @@ def test_listen_to(authenticated_client, song):
 
 
 def test_get_id3_info(authenticated_client, song):
-
+    """Test extracting ID3 metadata from an MP3 file."""
     song_path = Path(__file__).parent / "resources/Mysterious Lights.mp3"
 
     with open(song_path, "rb") as f:
@@ -38,7 +38,7 @@ def test_get_id3_info(authenticated_client, song):
 
 
 def test_music_playtime():
-
+    """Test album playtime calculation from song lengths."""
     album = AlbumFactory()
     SongFactory.create_batch(10, length=300, album=album)
 
@@ -46,7 +46,7 @@ def test_music_playtime():
 
 
 def test_music_song_url():
-
+    """Test that song URL returns album page or artist page as appropriate."""
     # Test url for a song that's part of an album
     album = AlbumFactory()
     songs = SongFactory.create_batch(10, length=300, album=album)
@@ -60,7 +60,7 @@ def test_music_song_url():
 
 
 def test_music_scan_zipfile():
-
+    """Test scanning a ZIP file to extract MP3 metadata."""
     album_zip = Path(__file__).parent / "resources/test-album.zip"
     in_file = open(album_zip, "rb")
     zipfile_obj = in_file.read()
@@ -91,7 +91,7 @@ def test_music_scan_zipfile():
 
 
 def test_create_album_from_zipfile(s3_resource, s3_bucket, authenticated_client, song_source):
-
+    """Test creating an album from a ZIP file of MP3s."""
     user, _ = authenticated_client()
 
     album_zip = Path(__file__).parent / "resources/test-album.zip"
@@ -137,7 +137,7 @@ def test_create_album_from_zipfile(s3_resource, s3_bucket, authenticated_client,
 
 
 def test_create_album_from_zipfile_with_changes(s3_resource, s3_bucket, authenticated_client, song_source):
-
+    """Test creating an album from ZIP with user-specified title and note changes."""
     user, _ = authenticated_client()
 
     album_zip = Path(__file__).parent / "resources/test-album.zip"

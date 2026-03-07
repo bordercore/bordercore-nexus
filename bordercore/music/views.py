@@ -753,6 +753,7 @@ def search_artists(request: HttpRequest) -> Response:
     return Response(matches)
 
 
+
 class RecentSongsListView(APIView):
     """Return a JSON list of recent songs, optionally filtered by tag."""
 
@@ -824,6 +825,7 @@ def mark_song_as_listened_to(request: Request, song_uuid: str) -> Response:
     song = get_user_object_or_404(request.user, Song, uuid=song_uuid)
     if not settings.DEBUG:
         song.listen_to()
+        song.refresh_from_db(fields=["times_played"])
 
     return Response(
         {
@@ -860,7 +862,7 @@ class SearchTagListView(LoginRequiredMixin, ListView):
         Returns:
             QuerySet of Song objects with the specified tag.
         """
-        tag_name = self.request.GET["tag"]
+        tag_name = self.request.GET.get("tag", "")
         user = cast(User, self.request.user)
 
         return Song.objects.filter(
@@ -895,7 +897,7 @@ class SearchTagListView(LoginRequiredMixin, ListView):
 
         for match in Album.objects.filter(
                 user=user,
-                tags__name=self.request.GET["tag"]
+                tags__name=self.request.GET.get("tag", "")
         ).select_related(
             "artist"
         ).order_by("-year"):
@@ -911,7 +913,7 @@ class SearchTagListView(LoginRequiredMixin, ListView):
 
         return {
             **context,
-            "tag_name": self.request.GET["tag"],
+            "tag_name": self.request.GET.get("tag", ""),
             "song_list": song_list,
             "album_list": album_list,
             # JSON serialized data for React
@@ -920,7 +922,7 @@ class SearchTagListView(LoginRequiredMixin, ListView):
         }
 
 
-class PlaylistDetailView(LoginRequiredMixin, DetailView):
+class PlaylistDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView):
     """Display detailed information about a specific playlist."""
 
     model = Playlist
@@ -998,7 +1000,7 @@ class CreatePlaylistView(LoginRequiredMixin, FormRequestMixin, CreateView):
         return super().form_valid(form)
 
 
-class UpdatePlaylistView(LoginRequiredMixin, FormRequestMixin, UpdateView):
+class UpdatePlaylistView(LoginRequiredMixin, UserScopedQuerysetMixin, FormRequestMixin, UpdateView):
     """Handle updating existing playlists."""
 
     model = Playlist
@@ -1228,7 +1230,10 @@ def sort_playlist(request: HttpRequest) -> Response:
         JSON response with operation status.
     """
     playlistitem_uuid = request.POST.get("playlistitem_uuid", "").strip()
-    new_position = int(request.POST.get("position", "").strip())
+    try:
+        new_position = int(request.POST.get("position", "").strip())
+    except (TypeError, ValueError):
+        return Response({"status": "ERROR", "message": "Invalid position"}, status=400)
 
     with transaction.atomic():
         playlistitem = get_object_or_404(
@@ -1324,6 +1329,10 @@ def update_artist_image(request: HttpRequest) -> Response:
     artist_uuid = request.POST.get("artist_uuid", "").strip()
 
     get_user_object_or_404(request.user, Artist, uuid=artist_uuid)
+
+    if "image" not in request.FILES:
+        return Response({"status": "ERROR", "message": "No image provided"}, status=400)
+
     image = cast(UploadedFile, request.FILES["image"])
 
     upload_artist_image(artist_uuid, image.file)
@@ -1388,7 +1397,9 @@ def missing_artist_images(request: HttpRequest) -> HttpResponse:
         for key in artist_image_keys
     }
 
-    artists = Artist.objects.all(
+    user = cast(User, request.user)
+    artists = Artist.objects.filter(
+        user=user,
     ).exclude(
         album__artist__name="Various"
     ).exclude(
@@ -1442,10 +1453,16 @@ def set_song_rating(request: HttpRequest) -> Response:
     """
     song_uuid = request.POST.get("song_uuid", "").strip()
 
-    if request.POST.get("rating", "").strip() == "":
+    rating_raw = request.POST.get("rating", "").strip()
+    if rating_raw == "":
         rating = None
     else:
-        rating = int(request.POST.get("rating", "").strip())
+        try:
+            rating = int(rating_raw)
+        except (TypeError, ValueError):
+            return Response({"status": "ERROR", "message": "Invalid rating"}, status=400)
+        if rating < 1 or rating > 5:
+            return Response({"status": "ERROR", "message": "Rating must be between 1 and 5"}, status=400)
 
     song = get_user_object_or_404(request.user, Song, uuid=song_uuid)
     song.rating = rating

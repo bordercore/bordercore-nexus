@@ -6,7 +6,9 @@ import pytest
 from django import urls
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db.models import signals
+from django.test import Client
 
+from accounts.tests.factories import TEST_PASSWORD, UserFactory
 from music.models import Album, Playlist, Song
 from music.tests.factories import AlbumFactory, ArtistFactory
 
@@ -15,10 +17,7 @@ pytestmark = [pytest.mark.django_db]
 
 @pytest.fixture
 def monkeypatch_song(monkeypatch):
-    """
-    Prevent the song object from interacting with Elasticsearch by
-    patching out various methods.
-    """
+    """Prevent the song object from interacting with Elasticsearch."""
 
     def mock(*args, **kwargs):
         pass
@@ -26,8 +25,17 @@ def monkeypatch_song(monkeypatch):
     monkeypatch.setattr(Song, "delete", mock)
 
 
-def test_music_list(authenticated_client, song):
+@pytest.fixture
+def other_user_client():
+    """Create a second authenticated user with their own client."""
+    user = UserFactory(username="otheruser")
+    client = Client()
+    client.login(username="otheruser", password=TEST_PASSWORD)
+    return user, client
 
+
+def test_music_list(authenticated_client, song):
+    """Test the main music list page renders successfully."""
     _, client = authenticated_client()
 
     url = urls.reverse("music:list")
@@ -38,7 +46,7 @@ def test_music_list(authenticated_client, song):
 
 @factory.django.mute_signals(signals.post_save)
 def test_music_song_update(authenticated_client, song, song_source):
-
+    """Test updating a song's metadata."""
     _, client = authenticated_client()
 
     # The submitted form
@@ -63,7 +71,7 @@ def test_music_song_update(authenticated_client, song, song_source):
 
 
 def test_music_album_list(authenticated_client, song):
-
+    """Test the album list page renders successfully."""
     _, client = authenticated_client()
 
     url = urls.reverse("music:album_list")
@@ -73,7 +81,7 @@ def test_music_album_list(authenticated_client, song):
 
 
 def test_music_album_detail(authenticated_client, song):
-
+    """Test the album detail page renders successfully."""
     _, client = authenticated_client()
 
     url = urls.reverse("music:album_detail", kwargs={"uuid": song[1].album.uuid})
@@ -83,7 +91,7 @@ def test_music_album_detail(authenticated_client, song):
 
 
 def test_music_album_update(authenticated_client, song):
-
+    """Test updating an album's metadata and tags."""
     _, client = authenticated_client()
 
     url = urls.reverse("music:album_update", kwargs={"uuid": song[1].album.uuid})
@@ -106,7 +114,7 @@ def test_music_album_update(authenticated_client, song):
 
 
 def test_music_artist_detail(authenticated_client, song):
-
+    """Test the artist detail page renders successfully."""
     _, client = authenticated_client()
 
     url = urls.reverse("music:artist_detail", kwargs={"uuid": song[1].artist.uuid})
@@ -117,7 +125,7 @@ def test_music_artist_detail(authenticated_client, song):
 
 @factory.django.mute_signals(signals.post_save)
 def test_music_create(s3_resource, s3_bucket, authenticated_client, song_source):
-
+    """Test creating a new song with file upload."""
     user, client = authenticated_client()
 
     # The empty form
@@ -152,7 +160,7 @@ def test_music_create(s3_resource, s3_bucket, authenticated_client, song_source)
 
 @factory.django.mute_signals(signals.pre_delete)
 def test_music_delete(monkeypatch_song, authenticated_client, song):
-
+    """Test deleting a song."""
     _, client = authenticated_client()
 
     url = urls.reverse("music:delete", kwargs={"uuid": song[0].uuid})
@@ -162,7 +170,7 @@ def test_music_delete(monkeypatch_song, authenticated_client, song):
 
 
 def test_music_recent_songs(authenticated_client, song):
-
+    """Test the recent songs endpoint returns successfully."""
     _, client = authenticated_client()
 
     url = urls.reverse("music:recent_songs")
@@ -172,17 +180,25 @@ def test_music_recent_songs(authenticated_client, song):
 
 
 def test_music_search_tag(authenticated_client, song, tag):
-
+    """Test tag search returns matching songs and albums."""
     _, client = authenticated_client()
 
     url = urls.reverse("music:search_tag")
     resp = client.get(f"{url}?tag={tag[0].name}")
 
     assert resp.status_code == 200
+    assert "songs_json" in resp.context
+    assert "albums_json" in resp.context
+    assert resp.context["tag_name"] == tag[0].name
+
+    # Verify that the tagged song appears in results
+    song_list = resp.context["song_list"]
+    song_uuids = [s["uuid"] for s in song_list]
+    assert str(song[0].uuid) in song_uuids
 
 
 def test_mark_song_as_listened_to(authenticated_client, song):
-
+    """Test marking a song as listened to."""
     _, client = authenticated_client()
 
     url = urls.reverse(
@@ -195,7 +211,7 @@ def test_mark_song_as_listened_to(authenticated_client, song):
 
 
 def test_music_playlist_detail(authenticated_client, playlist):
-
+    """Test the playlist detail page renders successfully."""
     _, client = authenticated_client()
 
     url = urls.reverse("music:playlist_detail", kwargs={"uuid": playlist[0].uuid})
@@ -205,7 +221,7 @@ def test_music_playlist_detail(authenticated_client, playlist):
 
 
 def test_music_playlist_create(authenticated_client, song):
-
+    """Test creating a new playlist."""
     _, client = authenticated_client()
 
     url = urls.reverse("music:playlist_create")
@@ -220,7 +236,7 @@ def test_music_playlist_create(authenticated_client, song):
 
 
 def test_music_playlist_update(authenticated_client, playlist):
-
+    """Test updating a playlist's metadata."""
     _, client = authenticated_client()
 
     url = urls.reverse("music:playlist_update", kwargs={"uuid": playlist[0].uuid})
@@ -239,7 +255,7 @@ def test_music_playlist_update(authenticated_client, playlist):
 
 
 def test_music_playlist_delete(authenticated_client, playlist):
-
+    """Test deleting a playlist."""
     _, client = authenticated_client()
 
     url = urls.reverse("music:delete_playlist", kwargs={"uuid": playlist[0].uuid})
@@ -251,7 +267,7 @@ def test_music_playlist_delete(authenticated_client, playlist):
 
 
 def test_music_get_playlist(authenticated_client, playlist):
-
+    """Test retrieving playlist contents via API."""
     _, client = authenticated_client()
 
     url = urls.reverse("music:get_playlist", kwargs={"playlist_uuid": playlist[0].uuid})
@@ -264,7 +280,7 @@ def test_music_get_playlist(authenticated_client, playlist):
 
 
 def test_music_sort_playlist(authenticated_client, playlist):
-
+    """Test reordering a song within a playlist."""
     _, client = authenticated_client()
 
     url = urls.reverse("music:sort_playlist")
@@ -278,7 +294,7 @@ def test_music_sort_playlist(authenticated_client, playlist):
 
 
 def test_music_search_playlists(authenticated_client, playlist):
-
+    """Test searching playlists by name."""
     _, client = authenticated_client()
 
     url = urls.reverse("music:search_playlists")
@@ -290,7 +306,7 @@ def test_music_search_playlists(authenticated_client, playlist):
 
 
 def test_music_add_to_playlist(authenticated_client, playlist, song):
-
+    """Test adding a song to a playlist."""
     _, client = authenticated_client()
 
     url = urls.reverse("music:add_to_playlist")
@@ -304,7 +320,7 @@ def test_music_add_to_playlist(authenticated_client, playlist, song):
 
 
 def test_music_dupe_song_checker(authenticated_client, song):
-
+    """Test duplicate song detection endpoint."""
     _, client = authenticated_client()
 
     url = urls.reverse("music:dupe_song_checker")
@@ -322,7 +338,7 @@ def test_music_dupe_song_checker(authenticated_client, song):
 
 
 def test_music_recent_albums(authenticated_client):
-
+    """Test paginated recent albums endpoint."""
     user, client = authenticated_client()
 
     artist = ArtistFactory(user=user)
@@ -348,7 +364,7 @@ def test_music_recent_albums(authenticated_client):
 
 
 def test_music_set_song_rating(authenticated_client, song):
-
+    """Test setting a valid song rating."""
     _, client = authenticated_client()
 
     url = urls.reverse("music:set_song_rating")
@@ -362,3 +378,116 @@ def test_music_set_song_rating(authenticated_client, song):
 
     updated_song = Song.objects.get(uuid=song[0].uuid)
     assert updated_song.rating == 3
+
+
+# ---------------------------------------------------------------------------
+# Negative / validation tests for API endpoints
+# ---------------------------------------------------------------------------
+
+
+def test_set_song_rating_invalid_value(authenticated_client, song):
+    """Test that a non-numeric rating returns 400."""
+    _, client = authenticated_client()
+
+    url = urls.reverse("music:set_song_rating")
+    resp = client.post(url, {"song_uuid": song[0].uuid, "rating": "abc"})
+
+    assert resp.status_code == 400
+    assert resp.json()["status"] == "ERROR"
+
+
+def test_set_song_rating_out_of_range(authenticated_client, song):
+    """Test that a rating outside 1-5 returns 400."""
+    _, client = authenticated_client()
+
+    url = urls.reverse("music:set_song_rating")
+
+    resp = client.post(url, {"song_uuid": song[0].uuid, "rating": 0})
+    assert resp.status_code == 400
+
+    resp = client.post(url, {"song_uuid": song[0].uuid, "rating": 6})
+    assert resp.status_code == 400
+
+
+def test_set_song_rating_clear(authenticated_client, song):
+    """Test that an empty rating clears the value to None."""
+    _, client = authenticated_client()
+
+    url = urls.reverse("music:set_song_rating")
+    resp = client.post(url, {"song_uuid": song[0].uuid, "rating": ""})
+
+    assert resp.status_code == 200
+    updated_song = Song.objects.get(uuid=song[0].uuid)
+    assert updated_song.rating is None
+
+
+def test_sort_playlist_invalid_position(authenticated_client, playlist):
+    """Test that a non-numeric position returns 400."""
+    _, client = authenticated_client()
+
+    url = urls.reverse("music:sort_playlist")
+    resp = client.post(url, {
+        "playlistitem_uuid": playlist[0].playlistitem_set.all()[0].uuid,
+        "position": "abc"
+    })
+
+    assert resp.status_code == 400
+    assert resp.json()["status"] == "ERROR"
+
+
+def test_search_tag_without_param(authenticated_client):
+    """Test that the tag search page handles missing tag parameter gracefully."""
+    _, client = authenticated_client()
+
+    url = urls.reverse("music:search_tag")
+    resp = client.get(url)
+
+    assert resp.status_code == 200
+
+
+# ---------------------------------------------------------------------------
+# Authorization / user-scoping tests
+# ---------------------------------------------------------------------------
+
+
+def test_playlist_detail_blocked_for_other_user(authenticated_client, other_user_client, playlist):
+    """Test that a user cannot view another user's playlist."""
+    _, other_client = other_user_client
+
+    url = urls.reverse("music:playlist_detail", kwargs={"uuid": playlist[0].uuid})
+    resp = other_client.get(url)
+
+    assert resp.status_code == 404
+
+
+def test_playlist_update_blocked_for_other_user(authenticated_client, other_user_client, playlist):
+    """Test that a user cannot update another user's playlist."""
+    _, other_client = other_user_client
+
+    url = urls.reverse("music:playlist_update", kwargs={"uuid": playlist[0].uuid})
+    resp = other_client.post(url, {
+        "name": "Hijacked",
+        "type": "manual",
+    })
+
+    assert resp.status_code == 404
+
+
+def test_album_detail_blocked_for_other_user(authenticated_client, other_user_client, song):
+    """Test that a user cannot view another user's album."""
+    _, other_client = other_user_client
+
+    url = urls.reverse("music:album_detail", kwargs={"uuid": song[1].album.uuid})
+    resp = other_client.get(url)
+
+    assert resp.status_code == 404
+
+
+def test_song_update_blocked_for_other_user(authenticated_client, other_user_client, song):
+    """Test that a user cannot update another user's song."""
+    _, other_client = other_user_client
+
+    url = urls.reverse("music:update", kwargs={"uuid": song[1].uuid})
+    resp = other_client.get(url)
+
+    assert resp.status_code == 404

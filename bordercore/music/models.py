@@ -156,8 +156,8 @@ class Album(TimeStampedModel):
         """
         super().save(*args, **kwargs)
 
-        # Index the album in Elasticsearch
-        self.index_album()
+        # Index the album in Elasticsearch after the transaction commits
+        transaction.on_commit(self.index_album)
 
     def delete(
             self,
@@ -244,8 +244,8 @@ class Song(TimeStampedModel):
         """
         super().save(*args, **kwargs)
 
-        # Index the song in Elasticsearch
-        self.index_song()
+        # Index the song in Elasticsearch after the transaction commits
+        transaction.on_commit(self.index_song)
 
     def delete(
             self,

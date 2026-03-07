@@ -15,7 +15,7 @@ from django.forms import (ModelChoiceField, ModelForm, NumberInput, Select,
 from django.forms.fields import BooleanField, CharField, FileField
 from django.http import HttpRequest
 from django.urls import reverse
-from django.utils.safestring import mark_safe
+from django.utils.html import format_html
 
 from lib.fields import ModelCommaSeparatedChoiceField
 from tag.models import Tag
@@ -125,8 +125,9 @@ class SongForm(ModelForm):
             if album.year != self.cleaned_data.get("year"):
                 listen_url: str = reverse("music:album_detail", args=[album.uuid])
                 raise ValidationError(
-                    mark_safe(
-                        f"Error: The <a href='{listen_url}'>same album</a> already exists but with a different year."
+                    format_html(
+                        'Error: The <a href="{}">same album</a> already exists but with a different year.',
+                        listen_url,
                     )
                 )
         except ObjectDoesNotExist:
@@ -342,7 +343,7 @@ class AlbumForm(ModelForm):
         if not self.request:
             return None
 
-        data: str = self.cleaned_data["artist"]
+        data: str = self.cleaned_data["artist"].strip()
         artist: Artist
         artist, _ = Artist.objects.get_or_create(name=data, user=self.request.user)
         return artist

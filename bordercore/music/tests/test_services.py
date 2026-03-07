@@ -11,7 +11,7 @@ faker = FakerFactory.create()
 
 
 def test_get_unique_artist_letters(authenticated_client):
-
+    """Test that unique artist first letters are correctly identified."""
     user, _ = authenticated_client()
 
     artist_1 = ArtistFactory.create(user=user, name="Abba")
