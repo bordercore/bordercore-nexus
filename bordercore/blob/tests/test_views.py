@@ -52,6 +52,7 @@ def monkeypatch_collection(monkeypatch):
 
 
 def test_blob_list(authenticated_client, blob_text_factory):
+    """Test that the blob list view returns 200."""
 
     _, client = authenticated_client()
 
@@ -64,6 +65,7 @@ def test_blob_list(authenticated_client, blob_text_factory):
 
 @factory.django.mute_signals(signals.post_save)
 def test_blob_create(monkeypatch_blob, authenticated_client, blob_text_factory):
+    """Test blob creation via form submission, linked blobs, and file upload."""
 
     _, client = authenticated_client()
 
@@ -143,6 +145,7 @@ def test_blob_create(monkeypatch_blob, authenticated_client, blob_text_factory):
 
 @factory.django.mute_signals(signals.pre_delete)
 def test_blob_delete(monkeypatch_blob, authenticated_client, blob_text_factory):
+    """Test that deleting a blob removes it from the database."""
 
     # Quiet spurious output
     settings.NPLUSONE_WHITELIST = [
@@ -162,6 +165,7 @@ def test_blob_delete(monkeypatch_blob, authenticated_client, blob_text_factory):
 
 @factory.django.mute_signals(signals.post_save)
 def test_blob_update(monkeypatch_blob, authenticated_client, blob_text_factory, blob_pdf_factory):
+    """Test blob update including file change and filename rename."""
 
     _, client = authenticated_client()
 
@@ -241,6 +245,7 @@ def resolved_blob(request):
 # Indirect parametrization to inject fixture values by name (e.g., 'blob_image_factory')
 @pytest.mark.parametrize("resolved_blob", ["blob_image_factory", "blob_text_factory"], indirect=["resolved_blob"])
 def test_blob_detail(authenticated_client, resolved_blob):
+    """Test blob detail view renders for both image and text blobs."""
 
     _, client = authenticated_client()
 
@@ -284,6 +289,7 @@ def test_blob_detail(authenticated_client, resolved_blob):
 
 
 def test_clone(monkeypatch_blob, authenticated_client):
+    """Test that cloning a blob redirects to the new blob's detail page."""
 
     user, client = authenticated_client()
 
@@ -296,6 +302,7 @@ def test_clone(monkeypatch_blob, authenticated_client):
 
 
 def test_handle_metadata(authenticated_client, blob_text_factory, blob_image_factory):
+    """Test that handle_metadata creates and replaces metadata entries."""
 
     user, client = authenticated_client()
 
@@ -341,6 +348,7 @@ def test_handle_metadata(authenticated_client, blob_text_factory, blob_image_fac
 
 
 def test_handle_linked_collection(monkeypatch_collection, authenticated_client, blob_image_factory):
+    """Test that handle_linked_collection adds a blob to a collection."""
 
     user, client = authenticated_client()
 
@@ -360,6 +368,7 @@ def test_handle_linked_collection(monkeypatch_collection, authenticated_client, 
 
 
 def test_blob_metadata_name_search(authenticated_client, blob_image_factory):
+    """Test that metadata name search returns 200."""
 
     _, client = authenticated_client()
 
@@ -370,6 +379,7 @@ def test_blob_metadata_name_search(authenticated_client, blob_image_factory):
 
 
 def test_blob_parse_date(authenticated_client):
+    """Test date parsing for valid and invalid date strings."""
 
     _, client = authenticated_client()
 
@@ -386,6 +396,7 @@ def test_blob_parse_date(authenticated_client):
 
 
 def test_blob_update_cover_image(s3_resource, s3_bucket, authenticated_client):
+    """Test updating a blob's cover image via the API."""
 
     user, client = authenticated_client()
 
@@ -449,6 +460,7 @@ def test_get_elasticsearch_info(mock_get_info, authenticated_client):
 
 
 def test_related_objects(authenticated_client):
+    """Test that related objects are returned for a blob."""
 
     # Quiet spurious output
     settings.NPLUSONE_WHITELIST = [
@@ -477,6 +489,7 @@ def test_related_objects(authenticated_client):
 
 
 def test_blob_add_related_object(authenticated_client):
+    """Test adding a related object to a blob."""
 
     user, client = authenticated_client()
 
@@ -498,6 +511,7 @@ def test_blob_add_related_object(authenticated_client):
 
 
 def test_blob_remove_related_object(authenticated_client):
+    """Test removing a related object from a blob."""
 
     user, client = authenticated_client()
 
@@ -520,6 +534,7 @@ def test_blob_remove_related_object(authenticated_client):
 
 
 def test_blob_update_page_number(authenticated_client):
+    """Test updating the PDF page number for cover image generation."""
 
     user, client = authenticated_client()
 
@@ -544,6 +559,7 @@ def test_blob_update_page_number(authenticated_client):
 
 
 def test_blob_update_related_object_note(authenticated_client):
+    """Test updating the note on a related object."""
 
     user, client = authenticated_client()
 
@@ -569,6 +585,7 @@ def test_blob_update_related_object_note(authenticated_client):
 
 
 def test_blob_get_template(authenticated_client):
+    """Test retrieving a blob template by UUID."""
 
     user, client = authenticated_client()
 
@@ -635,3 +652,109 @@ def test_bookshelf_list(mock_get_es, authenticated_client):
 
     assert resp.status_code == 200
     assert resp.context["total_count"] == 1
+
+
+def test_blob_file_serve(s3_resource, s3_bucket, authenticated_client):
+    """Test serving a blob's file returns the file content."""
+
+    user, client = authenticated_client()
+    blob = BlobFactory.create(user=user)
+
+    # Upload a file to S3 for this blob
+    file_contents = b"test file contents"
+    blob_file = io.BytesIO(file_contents)
+    blob_file.name = "test_file.txt"
+    blob.file_modified = 1638644921
+    blob.file.save(blob_file.name, blob_file)
+    blob.save()
+
+    url = urls.reverse("blob:file", kwargs={"uuid": blob.uuid})
+    resp = client.get(url)
+
+    assert resp.status_code == 200
+    assert resp["Content-Disposition"] == 'attachment; filename="test_file.txt"'
+
+
+def test_blob_file_serve_no_file(authenticated_client):
+    """Test serving a blob without a file returns 404."""
+
+    user, client = authenticated_client()
+    blob = BlobFactory.create(user=user)
+
+    url = urls.reverse("blob:file", kwargs={"uuid": blob.uuid})
+    resp = client.get(url)
+
+    assert resp.status_code == 404
+
+
+def test_blob_file_serve_other_user(authenticated_client):
+    """Test that a user cannot serve another user's blob file."""
+
+    from accounts.tests.factories import UserFactory
+
+    other_user = UserFactory()
+    blob = BlobFactory.create(user=other_user)
+
+    # Log in after creating the other user's blob to avoid session issues
+    _, client = authenticated_client()
+
+    url = urls.reverse("blob:file", kwargs={"uuid": blob.uuid})
+    resp = client.get(url)
+
+    assert resp.status_code == 404
+
+
+def test_blob_file_serve_nonexistent(authenticated_client):
+    """Test serving a nonexistent blob UUID returns 404."""
+
+    _, client = authenticated_client()
+
+    url = urls.reverse("blob:file", kwargs={"uuid": uuid.uuid4()})
+    resp = client.get(url)
+
+    assert resp.status_code == 404
+
+
+@patch("blob.views.chatbot")
+def test_chat(mock_chatbot, authenticated_client):
+    """Test that the chat endpoint returns a streaming response."""
+
+    def fake_generator():
+        yield "Hello "
+        yield "world"
+
+    mock_chatbot.return_value = fake_generator()
+
+    _, client = authenticated_client()
+
+    url = urls.reverse("blob:chat")
+    resp = client.post(url, {"chat_history": "[]", "mode": "general"})
+
+    assert resp.status_code == 200
+    assert resp["Content-Type"] == "text/plain"
+    content = b"".join(resp.streaming_content).decode()
+    assert content == "Hello world"
+
+
+def test_sort_related_objects(authenticated_client):
+    """Test sorting related objects changes their order."""
+
+    user, client = authenticated_client()
+
+    blob_1 = BlobFactory.create(user=user)
+    blob_2 = BlobFactory.create(user=user)
+    blob_3 = BlobFactory.create(user=user)
+
+    BlobToObject.objects.create(node=blob_1, blob=blob_2)
+    BlobToObject.objects.create(node=blob_1, blob=blob_3)
+
+    url = urls.reverse("blob:sort_related_objects")
+    resp = client.post(url, {
+        "node_uuid": blob_1.uuid,
+        "object_uuid": blob_3.uuid,
+        "new_position": 0,
+        "node_type": "blob"
+    })
+
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "OK"

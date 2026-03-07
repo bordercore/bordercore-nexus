@@ -131,6 +131,8 @@ class Blob(TimeStampedModel):
     user = models.ForeignKey(User, on_delete=models.PROTECT)
     note = models.TextField(null=True, blank=True)
     tags = models.ManyToManyField(Tag)
+    # Stored as text to support flexible formats: YYYY-MM-DD, YYYY-MM, YYYY,
+    # and date ranges like [YYYY-MM TO YYYY-MM]. Validated in BlobForm.clean_date().
     date = models.TextField(null=True)
     importance = models.IntegerField(default=1)
     is_note = models.BooleanField(default=False)
@@ -170,6 +172,10 @@ class Blob(TimeStampedModel):
         # Save the filename so that when it changes by a blob edit
         #  in save() we know what the original was.
         setattr(self, "__original_filename", self.file.name)
+
+        # Transient attribute: set before save() to record a file's
+        # modification timestamp in S3 metadata. Not a model field.
+        self.file_modified: int | None = None
 
     # Properties - File/Storage
     @property
@@ -605,13 +611,9 @@ class Blob(TimeStampedModel):
 
         super().save(*args, **kwargs)
 
-        # self.file_modified won't exist if we're editing a blob's
-        # information or renaming the file, but not changing the file itself.
-        # In that case we don't want to update its "file_modified" metadata.
-
-        if self.file and \
-           hasattr(self, "file_modified") and \
-           self.file_modified is not None:
+        # file_modified is only set when a file is uploaded or imported.
+        # If it's None we skip updating S3 metadata.
+        if self.file and self.file_modified is not None:
             self.set_s3_metadata_file_modified()
 
         # After every blob mutation, invalidate the cache
@@ -625,7 +627,7 @@ class Blob(TimeStampedModel):
         Note that Content-Type must be explicitly preserved when updating
         S3 metadata, otherwise it resets to "binary/octet-stream".
         """
-        if not hasattr(self, "file_modified") or self.file_modified is None:
+        if self.file_modified is None:
             return
 
         key = self.s3_key
@@ -791,28 +793,23 @@ class Blob(TimeStampedModel):
     def get_nodes(self) -> list[Any]:
         """Return all Node objects that reference this blob in their layout.
 
-        Searches through all nodes owned by the blob's user and checks if
-        this blob's UUID appears in the node's layout structure as a
-        "collection" or "note" type entry.
+        Uses Django's JSONField ``__contains`` lookup (PostgreSQL ``@>``
+        operator) to find nodes whose layout JSON contains an entry with
+        this blob's UUID and type "collection" or "note".
 
         Returns:
             List of Node instances that reference this blob.
         """
         Node = apps.get_model("node", "Node")
+        uuid_str = str(self.uuid)
 
-        node_list = []
-
-        for node in Node.objects.filter(user=self.user):
-            if str(self.uuid) in [
-                    val["uuid"]
-                    for sublist in node.layout
-                    for val in sublist
-                    if "uuid" in val
-                    and val["type"] in ["collection", "note"]
-            ]:
-                node_list.append(node)
-
-        return node_list
+        return list(
+            Node.objects.filter(
+                Q(layout__contains=[[{"uuid": uuid_str, "type": "collection"}]])
+                | Q(layout__contains=[[{"uuid": uuid_str, "type": "note"}]]),
+                user=self.user,
+            )
+        )
 
     @staticmethod
     def is_ingestible_file(filename: str | Any) -> bool:
@@ -1264,8 +1261,8 @@ class RecentlyViewedBlob(TimeStampedModel):
             node: Optional Node instance that was viewed.
         """
         # Delete any previous rows containing this object to avoid duplicates
-        RecentlyViewedBlob.objects.filter(blob=blob, node=None).delete()
-        RecentlyViewedBlob.objects.filter(node=node, blob=None).delete()
+        RecentlyViewedBlob.objects.filter(user=user, blob=blob, node=None).delete()
+        RecentlyViewedBlob.objects.filter(user=user, node=node, blob=None).delete()
 
         RecentlyViewedBlob.objects.create(user=user, blob=blob, node=node)
 

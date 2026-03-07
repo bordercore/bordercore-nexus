@@ -430,7 +430,8 @@ class BlobDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView):
             context["elasticsearch_info"] = None
 
         context["back_references"] = Blob.back_references(self.object.uuid)
-        context["collection_list"] = self.object.collections
+        collections = self.object.collections
+        context["collection_list"] = collections
         context["node_list"] = self.object.get_nodes()
         context["title"] = str(self.object)
 
@@ -511,7 +512,7 @@ class BlobDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView):
                 "numObjects": c["num_objects"],
                 "note": c.get("note", ""),
             }
-            for c in self.object.collections
+            for c in collections
         ]
 
         context["elasticsearch_info_json"] = {
@@ -686,22 +687,31 @@ def handle_metadata(blob: Blob, request: HttpRequest) -> None:
         blob: The blob instance to update metadata for.
         request: The HTTP request containing metadata in POST data.
     """
-    blob.metadata.all().delete()
-
     user = cast(User, request.user)
+
+    submitted: set[tuple[str, str]] = set()
 
     if "metadata" in request.POST:
         for pair in json.loads(request.POST["metadata"]):
-            new_metadata, _ = MetaData.objects.get_or_create(
-                blob=blob,
-                user=user,
-                name=pair["name"],
-                value=pair["value"]
-            )
+            submitted.add((pair["name"], pair["value"]))
 
     if request.POST.get("is_book", ""):
-        new_metadata = MetaData(user=user, name="is_book", value="true", blob=blob)
-        new_metadata.save()
+        submitted.add(("is_book", "true"))
+
+    existing = set(blob.metadata.values_list("name", "value"))
+
+    to_delete = existing - submitted
+    if to_delete:
+        q = Q()
+        for name, value in to_delete:
+            q |= Q(name=name, value=value)
+        blob.metadata.filter(q).delete()
+
+    to_create = submitted - existing
+    MetaData.objects.bulk_create([
+        MetaData(blob=blob, user=user, name=name, value=value)
+        for name, value in to_create
+    ])
 
 
 def handle_linked_collection(blob: Blob, request: HttpRequest) -> None:

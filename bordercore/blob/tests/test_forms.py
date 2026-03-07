@@ -14,6 +14,7 @@ faker = FakerFactory.create()
 
 
 def test_blob_form_add(authenticated_client, blob_pdf_factory):
+    """Test blob form validation for valid data, invalid dates, illegal filenames, and duplicates."""
 
     user, _ = authenticated_client()
 

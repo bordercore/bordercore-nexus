@@ -28,6 +28,7 @@ faker = FakerFactory.create()
 
 
 def test_node_unique_constraints(authenticated_client):
+    """Test that duplicate BlobToObject entries raise IntegrityError."""
 
     user, _ = authenticated_client()
 
@@ -44,6 +45,7 @@ def test_node_unique_constraints(authenticated_client):
 
 
 def test_get_s3_key(blob_image_factory, blob_text_factory):
+    """Test S3 key generation for blobs with and without files."""
     s3_key = Blob.get_s3_key(blob_image_factory[0].uuid, blob_image_factory[0].file)
     assert s3_key == f"blobs/{blob_image_factory[0].uuid}/{blob_image_factory[0].file}"
 
@@ -53,6 +55,7 @@ def test_get_s3_key(blob_image_factory, blob_text_factory):
 
 
 def test_get_doctype(blob_image_factory, blob_note, blob_text_factory):
+    """Test doctype classification for image, note, and document blobs."""
 
     assert blob_image_factory[0].doctype == "image"
     assert blob_note[0].doctype == "note"
@@ -60,6 +63,7 @@ def test_get_doctype(blob_image_factory, blob_note, blob_text_factory):
 
 
 def test_get_edition_string(blob_image_factory):
+    """Test edition string extraction from blob names."""
 
     blob_image_factory[0].name = "Introduction to Electrodynamics 4E"
     assert blob_image_factory[0].edition_string == "Fourth Edition"
@@ -69,6 +73,7 @@ def test_get_edition_string(blob_image_factory):
 
 
 def test_doctype(blob_image_factory, blob_text_factory):
+    """Test doctype changes based on file extension."""
 
     blob_image_factory[0].file = "foo.jpg"
     assert blob_image_factory[0].doctype == "image"
@@ -78,6 +83,7 @@ def test_doctype(blob_image_factory, blob_text_factory):
 
 
 def test_get_metadata(blob_image_factory):
+    """Test metadata retrieval including URL extraction."""
 
     metadata, urls = blob_image_factory[0].get_metadata()
     assert blob_image_factory[0].metadata.first().value in [value for key, value in metadata.items()]
@@ -88,6 +94,7 @@ def test_get_metadata(blob_image_factory):
 
 
 def test_has_been_modified(authenticated_client, blob_image_factory):
+    """Test has_been_modified detects changes after save."""
 
     user, _ = authenticated_client()
 
@@ -102,6 +109,7 @@ def test_has_been_modified(authenticated_client, blob_image_factory):
 
 
 def test_related_blobs(authenticated_client):
+    """Test related objects retrieval and reverse lookup."""
 
     user, _ = authenticated_client()
 
@@ -120,21 +128,25 @@ def test_related_blobs(authenticated_client):
 
 
 def test_get_content_type():
+    """Test MIME type to human-readable content type mapping."""
     assert Blob.get_content_type("application/octet-stream") == "Video"
     assert Blob.get_content_type("text/css") == ""
 
 
 def test_get_parent_dir(blob_image_factory):
+    """Test parent directory path generation."""
     parent_dir = blob_image_factory[0].parent_dir
     assert parent_dir == f"blobs/{blob_image_factory[0].uuid}"
 
 
 def test_get_url(blob_image_factory):
+    """Test URL generation for blob file access."""
     url = blob_image_factory[0].url
     assert url == f"{blob_image_factory[0].uuid}/{quote_plus(str(blob_image_factory[0].file))}"
 
 
 def test_get_name(blob_image_factory):
+    """Test name formatting with edition strings and filename fallback."""
 
     blob_image_factory[0].name = "Vaporwave Wallpaper 2E"
     assert blob_image_factory[0].get_name() == "Vaporwave Wallpaper 2E"
@@ -146,10 +158,12 @@ def test_get_name(blob_image_factory):
 
 
 def test_get_tags(blob_image_factory):
+    """Test comma-separated tag string generation."""
     assert blob_image_factory[0].tags_string == "django, linux, video"
 
 
 def test_add_related_object(authenticated_client):
+    """Test adding related objects with error handling for duplicates and missing items."""
 
     user, _ = authenticated_client()
 
@@ -173,6 +187,7 @@ def test_add_related_object(authenticated_client):
 
 
 def test_get_nodes(authenticated_client, monkeypatch):
+    """Test that get_nodes returns nodes referencing a blob."""
 
     def mock(*args, **kwargs):
         pass
@@ -189,28 +204,34 @@ def test_get_nodes(authenticated_client, monkeypatch):
 
 
 def test_is_pinned_note(blob_note):
+    """Test is_pinned_note returns False for non-pinned notes."""
     assert blob_note[0].is_pinned_note is False
 
 
 def test_get_collections(collection, blob_pdf_factory):
+    """Test collections property returns associated collections."""
     assert len(blob_pdf_factory[0].collections) == 2
     assert "To Display" in [x["name"] for x in blob_pdf_factory[0].collections]
 
 
 def test_get_linked_blobs(blob_pdf_factory):
+    """Test collections property returns empty list for unlinked blobs."""
     assert len(blob_pdf_factory[0].collections) == 0
 
 
 def test_get_date(blob_image_factory):
+    """Test parsed_date returns formatted date string."""
     assert blob_image_factory[0].parsed_date == datetime.datetime.strptime(blob_image_factory[0].date, '%Y-%m-%d').strftime('%B %d, %Y')
 
 
 def test_is_ingestible_file(blob_image_factory):
+    """Test file ingestibility check by extension."""
     assert Blob.is_ingestible_file("file.png") is False
     assert Blob.is_ingestible_file("file.pdf") is True
 
 
 def test_duration_humanized():
+    """Test duration formatting from seconds to human-readable time."""
     assert Blob.get_duration_humanized(8.356) == "0:08"
     assert Blob.get_duration_humanized(18.356) == "0:18"
     assert Blob.get_duration_humanized(218.356) == "3:38"
@@ -219,6 +240,7 @@ def test_duration_humanized():
 
 
 def test_clone(temp_blob_directory, monkeypatch_blob, blob_pdf_factory, collection):
+    """Test cloning preserves metadata, tags, and collection memberships."""
 
     cloned_blob = blob_pdf_factory[0].clone()
     assert cloned_blob.date == blob_pdf_factory[0].date
@@ -236,6 +258,7 @@ def test_clone(temp_blob_directory, monkeypatch_blob, blob_pdf_factory, collecti
 
 
 def test_blob_update_cover_image(blob_pdf_factory, s3_resource, s3_bucket):
+    """Test cover image upload creates both large and small variants in S3."""
 
     file_path = Path(__file__).parent / "resources/cover-large.jpg"
 
@@ -259,6 +282,7 @@ def test_blob_update_cover_image(blob_pdf_factory, s3_resource, s3_bucket):
 
 
 def test_blob_rename_file(blob_pdf_factory):
+    """Test renaming a blob file updates the S3 key."""
 
     s3 = boto3.resource("s3")
     bucket = s3.Bucket(settings.AWS_STORAGE_BUCKET_NAME)
@@ -283,6 +307,7 @@ def count_nodes(nodes, root_node=True):
 
 
 def test_parse_nodes(blob_text_factory):
+    """Test markdown heading parsing into hierarchical tree structure."""
 
     blob_text_factory[0].content = ""
     tree = blob_text_factory[0].get_tree()
@@ -354,6 +379,7 @@ def test_parse_nodes(blob_text_factory):
 
 
 def test_recently_viewed_blob_add(authenticated_client):
+    """Test adding and deduplicating recently viewed blobs and nodes."""
 
     user, _ = authenticated_client()
 

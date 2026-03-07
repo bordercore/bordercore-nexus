@@ -2,7 +2,14 @@
 Blob Data Integrity Tests
 
 This module contains integration tests that verify data consistency across multiple
-storage systems for blob records. These tests ensure that blob data remains synchronized between the database, S3 object storage, Elasticsearch index, and local filesystem.
+storage systems for blob records. These tests ensure that blob data remains synchronized
+between the database, S3 object storage, Elasticsearch index, and local filesystem.
+
+NOTE: These tests require live AWS (S3), Elasticsearch, and database connections.
+They are marked with ``pytest.mark.data_quality`` and cannot run in CI without
+infrastructure access. Run them separately against a staging/production environment.
+Tests marked ``pytest.mark.wumpus`` additionally require local filesystem access to
+the blob storage directory.
 """
 
 import django
@@ -803,7 +810,7 @@ def test_blobs_have_proper_metadata():
 
 def test_no_empty_blob_metadata():
     "Assert that no blobs have empty metadata"
-    m = MetaData.objects.filter(Q(name="") or Q(value=""))
+    m = MetaData.objects.filter(Q(name="") | Q(value=""))
     assert len(m) == 0, f"Empty metadata found: count={len(m)}, uuid={m.first().blob.uuid}"
 
 

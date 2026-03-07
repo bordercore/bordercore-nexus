@@ -72,7 +72,6 @@ def elasticsearch_merge(
 
     from elasticsearch_dsl.utils import AttrDict
     from elasticsearch_dsl.wrappers import Range
-    from six import iteritems
 
     if not (
         isinstance(data, (AttrDict, collections_abc.Mapping))
@@ -83,7 +82,7 @@ def elasticsearch_merge(
     if isinstance(new_data, Range):
         return
 
-    for key, value in iteritems(new_data):
+    for key, value in new_data.items():
         if (
             key in data
             and isinstance(data[key], (AttrDict, collections_abc.Mapping))

@@ -17,7 +17,7 @@ from django.forms import (CheckboxInput, ModelForm, Textarea, TextInput,
                           ValidationError)
 from django.forms.fields import CharField, IntegerField
 from django.urls import reverse_lazy
-from django.utils.safestring import mark_safe
+from django.utils.html import format_html
 
 from blob.models import ILLEGAL_FILENAMES, Blob
 from lib.fields import CheckboxIntegerField, ModelCommaSeparatedChoiceField
@@ -140,7 +140,7 @@ class BlobForm(ModelForm):
                 existing_file = Blob.objects.filter(sha1sum=hasher.hexdigest()).first()
                 if existing_file:
                     url = reverse_lazy("blob:detail", kwargs={"uuid": existing_file.uuid})
-                    raise forms.ValidationError(mark_safe(f"Error: This file <a href='{url}'>already exists.</a>"))
+                    raise forms.ValidationError(format_html("Error: This file <a href='{}'>already exists.</a>", url))
 
         return uploaded_file
 

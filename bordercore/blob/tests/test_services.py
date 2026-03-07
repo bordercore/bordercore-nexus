@@ -21,6 +21,7 @@ faker = FakerFactory.create()
 
 @patch("blob.services.get_blob_sizes")
 def test_get_recent_blobs(mock_get_blob_sizes, authenticated_client, blob_image_factory, blob_text_factory):
+    """Test recent blobs retrieval with doctype counts."""
 
     user, _ = authenticated_client()
 
@@ -55,6 +56,7 @@ def test_get_recent_blobs(mock_get_blob_sizes, authenticated_client, blob_image_
 
 
 def test_get_recent_media(authenticated_client, blob_image_factory, blob_text_factory):
+    """Test recent media retrieval filters to images and videos only."""
 
     user, _ = authenticated_client()
 
@@ -76,6 +78,7 @@ def test_get_recent_media(authenticated_client, blob_image_factory, blob_text_fa
 
 
 def test_get_blob_naturalizesize():
+    """Test humanized file size formatting."""
 
     blob_uuid = str(uuid.uuid4)
     blob = {
@@ -105,6 +108,7 @@ class MockInstaloaderPostResponse:
 
 
 def test_import_instagram(s3_resource, s3_bucket, authenticated_client, monkeypatch):
+    """Test Instagram import creates blob with correct metadata."""
 
     shortcode = "CUA4IQcARX2"
     url = f"https://www.instagram.com/p/{shortcode}/"
@@ -142,6 +146,7 @@ def test_import_instagram(s3_resource, s3_bucket, authenticated_client, monkeypa
 @patch("requests.get")
 @patch("blob.services.get_sha1sum")
 def test_import_artstation(mock_get_sha1sum, mock_requests, s3_resource, s3_bucket, authenticated_client, monkeypatch):
+    """Test ArtStation import creates blob with correct metadata."""
 
     shortcode = "QnxsqB"
     url = f"https://www.artstation.com/artwork/{shortcode}/"
@@ -220,6 +225,7 @@ def test_get_authors(byline, expected):
 
 @patch("requests.get")
 def test_import_newyorktimes(mock_requests, authenticated_client, monkeypatch):
+    """Test New York Times import creates blob with correct metadata."""
 
     user, _ = authenticated_client()
 
@@ -262,6 +268,7 @@ def test_import_newyorktimes(mock_requests, authenticated_client, monkeypatch):
 
 
 def test_parse_shortcode():
+    """Test shortcode extraction from various URL formats."""
 
     assert parse_shortcode("https://www.instagram.com/p/CUA4IQcARX2/") == "CUA4IQcARX2"
 
@@ -276,6 +283,7 @@ def test_parse_shortcode():
 
 
 def test_parse_date():
+    """Test date parsing from various datetime string formats."""
 
     assert parse_date("2021-08-15 23:40:56") == "2021-08-15"
     assert parse_date("2021-11-15T15:56:23.875-06:00") == "2021-11-15"

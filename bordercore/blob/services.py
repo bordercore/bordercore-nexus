@@ -15,7 +15,7 @@ import types
 import urllib.request
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Generator, Union
+from typing import Any, Generator, Union, cast
 from urllib.parse import ParseResult, urlparse
 
 import humanize
@@ -401,16 +401,8 @@ def get_blob_sizes(blob_list: QuerySet[Blob]) -> dict[str, dict[str, Any]]:
 
     search_object = {
         "query": {
-            "bool": {
-                "should": [
-                    {
-                        "term": {
-                            "_id": str(x.uuid)
-                        }
-                    }
-                    for x
-                    in blob_list
-                ]
+            "terms": {
+                "_id": [str(x.uuid) for x in blob_list]
             }
         },
         "_source": ["size", "uuid"]
@@ -742,7 +734,7 @@ def import_instagram(user: User, parsed_url: ParseResult) -> Blob:
         date=date,
         sha1sum=get_sha1sum(temp_file.name)
     )
-    setattr(blob, "file_modified", int(os.path.getmtime(temp_file.name)))
+    blob.file_modified = int(os.path.getmtime(temp_file.name))
     blob.save()
 
     filename = f"{base_name}{ext}"
@@ -807,7 +799,7 @@ def import_artstation(user: User, parsed_url: ParseResult) -> Blob:
         date=date,
         sha1sum=get_sha1sum(temp_file.name)
     )
-    setattr(blob, "file_modified", int(os.path.getmtime(temp_file.name)))
+    blob.file_modified = int(os.path.getmtime(temp_file.name))
     blob.save()
 
     with open(temp_file.name, "rb") as f:
@@ -901,9 +893,6 @@ def import_newyorktimes(user: User, url: str) -> Blob:
     if len(matches) > 1:
         raise ValueError("Error: found more than one article matching that url")
 
-    if len(matches) == 0:
-        raise ValueError("Error: no articles found matching that url")
-
     date = datetime.datetime.strptime(matches[0]["pub_date"], "%Y-%m-%dT%H:%M:%S%z").strftime("%Y-%m-%d")
 
     blob = Blob(
@@ -957,8 +946,10 @@ def chatbot(request: HttpRequest, args: dict[str, Any]) -> Generator[str, None, 
     messages: list[dict[str, str]] = []
     added_values: list[dict[str, Any]] = []
 
+    user = cast(User, request.user)
+
     if "blob_uuid" in args:
-        blob_content = Blob.objects.get(uuid=args["blob_uuid"]).content
+        blob_content = Blob.objects.get(uuid=args["blob_uuid"], user=user).content
         messages = [
             {
                 "role": "user",
@@ -966,7 +957,7 @@ def chatbot(request: HttpRequest, args: dict[str, Any]) -> Generator[str, None, 
             }
         ]
     elif "question_uuid" in args:
-        question = Question.objects.get(uuid=args["question_uuid"])
+        question = Question.objects.get(uuid=args["question_uuid"], user=user)
         tags = ",".join([x.name for x in question.tags.all()])
         messages = [
             {
@@ -975,7 +966,7 @@ def chatbot(request: HttpRequest, args: dict[str, Any]) -> Generator[str, None, 
             }
         ]
     elif "exercise_uuid" in args:
-        exercise = Exercise.objects.get(uuid=args["exercise_uuid"])
+        exercise = Exercise.objects.get(uuid=args["exercise_uuid"], user=user)
         messages = [
             {
                 "role": "user",
