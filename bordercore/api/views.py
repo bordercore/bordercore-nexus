@@ -5,6 +5,8 @@ handling CRUD operations, Elasticsearch indexing on write, and custom actions
 such as fetching untagged bookmarks and pinned tags.
 """
 
+import logging
+
 from elasticsearch.exceptions import NotFoundError
 from feed.models import Feed, FeedItem
 from typing import cast
@@ -15,11 +17,12 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from django.contrib import messages
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models import Count
 from django.db.models import QuerySet
+
+log = logging.getLogger(__name__)
 
 from accounts.models import UserFeed
 from lib.mixins import UserScopedQuerysetMixin
@@ -64,13 +67,12 @@ class AlbumViewSet(UserScopedQuerysetMixin, viewsets.ModelViewSet):
         return super().get_queryset().prefetch_related("tags")
 
     def perform_destroy(self, instance: Album) -> None:
-        """Delete the album and display a success message.
+        """Delete the album.
 
         Args:
             instance: The Album instance to delete.
         """
         instance.delete()
-        messages.add_message(self.request, messages.INFO, "Album successfully deleted")
 
 
 class BlobViewSet(viewsets.ModelViewSet):
@@ -88,7 +90,7 @@ class BlobViewSet(viewsets.ModelViewSet):
         Returns:
             QuerySet of Blob objects.
         """
-        if self.request.user.username == "service_user":
+        if self.request.user.groups.filter(name="ServiceAccount").exists():
             return Blob.objects.all()
         return Blob.objects.filter(
             user=self.request.user
@@ -108,22 +110,20 @@ class BlobViewSet(viewsets.ModelViewSet):
         Returns:
             Response with serialized blob data or validation errors.
         """
-        blob = Blob()
-        serializer = self.serializer_class(blob, data=request.data)
+        serializer = self.serializer_class(data=request.data, context=self.get_serializer_context())
         if serializer.is_valid():
-            serializer.save()
-            blob.index_blob()
+            instance = serializer.save()
+            instance.index_blob()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def perform_destroy(self, instance: Blob) -> None:
-        """Delete the blob and display a success message.
+        """Delete the blob.
 
         Args:
             instance: The Blob instance to delete.
         """
         instance.delete()
-        messages.add_message(self.request, messages.INFO, "Blob successfully deleted")
 
     def perform_update(self, serializer: BlobSerializer) -> None:
         """Save the blob and re-index it in Elasticsearch.
@@ -150,7 +150,7 @@ class BlobSha1sumViewSet(viewsets.ModelViewSet):
         Returns:
             QuerySet of Blob objects.
         """
-        if self.request.user.username == "service_user":
+        if self.request.user.groups.filter(name="ServiceAccount").exists():
             return Blob.objects.all()
 
         return Blob.objects.filter(
@@ -177,7 +177,7 @@ class BookmarkViewSet(UserScopedQuerysetMixin, viewsets.ModelViewSet):
     serializer_class = BookmarkSerializer
     queryset = Bookmark.objects.all()
     lookup_field = "uuid"
-    ordering_fields = ["created, modified"]
+    ordering_fields = ["created", "modified"]
     ordering = ["-created"]
 
     def get_queryset(self) -> QuerySet[Bookmark]:
@@ -203,14 +203,14 @@ class BookmarkViewSet(UserScopedQuerysetMixin, viewsets.ModelViewSet):
         instance.index_bookmark()
 
     def destroy(self, request: Request, *args: object, **kwargs: object) -> Response:
-        """Override destroy to catch NotFoundError and return JSON error response."""
+        """Delete the bookmark, logging a warning if the ES document is missing."""
         try:
             return super().destroy(request, *args, **kwargs)
         except NotFoundError:
-            return Response(
-                {"status": "ERROR", "message": "Bookmark not found in Elasticsearch"},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            log.warning("Bookmark ES document missing during delete, proceeding with DB delete")
+            instance = self.get_object()
+            instance.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
     def perform_destroy(self, instance: Bookmark) -> None:
         """Delete the bookmark."""
@@ -262,17 +262,6 @@ class CollectionViewSet(UserScopedQuerysetMixin, viewsets.ModelViewSet):
         """
         return super().get_queryset().prefetch_related("tags")
 
-    def perform_create(self, serializer: CollectionSerializer) -> None:
-        """Save the collection with the current user as owner.
-
-        Args:
-            serializer: The validated CollectionSerializer.
-        """
-        instance = serializer.save(user=self.request.user)
-
-        # Save a copy of the new object so we can reference it in create()
-        self._instance = instance
-
     def create(self, request: Request, *args: object, **kwargs: object) -> Response:
         """Create a collection and return its id and uuid.
 
@@ -284,13 +273,13 @@ class CollectionViewSet(UserScopedQuerysetMixin, viewsets.ModelViewSet):
         Returns:
             Response with status, id, and uuid of the new collection.
         """
-        response = super(CollectionViewSet, self).create(request, *args, **kwargs)
-        response.data = {
-            "status": "OK",
-            "id": self._instance.id,
-            "uuid": self._instance.uuid
-        }
-        return response
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save(user=request.user)
+        return Response(
+            {"status": "OK", "id": instance.id, "uuid": str(instance.uuid)},
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class FeedViewSet(UserScopedQuerysetMixin, viewsets.ModelViewSet):
@@ -300,20 +289,6 @@ class FeedViewSet(UserScopedQuerysetMixin, viewsets.ModelViewSet):
     serializer_class = FeedSerializer
     queryset = Feed.objects.all()
     lookup_field = "uuid"
-
-    def perform_create(self, serializer: FeedSerializer) -> None:
-        """Save the feed, create a UserFeed link, and stash the instance.
-
-        Args:
-            serializer: The validated FeedSerializer.
-        """
-        instance = serializer.save(user=self.request.user)
-        user = cast(User, self.request.user)
-        so = UserFeed(userprofile=user.userprofile, feed=instance)
-        so.save()
-
-        # Save a copy of the new object so we can reference it in create()
-        self._instance = instance
 
     def create(self, request: Request, *args: object, **kwargs: object) -> Response:
         """Create a feed and return feed info including id, uuid, and name.
@@ -326,19 +301,27 @@ class FeedViewSet(UserScopedQuerysetMixin, viewsets.ModelViewSet):
         Returns:
             Response with status and feed info dict.
         """
-        response = super(FeedViewSet, self).create(request, *args, **kwargs)
-        response.data = {
-            "status": "OK",
-            "feed_info": {
-                "id": self._instance.id,
-                "uuid": self._instance.uuid,
-                "name": self._instance.name,
-                "homepage": self._instance.homepage,
-                "lastCheck": "N/A",
-                "feedItems": []
-            }
-        }
-        return response
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save(user=request.user)
+
+        user = cast(User, request.user)
+        UserFeed(userprofile=user.userprofile, feed=instance).save()
+
+        return Response(
+            {
+                "status": "OK",
+                "feed_info": {
+                    "id": instance.id,
+                    "uuid": str(instance.uuid),
+                    "name": instance.name,
+                    "homepage": instance.homepage,
+                    "lastCheck": "N/A",
+                    "feedItems": [],
+                },
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
     def perform_destroy(self, instance: Feed) -> None:
         """Delete the feed and clear it from the session if active.
@@ -355,19 +338,21 @@ class FeedViewSet(UserScopedQuerysetMixin, viewsets.ModelViewSet):
 
 
 class FeedItemViewSet(viewsets.ModelViewSet):
-    """CRUD viewset for feed items."""
+    """CRUD viewset for feed items scoped to the current user's feeds."""
 
     permission_classes = [IsAuthenticated]
     serializer_class = FeedItemSerializer
-    queryset = FeedItem.objects.filter()
+    queryset = FeedItem.objects.all()
 
     def get_queryset(self) -> QuerySet[FeedItem]:
-        """Return all feed items with their parent feed.
+        """Return feed items belonging to the current user's feeds.
 
         Returns:
-            QuerySet of FeedItem objects with select_related feed.
+            QuerySet of FeedItem objects scoped to the user, with select_related feed.
         """
-        return FeedItem.objects.all().select_related("feed")
+        return super().get_queryset().filter(
+            feed__user=self.request.user
+        ).select_related("feed")
 
 
 class NodeViewSet(UserScopedQuerysetMixin, viewsets.ModelViewSet):

@@ -107,7 +107,7 @@ class BlobSerializer(serializers.ModelSerializer):
     """
 
     user = BlobUserSerializer(read_only=True, default=serializers.CurrentUserDefault())
-    uuid = serializers.UUIDField()
+    uuid = serializers.UUIDField(read_only=True)
     file = BlobFileField(read_only=True)
     metadata = BlobMetaDataField(many=True, read_only=True)
     sha1sum = serializers.CharField(required=False)

@@ -7,7 +7,7 @@ import type { Song, Album, AlbumDetailUrls, Playlist } from "./types";
 import SongTable from "./SongTable";
 import EditAlbumModal, { type EditAlbumModalHandle } from "./EditAlbumModal";
 import DropDownMenu from "../common/DropDownMenu";
-import { EventBus } from "../utils/reactUtils";
+import { doDelete, EventBus } from "../utils/reactUtils";
 import { tagStyle } from "../utils/tagColors";
 
 // markdown-it for rendering album notes
@@ -126,22 +126,18 @@ export function AlbumDetailPage({
     });
   };
 
-  const handleDeleteAlbum = async () => {
+  const handleDeleteAlbum = () => {
     if (!confirm("Are you sure you want to delete this album?")) {
       return;
     }
 
-    try {
-      await axios.delete(urls.deleteAlbum, {
-        headers: {
-          "X-CSRFToken": csrfToken,
-        },
-        withCredentials: true,
-      });
-      window.location.href = urls.musicList;
-    } catch (error) {
-      console.error("Error deleting album:", error);
-    }
+    doDelete(
+      urls.deleteAlbum,
+      () => {
+        window.location.href = urls.musicList;
+      },
+      "Album successfully deleted"
+    );
   };
 
   // Render album note with markdown - content is sanitized by markdown-it

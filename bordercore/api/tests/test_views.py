@@ -10,14 +10,18 @@ from django.utils import timezone
 
 pytestmark = [pytest.mark.django_db]
 
+from accounts.models import UserTag
 from accounts.tests.factories import UserFactory
 from blob.tests.factories import BlobFactory
+from bookmark.models import Bookmark
 from bookmark.tests.factories import BookmarkFactory
 from collection.tests.factories import CollectionFactory
 from drill.tests.factories import QuestionFactory
+from fitness.models import Data, Exercise, Workout
 from music.tests.factories import PlaylistFactory, SongFactory
 from reminder.models import Reminder
 from reminder.tests.factories import ReminderFactory
+from tag.models import TagBookmark
 from tag.tests.factories import TagFactory
 from todo.tests.factories import TodoFactory
 
@@ -422,3 +426,241 @@ def test_reminder_viewset_uses_web_list_ordering(authenticated_client):
 
     assert earliest_index < newest_index
     assert newest_index < oldest_index
+
+
+# --- Feed item user isolation (#20) ---
+
+def test_feeditem_viewset_user_isolation(authenticated_client, feed):
+    """Feed items from another user's feed are not visible."""
+    _, client = authenticated_client()
+
+    different_user = UserFactory(username=faker.user_name())
+    other_feed = FeedFactory(user=different_user)
+
+    url = urls.reverse("feeditem-detail", kwargs={"pk": other_feed.feeditem_set.first().id})
+    resp = client.get(url)
+    assert resp.status_code == 404
+
+
+# --- Bookmark custom actions (#16) ---
+
+def test_bookmark_untagged_action(authenticated_client, monkeypatch_bookmark):
+    """GET /api/bookmarks/untagged/ returns only bookmarks without tags."""
+    user, client = authenticated_client()
+
+    tagged = BookmarkFactory(user=user)
+    untagged = BookmarkFactory(user=user)
+
+    tag = TagFactory(user=user, name="test-tag")
+    tagged.tags.add(tag)
+
+    url = urls.reverse("bookmark-untagged")
+    resp = client.get(url)
+    assert resp.status_code == 200
+
+    returned_uuids = {item["uuid"] for item in resp.json().get("results", resp.json())}
+    assert str(untagged.uuid) in returned_uuids
+    assert str(tagged.uuid) not in returned_uuids
+
+
+def test_bookmark_by_tag_action(authenticated_client, monkeypatch_bookmark):
+    """GET /api/bookmarks/by-tag/<name>/ returns bookmarks for that tag."""
+    user, client = authenticated_client()
+
+    tag = TagFactory(user=user, name="by-tag-test")
+    bm = BookmarkFactory(user=user)
+    TagBookmark.objects.create(tag=tag, bookmark=bm)
+
+    other_bm = BookmarkFactory(user=user)
+
+    url = urls.reverse("bookmark-by-tag", kwargs={"tag_name": "by-tag-test"})
+    resp = client.get(url)
+    assert resp.status_code == 200
+
+    data = resp.json()
+    returned_uuids = {item["uuid"] for item in data}
+    assert str(bm.uuid) in returned_uuids
+    assert str(other_bm.uuid) not in returned_uuids
+
+
+# --- Pinned tags (#17) ---
+
+def test_pinned_tags_action(authenticated_client, monkeypatch_bookmark):
+    """GET /api/tags/pinned/ returns the user's pinned tags with counts."""
+    user, client = authenticated_client()
+
+    tag = TagFactory(user=user, name="pinned-test")
+    UserTag.objects.create(userprofile=user.userprofile, tag=tag)
+
+    bm = BookmarkFactory(user=user)
+    TagBookmark.objects.create(tag=tag, bookmark=bm)
+
+    url = urls.reverse("tag-pinned")
+    resp = client.get(url)
+    assert resp.status_code == 200
+
+    data = resp.json()
+    assert any(t["name"] == "pinned-test" for t in data)
+    pinned = next(t for t in data if t["name"] == "pinned-test")
+    assert pinned["bookmark_count"] >= 1
+
+
+# --- Write operations (#18) ---
+
+def test_bookmark_delete(authenticated_client, monkeypatch):
+    """DELETE on a bookmark removes it."""
+    user, client = authenticated_client()
+
+    monkeypatch.setattr(Bookmark, "generate_cover_image", lambda *a, **kw: None)
+    monkeypatch.setattr(Bookmark, "snarf_favicon", lambda *a, **kw: None)
+    bm = BookmarkFactory(user=user)
+    url = urls.reverse("bookmark-detail", kwargs={"uuid": bm.uuid})
+    resp = client.delete(url)
+    assert resp.status_code == 204
+
+
+def test_bookmark_patch(authenticated_client, monkeypatch_bookmark):
+    """PATCH on a bookmark updates it."""
+    user, client = authenticated_client()
+
+    bm = BookmarkFactory(user=user)
+    url = urls.reverse("bookmark-detail", kwargs={"uuid": bm.uuid})
+    resp = client.patch(url, {"name": "updated-name"}, content_type="application/json")
+    assert resp.status_code == 200
+    assert resp.json()["name"] == "updated-name"
+
+
+def test_todo_create(authenticated_client):
+    """POST to todo-list creates a todo."""
+    _, client = authenticated_client()
+
+    url = urls.reverse("todo-list")
+    resp = client.post(url, {"name": "new task", "priority": 2})
+    assert resp.status_code == 201
+
+
+def test_todo_delete(authenticated_client):
+    """DELETE on a todo removes it."""
+    user, client = authenticated_client()
+
+    todo = TodoFactory(user=user)
+    url = urls.reverse("todo-detail", kwargs={"uuid": todo.uuid})
+    resp = client.delete(url)
+    assert resp.status_code == 204
+
+
+def test_todo_patch(authenticated_client):
+    """PATCH on a todo updates it."""
+    user, client = authenticated_client()
+
+    todo = TodoFactory(user=user)
+    url = urls.reverse("todo-detail", kwargs={"uuid": todo.uuid})
+    resp = client.patch(url, {"name": "updated"}, content_type="application/json")
+    assert resp.status_code == 200
+
+
+def test_collection_delete(authenticated_client, collection):
+    """DELETE on a collection removes it."""
+    _, client = authenticated_client()
+
+    url = urls.reverse("collection-detail", kwargs={"uuid": collection[0].uuid})
+    resp = client.delete(url)
+    assert resp.status_code == 204
+
+
+def test_feed_delete(authenticated_client, feed):
+    """DELETE on a feed removes it."""
+    _, client = authenticated_client()
+
+    url = urls.reverse("feed-detail", kwargs={"uuid": feed[0].uuid})
+    resp = client.delete(url)
+    assert resp.status_code == 204
+
+
+# --- Blob field selection (#19) ---
+
+def test_blob_field_selection(authenticated_client, blob_image_factory):
+    """GET /api/blobs/?fields=name,uuid returns only those fields."""
+    settings.NPLUSONE_WHITELIST = [
+        {"label": "unused_eager_load", "model": "blob.Blob"},
+        {"label": "n_plus_one", "model": "blob.Blob"},
+    ]
+
+    _, client = authenticated_client()
+
+    url = urls.reverse("blob-list")
+    resp = client.get(url, {"fields": "name,uuid"})
+    assert resp.status_code == 200
+
+    results = resp.json().get("results", resp.json())
+    assert len(results) > 0
+    for item in results:
+        assert "name" in item
+        assert "uuid" in item
+        assert "content" not in item
+        assert "sha1sum" not in item
+
+
+# --- Fitness viewset (#15) ---
+
+def test_fitness_summary(authenticated_client):
+    """GET /api/fitness/summary/ returns active and inactive lists."""
+    _, client = authenticated_client()
+
+    url = urls.reverse("fitness-summary")
+    resp = client.get(url)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "active" in data
+    assert "inactive" in data
+
+
+def test_fitness_exercise_detail(authenticated_client):
+    """GET /api/fitness/exercise/<uuid>/ returns exercise detail."""
+    user, client = authenticated_client()
+
+    exercise = Exercise.objects.create(name=f"test-exercise-{faker.uuid4()}")
+
+    url = urls.reverse("fitness-exercise", kwargs={"exercise_uuid": exercise.uuid})
+    resp = client.get(url)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["name"] == exercise.name
+    assert data["uuid"] == str(exercise.uuid)
+
+
+def test_fitness_exercise_not_found(authenticated_client):
+    """GET /api/fitness/exercise/<bad-uuid>/ returns 404."""
+    _, client = authenticated_client()
+
+    url = urls.reverse("fitness-exercise", kwargs={"exercise_uuid": faker.uuid4()})
+    resp = client.get(url)
+    assert resp.status_code == 404
+
+
+def test_fitness_add_workout(authenticated_client):
+    """POST /api/fitness/exercise/<uuid>/workouts/ creates a workout."""
+    user, client = authenticated_client()
+
+    exercise = Exercise.objects.create(name=f"test-workout-{faker.uuid4()}")
+
+    url = urls.reverse("fitness-add-workout", kwargs={"exercise_uuid": exercise.uuid})
+    resp = client.post(
+        url,
+        {"sets": [{"weight": 100, "reps": 10, "duration": 0}]},
+        content_type="application/json",
+    )
+    assert resp.status_code == 201
+    assert Workout.objects.filter(user=user, exercise=exercise).exists()
+    assert Data.objects.filter(workout__exercise=exercise, weight=100, reps=10).exists()
+
+
+def test_fitness_add_workout_validation(authenticated_client):
+    """POST with empty sets returns 400."""
+    _, client = authenticated_client()
+
+    exercise = Exercise.objects.create(name=f"test-validation-{faker.uuid4()}")
+
+    url = urls.reverse("fitness-add-workout", kwargs={"exercise_uuid": exercise.uuid})
+    resp = client.post(url, {"sets": []}, content_type="application/json")
+    assert resp.status_code == 400
