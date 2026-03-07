@@ -1,7 +1,6 @@
 import factory
 
-from django.contrib.auth.models import User
-
+from accounts.tests.factories import UserFactory
 from book.models import Author, Book
 
 
@@ -18,7 +17,7 @@ class BookFactory(factory.django.DjangoModelFactory):
 
     title = factory.Faker("sentence", nb_words=3)
     year = factory.Faker("year")
-    user = factory.LazyAttribute(lambda o: User.objects.first())
+    user = factory.SubFactory(UserFactory)
 
     @factory.post_generation
     def author(self, create, extracted, **kwargs):

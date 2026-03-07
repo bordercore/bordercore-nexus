@@ -22,6 +22,9 @@ class Author(TimeStampedModel):
 
     name = models.TextField()
 
+    def __str__(self) -> str:
+        return self.name
+
 
 class Book(TimeStampedModel):
     """A book in the user's collection, with metadata and ownership tracking.
@@ -41,3 +44,6 @@ class Book(TimeStampedModel):
     notes = models.TextField(null=True)
     own = models.BooleanField(default=True)
     user = models.ForeignKey(User, on_delete=models.PROTECT)
+
+    def __str__(self) -> str:
+        return self.title

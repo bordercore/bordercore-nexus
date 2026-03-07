@@ -6,17 +6,18 @@ book library.
 
 import json
 import string
-from typing import Any, cast
+from typing import Any
 
 from book.models import Book
 
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.models import User
 from django.db.models import QuerySet
 from django.views.generic.list import ListView
 
+from lib.mixins import UserScopedQuerysetMixin
 
-class BookListView(LoginRequiredMixin, ListView):
+
+class BookListView(LoginRequiredMixin, UserScopedQuerysetMixin, ListView):
     """List view for browsing books filtered by the first letter of the title."""
 
     model = Book
@@ -30,11 +31,12 @@ class BookListView(LoginRequiredMixin, ListView):
         Returns:
             QuerySet of Book objects filtered by starting letter and user.
         """
-        if self.args[0]:
+        if self.args:
             self.selected_letter = self.args[0]
 
-        user = cast(User, self.request.user)
-        return Book.objects.filter(user=user, title__istartswith=self.selected_letter)
+        return super().get_queryset().filter(
+            title__istartswith=self.selected_letter,
+        ).prefetch_related("author")
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         """Build template context with book info, alphabet nav, and selected letter.
@@ -49,11 +51,11 @@ class BookListView(LoginRequiredMixin, ListView):
 
         info = []
 
-        for myobject in context["object_list"]:
+        for book in context["object_list"]:
             info.append({
-                "title": myobject.title,
-                "author": ", ".join(author.name for author in myobject.author.all()),
-                "year": myobject.year,
+                "title": book.title,
+                "author": ", ".join(author.name for author in book.author.all()),
+                "year": book.year,
             })
 
         context["alphabet"] = list(string.ascii_uppercase)
