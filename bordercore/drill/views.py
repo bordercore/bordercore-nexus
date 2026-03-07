@@ -4,9 +4,10 @@ This module contains views for managing questions, study sessions,
 and tag-related operations in the drill/flashcard system.
 """
 import json
+import logging
 import random
 from typing import Any, Dict, cast
-from urllib.parse import unquote
+from urllib.parse import unquote, urlparse
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -21,6 +22,7 @@ from django.forms import BaseModelForm
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.views.generic.list import ListView
@@ -33,7 +35,9 @@ from lib.mixins import FormRequestMixin, UserScopedQuerysetMixin, get_user_objec
 from lib.util import parse_title_from_url
 from tag.models import Tag
 
-from .models import Question
+from .models import VALID_RESPONSES, Question
+
+log = logging.getLogger(f"bordercore.{__name__}")
 
 
 class DrillListView(LoginRequiredMixin, ListView):
@@ -135,7 +139,7 @@ class QuestionCreateView(LoginRequiredMixin, FormRequestMixin, CreateView):
             context["tags"] = []
 
         # Get a list of the most recently used tags
-        context["recent_tags"] = Question.objects.recent_tags()[:10]
+        context["recent_tags"] = Question.objects.recent_tags(cast(User, self.request.user))[:10]
 
         return context
 
@@ -224,8 +228,16 @@ def handle_related_objects(question: Question, request: HttpRequest) -> None:
     if not info:
         return
 
-    for object_info in json.loads(info):
-        question.add_related_object(object_info["uuid"])
+    try:
+        related_objects = json.loads(info)
+    except json.JSONDecodeError:
+        log.warning("Invalid JSON in related-objects field")
+        return
+
+    for object_info in related_objects:
+        object_uuid = object_info.get("uuid") if isinstance(object_info, dict) else None
+        if object_uuid:
+            question.add_related_object(object_uuid)
 
 
 class QuestionDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView):
@@ -261,6 +273,7 @@ class QuestionDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView
         """
         context = super().get_context_data(**kwargs)
 
+        tags = list(self.object.tags.all())
         tag_info = self.object.get_all_tags_progress()
         last_response = self.object.get_last_response()
         intervals = self.object.get_intervals(description_only=True)
@@ -280,7 +293,7 @@ class QuestionDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView
             "isFavorite": self.object.is_favorite,
             "isDisabled": self.object.is_disabled,
             "isReversible": self.object.is_reversible,
-            "tags": [{"name": tag.name} for tag in self.object.tags.all()],
+            "tags": [{"name": tag.name} for tag in tags],
         }
 
         # Build SQL db JSON if present
@@ -293,7 +306,7 @@ class QuestionDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView
             "tag_info": tag_info,
             "question": self.object,
             "title": "Drill :: Question Detail",
-            "tag_list": ", ".join([x.name for x in self.object.tags.all()]),
+            "tag_list": ", ".join([x.name for x in tags]),
             "study_session_progress": study_session_progress,
             "last_response": last_response,
             "intervals": intervals,
@@ -349,7 +362,7 @@ class QuestionUpdateView(LoginRequiredMixin, UserScopedQuerysetMixin, FormReques
         context["tags"] = [x.name for x in self.object.tags.all()]
 
         # Get a list of the most recently used tags
-        context["recent_tags"] = Question.objects.recent_tags()[:10]
+        context["recent_tags"] = Question.objects.recent_tags(cast(User, self.request.user))[:10]
 
         return context
 
@@ -391,9 +404,39 @@ class QuestionUpdateView(LoginRequiredMixin, UserScopedQuerysetMixin, FormReques
         Returns:
             URL to redirect to after successful update.
         """
-        if "return_url" in self.request.POST:
-            return self.request.POST["return_url"]
+        return_url = self.request.POST.get("return_url", "")
+        if return_url and url_has_allowed_host_and_scheme(
+            return_url,
+            allowed_hosts={self.request.get_host()},
+        ):
+            return return_url
         return reverse("drill:list")
+
+
+def _get_next_question_url(request: HttpRequest) -> str:
+    """Advance the study session and return the URL for the next question.
+
+    Args:
+        request: The HTTP request containing the study session data.
+
+    Returns:
+        URL string for the next question detail page,
+            or for the drill list if the session is complete.
+    """
+    if "drill_study_session" in request.session:
+        request.session.modified = True
+
+        current_index = request.session["drill_study_session"]["list"].index(request.session["drill_study_session"]["current"])
+        if current_index + 1 == len(request.session["drill_study_session"]["list"]):
+            messages.add_message(request, messages.INFO, "Study session over.")
+            request.session.pop("drill_study_session")
+            return reverse("drill:list")
+        next_index = current_index + 1
+        next_question = request.session["drill_study_session"]["list"][next_index]
+        request.session["drill_study_session"]["current"] = next_question
+        return reverse("drill:detail", kwargs={"uuid": next_question})
+
+    return reverse("drill:list")
 
 
 @login_required
@@ -410,20 +453,7 @@ def get_next_question(request: HttpRequest) -> HttpResponseRedirect:
         Redirect to the next question detail page,
             or to the drill list if the session is complete.
     """
-    if "drill_study_session" in request.session:
-        request.session.modified = True
-
-        current_index = request.session["drill_study_session"]["list"].index(request.session["drill_study_session"]["current"])
-        if current_index + 1 == len(request.session["drill_study_session"]["list"]):
-            messages.add_message(request, messages.INFO, "Study session over.")
-            request.session.pop("drill_study_session")
-            return redirect("drill:list")
-        next_index = current_index + 1
-        next_question = request.session["drill_study_session"]["list"][next_index]
-        request.session["drill_study_session"]["current"] = next_question
-        return redirect("drill:detail", uuid=next_question)
-
-    return redirect("drill:list")
+    return HttpResponseRedirect(_get_next_question_url(request))
 
 
 @login_required
@@ -466,11 +496,16 @@ def start_study_session(request: HttpRequest) -> HttpResponseRedirect:
             Redirect to the first question in the session,
                 or to the drill list with a warning if no questions are found.
     """
+    study_method = request.GET.get("study_method")
+    if not study_method:
+        messages.add_message(request, messages.WARNING, "Study method is required")
+        return redirect("drill:list")
+
     user = cast(User, request.user)
     first_question = Question.start_study_session(
         user,
         request.session,
-        request.GET["study_method"],
+        study_method,
         request.GET.get("filter", "review"),
         {k: v for k, v in request.GET.items() if k in ["count", "interval", "keyword", "tags"]}
     )
@@ -485,26 +520,33 @@ def start_study_session(request: HttpRequest) -> HttpResponseRedirect:
     return redirect("drill:list")
 
 
-@login_required
-def record_response(request: HttpRequest, uuid: str, response: str) -> HttpResponseRedirect:
+@api_view(["POST"])
+def record_response(request: HttpRequest, uuid: str, response_type: str) -> Response:
     """Record a user's response to a question.
 
-    Records the user's response (e.g., correct/incorrect) and advances
-    to the next question in the study session.
+    Records the user's response (e.g., correct/incorrect) and returns
+    the URL for the next question in the study session.
 
     Args:
         request: The HTTP request.
         uuid: The UUID of the question being answered.
-        response: The response value to record.
+        response_type: The response value to record.
 
     Returns:
-        Redirect to the next question in the session.
+        JSON response with the redirect URL for the next question.
     """
+    if response_type not in VALID_RESPONSES:
+        return Response(
+            {"status": "ERROR", "message": f"Invalid response: {response_type}"},
+            status=400,
+        )
+
     user = cast(User, request.user)
     question = get_user_object_or_404(user, Question, uuid=uuid)
-    question.record_response(response)
+    question.record_response(response_type)
 
-    return get_next_question(request)
+    redirect_url = _get_next_question_url(request)
+    return Response({"status": "OK", "redirect_url": redirect_url})
 
 
 @api_view(["GET"])
@@ -756,14 +798,16 @@ def is_favorite_mutate(request: HttpRequest) -> Response:
     question_uuid = request.POST["question_uuid"]
     mutation = request.POST["mutation"]
 
+    if mutation not in ("add", "delete"):
+        return Response(
+            {"status": "ERROR", "message": f"Invalid mutation: {mutation}"},
+            status=400,
+        )
+
     user = cast(User, request.user)
     question = get_user_object_or_404(user, Question, uuid=question_uuid)
 
-    if mutation == "add":
-        question.is_favorite = True
-    elif mutation == "delete":
-        question.is_favorite = False
-
+    question.is_favorite = mutation == "add"
     question.save()
 
     return Response({"status": "OK"})
@@ -788,7 +832,16 @@ def get_title_from_url(request: HttpRequest) -> Response:
                 - bookmarkUuid: UUID of existing bookmark if found, None otherwise
                 - message: Status message or error message
     """
-    url = unquote(request.GET["url"])
+    url = unquote(request.GET.get("url", ""))
+    if not url:
+        return Response({"status": "ERROR", "message": "URL is required"}, status=400)
+
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        return Response(
+            {"status": "ERROR", "message": "Only http and https URLs are allowed"},
+            status=400,
+        )
 
     message = ""
     title = None
@@ -804,6 +857,7 @@ def get_title_from_url(request: HttpRequest) -> Response:
         try:
             title = parse_title_from_url(url)[1]
         except Exception as e:
+            log.exception("Failed to parse title from URL: %s", url)
             return Response({"status": "ERROR", "message": str(e)})
 
     response = {

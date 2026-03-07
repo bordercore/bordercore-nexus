@@ -281,6 +281,14 @@ export function DrillQuestionPage({
     [urls.newObject, question.uuid]
   );
 
+  const submitResponse = useCallback((url: string) => {
+    doPost(url, {}, (response: any) => {
+      if (response.data?.redirect_url) {
+        window.location.href = response.data.redirect_url;
+      }
+    });
+  }, []);
+
   // Initialize MathJax and keyboard shortcuts
   useEffect(() => {
     // Configure MathJax only if not already configured
@@ -335,22 +343,22 @@ export function DrillQuestionPage({
           break;
         case "e":
           if (mode === "answer") {
-            window.location.href = urls.recordResponseEasy;
+            submitResponse(urls.recordResponseEasy);
           }
           break;
         case "g":
           if (mode === "answer") {
-            window.location.href = urls.recordResponseGood;
+            submitResponse(urls.recordResponseGood);
           }
           break;
         case "h":
           if (mode === "answer") {
-            window.location.href = urls.recordResponseHard;
+            submitResponse(urls.recordResponseHard);
           }
           break;
         case "r":
           if (mode === "answer") {
-            window.location.href = urls.recordResponseReset;
+            submitResponse(urls.recordResponseReset);
           }
           break;
       }
@@ -361,7 +369,7 @@ export function DrillQuestionPage({
     return () => {
       hotkeys.unbind("right,space,e,g,h,r");
     };
-  }, [mode, urls, handleShowAnswer]);
+  }, [mode, urls, handleShowAnswer, submitResponse]);
 
   // Get study session description for breadcrumb
   const getSessionDescription = () => {
@@ -624,42 +632,38 @@ export function DrillQuestionPage({
 
                     <div className="d-flex mt-5">
                       <div>
-                        <a
-                          href={urls.recordResponseGood}
+                        <button
+                          onClick={() => submitResponse(urls.recordResponseGood)}
                           className="btn btn-primary"
-                          role="button"
                           onMouseOver={() => handleMouseOverResponse("good")}
                           onMouseOut={handleMouseOutResponse}
                         >
                           Good
-                        </a>
-                        <a
-                          href={urls.recordResponseHard}
+                        </button>
+                        <button
+                          onClick={() => submitResponse(urls.recordResponseHard)}
                           className="btn btn-primary ms-2"
-                          role="button"
                           onMouseOver={() => handleMouseOverResponse("hard")}
                           onMouseOut={handleMouseOutResponse}
                         >
                           Hard
-                        </a>
-                        <a
-                          href={urls.recordResponseEasy}
+                        </button>
+                        <button
+                          onClick={() => submitResponse(urls.recordResponseEasy)}
                           className="btn btn-primary ms-2"
-                          role="button"
                           onMouseOver={() => handleMouseOverResponse("easy")}
                           onMouseOut={handleMouseOutResponse}
                         >
                           Easy
-                        </a>
-                        <a
-                          href={urls.recordResponseReset}
+                        </button>
+                        <button
+                          onClick={() => submitResponse(urls.recordResponseReset)}
                           className="btn btn-primary ms-2"
-                          role="button"
                           onMouseOver={() => handleMouseOverResponse("reset")}
                           onMouseOut={handleMouseOutResponse}
                         >
                           Reset
-                        </a>
+                        </button>
                         <a href={urls.drillStudy} className="btn btn-primary ms-2" role="button">
                           Skip
                         </a>

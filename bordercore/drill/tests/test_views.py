@@ -202,12 +202,31 @@ def test_drill_record_response(authenticated_client, question):
         "drill:record_response",
         kwargs={
             "uuid": question[0].uuid,
-            "response": "good"
+            "response_type": "good"
         }
     )
-    resp = client.get(url)
+    resp = client.post(url)
 
-    assert resp.status_code == 302
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "OK"
+    assert "redirect_url" in resp.json()
+
+
+def test_drill_record_response_invalid(authenticated_client, question):
+
+    _, client = authenticated_client()
+
+    url = urls.reverse(
+        "drill:record_response",
+        kwargs={
+            "uuid": question[0].uuid,
+            "response_type": "invalid"
+        }
+    )
+    resp = client.post(url)
+
+    assert resp.status_code == 400
+    assert resp.json()["status"] == "ERROR"
 
 
 def test_drill_get_pinned_tags(authenticated_client, question):

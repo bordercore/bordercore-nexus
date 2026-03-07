@@ -139,7 +139,7 @@ def test_recent_tags(authenticated_client):
     question_1.tags.add(tag_2)
     question_1.save()
 
-    recent_tags = Question.objects.recent_tags()[:2]
+    recent_tags = Question.objects.recent_tags(user)[:2]
 
     assert tag_1.name in [x["name"] for x in recent_tags]
     assert tag_2.name in [x["name"] for x in recent_tags]

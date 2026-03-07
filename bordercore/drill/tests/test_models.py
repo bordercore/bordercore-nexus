@@ -175,13 +175,13 @@ def test_start_study_session(question, tag):
     assert len(session["drill_study_session"]["list"]) == 3
 
     first_word_of_question = question[0].question.split(" ")[0]
-    current = Question.start_study_session(question[0].user, session, "search", "review", {"keyword": first_word_of_question})
+    current = Question.start_study_session(question[0].user, session, "keyword", "review", {"keyword": first_word_of_question})
     assert current in [str(x.uuid) for x in question]
-    assert len(session["drill_study_session"]["list"]) > 1
-    first_word_of_answer = question[0].question.split(" ")[0]
-    current = Question.start_study_session(question[0].user, session, "search", "review", {"keyword": first_word_of_answer})
+    assert len(session["drill_study_session"]["list"]) >= 1
+    first_word_of_answer = question[0].answer.split(" ")[0]
+    current = Question.start_study_session(question[0].user, session, "keyword", "review", {"keyword": first_word_of_answer})
     assert current in [str(x.uuid) for x in question]
-    assert len(session["drill_study_session"]["list"]) > 1
+    assert len(session["drill_study_session"]["list"]) >= 1
 
 
 def test_get_tag_progress(question, tag):
@@ -220,10 +220,44 @@ def test_drill_get_disabled_tags(authenticated_client, tag):
     user, client = authenticated_client()
 
     QuestionFactory(user=user)
-    question_1 = QuestionFactory(is_disabled=True)
+    question_1 = QuestionFactory(user=user, is_disabled=True)
     question_1.tags.add(tag[0])
 
     questions = Question.objects.get_disabled_tags(user)
 
     assert len(questions) == 1
     assert tag[0].name in [x["name"] for x in questions]
+
+
+def test_drill_get_disabled_tags_excludes_other_users(authenticated_client, tag):
+    """Disabled tags from other users should not appear."""
+    from accounts.tests.factories import UserFactory
+
+    user, _ = authenticated_client()
+
+    # Create a disabled question owned by a different user
+    other_user = UserFactory(username="other_user")
+    other_question = QuestionFactory(user=other_user, is_disabled=True)
+    other_question.tags.add(tag[0])
+
+    questions = Question.objects.get_disabled_tags(user)
+    assert len(questions) == 0
+
+
+def test_get_intervals_description_only():
+    """get_intervals(description_only=True) returns only description keys."""
+    question = QuestionFactory()
+    intervals = question.get_intervals(description_only=True)
+
+    for key in ("good", "easy", "hard", "reset"):
+        assert "description" in intervals[key]
+        assert "interval" not in intervals[key]
+        assert "interval_index" not in intervals[key]
+
+
+def test_record_response_invalid():
+    """record_response raises ValueError for invalid response strings."""
+    question = QuestionFactory()
+
+    with pytest.raises(ValueError, match="Invalid response value"):
+        question.record_response("invalid")

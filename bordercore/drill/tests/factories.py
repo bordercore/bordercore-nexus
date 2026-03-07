@@ -12,7 +12,7 @@ class QuestionFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Question
 
-    question = faker.text()
-    answer = faker.text()
-    times_failed = faker.pyint(max_value=50)
+    question = factory.LazyFunction(faker.text)
+    answer = factory.LazyFunction(faker.text)
+    times_failed = factory.LazyFunction(lambda: faker.pyint(max_value=50))
     user = factory.SubFactory(UserFactory)

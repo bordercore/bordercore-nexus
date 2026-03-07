@@ -1,9 +1,68 @@
 try:
+    import time
+
+    from selenium.common.exceptions import ElementClickInterceptedException
     from selenium.webdriver.common.by import By
     from selenium.webdriver.remote.webelement import WebElement
+    from selenium.webdriver.support.wait import WebDriverWait
 except ModuleNotFoundError:
     # Don't worry if this import doesn't exist in production
     pass
+
+
+def _wrap_element(browser, element):
+    """Wrap a Selenium WebElement with JS-fallback click and send_keys."""
+    original_click = element.click
+    original_send_keys = element.send_keys
+
+    def smart_click():
+        try:
+            browser.execute_script(
+                "arguments[0].scrollIntoView({block: 'center'});", element
+            )
+            time.sleep(0.5)
+            original_click()
+        except ElementClickInterceptedException:
+            browser.execute_script("arguments[0].click();", element)
+        except Exception:
+            try:
+                browser.execute_script("arguments[0].click();", element)
+            except Exception:
+                original_click()
+
+    def smart_send_keys(*args):
+        try:
+            browser.execute_script(
+                "arguments[0].scrollIntoView({block: 'center'});", element
+            )
+            time.sleep(0.5)
+            original_send_keys(*args)
+        except Exception:
+            if len(args) == 1 and isinstance(args[0], str):
+                try:
+                    browser.execute_script(
+                        "arguments[0].value = arguments[1];", element, args[0]
+                    )
+                    browser.execute_script(
+                        "arguments[0].dispatchEvent(new Event('input', { bubbles: true }));",
+                        element,
+                    )
+                    browser.execute_script(
+                        "arguments[0].dispatchEvent(new Event('change', { bubbles: true }));",
+                        element,
+                    )
+                except Exception:
+                    original_send_keys(*args)
+            else:
+                original_send_keys(*args)
+
+    class ElementWrapper(WebElement):
+        def __init__(self, el, click_fn, send_keys_fn):
+            super().__init__(el.parent, el.id)
+            self.click = click_fn
+            self.send_keys = send_keys_fn
+
+    return ElementWrapper(element, smart_click, smart_send_keys)
 
 
 class SummaryPage:
@@ -20,149 +79,52 @@ class SummaryPage:
         self.browser = browser
 
     def find_element(self, *selector):
-        """
-        Find an element with JS click fallback
-        """
-        import time
-
-        from selenium.webdriver.support.wait import WebDriverWait
-
-        # Wait for element to be present
+        """Find an element with JS click fallback."""
         wait = WebDriverWait(self.browser, timeout=10)
         try:
             wait.until(lambda driver: driver.find_element(*selector))
-        except:
+        except Exception:
             pass
 
         found_element = self.browser.find_element(*selector)
-
-        # Capture variables for closure
-        browser = self.browser
-
-        # Add a click method to the element that uses JS click as fallback
-        original_click = found_element.click
-        def smart_click():
-            from selenium.common.exceptions import \
-                ElementClickInterceptedException
-            try:
-                browser.execute_script("arguments[0].scrollIntoView({block: 'center'});", found_element)
-                time.sleep(0.5)
-                original_click()
-            except ElementClickInterceptedException:
-                # If element is intercepted, use JavaScript click which bypasses overlays
-                browser.execute_script("arguments[0].click();", found_element)
-            except Exception:
-                # If regular click fails, try JS click
-                try:
-                    browser.execute_script("arguments[0].click();", found_element)
-                except:
-                    original_click()
-
-        # Also add a send_keys method that uses JS fallback or ensures focus
-        original_send_keys = found_element.send_keys
-        def smart_send_keys(*args):
-            try:
-                browser.execute_script("arguments[0].scrollIntoView({block: 'center'});", found_element)
-                time.sleep(0.5)
-                original_send_keys(*args)
-            except Exception:
-                # Fallback: try to set value via JS if it's a simple string
-                if len(args) == 1 and isinstance(args[0], str):
-                    try:
-                        browser.execute_script("arguments[0].value = arguments[1];", found_element, args[0])
-                        browser.execute_script("arguments[0].dispatchEvent(new Event('input', { bubbles: true }));", found_element)
-                        browser.execute_script("arguments[0].dispatchEvent(new Event('change', { bubbles: true }));", found_element)
-                    except:
-                        original_send_keys(*args)
-                else:
-                    original_send_keys(*args)
-
-        # Use a wrapper class to avoid modifying the original element object directly
-        # which might cause issues with some selenium versions or drivers
-        class ElementWrapper(WebElement):
-            def __init__(self, element, smart_click, smart_send_keys):
-                super().__init__(element.parent, element.id)
-                self.click = smart_click
-                self.send_keys = smart_send_keys
-
-        return ElementWrapper(found_element, smart_click, smart_send_keys)
+        return _wrap_element(self.browser, found_element)
 
     def study_button(self):
-        """
-        Find the 'Study' button
-        """
+        """Find the 'Study' button."""
         return self.find_element(*self.STUDY_BUTTON)
 
     def tag_radio_option(self):
-        """
-        Find the 'Tag' study method option
-        """
+        """Find the 'Tag' study method option."""
         return self.find_element(*self.TAG_RADIO_OPTION)
 
     def tag_input(self):
-        """
-        Find the 'Tag' text input
-        """
+        """Find the 'Tag' text input."""
         return self.find_element(*self.TAG_INPUT)
 
     def start_study_session_button(self):
-        """
-        Find the 'Start Study Session' button
-        """
+        """Find the 'Start Study Session' button."""
         return self.find_element(*self.START_STUDY_SESSION_BUTTON)
 
     def tag_dropdown_option(self, tag_name):
-        """
-        Find the dropdown option with display name 'tag_name'
-        """
-        import time
-
-        from selenium.common.exceptions import ElementClickInterceptedException
-        from selenium.webdriver.support.wait import WebDriverWait
-
-        # Wait for options to be present
+        """Find the dropdown option with display name 'tag_name'."""
         wait = WebDriverWait(self.browser, timeout=10)
         try:
-            wait.until(lambda driver: len(driver.find_elements(*self.TAG_DROPDOWN)) > 0)
-        except:
+            wait.until(
+                lambda driver: len(driver.find_elements(*self.TAG_DROPDOWN)) > 0
+            )
+        except Exception:
             pass
 
         tag_list = self.browser.find_elements(*self.TAG_DROPDOWN)
 
         for option in tag_list:
             if option.text.strip() == tag_name:
-                # Wrap the element with smart click handling
-                browser = self.browser
-                original_click = option.click
-                def smart_click():
-                    try:
-                        browser.execute_script("arguments[0].scrollIntoView({block: 'center'});", option)
-                        time.sleep(0.5)
-                        original_click()
-                    except ElementClickInterceptedException:
-                        # If element is intercepted, use JavaScript click which bypasses overlays
-                        browser.execute_script("arguments[0].click();", option)
-                    except Exception:
-                        try:
-                            browser.execute_script("arguments[0].click();", option)
-                        except:
-                            original_click()
-
-                class ElementWrapper(WebElement):
-                    def __init__(self, element, smart_click):
-                        super().__init__(element.parent, element.id)
-                        self.click = smart_click
-
-                return ElementWrapper(option, smart_click)
+                return _wrap_element(self.browser, option)
 
     def question_text(self):
-        """
-        Find the question text
-        """
+        """Find the question text."""
         return self.browser.find_element(*self.QUESTION).text
 
     def breadcrumb(self):
-        """
-        Find the breadcrumb text
-        """
+        """Find the breadcrumb text."""
         return self.browser.find_element(*self.BREADCRUMB).text

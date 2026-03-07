@@ -45,7 +45,7 @@ urlpatterns = [
         name="is_favorite_mutate"
     ),
     path(
-        route="response/<uuid:uuid>/<str:response>/",
+        route="response/<uuid:uuid>/<str:response_type>/",
         view=views.record_response,
         name="record_response"
     ),

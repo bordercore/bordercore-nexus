@@ -36,6 +36,7 @@ from .managers import DrillManager
 log = logging.getLogger(f"bordercore.{__name__}")
 
 INTERVALS_DEFAULT = [1, 2, 3, 5, 8, 13, 21, 30]
+VALID_RESPONSES = {"good", "easy", "hard", "reset"}
 
 
 class IntervalResponse(TypedDict, total=False):
@@ -291,28 +292,12 @@ class Question(TimeStampedModel):
     def get_all_tags_progress(self) -> list[dict[str, Union[str, int]]]:
         """Return review/progress summaries for each tag on this question.
 
-        For each tag the question has, this calls `get_tag_progress(...)` and
-        returns the list of those progress dicts.
-
         Returns:
             A list of tag progress dicts. Each dict includes fields such as
             "name", "progress", "last_reviewed", and "count".
         """
-        info: list[dict[str, Union[str, int]]] = []
-        for tag in self.tags.all():
-            info.append(Question.get_tag_progress(self.user, tag.name))
-        return info
-
-    def save(self, *args: Any, **kwargs: Any) -> None:
-        """Save the question.
-
-        This method currently just forwards to the superclass `save()`.
-
-        Args:
-            *args: Variable length argument list.
-            **kwargs: Arbitrary keyword arguments.
-        """
-        super().save(*args, **kwargs)
+        tag_names = list(self.tags.values_list("name", flat=True))
+        return Question.objects._batch_tag_progress(self.user, tag_names)
 
     def delete(
             self,

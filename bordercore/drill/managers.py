@@ -11,7 +11,8 @@ from typing import Any, Union
 from django.apps import apps
 from django.contrib.auth.models import User
 from django.db import models
-from django.db.models import F, Max, Q, QuerySet
+from django.db.models import Count, F, Max, Q, QuerySet
+from django.urls import reverse
 from django.utils import timezone
 
 from tag.models import Tag
@@ -139,17 +140,9 @@ class DrillManager(models.Manager):
         Returns:
             List of tag progress information dictionaries for pinned tags.
         """
-
-        Question = apps.get_model("drill", "Question")
-
         tags = user.userprofile.pinned_drill_tags.all().only("name").order_by("drilltag__sort_order")
-
-        info = []
-
-        for tag in tags:
-            info.append(Question.get_tag_progress(user, tag.name))
-
-        return info
+        tag_names = [t.name for t in tags]
+        return self._batch_tag_progress(user, tag_names)
 
     def get_disabled_tags(self, user: User) -> list[dict[str, Union[str, int]]]:
         """Get the user's disabled tags.
@@ -160,21 +153,21 @@ class DrillManager(models.Manager):
         Returns:
             List of tag progress information dictionaries for disabled tags.
         """
-
         Question = apps.get_model("drill", "Question")
 
-        tag_ids = Question.objects.filter(is_disabled=True).values_list("tags", flat=True)
-        tags = Tag.objects.filter(id__in=tag_ids).distinct()
+        tag_ids = Question.objects.filter(
+            is_disabled=True, user=user
+        ).values_list("tags", flat=True)
+        tag_names = list(
+            Tag.objects.filter(id__in=tag_ids).distinct().values_list("name", flat=True)
+        )
+        return self._batch_tag_progress(user, tag_names)
 
-        info = []
-
-        for tag in tags:
-            info.append(Question.get_tag_progress(user, tag.name))
-
-        return info
-
-    def recent_tags(self) -> Any:
+    def recent_tags(self, user: User) -> Any:
         """Get the tags most recently attached to questions.
+
+        Args:
+            user: The user to get recent tags for.
 
         Returns:
             Tags ordered by most recently created, annotated with the maximum
@@ -183,10 +176,73 @@ class DrillManager(models.Manager):
 
         Question = apps.get_model("drill", "Question")
 
-        return Question.objects.values(
+        return Question.objects.filter(user=user).values(
             name=F("tags__name")
         ).annotate(
             max=Max("created")
         ).order_by(
             "-max"
         )
+
+    def _batch_tag_progress(
+        self, user: User, tag_names: list[str]
+    ) -> list[dict[str, Union[str, int]]]:
+        """Compute progress for multiple tags in bulk.
+
+        Args:
+            user: The user whose questions to inspect.
+            tag_names: List of tag names to compute progress for.
+
+        Returns:
+            List of tag progress dicts in the same order as tag_names.
+        """
+        if not tag_names:
+            return []
+
+        Question = apps.get_model("drill", "Question")
+
+        now = timezone.now()
+        due_filter = Q(
+            question__interval__lte=now - F("question__last_reviewed")  # type: ignore[operator]
+        ) | Q(question__last_reviewed__isnull=True)
+
+        stats = (
+            Tag.objects.filter(user=user, name__in=tag_names)
+            .annotate(
+                q_count=Count(
+                    "question",
+                    filter=Q(question__user=user),
+                ),
+                q_todo=Count(
+                    "question",
+                    filter=Q(question__user=user) & due_filter,
+                ),
+                q_last_reviewed=Max(
+                    "question__last_reviewed",
+                    filter=Q(question__user=user),
+                ),
+            )
+        )
+
+        stats_by_name = {s.name: s for s in stats}
+
+        results = []
+        for name in tag_names:
+            stat = stats_by_name.get(name)
+            count = stat.q_count if stat else 0
+            todo = stat.q_todo if stat else 0
+            progress = round(100 - (todo / count * 100)) if count else 0
+            last_reviewed_str = (
+                stat.q_last_reviewed.strftime("%B %d, %Y")
+                if stat and stat.q_last_reviewed
+                else "Never"
+            )
+            results.append({
+                "name": name,
+                "progress": progress,
+                "last_reviewed": last_reviewed_str,
+                "url": reverse("drill:start_study_session")
+                + f"?study_method=tag&tags={name}",
+                "count": count,
+            })
+        return results
