@@ -72,8 +72,9 @@ class UserProfileForm(ModelForm):
             self.fields["homepage_default_collection"].widget.attrs["class"] = "form-control form-select"
             self.fields["homepage_image_collection"].widget.attrs["class"] = "form-control form-select"
         else:
-            # If the user doesn't have any collections, remove the field
+            # If the user doesn't have any collections, remove the fields
             self.fields.pop("homepage_default_collection")
+            self.fields.pop("homepage_image_collection")
 
     class Meta:
         """Meta configuration for UserProfileForm.

@@ -90,7 +90,7 @@ class Command(BaseCommand):
             raise CommandError(f"Database connection error: {e}")
         
         # Build API URL
-        url = f"http://api.weatherapi.com/v1/forecast.json?key={api_key}&q=02138&days=1&aqi=yes&alerts=yes"
+        url = f"https://api.weatherapi.com/v1/forecast.json?key={api_key}&q=02138&days=1&aqi=yes&alerts=yes"
         
         # Make API request
         try:

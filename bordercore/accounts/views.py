@@ -21,6 +21,8 @@ from django.forms import BaseModelForm
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
+from django.utils.http import url_has_allowed_host_and_scheme
+from django.views.decorators.http import require_http_methods
 from django.views.generic.edit import UpdateView
 
 from accounts.forms import UserProfileForm
@@ -123,7 +125,8 @@ class UserProfileUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView):
         """Shared handler for S3-backed profile image fields.
 
         Handles delete requests and uploads of new images, updating the model
-        field and deleting any previous object from S3.
+        field on self.object without saving. The caller is responsible for
+        saving the model after all handlers have run.
 
         Args:
             form: The bound form instance.
@@ -148,7 +151,6 @@ class UserProfileUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView):
                 delete_profile_image(profile_uuid, s3_prefix, old_name)
 
             setattr(self.object, field_name, None)
-            self.object.save()
             return
 
         # Upload branch
@@ -166,13 +168,7 @@ class UserProfileUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView):
                 content_type=uploaded_file.content_type,
             )
 
-            # Update the profile field
             setattr(self.object, field_name, filename)
-            self.object.save()
-
-            # Mirror onto the user's profile instance in case templates
-            # are using that object directly
-            setattr(user.userprofile, field_name, uploaded_file.name)
 
     def handle_background_image(self, form: BaseModelForm) -> None:
         """Handle background image upload or deletion."""
@@ -271,6 +267,13 @@ def sort_pinned_notes(request: HttpRequest) -> Response:
     new_position = int(request.POST["new_position"])
 
     user = cast(User, request.user)
+    total = UserNote.objects.filter(userprofile=user.userprofile).count()
+    if new_position < 1 or new_position > total:
+        return Response(
+            {"status": "ERROR", "message": f"Position must be between 1 and {total}"},
+            status=400,
+        )
+
     user_note = get_object_or_404(UserNote, userprofile=user.userprofile, blob__uuid=note_uuid)
     UserNote.reorder(user_note, new_position)
 
@@ -320,11 +323,22 @@ def pin_note(request: HttpRequest) -> Response:
     return Response({"status": status, "message": message})
 
 
+ALLOWED_SESSION_KEYS = frozenset({
+    "bookmark_view_type",
+    "current_feed",
+    "search_tag_detail_current_tab",
+    "show_sidebar",
+    "todo_sort",
+    "top_search_filter",
+})
+
+
 @api_view(["POST"])
 def store_in_session(request: HttpRequest) -> Response:
     """Store POST data in the session.
 
-    Saves all POST parameters to the session for later retrieval.
+    Only keys in ALLOWED_SESSION_KEYS are accepted to prevent overwriting
+    Django internal session keys.
 
     Args:
         request: The HTTP request containing POST data to store.
@@ -333,15 +347,16 @@ def store_in_session(request: HttpRequest) -> Response:
         JSON response with operation status.
     """
     for key in request.POST:
-        request.session[key] = request.POST[key]
+        if key in ALLOWED_SESSION_KEYS:
+            request.session[key] = request.POST[key]
     return Response({"status": "OK"})
 
 
+@require_http_methods(["GET", "POST"])
 def bordercore_login(request: HttpRequest) -> HttpResponse:
     """Handle user login.
 
-    Authenticates users and logs them into the system. Validates username
-    existence, password correctness, and account status. Sets a cookie to
+    Authenticates users and logs them into the system. Sets a cookie to
     remember the username for a month.
 
     Args:
@@ -361,20 +376,22 @@ def bordercore_login(request: HttpRequest) -> HttpResponse:
         username = request.POST["username"]
         password = request.POST["password"]
 
-        if not User.objects.filter(username=username).exists():
-            message = "Username does not exist"
+        user = authenticate(username=username, password=password)
+        if user is not None:
+            if user.is_active:
+                login(request, user)
+                next_url = request.POST.get("next", "")
+                if not next_url or not url_has_allowed_host_and_scheme(
+                    next_url, allowed_hosts={request.get_host()}
+                ):
+                    next_url = "homepage:homepage"
+                response = redirect(next_url)
+                # Remember the username for a month
+                response.set_cookie("bordercore_username", username, max_age=2592000)
+                return response
+            message = "Disabled account"
         else:
-            user = authenticate(username=username, password=password)
-            if user is not None:
-                if user.is_active:
-                    login(request, user)
-                    response = redirect(request.POST.get("next", "homepage:homepage"))
-                    # Remember the username for a month
-                    response.set_cookie("bordercore_username", username, max_age=2592000)
-                    return response
-                message = "Disabled account"
-            else:
-                message = "Invalid login"
+            message = "Invalid username or password"
 
     return render(request, "login.html", {
         "message": message,

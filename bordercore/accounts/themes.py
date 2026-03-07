@@ -5,7 +5,6 @@ Theme identifiers (css_id) must match the SCSS file names and color-mode attribu
 """
 
 from dataclasses import dataclass
-from typing import Dict, List, Tuple
 
 
 @dataclass(frozen=True)
@@ -28,7 +27,7 @@ class Theme:
 # The css_id must match:
 #   1. The SCSS file: themes/_theme-{css_id}.scss
 #   2. The CSS selector: :root[color-mode="{css_id}"]
-THEMES: Dict[str, Theme] = {
+THEMES: dict[str, Theme] = {
     "light": Theme(
         css_id="light",
         display_name="Light",
@@ -60,7 +59,7 @@ THEMES: Dict[str, Theme] = {
 DEFAULT_THEME = "light"
 
 
-def get_theme_choices() -> List[Tuple[str, str]]:
+def get_theme_choices() -> list[tuple[str, str]]:
     """Return theme choices formatted for Django model/form fields.
 
     Returns:
