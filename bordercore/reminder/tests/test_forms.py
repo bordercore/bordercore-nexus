@@ -18,12 +18,12 @@ def _base_form_data():
 
 
 def test_clean_days_of_week_input_empty():
-    """clean_days_of_week_input: empty string returns [] and copies to days_of_week."""
+    """clean_days_of_week_input: empty string returns [] and sets on instance."""
     data = _base_form_data()
     data["days_of_week_input"] = ""
     form = ReminderForm(data=data)
     assert form.is_valid()
-    assert form.cleaned_data.get("days_of_week") == []
+    assert form.instance.days_of_week == []
 
 
 def test_clean_days_of_week_input_json_array():
@@ -32,7 +32,7 @@ def test_clean_days_of_week_input_json_array():
     data["days_of_week_input"] = "[0, 2, 2]"
     form = ReminderForm(data=data)
     assert form.is_valid()
-    assert form.cleaned_data.get("days_of_week") == [0, 2]
+    assert form.instance.days_of_week == [0, 2]
 
 
 def test_clean_days_of_week_input_comma_separated():
@@ -41,7 +41,7 @@ def test_clean_days_of_week_input_comma_separated():
     data["days_of_week_input"] = "2, 0, 2"
     form = ReminderForm(data=data)
     assert form.is_valid()
-    assert form.cleaned_data.get("days_of_week") == [0, 2]
+    assert form.instance.days_of_week == [0, 2]
 
 
 def test_clean_days_of_week_input_invalid_day_raises():
@@ -72,12 +72,12 @@ def test_clean_days_of_week_input_non_numeric_raises():
 
 
 def test_clean_days_of_month_input_empty():
-    """clean_days_of_month_input: empty string returns [] and copies to days_of_month."""
+    """clean_days_of_month_input: empty string returns [] and sets on instance."""
     data = _base_form_data()
     data["days_of_month_input"] = ""
     form = ReminderForm(data=data)
     assert form.is_valid()
-    assert form.cleaned_data.get("days_of_month") == []
+    assert form.instance.days_of_month == []
 
 
 def test_clean_days_of_month_input_json_array():
@@ -86,7 +86,7 @@ def test_clean_days_of_month_input_json_array():
     data["days_of_month_input"] = "[1, 15, 15]"
     form = ReminderForm(data=data)
     assert form.is_valid()
-    assert form.cleaned_data.get("days_of_month") == [1, 15]
+    assert form.instance.days_of_month == [1, 15]
 
 
 def test_clean_days_of_month_input_comma_separated():
@@ -95,7 +95,7 @@ def test_clean_days_of_month_input_comma_separated():
     data["days_of_month_input"] = "15, 1, 15"
     form = ReminderForm(data=data)
     assert form.is_valid()
-    assert form.cleaned_data.get("days_of_month") == [1, 15]
+    assert form.instance.days_of_month == [1, 15]
 
 
 def test_clean_days_of_month_input_invalid_day_zero_raises():
@@ -134,7 +134,7 @@ def test_clean_weekly_with_days_valid():
     data["days_of_week_input"] = "[0, 2]"
     form = ReminderForm(data=data)
     assert form.is_valid()
-    assert form.cleaned_data.get("days_of_week") == [0, 2]
+    assert form.instance.days_of_week == [0, 2]
 
 
 def test_clean_monthly_requires_days_of_month():
@@ -155,16 +155,16 @@ def test_clean_monthly_with_days_valid():
     data["days_of_month_input"] = "[1, 15]"
     form = ReminderForm(data=data)
     assert form.is_valid()
-    assert form.cleaned_data.get("days_of_month") == [1, 15]
+    assert form.instance.days_of_month == [1, 15]
 
 
-def test_clean_copies_days_to_model_fields():
-    """clean(): copies days_of_week_input to days_of_week, days_of_month_input to days_of_month."""
+def test_clean_copies_days_to_instance():
+    """clean(): copies days_of_week_input and days_of_month_input to instance fields."""
     data = _base_form_data()
     data["schedule_type"] = Reminder.SCHEDULE_TYPE_DAILY
     data["days_of_week_input"] = "[1, 3]"
     data["days_of_month_input"] = "[5, 20]"
     form = ReminderForm(data=data)
     assert form.is_valid()
-    assert form.cleaned_data["days_of_week"] == [1, 3]
-    assert form.cleaned_data["days_of_month"] == [5, 20]
+    assert form.instance.days_of_week == [1, 3]
+    assert form.instance.days_of_month == [5, 20]

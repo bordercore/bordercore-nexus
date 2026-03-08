@@ -6,13 +6,14 @@ require authentication and automatically filter to the current user's reminders.
 """
 
 from datetime import datetime
-from typing import Any, Dict, cast
+from typing import Any, cast
 
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
+from django.core.paginator import Paginator
 from django.forms import BaseModelForm
 from rest_framework.request import Request
 
@@ -39,7 +40,7 @@ class ReminderAppView(LoginRequiredMixin, TemplateView):
 
     template_name = "reminder/index.html"
 
-    def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         """Add title to the template context.
 
         Args:
@@ -67,7 +68,7 @@ class ReminderDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
 
-    def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         """Add detail-ajax URL to context.
 
         Args:
@@ -77,10 +78,9 @@ class ReminderDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView
             Context dictionary with reminder details URLs.
         """
         context = super().get_context_data(**kwargs)
-        reminder = self.get_object()
-        context["title"] = f"{reminder.name} - Reminder"
+        context["title"] = f"{self.object.name} - Reminder"
         context["detail_ajax_url"] = reverse(
-            "reminder:detail-ajax", kwargs={"uuid": reminder.uuid}
+            "reminder:detail-ajax", kwargs={"uuid": self.object.uuid}
         )
         return context
 
@@ -198,7 +198,7 @@ class ReminderCreateView(LoginRequiredMixin, CreateView):
     template_name = "reminder/update.html"
     success_url = reverse_lazy("reminder:app")
 
-    def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         """Add form URLs to context.
 
         Args:
@@ -242,7 +242,7 @@ class ReminderCreateView(LoginRequiredMixin, CreateView):
             HttpResponse with form errors, JSON for AJAX requests.
         """
         if self.request.headers.get("X-Requested-With") == "XMLHttpRequest" or self.request.content_type == "application/x-www-form-urlencoded":
-            errors: Dict[str, Any] = {}
+            errors: dict[str, Any] = {}
             for field, field_errors in form.errors.items():
                 errors[field] = field_errors
             return JsonResponse({"errors": errors}, status=400)
@@ -264,7 +264,7 @@ class ReminderUpdateView(LoginRequiredMixin, UserScopedQuerysetMixin, UpdateView
     slug_url_kwarg = "uuid"
     success_url = reverse_lazy("reminder:app")
 
-    def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         """Add form URLs to context.
 
         Args:
@@ -274,13 +274,12 @@ class ReminderUpdateView(LoginRequiredMixin, UserScopedQuerysetMixin, UpdateView
             Context dictionary with form URLs.
         """
         context = super().get_context_data(**kwargs)
-        reminder = self.get_object()
         context["title"] = "Edit Reminder"
         context["is_edit"] = True
         context["form_ajax_url"] = reverse(
-            "reminder:form-ajax", kwargs={"uuid": reminder.uuid}
+            "reminder:form-ajax", kwargs={"uuid": self.object.uuid}
         )
-        context["submit_url"] = reverse("reminder:update", kwargs={"uuid": reminder.uuid})
+        context["submit_url"] = reverse("reminder:update", kwargs={"uuid": self.object.uuid})
         context["cancel_url"] = reverse("reminder:app")
         return context
 
@@ -311,7 +310,7 @@ class ReminderUpdateView(LoginRequiredMixin, UserScopedQuerysetMixin, UpdateView
             HttpResponse with form errors, JSON for AJAX requests.
         """
         if self.request.headers.get("X-Requested-With") == "XMLHttpRequest" or self.request.content_type == "application/x-www-form-urlencoded":
-            errors: Dict[str, Any] = {}
+            errors: dict[str, Any] = {}
             for field, field_errors in form.errors.items():
                 errors[field] = field_errors
             return JsonResponse({"errors": errors}, status=400)
@@ -356,7 +355,6 @@ class ReminderListAjaxView(APIView):
             "next_trigger_at", "-created"
         )
 
-        from django.core.paginator import Paginator
         paginator = Paginator(queryset, self.paginate_by)
         page_number = request.query_params.get("page", 1)
         page_obj = paginator.get_page(page_number)

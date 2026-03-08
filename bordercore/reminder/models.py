@@ -8,7 +8,6 @@ days, or monthly on specific dates.
 import calendar
 import uuid
 from datetime import datetime, time, timedelta
-from typing import List, Optional
 
 from django.contrib.auth.models import User
 from django.db import models
@@ -96,7 +95,7 @@ class Reminder(TimeStampedModel):
     uuid: models.UUIDField = models.UUIDField(default=uuid.uuid4, editable=False)
     user = models.ForeignKey(User, on_delete=models.PROTECT)
 
-    name = models.TextField()
+    name = models.CharField(max_length=255)
     note = models.TextField(null=True, blank=True)
 
     is_active = models.BooleanField(default=True)
@@ -124,7 +123,7 @@ class Reminder(TimeStampedModel):
     )
 
     last_triggered_at = models.DateTimeField(null=True, blank=True)
-    next_trigger_at = models.DateTimeField(null=True, blank=True)
+    next_trigger_at = models.DateTimeField(null=True, blank=True, db_index=True)
 
     def __str__(self) -> str:
         """Return string representation of the reminder.
@@ -134,7 +133,7 @@ class Reminder(TimeStampedModel):
         """
         return self.name
 
-    def get_days_of_week_display(self) -> List[str]:
+    def get_days_of_week_display(self) -> list[str]:
         """Return human-readable names for the selected days of week.
 
         Returns:
@@ -182,8 +181,8 @@ class Reminder(TimeStampedModel):
         return f"{n}{suffix}"
 
     def calculate_next_trigger_at(
-        self, from_datetime: Optional[datetime] = None
-    ) -> Optional[datetime]:
+        self, from_datetime: datetime | None = None
+    ) -> datetime | None:
         """Calculate the next trigger datetime based on schedule settings.
 
         This method computes when the reminder should next trigger based on
@@ -312,16 +311,17 @@ class Reminder(TimeStampedModel):
             # No days selected, default to same day next month
             return self._add_months(from_datetime, 1, trigger_time_val)
 
-        sorted_days = sorted(days_of_month)
         current_day = from_datetime.day
         current_year = from_datetime.year
         current_month = from_datetime.month
 
         _, days_in_current_month = calendar.monthrange(current_year, current_month)
 
+        # Clamp days to month length and deduplicate (e.g., [30, 31] -> [30] in a 30-day month)
+        actual_days = sorted(set(min(d, days_in_current_month) for d in days_of_month))
+
         # Check if today is a matching day and the time hasn't passed
-        for day in sorted_days:
-            actual_day = min(day, days_in_current_month)
+        for actual_day in actual_days:
             if actual_day == current_day:
                 today_trigger = timezone.make_aware(
                     datetime.combine(from_datetime.date(), trigger_time_val),
@@ -331,8 +331,7 @@ class Reminder(TimeStampedModel):
                     return today_trigger
 
         # Check if there's a matching day later this month
-        for day in sorted_days:
-            actual_day = min(day, days_in_current_month)
+        for actual_day in actual_days:
             if actual_day > current_day:
                 next_date = from_datetime.date().replace(day=actual_day)
                 return timezone.make_aware(
@@ -348,7 +347,7 @@ class Reminder(TimeStampedModel):
             next_year += 1
 
         _, days_in_next_month = calendar.monthrange(next_year, next_month)
-        first_day = min(sorted_days[0], days_in_next_month)
+        first_day = min(sorted(days_of_month)[0], days_in_next_month)
 
         next_date = from_datetime.date().replace(
             year=next_year, month=next_month, day=first_day

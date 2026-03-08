@@ -36,8 +36,6 @@ class ReminderForm(ModelForm):
             "start_at",
             "schedule_type",
             "trigger_time",
-            "days_of_week",
-            "days_of_month",
             # Legacy fields (kept for backward compatibility)
             "interval_value",
             "interval_unit",
@@ -58,8 +56,6 @@ class ReminderForm(ModelForm):
             "start_at": TextInput(attrs={"class": "form-control", "type": "datetime-local"}),
             "schedule_type": Select(attrs={"class": "form-control form-select"}),
             "trigger_time": TextInput(attrs={"class": "form-control", "type": "time"}),
-            "days_of_week": forms.HiddenInput(),
-            "days_of_month": forms.HiddenInput(),
             # Legacy widgets
             "interval_value": TextInput(
                 attrs={"class": "form-control", "type": "number", "min": "1"}
@@ -74,8 +70,6 @@ class ReminderForm(ModelForm):
             "start_at": "Start Date (optional)",
             "schedule_type": "Schedule Type",
             "trigger_time": "Time",
-            "days_of_week": "Days of Week",
-            "days_of_month": "Days of Month",
             "interval_value": "Repeat Every",
             "interval_unit": "Unit",
         }
@@ -87,10 +81,6 @@ class ReminderForm(ModelForm):
         # Make legacy fields not required
         self.fields["interval_value"].required = False
         self.fields["interval_unit"].required = False
-
-        # Make JSON fields not required (they're handled via custom inputs)
-        self.fields["days_of_week"].required = False
-        self.fields["days_of_month"].required = False
 
     def clean_days_of_week_input(self) -> list[int]:
         """Parse and validate days_of_week_input field.
@@ -164,15 +154,15 @@ class ReminderForm(ModelForm):
 
         schedule_type = cleaned_data.get("schedule_type")
 
-        # Copy parsed days from custom input fields to model fields
-        if "days_of_week_input" in cleaned_data:
-            cleaned_data["days_of_week"] = cleaned_data.get("days_of_week_input", [])
-        if "days_of_month_input" in cleaned_data:
-            cleaned_data["days_of_month"] = cleaned_data.get("days_of_month_input", [])
+        # Copy parsed days from custom input fields to model instance
+        days_of_week = cleaned_data.get("days_of_week_input", [])
+        days_of_month = cleaned_data.get("days_of_month_input", [])
+        if self.instance:
+            self.instance.days_of_week = days_of_week
+            self.instance.days_of_month = days_of_month
 
         # Validate based on schedule type
         if schedule_type == Reminder.SCHEDULE_TYPE_WEEKLY:
-            days_of_week = cleaned_data.get("days_of_week", [])
             if not days_of_week:
                 self.add_error(
                     "days_of_week_input",
@@ -180,7 +170,6 @@ class ReminderForm(ModelForm):
                 )
 
         elif schedule_type == Reminder.SCHEDULE_TYPE_MONTHLY:
-            days_of_month = cleaned_data.get("days_of_month", [])
             if not days_of_month:
                 self.add_error(
                     "days_of_month_input",

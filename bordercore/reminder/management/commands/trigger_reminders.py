@@ -23,6 +23,7 @@ from todo.models import Todo
 
 from django.core.mail import send_mail
 from django.core.management.base import BaseCommand
+from django.db import transaction
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
@@ -87,13 +88,17 @@ class Command(BaseCommand):
         """
         now = timezone.now()
 
-        # Query for active reminders that are due
-        due_reminders = Reminder.objects.filter(
-            is_active=True,
-            next_trigger_at__lte=now,
-        )
+        # Query for active reminders that are due, locking rows to prevent
+        # double-triggers from overlapping cron runs
+        with transaction.atomic():
+            due_reminders = list(
+                Reminder.objects.select_for_update(skip_locked=True).filter(
+                    is_active=True,
+                    next_trigger_at__lte=now,
+                )
+            )
 
-        self.reminders_due = due_reminders.count()
+        self.reminders_due = len(due_reminders)
 
         if self.reminders_due > 0 and verbosity >= 1:
             self.stdout.write(f"Found {self.reminders_due} reminders due for triggering")
@@ -124,7 +129,7 @@ class Command(BaseCommand):
                 # Update timestamps only after successful notification
                 reminder.last_triggered_at = now
                 reminder.next_trigger_at = reminder.calculate_next_trigger_at(from_datetime=now)
-                reminder.save()
+                reminder.save(update_fields=["last_triggered_at", "next_trigger_at"])
 
             self.reminders_sent += 1
 
@@ -179,16 +184,13 @@ This is your reminder: {reminder.name}
 Bordercore Reminder Service
 """
 
-        try:
-            send_mail(
-                subject=subject,
-                message=body,
-                from_email="Admin <admin@bordercore.com>",
-                recipient_list=[user_email],
-                fail_silently=False,
-            )
-        except Exception as e:
-            raise Exception(f"Failed to send email to {user_email}: {str(e)}")
+        send_mail(
+            subject=subject,
+            message=body,
+            from_email="Admin <admin@bordercore.com>",
+            recipient_list=[user_email],
+            fail_silently=False,
+        )
 
     def create_todo_from_reminder(self, reminder: Reminder) -> None:
         """Create a Todo task from a reminder when it triggers.
