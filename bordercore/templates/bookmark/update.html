@@ -1,6 +1,5 @@
 {% extends "base.html" %}
 {% load vite_tags %}
-{% load favicon %}
 
 {% block title %} Bookmarks {% endblock %}
 
@@ -12,7 +11,6 @@
         data-form-action="{{ request.path }}"
         data-csrf-token="{{ csrf_token }}"
         {% if object.thumbnail_url %}data-thumbnail-url="{{ object.thumbnail_url }}"{% endif %}
-        data-favicon-html="{{ form.instance.url|favicon|default:'' }}"
         data-bookmark-name="{{ form.instance.name|default:'New Bookmark' }}"
         data-initial-importance="{{ form.importance.value|yesno:'true,false' }}"
         data-initial-is-pinned="{{ form.is_pinned.value|yesno:'true,false' }}"
@@ -28,6 +26,7 @@
     {{ back_references|json_script:"backReferences" }}
     {{ tags|json_script:"initial-tags" }}
     {{ related_nodes|json_script:"related_nodes" }}
+    {{ favicon_html|json_script:"favicon-html" }}
 
     <script id="formFields" type="application/json">
     [

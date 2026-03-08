@@ -32,7 +32,6 @@ if (container) {
   const formAction = container.getAttribute("data-form-action") || "";
   const csrfToken = container.getAttribute("data-csrf-token") || "";
   const thumbnailUrl = container.getAttribute("data-thumbnail-url") || undefined;
-  const faviconHtml = container.getAttribute("data-favicon-html") || undefined;
   const bookmarkName = container.getAttribute("data-bookmark-name") || undefined;
 
   // Parse initial boolean values
@@ -84,6 +83,17 @@ if (container) {
       relatedNodes = JSON.parse(relatedNodesScript.textContent || "[]");
     } catch (e) {
       console.error("Error parsing related nodes:", e);
+    }
+  }
+
+  let faviconHtml: string | undefined;
+  const faviconScript = document.getElementById("favicon-html");
+  if (faviconScript) {
+    try {
+      const parsed = JSON.parse(faviconScript.textContent || '""');
+      faviconHtml = parsed || undefined;
+    } catch (e) {
+      console.error("Error parsing favicon html:", e);
     }
   }
 

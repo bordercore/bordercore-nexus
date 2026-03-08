@@ -40,7 +40,7 @@ from bookmark.models import Bookmark
 from lib.decorators import validate_post_data
 from lib.exceptions import BookmarkSearchDeleteError
 from lib.mixins import FormRequestMixin, UserScopedQuerysetMixin, get_user_object_or_404
-from lib.util import get_pagination_range, parse_title_from_url
+from lib.util import favicon_url, get_pagination_range, parse_title_from_url
 from tag.models import Tag, TagBookmark
 
 BOOKMARKS_PER_PAGE = 50
@@ -155,6 +155,7 @@ class BookmarkUpdateView(LoginRequiredMixin, FormRequestMixin, BookmarkFormValid
         context["tags"] = [x.name for x in self.object.tags.all()]
         context["back_references"] = Blob.back_references(self.object.uuid)
         context["related_nodes"] = self.object.related_nodes()
+        context["favicon_html"] = favicon_url(self.object.url)
 
         return context
 
@@ -185,6 +186,7 @@ class BookmarkCreateView(LoginRequiredMixin, FormRequestMixin, BookmarkFormValid
         context["tags"] = []
         context["back_references"] = []
         context["related_nodes"] = []
+        context["favicon_html"] = ""
         return context
 
 
