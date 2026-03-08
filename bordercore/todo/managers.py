@@ -5,8 +5,9 @@ This module provides a custom manager for the `Todo` model, offering methods
 to compute counts of todos by priority and by recent creation date ranges.
 """
 
+from __future__ import annotations
+
 from datetime import timedelta
-from typing import List, Tuple
 
 from django.apps import apps
 from django.contrib.auth.models import User
@@ -18,7 +19,7 @@ from django.utils import timezone
 class TodoManager(models.Manager):
     """Custom manager for `Todo` model with aggregation utilities."""
 
-    def priority_counts(self, user: User) -> List[Tuple[int, str, int]]:
+    def priority_counts(self, user: User) -> list[tuple[int, str, int]]:
         """Return counts of todos grouped by priority for the given user.
 
         Args:
@@ -40,7 +41,7 @@ class TodoManager(models.Manager):
         for entry in priority_counts:
             cache[entry["priority"]] = entry["count"]
 
-        filter_priority_options: List[Tuple[int, str, int]] = [
+        filter_priority_options: list[tuple[int, str, int]] = [
             (1, "High", cache.get(1, 0)),
             (2, "Medium", cache.get(2, 0)),
             (3, "Low", cache.get(3, 0))
@@ -48,7 +49,7 @@ class TodoManager(models.Manager):
 
         return filter_priority_options
 
-    def created_counts(self, user: User) -> List[Tuple[str, str, int]]:
+    def created_counts(self, user: User) -> list[tuple[str, str, int]]:
         """Return counts of todos grouped by recent creation date ranges.
 
         Args:
@@ -83,7 +84,7 @@ class TodoManager(models.Manager):
             ),
         )
 
-        filter_created_options: List[Tuple[str, str, int]] = [
+        filter_created_options: list[tuple[str, str, int]] = [
             ("1", "Last Day", created_counts.get("last_day", 0)),
             ("3", "Last 3 Days", created_counts.get("last_3_days", 0)),
             ("7", "Last Week", created_counts.get("last_week", 0)),

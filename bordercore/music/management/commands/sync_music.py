@@ -18,13 +18,15 @@ Args:
     --dry-run (bool): Run without making changes.
 """
 
+from __future__ import annotations
+
 import logging
 import os
 import re
 from argparse import ArgumentParser
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 import boto3
 from botocore.exceptions import ClientError, NoCredentialsError
@@ -59,8 +61,8 @@ class SongMetadata:
     """
     artist: str
     title: str
-    album_name: Optional[str] = None
-    track_number: Optional[str] = None
+    album_name: str | None = None
+    track_number: str | None = None
 
     def __post_init__(self) -> None:
         """Validate required fields after initialization.
@@ -407,7 +409,7 @@ class Command(BaseCommand):
             return ""
         return value.replace(" [Explicit]", "").strip()
 
-    def _get_id3_tag(self, tag_name: str, id3_info: Dict, required: bool = True) -> Optional[str]:
+    def _get_id3_tag(self, tag_name: str, id3_info: dict, required: bool = True) -> str | None:
         """Extract a tag value from ID3 metadata with validation.
 
         Retrieves the specified tag from the ID3 metadata dictionary,
@@ -434,8 +436,8 @@ class Command(BaseCommand):
     def _sync_directory(
         self,
         directory: str,
-        artist: Optional[str],
-        album_name: Optional[str],
+        artist: str | None,
+        album_name: str | None,
         is_album_song: bool
     ) -> None:
         """Sync all MP3 files in a directory recursively.
@@ -481,10 +483,10 @@ class Command(BaseCommand):
     def _sync_file(
         self,
         filename: str,
-        artist: Optional[str],
-        title: Optional[str],
-        album_name: Optional[str],
-        song_uuid: Optional[str],
+        artist: str | None,
+        title: str | None,
+        album_name: str | None,
+        song_uuid: str | None,
         is_album_song: bool
     ) -> None:
         """Sync an individual song file by organizing and moving it to the correct path.
@@ -540,7 +542,7 @@ class Command(BaseCommand):
         except Exception as e:
             raise MusicSyncError(f"Failed to sync {filename}: {e}") from e
 
-    def _get_id3_info(self, filename: str) -> Dict:
+    def _get_id3_info(self, filename: str) -> dict:
         """Extract ID3 metadata from the file, or return empty dict if unavailable.
 
         Attempts to read ID3 tags from the MP3 file using the EasyID3 format.
@@ -563,10 +565,10 @@ class Command(BaseCommand):
 
     def _resolve_metadata(
         self,
-        id3_info: Dict,
-        artist: Optional[str],
-        title: Optional[str],
-        album_name: Optional[str],
+        id3_info: dict,
+        artist: str | None,
+        title: str | None,
+        album_name: str | None,
         is_album_song: bool
     ) -> SongMetadata:
         """Resolve metadata by combining command line arguments with ID3 tags.
@@ -620,7 +622,7 @@ class Command(BaseCommand):
     def _verify_song_in_db(
         self,
         metadata: SongMetadata,
-        song_uuid: Optional[str],
+        song_uuid: str | None,
         is_album_song: bool
     ) -> QuerySet:
         """Ensure the song exists uniquely in the database.

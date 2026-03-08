@@ -88,12 +88,12 @@ class Bookmark(TimeStampedModel):
     user = models.ForeignKey(User, on_delete=models.PROTECT)
     note = models.TextField(blank=True, null=True)
     tags = models.ManyToManyField("tag.Tag")
-    is_pinned = models.BooleanField(default=False)
-    daily = DailyBookmarkJSONField(blank=True, null=True)
-    last_check = models.DateTimeField(null=True)
-    last_response_code = models.IntegerField(null=True)
-    importance = models.IntegerField(default=1)
-    data = JSONField(null=True, blank=True)
+    is_pinned = models.BooleanField(default=False, help_text="Pinned bookmarks appear at the top of lists")
+    daily = DailyBookmarkJSONField(blank=True, null=True, help_text="Tracks daily viewing status for recurring bookmarks")
+    last_check = models.DateTimeField(null=True, help_text="Timestamp of the last URL availability check")
+    last_response_code = models.IntegerField(null=True, help_text="HTTP status code from the last availability check")
+    importance = models.IntegerField(default=1, help_text="Search ranking boost (higher = more prominent)")
+    data = JSONField(null=True, blank=True, help_text="Extra metadata (e.g. video_duration for YouTube bookmarks)")
 
     created = models.DateTimeField(db_index=True, auto_now_add=True)
 

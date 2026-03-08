@@ -5,11 +5,13 @@ This module contains models for managing artists, albums, songs, playlists, and 
 with support for Elasticsearch indexing and AWS S3 storage.
 """
 
+from __future__ import annotations
+
 import io
 import logging
 import uuid
 from datetime import timedelta
-from typing import Any, Optional
+from typing import Any
 
 import humanize
 from mutagen.mp3 import MP3
@@ -64,8 +66,8 @@ class Album(TimeStampedModel):
     title = models.TextField()
     artist = models.ForeignKey(Artist, on_delete=models.PROTECT)
     year = models.IntegerField()
-    original_release_year = models.IntegerField(null=True)
-    compilation = models.BooleanField(default=False)
+    original_release_year = models.IntegerField(null=True, help_text="Year the album was originally released, if this is a reissue")
+    compilation = models.BooleanField(default=False, help_text="True if this is a various-artists compilation")
     note = models.TextField(null=True, blank=True)
     tags = models.ManyToManyField(Tag)
     user = models.ForeignKey(User, on_delete=models.PROTECT)
@@ -202,20 +204,20 @@ class Song(TimeStampedModel):
     title = models.TextField()
     artist = models.ForeignKey(Artist, on_delete=models.PROTECT)
     album = models.ForeignKey(Album, null=True, on_delete=models.PROTECT)
-    track = models.PositiveIntegerField(null=True)
+    track = models.PositiveIntegerField(null=True, help_text="Track number on the album")
     year = models.IntegerField(null=True)
-    length = models.PositiveIntegerField(blank=True, null=True)
+    length = models.PositiveIntegerField(blank=True, null=True, help_text="Duration in seconds")
     note = models.TextField(null=True)
-    source = models.ForeignKey(SongSource, on_delete=models.PROTECT)
+    source = models.ForeignKey(SongSource, on_delete=models.PROTECT, help_text="Where the song was acquired (e.g. Amazon, Bandcamp)")
     rating = models.PositiveSmallIntegerField(
         blank=True,
         null=True,
         validators=[MinValueValidator(1), MaxValueValidator(5)]
     )
     last_time_played = models.DateTimeField(null=True)
-    times_played = models.PositiveIntegerField(default=0)
-    original_album = models.TextField(null=True)
-    original_year = models.IntegerField(null=True)
+    times_played = models.PositiveIntegerField(default=0, help_text="Lifetime play count, incremented by listen_to()")
+    original_album = models.TextField(null=True, help_text="Album this song first appeared on, if different from current")
+    original_year = models.IntegerField(null=True, help_text="Original release year, if different from current album year")
     tags = models.ManyToManyField(Tag)
     user = models.ForeignKey(User, on_delete=models.PROTECT)
 
@@ -357,7 +359,7 @@ class Song(TimeStampedModel):
         Listen.objects.create(song=self, user=self.user)
 
     @staticmethod
-    def get_or_create_album(user: User, song_info: dict[str, Any]) -> Optional[Album]:
+    def get_or_create_album(user: User, song_info: dict[str, Any]) -> Album | None:
         """Get or create an album based on song information.
 
         Args:

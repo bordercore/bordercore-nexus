@@ -5,10 +5,12 @@ This module defines the Node and NodeTodo models for organizing collections,
 notes, todos, and other components in a flexible layout system.
 """
 
+from __future__ import annotations
+
 import json
 import random
 import uuid
-from typing import Any, Dict, List, Union
+from typing import Any
 from uuid import UUID
 
 from django.conf import settings
@@ -45,7 +47,7 @@ def validate_layout(layout: Any) -> None:
                 raise ValueError("Each item in a layout column must be a dict")
 
 
-def default_layout() -> List[List[Dict[str, Any]]]:
+def default_layout() -> list[list[dict[str, Any]]]:
     """Return the default layout structure for a new node.
 
     Django JSONField default must be a callable.
@@ -245,7 +247,7 @@ class Node(TimeStampedModel):
         ]
 
         # Populate a lookup dictionary with the collection and note names, uuid => name
-        lookup: Dict[str, Dict[str, str | int | None]] = {}
+        lookup: dict[str, dict[str, str | int | None]] = {}
 
         collections = Collection.objects.filter(uuid__in=uuids).annotate(
             item_count=Count("collectionobject")
@@ -308,7 +310,7 @@ class Node(TimeStampedModel):
 
         self.save()
 
-    def set_quote(self, quote_uuid: Union[str, UUID]) -> None:
+    def set_quote(self, quote_uuid: str | UUID) -> None:
         """Set the quote UUID for quote components in the layout.
 
         Args:
@@ -347,7 +349,7 @@ class Node(TimeStampedModel):
         for so in NodeTodo.objects.filter(node=self):
             so.todo.delete()
 
-    def get_todo_list(self) -> List[Dict[str, Any]]:
+    def get_todo_list(self) -> list[dict[str, Any]]:
         """Get all todos associated with this node.
 
         Returns:
@@ -367,13 +369,13 @@ class Node(TimeStampedModel):
             in todo_list
         ]
 
-    def get_preview(self) -> Dict[str, Any]:
+    def get_preview(self) -> dict[str, Any]:
         """Generate a preview of the node's contents.
 
         Returns:
             Dictionary containing preview images, notes, and todos.
         """
-        images: List[Dict[str, Any]] = []
+        images: list[dict[str, Any]] = []
 
         if not self.layout:
             return {
@@ -450,8 +452,8 @@ class Node(TimeStampedModel):
     def add_component(
         self,
         component_type: str,
-        component: Union[Blob, "Node", Quote],
-        options: Dict[str, Any] | None = None
+        component: Blob | Node | Quote,
+        options: dict[str, Any] | None = None
     ) -> str:
         """Add an image, quote or node component to the layout.
 
@@ -482,7 +484,7 @@ class Node(TimeStampedModel):
 
         return new_uuid
 
-    def update_component(self, uuid: str, options: Dict[str, Any]) -> None:
+    def update_component(self, uuid: str, options: dict[str, Any]) -> None:
         """Edit the options for a quote or node component.
 
         Args:

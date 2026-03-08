@@ -8,9 +8,11 @@ indexing, as well as a signal handler for keeping `TagTodo` relations in sync
 when a todo’s tags change.
 """
 
+from __future__ import annotations
+
 import logging
 import uuid
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -40,7 +42,7 @@ class Todo(TimeStampedModel):
     url = models.URLField(max_length=1000, null=True, blank=True)
     user = models.ForeignKey(User, on_delete=models.PROTECT)
     tags = models.ManyToManyField(Tag)
-    data = JSONField(null=True, blank=True)
+    data = JSONField(null=True, blank=True, help_text="Arbitrary JSON metadata attached to this todo")
     due_date = models.DateTimeField(null=True, blank=True)
 
     objects = TodoManager()
@@ -52,7 +54,8 @@ class Todo(TimeStampedModel):
     ]
     priority: models.IntegerField = models.IntegerField(
         choices=PRIORITY_CHOICES,
-        default=3
+        default=3,
+        help_text="1=High, 2=Medium, 3=Low",
     )
 
     class Meta:
@@ -69,7 +72,7 @@ class Todo(TimeStampedModel):
         return ", ".join([tag.name for tag in self.tags.all().order_by("name")])
 
     @staticmethod
-    def get_priority_name(priority_value: int) -> Optional[str]:
+    def get_priority_name(priority_value: int) -> str | None:
         """Map an integer priority value to its display name.
 
         Args:
@@ -84,7 +87,7 @@ class Todo(TimeStampedModel):
         return None
 
     @staticmethod
-    def get_priority_value(priority_name: str) -> Optional[int]:
+    def get_priority_value(priority_name: str) -> int | None:
         """Map a priority name back to its integer value.
 
         Args:
@@ -99,7 +102,7 @@ class Todo(TimeStampedModel):
         return None
 
     @staticmethod
-    def get_todo_counts(user: User) -> List[Dict[str, Union[str, int]]]:
+    def get_todo_counts(user: User) -> list[dict[str, str | int]]:
         """Count todos per tag for the given user, sorted by most recent.
 
         Args:
@@ -159,7 +162,7 @@ class Todo(TimeStampedModel):
         index_document(self.elasticsearch_document)
 
     @property
-    def elasticsearch_document(self) -> Dict[str, Any]:
+    def elasticsearch_document(self) -> dict[str, Any]:
         """Build the dict representation for Elasticsearch indexing.
 
         Returns:
@@ -188,7 +191,7 @@ class Todo(TimeStampedModel):
         }
 
 
-def tags_changed(sender: Type[Todo], **kwargs: Any) -> None:
+def tags_changed(sender: type[Todo], **kwargs: Any) -> None:
     """Handle m2m 'tags' changes by adding/removing TagTodo relations.
 
     Triggered on post_add and post_remove of Todo.tags.

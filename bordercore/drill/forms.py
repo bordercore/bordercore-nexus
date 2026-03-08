@@ -5,7 +5,7 @@ including validation and field configuration.
 """
 from __future__ import annotations
 
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 from django.contrib.auth.models import User
 from django.forms import CharField, ModelForm, Textarea, ValidationError
@@ -27,7 +27,7 @@ class QuestionForm(ModelForm):
         request: The HTTP request object, used for user-specific tag filtering.
     """
 
-    request: Optional[HttpRequest]
+    request: HttpRequest | None
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the QuestionForm instance.

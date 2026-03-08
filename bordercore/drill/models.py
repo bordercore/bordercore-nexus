@@ -13,7 +13,7 @@ from __future__ import annotations
 import logging
 import uuid
 from datetime import timedelta
-from typing import Any, Iterable, TypedDict, Union, cast
+from typing import Any, Iterable, TypedDict, cast
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -67,12 +67,12 @@ class Question(TimeStampedModel):
     answer = models.TextField()
     tags = models.ManyToManyField(Tag, blank=True)
     last_reviewed = models.DateTimeField(null=True)
-    times_failed = models.PositiveIntegerField(default=0, null=False)
-    interval = models.DurationField(default=timedelta(days=1), blank=False, null=False)
-    interval_index = models.PositiveIntegerField(default=0, null=False)
+    times_failed = models.PositiveIntegerField(default=0, null=False, help_text="Number of times the user answered incorrectly")
+    interval = models.DurationField(default=timedelta(days=1), blank=False, null=False, help_text="Current spaced-repetition interval between reviews")
+    interval_index = models.PositiveIntegerField(default=0, null=False, help_text="Position in the user's drill_intervals schedule list")
     is_favorite = models.BooleanField(default=False)
-    is_reversible = models.BooleanField(default=False)
-    is_disabled = models.BooleanField(default=False)
+    is_reversible = models.BooleanField(default=False, help_text="If true, question and answer can be swapped during review")
+    is_disabled = models.BooleanField(default=False, help_text="Disabled questions are excluded from study sessions")
     user = models.ForeignKey(User, on_delete=models.PROTECT)
     bc_objects = models.ManyToManyField(
         "drill.BCObject",
@@ -219,7 +219,7 @@ class Question(TimeStampedModel):
 
     def get_intervals(
         self, description_only: bool = False
-    ) -> dict[str, Union[IntervalResponse, dict[str, str]]]:
+    ) -> dict[str, IntervalResponse | dict[str, str]]:
         """Return candidate interval adjustments for all response types.
 
         Args:
@@ -255,7 +255,7 @@ class Question(TimeStampedModel):
             }
 
         return cast(
-            dict[str, Union[IntervalResponse, dict[str, str]]],
+            dict[str, IntervalResponse | dict[str, str]],
             intervals,
         )
 
@@ -295,7 +295,7 @@ class Question(TimeStampedModel):
             .first()
         )
 
-    def get_all_tags_progress(self) -> list[dict[str, Union[str, int]]]:
+    def get_all_tags_progress(self) -> list[dict[str, str | int]]:
         """Return review/progress summaries for each tag on this question.
 
         Returns:
@@ -520,7 +520,7 @@ class Question(TimeStampedModel):
     @staticmethod
     def get_tag_progress(
         user: User, tag: str
-    ) -> dict[str, Union[str, int]]:
+    ) -> dict[str, str | int]:
         """Return study progress metrics for all Questions with a given tag.
 
         For all questions owned by ``user`` that have the tag named ``tag``,

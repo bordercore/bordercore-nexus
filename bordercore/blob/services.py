@@ -5,6 +5,8 @@ importing from external sources (Instagram, ArtStation, New York Times), and
 chatbot functionality using OpenAI.
 """
 
+from __future__ import annotations
+
 import datetime
 import hashlib
 import itertools
@@ -15,7 +17,8 @@ import types
 import urllib.request
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Generator, Union, cast
+
+from typing import Any, Generator, cast
 from urllib.parse import ParseResult, urlparse
 
 import humanize
@@ -438,7 +441,7 @@ def get_blob_naturalsize(blob_sizes: dict[str, dict[str, Any]], blob: dict[str, 
         blob["content_size"] = humanize.naturalsize(blob_sizes[blob["uuid"]]["size"])
 
 
-def import_blob(user: User, url: str) -> Union[Blob, dict[str, Any]]:
+def import_blob(user: User, url: str) -> Blob | dict[str, Any]:
     """Import a blob from an external URL.
 
     Determines the source domain from the URL and delegates to the

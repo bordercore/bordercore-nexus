@@ -6,7 +6,9 @@ metrics, and retrieving tag-related information for the spaced repetition
 drill system.
 """
 
-from typing import Any, Union
+from __future__ import annotations
+
+from typing import Any
 
 from django.apps import apps
 from django.contrib.auth.models import User
@@ -109,7 +111,7 @@ class DrillManager(models.Manager):
             "count": count
         }
 
-    def get_random_tag(self, user: User) -> dict[str, Union[str, int]] | None:
+    def get_random_tag(self, user: User) -> dict[str, str | int] | None:
         """Get a random tag and its related information.
 
         We don't want a simple "order by random" on the entire tag set,
@@ -131,7 +133,7 @@ class DrillManager(models.Manager):
         random_tag = Tag.objects.filter(id__in=distinct_tags).order_by("?").first()
         return Question.get_tag_progress(user, random_tag.name) if random_tag else None
 
-    def get_pinned_tags(self, user: User) -> list[dict[str, Union[str, int]]]:
+    def get_pinned_tags(self, user: User) -> list[dict[str, str | int]]:
         """Get the user's pinned tags.
 
         Args:
@@ -144,7 +146,7 @@ class DrillManager(models.Manager):
         tag_names = [t.name for t in tags]
         return self._batch_tag_progress(user, tag_names)
 
-    def get_disabled_tags(self, user: User) -> list[dict[str, Union[str, int]]]:
+    def get_disabled_tags(self, user: User) -> list[dict[str, str | int]]:
         """Get the user's disabled tags.
 
         Args:
@@ -186,7 +188,7 @@ class DrillManager(models.Manager):
 
     def _batch_tag_progress(
         self, user: User, tag_names: list[str]
-    ) -> list[dict[str, Union[str, int]]]:
+    ) -> list[dict[str, str | int]]:
         """Compute progress for multiple tags in bulk.
 
         Args:

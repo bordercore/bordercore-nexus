@@ -126,7 +126,7 @@ class Blob(TimeStampedModel):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False)
     content = models.TextField(blank=True, default="")
     name = models.TextField(blank=True, default="")
-    sha1sum = models.CharField(max_length=40, blank=True, null=True)
+    sha1sum = models.CharField(max_length=40, blank=True, null=True, help_text="SHA1 hash of file content, used for deduplication")
     file = models.FileField(max_length=500, storage=DownloadableS3Boto3Storage(), blank=True)
     user = models.ForeignKey(User, on_delete=models.PROTECT)
     note = models.TextField(blank=True, default="")
@@ -134,11 +134,11 @@ class Blob(TimeStampedModel):
     # Stored as text to support flexible formats: YYYY-MM-DD, YYYY-MM, YYYY,
     # and date ranges like [YYYY-MM TO YYYY-MM]. Validated in BlobForm.clean_date().
     date = models.TextField(blank=True, default="")
-    importance = models.IntegerField(default=1)
-    is_note = models.BooleanField(default=False)
-    is_indexed = models.BooleanField(default=True)
-    math_support = models.BooleanField(default=False)
-    data = JSONField(null=True, blank=True)
+    importance = models.IntegerField(default=1, help_text="Search ranking boost (higher = more prominent)")
+    is_note = models.BooleanField(default=False, help_text="True if this blob is a text note rather than a file")
+    is_indexed = models.BooleanField(default=True, help_text="Whether this blob is indexed in Elasticsearch")
+    math_support = models.BooleanField(default=False, help_text="Enable LaTeX/MathJax rendering for this blob")
+    data = JSONField(null=True, blank=True, help_text="Arbitrary structured metadata (e.g. page count, dimensions)")
     bc_objects = models.ManyToManyField("blob.BCObject", through="blob.BlobToObject", through_fields=("node", "bc_object"))
 
     class Meta:

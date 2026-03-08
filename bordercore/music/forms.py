@@ -4,8 +4,9 @@ This module provides form classes for creating and editing songs, playlists,
 and albums. It includes custom validation logic and dynamic field handling
 based on user context and relationships between models.
 """
+from __future__ import annotations
 
-from typing import Any, Dict, Optional, Union, cast
+from typing import Any, cast
 
 from django import forms
 from django.contrib.auth.models import User
@@ -56,7 +57,7 @@ class SongForm(ModelForm):
                      key with HttpRequest object for user context.
         """
         # The request object is passed in from a view's SongForm() constructor
-        self.request: Optional[HttpRequest] = kwargs.pop("request", None)
+        self.request: HttpRequest | None = kwargs.pop("request", None)
 
         super().__init__(*args, **kwargs)
 
@@ -93,7 +94,7 @@ class SongForm(ModelForm):
                 queryset=Tag.objects.filter(user=self.request.user),
                 to_field_name="name")
 
-    def clean_album_name(self) -> Optional[str]:
+    def clean_album_name(self) -> str | None:
         """Validate album name and check for conflicts with existing albums.
 
         Ensures that if an album with the same name and artist already exists,
@@ -111,8 +112,8 @@ class SongForm(ModelForm):
             but it already exists with year 1969, a validation error is raised
             with a link to the existing album.
         """
-        album_name: Optional[str] = self.cleaned_data.get("album_name")
-        artist: Optional[Artist] = self.cleaned_data.get("artist")
+        album_name: str | None = self.cleaned_data.get("album_name")
+        artist: Artist | None = self.cleaned_data.get("artist")
 
         if not album_name or not artist or not self.request:
             return album_name
@@ -135,7 +136,7 @@ class SongForm(ModelForm):
 
         return album_name
 
-    def clean_artist(self) -> Optional[Artist]:
+    def clean_artist(self) -> Artist | None:
         """Clean and normalize artist name, creating Artist object if needed.
 
         Takes the artist name string from the form, strips whitespace,
@@ -153,7 +154,7 @@ class SongForm(ModelForm):
         artist, _ = Artist.objects.get_or_create(name=data, user=self.request.user)
         return artist
 
-    def clean_rating(self) -> Optional[int]:
+    def clean_rating(self) -> int | None:
         """Clean rating field, converting empty strings to None for database NULL.
 
         Django forms return empty numeric fields as empty strings, but we want
@@ -166,7 +167,7 @@ class SongForm(ModelForm):
             Empty rating input "" becomes None for database storage.
             Valid rating "5" remains as integer 5.
         """
-        rating: Union[str, int, None] = self.cleaned_data.get('rating')
+        rating: str | int | None = self.cleaned_data.get('rating')
 
         # An empty rating is returned as an empty string by the
         #  form. Convert it to "None" so that the corresponding
@@ -175,7 +176,7 @@ class SongForm(ModelForm):
             return None
         return rating  # type: ignore[return-value]
 
-    def clean_year(self) -> Optional[int]:
+    def clean_year(self) -> int | None:
         """Validate year field, ensuring it's provided when album is specified.
 
         Enforces business rule that if a user specifies an album name,
@@ -188,12 +189,12 @@ class SongForm(ModelForm):
         Raises:
             ValidationError: If album name is provided but year is missing.
         """
-        year: Optional[int] = self.cleaned_data.get("year")
+        year: int | None = self.cleaned_data.get("year")
         if not year and self.data.get("album_name"):
             raise ValidationError("If you specify an album you must also specify the year")
         return year
 
-    def clean(self) -> Dict[str, Any]:
+    def clean(self) -> dict[str, Any]:
         """Perform final form validation and clean text fields.
 
         Strips whitespace from text fields (title, note, album_name) to ensure
@@ -202,7 +203,7 @@ class SongForm(ModelForm):
         Returns:
             Dictionary of cleaned form data with stripped text fields.
         """
-        cleaned_data: Optional[Dict[str, Any]] = super().clean()
+        cleaned_data: dict[str, Any] | None = super().clean()
         if cleaned_data is None:
             return {}
 
@@ -263,7 +264,7 @@ class PlaylistForm(ModelForm):
                      key with HttpRequest object for user context.
         """
         # The request object is passed in from a view's PlaylistForm() constructor
-        self.request: Optional[HttpRequest] = kwargs.pop("request", None)
+        self.request: HttpRequest | None = kwargs.pop("request", None)
         super().__init__(*args, **kwargs)
 
     class Meta:
@@ -313,7 +314,7 @@ class AlbumForm(ModelForm):
                      key with HttpRequest object for user context.
         """
         # The request object is passed in from a view's AlbumForm() constructor
-        self.request: Optional[HttpRequest] = kwargs.pop("request", None)
+        self.request: HttpRequest | None = kwargs.pop("request", None)
 
         super().__init__(*args, **kwargs)
 
@@ -330,7 +331,7 @@ class AlbumForm(ModelForm):
                 queryset=Tag.objects.filter(user=self.request.user),
                 to_field_name="name")
 
-    def clean_artist(self) -> Optional[Artist]:
+    def clean_artist(self) -> Artist | None:
         """Clean and normalize artist name, creating Artist object if needed.
 
         Takes the artist name string from the form and either retrieves

@@ -3,13 +3,14 @@
 This module contains all the views for handling music-related functionality including
 songs, albums, artists, playlists, and related operations.
 """
+from __future__ import annotations
 
 import json
 import re
 import string
 import uuid
 from datetime import timedelta
-from typing import Any, Union, cast
+from typing import Any, cast
 
 import humanize
 from rest_framework.decorators import api_view, permission_classes
@@ -1414,7 +1415,7 @@ def missing_artist_images(request: HttpRequest) -> HttpResponse:
 
 
 @api_view(["GET"])
-def recent_albums(request: HttpRequest, page_number: Union[str, int]) -> Response:
+def recent_albums(request: HttpRequest, page_number: str | int) -> Response:
     """Get a paginated list of recently added albums.
 
     Args:

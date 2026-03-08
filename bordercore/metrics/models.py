@@ -41,6 +41,7 @@ class Metric(models.Model):
         blank=False,
         null=False,
         validators=[MinValueValidator(timedelta(minutes=1))],
+        help_text="How often this metric should be updated (e.g. 1 day)",
     )
 
     objects = MetricsManager()

@@ -46,9 +46,9 @@ class Habit(TimeStampedModel):
 
     uuid: models.UUIDField = models.UUIDField(default=uuid.uuid4, editable=False)
     name = models.TextField()
-    purpose = models.TextField(blank=True)
-    start_date = models.DateField()
-    end_date = models.DateField(null=True, blank=True)
+    purpose = models.TextField(blank=True, help_text="Why you are tracking this habit")
+    start_date = models.DateField(help_text="Date habit tracking begins")
+    end_date = models.DateField(null=True, blank=True, help_text="Date habit tracking ended; blank means still active")
     user = models.ForeignKey(User, on_delete=models.PROTECT)
     tags = models.ManyToManyField(Tag, blank=True)
 
@@ -99,6 +99,7 @@ class HabitLog(TimeStampedModel):
     value = models.DecimalField(
         max_digits=10, decimal_places=2, null=True, blank=True,
         validators=[MinValueValidator(0)],
+        help_text="Optional numeric measurement (e.g. minutes, reps, miles)",
     )
     note = models.TextField(blank=True)
 

@@ -3,10 +3,12 @@
 This module contains views for managing questions, study sessions,
 and tag-related operations in the drill/flashcard system.
 """
+from __future__ import annotations
+
 import json
 import logging
 import random
-from typing import Any, Dict, cast
+from typing import Any, cast
 from urllib.parse import unquote, urlparse
 
 from rest_framework.decorators import api_view
@@ -50,7 +52,7 @@ class DrillListView(LoginRequiredMixin, ListView):
     template_name = "drill/drill_list.html"
     queryset = Question.objects.none()
 
-    def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         """Get context data for the drill list view.
 
         Args:
@@ -112,7 +114,7 @@ class QuestionCreateView(LoginRequiredMixin, FormRequestMixin, CreateView):
     template_name = "drill/question_edit.html"
     form_class = QuestionForm
 
-    def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         """Get context data for the question creation form.
 
         Args:
@@ -252,7 +254,7 @@ class QuestionDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView
     slug_url_kwarg = "uuid"
     template_name = "drill/question.html"
 
-    def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         """Get context data for the question detail view.
 
         Args:
@@ -343,7 +345,7 @@ class QuestionUpdateView(LoginRequiredMixin, UserScopedQuerysetMixin, FormReques
         """
         return super().get_queryset().prefetch_related("tags")
 
-    def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         """Get context data for the question edit form.
 
         Args:

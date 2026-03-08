@@ -4,9 +4,10 @@ Elasticsearch-backed search service for Todo items.
 This module defines utilities to query the Elasticsearch index for Todo
 documents belonging to a given user and matching a name substring.
 """
+from __future__ import annotations
 
 import datetime
-from typing import Any, Dict, List
+from typing import Any
 from urllib.parse import unquote
 
 from django.conf import settings
@@ -17,7 +18,7 @@ from lib.util import get_elasticsearch_connection
 SEARCH_LIMIT = 1000
 
 
-def search(user: User, todo_name: str) -> List[Dict[str, Any]]:
+def search(user: User, todo_name: str) -> list[dict[str, Any]]:
     """Search for Todo items in Elasticsearch by name substring.
 
     Constructs and executes an Elasticsearch query that filters on the given

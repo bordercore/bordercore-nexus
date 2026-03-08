@@ -6,11 +6,12 @@ This module provides:
 - `TodoTaskList`: Returns a JSON list of todos based on query parameters or search.
 - `sort_todo`, `move_to_top`, `snooze_task`: Function-based views for AJAX task operations.
 """
+from __future__ import annotations
 
 import json
 import re
 from datetime import timedelta
-from typing import Any, Dict, Iterable, Optional, Union, cast
+from typing import Any, Iterable, cast
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -34,7 +35,7 @@ from todo.models import Todo
 from todo.services import search as search_service
 
 
-def serialize_todo(todo: Union[Todo, Dict[str, Any]], sort_order: int = 0) -> Dict[str, Any]:
+def serialize_todo(todo: Todo | dict[str, Any], sort_order: int = 0) -> dict[str, Any]:
     """Convert Todo instance or dict to standardized dict for JSON response.
 
     This function handles both Django model objects (from querysets) and
@@ -80,7 +81,7 @@ class TodoListView(LoginRequiredMixin, ListView):
     template_name = "todo/index.html"
     context_object_name = "info"
 
-    def get_filter(self, tag: Optional[str] = None) -> Dict[str, Optional[str]]:
+    def get_filter(self, tag: str | None = None) -> dict[str, str | None]:
         """Construct the current filter settings from session or URL tag.
 
         Args:
@@ -95,7 +96,7 @@ class TodoListView(LoginRequiredMixin, ListView):
             "todo_filter_tag": tag or self.request.session.get("todo_filter_tag", ""),
         }
 
-    def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         """Add filter settings, tag counts, and UI data to template context.
 
         Args:
@@ -224,7 +225,7 @@ class TodoTaskList(APIView):
         search_term = request.query_params.get("search", None)
 
         if search_term:
-            tasks: Iterable[Todo | Dict[str, Any]] = search_service(user, search_term)
+            tasks: Iterable[Todo | dict[str, Any]] = search_service(user, search_term)
         else:
             tasks = self.get_queryset(request)
 

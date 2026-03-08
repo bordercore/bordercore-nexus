@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import json
 import random
-from typing import Any, Dict, cast
+from typing import Any, cast
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -58,7 +58,7 @@ class NodeListView(LoginRequiredMixin, ListView, FormMixin):
         """
         return get_node_list(self.request.user)
 
-    def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         """Get context data for the node list view.
 
         Args:
@@ -105,7 +105,7 @@ class NodeDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView):
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
 
-    def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         """Get context data for the node detail view.
 
         Also populates derived fields on the ``Node`` instance for display.

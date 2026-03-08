@@ -99,27 +99,29 @@ class Reminder(TimeStampedModel):
     note = models.TextField(null=True, blank=True)
 
     is_active = models.BooleanField(default=True)
-    create_todo = models.BooleanField(default=False)
+    create_todo = models.BooleanField(default=False, help_text="Auto-create a Todo task when this reminder triggers")
 
     # When the schedule begins. If unset, the scheduler can treat created time as the start.
-    start_at = models.DateTimeField(null=True, blank=True)
+    start_at = models.DateTimeField(null=True, blank=True, help_text="When the schedule begins; defaults to creation time")
 
     # New schedule fields
     schedule_type = models.CharField(
         max_length=10,
         choices=SCHEDULE_TYPE_CHOICES,
         default=SCHEDULE_TYPE_DAILY,
+        help_text="How often the reminder repeats: daily, weekly, or monthly",
     )
-    trigger_time = models.TimeField(null=True, blank=True)
-    days_of_week: models.JSONField = models.JSONField(default=list, blank=True)
-    days_of_month: models.JSONField = models.JSONField(default=list, blank=True)
+    trigger_time = models.TimeField(null=True, blank=True, help_text="Time of day when the reminder fires")
+    days_of_week: models.JSONField = models.JSONField(default=list, blank=True, help_text="Weekday indices for weekly reminders (0=Mon, 6=Sun)")
+    days_of_month: models.JSONField = models.JSONField(default=list, blank=True, help_text="Day-of-month numbers (1-31) for monthly reminders")
 
     # Deprecated fields (kept for backward compatibility)
-    interval_value = models.PositiveSmallIntegerField(default=1)
+    interval_value = models.PositiveSmallIntegerField(default=1, help_text="Deprecated: legacy interval numeric value")
     interval_unit = models.CharField(
         max_length=10,
         choices=INTERVAL_UNIT_CHOICES,
         default=INTERVAL_UNIT_DAY,
+        help_text="Deprecated: legacy interval time unit",
     )
 
     last_triggered_at = models.DateTimeField(null=True, blank=True)

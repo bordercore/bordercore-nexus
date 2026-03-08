@@ -3,11 +3,12 @@
 This module provides service functions for managing playlists, albums, artists,
 and search functionality using Django ORM and Elasticsearch.
 """
+from __future__ import annotations
 
 import string
 import zipfile
 from io import BytesIO
-from typing import Any, Iterable, Optional, TypedDict, Union, cast
+from typing import Any, Iterable, TypedDict, cast
 from urllib.parse import unquote
 from uuid import UUID
 
@@ -71,7 +72,7 @@ def get_playlist_counts(user: User) -> QuerySet[Playlist]:
     )
 
 
-def get_playlist_songs(playlist: Playlist) -> dict[str, Union[list[dict[str, Any]], int]]:
+def get_playlist_songs(playlist: Playlist) -> dict[str, list[dict[str, Any]] | int]:
     """Get all songs in a playlist with metadata and total playtime.
 
     Retrieves all songs in the specified playlist along with their metadata
@@ -121,7 +122,7 @@ def get_playlist_songs(playlist: Playlist) -> dict[str, Union[list[dict[str, Any
     }
 
 
-def get_recent_albums(user: User, page_number: int = 1) -> tuple[list[dict[str, Any]], dict[str, Union[int, bool, Optional[int]]]]:
+def get_recent_albums(user: User, page_number: int = 1) -> tuple[list[dict[str, Any]], dict[str, int | bool | int | None]]:
     """Get paginated recent albums for a user.
 
     Retrieves the most recently created albums for a user with pagination
@@ -163,7 +164,7 @@ def get_recent_albums(user: User, page_number: int = 1) -> tuple[list[dict[str, 
     paginator: Paginator = Paginator(query, albums_per_page)
     page: Page = paginator.get_page(page_number)
 
-    paginator_info: dict[str, Union[int, bool, Optional[int]]] = {
+    paginator_info: dict[str, int | bool | int | None] = {
         "page_number": page_number,
         "has_next": page.has_next(),
         "has_previous": page.has_previous(),
@@ -396,7 +397,7 @@ def create_album_from_zipfile(
     zipfile_obj: bytes,
     artist_name: str,
     song_source: "SongSource",
-    tags: Optional[str],
+    tags: str | None,
     user: User,
     changes: dict[str, dict[str, Any]]
 ) -> UUID:

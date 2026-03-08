@@ -5,10 +5,11 @@ Calendar API using OAuth2 credentials stored in a `UserProfile`. It retrieves
 a user's calendar events for the next 7 days, parsing and formatting event
 metadata into a simplified list of dictionaries.
 """
+from __future__ import annotations
 
 import logging
 from datetime import timedelta
-from typing import Any, Dict, List, Optional, TypedDict, cast
+from typing import Any, TypedDict, cast
 
 import dateutil.parser
 import httplib2
@@ -65,7 +66,7 @@ class Calendar():
         """
         if not isinstance(user_profile, UserProfile):
             raise ValueError("Calendar must be passed a UserProfile instance")
-        self.calendar_email: Optional[str] = user_profile.google_calendar_email
+        self.calendar_email: str | None = user_profile.google_calendar_email
         cal_info = user_profile.google_calendar
         if cal_info:
             self.credentials = OAuth2Credentials(
@@ -89,7 +90,7 @@ class Calendar():
         """
         return bool(self.credentials)
 
-    def _parse_event_time(self, time_info: Dict[str, str]) -> tuple[str, str]:
+    def _parse_event_time(self, time_info: dict[str, str]) -> tuple[str, str]:
         """Parses and formats event start/end times from the Google Calendar event structure.
 
         Args:
@@ -105,7 +106,7 @@ class Calendar():
         pretty = dateutil.parser.parse(raw).strftime("%a %I:%M%p")
         return raw, pretty
 
-    def get_calendar_info(self) -> List[EventDict]:
+    def get_calendar_info(self) -> list[EventDict]:
         """Fetches upcoming events for the next 7 days from the user's calendar.
 
         Returns:
@@ -130,13 +131,13 @@ class Calendar():
                                        singleEvents=True,
                                        timeMin=str(now_rfc3339()).replace(" ", "T"),
                                        timeMax=datetimetostr(time_max)).execute()
-        event_list: List[EventDict] = []
+        event_list: list[EventDict] = []
         for count, e in enumerate(events.get("items", []), start=1):
             one_event: EventDict = {"count": count}
             for field in ["description", "location", "summary"]:
                 value = e.get(field)
                 if value:
-                    cast(Dict[str, Any], one_event)[field] = value
+                    cast(dict[str, Any], one_event)[field] = value
             one_event["start_raw"], one_event["start_pretty"] = self._parse_event_time(e["start"])
             one_event["end_raw"], one_event["end_pretty"] = self._parse_event_time(e["end"])
             event_list.append(one_event)
