@@ -220,6 +220,7 @@ class Song(TimeStampedModel):
     user = models.ForeignKey(User, on_delete=models.PROTECT)
 
     class Meta:
+        ordering = ("-modified", "-created")
         indexes = [
             models.Index(fields=["user", "album"]),
         ]

@@ -54,6 +54,7 @@ class Habit(TimeStampedModel):
     objects = HabitManager()
 
     class Meta:
+        ordering = ("-modified", "-created")
         indexes = [
             models.Index(fields=["user", "-end_date"]),
         ]

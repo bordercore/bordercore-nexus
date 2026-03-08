@@ -55,8 +55,8 @@ def test_collection_detail(authenticated_client, collection):
 
     assert resp.status_code == 200
 
-    # Test collections with blobs with no "null" names
-    blob = BlobFactory(user=user, name=None)
+    # Test collections with blobs with empty names
+    blob = BlobFactory(user=user, name="")
     collection[0].add_object(blob)
 
     url = urls.reverse("collection:detail", kwargs={"uuid": collection[0].uuid})

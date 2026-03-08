@@ -59,6 +59,7 @@ class Collection(TimeStampedModel):
     is_favorite = models.BooleanField(default=False)
 
     class Meta:
+        ordering = ("-modified", "-created")
         indexes = [
             models.Index(fields=["user", "-created"]),
         ]

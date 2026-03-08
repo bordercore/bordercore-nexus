@@ -100,6 +100,7 @@ class Bookmark(TimeStampedModel):
     objects = BookmarkManager()
 
     class Meta:
+        ordering = ("-modified", "-created")
         indexes = [
             models.Index(fields=["user", "-created"]),
         ]
