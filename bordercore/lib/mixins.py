@@ -2,6 +2,7 @@
 
 This module provides reusable mixin classes for common Django patterns:
 - TimeStampedModel: Adds created and modified timestamp fields
+- ElasticsearchMixin: Provides Elasticsearch indexing and deletion
 - FormRequestMixin: Passes request object to forms
 - SortOrderMixin: Manages sort order for model instances
 """
@@ -10,10 +11,16 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, TypeVar
 
+import logging
+
 from django.apps import apps
 from django.db import models, transaction
 from django.db.models import F, Model, QuerySet
 from django.shortcuts import get_object_or_404
+
+from search.services import delete_document, index_document
+
+log = logging.getLogger(f"bordercore.{__name__}")
 
 if TYPE_CHECKING:
     from django.contrib.auth.base_user import AbstractBaseUser
@@ -42,6 +49,53 @@ class TimeStampedModel(models.Model):
         get_latest_by = "modified"
         ordering = ("-modified", "-created",)
         abstract = True
+
+
+class ElasticsearchMixin(models.Model):
+    """Abstract mixin that provides Elasticsearch indexing and deletion.
+
+    Models using this mixin must define an `elasticsearch_document` property
+    that returns the dict to be indexed. The mixin provides:
+    - `index_es_document()`: Index this object in Elasticsearch.
+    - `delete_from_elasticsearch()`: Deferred deletion from ES after transaction commit.
+
+    Models keep their own `save()` and `delete()` overrides since those vary
+    significantly (some index on save, some defer, some don't index at all).
+    """
+
+    class Meta:
+        abstract = True
+
+    @property
+    def elasticsearch_document(self) -> dict:
+        """Return the dict representation for Elasticsearch indexing.
+
+        Raises:
+            NotImplementedError: Always; subclasses must override this property.
+        """
+        raise NotImplementedError("Subclasses must define elasticsearch_document")
+
+    def index_es_document(self) -> None:
+        """Index this object in Elasticsearch."""
+        index_document(self.elasticsearch_document)
+
+    def delete_from_elasticsearch(self) -> None:
+        """Schedule deletion of this object from Elasticsearch after transaction commit.
+
+        Must be called before ``super().delete()`` since the UUID is read from
+        ``self``. Defers the actual ES call via ``transaction.on_commit()`` for
+        consistency.
+        """
+        obj_uuid = str(self.uuid)
+        model_name = type(self).__name__.lower()
+
+        def cleanup() -> None:
+            try:
+                delete_document(obj_uuid)
+            except Exception as e:
+                log.error("Failed to delete %s %s from Elasticsearch: %s", model_name, obj_uuid, e)
+
+        transaction.on_commit(cleanup)
 
 
 class UserScopedQuerysetMixin:

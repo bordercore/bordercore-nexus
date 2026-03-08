@@ -17,7 +17,7 @@ from typing import Any, Iterable, TypedDict, cast
 
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.db import models, transaction
+from django.db import models
 from django.db.models import F, Max, Q, QuerySet
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
@@ -27,8 +27,7 @@ from django.utils import timezone
 
 from blob.models import Blob
 from bookmark.models import Bookmark
-from lib.mixins import SortOrderMixin, TimeStampedModel
-from search.services import delete_document, index_document
+from lib.mixins import ElasticsearchMixin, SortOrderMixin, TimeStampedModel
 from tag.models import Tag
 
 from .managers import DrillManager
@@ -53,7 +52,7 @@ class IntervalResponse(TypedDict, total=False):
     interval_index: int
 
 
-class Question(TimeStampedModel):
+class Question(ElasticsearchMixin, TimeStampedModel):
     """
     A single study item (question/answer pair) in the spaced-repetition system.
 
@@ -311,22 +310,11 @@ class Question(TimeStampedModel):
             keep_parents: bool = False,
     ) -> tuple[int, dict[str, int]]:
         """Delete this question and remove it from Elasticsearch."""
-        question_uuid = str(self.uuid)
-        result = super().delete(using=using, keep_parents=keep_parents)
+        self.delete_from_elasticsearch()
+        return super().delete(using=using, keep_parents=keep_parents)
 
-        def cleanup() -> None:
-            try:
-                delete_document(question_uuid)
-            except Exception as e:
-                log.error("Failed to delete question %s from Elasticsearch: %s", question_uuid, e)
-
-        transaction.on_commit(cleanup)
-        return result
-
-    def index_question(self) -> None:
-        """Index this question in Elasticsearch.
-        """
-        index_document(self.elasticsearch_document)
+    # Alias for backward compatibility with callers using the old name
+    index_question = ElasticsearchMixin.index_es_document
 
     def add_related_object(self, object_uuid: str) -> dict[str, str]:
         """Relate this Question to a Blob or Bookmark by UUID.

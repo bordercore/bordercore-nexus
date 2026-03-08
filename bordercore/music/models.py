@@ -30,9 +30,8 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from lib.aws import s3_delete_object, s3_upload_fileobj
-from lib.mixins import SortOrderMixin, TimeStampedModel
+from lib.mixins import ElasticsearchMixin, SortOrderMixin, TimeStampedModel
 from lib.util import remove_non_ascii_characters
-from search.services import delete_document, index_document
 from tag.models import Tag
 
 log = logging.getLogger(f"bordercore.{__name__}")
@@ -58,7 +57,7 @@ class Artist(TimeStampedModel):
         return self.name
 
 
-class Album(TimeStampedModel):
+class Album(ElasticsearchMixin, TimeStampedModel):
     """An album is a collection of songs released together by an artist that can be tagged and tracked.
     """
 
@@ -111,9 +110,8 @@ class Album(TimeStampedModel):
             format="%.f"
         )
 
-    def index_album(self) -> None:
-        """Index this album in Elasticsearch."""
-        index_document(self.elasticsearch_document)
+    # Alias for backward compatibility with callers using the old name
+    index_album = ElasticsearchMixin.index_es_document
 
     @property
     def elasticsearch_document(self) -> dict[str, Any]:
@@ -159,7 +157,7 @@ class Album(TimeStampedModel):
         super().save(*args, **kwargs)
 
         # Index the album in Elasticsearch after the transaction commits
-        transaction.on_commit(self.index_album)
+        transaction.on_commit(self.index_es_document)
 
     def delete(
             self,
@@ -167,17 +165,8 @@ class Album(TimeStampedModel):
             keep_parents: bool = False,
     ) -> tuple[int, dict[str, int]]:
         """Delete the album and remove it from Elasticsearch."""
-        album_uuid = str(self.uuid)
-        result = super().delete(using=using, keep_parents=keep_parents)
-
-        def cleanup() -> None:
-            try:
-                delete_document(album_uuid)
-            except Exception as e:
-                log.error("Failed to delete album %s from Elasticsearch: %s", album_uuid, e)
-
-        transaction.on_commit(cleanup)
-        return result
+        self.delete_from_elasticsearch()
+        return super().delete(using=using, keep_parents=keep_parents)
 
 
 class SongSource(TimeStampedModel):
@@ -197,7 +186,7 @@ class SongSource(TimeStampedModel):
         return self.name
 
 
-class Song(TimeStampedModel):
+class Song(ElasticsearchMixin, TimeStampedModel):
     """A song is an individual musical track that can be played, rated, tagged, and organized within albums.
     """
     uuid = models.UUIDField(default=uuid.uuid4, editable=False)
@@ -260,7 +249,7 @@ class Song(TimeStampedModel):
         super().save(*args, **kwargs)
 
         # Index the song in Elasticsearch after the transaction commits
-        transaction.on_commit(self.index_song)
+        transaction.on_commit(self.index_es_document)
 
     def delete(
             self,
@@ -269,27 +258,24 @@ class Song(TimeStampedModel):
     ) -> tuple[int, dict[str, int]]:
         """Delete the song, remove it from Elasticsearch, and delete from S3."""
         song_uuid = str(self.uuid)
+
+        # Schedule ES deletion
+        self.delete_from_elasticsearch()
+
         result = super().delete(using=using, keep_parents=keep_parents)
 
-        def cleanups() -> None:
-            # Delete from Elasticsearch
-            try:
-                delete_document(song_uuid)
-            except Exception as e:
-                log.error("Failed to delete song %s from Elasticsearch: %s", song_uuid, e)
-
-            # Delete from S3
+        # S3 cleanup deferred until after transaction commits
+        def s3_cleanup() -> None:
             try:
                 s3_delete_object(settings.AWS_BUCKET_NAME_MUSIC, f"songs/{song_uuid}")
             except Exception as e:
                 log.error("Failed to delete song %s from S3: %s", song_uuid, e)
 
-        transaction.on_commit(cleanups)
+        transaction.on_commit(s3_cleanup)
         return result
 
-    def index_song(self) -> None:
-        """Index this song in Elasticsearch."""
-        index_document(self.elasticsearch_document)
+    # Alias for backward compatibility with callers using the old name
+    index_song = ElasticsearchMixin.index_es_document
 
     @property
     def elasticsearch_document(self) -> dict[str, Any]:

@@ -32,8 +32,7 @@ if TYPE_CHECKING:
 
 from collection.services import delete_collection_thumbnail, publish_create_collection_thumbnail
 from lib.exceptions import DuplicateObjectError
-from lib.mixins import SortOrderMixin, TimeStampedModel
-from search.services import delete_document, index_document
+from lib.mixins import ElasticsearchMixin, SortOrderMixin, TimeStampedModel
 from tag.models import Tag
 
 log = logging.getLogger(f"bordercore.{__name__}")
@@ -41,7 +40,7 @@ log = logging.getLogger(f"bordercore.{__name__}")
 BLOB_COUNT_PER_PAGE = 30
 
 
-class Collection(TimeStampedModel):
+class Collection(ElasticsearchMixin, TimeStampedModel):
     """
     A user-created grouping of Blobs and Bookmarks organized around a theme.
 
@@ -163,11 +162,10 @@ class Collection(TimeStampedModel):
 
         # Index the collection in Elasticsearch
         if index_es:
-            self.index_collection()
+            self.index_es_document()
 
-    def index_collection(self) -> None:
-        """Index this collection in Elasticsearch."""
-        index_document(self.elasticsearch_document)
+    # Alias for backward compatibility with callers using the old name
+    index_collection = ElasticsearchMixin.index_es_document
 
     @property
     def elasticsearch_document(self) -> dict[str, Any]:
@@ -205,9 +203,8 @@ class Collection(TimeStampedModel):
     ) -> tuple[int, dict[str, int]]:
         """Delete this collection, its S3 thumbnail, and remove it from Elasticsearch.
 
-        Deletes the collection from the database first, then defers S3 thumbnail
-        cleanup and Elasticsearch deletion until after the transaction commits.
-        If the transaction rolls back, the cleanup is not performed.
+        Defers S3 thumbnail cleanup and Elasticsearch deletion until after the
+        transaction commits. If the transaction rolls back, cleanup is not performed.
 
         Args:
             using: Database alias (unused).
@@ -217,19 +214,20 @@ class Collection(TimeStampedModel):
             A tuple of (number of objects deleted, dict of deletion counts by model).
         """
         collection_uuid = str(self.uuid)
+
+        # Schedule ES deletion
+        self.delete_from_elasticsearch()
+
         result = super().delete(using=using, keep_parents=keep_parents)
 
-        def cleanup() -> None:
+        # S3 cleanup deferred until after transaction commits
+        def s3_cleanup() -> None:
             try:
                 delete_collection_thumbnail(collection_uuid)
             except Exception as e:
                 log.error("Failed to delete collection %s thumbnail from S3: %s", collection_uuid, e)
-            try:
-                delete_document(collection_uuid)
-            except Exception as e:
-                log.error("Failed to delete collection %s from Elasticsearch: %s", collection_uuid, e)
 
-        transaction.on_commit(cleanup)
+        transaction.on_commit(s3_cleanup)
         return result
 
     def get_tags(self) -> str:

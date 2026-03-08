@@ -16,12 +16,11 @@ from typing import Any
 
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.db import models, transaction
+from django.db import models
 from django.db.models import Count, JSONField, Max
 from django.db.models.signals import m2m_changed
 
-from lib.mixins import TimeStampedModel
-from search.services import delete_document, index_document
+from lib.mixins import ElasticsearchMixin, TimeStampedModel
 from tag.models import Tag, TagTodo
 
 from .managers import TodoManager
@@ -29,7 +28,7 @@ from .managers import TodoManager
 log = logging.getLogger(f"bordercore.{__name__}")
 
 
-class Todo(TimeStampedModel):
+class Todo(ElasticsearchMixin, TimeStampedModel):
     """A todo is a user-defined task or action item that can be organized and tracked.
 
     A todo has a name, optional notes and related URL, and can be assigned one or
@@ -137,7 +136,7 @@ class Todo(TimeStampedModel):
 
         # Index the todo item in Elasticsearch
         if index_es:
-            self.index_todo()
+            self.index_es_document()
 
     def delete(
             self,
@@ -145,21 +144,11 @@ class Todo(TimeStampedModel):
             keep_parents: bool = False,
     ) -> tuple[int, dict[str, int]]:
         """Delete the todo and remove it from Elasticsearch."""
-        todo_uuid = str(self.uuid)
-        result = super().delete(using=using, keep_parents=keep_parents)
+        self.delete_from_elasticsearch()
+        return super().delete(using=using, keep_parents=keep_parents)
 
-        def cleanup() -> None:
-            try:
-                delete_document(todo_uuid)
-            except Exception as e:
-                log.error("Failed to delete todo %s from Elasticsearch: %s", todo_uuid, e)
-
-        transaction.on_commit(cleanup)
-        return result
-
-    def index_todo(self) -> None:
-        """Index this todo item in Elasticsearch."""
-        index_document(self.elasticsearch_document)
+    # Alias for backward compatibility with callers using the old name
+    index_todo = ElasticsearchMixin.index_es_document
 
     @property
     def elasticsearch_document(self) -> dict[str, Any]:

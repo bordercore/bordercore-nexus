@@ -25,9 +25,8 @@ from django.db import models, transaction
 from django.db.models import JSONField
 from django.db.models.signals import m2m_changed
 
-from lib.mixins import TimeStampedModel
+from lib.mixins import ElasticsearchMixin, TimeStampedModel
 from lib.time_utils import convert_seconds
-from search.services import delete_document, index_document
 from tag.models import Tag, TagBookmark
 
 from .managers import BookmarkManager
@@ -58,7 +57,7 @@ class DailyBookmarkJSONField(JSONField):
         return None
 
 
-class Bookmark(TimeStampedModel):
+class Bookmark(ElasticsearchMixin, TimeStampedModel):
     """A saved URL bookmark with metadata, tags, and cover images.
 
     Each Bookmark represents a URL saved by a user, with optional notes, tags,
@@ -162,32 +161,27 @@ class Bookmark(TimeStampedModel):
         Returns:
             Tuple of (number of objects deleted, dictionary with deletion counts).
         """
-        # Save values needed for cleanup before database deletion
         bookmark_uuid = str(self.uuid)
         user_id = self.user.id
 
         # After every bookmark mutation, invalidate the cache
         cache.delete(f"recent_bookmarks_{user_id}")
 
-        # Delete from database first
+        # Schedule ES deletion before super().delete()
+        self.delete_from_elasticsearch()
+
+        # Delete from database
         result = super().delete(using=using, keep_parents=keep_parents)
 
-        # Cleanup operations that should happen after transaction commits
-        def cleanups() -> None:
-            # Delete from Elasticsearch
-            try:
-                delete_document(bookmark_uuid)
-            except Exception as e:
-                log.error("Failed to delete bookmark %s from Elasticsearch: %s", bookmark_uuid, e)
-
-            # Delete cover images from S3
+        # S3 cleanup deferred until after transaction commits
+        def s3_cleanup() -> None:
             try:
                 from bookmark.services import delete_bookmark_cover_images
                 delete_bookmark_cover_images(bookmark_uuid)
             except Exception as e:
                 log.error("Failed to delete bookmark %s cover images from S3: %s", bookmark_uuid, e)
 
-        transaction.on_commit(cleanups)
+        transaction.on_commit(s3_cleanup)
         return result
 
     def delete_tag(self, tag: "Tag") -> None:
@@ -208,7 +202,7 @@ class Bookmark(TimeStampedModel):
             self.tags.remove(tag)
 
         # Refresh search index after the DB state is consistent.
-        self.index_bookmark()
+        self.index_es_document()
 
     def generate_cover_image(self) -> None:
         """Generate a cover image thumbnail for this bookmark.
@@ -258,9 +252,8 @@ class Bookmark(TimeStampedModel):
             from bookmark.services import upload_youtube_thumbnail
             upload_youtube_thumbnail(str(self.uuid), r.content)
 
-    def index_bookmark(self) -> None:
-        """Index this bookmark in Elasticsearch."""
-        index_document(self.elasticsearch_document)
+    # Alias for backward compatibility with callers using the old name
+    index_bookmark = ElasticsearchMixin.index_es_document
 
     @property
     def cover_url(self) -> str:
