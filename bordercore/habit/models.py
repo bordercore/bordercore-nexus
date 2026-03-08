@@ -53,6 +53,11 @@ class Habit(TimeStampedModel):
 
     objects = HabitManager()
 
+    class Meta:
+        indexes = [
+            models.Index(fields=["user", "-end_date"]),
+        ]
+
     def __str__(self) -> str:
         return self.name
 
@@ -97,6 +102,9 @@ class HabitLog(TimeStampedModel):
         return f"{self.habit.name} - {self.date} ({status})"
 
     class Meta:
+        indexes = [
+            models.Index(fields=["habit", "-date"]),
+        ]
         constraints = [
             models.UniqueConstraint(fields=["habit", "date"], name="unique_habit_date"),
         ]

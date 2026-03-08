@@ -55,6 +55,11 @@ class Todo(TimeStampedModel):
         default=3
     )
 
+    class Meta:
+        indexes = [
+            models.Index(fields=["user", "-created"]),
+        ]
+
     def get_tags(self) -> str:
         """Return a comma-separated, alphabetically ordered list of tag names.
 

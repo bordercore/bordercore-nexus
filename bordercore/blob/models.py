@@ -142,6 +142,10 @@ class Blob(TimeStampedModel):
     bc_objects = models.ManyToManyField("blob.BCObject", through="blob.BlobToObject", through_fields=("node", "bc_object"))
 
     class Meta:
+        indexes = [
+            models.Index(fields=["user", "-created"]),
+            models.Index(fields=["user", "is_note"]),
+        ]
         constraints = [
             models.UniqueConstraint(
                 fields=("sha1sum", "user"),

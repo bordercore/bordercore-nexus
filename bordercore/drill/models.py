@@ -82,6 +82,12 @@ class Question(TimeStampedModel):
 
     objects = DrillManager()
 
+    class Meta:
+        indexes = [
+            models.Index(fields=["user", "last_reviewed"]),
+            models.Index(fields=["user", "is_disabled"]),
+        ]
+
     def get_tags(self) -> str:
         """Return a comma-separated string of this question's tag names.
 

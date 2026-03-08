@@ -99,6 +99,11 @@ class Bookmark(TimeStampedModel):
 
     objects = BookmarkManager()
 
+    class Meta:
+        indexes = [
+            models.Index(fields=["user", "-created"]),
+        ]
+
     def __str__(self) -> str:
         """Return string representation of the bookmark.
 

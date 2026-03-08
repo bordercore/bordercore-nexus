@@ -58,6 +58,11 @@ class Collection(TimeStampedModel):
     description = models.TextField(blank=True, default="")
     is_favorite = models.BooleanField(default=False)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=["user", "-created"]),
+        ]
+
     def __str__(self) -> str:
         """Return string representation of the collection.
 

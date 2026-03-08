@@ -219,6 +219,11 @@ class Song(TimeStampedModel):
     tags = models.ManyToManyField(Tag)
     user = models.ForeignKey(User, on_delete=models.PROTECT)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=["user", "album"]),
+        ]
+
     def __str__(self) -> str:
         """Return string representation of the song.
 
