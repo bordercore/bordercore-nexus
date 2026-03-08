@@ -42,7 +42,7 @@ class Command(BaseCommand):
 
         count = 0
 
-        found = Blob.objects.filter(content__isnull=False).exclude(content="")
+        found = Blob.objects.exclude(content="")
         self.stdout.write(f"Total blobs possibly needing updating: {found.count()}")
 
         for hit in found:

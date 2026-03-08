@@ -36,12 +36,12 @@ class Book(TimeStampedModel):
 
     title = models.TextField()
     author = models.ManyToManyField(Author)
-    subtitle = models.TextField(null=True)
-    isbn = models.TextField(null=True)
-    asin = models.TextField(null=True)
+    subtitle = models.TextField(blank=True, default="")
+    isbn = models.TextField(blank=True, default="")
+    asin = models.TextField(blank=True, default="")
     year = models.IntegerField(null=True)
-    publisher = models.TextField(null=True)
-    notes = models.TextField(null=True)
+    publisher = models.TextField(blank=True, default="")
+    notes = models.TextField(blank=True, default="")
     own = models.BooleanField(default=True)
     user = models.ForeignKey(User, on_delete=models.PROTECT)
 

@@ -124,16 +124,16 @@ class Blob(TimeStampedModel):
     """
 
     uuid = models.UUIDField(default=uuid.uuid4, editable=False)
-    content = models.TextField(null=True)
-    name = models.TextField(null=True)
+    content = models.TextField(blank=True, default="")
+    name = models.TextField(blank=True, default="")
     sha1sum = models.CharField(max_length=40, blank=True, null=True)
     file = models.FileField(max_length=500, storage=DownloadableS3Boto3Storage(), blank=True)
     user = models.ForeignKey(User, on_delete=models.PROTECT)
-    note = models.TextField(null=True, blank=True)
+    note = models.TextField(blank=True, default="")
     tags = models.ManyToManyField(Tag)
     # Stored as text to support flexible formats: YYYY-MM-DD, YYYY-MM, YYYY,
     # and date ranges like [YYYY-MM TO YYYY-MM]. Validated in BlobForm.clean_date().
-    date = models.TextField(null=True)
+    date = models.TextField(blank=True, default="")
     importance = models.IntegerField(default=1)
     is_note = models.BooleanField(default=False)
     is_indexed = models.BooleanField(default=True)

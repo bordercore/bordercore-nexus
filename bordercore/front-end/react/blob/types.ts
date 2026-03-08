@@ -26,7 +26,7 @@ export interface Blob {
   url: string;
   doctype: string;
   cover_url: string | null;
-  content: string | null;
+  content: string;
   delta_days: number;
   content_size: string;
 }
