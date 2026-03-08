@@ -10,6 +10,7 @@ import uuid
 from datetime import timedelta
 
 from django.contrib.auth.models import User
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import JSONField
 
@@ -35,7 +36,12 @@ class Metric(models.Model):
     name = models.TextField()
     user = models.ForeignKey(User, on_delete=models.PROTECT)
     note = models.TextField(blank=True, null=True)
-    frequency = models.DurationField(default=timedelta(days=1), blank=False, null=False)
+    frequency = models.DurationField(
+        default=timedelta(days=1),
+        blank=False,
+        null=False,
+        validators=[MinValueValidator(timedelta(minutes=1))],
+    )
 
     objects = MetricsManager()
 

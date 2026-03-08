@@ -17,6 +17,7 @@ from datetime import date
 from typing import Any
 
 from django.contrib.auth.models import User
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models.signals import m2m_changed
 
@@ -95,7 +96,10 @@ class HabitLog(TimeStampedModel):
     habit = models.ForeignKey(Habit, on_delete=models.CASCADE)
     date = models.DateField()
     completed = models.BooleanField(default=False)
-    value = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    value = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True,
+        validators=[MinValueValidator(0)],
+    )
     note = models.TextField(blank=True)
 
     def __str__(self) -> str:
