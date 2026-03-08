@@ -426,7 +426,7 @@ def create_blob(request: HttpRequest) -> Response:
                 date=timezone.now().date().strftime("%Y-%m-%d")
             )
 
-            blob.file_modified = str(int(timezone.now().timestamp()))  # type: ignore[attr-defined]
+            blob.file_modified = int(timezone.now().timestamp())  # type: ignore[attr-defined]
             blob.file.save(uploaded_file.name, BytesIO(file_contents))
             blob.sha1sum = sha1sum
             blob.save()

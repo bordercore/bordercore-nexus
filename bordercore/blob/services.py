@@ -969,7 +969,7 @@ def chatbot(request: HttpRequest, args: dict[str, Any]) -> Generator[str, None, 
             }
         ]
     elif "exercise_uuid" in args:
-        exercise = Exercise.objects.get(uuid=args["exercise_uuid"], user=user)
+        exercise = Exercise.objects.get(uuid=args["exercise_uuid"], exerciseuser__user=user)
         messages = [
             {
                 "role": "user",

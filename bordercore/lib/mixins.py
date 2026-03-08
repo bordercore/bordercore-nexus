@@ -63,6 +63,8 @@ class ElasticsearchMixin(models.Model):
     significantly (some index on save, some defer, some don't index at all).
     """
 
+    uuid: models.UUIDField
+
     class Meta:
         abstract = True
 
