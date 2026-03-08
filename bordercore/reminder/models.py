@@ -125,6 +125,14 @@ class Reminder(TimeStampedModel):
     last_triggered_at = models.DateTimeField(null=True, blank=True)
     next_trigger_at = models.DateTimeField(null=True, blank=True, db_index=True)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "name"],
+                name="unique_reminder_user_name",
+            ),
+        ]
+
     def __str__(self) -> str:
         """Return string representation of the reminder.
 

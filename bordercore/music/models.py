@@ -224,6 +224,13 @@ class Song(TimeStampedModel):
         indexes = [
             models.Index(fields=["user", "album"]),
         ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["title", "artist", "album", "user"],
+                name="unique_song_title_artist_album_user",
+                nulls_distinct=False,
+            ),
+        ]
 
     def __str__(self) -> str:
         """Return string representation of the song.
