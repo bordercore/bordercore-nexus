@@ -15,6 +15,7 @@ from typing import Any, cast
 from urllib.parse import urlparse
 
 import markdown
+import nh3
 from elasticsearch import RequestError
 
 from django.conf import settings
@@ -88,7 +89,7 @@ class SearchListView(LoginRequiredMixin, ListView):
             return {}
 
         num_pages = int(math.ceil(num_results / self.RESULT_COUNT_PER_PAGE))
-        paginate_by = 2
+        pagination_window = 2
 
         paginator = {
             "page_number": page,
@@ -97,7 +98,7 @@ class SearchListView(LoginRequiredMixin, ListView):
             "range": get_pagination_range(
                 page,
                 num_pages,
-                paginate_by
+                pagination_window
             )
         }
 
@@ -173,9 +174,9 @@ class SearchListView(LoginRequiredMixin, ListView):
 
             # Display markdown for drill questions and todo items
             if match["source"]["doctype"] == "drill":
-                match["source"]["question"] = markdown.markdown(match["source"]["question"])
+                match["source"]["question"] = nh3.clean(markdown.markdown(match["source"]["question"]))
             if match["source"]["doctype"] == "todo":
-                match["source"]["name"] = markdown.markdown(match["source"]["name"])
+                match["source"]["name"] = nh3.clean(markdown.markdown(match["source"]["name"]))
 
     def get_queryset(self) -> Any:
         """Build and execute the Elasticsearch query via perform_search().

@@ -320,7 +320,8 @@ def pin_note(request: HttpRequest) -> Response:
             user_note.save()
             status = "OK"
 
-    return Response({"status": status, "message": message})
+    http_status = 409 if status == "ERROR" else 200
+    return Response({"status": status, "message": message}, status=http_status)
 
 
 ALLOWED_SESSION_KEYS = frozenset({

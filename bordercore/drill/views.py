@@ -860,7 +860,7 @@ def get_title_from_url(request: HttpRequest) -> Response:
             title = parse_title_from_url(url)[1]
         except Exception as e:
             log.exception("Failed to parse title from URL: %s", url)
-            return Response({"status": "ERROR", "message": str(e)})
+            return Response({"status": "ERROR", "message": str(e)}, status=400)
 
     response = {
         "status": "OK",

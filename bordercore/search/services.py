@@ -12,6 +12,7 @@ from typing import Any, cast
 from uuid import UUID
 
 import markdown
+import nh3
 from elasticsearch import RequestError, helpers
 
 from django.conf import settings
@@ -220,13 +221,13 @@ def _build_pagination_dict(page: int, num_results: int) -> dict[str, Any]:
         return {}
 
     num_pages = int(math.ceil(num_results / RESULT_COUNT_PER_PAGE))
-    paginate_by = 2
+    pagination_window = 2
 
     paginator: dict[str, Any] = {
         "page_number": page,
         "num_pages": num_pages,
         "total_results": num_results,
-        "range": get_pagination_range(page, num_pages, paginate_by),
+        "range": get_pagination_range(page, num_pages, pagination_window),
     }
     paginator["has_previous"] = page != 1
     paginator["has_next"] = page != paginator["num_pages"]
@@ -298,9 +299,9 @@ def _filter_results(results: list[dict[str, Any]], search_term: str | None) -> N
             match["source"]["contents"] = match["source"]["contents"].replace(search_term, f"*{search_term}*")
 
         if match["source"]["doctype"] == "drill":
-            match["source"]["question"] = markdown.markdown(match["source"]["question"])
+            match["source"]["question"] = nh3.clean(markdown.markdown(match["source"]["question"]))
         if match["source"]["doctype"] == "todo":
-            match["source"]["name"] = markdown.markdown(match["source"]["name"])
+            match["source"]["name"] = nh3.clean(markdown.markdown(match["source"]["name"]))
 
 
 def perform_search(
