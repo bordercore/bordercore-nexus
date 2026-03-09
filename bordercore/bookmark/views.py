@@ -536,11 +536,11 @@ def sort_pinned_tags(request: HttpRequest) -> Response:
     try:
         new_position = int(request.POST["new_position"])
     except (TypeError, ValueError):
-        return Response({"status": "ERROR", "message": "Invalid position value"}, status=400)
+        return Response({"detail": "Invalid position value"}, status=400)
 
     if new_position < 1:
         return Response(
-            {"status": "ERROR", "message": f"Position cannot be < 1: {new_position}"},
+            {"detail": f"Position cannot be < 1: {new_position}"},
             status=400,
         )
 
@@ -550,7 +550,7 @@ def sort_pinned_tags(request: HttpRequest) -> Response:
     s = get_object_or_404(UserTag, userprofile=user.userprofile, tag=tag)
     UserTag.reorder(s, new_position)
 
-    return Response({"status": "OK"})
+    return Response()
 
 
 @api_view(["POST"])
@@ -576,13 +576,13 @@ def sort_bookmarks(request: HttpRequest) -> Response:
     try:
         new_position = int(request.POST["position"])
     except (TypeError, ValueError):
-        return Response({"status": "ERROR", "message": "Invalid position value"}, status=400)
+        return Response({"detail": "Invalid position value"}, status=400)
 
     user = cast(User, request.user)
     tb = get_object_or_404(TagBookmark, tag__name=tag_name, tag__user=user, bookmark__uuid=bookmark_uuid, bookmark__user=user)
     TagBookmark.reorder(tb, new_position)
 
-    return Response({"status": "OK"})
+    return Response()
 
 
 @api_view(["POST"])
@@ -616,7 +616,7 @@ def add_note(request: HttpRequest) -> Response:
         bookmark__user=user
     ).update(note=note)
 
-    return Response({"status": "OK"})
+    return Response()
 
 
 @api_view(["GET"])
@@ -642,7 +642,6 @@ def get_new_bookmarks_count(request: HttpRequest, timestamp: int) -> Response:
 
     return Response(
         {
-            "status": "OK",
             "count": count
         }
     )
@@ -666,11 +665,11 @@ def get_title_from_url(request: HttpRequest) -> Response:
     """
     url = unquote(request.GET.get("url", ""))
     if not url:
-        return Response({"status": "ERROR", "message": "URL parameter is required"}, status=400)
+        return Response({"detail": "URL parameter is required"}, status=400)
 
     parsed = urlparse(url)
     if parsed.scheme not in {"http", "https"}:
-        return Response({"status": "ERROR", "message": "Invalid URL scheme"}, status=400)
+        return Response({"detail": "Invalid URL scheme"}, status=400)
 
     hostname = parsed.hostname
     if hostname:
@@ -678,7 +677,7 @@ def get_title_from_url(request: HttpRequest) -> Response:
             ip = socket.gethostbyname(hostname)
             ip_obj = ipaddress.ip_address(ip)
             if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local or ip_obj.is_reserved:
-                return Response({"status": "ERROR", "message": "Access to private/internal IPs is not allowed"}, status=400)
+                return Response({"detail": "Access to private/internal IPs is not allowed"}, status=400)
         except (socket.gaierror, ValueError):
             pass
 
@@ -686,7 +685,6 @@ def get_title_from_url(request: HttpRequest) -> Response:
 
     return Response(
         {
-            "status": "OK",
             "title": title[1]
         }
     )
@@ -720,19 +718,14 @@ def add_tag(request: HttpRequest) -> Response:
     if tag in bookmark.tags.all():
         return Response(
             {
-                "status": "ERROR",
-                "message": f"Bookmark already has tag {tag}"
+                "detail": f"Bookmark already has tag {tag}"
             },
             status=400
         )
     else:
         bookmark.tags.add(tag)
         bookmark.index_bookmark()
-        return Response(
-            {
-                "status": "OK",
-            }
-        )
+        return Response()
 
 
 @api_view(["POST"])
@@ -763,15 +756,10 @@ def remove_tag(request: HttpRequest) -> Response:
     if tag not in bookmark.tags.all():
         return Response(
             {
-                "status": "ERROR",
-                "message": f"Bookmark does not have tag {tag}"
+                "detail": f"Bookmark does not have tag {tag}"
             },
             status=400
         )
     else:
         bookmark.delete_tag(tag)
-        return Response(
-            {
-                "status": "OK",
-            }
-        )
+        return Response()

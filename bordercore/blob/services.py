@@ -1094,7 +1094,7 @@ def add_related_object(node_type: str, node_uuid: str, object_uuid: str, user: U
     if not created:
         raise ObjectAlreadyRelatedError("That object is already related")
 
-    return {"status": "OK"}
+    return {}
 
 
 # ---------------------------------------------------------------------------

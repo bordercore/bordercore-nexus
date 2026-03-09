@@ -126,7 +126,7 @@ export function FeedEditorModal({
         if (!response || response.data.status_code !== StatusCodes.OK) {
           setStatusMessage({
             type: "error",
-            text: getReasonPhrase(response.data.status),
+            text: getReasonPhrase(response.data.status_code),
           });
         } else if (response.data.entry_count === 0) {
           setStatusMessage({ type: "empty" });

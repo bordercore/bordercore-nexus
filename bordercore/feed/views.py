@@ -137,13 +137,13 @@ def sort_feed(request: HttpRequest) -> Response:
         feed_id = int(request.POST.get("feed_id", "").strip())
         new_position = int(request.POST.get("position", "").strip())
     except (TypeError, ValueError):
-        return Response({"status": "ERROR", "message": "Invalid feed_id or position"}, status=400)
+        return Response({"detail": "Invalid feed_id or position"}, status=400)
 
     user = cast(User, request.user)
     s = get_object_or_404(UserFeed, userprofile=user.userprofile, feed__id=feed_id)
     UserFeed.reorder(s, new_position)
 
-    return Response({"status": "OK"})
+    return Response()
 
 
 @api_view(["POST"])
@@ -165,9 +165,9 @@ def update_feed_list(request: HttpRequest, feed_uuid: str) -> Response:
     try:
         updated_count = feed.update()
     except Exception as e:
-        return Response({"status": "ERROR", "message": str(e)}, status=HTTPStatus.SERVICE_UNAVAILABLE)
+        return Response({"detail": str(e)}, status=HTTPStatus.SERVICE_UNAVAILABLE)
 
-    return Response({"status": "OK", "updated_count": updated_count})
+    return Response({"updated_count": updated_count})
 
 
 @api_view(["GET"])
@@ -189,7 +189,7 @@ def check_url(request: HttpRequest, url: str) -> Response:
 
     parsed = urlparse(url)
     if parsed.scheme not in {"http", "https"}:
-        return Response({"status": "ERROR", "message": "Invalid URL scheme"}, status=400)
+        return Response({"detail": "Invalid URL scheme"}, status=400)
 
     hostname = parsed.hostname
     if hostname:
@@ -198,7 +198,7 @@ def check_url(request: HttpRequest, url: str) -> Response:
             ip_obj = ipaddress.ip_address(ip)
             if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local or ip_obj.is_reserved:
                 return Response(
-                    {"status": "ERROR", "message": "Access to private/internal IPs is not allowed"},
+                    {"detail": "Access to private/internal IPs is not allowed"},
                     status=400,
                 )
         except (socket.gaierror, ValueError):
@@ -208,17 +208,16 @@ def check_url(request: HttpRequest, url: str) -> Response:
         headers: dict[str, str] = {"user-agent": USER_AGENT}
         r = requests.get(url, headers=headers, timeout=10)
     except requests.RequestException as e:
-        return Response({"status": "ERROR", "message": str(e)}, status=400)
+        return Response({"detail": str(e)}, status=400)
 
     if r.status_code != HTTPStatus.OK:
         return Response({
-            "status": "ERROR",
+            "detail": f"Feed returned HTTP {r.status_code}",
             "status_code": r.status_code,
         }, status=400)
 
     d: Any = feedparser.parse(r.text)
     return Response({
-        "status": "OK",
         "status_code": r.status_code,
         "entry_count": len(d.entries),
     })

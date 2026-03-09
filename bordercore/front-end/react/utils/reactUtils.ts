@@ -49,21 +49,10 @@ export function doGet(
   axios
     .get(url, { responseType: responseType })
     .then(response => {
-      // Skip status check for arraybuffer responses (binary data has no .status property)
-      if (responseType !== "arraybuffer" && response.data.status && response.data.status !== "OK") {
-        EventBus.$emit("toast", {
-          title: "Error!",
-          body: errorMsg,
-          variant: "danger",
-          autoHide: true,
-        });
-        console.log(errorMsg);
-      } else {
-        return callback(response);
-      }
+      return callback(response);
     })
     .catch(error => {
-      const serverMessage = error.response?.data?.message;
+      const serverMessage = error.response?.data?.detail;
       EventBus.$emit("toast", {
         title: "Error!",
         body: serverMessage || `${errorMsg}: ${error.message}`,
@@ -117,38 +106,19 @@ export function doPost(
     withCredentials: true, // Ensure cookies are sent for same-origin requests
   })
     .then(response => {
-      if (response.data.status && response.data.status === "WARNING") {
+      if (successMsg) {
         EventBus.$emit("toast", {
-          title: "Error",
-          body: response.data.message,
-          variant: "warning",
-          autoHide: true,
+          title: "Success",
+          body: successMsg,
+          variant: "info",
         });
-        console.log("Warning: ", response.data.message);
-      } else if (response.data.status && response.data.status !== "OK") {
-        EventBus.$emit("toast", {
-          title: "Error",
-          body: response.data.message,
-          variant: "danger",
-          autoHide: true,
-        });
-        console.log("Error: ", response.data.message);
-      } else {
-        const body = response.data.message ? response.data.message : successMsg;
-        if (body) {
-          EventBus.$emit("toast", {
-            title: "Success",
-            body: response.data.message ? response.data.message : successMsg,
-            variant: "info",
-          });
-        }
-        callback(response);
       }
+      callback(response);
     })
     .catch(error => {
       EventBus.$emit("toast", {
         title: "Error",
-        body: error.response?.data?.message || error.message,
+        body: error.response?.data?.detail || error.message,
         variant: "danger",
         autoHide: true,
       });
@@ -197,30 +167,19 @@ export function doPut(
     withCredentials: true,
   })
     .then(response => {
-      if (response.status !== 200) {
+      if (successMsg) {
         EventBus.$emit("toast", {
-          title: "Error",
-          body: response.data.message,
-          variant: "danger",
-          autoHide: true,
+          title: "Success",
+          body: successMsg,
+          variant: "info",
         });
-        console.log("Error: ", response.statusText);
-      } else {
-        const body = response.data.message ? response.data.message : successMsg;
-        if (body) {
-          EventBus.$emit("toast", {
-            title: "Success",
-            body: response.data.message ? response.data.message : successMsg,
-            variant: "info",
-          });
-        }
-        callback(response);
       }
+      callback(response);
     })
     .catch(error => {
       EventBus.$emit("toast", {
         title: "Error",
-        body: error.response?.data?.message || error.message,
+        body: error.response?.data?.detail || error.message,
         variant: "danger",
         autoHide: true,
       });
@@ -266,7 +225,7 @@ export function doDelete(url: string, callback: (response: any) => void, success
     .catch(error => {
       EventBus.$emit("toast", {
         title: "Error",
-        body: error.response?.data?.message || error.message,
+        body: error.response?.data?.detail || error.message,
         variant: "danger",
         autoHide: true,
       });

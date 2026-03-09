@@ -170,7 +170,7 @@ class FormValidMixin(ModelFormMixin):
         message = "Blob created" if new_object else "Blob updated"
         messages.add_message(self.request, messages.INFO, message)
 
-        return JsonResponse({"status": "OK", "uuid": blob.uuid})
+        return JsonResponse({"uuid": blob.uuid})
 
     def form_invalid(self, form: BaseModelForm) -> JsonResponse:
         """Handle an invalid form submission.
@@ -181,7 +181,7 @@ class FormValidMixin(ModelFormMixin):
         Returns:
             JSON response with form errors and 400 status code.
         """
-        return JsonResponse({"status": "ERROR", "message": form.errors}, status=400)
+        return JsonResponse({"detail": form.errors}, status=400)
 
 
 class BlobListView(LoginRequiredMixin, ListView):
@@ -811,11 +811,7 @@ def update_cover_image(request: HttpRequest) -> Response:
     blob = get_user_object_or_404(user, Blob, uuid=blob_uuid)
     blob.update_cover_image(image)
 
-    response = {
-        "status": "OK"
-    }
-
-    return Response(response)
+    return Response()
 
 
 @api_view(["GET"])
@@ -844,7 +840,6 @@ def get_elasticsearch_info(request: HttpRequest, uuid: str) -> Response:
 
     response = {
         "info": info,
-        "status": "OK"
     }
 
     return Response(response)
@@ -870,7 +865,6 @@ def get_related_objects(request: HttpRequest, uuid: str) -> Response:
     blob = get_user_object_or_404(user, Blob, uuid=uuid)
 
     response = {
-        "status": "OK",
         "related_objects": Blob.related_objects("blob", "BlobToObject", blob),
     }
 
@@ -902,15 +896,15 @@ def add_related_object(request: HttpRequest) -> Response:
         result = add_related_object_service(node_type, node_uuid, object_uuid, user)
         return Response(result, status=200)
     except UnsupportedNodeTypeError as e:
-        return Response({"status": "ERROR", "message": str(e)}, status=400)
+        return Response({"detail": str(e)}, status=400)
     except InvalidNodeTypeError as e:
-        return Response({"status": "ERROR", "message": str(e)}, status=400)
+        return Response({"detail": str(e)}, status=400)
     except NodeNotFoundError as e:
-        return Response({"status": "ERROR", "message": str(e)}, status=404)
+        return Response({"detail": str(e)}, status=404)
     except RelatedObjectNotFoundError as e:
-        return Response({"status": "ERROR", "message": str(e)}, status=400)
+        return Response({"detail": str(e)}, status=400)
     except ObjectAlreadyRelatedError as e:
-        return Response({"status": "ERROR", "message": str(e)}, status=400)
+        return Response({"detail": str(e)}, status=400)
 
 
 @api_view(["POST"])
@@ -941,11 +935,7 @@ def remove_related_object(request: HttpRequest) -> Response:
         cast(Any, node_model), get_node_to_object_query(node_uuid, object_uuid, user)
     ).delete()
 
-    response = {
-        "status": "OK",
-    }
-
-    return Response(response)
+    return Response()
 
 
 @api_view(["POST"])
@@ -979,11 +969,7 @@ def sort_related_objects(request: HttpRequest) -> Response:
     )
     cast(Any, node_model).reorder(node_to_object, new_position)
 
-    response = {
-        "status": "OK",
-    }
-
-    return Response(response)
+    return Response()
 
 
 @api_view(["POST"])
@@ -1018,11 +1004,7 @@ def update_related_object_note(request: HttpRequest) -> Response:
     node_to_object.note = note
     node_to_object.save()
 
-    response = {
-        "status": "OK",
-    }
-
-    return Response(response)
+    return Response()
 
 
 @api_view(["POST"])
@@ -1049,7 +1031,6 @@ def update_page_number(request: HttpRequest) -> Response:
 
     response = {
         "message": "Cover image will be updated soon",
-        "status": "OK"
     }
 
     return Response(response)
@@ -1137,7 +1118,6 @@ def get_template(request: HttpRequest) -> Response:
 
     response = {
         "template": blob_template.template,
-        "status": "OK"
     }
 
     return Response(response)

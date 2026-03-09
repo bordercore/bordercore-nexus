@@ -254,7 +254,7 @@ def change_active_status(request: HttpRequest) -> Response:
         )
         info = eu.activity_info()
 
-    return Response({"info": info, "status": "OK"})
+    return Response({"info": info})
 
 
 @api_view(["POST"])
@@ -282,8 +282,7 @@ def edit_note(request: HttpRequest) -> Response:
     exercise.note = note
     exercise.save()
 
-    response = {"status": "OK"}
-    return Response(response)
+    return Response()
 
 
 @api_view(["GET"])
@@ -302,7 +301,7 @@ def get_workout_data(request: HttpRequest) -> Response:
     """
     exercise_uuid = request.GET.get("uuid")
     if not exercise_uuid:
-        return Response({"status": "ERROR", "message": "Missing required parameter: uuid"}, status=400)
+        return Response({"detail": "Missing required parameter: uuid"}, status=400)
 
     try:
         page_number = int(request.GET.get("page_number", 1))
@@ -316,8 +315,7 @@ def get_workout_data(request: HttpRequest) -> Response:
 
     workout_data = exercise.get_plot_info(user=user, page_number=page_number)
 
-    response = {"status": "OK", "workout_data": workout_data}
-    return Response(response)
+    return Response({"workout_data": workout_data})
 
 
 @api_view(["POST"])
@@ -347,7 +345,7 @@ def update_schedule(request: HttpRequest) -> Response:
     eu.schedule = boolean_values
     eu.save()
 
-    return Response({"status": "OK"})
+    return Response()
 
 
 @api_view(["POST"])
@@ -374,4 +372,4 @@ def update_rest_period(request: HttpRequest) -> Response:
     eu.rest_period = rest_period
     eu.save()
 
-    return Response({"status": "OK"})
+    return Response()

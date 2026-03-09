@@ -190,11 +190,7 @@ def edit_note(request: HttpRequest) -> Response:
         node.note = note
         node.save(update_fields=["note"])
 
-    response = {
-        "status": "OK"
-    }
-
-    return Response(response)
+    return Response()
 
 
 @api_view(["GET"])
@@ -212,7 +208,7 @@ def get_todo_list(request: HttpRequest, uuid: str) -> Response:
     node = get_user_object_or_404(user, Node, uuid=uuid)
     todo_list = node.get_todo_list()
 
-    response = {"status": "OK", "todo_list": todo_list}
+    response = {"todo_list": todo_list}
     return Response(response)
 
 
@@ -245,8 +241,7 @@ def add_todo(request: HttpRequest) -> Response:
         so.node.modified = timezone.now()
         so.node.save()
 
-    response = {"status": "OK"}
-    return Response(response)
+    return Response()
 
 
 @api_view(["POST"])
@@ -277,8 +272,7 @@ def remove_todo(request: HttpRequest) -> Response:
         node.modified = timezone.now()
         node.save()
 
-    response = {"status": "OK"}
-    return Response(response)
+    return Response()
 
 
 @api_view(["POST"])
@@ -298,7 +292,7 @@ def sort_todos(request: HttpRequest) -> Response:
         new_position = int(request.POST["new_position"])
     except ValueError:
         return Response(
-            {"status": "ERROR", "message": "new_position must be an integer"},
+            {"detail": "new_position must be an integer"},
             status=400,
         )
     user = cast(User, request.user)
@@ -315,8 +309,7 @@ def sort_todos(request: HttpRequest) -> Response:
         so.node.modified = timezone.now()
         so.node.save()
 
-    response = {"status": "OK"}
-    return Response(response)
+    return Response()
 
 
 @api_view(["POST"])
@@ -338,7 +331,7 @@ def change_layout(request: HttpRequest) -> Response:
         layout = json.loads(layout_raw)
     except json.JSONDecodeError:
         return Response(
-            {"status": "ERROR", "message": "Invalid JSON in layout"},
+            {"detail": "Invalid JSON in layout"},
             status=400,
         )
 
@@ -346,7 +339,7 @@ def change_layout(request: HttpRequest) -> Response:
         validate_layout(layout)
     except ValueError as e:
         return Response(
-            {"status": "ERROR", "message": str(e)},
+            {"detail": str(e)},
             status=400,
         )
 
@@ -355,8 +348,7 @@ def change_layout(request: HttpRequest) -> Response:
         node.layout = layout
         node.save()
 
-    response = {"status": "OK"}
-    return Response(response)
+    return Response()
 
 
 @api_view(["POST"])
@@ -380,7 +372,7 @@ def add_collection(request: HttpRequest) -> Response:
         rotate = int(rotate_raw)
     except ValueError:
         return Response(
-            {"status": "ERROR", "message": "Rotate must be an integer"},
+            {"detail": "Rotate must be an integer"},
             status=400,
         )
     limit_raw = request.POST.get("limit", "").strip().lower()
@@ -391,7 +383,7 @@ def add_collection(request: HttpRequest) -> Response:
             limit = int(limit_raw)
         except ValueError:
             return Response(
-                {"status": "ERROR", "message": "Limit must be an integer"},
+                {"detail": "Limit must be an integer"},
                 status=400,
             )
     user = cast(User, request.user)
@@ -403,7 +395,6 @@ def add_collection(request: HttpRequest) -> Response:
         )
 
     response = {
-        "status": "OK",
         "collection_uuid": collection.uuid,
         "layout": node.get_layout(),
     }
@@ -431,7 +422,7 @@ def update_collection(request: HttpRequest) -> Response:
         rotate = int(rotate_raw)
     except ValueError:
         return Response(
-            {"status": "ERROR", "message": "Rotate must be an integer"},
+            {"detail": "Rotate must be an integer"},
             status=400,
         )
     limit_raw = request.POST.get("limit", "").strip().lower()
@@ -442,7 +433,7 @@ def update_collection(request: HttpRequest) -> Response:
             limit = int(limit_raw)
         except ValueError:
             return Response(
-                {"status": "ERROR", "message": "Limit must be an integer"},
+                {"detail": "Limit must be an integer"},
                 status=400,
             )
     user = cast(User, request.user)
@@ -455,8 +446,7 @@ def update_collection(request: HttpRequest) -> Response:
         node = get_user_object_or_404(user, Node, uuid=node_uuid)
         node.update_collection(collection_uuid, display, random_order, rotate, limit)
 
-    response = {"status": "OK"}
-    return Response(response)
+    return Response()
 
 
 @api_view(["POST"])
@@ -479,7 +469,7 @@ def delete_collection(request: HttpRequest) -> Response:
         node = get_user_object_or_404(user, Node, uuid=node_uuid)
         node.delete_collection(collection_uuid, collection_type)
 
-    response = {"status": "OK", "layout": node.get_layout()}
+    response = {"layout": node.get_layout()}
     return Response(response)
 
 
@@ -500,7 +490,7 @@ def add_note(request: HttpRequest) -> Response:
         color = int(request.POST.get("color", "").strip())
     except ValueError:
         return Response(
-            {"status": "ERROR", "message": "Color must be an integer"},
+            {"detail": "Color must be an integer"},
             status=400,
         )
     user = cast(User, request.user)
@@ -511,7 +501,6 @@ def add_note(request: HttpRequest) -> Response:
         node.set_note_color(str(note.uuid), color)
 
     response = {
-        "status": "OK",
         "note_uuid": note.uuid,
         "layout": node.get_layout(),
     }
@@ -537,7 +526,7 @@ def delete_note(request: HttpRequest) -> Response:
         node = get_user_object_or_404(user, Node, uuid=node_uuid)
         node.delete_note(note_uuid)
 
-    response = {"status": "OK", "layout": node.get_layout()}
+    response = {"layout": node.get_layout()}
     return Response(response)
 
 
@@ -558,7 +547,7 @@ def set_note_color(request: HttpRequest) -> Response:
         color = int(request.POST.get("color", "").strip())
     except ValueError:
         return Response(
-            {"status": "ERROR", "message": "Color must be an integer"},
+            {"detail": "Color must be an integer"},
             status=400,
         )
     user = cast(User, request.user)
@@ -567,8 +556,7 @@ def set_note_color(request: HttpRequest) -> Response:
         node = get_user_object_or_404(user, Node, uuid=node_uuid)
         node.set_note_color(note_uuid, color)
 
-    response = {"status": "OK"}
-    return Response(response)
+    return Response()
 
 
 @api_view(["POST"])
@@ -593,7 +581,7 @@ def add_image(request: HttpRequest) -> Response:
 
     node.populate_image_info()
 
-    response = {"status": "OK", "layout": node.get_layout()}
+    response = {"layout": node.get_layout()}
     return Response(response)
 
 
@@ -617,12 +605,12 @@ def add_quote(request: HttpRequest) -> Response:
     # Choose a random quote
     quote = Quote.objects.filter(user=user).order_by("?").first()
     if not quote:
-        return Response({"status": "ERROR", "message": "No quotes available."}, status=404)
+        return Response({"detail": "No quotes available."}, status=404)
 
     with transaction.atomic():
         node.add_component("quote", quote, options)
 
-    response = {"status": "OK", "layout": node.get_layout()}
+    response = {"layout": node.get_layout()}
     return Response(response)
 
 
@@ -647,7 +635,7 @@ def update_quote(request: HttpRequest) -> Response:
         node = get_user_object_or_404(user, Node, uuid=node_uuid)
         node.update_component(uuid, options)
 
-    response = {"status": "OK", "layout": node.get_layout()}
+    response = {"layout": node.get_layout()}
     return Response(response)
 
 
@@ -671,14 +659,13 @@ def get_quote(request: HttpRequest) -> Response:
         quote_qs = quote_qs.filter(is_favorite=True)
     quote = quote_qs.order_by("?").first()
     if not quote:
-        return Response({"status": "ERROR", "message": "No quotes available."}, status=404)
+        return Response({"detail": "No quotes available."}, status=404)
 
     with transaction.atomic():
         node = get_user_object_or_404(user, Node, uuid=node_uuid)
         node.set_quote(quote.uuid)
 
     response = {
-        "status": "OK",
         "quote": {
             "uuid": quote.uuid,
             "is_favorite": quote.is_favorite,
@@ -707,7 +694,7 @@ def add_todo_list(request: HttpRequest) -> Response:
         node = get_user_object_or_404(user, Node, uuid=node_uuid)
         node.add_todo_list()
 
-    response = {"status": "OK", "layout": node.get_layout()}
+    response = {"layout": node.get_layout()}
     return Response(response)
 
 
@@ -729,7 +716,7 @@ def delete_todo_list(request: HttpRequest) -> Response:
         node = get_user_object_or_404(user, Node, uuid=node_uuid)
         node.delete_todo_list()
 
-    response = {"status": "OK", "layout": node.get_layout()}
+    response = {"layout": node.get_layout()}
     return Response(response)
 
 
@@ -754,7 +741,7 @@ def add_node(request: HttpRequest) -> Response:
         node = get_user_object_or_404(user, Node, uuid=node_uuid)
         parent_node.add_component("node", node, options)
 
-    response = {"status": "OK", "layout": parent_node.get_layout()}
+    response = {"layout": parent_node.get_layout()}
     return Response(response)
 
 
@@ -778,7 +765,7 @@ def update_node(request: HttpRequest) -> Response:
         node = get_user_object_or_404(user, Node, uuid=parent_node_uuid)
         node.update_component(uuid, options)
 
-    response = {"status": "OK", "layout": node.get_layout()}
+    response = {"layout": node.get_layout()}
     return Response(response)
 
 
@@ -830,7 +817,6 @@ def node_preview(request: HttpRequest, uuid: str) -> Response:
         random_todo = []
 
     response = {
-        "status": "OK",
         "info": {
             "uuid": uuid,
             "name": node.name,
@@ -863,5 +849,5 @@ def remove_component(request: HttpRequest) -> Response:
         node = get_user_object_or_404(user, Node, uuid=node_uuid)
         node.remove_component(uuid)
 
-    response = {"status": "OK", "layout": node.get_layout()}
+    response = {"layout": node.get_layout()}
     return Response(response)

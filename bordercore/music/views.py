@@ -804,7 +804,6 @@ class RecentSongsListView(APIView):
             )
 
         response = {
-            "status": "OK",
             "song_list": song_list
         }
 
@@ -830,7 +829,6 @@ def mark_song_as_listened_to(request: Request, song_uuid: str) -> Response:
 
     return Response(
         {
-            "status": "OK",
             "times_played": song.times_played
         }
     )
@@ -1124,8 +1122,7 @@ def scan_album_from_zipfile(request: HttpRequest) -> Response:
     """
     if "zipfile" not in request.FILES:
         return Response({
-            "status": "ERROR",
-            "message": "No ZIP file provided"
+            "detail": "No ZIP file provided"
         }, status=400)
 
     zipfile_upload = cast(UploadedFile, request.FILES["zipfile"])
@@ -1134,7 +1131,6 @@ def scan_album_from_zipfile(request: HttpRequest) -> Response:
 
     response = {
         **info,
-        "status": "OK",
     }
 
     return Response(response)
@@ -1156,8 +1152,7 @@ def add_album_from_zipfile(request: HttpRequest) -> Response:
 
     if "zipfile" not in request.FILES:
         return Response({
-            "status": "ERROR",
-            "message": "No ZIP file provided"
+            "detail": "No ZIP file provided"
         }, status=400)
 
     zipfile_upload = cast(UploadedFile, request.FILES["zipfile"])
@@ -1175,13 +1170,12 @@ def add_album_from_zipfile(request: HttpRequest) -> Response:
             json.loads(request.POST.get("songListChanges", "{}"))
         )
     except Exception as e:
-        return Response({"status": "ERROR", "message": str(e)}, status=400)
+        return Response({"detail": str(e)}, status=400)
 
     # Save the song source in the session
     request.session["song_source"] = SongSource.objects.get(id=request.POST["source"]).name
 
     response = {
-        "status": "OK",
         "url": reverse("music:album_detail", kwargs={"uuid": album_uuid}),
     }
 
@@ -1211,7 +1205,6 @@ def get_playlist(request: HttpRequest, playlist_uuid: str) -> Response:
     )
 
     response = {
-        "status": "OK",
         "totalTime": total_time,
         "playlistitems": playlist_data["song_list"]
     }
@@ -1234,7 +1227,7 @@ def sort_playlist(request: HttpRequest) -> Response:
     try:
         new_position = int(request.POST.get("position", "").strip())
     except (TypeError, ValueError):
-        return Response({"status": "ERROR", "message": "Invalid position"}, status=400)
+        return Response({"detail": "Invalid position"}, status=400)
 
     with transaction.atomic():
         playlistitem = get_object_or_404(
@@ -1244,7 +1237,7 @@ def sort_playlist(request: HttpRequest) -> Response:
         )
         playlistitem.reorder(new_position)
 
-    return Response({"status": "OK"})
+    return Response()
 
 
 @api_view(["GET"])
@@ -1293,7 +1286,6 @@ def add_to_playlist(request: HttpRequest) -> Response:
         # Song is already on playlist - remove it
         existing_item.delete()
         response = {
-            "status": "OK",
             "action": "removed"
         }
     else:
@@ -1306,7 +1298,6 @@ def add_to_playlist(request: HttpRequest) -> Response:
         request.session["music_playlist"] = playlist_uuid
 
         response = {
-            "status": "OK",
             "action": "added"
         }
 
@@ -1332,13 +1323,13 @@ def update_artist_image(request: HttpRequest) -> Response:
     get_user_object_or_404(request.user, Artist, uuid=artist_uuid)
 
     if "image" not in request.FILES:
-        return Response({"status": "ERROR", "message": "No image provided"}, status=400)
+        return Response({"detail": "No image provided"}, status=400)
 
     image = cast(UploadedFile, request.FILES["image"])
 
     upload_artist_image(artist_uuid, image.file)
 
-    return Response({"status": "OK"})
+    return Response()
 
 
 @api_view(["GET"])
@@ -1433,7 +1424,6 @@ def recent_albums(request: HttpRequest, page_number: str | int) -> Response:
 
     recent_albums_list, paginator = get_recent_albums_service(user, page_num)
     response = {
-        "status": "OK",
         "album_list": recent_albums_list,
         "paginator": paginator
     }
@@ -1461,16 +1451,12 @@ def set_song_rating(request: HttpRequest) -> Response:
         try:
             rating = int(rating_raw)
         except (TypeError, ValueError):
-            return Response({"status": "ERROR", "message": "Invalid rating"}, status=400)
+            return Response({"detail": "Invalid rating"}, status=400)
         if rating < 1 or rating > 5:
-            return Response({"status": "ERROR", "message": "Rating must be between 1 and 5"}, status=400)
+            return Response({"detail": "Rating must be between 1 and 5"}, status=400)
 
     song = get_user_object_or_404(request.user, Song, uuid=song_uuid)
     song.rating = rating
     song.save()
 
-    response = {
-        "status": "OK"
-    }
-
-    return Response(response)
+    return Response()

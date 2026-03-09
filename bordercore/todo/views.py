@@ -237,7 +237,6 @@ class TodoTaskList(APIView):
         created_counts = list(Todo.objects.created_counts(user))
 
         return Response({
-            "status": "OK",
             "priority_counts": priority_counts,
             "created_counts": created_counts,
             "todo_list": todo_list
@@ -266,7 +265,7 @@ def _reorder_todo(user: User, tag_name: str, todo_uuid: str, new_position: int) 
         )
         TagTodo.reorder(tag_todo, new_position)
 
-    return {"status": "OK", "new_position": new_position}
+    return {"new_position": new_position}
 
 
 @api_view(["POST"])
@@ -293,14 +292,12 @@ def sort_todo(request: Request) -> Response:
         new_position = int(position_str)
     except (ValueError, TypeError):
         return Response({
-            "status": "ERROR",
-            "message": "Position must be a valid integer"
+            "detail": "Position must be a valid integer"
         }, status=400)
 
     if new_position < 1:
         return Response({
-            "status": "ERROR",
-            "message": "Position must be a positive integer"
+            "detail": "Position must be a positive integer"
         }, status=400)
 
     user = cast(User, request.user)
@@ -346,4 +343,4 @@ def snooze_task(request: Request) -> Response:
     todo.due_date = timezone.now() + timedelta(days=1)
     todo.save()
 
-    return Response({"status": "OK"})
+    return Response()

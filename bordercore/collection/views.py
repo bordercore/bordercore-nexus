@@ -293,7 +293,7 @@ def get_blob(request: HttpRequest, collection_uuid: str) -> Response:
     try:
         blob_position = int(request.GET.get("position", 0))
     except (ValueError, TypeError):
-        return Response({"status": "ERROR", "message": "Invalid position value."}, status=400)
+        return Response({"detail": "Invalid position value."}, status=400)
     tag_name = request.GET.get("tag", None)
     randomize = request.GET.get("randomize", "") == "true"
 
@@ -412,8 +412,7 @@ def create_blob(request: HttpRequest) -> Response:
     if existing_blob:
 
         return Response({
-            "status": "ERROR",
-            "message": "This blob already exists.",
+            "detail": "This blob already exists.",
             "existing_blob_uuid": str(existing_blob.uuid),
             "existing_blob_url": reverse("blob:detail", kwargs={"uuid": existing_blob.uuid}),
         }, status=400)
@@ -437,7 +436,6 @@ def create_blob(request: HttpRequest) -> Response:
         blob.index_blob()
 
         response = {
-            "status": "OK",
             "blob_uuid": str(blob.uuid)
         }
 
@@ -468,7 +466,7 @@ def get_object_list(request: HttpRequest, collection_uuid: str) -> Response:
     try:
         page_number = int(request.GET.get("pageNumber", 1))
     except (ValueError, TypeError):
-        return Response({"status": "ERROR", "message": "Invalid page number."}, status=400)
+        return Response({"detail": "Invalid page number."}, status=400)
 
     object_list = collection.get_object_list(
         page_number=page_number,
@@ -514,21 +512,17 @@ def add_object(request: HttpRequest) -> Response:
     else:
         return Response(
             {
-                "status": "ERROR",
-                "message": "You must specify a blob_uuid or bookmark_uuid"
+                "detail": "You must specify a blob_uuid or bookmark_uuid"
             },
             status=400
         )
 
     try:
         collection.add_object(item)
-        response = {
-            "status": "OK",
-        }
+        response = {}
     except DuplicateObjectError:
         return Response({
-            "status": "ERROR",
-            "message": "That object already belongs to this collection."
+            "detail": "That object already belongs to this collection."
         }, status=400)
 
     return Response(response)
@@ -560,11 +554,11 @@ def remove_object(request: HttpRequest) -> Response:
         collection.remove_object(object_uuid)
     except CollectionObject.DoesNotExist:
         return Response(
-            {"status": "ERROR", "message": "Object not found in this collection."},
+            {"detail": "Object not found in this collection."},
             status=404
         )
 
-    return Response({"status": "OK"})
+    return Response()
 
 
 @api_view(["POST"])
@@ -590,7 +584,7 @@ def sort_objects(request: HttpRequest) -> Response:
     try:
         new_position = int(request.POST["new_position"])
     except (ValueError, TypeError):
-        return Response({"status": "ERROR", "message": "Invalid position value."}, status=400)
+        return Response({"detail": "Invalid position value."}, status=400)
 
     user = cast(User, request.user)
     so = get_object_or_404(
@@ -601,11 +595,7 @@ def sort_objects(request: HttpRequest) -> Response:
     )
     CollectionObject.reorder(so, new_position)
 
-    response = {
-        "status": "OK",
-    }
-
-    return Response(response)
+    return Response()
 
 
 @api_view(["POST"])
@@ -639,11 +629,7 @@ def update_object_note(request: HttpRequest) -> Response:
     so.note = note
     so.save()
 
-    response = {
-        "status": "OK",
-    }
-
-    return Response(response)
+    return Response()
 
 
 @api_view(["POST"])
@@ -692,9 +678,8 @@ def add_new_bookmark(request: HttpRequest) -> Response:
             bookmark=bookmark
     ).exists():
         return Response({
-            "status": "ERROR",
-            "message": "This bookmark is already a member of the collection."
+            "detail": "This bookmark is already a member of the collection."
         }, status=400)
 
     collection.add_object(bookmark)
-    return Response({"status": "OK"})
+    return Response()

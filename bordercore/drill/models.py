@@ -344,18 +344,16 @@ class Question(ElasticsearchMixin, TimeStampedModel):
                 related_kwargs = {"bookmark": bookmark_instance}
             else:
                 return {
-                    "status": "ERROR",
-                    "message": "Related Blob or Bookmark not found",
+                    "detail": "Related Blob or Bookmark not found",
                 }
 
         if QuestionToObject.objects.filter(node=self, **related_kwargs).exists():
             return {
-                "status": "ERROR",
-                "message": "That object is already related",
+                "detail": "That object is already related",
             }
 
         QuestionToObject.objects.create(node=self, **related_kwargs)
-        return {"status": "OK"}
+        return {}
 
     @property
     def sql_db(self) -> QuestionToObject | None:

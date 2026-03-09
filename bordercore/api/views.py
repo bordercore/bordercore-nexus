@@ -277,7 +277,7 @@ class CollectionViewSet(UserScopedQuerysetMixin, viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         instance = serializer.save(user=request.user)
         return Response(
-            {"status": "OK", "id": instance.id, "uuid": str(instance.uuid)},
+            {"id": instance.id, "uuid": str(instance.uuid)},
             status=status.HTTP_201_CREATED,
         )
 
@@ -310,7 +310,6 @@ class FeedViewSet(UserScopedQuerysetMixin, viewsets.ModelViewSet):
 
         return Response(
             {
-                "status": "OK",
                 "feed_info": {
                     "id": instance.id,
                     "uuid": str(instance.uuid),
@@ -640,4 +639,4 @@ class FitnessViewSet(viewsets.ViewSet):
                 ]
             )
 
-        return Response({"status": "OK"}, status=status.HTTP_201_CREATED)
+        return Response(status=status.HTTP_201_CREATED)

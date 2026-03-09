@@ -141,25 +141,21 @@ def add_alias(request: HttpRequest) -> Response:
 
     # Check that the alias doesn't already exist for this user
     if TagAlias.objects.filter(name=alias_name, user=user).exists():
-        response = {
-            "status": "WARNING",
-            "message": "Alias already exists"
-        }
+        return Response(
+            {"detail": "Alias already exists"},
+            status=400,
+        )
     elif Tag.objects.filter(name=alias_name, user=user).exists():
-        response = {
-            "status": "WARNING",
-            "message": f"A tag with the name '{alias_name}' already exists"
-        }
-    else:
-        tag = get_user_object_or_404(user, Tag, name=tag_name)
-        tag_alias = TagAlias(name=alias_name, tag=tag, user=user)
-        tag_alias.save()
-        response = {
-            "status": "OK",
-            "message": ""
-        }
+        return Response(
+            {"detail": f"A tag with the name '{alias_name}' already exists"},
+            status=400,
+        )
 
-    return Response(response)
+    tag = get_user_object_or_404(user, Tag, name=tag_name)
+    tag_alias = TagAlias(name=alias_name, tag=tag, user=user)
+    tag_alias.save()
+
+    return Response()
 
 
 @api_view(["GET"])
@@ -182,20 +178,17 @@ def get_todo_counts(request: HttpRequest) -> Response:
     else:
         tag_obj = Tag.objects.filter(user=user).order_by("?").first()
         if tag_obj is None:
-            return Response({"status": "ERROR", "message": "No tags found for user."}, status=404)
+            return Response({"detail": "No tags found for user."}, status=404)
         tag_name = tag_obj.name
 
     tag = get_user_object_or_404(user, Tag, name=tag_name)
     info = tag.get_related_counts().first() or {}
 
-    response = {
-        "status": "OK",
+    return Response({
         "info": {
             **info
         }
-    }
-
-    return Response(response)
+    })
 
 
 @api_view(["GET"])
@@ -219,9 +212,4 @@ def get_related_tags(request: HttpRequest) -> Response:
 
     info = find_related_tags(tag_name, user, doc_type)
 
-    response = {
-        "status": "OK",
-        "info": info
-    }
-
-    return Response(response)
+    return Response({"info": info})

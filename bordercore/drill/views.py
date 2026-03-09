@@ -539,7 +539,7 @@ def record_response(request: HttpRequest, uuid: str, response_type: str) -> Resp
     """
     if response_type not in VALID_RESPONSES:
         return Response(
-            {"status": "ERROR", "message": f"Invalid response: {response_type}"},
+            {"detail": f"Invalid response: {response_type}"},
             status=400,
         )
 
@@ -548,7 +548,7 @@ def record_response(request: HttpRequest, uuid: str, response_type: str) -> Resp
     question.record_response(response_type)
 
     redirect_url = _get_next_question_url(request)
-    return Response({"status": "OK", "redirect_url": redirect_url})
+    return Response({"redirect_url": redirect_url})
 
 
 @api_view(["GET"])
@@ -567,7 +567,6 @@ def get_pinned_tags(request: HttpRequest) -> Response:
     tags = Question.objects.get_pinned_tags(user)
 
     response = {
-        "status": "OK",
         "tag_list": tags
     }
 
@@ -590,7 +589,6 @@ def get_disabled_tags(request: HttpRequest) -> Response:
     tags = Question.objects.get_disabled_tags(user)
 
     response = {
-        "status": "OK",
         "tag_list": tags
     }
 
@@ -620,8 +618,7 @@ def pin_tag(request: HttpRequest) -> Response:
 
         return Response(
             {
-                "status": "ERROR",
-                "message": "Duplicate: that tag is already pinned."
+                "detail": "Duplicate: that tag is already pinned."
             },
             status=400
         )
@@ -632,11 +629,7 @@ def pin_tag(request: HttpRequest) -> Response:
         so = DrillTag(userprofile=user.userprofile, tag=tag)
         so.save()
 
-        return Response(
-            {
-                "status": "OK"
-            }
-        )
+        return Response()
 
 
 @api_view(["POST"])
@@ -662,8 +655,7 @@ def unpin_tag(request: HttpRequest) -> Response:
 
         return Response(
             {
-                "status": "ERROR",
-                "message": "That tag is not pinned."
+                "detail": "That tag is not pinned."
             },
             status=400
         )
@@ -673,11 +665,7 @@ def unpin_tag(request: HttpRequest) -> Response:
         so = get_object_or_404(DrillTag, userprofile=user.userprofile, tag__name=tag_name)
         so.delete()
 
-        return Response(
-            {
-                "status": "OK"
-            }
-        )
+        return Response()
 
 
 @api_view(["POST"])
@@ -702,11 +690,7 @@ def sort_pinned_tags(request: HttpRequest) -> Response:
     so = get_object_or_404(DrillTag, tag__name=tag_name, userprofile=user.userprofile)
     DrillTag.reorder(so, new_position)
 
-    response = {
-        "status": "OK"
-    }
-
-    return Response(response)
+    return Response()
 
 
 @api_view(["POST"])
@@ -731,18 +715,13 @@ def disable_tag(request: HttpRequest) -> Response:
     if tag_name in {x["name"] for x in Question.objects.get_disabled_tags(user)}:
         return Response(
             {
-                "status": "ERROR",
-                "message": "Questions with that tag are already disabled."
+                "detail": "Questions with that tag are already disabled."
             },
             status=400
         )
     else:
         Question.objects.filter(tags__name=tag_name, user=user).update(is_disabled=True)
-        return Response(
-            {
-                "status": "OK"
-            }
-        )
+        return Response()
 
 
 @api_view(["POST"])
@@ -767,19 +746,14 @@ def enable_tag(request: HttpRequest) -> Response:
     if tag_name not in {x["name"] for x in Question.objects.get_disabled_tags(user)}:
         return Response(
             {
-                "status": "ERROR",
-                "message": "No question with that tag is disabled."
+                "detail": "No question with that tag is disabled."
             },
             status=400
         )
     else:
         Question.objects.filter(tags__name=tag_name, user=user).update(is_disabled=False)
 
-        return Response(
-            {
-                "status": "OK"
-            }
-        )
+        return Response()
 
 
 @api_view(["POST"])
@@ -802,7 +776,7 @@ def is_favorite_mutate(request: HttpRequest) -> Response:
 
     if mutation not in ("add", "delete"):
         return Response(
-            {"status": "ERROR", "message": f"Invalid mutation: {mutation}"},
+            {"detail": f"Invalid mutation: {mutation}"},
             status=400,
         )
 
@@ -812,7 +786,7 @@ def is_favorite_mutate(request: HttpRequest) -> Response:
     question.is_favorite = mutation == "add"
     question.save()
 
-    return Response({"status": "OK"})
+    return Response()
 
 
 @api_view(["GET"])
@@ -836,12 +810,12 @@ def get_title_from_url(request: HttpRequest) -> Response:
     """
     url = unquote(request.GET.get("url", ""))
     if not url:
-        return Response({"status": "ERROR", "message": "URL is required"}, status=400)
+        return Response({"detail": "URL is required"}, status=400)
 
     parsed = urlparse(url)
     if parsed.scheme not in ("http", "https"):
         return Response(
-            {"status": "ERROR", "message": "Only http and https URLs are allowed"},
+            {"detail": "Only http and https URLs are allowed"},
             status=400,
         )
 
@@ -860,10 +834,9 @@ def get_title_from_url(request: HttpRequest) -> Response:
             title = parse_title_from_url(url)[1]
         except Exception as e:
             log.exception("Failed to parse title from URL: %s", url)
-            return Response({"status": "ERROR", "message": str(e)}, status=400)
+            return Response({"detail": str(e)}, status=400)
 
     response = {
-        "status": "OK",
         "title": title,
         "bookmarkUuid": bookmark_uuid,
         "message": message
@@ -893,7 +866,6 @@ def get_related_objects(request: HttpRequest, uuid: str) -> Response:
     question = get_user_object_or_404(user, Question, uuid=uuid)
 
     response = {
-        "status": "OK",
         "related_objects": Blob.related_objects("drill", "QuestionToObject", question)
     }
 

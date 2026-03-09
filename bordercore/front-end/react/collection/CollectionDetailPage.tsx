@@ -169,23 +169,19 @@ export function CollectionDetailPage({
         setIsProcessing(false);
       }, 500);
 
-      if (response.data.status === "OK") {
-        const blobUuid = response.data.blob_uuid;
-        const blobUrl = urls.blobDetail.replace(/00000000-0000-0000-0000-000000000000/, blobUuid);
-        window.location.href = blobUrl;
-      } else {
-        alert(response.data.message || "Error creating blob");
-      }
+      const blobUuid = response.data.blob_uuid;
+      const blobUrl = urls.blobDetail.replace(/00000000-0000-0000-0000-000000000000/, blobUuid);
+      window.location.href = blobUrl;
     } catch (error: any) {
       console.error("Error uploading file:", error);
       const data = error.response?.data;
       if (data?.existing_blob_url) {
-        if (confirm(`${data.message} View existing blob?`)) {
+        if (confirm(`${data.detail} View existing blob?`)) {
           window.location.href = data.existing_blob_url;
           return;
         }
       } else {
-        alert(data?.message || "Error uploading file");
+        alert(data?.detail || "Error uploading file");
       }
       processingModal.hide();
       setIsProcessing(false);

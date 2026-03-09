@@ -270,14 +270,14 @@ def sort_pinned_notes(request: HttpRequest) -> Response:
     total = UserNote.objects.filter(userprofile=user.userprofile).count()
     if new_position < 1 or new_position > total:
         return Response(
-            {"status": "ERROR", "message": f"Position must be between 1 and {total}"},
+            {"detail": f"Position must be between 1 and {total}"},
             status=400,
         )
 
     user_note = get_object_or_404(UserNote, userprofile=user.userprofile, blob__uuid=note_uuid)
     UserNote.reorder(user_note, new_position)
 
-    return Response({"status": "OK"})
+    return Response()
 
 
 @api_view(["POST"])
@@ -304,24 +304,16 @@ def pin_note(request: HttpRequest) -> Response:
     user = cast(User, request.user)
     note = get_user_object_or_404(user, Blob, uuid=uuid)
 
-    message = ""
-    status = ""
-
     if remove:
         sort_order = get_object_or_404(UserNote, userprofile=user.userprofile, blob=note)
         sort_order.delete()
-        status = "OK"
     else:
         if UserNote.objects.filter(userprofile=user.userprofile, blob=note).exists():
-            message = "That note is already pinned."
-            status = "ERROR"
-        else:
-            user_note = UserNote(userprofile=user.userprofile, blob=note)
-            user_note.save()
-            status = "OK"
+            return Response({"detail": "That note is already pinned."}, status=409)
+        user_note = UserNote(userprofile=user.userprofile, blob=note)
+        user_note.save()
 
-    http_status = 409 if status == "ERROR" else 200
-    return Response({"status": status, "message": message}, status=http_status)
+    return Response()
 
 
 ALLOWED_SESSION_KEYS = frozenset({
@@ -350,7 +342,7 @@ def store_in_session(request: HttpRequest) -> Response:
     for key in request.POST:
         if key in ALLOWED_SESSION_KEYS:
             request.session[key] = request.POST[key]
-    return Response({"status": "OK"})
+    return Response()
 
 
 @require_http_methods(["GET", "POST"])

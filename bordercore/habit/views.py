@@ -98,7 +98,7 @@ def get_habits(request: Request) -> Response:
     user = cast(User, request.user)
     habits = get_habit_list(user)
 
-    return Response({"status": "OK", "habits": habits})
+    return Response({"habits": habits})
 
 
 @api_view(["POST"])
@@ -130,7 +130,7 @@ def log_habit(request: Request) -> Response:
         log_date = date.fromisoformat(log_date_str)
     except ValueError:
         return Response(
-            {"status": "ERROR", "message": "Invalid date format. Use YYYY-MM-DD."},
+            {"detail": "Invalid date format. Use YYYY-MM-DD."},
             status=400,
         )
 
@@ -143,7 +143,7 @@ def log_habit(request: Request) -> Response:
             value = Decimal(value_str)
         except InvalidOperation:
             return Response(
-                {"status": "ERROR", "message": "Invalid numeric value."},
+                {"detail": "Invalid numeric value."},
                 status=400,
             )
 
@@ -160,7 +160,6 @@ def log_habit(request: Request) -> Response:
     )
 
     return Response({
-        "status": "OK",
         "log": {
             "uuid": str(log.uuid),
             "date": log.date.isoformat(),
