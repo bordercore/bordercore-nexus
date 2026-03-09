@@ -262,6 +262,14 @@ def main() -> None:
     test_kind = args.test
     verbose = args.verbose
     return_code = run_test(test_kind, verbose)
+
+    # Close the psycopg connection pool to prevent thread-shutdown
+    # warnings at interpreter exit (psycopg_pool worker/scheduler threads).
+    from django.db import connections as db_connections
+    for conn in db_connections.all():
+        if hasattr(conn, 'pool') and conn.pool is not None:
+            conn.pool.close()
+
     sys.exit(return_code)
 
 
