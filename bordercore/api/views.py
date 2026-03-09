@@ -90,7 +90,7 @@ class BlobViewSet(viewsets.ModelViewSet):
         Returns:
             QuerySet of Blob objects.
         """
-        if self.request.user.groups.filter(name="ServiceAccount").exists():
+        if self.request.user.username == "service_user":
             return Blob.objects.all()
         return Blob.objects.filter(
             user=self.request.user
@@ -150,7 +150,7 @@ class BlobSha1sumViewSet(viewsets.ModelViewSet):
         Returns:
             QuerySet of Blob objects.
         """
-        if self.request.user.groups.filter(name="ServiceAccount").exists():
+        if self.request.user.username == "service_user":
             return Blob.objects.all()
 
         return Blob.objects.filter(
