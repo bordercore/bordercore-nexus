@@ -12,6 +12,7 @@ import json
 import random
 from typing import Any, cast
 
+from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
@@ -241,7 +242,7 @@ def add_todo(request: HttpRequest) -> Response:
         so.node.modified = timezone.now()
         so.node.save()
 
-    return Response()
+    return Response(status=status.HTTP_201_CREATED)
 
 
 @api_view(["POST"])
@@ -272,7 +273,7 @@ def remove_todo(request: HttpRequest) -> Response:
         node.modified = timezone.now()
         node.save()
 
-    return Response()
+    return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @api_view(["POST"])
@@ -398,7 +399,7 @@ def add_collection(request: HttpRequest) -> Response:
         "collection_uuid": collection.uuid,
         "layout": node.get_layout(),
     }
-    return Response(response)
+    return Response(response, status=status.HTTP_201_CREATED)
 
 
 @api_view(["POST"])
@@ -504,7 +505,7 @@ def add_note(request: HttpRequest) -> Response:
         "note_uuid": note.uuid,
         "layout": node.get_layout(),
     }
-    return Response(response)
+    return Response(response, status=status.HTTP_201_CREATED)
 
 
 @api_view(["POST"])
@@ -582,7 +583,7 @@ def add_image(request: HttpRequest) -> Response:
     node.populate_image_info()
 
     response = {"layout": node.get_layout()}
-    return Response(response)
+    return Response(response, status=status.HTTP_201_CREATED)
 
 
 @api_view(["POST"])
@@ -611,7 +612,7 @@ def add_quote(request: HttpRequest) -> Response:
         node.add_component("quote", quote, options)
 
     response = {"layout": node.get_layout()}
-    return Response(response)
+    return Response(response, status=status.HTTP_201_CREATED)
 
 
 @api_view(["POST"])
@@ -695,7 +696,7 @@ def add_todo_list(request: HttpRequest) -> Response:
         node.add_todo_list()
 
     response = {"layout": node.get_layout()}
-    return Response(response)
+    return Response(response, status=status.HTTP_201_CREATED)
 
 
 @api_view(["POST"])
@@ -742,7 +743,7 @@ def add_node(request: HttpRequest) -> Response:
         parent_node.add_component("node", node, options)
 
     response = {"layout": parent_node.get_layout()}
-    return Response(response)
+    return Response(response, status=status.HTTP_201_CREATED)
 
 
 @api_view(["POST"])

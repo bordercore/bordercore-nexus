@@ -13,6 +13,7 @@ from datetime import timedelta
 from typing import Any, cast
 
 import humanize
+from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
@@ -1179,7 +1180,7 @@ def add_album_from_zipfile(request: HttpRequest) -> Response:
         "url": reverse("music:album_detail", kwargs={"uuid": album_uuid}),
     }
 
-    return Response(response)
+    return Response(response, status=status.HTTP_201_CREATED)
 
 
 @api_view(["GET"])
@@ -1285,23 +1286,17 @@ def add_to_playlist(request: HttpRequest) -> Response:
     if existing_item:
         # Song is already on playlist - remove it
         existing_item.delete()
-        response = {
-            "action": "removed"
-        }
-    else:
-        # Song is not on playlist - add it
-        playlistitem = PlaylistItem(playlist=playlist, song=song)
-        playlistitem.save()
+        return Response({"action": "removed"})
 
-        # Save the playlist in the user's session, so that this will
-        #  be the default selection next time.
-        request.session["music_playlist"] = playlist_uuid
+    # Song is not on playlist - add it
+    playlistitem = PlaylistItem(playlist=playlist, song=song)
+    playlistitem.save()
 
-        response = {
-            "action": "added"
-        }
+    # Save the playlist in the user's session, so that this will
+    #  be the default selection next time.
+    request.session["music_playlist"] = playlist_uuid
 
-    return Response(response)
+    return Response({"action": "added"}, status=status.HTTP_201_CREATED)
 
 
 @api_view(["POST"])

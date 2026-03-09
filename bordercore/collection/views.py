@@ -6,6 +6,7 @@ and related operations in the collection system.
 from io import BytesIO
 from typing import Any, cast
 
+from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -439,7 +440,7 @@ def create_blob(request: HttpRequest) -> Response:
             "blob_uuid": str(blob.uuid)
         }
 
-    return Response(response)
+    return Response(response, status=status.HTTP_201_CREATED)
 
 
 @api_view(["GET"])
@@ -525,7 +526,7 @@ def add_object(request: HttpRequest) -> Response:
             "detail": "That object already belongs to this collection."
         }, status=400)
 
-    return Response(response)
+    return Response(response, status=status.HTTP_201_CREATED)
 
 
 @api_view(["POST"])
@@ -558,7 +559,7 @@ def remove_object(request: HttpRequest) -> Response:
             status=404
         )
 
-    return Response()
+    return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @api_view(["POST"])
@@ -682,4 +683,4 @@ def add_new_bookmark(request: HttpRequest) -> Response:
         }, status=400)
 
     collection.add_object(bookmark)
-    return Response()
+    return Response(status=status.HTTP_201_CREATED)

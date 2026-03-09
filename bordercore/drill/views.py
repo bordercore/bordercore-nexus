@@ -11,6 +11,7 @@ import random
 from typing import Any, cast
 from urllib.parse import unquote, urlparse
 
+from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
@@ -629,7 +630,7 @@ def pin_tag(request: HttpRequest) -> Response:
         so = DrillTag(userprofile=user.userprofile, tag=tag)
         so.save()
 
-        return Response()
+        return Response(status=status.HTTP_201_CREATED)
 
 
 @api_view(["POST"])
@@ -665,7 +666,7 @@ def unpin_tag(request: HttpRequest) -> Response:
         so = get_object_or_404(DrillTag, userprofile=user.userprofile, tag__name=tag_name)
         so.delete()
 
-        return Response()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @api_view(["POST"])

@@ -11,6 +11,7 @@ from typing import Any, Generator, cast
 
 from botocore.exceptions import BotoCoreError, ClientError
 
+from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
@@ -935,7 +936,7 @@ def remove_related_object(request: HttpRequest) -> Response:
         cast(Any, node_model), get_node_to_object_query(node_uuid, object_uuid, user)
     ).delete()
 
-    return Response()
+    return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @api_view(["POST"])

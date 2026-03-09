@@ -6,6 +6,7 @@ This module provides Django views for pinning/unpinning tags, searching tags, ma
 
 from typing import cast
 
+from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
@@ -155,7 +156,7 @@ def add_alias(request: HttpRequest) -> Response:
     tag_alias = TagAlias(name=alias_name, tag=tag, user=user)
     tag_alias.save()
 
-    return Response()
+    return Response(status=status.HTTP_201_CREATED)
 
 
 @api_view(["GET"])

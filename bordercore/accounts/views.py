@@ -5,6 +5,7 @@ password changes, and user-related operations.
 """
 from typing import Any, cast
 
+from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
@@ -307,13 +308,13 @@ def pin_note(request: HttpRequest) -> Response:
     if remove:
         sort_order = get_object_or_404(UserNote, userprofile=user.userprofile, blob=note)
         sort_order.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
     else:
         if UserNote.objects.filter(userprofile=user.userprofile, blob=note).exists():
             return Response({"detail": "That note is already pinned."}, status=409)
         user_note = UserNote(userprofile=user.userprofile, blob=note)
         user_note.save()
-
-    return Response()
+        return Response(status=status.HTTP_201_CREATED)
 
 
 ALLOWED_SESSION_KEYS = frozenset({

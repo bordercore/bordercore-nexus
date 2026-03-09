@@ -15,6 +15,7 @@ from datetime import date
 from decimal import Decimal, InvalidOperation
 from typing import Any, cast
 
+from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -149,7 +150,7 @@ def log_habit(request: Request) -> Response:
 
     note = request.POST.get("note", "")
 
-    log, _created = HabitLog.objects.update_or_create(
+    log, created = HabitLog.objects.update_or_create(
         habit=habit,
         date=log_date,
         defaults={
@@ -159,6 +160,8 @@ def log_habit(request: Request) -> Response:
         },
     )
 
+    http_status = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+
     return Response({
         "log": {
             "uuid": str(log.uuid),
@@ -167,4 +170,4 @@ def log_habit(request: Request) -> Response:
             "value": str(log.value) if log.value is not None else None,
             "note": log.note,
         },
-    })
+    }, status=http_status)

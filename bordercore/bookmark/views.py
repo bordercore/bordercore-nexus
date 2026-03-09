@@ -13,6 +13,7 @@ from urllib.parse import unquote, urlparse
 
 import pytz
 
+from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -725,7 +726,7 @@ def add_tag(request: HttpRequest) -> Response:
     else:
         bookmark.tags.add(tag)
         bookmark.index_bookmark()
-        return Response()
+        return Response(status=status.HTTP_201_CREATED)
 
 
 @api_view(["POST"])
@@ -762,4 +763,4 @@ def remove_tag(request: HttpRequest) -> Response:
         )
     else:
         bookmark.delete_tag(tag)
-        return Response()
+        return Response(status=status.HTTP_204_NO_CONTENT)
