@@ -154,10 +154,20 @@ export function TagDetailPage({
                 metadataExtra={selectedDoctype === "bookmark" ? match.url_domain : undefined}
                 imageSlot={
                   selectedDoctype === "album" && match.album_artwork_url ? (
-                    <img src={match.album_artwork_url} className="search-result-thumbnail" alt="" loading="lazy" />
+                    <img
+                      src={match.album_artwork_url}
+                      className="search-result-thumbnail"
+                      alt=""
+                      loading="lazy"
+                    />
                   ) : (selectedDoctype === "blob" || selectedDoctype === "book") &&
                     match.cover_url ? (
-                    <img src={match.cover_url} className="search-result-thumbnail" alt="" loading="lazy" />
+                    <img
+                      src={match.cover_url}
+                      className="search-result-thumbnail"
+                      alt=""
+                      loading="lazy"
+                    />
                   ) : undefined
                 }
                 extraSlot={

@@ -74,7 +74,9 @@ export function BackReferences({ backReferences }: BackReferencesProps) {
                   <FontAwesomeIcon icon={faCopy} className="text-success" />
                 </div>
                 <div className="text-truncate">
-                  {node.cover_url && <img src={node.cover_url} className="mw-100" alt="" loading="lazy" />}
+                  {node.cover_url && (
+                    <img src={node.cover_url} className="mw-100" alt="" loading="lazy" />
+                  )}
                   {/* Content is trusted server-rendered HTML from the app's own database */}
                   <div
                     className="text-truncate cursor-pointer"
