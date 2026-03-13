@@ -217,9 +217,9 @@ class Song(ElasticsearchMixin, TimeStampedModel):
         ]
         constraints = [
             models.UniqueConstraint(
-                fields=["title", "artist", "album", "user"],
-                name="unique_song_title_artist_album_user",
-                nulls_distinct=False,
+                fields=["title", "artist", "album", "track", "user"],
+                name="unique_song_title_artist_album_track_user",
+                condition=models.Q(album__isnull=False),
             ),
         ]
 
