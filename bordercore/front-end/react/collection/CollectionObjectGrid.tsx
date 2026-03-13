@@ -187,6 +187,7 @@ function SortableCollectionItem({
               <img
                 src={object.cover_url}
                 alt={object.name}
+                loading="lazy"
                 onClick={() => onImageClick(object.cover_url_large)}
               />
             </div>

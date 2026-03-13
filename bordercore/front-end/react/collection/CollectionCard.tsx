@@ -19,7 +19,7 @@ export function CollectionCard({ collection, onClick }: CollectionCardProps) {
       onClick={() => onClick(collection.url)}
     >
       <div className="position-relative collection mx-auto">
-        <img src={collection.cover_url} alt={collection.name} />
+        <img src={collection.cover_url} alt={collection.name} loading="lazy" />
         <div className="collection-cover-container position-absolute">{blobCountText}</div>
       </div>
       <div className="text-truncate">

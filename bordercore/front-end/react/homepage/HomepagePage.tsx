@@ -274,7 +274,7 @@ export function HomepagePage({
                 {defaultCollection.blob_list.map((blob: CollectionBlob) => (
                   <li key={blob.uuid} className="mx-3">
                     <a href={blob.url}>
-                      <img src={blob.cover_url} alt="" />
+                      <img src={blob.cover_url} alt="" loading="lazy" />
                     </a>
                   </li>
                 ))}

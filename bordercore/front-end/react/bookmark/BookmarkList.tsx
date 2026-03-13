@@ -138,7 +138,7 @@ function SortableBookmarkRow({
         <div className="d-flex align-items-center gap-2 overflow-hidden position-relative w-100">
           <div className="bookmark-icon-box">
             {bookmark.thumbnail_url ? (
-              <img src={bookmark.thumbnail_url} alt="" />
+              <img src={bookmark.thumbnail_url} alt="" loading="lazy" />
             ) : faviconHtml ? (
               <div
                 className="favicon-container"

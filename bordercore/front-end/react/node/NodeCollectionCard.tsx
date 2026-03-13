@@ -103,7 +103,7 @@ function SortableItem({
             </div>
             {element.type === "blob" ? (
               <div className="pe-2">
-                <img src={element.cover_url} height="75" width="70" alt="" />
+                <img src={element.cover_url} height="75" width="70" alt="" loading="lazy" />
               </div>
             ) : (
               <div className="pe-2">

@@ -180,11 +180,30 @@ def vite_asset(entry_name: str) -> SafeString | str:
 
     parts.clear()
     static_base = settings.STATIC_URL.rstrip("/") + "/vite/"
-    # CSS
+
+    # Collect all chunk dependencies for modulepreload hints
+    seen: set[str] = set()
+    def _collect_imports(ent: dict[str, Any]) -> None:
+        for imp_key in ent.get("imports", []):
+            if imp_key in seen:
+                continue
+            seen.add(imp_key)
+            imp_entry = manifest.get(imp_key, {})
+            imp_file = imp_entry.get("file")
+            if imp_file:
+                parts.append(f'<link rel="modulepreload" href="{static_base}{imp_file}">')
+            # Also collect CSS from imported chunks
+            for css in imp_entry.get("css", []):
+                parts.append(f'<link rel="stylesheet" href="{static_base}{css}">')
+            _collect_imports(imp_entry)
+
+    # CSS from entry
     for css in entry.get("css", []):
         href = static_base + css
         parts.append(f'<link rel="stylesheet" href="{href}">')
-    # JS
+    # Modulepreload hints for all chunk dependencies
+    _collect_imports(entry)
+    # JS entry point
     js_file = entry.get("file")
     if js_file:
         src = static_base + js_file
