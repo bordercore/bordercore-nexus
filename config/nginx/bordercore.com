@@ -103,6 +103,14 @@ server {
 
     server_name blobs.bordercore.com;
 
+    # S3 proxy cache settings (shared across all locations)
+    proxy_cache s3_images;
+    proxy_cache_valid 200 30d;
+    proxy_cache_valid 403 1m;
+    proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;
+    proxy_cache_lock on;
+    add_header X-Cache-Status $upstream_cache_status;
+
     location / {
 
         proxy_pass https://bordercore-blobs.s3.amazonaws.com/;
@@ -172,6 +180,14 @@ server {
     listen [::]:443 ssl;
 
     server_name images.bordercore.com;
+
+    # S3 proxy cache settings
+    proxy_cache s3_images;
+    proxy_cache_valid 200 30d;
+    proxy_cache_valid 403 1m;
+    proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;
+    proxy_cache_lock on;
+    add_header X-Cache-Status $upstream_cache_status;
 
     location /album_artwork/ {
 

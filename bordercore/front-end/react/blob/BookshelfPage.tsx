@@ -117,7 +117,7 @@ export function BookshelfPage({
                 <div className="zoom d-flex flex-column justify-content-top h-100 mb-4">
                   <div>
                     <a href={book.url}>
-                      <img src={book.cover_url} alt={book.name || "Book cover"} />
+                      <img src={book.cover_url} alt={book.name || "Book cover"} loading="lazy" />
                     </a>
                   </div>
                   <div

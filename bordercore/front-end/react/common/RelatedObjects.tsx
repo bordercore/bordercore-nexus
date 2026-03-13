@@ -331,12 +331,12 @@ function SortableRelatedObject({
             <div className="d-flex flex-column flex-grow-1">
               {element.type === "bookmark" && element.cover_url && (
                 <div className="pe-2">
-                  <img src={element.cover_url} width="120" height="67" alt="" />
+                  <img src={element.cover_url} width="120" height="67" alt="" loading="lazy" />
                 </div>
               )}
               {element.type === "blob" && element.cover_url && (
                 <div className="pe-2">
-                  <img src={element.cover_url} alt="" />
+                  <img src={element.cover_url} alt="" loading="lazy" />
                 </div>
               )}
               <div>

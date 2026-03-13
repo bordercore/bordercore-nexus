@@ -75,7 +75,13 @@ export function RecentAlbumsCard({
             >
               <div className="zoomable">
                 <a href={album.album_url}>
-                  <img src={album.artwork_url} height={150} width={150} alt={album.title} />
+                  <img
+                    src={album.artwork_url}
+                    height={150}
+                    width={150}
+                    alt={album.title}
+                    loading="lazy"
+                  />
                 </a>
               </div>
               <div className="mt-1 fw-bold text-truncate">{album.title}</div>
