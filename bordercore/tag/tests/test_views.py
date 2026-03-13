@@ -55,7 +55,7 @@ def test_tag_add_alias(authenticated_client, tag):
         "alias_name": tag_alias_name
     })
 
-    assert resp.status_code == 200
+    assert resp.status_code == 201
 
     tag_alias = TagAlias.objects.filter(name=tag_alias_name, tag=tag[0], user=user)
 
@@ -66,16 +66,16 @@ def test_tag_add_alias(authenticated_client, tag):
         "alias_name": tag_alias_name
     })
 
-    assert resp.status_code == 200
-    assert resp.json()["message"] == "Alias already exists"
+    assert resp.status_code == 400
+    assert resp.json()["detail"] == "Alias already exists"
 
     resp = client.post(url, {
         "tag_name": tag_alias,
         "alias_name": tag[0].name
     })
 
-    assert resp.status_code == 200
-    assert resp.json()["message"] == f"A tag with the name '{tag[0]}' already exists"
+    assert resp.status_code == 400
+    assert resp.json()["detail"] == f"A tag with the name '{tag[0]}' already exists"
 
 
 def test_tag_todo_counts(authenticated_client, tag):
@@ -192,7 +192,6 @@ def test_get_related_tags(authenticated_client, tag, mock_elasticsearch):
 
     assert resp.status_code == 200
     data = resp.json()
-    assert data["status"] == "OK"
 
     tag_names = [r["tag_name"] for r in data["info"]]
     assert "django" not in tag_names

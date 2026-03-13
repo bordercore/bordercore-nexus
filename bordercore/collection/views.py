@@ -520,7 +520,7 @@ def add_object(request: HttpRequest) -> Response:
 
     try:
         collection.add_object(item)
-        response = {}
+        response: dict[str, str] = {}
     except DuplicateObjectError:
         return Response({
             "detail": "That object already belongs to this collection."

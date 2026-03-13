@@ -85,7 +85,6 @@ def test_check_url_valid_feed(authenticated_client):
     resp = client.get(url)
 
     assert resp.status_code == 200
-    assert resp.json()["status"] == "OK"
     assert resp.json()["entry_count"] == 4
 
 
@@ -101,7 +100,7 @@ def test_check_url_network_error(authenticated_client):
         resp = client.get(url)
 
     assert resp.status_code == 400
-    assert resp.json()["status"] == "ERROR"
+    assert "detail" in resp.json()
 
 
 def test_check_url_private_ip(authenticated_client):
@@ -116,7 +115,7 @@ def test_check_url_private_ip(authenticated_client):
         resp = client.get(url)
 
     assert resp.status_code == 400
-    assert "private" in resp.json()["message"].lower()
+    assert "private" in resp.json()["detail"].lower()
 
 
 @responses.activate
@@ -133,5 +132,4 @@ def test_update_feed_list(authenticated_client, feed):
     resp = client.post(url)
 
     assert resp.status_code == 200
-    assert resp.json()["status"] == "OK"
     assert resp.json()["updated_count"] == 4

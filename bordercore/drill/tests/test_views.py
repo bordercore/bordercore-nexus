@@ -208,7 +208,6 @@ def test_drill_record_response(authenticated_client, question):
     resp = client.post(url)
 
     assert resp.status_code == 200
-    assert resp.json()["status"] == "OK"
     assert "redirect_url" in resp.json()
 
 
@@ -226,7 +225,7 @@ def test_drill_record_response_invalid(authenticated_client, question):
     resp = client.post(url)
 
     assert resp.status_code == 400
-    assert resp.json()["status"] == "ERROR"
+    assert "detail" in resp.json()
 
 
 def test_drill_get_pinned_tags(authenticated_client, question):
@@ -250,16 +249,15 @@ def test_drill_pin_tag(authenticated_client, question, tag):
         "tag": tag[2].name
     })
 
-    assert json.loads(resp.content)["status"] == "OK"
-    assert resp.status_code == 200
+    assert resp.status_code == 201
 
     url = urls.reverse("drill:pin_tag")
     resp = client.post(url, {
         "tag": tag[2].name
     })
 
-    assert json.loads(resp.content)["status"] == "ERROR"
     assert resp.status_code == 400
+    assert "detail" in json.loads(resp.content)
 
 
 def test_drill_unpin_tag(authenticated_client, question, tag):
@@ -271,15 +269,14 @@ def test_drill_unpin_tag(authenticated_client, question, tag):
         "tag": tag[0].name
     })
 
-    assert json.loads(resp.content)["status"] == "OK"
-    assert resp.status_code == 200
+    assert resp.status_code == 204
 
     resp = client.post(url, {
         "tag": tag[0].name
     })
 
-    assert json.loads(resp.content)["status"] == "ERROR"
     assert resp.status_code == 400
+    assert "detail" in json.loads(resp.content)
 
 
 def test_sort_pinned_tags(authenticated_client, question, tag):
@@ -292,7 +289,6 @@ def test_sort_pinned_tags(authenticated_client, question, tag):
         "new_position": 1
     })
 
-    assert json.loads(resp.content)["status"] == "OK"
     assert resp.status_code == 200
 
 
@@ -326,7 +322,6 @@ def test_drill_disable_tag(authenticated_client, tag):
         "tag": tag[0].name
     })
 
-    assert json.loads(resp.content)["status"] == "OK"
     assert resp.status_code == 200
 
     question_modified = Question.objects.get(pk=question_0.pk)
@@ -338,8 +333,8 @@ def test_drill_disable_tag(authenticated_client, tag):
         "tag": tag[0].name
     })
 
-    assert json.loads(resp.content)["status"] == "ERROR"
     assert resp.status_code == 400
+    assert "detail" in json.loads(resp.content)
 
 
 def test_drill_enable_tag(authenticated_client, tag):
@@ -354,7 +349,6 @@ def test_drill_enable_tag(authenticated_client, tag):
         "tag": tag[0].name
     })
 
-    assert json.loads(resp.content)["status"] == "OK"
     assert resp.status_code == 200
 
     question_modified = Question.objects.get(pk=question_0.pk)
@@ -366,8 +360,8 @@ def test_drill_enable_tag(authenticated_client, tag):
         "tag": tag[0].name
     })
 
-    assert json.loads(resp.content)["status"] == "ERROR"
     assert resp.status_code == 400
+    assert "detail" in json.loads(resp.content)
 
 
 def test_drill_is_favorite_mutate(authenticated_client, question, tag):
@@ -380,7 +374,6 @@ def test_drill_is_favorite_mutate(authenticated_client, question, tag):
         "mutation": "add"
     })
 
-    assert json.loads(resp.content)["status"] == "OK"
     assert resp.status_code == 200
 
     # Retrieve the question from the database and verify it is now a favorite
@@ -393,7 +386,6 @@ def test_drill_is_favorite_mutate(authenticated_client, question, tag):
         "mutation": "delete"
     })
 
-    assert json.loads(resp.content)["status"] == "OK"
     assert resp.status_code == 200
 
     # Retrieve the question from the database and verify it is no longer a favorite
@@ -416,7 +408,6 @@ def test_get_title_from_url(authenticated_client, bookmark):
     # Test existing bookmark
     resp = client.get(f"{url}?url={bookmark[0].url}")
     content = json.loads(resp.content)
-    assert content["status"] == "OK"
     assert resp.status_code == 200
     assert content["bookmarkUuid"] == str(bookmark[0].uuid)
     assert content["title"] == bookmark[0].name
@@ -424,7 +415,6 @@ def test_get_title_from_url(authenticated_client, bookmark):
     # Test new bookmark
     resp = client.get(f"{url}?url=https://www.bordercore.com/bookmarks/")
     content = json.loads(resp.content)
-    assert content["status"] == "OK"
     assert resp.status_code == 200
     assert content["bookmarkUuid"] is None
     assert content["title"] == "Bordercore Bookmarks"
@@ -441,7 +431,6 @@ def test_drill_get_related_objects(authenticated_client, question, blob_note):
     resp = client.get(url)
 
     content = json.loads(resp.content)
-    assert content["status"] == "OK"
     assert len(content["related_objects"]) == 3
     assert content["related_objects"][0]["name"] == blob_note[0].name
     assert content["related_objects"][0]["uuid"] == str(blob_note[0].uuid)
@@ -476,7 +465,7 @@ def test_drill_remove_object(authenticated_client, question, blob_note):
         "node_type": "drill"
     })
 
-    assert resp.status_code == 200
+    assert resp.status_code == 204
     assert not QuestionToObject.objects.filter(node=question[0], blob=blob_note[0]).exists()
     assert QuestionToObject.objects.filter(node=question[0]).count() == 2
 

@@ -143,7 +143,6 @@ def test_sort_todo_success():
             response = sort_todo(request)
 
             assert isinstance(response, Response)
-            assert response.data["status"] == "OK"
             assert response.data["new_position"] == 2
             mock_reorder.assert_called_once_with(mock_tag_todo, 2)
 
@@ -175,7 +174,7 @@ def test_sort_todo_invalid_position(authenticated_client, todo):
     })
 
     assert resp.status_code == 400
-    assert resp.json()["status"] == "ERROR"
+    assert "detail" in resp.json()
 
 
 def test_sort_todo_negative_position(authenticated_client, todo):
@@ -191,7 +190,7 @@ def test_sort_todo_negative_position(authenticated_client, todo):
     })
 
     assert resp.status_code == 400
-    assert resp.json()["status"] == "ERROR"
+    assert "detail" in resp.json()
 
 
 def test_sort_todo_missing_fields(authenticated_client, todo):
@@ -248,7 +247,6 @@ def test_snooze_task(authenticated_client, todo):
     })
 
     assert resp.status_code == 200
-    assert resp.json()["status"] == "OK"
 
     todo.refresh_from_db()
     assert todo.due_date is not None
@@ -289,6 +287,5 @@ def test_todo_task_list_search(authenticated_client, mock_elasticsearch):
 
     assert resp.status_code == 200
     data = resp.json()
-    assert data["status"] == "OK"
     assert isinstance(data["todo_list"], list)
     mock_elasticsearch.search.assert_called_once()

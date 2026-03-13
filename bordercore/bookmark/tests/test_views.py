@@ -264,7 +264,7 @@ def test_get_title_from_url_private_ip(authenticated_client):
         resp = client.get(f"{url}?url=http%3A%2F%2Flocalhost%2Ftest")
 
     assert resp.status_code == 400
-    assert "private" in json.loads(resp.content)["message"].lower()
+    assert "private" in json.loads(resp.content)["detail"].lower()
 
 
 def test_get_title_from_url_missing_url(authenticated_client):
@@ -293,7 +293,7 @@ def test_add_tag(authenticated_client, monkeypatch_bookmark):
     updated_bookmark = Bookmark.objects.get(uuid=bookmark.uuid)
     assert updated_bookmark.tags.count() == 1
     assert updated_bookmark.tags.first() == tag
-    assert resp.status_code == 200
+    assert resp.status_code == 201
 
 
 def test_add_tag_duplicate(authenticated_client, monkeypatch_bookmark):
@@ -311,7 +311,7 @@ def test_add_tag_duplicate(authenticated_client, monkeypatch_bookmark):
     })
 
     assert resp.status_code == 400
-    assert json.loads(resp.content)["status"] == "ERROR"
+    assert "detail" in json.loads(resp.content)
 
 
 def test_remove_tag(authenticated_client, monkeypatch_bookmark):
@@ -330,7 +330,7 @@ def test_remove_tag(authenticated_client, monkeypatch_bookmark):
 
     updated_bookmark = Bookmark.objects.get(uuid=bookmark.uuid)
     assert updated_bookmark.tags.count() == 0
-    assert resp.status_code == 200
+    assert resp.status_code == 204
 
     # Trying to remove the tag again should produce an error
     url = urls.reverse("bookmark:remove_tag")
@@ -338,7 +338,7 @@ def test_remove_tag(authenticated_client, monkeypatch_bookmark):
         "bookmark_uuid": bookmark.uuid,
         "tag_name": tag.name
     })
-    assert json.loads(resp.content)["status"] == "ERROR"
+    assert "detail" in json.loads(resp.content)
     updated_bookmark = Bookmark.objects.get(uuid=bookmark.uuid)
     assert updated_bookmark.tags.count() == 0
     assert resp.status_code == 400

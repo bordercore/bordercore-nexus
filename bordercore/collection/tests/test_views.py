@@ -225,7 +225,7 @@ def test_add_object(authenticated_client, collection, blob_image_factory):
         "blob_uuid": blob_image_factory[0].uuid
     })
 
-    assert resp.status_code == 200
+    assert resp.status_code == 201
 
     # Test for adding a duplicate blob
     resp = client.post(url, {
@@ -233,7 +233,7 @@ def test_add_object(authenticated_client, collection, blob_image_factory):
         "blob_uuid": blob_image_factory[0].uuid
     })
     assert resp.status_code == 400
-    assert resp.json()["status"] == "ERROR"
+    assert resp.json()["detail"] == "That object already belongs to this collection."
 
 
 def test_remove_object(authenticated_client, collection, blob_image_factory):
@@ -246,7 +246,7 @@ def test_remove_object(authenticated_client, collection, blob_image_factory):
         "object_uuid": blob_image_factory[0].uuid
     })
 
-    assert resp.status_code == 200
+    assert resp.status_code == 204
 
 
 @patch("collection.views.parse_title_from_url")
@@ -266,8 +266,7 @@ def test_add_new_bookmark(mock_parse_title_from_url, monkeypatch_bookmark, authe
         "url": bookmark.url
     })
 
-    assert resp.status_code == 200
-    assert resp.json()["status"] == "OK"
+    assert resp.status_code == 201
     assert CollectionObject.objects.filter(collection=collection[0], bookmark=bookmark).exists()
 
     # Adding a new bookmark
@@ -278,8 +277,7 @@ def test_add_new_bookmark(mock_parse_title_from_url, monkeypatch_bookmark, authe
         "url": bookmark_url
     })
 
-    assert resp.status_code == 200
-    assert resp.json()["status"] == "OK"
+    assert resp.status_code == 201
     bookmark = Bookmark.objects.get(url=bookmark_url)
     assert CollectionObject.objects.filter(collection=collection[0], bookmark=bookmark).exists()
 
@@ -291,4 +289,4 @@ def test_add_new_bookmark(mock_parse_title_from_url, monkeypatch_bookmark, authe
     })
 
     assert resp.status_code == 400
-    assert resp.json()["status"] == "ERROR"
+    assert resp.json()["detail"] == "This bookmark is already a member of the collection."

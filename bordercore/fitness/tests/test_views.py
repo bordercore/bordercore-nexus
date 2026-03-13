@@ -106,7 +106,6 @@ def test_fitness_get_workout_data(authenticated_client, fitness):
 
     result = resp.json()
     assert resp.status_code == 200
-    assert result["status"] == "OK"
     assert len(result["workout_data"]["labels"]) == 11
     assert len(result["workout_data"]["plot_data"]["reps"]) == 11
     assert len(result["workout_data"]["plot_data"]["reps"][0]) == 4

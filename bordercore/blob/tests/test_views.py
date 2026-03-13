@@ -125,8 +125,7 @@ def test_blob_create(monkeypatch_blob, authenticated_client, blob_text_factory):
     assert resp.status_code == 200
 
     payload = resp.json()
-    assert payload["status"] == "OK"
-    blob_uuid = json.loads(resp.content)["uuid"]
+    blob_uuid = payload["uuid"]
     blob = Blob.objects.get(uuid=blob_uuid)
     assert blob.name == name
 
@@ -416,9 +415,6 @@ def test_blob_update_cover_image(s3_resource, s3_bucket, authenticated_client):
 
     assert resp.status_code == 200
 
-    payload = resp.json()
-    assert payload["status"] == "OK"
-
 
 @patch("blob.models.Blob.get_elasticsearch_info")
 def test_get_elasticsearch_info(mock_get_info, authenticated_client):
@@ -434,7 +430,7 @@ def test_get_elasticsearch_info(mock_get_info, authenticated_client):
     resp = client.get(url)
 
     assert resp.status_code == 200
-    assert resp.json() == {"info": {}, "status": "OK"}
+    assert resp.json() == {"info": {}}
 
     # Second request: simulate indexed blob
     mock_get_info.reset_mock()
@@ -451,7 +447,6 @@ def test_get_elasticsearch_info(mock_get_info, authenticated_client):
     resp_json = resp.json()
 
     assert resp.status_code == 200
-    assert resp_json["status"] == "OK"
     assert resp_json["info"]["id"] == str(blob.uuid)
     assert resp_json["info"]["name"] == blob.name
     assert resp_json["info"]["filename"] == ""
@@ -483,7 +478,6 @@ def test_related_objects(authenticated_client):
     assert resp.status_code == 200
 
     payload = resp.json()
-    assert payload["status"] == "OK"
     assert len(payload["related_objects"]) == 1
     assert payload["related_objects"][0]["uuid"] == str(blob_2.uuid)
 
@@ -527,7 +521,7 @@ def test_blob_remove_related_object(authenticated_client):
         "node_type": "blob"
     })
 
-    assert resp.status_code == 200
+    assert resp.status_code == 204
 
     related_blobs = BlobToObject.objects.filter(node=blob_1)
     assert related_blobs.count() == 0
@@ -757,4 +751,3 @@ def test_sort_related_objects(authenticated_client):
     })
 
     assert resp.status_code == 200
-    assert resp.json()["status"] == "OK"

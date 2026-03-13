@@ -144,13 +144,13 @@ def test_add_related_object(authenticated_client, question):
     blob = BlobFactory.create(user=user)
 
     response = question[0].add_related_object(blob.uuid)
-    assert response == {"status": "OK"}
+    assert response == {}
 
     response = question[0].add_related_object(uuid.uuid4())
-    assert response == {"status": "ERROR", "message": "Related Blob or Bookmark not found"}
+    assert response == {"detail": "Related Blob or Bookmark not found"}
 
     response = question[0].add_related_object(blob.uuid)
-    assert response == {"status": "ERROR", "message": "That object is already related"}
+    assert response == {"detail": "That object is already related"}
 
 
 def test_start_study_session(question, tag):

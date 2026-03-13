@@ -171,7 +171,7 @@ def test_add_related_object(authenticated_client):
     blob = BlobFactory.create(user=user)
 
     response = add_related_object("drill", question.uuid, blob.uuid, user)
-    assert response == {"status": "OK"}
+    assert response == {}
 
     with pytest.raises(NodeNotFoundError, match="Node not found"):
         add_related_object("drill", uuid.uuid4(), blob.uuid, user)

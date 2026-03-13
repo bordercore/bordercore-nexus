@@ -54,7 +54,6 @@ def test_get_habits_api(authenticated_client):
 
     assert resp.status_code == 200
     data = resp.json()
-    assert data["status"] == "OK"
     assert len(data["habits"]) == 1
 
 
@@ -71,9 +70,8 @@ def test_log_habit_create(authenticated_client):
         "note": "Good day",
     })
 
-    assert resp.status_code == 200
+    assert resp.status_code == 201
     data = resp.json()
-    assert data["status"] == "OK"
     assert data["log"]["completed"] is True
     assert data["log"]["date"] == "2025-06-15"
 

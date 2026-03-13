@@ -96,7 +96,7 @@ def test_add_collection(authenticated_client, node):
         "random_order": "true",
     })
 
-    assert resp.status_code == 200
+    assert resp.status_code == 201
 
     resp_json = resp.json()
     updated_node = Node.objects.get(uuid=node.uuid)
@@ -197,7 +197,7 @@ def test_add_note(monkeypatch_blob, authenticated_client, node):
         "color": 1,
     })
 
-    assert resp.status_code == 200
+    assert resp.status_code == 201
 
     resp_json = resp.json()
     updated_node = Node.objects.get(uuid=node.uuid)
@@ -274,7 +274,7 @@ def test_node_add_image(monkeypatch_blob, authenticated_client, node, blob_image
         "image_uuid": blob_image_factory[0].uuid
     })
 
-    assert resp.status_code == 200
+    assert resp.status_code == 201
 
     # Verify that the collection has been removed from the node's layout
     updated_node = Node.objects.get(uuid=node.uuid)
@@ -319,7 +319,7 @@ def test_node_add_quote(authenticated_client, node, quote):
         "node_uuid": node.uuid,
     })
 
-    assert resp.status_code == 200
+    assert resp.status_code == 201
 
     updated_node = Node.objects.get(uuid=node.uuid)
 
@@ -426,7 +426,7 @@ def test_node_add_todo_list(authenticated_client, node):
         "node_uuid": node.uuid,
     })
 
-    assert resp.status_code == 200
+    assert resp.status_code == 201
 
     updated_node = Node.objects.get(uuid=node.uuid)
 
@@ -472,7 +472,7 @@ def test_node_add_node(authenticated_client, node):
         "node_uuid": added_node.uuid,
     })
 
-    assert resp.status_code == 200
+    assert resp.status_code == 201
 
     updated_node = Node.objects.get(uuid=node.uuid)
 
@@ -535,7 +535,6 @@ def test_get_todo_list(authenticated_client, node):
 
     assert resp.status_code == 200
     data = resp.json()
-    assert data["status"] == "OK"
     assert "todo_list" in data
     assert len(data["todo_list"]) == 1
     assert data["todo_list"][0]["name"] == "Node todo task"
@@ -551,7 +550,6 @@ def test_get_todo_list_empty(authenticated_client, node):
 
     assert resp.status_code == 200
     data = resp.json()
-    assert data["status"] == "OK"
     assert data["todo_list"] == []
 
 
@@ -565,8 +563,7 @@ def test_add_todo(authenticated_client, node):
     url = urls.reverse("node:add_todo")
     resp = client.post(url, {"node_uuid": node.uuid, "todo_uuid": todo.uuid})
 
-    assert resp.status_code == 200
-    assert resp.json()["status"] == "OK"
+    assert resp.status_code == 201
     assert NodeTodo.objects.filter(node=node, todo=todo).exists()
 
 
@@ -581,8 +578,7 @@ def test_remove_todo(authenticated_client, node):
     url = urls.reverse("node:remove_todo")
     resp = client.post(url, {"node_uuid": node.uuid, "todo_uuid": todo.uuid})
 
-    assert resp.status_code == 200
-    assert resp.json()["status"] == "OK"
+    assert resp.status_code == 204
     assert not NodeTodo.objects.filter(node=node, todo=todo).exists()
 
 
@@ -604,7 +600,6 @@ def test_sort_todos(authenticated_client, node):
     })
 
     assert resp.status_code == 200
-    assert resp.json()["status"] == "OK"
 
     order = list(
         NodeTodo.objects.filter(node=node).order_by("sort_order").values_list("todo__uuid", flat=True)
@@ -629,7 +624,6 @@ def test_update_node(authenticated_client, node):
     })
 
     assert resp.status_code == 200
-    assert resp.json()["status"] == "OK"
 
     updated = Node.objects.get(uuid=node.uuid)
     component = next(
@@ -650,7 +644,6 @@ def test_node_preview(authenticated_client, node):
 
     assert resp.status_code == 200
     data = resp.json()
-    assert data["status"] == "OK"
     assert "info" in data
     info = data["info"]
     assert info["uuid"] == str(node.uuid)

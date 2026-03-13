@@ -101,8 +101,7 @@ def test_pin_note(authenticated_client, blob_image_factory):
     _, client = authenticated_client()
     url = urls.reverse("accounts:pin_note")
     resp = client.post(url, {"uuid": blob_image_factory[0].uuid})
-    assert resp.status_code == 200
-    assert resp.json()["status"] == "OK"
+    assert resp.status_code == 201
 
 
 def test_pin_note_already_pinned(auto_login_user, blob_text_factory):
@@ -110,9 +109,8 @@ def test_pin_note_already_pinned(auto_login_user, blob_text_factory):
     url = urls.reverse("accounts:pin_note")
     # blob_text_factory[0] is already pinned by the auto_login_user fixture
     resp = client.post(url, {"uuid": blob_text_factory[0].uuid})
-    assert resp.status_code == 200
-    assert resp.json()["status"] == "ERROR"
-    assert "already pinned" in resp.json()["message"]
+    assert resp.status_code == 409
+    assert "already pinned" in resp.json()["detail"]
 
 
 def test_unpin_note(auto_login_user, blob_text_factory):
@@ -122,8 +120,7 @@ def test_unpin_note(auto_login_user, blob_text_factory):
         "uuid": blob_text_factory[0].uuid,
         "remove": "true"
     })
-    assert resp.status_code == 200
-    assert resp.json()["status"] == "OK"
+    assert resp.status_code == 204
 
 
 # ── Store in session ─────────────────────────────────────────────────────

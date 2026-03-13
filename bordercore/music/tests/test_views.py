@@ -290,7 +290,6 @@ def test_music_sort_playlist(authenticated_client, playlist):
     })
 
     assert resp.status_code == 200
-    assert resp.json()["status"] == "OK"
 
 
 def test_music_search_playlists(authenticated_client, playlist):
@@ -315,8 +314,8 @@ def test_music_add_to_playlist(authenticated_client, playlist, song):
         "song_uuid": song[2].uuid
     })
 
-    assert resp.status_code == 200
-    assert resp.json()["status"] == "OK"
+    assert resp.status_code == 201
+    assert resp.json()["action"] == "added"
 
 
 def test_music_dupe_song_checker(authenticated_client, song):
@@ -374,7 +373,6 @@ def test_music_set_song_rating(authenticated_client, song):
     })
 
     assert resp.status_code == 200
-    assert resp.json()["status"] == "OK"
 
     updated_song = Song.objects.get(uuid=song[0].uuid)
     assert updated_song.rating == 3
@@ -393,7 +391,7 @@ def test_set_song_rating_invalid_value(authenticated_client, song):
     resp = client.post(url, {"song_uuid": song[0].uuid, "rating": "abc"})
 
     assert resp.status_code == 400
-    assert resp.json()["status"] == "ERROR"
+    assert "detail" in resp.json()
 
 
 def test_set_song_rating_out_of_range(authenticated_client, song):
@@ -432,7 +430,7 @@ def test_sort_playlist_invalid_position(authenticated_client, playlist):
     })
 
     assert resp.status_code == 400
-    assert resp.json()["status"] == "ERROR"
+    assert "detail" in resp.json()
 
 
 def test_search_tag_without_param(authenticated_client):
