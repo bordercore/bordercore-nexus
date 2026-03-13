@@ -60,5 +60,13 @@ cd "$BORDERCORE_DIR"
 npm run -s format:react
 echo "✅ Frontend formatting complete."
 
+# ----------------------------------------------------------------------
+# 5. Type Checking (mypy)
+# ----------------------------------------------------------------------
+echo "Running mypy type checking..."
+cd "$REPO_ROOT"
+uv run mypy --config=pyproject.toml bordercore/
+echo "✅ mypy type checking passed."
+
 echo "--- Pre-commit Checks Finished Successfully ---"
 exit 0
