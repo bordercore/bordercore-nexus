@@ -180,6 +180,28 @@ final class APIClientPaginationTests: XCTestCase {
         }
     }
 
+    func testPostWithoutResponseBodyAcceptsCreatedStatus() async throws {
+        let baseURL = "https://example.com"
+        let postURL = URL(string: "\(baseURL)/api/fitness/exercise/123/workouts/")!
+
+        MockURLProtocol.requestHandler = { request in
+            XCTAssertEqual(request.url, postURL)
+            XCTAssertEqual(request.httpMethod, "POST")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Token test-token")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Accept"), "application/json")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "application/json")
+            XCTAssertEqual(request.httpBody, Data("{\"sets\":[]}".utf8))
+
+            return (
+                HTTPURLResponse(url: postURL, statusCode: 201, httpVersion: nil, headerFields: nil)!,
+                Data()
+            )
+        }
+
+        let client = makeClient(baseURL: baseURL)
+        try await client.post("/api/fitness/exercise/123/workouts/", token: token, body: EmptySetsPayload())
+    }
+
     private func makeClient(baseURL: String) -> APIClient {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
@@ -190,6 +212,10 @@ final class APIClientPaginationTests: XCTestCase {
 
 private struct TestItem: Decodable, Equatable {
     let id: Int
+}
+
+private struct EmptySetsPayload: Encodable {
+    let sets: [Int] = []
 }
 
 private final class MockURLProtocol: URLProtocol {

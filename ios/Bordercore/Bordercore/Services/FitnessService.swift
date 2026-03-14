@@ -41,8 +41,7 @@ actor FitnessService {
             }
         )
 
-        struct EmptyResponse: Decodable {}
-        let _: EmptyResponse = try await APIClient.shared.post(
+        try await APIClient.shared.post(
             "/api/fitness/exercise/\(exerciseUUID.uuidString.lowercased())/workouts/",
             token: token,
             body: payload
