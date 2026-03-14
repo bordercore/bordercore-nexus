@@ -177,6 +177,21 @@ actor APIClient {
         return try await performRequest(request)
     }
 
+    func post<Body: Encodable>(_ endpoint: String, token: String, body: Body) async throws {
+        guard let url = URL(string: "\(baseURL)\(endpoint)") else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Token \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONEncoder().encode(body)
+
+        _ = try await performRawRequest(request)
+    }
+
     func put<T: Decodable, Body: Encodable>(_ endpoint: String, token: String, body: Body) async throws -> T {
         guard let url = URL(string: "\(baseURL)\(endpoint)") else {
             throw APIError.invalidURL
