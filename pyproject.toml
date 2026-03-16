@@ -76,7 +76,7 @@ dev = [
     "rich==13.3.1",
     "selenium>=4.6.1",
     "types-requests==2.30.0.0",
-    "Werkzeug==3.0.6",
+    "Werkzeug==3.1.6",
 ]
 prod = [
     "gunicorn==23.0.0",
