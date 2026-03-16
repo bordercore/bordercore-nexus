@@ -139,8 +139,8 @@ def test_import_instagram(s3_resource, s3_bucket, authenticated_client, monkeypa
         assert blob.user == user
         assert blob.date == mock_post.date
         assert blob.name == mock_post.caption
-        assert blob.metadata.filter(name="Url")[0].value == f"https://instagram.com/p/{shortcode}/"
-        assert blob.metadata.filter(name="Artist")[0].value == mock_post.owner_profile.full_name
+        assert blob.metadata.get(name="Url").value == f"https://instagram.com/p/{shortcode}/"
+        assert blob.metadata.get(name="Artist").value == mock_post.owner_profile.full_name
 
 
 @patch("requests.get")
@@ -190,8 +190,8 @@ def test_import_artstation(mock_get_sha1sum, mock_requests, s3_resource, s3_buck
         assert blob.user == user
         assert blob.date == "2022-01-07"
         assert blob.name == artstation_json["title"]
-        assert blob.metadata.filter(name="Url")[0].value == artstation_json["permalink"]
-        assert blob.metadata.filter(name="Artist")[0].value == artstation_json["user"]["full_name"]
+        assert blob.metadata.get(name="Url").value == artstation_json["permalink"]
+        assert blob.metadata.get(name="Artist").value == artstation_json["user"]["full_name"]
 
 
 @pytest.mark.parametrize("byline,expected", [
@@ -263,8 +263,8 @@ def test_import_newyorktimes(mock_requests, authenticated_client, monkeypatch):
     assert blob.user == user
     assert blob.date == "2022-01-15"
     assert blob.name == title
-    assert blob.metadata.filter(name="Url")[0].value == newyorktimes_json["response"]["docs"][0]["web_url"]
-    assert blob.metadata.filter(name="Author")[0].value == author
+    assert blob.metadata.get(name="Url").value == newyorktimes_json["response"]["docs"][0]["web_url"]
+    assert blob.metadata.get(name="Author").value == author
 
 
 def test_parse_shortcode():

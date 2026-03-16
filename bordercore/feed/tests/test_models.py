@@ -57,8 +57,10 @@ def test_update(authenticated_client, feed):
 
     assert feed[0].last_response_code == 200
 
-    assert FeedItem.objects.filter(feed=feed[0]).count() == 4
+    items = FeedItem.objects.filter(feed=feed[0]).order_by("id")
 
-    assert FeedItem.objects.filter(feed=feed[0])[2].title == "Bad Title"
+    assert items.count() == 4
 
-    assert FeedItem.objects.filter(feed=feed[0])[3].title == "No Title"
+    assert items[2].title == "Bad Title"
+
+    assert items[3].title == "No Title"
