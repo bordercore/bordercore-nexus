@@ -285,7 +285,7 @@ def test_music_sort_playlist(authenticated_client, playlist):
 
     url = urls.reverse("music:sort_playlist")
     resp = client.post(url, {
-        "playlistitem_uuid": playlist[0].playlistitem_set.all()[0].uuid,
+        "playlistitem_uuid": playlist[0].playlistitem_set.order_by("sort_order")[0].uuid,
         "position": 2
     })
 
@@ -425,7 +425,7 @@ def test_sort_playlist_invalid_position(authenticated_client, playlist):
 
     url = urls.reverse("music:sort_playlist")
     resp = client.post(url, {
-        "playlistitem_uuid": playlist[0].playlistitem_set.all()[0].uuid,
+        "playlistitem_uuid": playlist[0].playlistitem_set.order_by("sort_order")[0].uuid,
         "position": "abc"
     })
 
