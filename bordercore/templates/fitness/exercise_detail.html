@@ -35,7 +35,7 @@
         data-related-exercises="{{ related_exercises_json }}"
         data-targeted-muscles="{{ targeted_muscles_json }}"
         data-last-workout-date="{{ last_workout_date }}"
-        data-description="{{ description_escaped }}"
+        data-description="{{ object.description|default:'No description'|escapejs }}"
         data-note="{{ object.note|escapejs }}"
         data-delta-days="{{ delta_days|default:7 }}"
         data-latest-weight="{{ latest_weight_json }}"

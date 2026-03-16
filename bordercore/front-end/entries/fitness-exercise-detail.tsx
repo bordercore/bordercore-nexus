@@ -53,8 +53,10 @@ if (container) {
 
   // Last workout data
   const lastWorkoutDate = container.getAttribute("data-last-workout-date") || "";
-  const description = container.getAttribute("data-description") || "";
-  const note = container.getAttribute("data-note") || "";
+  const descriptionRaw = container.getAttribute("data-description") || "";
+  const description = descriptionRaw ? JSON.parse(`"${descriptionRaw}"`) : "";
+  const noteRaw = container.getAttribute("data-note") || "";
+  const note = noteRaw ? JSON.parse(`"${noteRaw}"`) : "";
   const deltaDays = parseInt(container.getAttribute("data-delta-days") || "7", 10);
 
   let latestWeight: number[] = [0];

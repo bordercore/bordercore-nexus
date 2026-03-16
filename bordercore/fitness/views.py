@@ -97,7 +97,6 @@ class ExerciseDetailView(LoginRequiredMixin, DetailView):
         context["last_workout_date"] = (
             recent_data[0].date.strftime("%b %d, %Y") if recent_data else ""
         )
-        context["description_escaped"] = self.object.description or "No description"
         context["delta_days"] = last_workout.get("delta_days", 7)
         context["latest_weight_json"] = json.dumps(last_workout.get("latest_weight", [0]))
         context["latest_reps_json"] = json.dumps(last_workout.get("latest_reps", [0]))
