@@ -75,6 +75,7 @@ struct FitnessRowView: View {
                 lastActive: .now.addingTimeInterval(-86_400 * 4),
                 deltaDays: 4,
                 overdue: 1,
+                schedule: [true, false, true, false, false, false, false],
                 scheduleDays: "Mon Wed Fri",
                 frequency: "3 days"
             )
@@ -90,6 +91,7 @@ private extension FitnessExercise {
         lastActive: Date?,
         deltaDays: Int?,
         overdue: Int,
+        schedule: [Bool],
         scheduleDays: String,
         frequency: String
     ) {
@@ -99,6 +101,7 @@ private extension FitnessExercise {
         self.lastActive = lastActive
         self.deltaDays = deltaDays
         self.overdue = overdue
+        self.schedule = schedule
         self.scheduleDays = scheduleDays
         self.frequency = frequency
     }

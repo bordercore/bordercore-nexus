@@ -12,6 +12,7 @@ struct FitnessExercise: Identifiable, Decodable, Equatable {
     let lastActive: Date?
     let deltaDays: Int?
     let overdue: Int
+    let schedule: [Bool]
     let scheduleDays: String
     let frequency: String
 
@@ -24,6 +25,7 @@ struct FitnessExercise: Identifiable, Decodable, Equatable {
         case lastActive = "last_active"
         case deltaDays = "delta_days"
         case overdue
+        case schedule
         case scheduleDays = "schedule_days"
         case frequency
     }
@@ -36,6 +38,7 @@ struct FitnessExercise: Identifiable, Decodable, Equatable {
         muscleGroup = try container.decodeIfPresent(String.self, forKey: .muscleGroup) ?? ""
         deltaDays = try container.decodeIfPresent(Int.self, forKey: .deltaDays)
         overdue = try container.decodeIfPresent(Int.self, forKey: .overdue) ?? 0
+        schedule = try container.decodeIfPresent([Bool].self, forKey: .schedule) ?? []
         scheduleDays = try container.decodeIfPresent(String.self, forKey: .scheduleDays) ?? ""
         frequency = try container.decodeIfPresent(String.self, forKey: .frequency) ?? ""
 

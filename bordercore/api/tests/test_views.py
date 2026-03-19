@@ -17,7 +17,7 @@ from bookmark.models import Bookmark
 from bookmark.tests.factories import BookmarkFactory
 from collection.tests.factories import CollectionFactory
 from drill.tests.factories import QuestionFactory
-from fitness.models import Data, Exercise, Workout
+from fitness.models import Data, Exercise, ExerciseUser, Workout
 from music.tests.factories import PlaylistFactory, SongFactory
 from reminder.models import Reminder
 from reminder.tests.factories import ReminderFactory
@@ -605,7 +605,15 @@ def test_blob_field_selection(authenticated_client, blob_image_factory):
 
 def test_fitness_summary(authenticated_client):
     """GET /api/fitness/summary/ returns active and inactive lists."""
-    _, client = authenticated_client()
+    user, client = authenticated_client()
+
+    exercise = Exercise.objects.create(name=f"test-summary-{faker.uuid4()}")
+    ExerciseUser.objects.create(
+        user=user,
+        exercise=exercise,
+        started=timezone.now(),
+        schedule=[True, False, True, False, False, False, False],
+    )
 
     url = urls.reverse("fitness-summary")
     resp = client.get(url)
@@ -613,6 +621,10 @@ def test_fitness_summary(authenticated_client):
     data = resp.json()
     assert "active" in data
     assert "inactive" in data
+    assert any(item["uuid"] == str(exercise.uuid) for item in data["active"])
+
+    item = next(item for item in data["active"] if item["uuid"] == str(exercise.uuid))
+    assert item["schedule"] == [True, False, True, False, False, False, False]
 
 
 def test_fitness_exercise_detail(authenticated_client):

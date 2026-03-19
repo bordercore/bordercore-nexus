@@ -242,6 +242,7 @@ class PinnedTagSerializer(serializers.ModelSerializer):
 class FitnessExerciseSerializer(serializers.ModelSerializer):
     last_active = serializers.DateTimeField(required=False, allow_null=True)
     muscle_group = serializers.SerializerMethodField()
+    schedule = serializers.SerializerMethodField()
     schedule_days = serializers.SerializerMethodField()
     frequency = serializers.SerializerMethodField()
     delta_days = serializers.SerializerMethodField()
@@ -256,6 +257,7 @@ class FitnessExerciseSerializer(serializers.ModelSerializer):
             "last_active",
             "delta_days",
             "overdue",
+            "schedule",
             "schedule_days",
             "frequency",
         ]
@@ -268,6 +270,12 @@ class FitnessExerciseSerializer(serializers.ModelSerializer):
 
     def get_schedule_days(self, obj: Exercise) -> str:
         return str(getattr(obj, "schedule_days", ""))
+
+    def get_schedule(self, obj: Exercise) -> list[bool]:
+        schedule = getattr(obj, "schedule", None)
+        if not schedule:
+            return []
+        return [bool(day) for day in schedule[:7]]
 
     def get_frequency(self, obj: Exercise) -> str:
         frequency = getattr(obj, "frequency", None)
