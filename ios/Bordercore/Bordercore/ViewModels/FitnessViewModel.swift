@@ -32,11 +32,50 @@ final class FitnessViewModel: ObservableObject {
 
         do {
             let summary = try await FitnessService.shared.fetchSummary(token: token)
-            activeExercises = summary.active
-            inactiveExercises = summary.inactive
+            activeExercises = sortActiveExercises(summary.active)
+            inactiveExercises = sortInactiveExercises(summary.inactive)
         } catch {
             handleError(error)
         }
+    }
+
+    private func sortActiveExercises(_ exercises: [FitnessExercise]) -> [FitnessExercise] {
+        let currentWeekday = (Calendar.current.component(.weekday, from: Date()) + 5) % 7
+
+        return exercises.enumerated().sorted { lhs, rhs in
+            let leftOffset = nextScheduledDayOffset(for: lhs.element.schedule, currentWeekday: currentWeekday)
+            let rightOffset = nextScheduledDayOffset(for: rhs.element.schedule, currentWeekday: currentWeekday)
+
+            if leftOffset != rightOffset {
+                return leftOffset < rightOffset
+            }
+
+            return lhs.offset < rhs.offset
+        }.map(\.element)
+    }
+
+    private func sortInactiveExercises(_ exercises: [FitnessExercise]) -> [FitnessExercise] {
+        exercises.enumerated().sorted { lhs, rhs in
+            let comparison = lhs.element.name.localizedCaseInsensitiveCompare(rhs.element.name)
+            if comparison != .orderedSame {
+                return comparison == .orderedAscending
+            }
+
+            return lhs.offset < rhs.offset
+        }.map(\.element)
+    }
+
+    private func nextScheduledDayOffset(for schedule: [Bool], currentWeekday: Int) -> Int {
+        guard schedule.count == 7 else { return 999 }
+
+        for offset in 0..<7 {
+            let dayIndex = (currentWeekday + offset) % 7
+            if schedule[dayIndex] {
+                return offset
+            }
+        }
+
+        return 999
     }
 
     private func handleError(_ error: Error) {
