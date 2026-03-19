@@ -108,6 +108,8 @@ class KeyReader:
                         # Check if we've hit a letter (end of CSI sequence)
                         if next_ch.isalpha() or next_ch == "~":
                             break
+                elif ch == "a":
+                    self._queue.put("toggle_analysis")
                 elif ch == "q":
                     self._queue.put("quit")
             except Exception:
@@ -176,6 +178,8 @@ class Dashboard():
         ))
 
         self.code_echoes_scroller = ScrollablePanel()
+        self.showing_analysis = False
+        self._code_echoes_content: Group | None = None
 
         self.layout["bookmarks"].update(Panel("Recent bookmarks", title="Bookmarks"))
         self.layout["code_echoes"].update(Panel("", title="Code Echoes"))
@@ -571,6 +575,8 @@ class Dashboard():
 
         # Combine header and syntax, wrap in scrollable panel
         content = Group(header, syntax)
+        self._code_echoes_content = content
+        self.showing_analysis = False
         self.code_echoes_scroller.update(content)
 
         self.layout["code_echoes"].update(Panel(
@@ -578,6 +584,37 @@ class Dashboard():
             title=Text("Code Echoes")
         ))
         self.update_timers["code_echoes"]["last_update"] = time.time()
+
+        # Save code fragment to /tmp for external access
+        try:
+            with open("/tmp/code_echoes_fragment.txt", "w") as f:
+                f.write(code_preview)
+        except OSError:
+            pass
+
+    def toggle_code_analysis(self) -> None:
+        """Toggle the Code Echoes panel between code fragment and analysis."""
+        if self.showing_analysis:
+            # Switch back to code fragment
+            if self._code_echoes_content is not None:
+                self.code_echoes_scroller.update(self._code_echoes_content)
+            self.showing_analysis = False
+        else:
+            # Switch to analysis
+            analysis_path = "/tmp/code_echoes_fragment.md"
+            try:
+                with open(analysis_path) as f:
+                    analysis_text = f.read()
+                from rich.markdown import Markdown
+                self.code_echoes_scroller.update(Markdown(analysis_text))
+            except FileNotFoundError:
+                self.code_echoes_scroller.update(Text("Code Analysis File Not Found", style="red"))
+            self.showing_analysis = True
+
+        self.layout["code_echoes"].update(Panel(
+            self.code_echoes_scroller,
+            title=Text("Code Echoes" + (" [Analysis]" if self.showing_analysis else ""))
+        ))
 
 
 def main() -> None:
@@ -619,6 +656,8 @@ def main() -> None:
                         dash.code_echoes_scroller.page_up()
                     elif key == "page_down":
                         dash.code_echoes_scroller.page_down()
+                    elif key == "toggle_analysis":
+                        dash.toggle_code_analysis()
 
                 # Check and update bookmarks if its timer has elapsed
                 if current_time - dash.update_timers["bookmarks"]["last_update"] >= dash.update_timers["bookmarks"]["interval"]:
