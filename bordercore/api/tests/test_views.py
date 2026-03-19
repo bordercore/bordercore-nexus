@@ -340,7 +340,8 @@ def test_todo_viewset(authenticated_client, todo):
 def test_todo_viewset_filters_by_priority(authenticated_client):
     user, client = authenticated_client()
 
-    high = TodoFactory(user=user, priority=1)
+    high = TodoFactory(user=user, priority=1, name="Zulu")
+    high_early = TodoFactory(user=user, priority=1, name="Alpha")
     medium = TodoFactory(user=user, priority=2)
     low = TodoFactory(user=user, priority=3)
 
@@ -351,8 +352,10 @@ def test_todo_viewset_filters_by_priority(authenticated_client):
     result = resp.json()
     returned_uuids = {item["uuid"] for item in result}
     assert str(high.uuid) in returned_uuids
+    assert str(high_early.uuid) in returned_uuids
     assert str(medium.uuid) not in returned_uuids
     assert str(low.uuid) not in returned_uuids
+    assert [item["name"] for item in result] == ["Alpha", "Zulu"]
 
 
 def test_todo_viewset_filters_by_tag(authenticated_client):

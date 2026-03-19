@@ -203,9 +203,7 @@ final class TodoViewModel: ObservableObject {
 
         do {
             let fetched = try await TodoService.shared.fetchTodos(token: token)
-            allTodos = fetched.sorted { lhs, rhs in
-                lhs.priority < rhs.priority
-            }
+            allTodos = fetched
             recalculateFacets()
             applyFilter()
         } catch {
@@ -227,12 +225,8 @@ final class TodoViewModel: ObservableObject {
                 fetched = try await TodoService.shared.fetchTodos(token: token, tag: tagName)
             }
 
-            let sorted = fetched.sorted { lhs, rhs in
-                lhs.priority < rhs.priority
-            }
-
             if viewState == state {
-                todos = sorted
+                todos = fetched
             }
         } catch {
             handleError(error)
