@@ -228,6 +228,7 @@ export default function NodeCollectionCard({
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const rotateIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const objectListRef = useRef<CollectionObject[]>([]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -239,6 +240,10 @@ export default function NodeCollectionCard({
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
+
+  useEffect(() => {
+    objectListRef.current = objectList;
+  }, [objectList]);
 
   useEffect(() => {
     getObjectList();
@@ -298,11 +303,19 @@ export default function NodeCollectionCard({
   };
 
   const showNextObject = () => {
-    setCurrentObjectIndex(prev => (prev === objectList.length - 1 ? 0 : prev + 1));
+    setCurrentObjectIndex(prev => {
+      const len = objectListRef.current.length;
+      if (len === 0) return 0;
+      return prev >= len - 1 ? 0 : prev + 1;
+    });
   };
 
   const showPreviousObject = () => {
-    setCurrentObjectIndex(prev => (prev === 0 ? objectList.length - 1 : prev - 1));
+    setCurrentObjectIndex(prev => {
+      const len = objectListRef.current.length;
+      if (len === 0) return 0;
+      return prev <= 0 ? len - 1 : prev - 1;
+    });
   };
 
   const handleEditCollection = (settings: CollectionSettings) => {
