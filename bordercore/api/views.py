@@ -526,7 +526,12 @@ class TodoViewSet(UserScopedQuerysetMixin, viewsets.ModelViewSet):
         if tag is not None:
             queryset = queryset.filter(tags__name=tag).distinct()
 
-        return queryset
+        if priority is not None:
+            return queryset.order_by("name")
+        if tag is not None:
+            return queryset.order_by("tagtodo__sort_order")
+
+        return queryset.order_by("-created")
 
 
 class ReminderViewSet(UserScopedQuerysetMixin, viewsets.ReadOnlyModelViewSet):
