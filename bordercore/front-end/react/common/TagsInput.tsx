@@ -185,9 +185,7 @@ export const TagsInput = forwardRef<TagsInputHandle, TagsInputProps>(function Ta
         isSearchable={isSearchable}
         placeholder={placeholder}
         noOptionsMessage={({ inputValue }) =>
-          inputValue.length < minLength
-            ? `Type at least ${minLength} characters to search`
-            : "No options found"
+          inputValue.length < minLength ? null : "No options found"
         }
         formatCreateLabel={inputValue => `Create "${inputValue}"`}
         classNamePrefix="react-select"
