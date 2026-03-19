@@ -44,10 +44,10 @@ class Feed(TimeStampedModel):
 
     uuid = models.UUIDField(default=uuid.uuid4, editable=False)
     name = models.TextField()
-    url = models.URLField(unique=True)
+    url = models.URLField(unique=True, assume_scheme="https")
     last_check = models.DateTimeField(null=True)
     last_response_code = models.IntegerField(null=True)
-    homepage = models.URLField(null=True)
+    homepage = models.URLField(null=True, assume_scheme="https")
     verify_ssl_certificate = models.BooleanField(default=True)
     user = models.ForeignKey(User, on_delete=models.PROTECT)
 
