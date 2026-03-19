@@ -2,13 +2,14 @@ import SwiftUI
 import UIKit
 
 struct FitnessExerciseDetailView: View {
+    @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel: FitnessExerciseDetailViewModel
-    @State private var successToastMessage: String?
-    @State private var toastDismissTask: Task<Void, Never>?
     @State private var isLastWorkoutExpanded = false
+    private let onWorkoutSubmitted: @MainActor () async -> Void
 
-    init(exerciseUUID: UUID) {
+    init(exerciseUUID: UUID, onWorkoutSubmitted: @escaping @MainActor () async -> Void = {}) {
         _viewModel = StateObject(wrappedValue: FitnessExerciseDetailViewModel(exerciseUUID: exerciseUUID))
+        self.onWorkoutSubmitted = onWorkoutSubmitted
     }
 
     var body: some View {
@@ -140,7 +141,8 @@ struct FitnessExerciseDetailView: View {
                             Task {
                                 let didSubmit = await viewModel.submit()
                                 if didSubmit {
-                                    showSuccessToast("Workout saved")
+                                    await onWorkoutSubmitted()
+                                    dismiss()
                                 }
                             }
                         } label: {
@@ -161,19 +163,6 @@ struct FitnessExerciseDetailView: View {
         .navigationTitle(viewModel.detail?.name ?? "Exercise")
         .overlay(alignment: .bottom) {
             VStack(spacing: 8) {
-                if let message = successToastMessage {
-                    Text(message)
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
-                        .background(Color.green.opacity(0.95))
-                        .clipShape(Capsule())
-                        .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                        .allowsHitTesting(false)
-                }
-
                 if let error = viewModel.errorMessage {
                     Text(error)
                         .font(.footnote)
@@ -187,28 +176,8 @@ struct FitnessExerciseDetailView: View {
             }
             .padding()
         }
-        .onDisappear {
-            toastDismissTask?.cancel()
-        }
         .task {
             await viewModel.load()
-        }
-    }
-
-    private func showSuccessToast(_ message: String) {
-        toastDismissTask?.cancel()
-        withAnimation {
-            successToastMessage = message
-        }
-
-        toastDismissTask = Task {
-            try? await Task.sleep(nanoseconds: 3_000_000_000)
-            guard !Task.isCancelled else { return }
-            await MainActor.run {
-                withAnimation {
-                    successToastMessage = nil
-                }
-            }
         }
     }
 
