@@ -17,6 +17,7 @@ from typing import Optional
 
 import django
 from django.core.exceptions import ObjectDoesNotExist
+from django.db import connections
 
 django.setup()
 
@@ -106,4 +107,9 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    finally:
+        for conn in connections.all():
+            conn.close_pool()
+        connections.close_all()
