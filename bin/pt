@@ -1,12 +1,12 @@
 #!/bin/bash
 # Short pytest wrapper that excludes data_quality and functional tests
-# Usage: pt [-b] [-d] [-f] <test_substring>
-#   -b: allow database access (do not use -p no:django)
+# Usage: pt [-d] [-f] [-n] <test_substring>
 #   -d: exclude data_quality tests
 #   -f: exclude functional tests
-#   If no options are passed, runs with -p no:django (no DB) for speed
+#   -n: disable database access (faster, uses -p no:django)
+#   Default: runs with pytest-django active (test database)
 # Example: pt test_get_cover_info
-# Example: pt -b test_blob_metadata_exists_in_elasticsearch  # with DB
+# Example: pt -n test_get_cover_info  # no DB, faster
 
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -19,24 +19,24 @@ fi
 
 EXCLUDE_DATA_QUALITY=false
 EXCLUDE_FUNCTIONAL=false
-INCLUDE_DB=false
+NO_DB=false
 
-while getopts "bdf" opt; do
+while getopts "dfn" opt; do
     case $opt in
-        b)
-            INCLUDE_DB=true
-            ;;
         d)
             EXCLUDE_DATA_QUALITY=true
             ;;
         f)
             EXCLUDE_FUNCTIONAL=true
             ;;
+        n)
+            NO_DB=true
+            ;;
         \?)
-            echo "Usage: $0 [-b] [-d] [-f] <test_substring>"
-            echo "  -b: allow database access (required for tests that use django_db)"
+            echo "Usage: $0 [-d] [-f] [-n] <test_substring>"
             echo "  -d: exclude data_quality tests"
             echo "  -f: exclude functional tests"
+            echo "  -n: no database (disable pytest-django for faster runs)"
             exit 1
             ;;
     esac
@@ -45,20 +45,20 @@ done
 shift $((OPTIND - 1))
 
 if [ $# -eq 0 ]; then
-    echo "Usage: $0 [-b] [-d] [-f] <test_substring>"
-    echo "  -b: allow database access (required for tests that use django_db)"
+    echo "Usage: $0 [-d] [-f] [-n] <test_substring>"
     echo "  -d: exclude data_quality tests"
     echo "  -f: exclude functional tests"
+    echo "  -n: no database (disable pytest-django for faster runs)"
     echo "Example: $0 test_get_cover_info"
-    echo "Example: $0 -b test_blob_metadata_exists_in_elasticsearch"
+    echo "Example: $0 -n test_get_cover_info  # no DB, faster"
     exit 1
 fi
 
-# When not including DB, disable django plugin for faster runs (avoids "Database access not allowed")
-if [ "$INCLUDE_DB" = true ]; then
-    NO_DJANGO_OPTS=()
-else
+# Only disable django plugin when explicitly requested with -n
+if [ "$NO_DB" = true ]; then
     NO_DJANGO_OPTS=(-p no:django -o addopts=)
+else
+    NO_DJANGO_OPTS=()
 fi
 
 # Build the marker expression and run pytest
@@ -76,4 +76,3 @@ else
     # No flags: don't exclude any markers
     uv run pytest "${NO_DJANGO_OPTS[@]}" "$PROJECT_DIR/bordercore/" -k "$1"
 fi
-
