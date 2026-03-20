@@ -135,7 +135,7 @@ function SortableBookmarkRow({
 
       {/* Content: icon box + title + hostname + note */}
       <div role="cell" className="bookmark-col-content content-cell">
-        <div className="d-flex align-items-center gap-2 overflow-hidden position-relative w-100">
+        <div className="d-flex align-items-center gap-3 overflow-hidden position-relative w-100">
           <div className="bookmark-icon-box">
             {bookmark.thumbnail_url ? (
               <img src={bookmark.thumbnail_url} alt="" loading="lazy" />
@@ -393,7 +393,7 @@ export function BookmarkList({
               <FontAwesomeIcon icon={faBars} />
             </div>
             <div role="cell" className="bookmark-col-content content-cell">
-              <div className="d-flex align-items-center gap-2 overflow-hidden">
+              <div className="d-flex align-items-center gap-3 overflow-hidden">
                 <div className="bookmark-icon-box">
                   {activeBookmark.thumbnail_url ? (
                     <img src={activeBookmark.thumbnail_url} alt="" />
