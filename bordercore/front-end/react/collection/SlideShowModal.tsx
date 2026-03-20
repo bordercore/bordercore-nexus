@@ -76,9 +76,9 @@ export const SlideShowModal = forwardRef<SlideShowModalHandle, SlideShowModalPro
             </div>
             <div className="modal-body">
               <div className="collection-slide-show-section">
-                <div className="form-section">Type</div>
+                <div className="form-section mb-0">Type</div>
 
-                <div className="row mt-3">
+                <div className="row">
                   <div className="col-lg-12">
                     <div className="form-check">
                       <input
@@ -148,12 +148,12 @@ export const SlideShowModal = forwardRef<SlideShowModalHandle, SlideShowModalPro
                 </div>
               </div>
 
-              <hr className="my-1" />
+              <hr className="my-1 my-3" />
 
               <div className="collection-slide-show-section">
                 <div className="form-section">Options</div>
 
-                <div className="row mt-3">
+                <div className="row">
                   <div className="col-lg-4">Tag</div>
                   <div className="col-lg-8">
                     <select

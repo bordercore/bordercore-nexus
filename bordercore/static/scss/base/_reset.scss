@@ -48,7 +48,7 @@ a {
 }
 
 hr {
-  border-color: var(--border-color);
+  border-color: var(--hr-border-color);
 }
 
 strong {
@@ -76,8 +76,8 @@ span {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--scrollbar-thumb);
   border-radius: 0.5rem;
+  background: var(--scrollbar-thumb);
 }
 
 ::-webkit-scrollbar-thumb:hover {

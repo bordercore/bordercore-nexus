@@ -70,8 +70,8 @@
 
   &.dragging {
     z-index: 999;
-    background: var(--surface-bg);
     border-radius: var(--border-radius1);
+    background: var(--surface-bg);
     box-shadow: 0 0 20px rgb(var(--bs-primary-rgb) / 50%);
   }
 }
@@ -104,7 +104,6 @@ hr.collection-list-divider {
 }
 
 .collection-slide-show-section {
-  background-color: var(--surface6);
   border-radius: 0.7rem;
 }
 
