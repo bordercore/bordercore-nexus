@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import MarkdownIt from "markdown-it";
 import { doPost } from "../utils/reactUtils";
+import { DeactivateHabitModal, DeactivateHabitModalHandle } from "./DeactivateHabitModal";
 
 interface HabitLog {
   uuid: string;
@@ -24,16 +25,37 @@ interface HabitDetail {
 interface HabitDetailPageProps {
   habit: HabitDetail;
   logUrl: string;
+  setInactiveUrl: string;
   listUrl: string;
 }
 
-export default function HabitDetailPage({ habit, logUrl, listUrl }: HabitDetailPageProps) {
+export default function HabitDetailPage({
+  habit,
+  logUrl,
+  setInactiveUrl,
+  listUrl,
+}: HabitDetailPageProps) {
   const markdown = useMemo(() => new MarkdownIt(), []);
   const [logs, setLogs] = useState<HabitLog[]>(habit.logs);
+  const [isActive, setIsActive] = useState(habit.is_active);
+  const [endDate, setEndDate] = useState(habit.end_date);
   const [logDate, setLogDate] = useState(new Date().toISOString().split("T")[0]);
   const [completed, setCompleted] = useState(true);
   const [value, setValue] = useState("");
   const [note, setNote] = useState("");
+  const deactivateModalRef = useRef<DeactivateHabitModalHandle>(null);
+
+  function handleDeactivate() {
+    doPost(
+      setInactiveUrl,
+      { habit_uuid: habit.uuid },
+      response => {
+        setIsActive(false);
+        setEndDate(response.data.end_date);
+      },
+      "Habit deactivated"
+    );
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -80,9 +102,9 @@ export default function HabitDetailPage({ habit, logUrl, listUrl }: HabitDetailP
           <span>
             <span className="text-info">Started:</span> {habit.start_date}
           </span>
-          {habit.end_date && (
+          {endDate && (
             <span>
-              <span className="text-info">Ended:</span> {habit.end_date}
+              <span className="text-info">Ended:</span> {endDate}
             </span>
           )}
           {habit.tags.length > 0 && (
@@ -98,10 +120,19 @@ export default function HabitDetailPage({ habit, logUrl, listUrl }: HabitDetailP
         </div>
       </div>
 
-      {habit.is_active && (
+      {isActive && (
         <div className="card mb-4">
           <div className="card-body">
-            <h5 className="card-title">Log Entry</h5>
+            <div className="d-flex justify-content-between align-items-center mb-2">
+              <h5 className="card-title mb-0">Log Entry</h5>
+              <button
+                type="button"
+                className="btn btn-sm btn-warning"
+                onClick={() => deactivateModalRef.current?.openModal()}
+              >
+                Mark Inactive
+              </button>
+            </div>
             <form onSubmit={handleSubmit}>
               <div className="row g-2 align-items-end">
                 <div className="col-auto">
@@ -189,6 +220,8 @@ export default function HabitDetailPage({ habit, logUrl, listUrl }: HabitDetailP
           </tbody>
         </table>
       )}
+
+      <DeactivateHabitModal ref={deactivateModalRef} onConfirm={handleDeactivate} />
     </div>
   );
 }

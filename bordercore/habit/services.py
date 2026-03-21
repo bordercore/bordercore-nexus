@@ -8,12 +8,50 @@ recent log history.
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 from typing import Any
 
 from django.contrib.auth.models import User
 
 from habit.models import Habit, HabitLog
+
+
+def create_habit(user: User, name: str, purpose: str, start_date: date) -> Habit:
+    """Create a new habit for the given user.
+
+    Args:
+        user: The user who owns the habit.
+        name: The name of the habit.
+        purpose: Why the user is tracking this habit.
+        start_date: The date habit tracking begins.
+
+    Returns:
+        The newly created Habit instance.
+    """
+    return Habit.objects.create(
+        user=user,
+        name=name,
+        purpose=purpose,
+        start_date=start_date,
+    )
+
+
+def deactivate_habit(habit: Habit) -> date:
+    """Deactivate a habit by setting its end_date to yesterday.
+
+    The is_active property treats end_date >= today as active, so we set
+    end_date to yesterday for immediate deactivation.
+
+    Args:
+        habit: The Habit instance to deactivate.
+
+    Returns:
+        The end_date that was set (yesterday's date).
+    """
+    yesterday = date.today() - timedelta(days=1)
+    habit.end_date = yesterday
+    habit.save(update_fields=["end_date"])
+    return yesterday
 
 
 def get_habit_list(user: User) -> list[dict[str, Any]]:

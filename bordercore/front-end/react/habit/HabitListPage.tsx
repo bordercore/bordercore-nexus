@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { doPost } from "../utils/reactUtils";
+import { CreateHabitModal, CreateHabitModalHandle } from "./CreateHabitModal";
 
 interface Habit {
   uuid: string;
@@ -20,6 +21,7 @@ type SortDirection = "asc" | "desc";
 interface HabitListPageProps {
   habits: Habit[];
   logUrl: string;
+  createUrl: string;
   detailUrlTemplate: string;
 }
 
@@ -44,11 +46,13 @@ function timeAgo(dateStr: string): string {
 export default function HabitListPage({
   habits: initialHabits,
   logUrl,
+  createUrl,
   detailUrlTemplate,
 }: HabitListPageProps) {
   const [habits, setHabits] = useState<Habit[]>(initialHabits);
   const [inactiveSortField, setInactiveSortField] = useState<InactiveSortField>("end_date");
   const [inactiveSortDirection, setInactiveSortDirection] = useState<SortDirection>("desc");
+  const createModalRef = useRef<CreateHabitModalHandle>(null);
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -113,9 +117,17 @@ export default function HabitListPage({
 
   return (
     <div className="habit-list-page">
-      <h4>Active Habits</h4>
+      <div className="d-flex justify-content-between align-items-center mb-2">
+        <h4 className="mb-0">Active Habits</h4>
+        <button
+          className="btn btn-sm btn-primary"
+          onClick={() => createModalRef.current?.openModal()}
+        >
+          New Habit
+        </button>
+      </div>
       {activeHabits.length === 0 ? (
-        <p className="text-muted">No active habits. Create one in the admin.</p>
+        <p className="text-muted">No active habits.</p>
       ) : (
         <table className="table table-sm">
           <thead>
@@ -194,6 +206,11 @@ export default function HabitListPage({
           </table>
         </>
       )}
+      <CreateHabitModal
+        ref={createModalRef}
+        createUrl={createUrl}
+        onCreated={habit => setHabits(prev => [habit, ...prev])}
+      />
     </div>
   );
 }

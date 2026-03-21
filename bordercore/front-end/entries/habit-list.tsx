@@ -6,6 +6,7 @@ const container = document.getElementById("react-root");
 if (container) {
   const habitsJson = container.getAttribute("data-habits") || "[]";
   const logUrl = container.getAttribute("data-log-url") || "";
+  const createUrl = container.getAttribute("data-create-url") || "";
   const detailUrlTemplate = container.getAttribute("data-detail-url-template") || "";
 
   let habits = [];
@@ -17,6 +18,6 @@ if (container) {
 
   const root = createRoot(container);
   root.render(
-    <HabitListPage habits={habits} logUrl={logUrl} detailUrlTemplate={detailUrlTemplate} />
+    <HabitListPage habits={habits} logUrl={logUrl} createUrl={createUrl} detailUrlTemplate={detailUrlTemplate} />
   );
 }

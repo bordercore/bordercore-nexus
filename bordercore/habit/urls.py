@@ -15,6 +15,16 @@ urlpatterns = [
         name="log"
     ),
     path(
+        route="create/",
+        view=views.create_habit_view,
+        name="create"
+    ),
+    path(
+        route="set_inactive/",
+        view=views.set_habit_inactive,
+        name="set_inactive"
+    ),
+    path(
         route="get_habits/",
         view=views.get_habits,
         name="get_habits"

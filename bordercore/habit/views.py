@@ -26,7 +26,7 @@ from django.views.generic.detail import DetailView
 from django.views.generic.list import ListView
 
 from habit.models import Habit, HabitLog
-from habit.services import get_habit_detail, get_habit_list
+from habit.services import create_habit, deactivate_habit, get_habit_detail, get_habit_list
 from lib.decorators import validate_post_data
 from lib.mixins import UserScopedQuerysetMixin, get_user_object_or_404
 
@@ -171,3 +171,76 @@ def log_habit(request: Request) -> Response:
             "note": log.note,
         },
     }, status=http_status)
+
+
+@api_view(["POST"])
+@validate_post_data("habit_uuid")
+def set_habit_inactive(request: Request) -> Response:
+    """Deactivate a habit by setting its end_date to today.
+
+    Expects POST parameters:
+      - 'habit_uuid': UUID of the habit to deactivate.
+
+    Args:
+        request: The HTTP request with POST data.
+
+    Returns:
+        Response with the updated end_date and is_active status.
+    """
+    user = cast(User, request.user)
+    habit_uuid = request.POST["habit_uuid"]
+    habit = get_user_object_or_404(user, Habit, uuid=habit_uuid)
+
+    end_date = deactivate_habit(habit)
+
+    return Response({
+        "end_date": end_date.isoformat(),
+        "is_active": False,
+    })
+
+
+@api_view(["POST"])
+@validate_post_data("name", "start_date")
+def create_habit_view(request: Request) -> Response:
+    """Create a new habit.
+
+    Expects POST parameters:
+      - 'name': Name of the habit.
+      - 'start_date': Date string (YYYY-MM-DD).
+      - 'purpose' (optional): Why the user is tracking this habit.
+
+    Args:
+        request: The HTTP request with POST data.
+
+    Returns:
+        Response with the created habit data.
+    """
+    user = cast(User, request.user)
+    name = request.POST["name"]
+    start_date_str = request.POST["start_date"]
+    purpose = request.POST.get("purpose", "")
+
+    try:
+        start_date = date.fromisoformat(start_date_str)
+    except ValueError:
+        return Response(
+            {"detail": "Invalid date format. Use YYYY-MM-DD."},
+            status=400,
+        )
+
+    habit = create_habit(user, name, purpose, start_date)
+
+    return Response({
+        "habit": {
+            "uuid": str(habit.uuid),
+            "name": habit.name,
+            "purpose": habit.purpose,
+            "start_date": habit.start_date.isoformat(),
+            "end_date": None,
+            "is_active": True,
+            "tags": [],
+            "total_logs": 0,
+            "completed_logs": 0,
+            "completed_today": False,
+        },
+    }, status=status.HTTP_201_CREATED)
