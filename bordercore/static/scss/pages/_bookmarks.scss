@@ -353,13 +353,13 @@
     overflow: hidden;
 
     .bookmark-title-link {
-      display: block;
+      display: -webkit-box;
       overflow: hidden;
+      -webkit-box-orient: vertical;
       color: var(--text1);
       font-weight: 500;
+      -webkit-line-clamp: 2;
       text-decoration: none;
-      text-overflow: ellipsis;
-      white-space: nowrap;
 
       &:hover {
         color: var(--text3);
