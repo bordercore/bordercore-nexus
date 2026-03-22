@@ -85,7 +85,7 @@ def test_metrics_list_not_admin_group(client, django_db_blocker):
     from accounts.tests.factories import TEST_PASSWORD
 
     with django_db_blocker.unblock():
-        user = UserFactory()
+        user = UserFactory(username="non_admin_user")
 
     _grant_view_permission(user)
     client.login(username=user.username, password=TEST_PASSWORD)
