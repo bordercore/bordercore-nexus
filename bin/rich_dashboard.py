@@ -56,11 +56,20 @@ class KeyReader:
         "[6~": "page_down",
     }
 
+    # How long 'a' must be held to trigger regeneration
+    _HOLD_THRESHOLD = 2.0  # seconds
+    # How long after the last 'a' keypress to consider the key released.
+    # Must exceed the keyboard's initial repeat delay (~300-500ms on most systems).
+    _DEBOUNCE = 0.5  # seconds
+
     def __init__(self) -> None:
         self._queue: queue.Queue[str] = queue.Queue()
         self._running = False
         self._thread: threading.Thread | None = None
         self._old_settings: list | None = None
+        self._a_press_start: float | None = None
+        self._a_hold_emitted = False
+        self._a_debounce_timer: threading.Timer | None = None
 
     def start(self) -> None:
         """Start reading keys in a background daemon thread."""
@@ -75,6 +84,8 @@ class KeyReader:
     def stop(self) -> None:
         """Stop reading and restore terminal settings."""
         self._running = False
+        if self._a_debounce_timer is not None:
+            self._a_debounce_timer.cancel()
         if self._old_settings is not None:
             termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self._old_settings)
             self._old_settings = None
@@ -85,6 +96,18 @@ class KeyReader:
             return self._queue.get_nowait()
         except queue.Empty:
             return None
+
+    def _on_a_released(self) -> None:
+        """Called when the 'a' key debounce timer fires (key was released).
+
+        Decides tap vs hold based on total hold duration:
+        - Tap (< hold threshold): toggle analysis view
+        - Hold (>= hold threshold): regenerate analysis (already emitted)
+        """
+        if self._a_press_start is not None and not self._a_hold_emitted:
+            self._queue.put("toggle_analysis")
+        self._a_press_start = None
+        self._a_hold_emitted = False
 
     def _read_loop(self) -> None:
         """Background loop that reads stdin and enqueues key names."""
@@ -109,8 +132,33 @@ class KeyReader:
                         if next_ch.isalpha() or next_ch == "~":
                             break
                 elif ch == "a":
-                    self._queue.put("toggle_analysis")
+                    now = time.time()
+                    if self._a_press_start is None:
+                        self._a_press_start = now
+                        self._a_hold_emitted = False
+
+                    # Cancel existing debounce timer
+                    if self._a_debounce_timer is not None:
+                        self._a_debounce_timer.cancel()
+
+                    # Emit regenerate once when hold threshold is crossed
+                    if (not self._a_hold_emitted
+                            and now - self._a_press_start >= self._HOLD_THRESHOLD):
+                        self._a_hold_emitted = True
+                        self._queue.put("regenerate_analysis")
+
+                    # Restart debounce timer — when it fires, the key has
+                    # been released and _on_a_released decides tap vs hold
+                    self._a_debounce_timer = threading.Timer(
+                        self._DEBOUNCE, self._on_a_released
+                    )
+                    self._a_debounce_timer.daemon = True
+                    self._a_debounce_timer.start()
                 elif ch == "q":
+                    if self._a_debounce_timer is not None:
+                        self._a_debounce_timer.cancel()
+                        self._a_press_start = None
+                        self._a_hold_emitted = False
                     self._queue.put("quit")
             except Exception:
                 if not self._running:
@@ -180,6 +228,8 @@ class Dashboard():
         self.code_echoes_scroller = ScrollablePanel()
         self.showing_analysis = False
         self._code_echoes_content: Group | None = None
+        self._analyzing = False
+        self._analysis_complete = False
 
         self.layout["bookmarks"].update(Panel("Recent bookmarks", title="Bookmarks"))
         self.layout["code_echoes"].update(Panel("", title="Code Echoes"))
@@ -616,6 +666,53 @@ class Dashboard():
             title=Text("Code Echoes" + (" [Analysis]" if self.showing_analysis else ""))
         ))
 
+    def regenerate_code_analysis(self) -> None:
+        """Run claude -p in a background thread to regenerate the code analysis."""
+        if self._analyzing:
+            return
+        self._analyzing = True
+
+        # Show "Analyzing..." in the panel
+        self.code_echoes_scroller.update(
+            Text("Analyzing...", style="bold yellow")
+        )
+        self.layout["code_echoes"].update(Panel(
+            self.code_echoes_scroller,
+            title=Text("Code Echoes [Analyzing...]")
+        ))
+
+        def _run():
+            try:
+                result = subprocess.run(
+                    [
+                        "claude", "-p",
+                        "--model", "haiku",
+                        "--effort", "low",
+                        "Briefly analyze this code fragment.",
+                    ],
+                    stdin=open("/tmp/code_echoes_fragment.txt"),
+                    capture_output=True,
+                    text=True,
+                    timeout=120,
+                )
+                if result.stdout.strip():
+                    with open("/tmp/code_echoes_fragment.md", "w") as f:
+                        f.write(result.stdout)
+            except Exception:
+                pass
+            finally:
+                self._analyzing = False
+                self._analysis_complete = True
+
+        thread = threading.Thread(target=_run, daemon=True)
+        thread.start()
+
+    def _show_completed_analysis(self) -> None:
+        """Display the regenerated analysis after the background task completes."""
+        self._analysis_complete = False
+        self.showing_analysis = False  # Reset so toggle switches to analysis view
+        self.toggle_code_analysis()
+
 
 def main() -> None:
     """Run the live Bordercore dashboard loop.
@@ -657,7 +754,14 @@ def main() -> None:
                     elif key == "page_down":
                         dash.code_echoes_scroller.page_down()
                     elif key == "toggle_analysis":
-                        dash.toggle_code_analysis()
+                        if not dash._analyzing:
+                            dash.toggle_code_analysis()
+                    elif key == "regenerate_analysis":
+                        dash.regenerate_code_analysis()
+
+                # Check if background analysis finished
+                if dash._analysis_complete:
+                    dash._show_completed_analysis()
 
                 # Check and update bookmarks if its timer has elapsed
                 if current_time - dash.update_timers["bookmarks"]["last_update"] >= dash.update_timers["bookmarks"]["interval"]:
