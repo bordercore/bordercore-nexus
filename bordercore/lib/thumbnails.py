@@ -177,6 +177,9 @@ def create_thumbnail_from_text(infile: str, output_base: str) -> None:
 def _get_font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
     """Try to load a font at the given size, fall back to default."""
     font_paths = [
+        # Amazon Linux (Lambda base image)
+        "/usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf",
+        # Debian/Ubuntu
         "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
         "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
         "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",

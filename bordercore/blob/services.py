@@ -10,6 +10,7 @@ from __future__ import annotations
 import datetime
 import hashlib
 import itertools
+import logging
 import json
 import os
 import re
@@ -62,6 +63,8 @@ from lib.exceptions import (NodeNotFoundError, ObjectAlreadyRelatedError,
                             UnsupportedNodeTypeError)
 from lib.util import get_elasticsearch_connection, is_image, is_pdf, is_video
 from search.services import semantic_search
+
+log = logging.getLogger(__name__)
 
 
 def get_recent_blobs(user: User, limit: int = 10, skip_content: bool = False) -> tuple[list[dict[str, Any]], dict[str, int]]:
@@ -136,7 +139,7 @@ def get_recent_blobs(user: User, limit: int = 10, skip_content: bool = False) ->
 
         get_blob_naturalsize(blob_sizes, blob_dict)
 
-        if is_image(blob.file) or is_pdf(blob.file) or is_video(blob.file):
+        if is_image(blob.file) or is_pdf(blob.file) or is_video(blob.file) or blob.is_note:
             blob_dict["cover_url"] = blob.get_cover_url(size="large")
             blob_dict["cover_url_small"] = blob.get_cover_url(size="small")
 
@@ -1144,6 +1147,45 @@ def update_blob_s3_metadata(
         {"file-modified": file_modified},
         content_type,
     )
+
+
+def generate_note_thumbnail(uuid: str, name: str, content: str) -> None:
+    """Generate a text thumbnail for a note and upload it to S3.
+
+    Renders a 128x128 preview image from the note's name and content,
+    then uploads it as the blob's cover image. Designed to run in a
+    background thread; failures are logged but do not propagate.
+
+    Args:
+        uuid: The blob's UUID string.
+        name: The note's display name (used as thumbnail title).
+        content: The note's text content.
+    """
+    from io import BytesIO
+
+    from lib.thumbnails import render_text_thumbnail
+
+    try:
+        img = render_text_thumbnail(name, content)
+
+        buf = BytesIO()
+        img.save(buf, "JPEG")
+        buf.seek(0)
+
+        width, height = img.size
+        s3_upload_fileobj(
+            buf,
+            settings.AWS_STORAGE_BUCKET_NAME,
+            f"blobs/{uuid}/cover.jpg",
+            content_type="image/jpeg",
+            metadata={
+                "image-width": str(width),
+                "image-height": str(height),
+                "cover-image": "Yes",
+            },
+        )
+    except Exception:
+        log.exception("Failed to generate note thumbnail for blob %s", uuid)
 
 
 def upload_blob_cover_images(

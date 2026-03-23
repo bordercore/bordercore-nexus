@@ -12,7 +12,6 @@ from typing import Any
 from urllib.parse import urlparse
 
 import requests
-from django.utils.html import format_html
 
 ELASTICSEARCH_TIMEOUT = 20
 
@@ -266,6 +265,21 @@ def is_audio(file_path_or_obj: str | Any) -> bool:
     return _has_extension(file_path_or_obj, {"mp3", "wav"})
 
 
+def is_text(file_path_or_obj: str | Any) -> bool:
+    """Check if a file is a text document based on its extension.
+
+    Determines if a file is a text document by checking if its file extension
+    matches common text formats.
+
+    Args:
+        file_path_or_obj: File path string or file-like object with a name/path attribute.
+
+    Returns:
+        True if the file extension indicates a text format, False otherwise.
+    """
+    return _has_extension(file_path_or_obj, {"csv", "md", "txt"})
+
+
 def get_pagination_range(page_number: int, num_pages: int, paginate_by: int | None = None) -> list[int]:
     """Get a range of pages for pagination navigation UI.
 
@@ -358,6 +372,10 @@ def favicon_url(url: str | None, size: int = 32) -> str:
     Returns:
         HTML img tag string for the favicon, or empty string if url is None/empty.
     """
+    # Import here rather than at module level so that AWS Lambdas that
+    # import this module (for file-type helpers) don't require Django.
+    from django.utils.html import format_html
+
     if not url:
         return ""
 

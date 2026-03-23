@@ -6,7 +6,7 @@ from blob.models import Blob
 from bookmark.models import Bookmark
 from lib.util import (favicon_url, get_field, get_missing_blob_ids,
                       get_missing_bookmark_ids, get_pagination_range,
-                      is_audio, is_image, is_pdf, is_video,
+                      is_audio, is_image, is_pdf, is_text, is_video,
                       remove_non_ascii_characters, truncate)
 from tag.tests.factories import TagFactory
 from todo.tests.factories import TodoFactory
@@ -278,6 +278,26 @@ def test_util_is_audio():
     assert is_audio(None) is False
     assert is_audio("file") is False  # No extension
     assert is_audio("file.WAV") is True  # Case insensitive
+
+
+def test_util_is_text():
+    """Test that is_text correctly identifies text document file extensions."""
+
+    assert is_text("path/to/file.txt") is True
+    assert is_text("path/to/file.md") is True
+    assert is_text("path/to/file.csv") is True
+    assert is_text("file.txt") is True
+
+    assert is_text("path/to/file.pdf") is False
+    assert is_text("path/to/file.png") is False
+    assert is_text("path/to/file.docx") is False
+
+    # Test edge cases
+    assert is_text("") is False
+    assert is_text(None) is False
+    assert is_text("file") is False  # No extension
+    assert is_text("file.TXT") is True  # Case insensitive
+    assert is_text("file.Md") is True  # Case insensitive
 
 
 def test_get_pagination_range():

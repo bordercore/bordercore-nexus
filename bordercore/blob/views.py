@@ -6,6 +6,7 @@ blobs and other objects like collections and nodes.
 """
 import json
 import logging
+import threading
 from http import HTTPStatus
 from typing import Any, Generator, cast
 
@@ -39,8 +40,8 @@ from blob.forms import BlobForm
 from blob.models import (Blob, BlobTemplate, BlobToObject, MetaData,
                          RecentlyViewedBlob)
 from blob.services import add_related_object as add_related_object_service
-from blob.services import (chatbot, get_books, get_node_to_object_query,
-                           import_blob)
+from blob.services import (chatbot, generate_note_thumbnail, get_books,
+                           get_node_to_object_query, import_blob)
 from collection.models import Collection, CollectionObject
 from lib.decorators import validate_post_data
 from lib.exceptions import (InvalidNodeTypeError, NodeNotFoundError,
@@ -136,6 +137,15 @@ class FormValidMixin(ModelFormMixin):
                 if "collection_uuid" in self.request.POST:
                     collection = get_user_object_or_404(user, Collection, uuid=self.request.POST["collection_uuid"])
                     collection.add_object(blob)
+
+        if blob.is_note and blob.content and (
+            new_object or "content" in form.changed_data or "name" in form.changed_data
+        ):
+            threading.Thread(
+                target=generate_note_thumbnail,
+                args=(str(blob.uuid), blob.name, blob.content[:4096]),
+                daemon=True,
+            ).start()
 
         # Call index_blob outside the transaction since it's an external service call
         # If indexing fails, we still want the blob to be saved
