@@ -25,9 +25,9 @@
     z-index: 1;
     flex-grow: 0;
     padding: 1.25rem;
+    border-radius: 0.4rem;
     margin: 0 0.5rem 1rem;
     background-color: var(--surface2);
-    border-radius: 0.4rem;
     box-shadow: rgb(0 0 0 / 25%) 0 54px 55px, rgb(0 0 0 / 12%) 0 -12px 30px, rgb(0 0 0 / 12%) 0 0.25rem 0.37rem, rgb(0 0 0 / 17%) 0 12px 13px, rgb(0 0 0 / 9%) 0 -0.18rem 0.31rem;
 
     .card-title {
@@ -86,9 +86,9 @@
 
 #create-album-container {
   padding: 1.5rem;
+  border-radius: var(--border-radius1);
   margin-bottom: 1.5rem;
   background-color: var(--surface2);
-  border-radius: var(--border-radius1);
 }
 
 .album-grid {
@@ -99,8 +99,8 @@
   .album-item {
     padding: 1rem;
     border: 1px solid var(--border-color);
-    background-color: var(--surface2);
     border-radius: var(--border-radius1);
+    background-color: var(--surface2);
     cursor: pointer;
     transition: background-color 0.2s ease;
 
@@ -110,9 +110,9 @@
 
     .album-cover {
       width: 100%;
+      border-radius: var(--border-radius1);
       margin-bottom: 0.5rem;
       aspect-ratio: 1;
-      border-radius: var(--border-radius1);
       object-fit: cover;
     }
 
@@ -219,12 +219,25 @@
 
 // Star rating in song table
 .rating {
+  display: inline-block;
   color: var(--surface2);
   transition: color 0.15s ease;
 }
 
 .rating-star-selected {
   color: var(--surface7);
+}
+
+@keyframes star-pulse {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.4); }
+  50% { transform: scale(0.95); }
+  75% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+.rating-animate {
+  animation: star-pulse 0.8s ease-in-out;
 }
 
 tr.hover-target:hover {
