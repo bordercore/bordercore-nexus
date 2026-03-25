@@ -477,7 +477,7 @@ class BlobDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView):
             "isPdf": self.object.is_pdf,
             "mathSupport": self.object.math_support,
             "hasBeenModified": self.object.has_been_modified,
-            "modified": self.object.modified.strftime("%B %j, %Y") if self.object.has_been_modified else "",
+            "modified": self.object.modified.strftime("%B %-d, %Y") if self.object.has_been_modified else "",
             "coverUrl": self.object.get_cover_url() + "?nodefault=1" if self.object.sha1sum else "",
             "fileUrl": f"{settings.MEDIA_URL}blobs/{self.object.url}" if self.object.sha1sum else "",
             "tags": [
