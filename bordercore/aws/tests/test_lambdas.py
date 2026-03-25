@@ -8,12 +8,21 @@ from PIL import Image
 
 from bordercore.aws.create_thumbnail.create_thumbnail_lambda import (extract_uuid,
                                                                     get_cover_filename)
-from bordercore.aws.create_thumbnail.lib.thumbnails import (
-    create_thumbnail,
-    create_thumbnail_from_text,
-    render_text_thumbnail,
+try:
+    from bordercore.aws.create_thumbnail.lib.thumbnails import (
+        create_thumbnail,
+        create_thumbnail_from_text,
+        render_text_thumbnail,
+    )
+    from bordercore.aws.create_thumbnail.lib.util import is_text
+    HAS_THUMBNAIL_LIB = True
+except ModuleNotFoundError:
+    HAS_THUMBNAIL_LIB = False
+
+requires_thumbnail_lib = pytest.mark.skipif(
+    not HAS_THUMBNAIL_LIB,
+    reason="create_thumbnail lib not installed (gitignored Lambda dependency)",
 )
-from bordercore.aws.create_thumbnail.lib.util import is_text
 
 
 def test_extract_uuid():
@@ -43,6 +52,7 @@ def test_get_cover_filename():
                               ) == "cover-large.jpg"
 
 
+@requires_thumbnail_lib
 def test_is_text():
     """Test that is_text correctly identifies text document file extensions."""
 
@@ -61,6 +71,7 @@ def test_is_text():
     assert is_text("file.TXT") is True
 
 
+@requires_thumbnail_lib
 def test_render_text_thumbnail():
     """Test that render_text_thumbnail produces a 128x128 RGB image."""
 
@@ -69,6 +80,7 @@ def test_render_text_thumbnail():
     assert img.mode == "RGB"
 
 
+@requires_thumbnail_lib
 def test_render_text_thumbnail_empty_inputs():
     """Test rendering with empty title and/or content."""
 
@@ -82,6 +94,7 @@ def test_render_text_thumbnail_empty_inputs():
     assert img.size == (128, 128)
 
 
+@requires_thumbnail_lib
 def test_render_text_thumbnail_long_content():
     """Test that very long content doesn't cause errors."""
 
@@ -89,6 +102,7 @@ def test_render_text_thumbnail_long_content():
     assert img.size == (128, 128)
 
 
+@requires_thumbnail_lib
 def test_create_thumbnail_from_text(tmp_path):
     """Test that create_thumbnail_from_text writes a cover JPEG."""
 
@@ -104,6 +118,7 @@ def test_create_thumbnail_from_text(tmp_path):
     assert img.size == (128, 128)
 
 
+@requires_thumbnail_lib
 def test_create_thumbnail_from_text_nonexistent_file(tmp_path, caplog):
     """Test that a missing file logs an error and doesn't create output."""
 
@@ -114,6 +129,7 @@ def test_create_thumbnail_from_text_nonexistent_file(tmp_path, caplog):
     assert "Cannot read text file" in caplog.text
 
 
+@requires_thumbnail_lib
 def test_create_thumbnail_dispatches_text(tmp_path):
     """Test that create_thumbnail routes text files to the text handler."""
 
@@ -126,6 +142,7 @@ def test_create_thumbnail_dispatches_text(tmp_path):
     assert os.path.exists(f"{output_base}-cover.jpg")
 
 
+@requires_thumbnail_lib
 def test_create_thumbnail_dispatches_md(tmp_path):
     """Test that create_thumbnail routes .md files to the text handler."""
 
