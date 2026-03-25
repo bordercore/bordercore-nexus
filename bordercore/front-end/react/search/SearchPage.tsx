@@ -5,7 +5,7 @@ import SearchNoResult from "./SearchNoResult";
 import Pagination from "./Pagination";
 import SearchSidebar from "./SearchSidebar";
 import { doGet } from "../utils/reactUtils";
-import type { SearchMatch, Aggregation, Paginator, SearchApiResponse } from "./types";
+import type { SearchMatch, SearchSource, Aggregation, Paginator, SearchApiResponse } from "./types";
 
 interface SearchPageProps {
   results: SearchMatch[];
@@ -325,6 +325,14 @@ export function SearchPage({
     )
   ).slice(0, 20);
 
+  const getPdfViewerUrl = (source: SearchSource) => {
+    if (source.filename?.toLowerCase().endsWith(".pdf") && source.uuid) {
+      const term = searchTermState || searchSemanticState;
+      return `/blob/${source.uuid}/pdf-viewer/?search=${encodeURIComponent(term)}`;
+    }
+    return source.url;
+  };
+
   return (
     <div className="search-page-layout">
       <SearchSidebar
@@ -485,7 +493,7 @@ export function SearchPage({
                               icon="copy"
                               importance={source.importance || 1}
                               title={source.name || ""}
-                              url={source.url}
+                              url={getPdfViewerUrl(source)}
                               tags={tags}
                               tagUrl={tagUrl}
                               metadata={source.last_modified}
@@ -590,7 +598,7 @@ export function SearchPage({
                               icon="book"
                               importance={source.importance || 1}
                               title={source.name || ""}
-                              url={source.url}
+                              url={getPdfViewerUrl(source)}
                               tags={tags}
                               tagUrl={tagUrl}
                               metadata={source.last_modified}

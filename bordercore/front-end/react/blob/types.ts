@@ -101,6 +101,7 @@ export interface BlobDetailUrls {
   kbSearchTagDetail: string;
   awsUrl?: string;
   sqlPlayground?: string;
+  pdfViewer?: string;
 }
 
 export interface Collection {

@@ -509,6 +509,7 @@ class BlobDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView):
             "kbSearchTagDetail": reverse("search:kb_search_tag_detail", kwargs={"taglist": "PLACEHOLDER"}),
             "awsUrl": context.get("aws_url", ""),
             "sqlPlayground": reverse("homepage:sql"),
+            "pdfViewer": reverse("blob:pdf_viewer", kwargs={"uuid": self.object.uuid}),
         }
 
         context["blob_urls"] = context["urls"]
@@ -1048,6 +1049,20 @@ def update_page_number(request: HttpRequest) -> Response:
 
 
 @login_required
+def pdf_viewer(request: HttpRequest, uuid: str) -> HttpResponse:
+    """Render the pdf.js viewer page for a blob's PDF file."""
+    user = cast(User, request.user)
+    blob = get_user_object_or_404(user, Blob, uuid=uuid)
+    file_url = reverse("blob:file", kwargs={"uuid": uuid})
+    search_term = request.GET.get("search", "")
+    return render(request, "blob/pdf_viewer.html", {
+        "blob": blob,
+        "file_url": file_url,
+        "search_term": search_term,
+    })
+
+
+@login_required
 def blob_file_serve(request: HttpRequest, uuid: str) -> HttpResponse | StreamingHttpResponse:
     """Serve a blob's file through Django.
 
@@ -1084,16 +1099,14 @@ def blob_file_serve(request: HttpRequest, uuid: str) -> HttpResponse | Streaming
             return HttpResponse("File not found in storage", status=404)
 
         # Use StreamingHttpResponse with the storage backend's open method
-        response = StreamingHttpResponse(default_storage.open(file_path, "rb"), content_type="application/octet-stream")
-
-        # Set filename in header (just the base name, not the full path)
         import os
         filename = os.path.basename(blob.file.name)
-        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        content_type = "application/pdf" if filename.lower().endswith(".pdf") else "application/octet-stream"
+        response = StreamingHttpResponse(default_storage.open(file_path, "rb"), content_type=content_type)
 
-        # Add access control headers for same-origin requests
-        response["Access-Control-Allow-Origin"] = request.headers.get("Origin", "*")
-        response["Access-Control-Allow-Credentials"] = "true"
+        # PDFs served inline (for pdf.js viewer); other files as attachment (download)
+        disposition = "inline" if filename.lower().endswith(".pdf") else "attachment"
+        response["Content-Disposition"] = f'{disposition}; filename="{filename}"'
 
         return response
     except Exception as e:

@@ -595,6 +595,16 @@ export function BlobDetailPage({
             <BlobDetailCover coverUrl={blob.coverUrl} fullSize={!blob.content} />
           )}
 
+          {/* View PDF button */}
+          {blob.isPdf && urls.pdfViewer && (
+            <div className="my-2">
+              <a href={urls.pdfViewer} className="btn btn-outline-primary btn-sm">
+                <i className="fa fa-file-pdf me-1" />
+                View PDF
+              </a>
+            </div>
+          )}
+
           {/* Audio player */}
           {elasticsearchInfo?.contentType === "Audio" && blob.fileUrl && (
             // @ts-ignore - media-chrome web components

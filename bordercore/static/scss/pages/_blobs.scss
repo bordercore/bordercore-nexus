@@ -3,6 +3,13 @@
 // =============================================================================
 // File viewer, tree menu, file upload, slideshow, and notes
 
+// PDF viewer iframe
+#pdf-viewer {
+  width: 100%;
+  height: calc(100vh - 60px);
+  border: none;
+}
+
 // Blob list grid (used for blob picker/selection views)
 .blob-list-grid {
   display: grid;
@@ -15,9 +22,9 @@
     align-items: center;
     justify-content: center;
     border: 1px solid var(--border-color);
+    border-radius: var(--border-radius1);
     aspect-ratio: 1;
     background-color: var(--surface2);
-    border-radius: var(--border-radius1);
     cursor: pointer;
     transition: background-color 0.2s ease;
 
@@ -30,13 +37,13 @@
 // Base blob content (less specific; must come before .blob-list .blob-content)
 .blob-content {
   padding: 1.5rem;
-  background-color: var(--surface2);
   border-radius: var(--border-radius1);
+  background-color: var(--surface2);
 
   pre {
     padding: 1rem;
-    background-color: var(--surface1);
     border-radius: var(--border-radius1);
+    background-color: var(--surface1);
     overflow-x: auto;
   }
 }
@@ -44,8 +51,8 @@
 // Note content base (less specific p; must come before .blob-list .blob-content p)
 .note-content {
   padding: 1.5rem;
-  background-color: var(--surface2);
   border-radius: var(--border-radius1);
+  background-color: var(--surface2);
 
   h1, h2, h3, h4, h5, h6 {
     margin-top: 1.5rem;
@@ -58,8 +65,8 @@
 
   code {
     padding: 0.125rem 0.25rem;
-    background-color: var(--surface1);
     border-radius: 0.25rem;
+    background-color: var(--surface1);
   }
 
   blockquote {
@@ -96,9 +103,9 @@
 
 #blob-metadata {
   padding: 1rem;
+  border-radius: var(--border-radius1);
   margin-top: 1rem;
   background-color: var(--surface3);
-  border-radius: var(--border-radius1);
 
   .metadata-row {
     display: flex;
@@ -115,8 +122,8 @@
 .tree-menu {
   padding: 1rem;
   padding-left: 0;
-  background-color: var(--surface2);
   border-radius: var(--border-radius1);
+  background-color: var(--surface2);
   list-style: none;
 
   ul {
@@ -198,8 +205,8 @@
     position: absolute;
     top: 50%;
     padding: 1rem;
-    background-color: rgb(255 255 255 / 20%);
     border-radius: var(--border-radius1);
+    background-color: rgb(255 255 255 / 20%);
     color: white;
     cursor: pointer;
     transform: translateY(-50%);
@@ -285,9 +292,9 @@ $blob-detail-gutter: 1rem;
     overflow: hidden;
     width: 100%;
     border: 1px solid color-mix(in srgb, var(--border-color) 50%, $blob-heading-pink);
+    border-radius: var(--border-radius1);
     margin: 0.5rem 0;
     border-collapse: collapse;
-    border-radius: var(--border-radius1);
 
     th,
     td {

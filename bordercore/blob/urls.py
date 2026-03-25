@@ -90,6 +90,11 @@ urlpatterns = [
         name="update_related_object_note"
     ),
     path(
+        route="<uuid:uuid>/pdf-viewer/",
+        view=views.pdf_viewer,
+        name="pdf_viewer"
+    ),
+    path(
         route="<uuid:uuid>/file/",
         view=views.blob_file_serve,
         name="file"
