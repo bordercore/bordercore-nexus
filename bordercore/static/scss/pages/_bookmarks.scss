@@ -420,6 +420,7 @@
         height: 68px;
       }
     }
+
   }
 
   /* stylelint-disable-next-line no-descending-specificity */
@@ -568,6 +569,30 @@
       height: 100%;
       object-fit: contain;
     }
+  }
+
+  // Compact drag overlay
+  &.compact {
+    grid-template-columns: 30px minmax(0, 5fr) minmax(120px, auto) 50px;
+
+    .tags-cell {
+      display: none;
+    }
+
+    .bookmark-hostname {
+      display: none;
+    }
+  }
+}
+
+// Compact mode: shrink icon box to favicon size (in-grid rows and drag overlay)
+.bookmark-grid-row.compact .bookmark-icon-box {
+  width: 36px;
+  height: 36px;
+
+  .favicon-container img {
+    width: 28px;
+    height: 28px;
   }
 }
 

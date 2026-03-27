@@ -137,7 +137,14 @@ function SortableBookmarkRow({
       <div role="cell" className="bookmark-col-content content-cell">
         <div className="d-flex align-items-center gap-3 overflow-hidden position-relative w-100">
           <div className="bookmark-icon-box">
-            {bookmark.thumbnail_url ? (
+            {viewType === "compact" ? (
+              faviconHtml ? (
+                <div
+                  className="favicon-container"
+                  dangerouslySetInnerHTML={{ __html: faviconHtml }}
+                />
+              ) : null
+            ) : bookmark.thumbnail_url ? (
               <img src={bookmark.thumbnail_url} alt="" loading="lazy" />
             ) : faviconHtml ? (
               <div
@@ -395,7 +402,14 @@ export function BookmarkList({
             <div role="cell" className="bookmark-col-content content-cell">
               <div className="d-flex align-items-center gap-3 overflow-hidden">
                 <div className="bookmark-icon-box">
-                  {activeBookmark.thumbnail_url ? (
+                  {viewType === "compact" ? (
+                    activeFaviconHtml ? (
+                      <div
+                        className="favicon-container"
+                        dangerouslySetInnerHTML={{ __html: activeFaviconHtml }}
+                      />
+                    ) : null
+                  ) : activeBookmark.thumbnail_url ? (
                     <img src={activeBookmark.thumbnail_url} alt="" />
                   ) : activeFaviconHtml ? (
                     <div
@@ -406,10 +420,11 @@ export function BookmarkList({
                 </div>
                 <div className="overflow-hidden">
                   <span className="bookmark-title-link">{unescapeHtml(activeBookmark.name)}</span>
-                  {(() => {
-                    const h = getHostname(activeBookmark.url);
-                    return h ? <span className="bookmark-hostname">{h}</span> : null;
-                  })()}
+                  {viewType !== "compact" &&
+                    (() => {
+                      const h = getHostname(activeBookmark.url);
+                      return h ? <span className="bookmark-hostname">{h}</span> : null;
+                    })()}
                 </div>
               </div>
             </div>
