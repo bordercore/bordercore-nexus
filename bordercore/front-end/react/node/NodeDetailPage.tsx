@@ -781,11 +781,11 @@ export default function NodeDetailPage({
       {/* Header row with breadcrumb and dropdown */}
       <div className="d-flex align-items-center mb-gutter px-3">
         <nav aria-label="breadcrumb" className="flex-grow-1">
-          <ol className="breadcrumb mb-0">
-            <li className="breadcrumb-item">
+          <ol className="breadcrumb mb-0 ps-0">
+            <li className="breadcrumb-item mt-0">
               <a href={urls.nodeList}>Nodes</a>
             </li>
-            <li className="breadcrumb-item active" aria-current="page">
+            <li className="breadcrumb-item mt-0 active" aria-current="page">
               {isEditingName ? (
                 <input
                   type="text"
