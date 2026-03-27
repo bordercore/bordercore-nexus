@@ -73,11 +73,16 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
 
         const start = textarea.selectionStart;
         const end = textarea.selectionEnd;
-        const selectedText = content.substring(start, end);
+        // Read from textarea.value (not React state) so positions from
+        // selectionStart/selectionEnd are guaranteed to align with the text.
+        // Browsers normalise the textarea value (e.g. \r\n → \n) so the DOM
+        // string can differ from the React state string by a few characters.
+        const currentValue = textarea.value;
+        const selectedText = currentValue.substring(start, end);
 
         const { text, selected } = callback(selectedText);
 
-        const newContent = content.substring(0, start) + text + content.substring(end);
+        const newContent = currentValue.substring(0, start) + text + currentValue.substring(end);
         updateContent(newContent);
 
         // Set cursor position after insertion
@@ -88,7 +93,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
           textarea.setSelectionRange(newStart, newEnd);
         }, 0);
       },
-      [content, updateContent]
+      [updateContent]
     );
 
     const wrapSelection = useCallback(
@@ -111,8 +116,9 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
 
         const start = textarea.selectionStart;
         const end = textarea.selectionEnd;
+        const currentValue = textarea.value;
 
-        const newContent = content.substring(0, start) + text + content.substring(end);
+        const newContent = currentValue.substring(0, start) + text + currentValue.substring(end);
         updateContent(newContent);
 
         setTimeout(() => {
@@ -120,7 +126,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
           textarea.setSelectionRange(start + text.length, start + text.length);
         }, 0);
       },
-      [content, updateContent]
+      [updateContent]
     );
 
     const undo = useCallback(() => {
@@ -240,6 +246,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
                 key={index}
                 type="button"
                 className="markdown-toolbar-item"
+                onMouseDown={e => e.preventDefault()}
                 onClick={btn.action}
                 title={btn.title}
               >
