@@ -282,3 +282,17 @@ LOGGING = {
         }
     }
 }
+
+# --- Sentry ---
+import sentry_sdk
+
+SENTRY_DSN = os.environ.get("SENTRY_DSN", "")
+
+if SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        traces_sample_rate=float(os.environ.get("SENTRY_TRACES_SAMPLE_RATE", "0.2")),
+        send_default_pii=True,
+        release=os.environ.get("SENTRY_RELEASE"),
+        environment=os.environ.get("SENTRY_ENVIRONMENT", "production"),
+    )

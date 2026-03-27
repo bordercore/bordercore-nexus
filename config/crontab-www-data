@@ -28,6 +28,7 @@ PYTHONPATH=/var/www/django/bordercore:/var/www/django/bordercore/bordercore
 DJANGO_SETTINGS_MODULE=config.settings.prod
 PATH=/var/www/django/env/bin:/usr/bin
 UV_DIR=/var/www/.local/bin
+SENTRY_DSN=
 
 # Get the news feeds once every four hours
 5 */4 * * * $UV_DIR/uv run $BIN_DIR/get_feed.py

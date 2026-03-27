@@ -53,10 +53,13 @@ def update_feeds(feed_uuid=None):
 
 
 if __name__ == "__main__":
+    import sentry_sdk
 
-    if len(sys.argv) == 2:
-        feed_uuid = sys.argv[1]
-    else:
-        feed_uuid = None
-
-    update_feeds(feed_uuid)
+    with sentry_sdk.monitor(monitor_slug="get-feed", monitor_config={
+        "schedule": {"type": "crontab", "value": "5 */4 * * *"},
+        "checkin_margin": 5,
+        "max_runtime": 30,
+        "timezone": "America/New_York",
+    }):
+        feed_uuid = sys.argv[1] if len(sys.argv) == 2 else None
+        update_feeds(feed_uuid)
