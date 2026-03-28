@@ -29,7 +29,7 @@ def test_blob_form_add(authenticated_client, blob_pdf_factory):
     form_data = {
         "date": faker.date(),
         "name": faker.text(max_nb_chars=10),
-        "filename": faker.file_name(extension="jpg"),
+        "filename": "test_upload.jpg",
         "file": file_upload,
         "tags": "django, linux"
     }
@@ -40,7 +40,7 @@ def test_blob_form_add(authenticated_client, blob_pdf_factory):
     form_data = {
         "date": "Bogus date format",
         "name": faker.text(max_nb_chars=10),
-        "filename": faker.file_name(extension="jpg"),
+        "filename": "test_upload.jpg",
         "file": file_upload,
         "tags": "django, linux"
     }
@@ -68,7 +68,7 @@ def test_blob_form_add(authenticated_client, blob_pdf_factory):
     form_data = {
         "date": faker.date(),
         "name": faker.text(max_nb_chars=10),
-        "filename": faker.file_name(extension="jpg"),
+        "filename": "test_upload.jpg",
         "file": file_upload,
         "tags": "django, linux"
     }
