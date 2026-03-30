@@ -23,7 +23,8 @@
     },
     "lint-staged": {
         "front-end/react/**/*.{ts,tsx,jsx}": [
-            "eslint --no-eslintrc -c .eslintrc.react.json"
+            "eslint --no-eslintrc -c .eslintrc.react.json",
+            "prettier --write"
         ],
         "static/scss/**/*.{scss,css}": [
             "stylelint"

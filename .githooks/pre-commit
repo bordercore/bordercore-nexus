@@ -4,8 +4,9 @@
 #
 # Purpose:
 # 1. Block commits with unused Python imports (flake8 F401).
-# 2. Block commits with frontend lint violations (ESLint, stylelint).
-# 3. Automatically format React components with Prettier.
+# 2. Block commits with frontend lint/format violations (ESLint, stylelint, Prettier via lint-staged).
+# 3. Block commits with inline styles or naming violations in templates/components.
+# 4. Block commits with mypy type errors.
 #
 # Usage:
 # Run 'git config core.hooksPath .githooks' to enable these hooks.
@@ -53,15 +54,7 @@ cd "$REPO_ROOT"
 echo "✅ Template quality checks passed."
 
 # ----------------------------------------------------------------------
-# 4. Frontend Formatting (Prettier)
-# ----------------------------------------------------------------------
-echo "Formatting React components with Prettier..."
-cd "$BORDERCORE_DIR"
-npm run -s format:react
-echo "✅ Frontend formatting complete."
-
-# ----------------------------------------------------------------------
-# 5. Type Checking (mypy)
+# 4. Type Checking (mypy)
 # ----------------------------------------------------------------------
 echo "Running mypy type checking..."
 cd "$REPO_ROOT"
