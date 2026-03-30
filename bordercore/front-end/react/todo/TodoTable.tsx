@@ -13,6 +13,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { Todo, SortState } from "./types";
 import DropDownMenu from "../common/DropDownMenu";
+import { tagStyle } from "../utils/tagColors";
 
 const markdown = MarkdownIt({
   html: true,
@@ -26,6 +27,7 @@ interface TodoTableProps {
   items: Todo[];
   defaultSort: SortState;
   isSortable: boolean;
+  showTags: boolean;
   onSort: (field: string, direction: "asc" | "desc") => void;
   onMoveToTop: (todo: Todo) => void;
   onEdit: (todo: Todo) => void;
@@ -46,6 +48,7 @@ export function TodoTable({
   items,
   defaultSort,
   isSortable,
+  showTags,
   onSort,
   onMoveToTop,
   onEdit,
@@ -170,6 +173,7 @@ export function TodoTable({
               index={index}
               canDrag={canDrag}
               isSortable={isSortable}
+              showTags={showTags}
               onMoveToTop={onMoveToTop}
               onEdit={onEdit}
               onDelete={onDelete}
@@ -188,6 +192,7 @@ interface SortableRowProps {
   index: number;
   canDrag: boolean;
   isSortable: boolean;
+  showTags: boolean;
   onMoveToTop: (todo: Todo) => void;
   onEdit: (todo: Todo) => void;
   onDelete: (todo: Todo) => void;
@@ -197,6 +202,7 @@ function SortableRow({
   todo,
   canDrag,
   isSortable,
+  showTags,
   onMoveToTop,
   onEdit,
   onDelete,
@@ -253,6 +259,16 @@ function SortableRow({
                 </a>
               </span>
             )}
+            {showTags &&
+              todo.tags.map(tag => (
+                <span
+                  key={tag}
+                  className="tag ms-2"
+                  style={tagStyle(tag)} // must remain inline
+                >
+                  {tag}
+                </span>
+              ))}
           </div>
           <div className="ms-auto">
             {todo.note && (

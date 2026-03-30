@@ -7,8 +7,8 @@
   position: relative;
   z-index: 1;
   padding: 1rem;
-  background-color: var(--surface2);
   border-radius: var(--border-radius1);
+  background-color: var(--surface2);
 
   // Ensure sticky-top doesn't interfere with main navbar overlay
   .sticky-top {
@@ -87,9 +87,9 @@
 .todo-item {
   padding: 0.75rem 1rem;
   border: 1px solid var(--border-color);
+  border-radius: var(--border-radius1);
   margin-bottom: 0.5rem;
   background-color: var(--surface2);
-  border-radius: var(--border-radius1);
   transition: background-color 0.2s ease;
   
   &:hover {
@@ -128,6 +128,11 @@
 // =============================================================================
 // Todo Grid - column layout only (base styles in _tables.scss)
 // =============================================================================
+
+.todo-grid-container {
+  border: none;
+  background-color: transparent;
+}
 
 .todo-grid-header,
 .todo-grid-row {

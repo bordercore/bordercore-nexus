@@ -491,6 +491,7 @@ export function TodoListPage({
                 items={items}
                 defaultSort={defaultSort}
                 isSortable={isSortable}
+                showTags={filterTag === ""}
                 onSort={handleSort}
                 onMoveToTop={handleMoveToTop}
                 onEdit={handleEdit}
