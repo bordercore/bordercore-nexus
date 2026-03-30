@@ -1123,7 +1123,7 @@ class Blob(TimeStampedModel):
         This method:
         - Deletes the blob from the database
         - Removes the blob from Elasticsearch (after transaction commits)
-        - Deletes all files in the blob's S3 directory (after transaction commits)
+        - Deletes all objects in the blob's S3 directory, including thumbnails (after transaction commits)
         - Removes references from nodes
         - Invalidates user caches
 
@@ -1142,8 +1142,6 @@ class Blob(TimeStampedModel):
         blob_uuid = str(self.uuid)
         user = self.user
         user_id = user.id
-        has_file = bool(self.file)
-        directory = f"{settings.MEDIA_ROOT}/{self.uuid}" if has_file else None
 
         # Delete from database first
         result = super().delete(using=using, keep_parents=keep_parents)
@@ -1156,13 +1154,12 @@ class Blob(TimeStampedModel):
             except Exception as e:
                 log.error("Failed to delete blob %s from Elasticsearch: %s", blob_uuid, e)
 
-            # Delete from S3
-            if has_file and directory:
-                try:
-                    from blob.services import delete_blob_s3_directory
-                    delete_blob_s3_directory(blob_uuid)
-                except Exception as e:
-                    log.error("Failed to delete blob %s from S3: %s", blob_uuid, e)
+            # Delete from S3 (covers both file blobs and note thumbnails)
+            try:
+                from blob.services import delete_blob_s3_directory
+                delete_blob_s3_directory(blob_uuid)
+            except Exception as e:
+                log.error("Failed to delete blob %s from S3: %s", blob_uuid, e)
 
         transaction.on_commit(cleanups)
 
