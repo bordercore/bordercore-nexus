@@ -251,7 +251,7 @@ function SortableRow({
       <div role="cell" className="todo-col-name">
         <div className="d-flex">
           <div>
-            {todo.name}
+            <span className="todo-task-name">{todo.name}</span>
             {todo.url && (
               <span>
                 <a className="ms-1" href={todo.url} target="_blank" rel="noopener noreferrer">

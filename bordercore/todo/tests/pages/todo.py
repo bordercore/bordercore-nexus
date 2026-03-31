@@ -10,7 +10,7 @@ class TodoPage:
 
     TITLE = (By.TAG_NAME, "title")
     TODO_ELEMENTS = (By.CSS_SELECTOR, "div.todo-grid-body div.todo-grid-row")
-    FIRST_TASK = (By.CSS_SELECTOR, "div.todo-grid-row div.todo-col-name")
+    FIRST_TASK = (By.CSS_SELECTOR, "div.todo-grid-row .todo-task-name")
     NO_TASKS = (By.CSS_SELECTOR, "div#react-root .text-center.p-3")
     PRIORITY_COLUMN = (By.CSS_SELECTOR, "div.todo-grid-header div.todo-col-priority")
     LOW_PRIORITY_FILTER = (By.CSS_SELECTOR, "div[data-priority='3']")
@@ -40,7 +40,7 @@ class TodoPage:
 
     def todo_task_text(self):
         """
-        Find the text of the first ask
+        Find the name text of the first task
         """
         todo_element = self.browser.find_elements(*self.FIRST_TASK)
         return todo_element[0].text
