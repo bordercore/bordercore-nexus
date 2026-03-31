@@ -475,6 +475,7 @@ class BlobDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView):
             "isVideo": self.object.is_video,
             "isImage": self.object.is_image,
             "isPdf": self.object.is_pdf,
+            "isAudio": self.object.is_audio,
             "mathSupport": self.object.math_support,
             "hasBeenModified": self.object.has_been_modified,
             "modified": self.object.modified.strftime("%B %-d, %Y") if self.object.has_been_modified else "",

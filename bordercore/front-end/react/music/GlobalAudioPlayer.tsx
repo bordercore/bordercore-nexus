@@ -35,7 +35,7 @@ export const GlobalAudioPlayer: React.FC = () => {
 
   const markSongAsListenedTo = React.useCallback(
     async (uuid: string) => {
-      if (!config || !uuid) return;
+      if (!config || !uuid || !config.markListenedToUrl) return;
 
       try {
         const url = config.markListenedToUrl.replace(/00000000-0000-0000-0000-000000000000/, uuid);
@@ -74,9 +74,9 @@ export const GlobalAudioPlayer: React.FC = () => {
       isManualPlayRef.current = true;
       const newList = data.trackList.map(track => ({
         name: track.title,
-        musicSrc: data.songUrl + track.uuid,
-        uuid: track.uuid, // Store uuid for tracking
-        cover: "/static/img/bordercore-logo.jpg", // Add a default cover
+        musicSrc: track.musicSrc || data.songUrl + track.uuid,
+        uuid: track.uuid,
+        cover: "/static/img/bordercore-logo.jpg",
       }));
 
       const index = data.trackList.findIndex(t => t.uuid === data.track.uuid);

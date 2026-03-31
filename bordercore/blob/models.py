@@ -404,7 +404,7 @@ class Blob(TimeStampedModel):
         """
         switcher = {
             "application/mp4": "Video",
-            "application/octet-stream": "Video",
+            "application/octet-stream": "Binary",
             "application/pdf": "PDF",
             "application/x-sqlite3": "SQLite Database",
             "application/x-mobipocket-ebook": "E-Book",

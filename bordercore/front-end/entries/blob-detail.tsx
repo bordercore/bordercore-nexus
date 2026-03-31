@@ -33,6 +33,7 @@ if (container) {
     isVideo: false,
     isImage: false,
     isPdf: false,
+    isAudio: false,
     mathSupport: false,
     hasBeenModified: false,
     tags: [],

@@ -11,6 +11,7 @@ import {
   faDownload,
   faLink,
   faTags,
+  faPlay,
 } from "@fortawesome/free-solid-svg-icons";
 import { faAws } from "@fortawesome/free-brands-svg-icons";
 import markdownit from "markdown-it";
@@ -508,6 +509,28 @@ export function BlobDetailPage({
                 </div>
               )}
 
+              {/* Audio play button */}
+              {blob.isAudio && blob.fileUrl && (
+                <div className="mb-3">
+                  <button
+                    type="button"
+                    className="btn btn-outline-primary btn-sm"
+                    onClick={() => {
+                      EventBus.$emit("play-track", {
+                        track: { uuid: blob.uuid, title: blob.name, musicSrc: blob.fileUrl },
+                        trackList: [{ uuid: blob.uuid, title: blob.name, musicSrc: blob.fileUrl }],
+                        songUrl: "",
+                        markListenedToUrl: "",
+                        csrfToken: (window as any).BASE_TEMPLATE_DATA?.csrfToken || "",
+                      });
+                    }}
+                  >
+                    <FontAwesomeIcon icon={faPlay} className="me-1" />
+                    Play
+                  </button>
+                </div>
+              )}
+
               {/* Blob note - user's own markdown content from database */}
               {blob.note && (
                 <div
@@ -603,29 +626,6 @@ export function BlobDetailPage({
                 View PDF
               </a>
             </div>
-          )}
-
-          {/* Audio player */}
-          {elasticsearchInfo?.contentType === "Audio" && blob.fileUrl && (
-            // @ts-ignore - media-chrome web components
-            <media-controller audio className="w-100">
-              <audio slot="media" src={blob.fileUrl} />
-              {/* @ts-ignore */}
-              <media-control-bar className="w-100">
-                {/* @ts-ignore */}
-                <media-play-button />
-                {/* @ts-ignore */}
-                <media-time-display showDuration />
-                {/* @ts-ignore */}
-                <media-time-range />
-                {/* @ts-ignore */}
-                <media-playback-rate-button />
-                {/* @ts-ignore */}
-                <media-mute-button />
-                {/* @ts-ignore */}
-                <media-volume-range />
-              </media-control-bar>
-            </media-controller>
           )}
 
           {/* Blob content - user's own markdown content from database */}

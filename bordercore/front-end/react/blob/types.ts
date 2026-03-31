@@ -73,6 +73,7 @@ export interface BlobDetail {
   isVideo: boolean;
   isImage: boolean;
   isPdf: boolean;
+  isAudio: boolean;
   mathSupport: boolean;
   hasBeenModified: boolean;
   modified?: string;

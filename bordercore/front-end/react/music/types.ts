@@ -4,6 +4,7 @@
 export interface BaseTrack {
   uuid: string;
   title: string;
+  musicSrc?: string;
 }
 
 export interface Song extends BaseTrack {
