@@ -129,7 +129,7 @@ def test_related_blobs(authenticated_client):
 
 def test_get_content_type():
     """Test MIME type to human-readable content type mapping."""
-    assert Blob.get_content_type("application/octet-stream") == "Video"
+    assert Blob.get_content_type("application/octet-stream") == "Binary"
     assert Blob.get_content_type("text/css") == ""
 
 
