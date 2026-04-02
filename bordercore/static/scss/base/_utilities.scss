@@ -18,8 +18,8 @@ div.sphere {
   z-index: -1;
   width: 25rem;
   height: 25rem;
-  background: radial-gradient(circle, var(--sphere-gradient-start) 0%, var(--sphere-gradient-end) 100%);
   border-radius: 50%;
+  background: radial-gradient(circle, var(--sphere-gradient-start) 0%, var(--sphere-gradient-end) 100%);
   filter: var(--eye-candy);
   pointer-events: none;
 }
@@ -140,20 +140,36 @@ div.sphere {
   opacity: 0;
 }
 
+// Reveal animation — content scrolls down as if hidden underneath
+.reveal-container {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.4s ease-out;
+
+  &.revealed {
+    grid-template-rows: 1fr;
+  }
+}
+
+.reveal-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
 // Messages
 .message-error {
   padding: 1rem;
+  border-radius: var(--border-radius1);
   margin-bottom: 1rem;
   background-color: var(--error-bg);
-  border-radius: var(--border-radius1);
   color: var(--error-text);
 }
 
 .message-info {
   padding: 1rem;
+  border-radius: var(--border-radius1);
   margin-bottom: 1rem;
   background-color: var(--info-bg);
-  border-radius: var(--border-radius1);
   color: var(--info-text);
 }
 
@@ -164,8 +180,8 @@ div.drag-target {
 }
 
 .drag-over {
-  animation: drag-over-pulse 1.5s ease-in-out infinite;
   border-radius: 0.75rem;
+  animation: drag-over-pulse 1.5s ease-in-out infinite;
   outline: 2px dashed var(--bs-primary);
   outline-offset: -2px;
 }
@@ -193,15 +209,15 @@ div.drag-target {
 .highlight-box {
   padding: 0.5rem;
   border: 1px solid var(--border-color);
-  background-color: var(--surface3);
   border-radius: var(--border-radius1);
+  background-color: var(--surface3);
 }
 
 .notice-big {
   padding: 2rem;
+  border-radius: var(--border-radius1);
   margin: 2rem 0;
   background-color: var(--surface2);
-  border-radius: var(--border-radius1);
   color: var(--text1);
   font-size: 1.5rem;
   font-weight: 600;
@@ -214,8 +230,8 @@ div.drag-target {
   height: 2.5rem;
   align-items: center;
   justify-content: center;
-  background-color: var(--surface2);
   border-radius: 50%;
+  background-color: var(--surface2);
   color: var(--text1);
 }
 
@@ -378,8 +394,8 @@ hr.divider {
   right: 0.2em;
   padding: 0 0.5em;
   border: none;
-  background: none;
   border-radius: 0.5em;
+  background: none;
   color: #cfacd9;
   font-size: 0.8em;
   opacity: 0;

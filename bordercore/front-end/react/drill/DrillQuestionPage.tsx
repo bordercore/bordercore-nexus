@@ -622,8 +622,8 @@ export function DrillQuestionPage({
                 </div>
 
                 {/* Answer section - uses dangerouslySetInnerHTML for markdown */}
-                {mode === "answer" && (
-                  <div className="fade-in">
+                <div className={`reveal-container${mode === "answer" ? " revealed" : ""}`}>
+                  <div className="reveal-inner">
                     <hr className="divider mt-3" />
                     <h3
                       className="drill-text table-colors markdown"
@@ -674,7 +674,7 @@ export function DrillQuestionPage({
                       />
                     </div>
                   </div>
-                )}
+                </div>
               </div>
             </div>
 
