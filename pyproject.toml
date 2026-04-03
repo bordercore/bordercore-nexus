@@ -99,6 +99,8 @@ omit = [
   "*/env/*",
   "*/node_modules/*",
   "*aws-sam*",
+  "*/static/pdfjs/*",
+  "*/tests/pages/*",
 ]
 
 # Plugin-specific configuration (Django)
