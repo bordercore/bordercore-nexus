@@ -38,7 +38,7 @@ class Todo(ElasticsearchMixin, TimeStampedModel):
     uuid: models.UUIDField = models.UUIDField(default=uuid.uuid4, editable=False)
     name = models.TextField()
     note = models.TextField(null=True, blank=True)
-    url = models.URLField(max_length=1000, null=True, blank=True)
+    url = models.URLField(max_length=1000, null=True, blank=True, assume_scheme="https")
     user = models.ForeignKey(User, on_delete=models.PROTECT)
     tags = models.ManyToManyField(Tag)
     data = JSONField(null=True, blank=True, help_text="Arbitrary JSON metadata attached to this todo")
