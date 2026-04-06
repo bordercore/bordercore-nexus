@@ -29,5 +29,6 @@
         data-filter-priority="{{ filter.todo_filter_priority|default:'' }}"
         data-filter-time="{{ filter.todo_filter_time|default:'' }}"
         data-uuid="{{ uuid|default:'' }}"
+        data-view-type="{{ request.session.todo_view_type|default:'normal' }}"
     ></div>
 {% endblock %}

@@ -1,19 +1,22 @@
 import React, { useState, useCallback, useMemo, useRef, useLayoutEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faBars,
+  faGripVertical,
   faLink,
-  faStickyNote,
   faArrowUp,
   faPencilAlt,
   faTrashAlt,
+  faCalendarAlt,
+  faTag,
+  faExclamationCircle,
 } from "@fortawesome/free-solid-svg-icons";
-import MarkdownIt from "markdown-it";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { Todo, SortState } from "./types";
+import type { Todo, SortState, ViewType } from "./types";
+import { getPriorityClass } from "./types";
 import DropDownMenu from "../common/DropDownMenu";
 import { tagStyle } from "../utils/tagColors";
+import MarkdownIt from "markdown-it";
 
 const markdown = MarkdownIt({
   html: true,
@@ -28,11 +31,11 @@ interface TodoTableProps {
   defaultSort: SortState;
   isSortable: boolean;
   showTags: boolean;
+  viewType: ViewType;
   onSort: (field: string, direction: "asc" | "desc") => void;
   onMoveToTop: (todo: Todo) => void;
   onEdit: (todo: Todo) => void;
   onDelete: (todo: Todo) => void;
-  activeTodo?: Todo | null;
 }
 
 function getFormattedDate(dateString: string): string {
@@ -44,16 +47,31 @@ function getFormattedDate(dateString: string): string {
   });
 }
 
+function getDueDateLabel(dueDateString: string): { label: string; isOverdue: boolean } {
+  const now = new Date();
+  const due = new Date(dueDateString);
+  const diffMs = due.getTime() - now.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) return { label: "OVERDUE", isOverdue: true };
+  if (diffDays === 0) return { label: "TODAY", isOverdue: false };
+  if (diffDays === 1) return { label: "Tomorrow", isOverdue: false };
+  return {
+    label: due.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+    isOverdue: false,
+  };
+}
+
 export function TodoTable({
   items,
   defaultSort,
   isSortable,
   showTags,
+  viewType,
   onSort,
   onMoveToTop,
   onEdit,
   onDelete,
-  activeTodo,
 }: TodoTableProps) {
   const [sortField, setSortField] = useState<SortField>(defaultSort.field as SortField);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">(defaultSort.direction);
@@ -118,95 +136,82 @@ export function TodoTable({
 
   const renderSortIcon = (field: SortField) => {
     if (sortField !== field) return null;
-    return sortDirection === "asc" ? " ↑" : " ↓";
+    return sortDirection === "asc" ? " \u2191" : " \u2193";
   };
 
   const canDrag = isSortable && sortField === "sort_order" && sortDirection === "asc";
 
-  const renderNoteTooltip = (todo: Todo) => {
-    return markdown.render(todo.note);
-  };
+  const sortOptions: { field: SortField; label: string }[] = [
+    { field: "sort_order", label: "Manual" },
+    { field: "name", label: "Name" },
+    { field: "priority", label: "Priority" },
+    { field: "created_unixtime", label: "Date" },
+  ];
 
   if (items.length === 0) {
-    return <div className="text-center p-3">No tasks found</div>;
+    return <div className="todo-empty-state">No tasks found</div>;
   }
 
   return (
-    <div className="data-grid-container todo-grid-container">
-      <div className="data-grid todo-grid" role="table">
-        <div className="data-grid-header todo-grid-header" role="row">
-          <div
-            role="columnheader"
-            className="todo-col-manual cursor-pointer"
-            onClick={() => handleSort("sort_order")}
+    <>
+      <div className="todo-sort-bar">
+        <span className="todo-sort-label">Sort:</span>
+        {sortOptions.map(opt => (
+          <button
+            key={opt.field}
+            className={`todo-sort-btn ${sortField === opt.field ? "active" : ""}`}
+            data-sort-field={opt.field}
+            onClick={() => handleSort(opt.field)}
           >
-            Manual{renderSortIcon("sort_order")}
-          </div>
-          <div
-            role="columnheader"
-            className="todo-col-name cursor-pointer"
-            onClick={() => handleSort("name")}
-          >
-            Name{renderSortIcon("name")}
-          </div>
-          <div
-            role="columnheader"
-            className="todo-col-priority cursor-pointer"
-            onClick={() => handleSort("priority")}
-          >
-            Priority{renderSortIcon("priority")}
-          </div>
-          <div
-            role="columnheader"
-            className="todo-col-date cursor-pointer"
-            onClick={() => handleSort("created_unixtime")}
-          >
-            Date{renderSortIcon("created_unixtime")}
-          </div>
-          <div role="columnheader" className="todo-col-actions"></div>
-        </div>
-        <div className="data-grid-body todo-grid-body" role="rowgroup">
-          {sortedItems.map((todo, index) => (
-            <SortableRow
-              key={todo.uuid}
-              todo={todo}
-              index={index}
-              canDrag={canDrag}
-              isSortable={isSortable}
-              showTags={showTags}
-              onMoveToTop={onMoveToTop}
-              onEdit={onEdit}
-              onDelete={onDelete}
-            />
-          ))}
-        </div>
+            {opt.label}
+            {renderSortIcon(opt.field)}
+          </button>
+        ))}
       </div>
-    </div>
+      <div className={`todo-cards ${viewType === "compact" ? "compact" : ""}`} role="list">
+        {sortedItems.map(todo => (
+          <SortableCard
+            key={todo.uuid}
+            todo={todo}
+            canDrag={canDrag}
+            isSortable={isSortable}
+            showTags={showTags}
+            viewType={viewType}
+            onMoveToTop={onMoveToTop}
+            onEdit={onEdit}
+            onDelete={onDelete}
+          />
+        ))}
+      </div>
+    </>
   );
 }
 
 export default TodoTable;
 
-interface SortableRowProps {
+// ---------------------------------------------------------------------------
+
+interface SortableCardProps {
   todo: Todo;
-  index: number;
   canDrag: boolean;
   isSortable: boolean;
   showTags: boolean;
+  viewType: ViewType;
   onMoveToTop: (todo: Todo) => void;
   onEdit: (todo: Todo) => void;
   onDelete: (todo: Todo) => void;
 }
 
-function SortableRow({
+function SortableCard({
   todo,
   canDrag,
   isSortable,
   showTags,
+  viewType,
   onMoveToTop,
   onEdit,
   onDelete,
-}: SortableRowProps) {
+}: SortableCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: todo.uuid,
     disabled: !canDrag,
@@ -232,60 +237,87 @@ function SortableRow({
     }
   }, [transform, transition]);
 
+  const priorityClass = getPriorityClass(todo.priority);
+  const dueInfo = todo.due_date ? getDueDateLabel(todo.due_date) : null;
+
   return (
     <div
       ref={refCallback}
-      role="row"
-      className={`data-grid-row todo-grid-row sortable-row hover-target hover-reveal-target sortable-todo-row ${isDragging ? "dragging" : ""} ${!canDrag ? "no-drag" : ""}`}
+      role="listitem"
+      className={`todo-card todo-card--${priorityClass} sortable-row ${isDragging ? "dragging" : ""} ${viewType === "compact" ? "compact" : ""}`}
+      onClick={() => onEdit(todo)}
     >
-      <div
-        role="cell"
-        className="todo-col-manual drag-handle-cell"
-        {...(canDrag ? { ...attributes, ...listeners } : {})}
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="hover-reveal-object">
-          <FontAwesomeIcon icon={faBars} />
+      {canDrag && (
+        <div
+          className="todo-card__drag"
+          aria-label="Drag to reorder"
+          {...attributes}
+          {...listeners}
+          onClick={e => e.stopPropagation()}
+        >
+          <FontAwesomeIcon icon={faGripVertical} />
         </div>
-      </div>
-      <div role="cell" className="todo-col-name">
-        <div className="d-flex">
-          <div>
+      )}
+
+      <div className="todo-card__content">
+        <div className="todo-card__header">
+          <div className="todo-card__name">
             <span className="todo-task-name">{todo.name}</span>
             {todo.url && (
-              <span>
-                <a className="ms-1" href={todo.url} target="_blank" rel="noopener noreferrer">
-                  <FontAwesomeIcon icon={faLink} />
-                </a>
-              </span>
+              <a
+                href={todo.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
+              >
+                <FontAwesomeIcon icon={faLink} />
+              </a>
             )}
+          </div>
+          <span className={`todo-card__badge todo-card__badge--${priorityClass}`}>
+            <span className="badge-dot" />
+            {todo.priority_name}
+          </span>
+        </div>
+
+        {viewType !== "compact" && todo.note && (
+          <div
+            className="todo-card__note"
+            dangerouslySetInnerHTML={{ __html: markdown.render(todo.note) }}
+          />
+        )}
+
+        {viewType === "compact" ? (
+          <span className="todo-card__compact-date">{getFormattedDate(todo.created)}</span>
+        ) : (
+          <div className="todo-card__meta">
             {showTags &&
               todo.tags.map(tag => (
                 <span
                   key={tag}
-                  className="tag ms-2"
+                  className="tag"
                   style={tagStyle(tag)} // must remain inline
                 >
                   {tag}
                 </span>
               ))}
-          </div>
-          <div className="ms-auto">
-            {todo.note && (
-              <span title={todo.note} data-bs-toggle="tooltip" data-bs-html="true">
-                <FontAwesomeIcon icon={faStickyNote} className="glow text-primary" />
+            <span className="todo-card__meta-item">
+              <FontAwesomeIcon icon={faCalendarAlt} />
+              {getFormattedDate(todo.created)}
+            </span>
+            {dueInfo && (
+              <span
+                className={`todo-card__meta-item ${dueInfo.isOverdue ? "todo-card__meta-item--overdue" : ""}`}
+              >
+                <FontAwesomeIcon icon={faExclamationCircle} />
+                {dueInfo.label}
               </span>
             )}
           </div>
-        </div>
+        )}
       </div>
-      <div role="cell" className="todo-col-priority">
-        {todo.priority_name}
-      </div>
-      <div role="cell" className="todo-col-date">
-        {getFormattedDate(todo.created)}
-      </div>
-      <div role="cell" className="todo-col-actions">
+
+      <div className="todo-card__actions" onClick={e => e.stopPropagation()}>
         <DropDownMenu
           dropdownSlot={
             <ul className="dropdown-menu-list">

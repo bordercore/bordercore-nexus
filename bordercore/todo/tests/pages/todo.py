@@ -9,10 +9,10 @@ except ModuleNotFoundError:
 class TodoPage:
 
     TITLE = (By.TAG_NAME, "title")
-    TODO_ELEMENTS = (By.CSS_SELECTOR, "div.todo-grid-body div.todo-grid-row")
-    FIRST_TASK = (By.CSS_SELECTOR, "div.todo-grid-row .todo-task-name")
-    NO_TASKS = (By.CSS_SELECTOR, "div#react-root .text-center.p-3")
-    PRIORITY_COLUMN = (By.CSS_SELECTOR, "div.todo-grid-header div.todo-col-priority")
+    TODO_ELEMENTS = (By.CSS_SELECTOR, "div.todo-cards div.todo-card")
+    FIRST_TASK = (By.CSS_SELECTOR, "div.todo-card .todo-task-name")
+    NO_TASKS = (By.CSS_SELECTOR, "div#react-root .todo-empty-state")
+    PRIORITY_SORT = (By.CSS_SELECTOR, "button.todo-sort-btn[data-sort-field='priority']")
     LOW_PRIORITY_FILTER = (By.CSS_SELECTOR, "div[data-priority='3']")
 
     def __init__(self, browser):
@@ -54,8 +54,8 @@ class TodoPage:
 
     def sort_by_priority(self):
 
-        priority_column = self.browser.find_element(*self.PRIORITY_COLUMN)
-        priority_column.click()
+        priority_button = self.browser.find_element(*self.PRIORITY_SORT)
+        priority_button.click()
 
         todo_element = self.browser.find_elements(*self.FIRST_TASK)
         return todo_element[0].text

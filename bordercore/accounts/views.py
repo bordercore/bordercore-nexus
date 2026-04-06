@@ -323,6 +323,7 @@ ALLOWED_SESSION_KEYS = frozenset({
     "search_tag_detail_current_tab",
     "show_sidebar",
     "todo_sort",
+    "todo_view_type",
     "top_search_filter",
 })
 

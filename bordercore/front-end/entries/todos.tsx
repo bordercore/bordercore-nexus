@@ -1,7 +1,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import TodoListPage from "../react/todo/TodoListPage";
-import type { Tag, SortState } from "../react/todo/types";
+import type { Tag, SortState, ViewType } from "../react/todo/types";
 
 const container = document.getElementById("react-root");
 if (container) {
@@ -24,6 +24,7 @@ if (container) {
   const initialPriority = container.getAttribute("data-filter-priority") || "";
   const initialTime = container.getAttribute("data-filter-time") || "";
   const initialUuid = container.getAttribute("data-uuid") || "";
+  const initialViewType = (container.getAttribute("data-view-type") || "normal") as ViewType;
 
   let priorityList: [number, string][] = [];
   let tags: Tag[] = [];
@@ -67,6 +68,7 @@ if (container) {
         }}
         defaultSort={defaultSort}
         initialUuid={initialUuid || undefined}
+        initialViewType={initialViewType}
       />
     );
   } else {

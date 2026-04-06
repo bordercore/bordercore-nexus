@@ -4,9 +4,11 @@ import {
   faBars,
   faTimes,
   faPlus,
-  faStickyNote,
   faLink,
-  faEllipsisV,
+  faGripVertical,
+  faCalendarAlt,
+  faTag,
+  faList,
 } from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
 import {
@@ -26,12 +28,29 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import type { Todo, Tag, PriorityOption, TimeOption, SortState, TodoListResponse } from "./types";
+import type {
+  Todo,
+  Tag,
+  PriorityOption,
+  TimeOption,
+  SortState,
+  TodoListResponse,
+  ViewType,
+} from "./types";
+import { getPriorityClass } from "./types";
 import TodoFiltersSidebar from "./TodoFiltersSidebar";
 import TodoTable from "./TodoTable";
 import { TodoEditor, TodoEditorHandle } from "./TodoEditor";
 import DropDownMenu from "../common/DropDownMenu";
 import { doPost, doDelete, EventBus } from "../utils/reactUtils";
+import { tagStyle } from "../utils/tagColors";
+import MarkdownIt from "markdown-it";
+
+const markdown = MarkdownIt({
+  html: true,
+  linkify: true,
+  typographer: true,
+});
 
 interface TodoListPageProps {
   getTasksUrl: string;
@@ -50,6 +69,7 @@ interface TodoListPageProps {
   };
   defaultSort: SortState;
   initialUuid?: string;
+  initialViewType: ViewType;
 }
 
 export function TodoListPage({
@@ -65,6 +85,7 @@ export function TodoListPage({
   initialFilters,
   defaultSort,
   initialUuid,
+  initialViewType,
 }: TodoListPageProps) {
   const [items, setItems] = useState<Todo[]>([]);
   const [filterTag, setFilterTag] = useState(initialFilters.tag);
@@ -76,6 +97,7 @@ export function TodoListPage({
   const [priorityOptions, setPriorityOptions] = useState<PriorityOption[]>([]);
   const [timeOptions, setTimeOptions] = useState<TimeOption[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [viewType, setViewType] = useState<ViewType>(initialViewType);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -97,7 +119,7 @@ export function TodoListPage({
     if (currentSearchFilter) {
       return (
         <>
-          Results for "<span className="filter-value">{currentSearchFilter}</span>"
+          Results for &ldquo;<span className="filter-value">{currentSearchFilter}</span>&rdquo;
         </>
       );
     }
@@ -130,7 +152,7 @@ export function TodoListPage({
       }
     }
     if (parts.length === 0) {
-      return "All";
+      return "All Tasks";
     }
     return parts.reduce(
       (prev, curr, i) =>
@@ -386,6 +408,14 @@ export function TodoListPage({
     }
   }, [filterTag, filterPriority]);
 
+  const switchViewType = useCallback(
+    (type: ViewType) => {
+      setViewType(type);
+      doPost(storeInSessionUrl, { todo_view_type: type }, () => {});
+    },
+    [storeInSessionUrl]
+  );
+
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -414,15 +444,24 @@ export function TodoListPage({
         onClickTag={handleTagClick}
         onClickPriority={handlePriorityClick}
         onClickTime={handleTimeClick}
+        onCreateTodo={handleCreateTodo}
       />
 
       <div className="col-lg-9">
         <div className="card-grid ms-gutter">
-          <div className="d-flex justify-content-between mb-2">
-            {/* Filters button for mobile */}
+          {/* Page header */}
+          <div className="todo-page-header">
+            <h1 className="todo-page-title">{title}</h1>
+            <span className="todo-task-count">
+              {items.length} {items.length === 1 ? "task" : "tasks"}
+            </span>
+          </div>
+
+          {/* Toolbar: mobile filter toggle, search, new button */}
+          <div className="todo-toolbar">
             <button
               type="button"
-              className="btn btn-primary todo-filters-drawer-toggle d-lg-none me-2"
+              className="btn btn-primary todo-filters-drawer-toggle d-lg-none"
               onClick={toggleDrawer}
               aria-label="Toggle Filters"
             >
@@ -457,26 +496,27 @@ export function TodoListPage({
               </div>
             </form>
 
-            <div className="card-title ms-3 me-auto">{title}</div>
-
-            <div className="me-2">
-              <DropDownMenu
-                dropdownSlot={
-                  <ul className="dropdown-menu-list">
-                    <li>
-                      <button className="dropdown-menu-item" onClick={handleCreateTodo}>
-                        <span className="dropdown-menu-icon">
-                          <FontAwesomeIcon icon={faPlus} />
-                        </span>
-                        <span className="dropdown-menu-text">New Todo</span>
-                      </button>
-                    </li>
-                  </ul>
-                }
-              />
+            <div className="btn-group ms-3" role="group" aria-label="List View">
+              <button
+                type="button"
+                className={`btn btn-primary ${viewType === "normal" ? "active" : ""}`}
+                onClick={() => switchViewType("normal")}
+                title="Normal view"
+              >
+                <FontAwesomeIcon icon={faList} />
+              </button>
+              <button
+                type="button"
+                className={`btn btn-primary ${viewType === "compact" ? "active" : ""}`}
+                onClick={() => switchViewType("compact")}
+                title="Compact view"
+              >
+                <FontAwesomeIcon icon={faBars} />
+              </button>
             </div>
           </div>
 
+          {/* Card list with drag-and-drop */}
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
@@ -492,65 +532,77 @@ export function TodoListPage({
                 defaultSort={defaultSort}
                 isSortable={isSortable}
                 showTags={filterTag === ""}
+                viewType={viewType}
                 onSort={handleSort}
                 onMoveToTop={handleMoveToTop}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
-                activeTodo={activeTodo}
               />
             </SortableContext>
             <DragOverlay>
               {activeTodo ? (
-                <div className="data-grid-row todo-grid-row data-table-drag-overlay">
-                  <div role="cell" className="todo-col-manual drag-handle-cell">
-                    <div className="hover-reveal-object">
-                      <FontAwesomeIcon icon={faBars} />
-                    </div>
+                <div
+                  className={`todo-card todo-card--${getPriorityClass(activeTodo.priority)} todo-card-drag-overlay ${viewType === "compact" ? "compact" : ""}`}
+                >
+                  <div className="todo-card__drag">
+                    <FontAwesomeIcon icon={faGripVertical} />
                   </div>
-                  <div role="cell" className="todo-col-name">
-                    <div className="d-flex">
-                      <div>
+                  <div className="todo-card__content">
+                    <div className="todo-card__header">
+                      <div className="todo-card__name">
                         {activeTodo.name}
                         {activeTodo.url && (
-                          <span>
-                            <a
-                              className="ms-1"
-                              href={activeTodo.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                          <a href={activeTodo.url} target="_blank" rel="noopener noreferrer">
+                            <FontAwesomeIcon icon={faLink} />
+                          </a>
+                        )}
+                      </div>
+                      <span
+                        className={`todo-card__badge todo-card__badge--${getPriorityClass(activeTodo.priority)}`}
+                      >
+                        <span className="badge-dot" />
+                        {activeTodo.priority_name}
+                      </span>
+                    </div>
+                    {viewType !== "compact" && activeTodo.note && (
+                      <div
+                        className="todo-card__note"
+                        dangerouslySetInnerHTML={{ __html: markdown.render(activeTodo.note) }}
+                      />
+                    )}
+                    {viewType === "compact" ? (
+                      <span className="todo-card__compact-date">
+                        {new Date(activeTodo.created).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </span>
+                    ) : (
+                      <div className="todo-card__meta">
+                        {filterTag === "" &&
+                          activeTodo.tags.map(tag => (
+                            <span
+                              key={tag}
+                              className="tag"
+                              style={tagStyle(tag)} // must remain inline
                             >
-                              <FontAwesomeIcon icon={faLink} />
-                            </a>
-                          </span>
-                        )}
+                              {tag}
+                            </span>
+                          ))}
+                        <span className="todo-card__meta-item">
+                          <FontAwesomeIcon icon={faCalendarAlt} />
+                          {new Date(activeTodo.created).toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </span>
                       </div>
-                      <div className="ms-auto">
-                        {activeTodo.note && (
-                          <span>
-                            <FontAwesomeIcon icon={faStickyNote} className="glow text-primary" />
-                          </span>
-                        )}
-                      </div>
-                    </div>
+                    )}
                   </div>
-                  <div role="cell" className="todo-col-priority">
-                    {activeTodo.priority_name}
-                  </div>
-                  <div role="cell" className="todo-col-date">
-                    {new Date(activeTodo.created).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                    })}
-                  </div>
-                  <div role="cell" className="todo-col-actions">
-                    <div className="dropdown-wrapper">
-                      <div className="dropdown-trigger dropdownmenu">
-                        <div className="d-flex align-items-center justify-content-center h-100 w-100">
-                          <FontAwesomeIcon icon={faEllipsisV} />
-                        </div>
-                      </div>
-                    </div>
+                  <div className="todo-card__actions">
+                    <DropDownMenu dropdownSlot={<></>} />
                   </div>
                 </div>
               ) : null}
