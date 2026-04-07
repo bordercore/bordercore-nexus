@@ -65,7 +65,7 @@
   padding: 0.6rem 1rem;
   border: none;
   border-radius: var(--border-radius1);
-  background-color: var(--text3);
+  background-color: var(--text4);
   color: var(--surface1);
   cursor: pointer;
   font-size: 0.85rem;
@@ -122,46 +122,67 @@
 }
 
 // -----------------------------------------------------------------------------
-// Sort controls
+// Table actions row (view toggle + sort dropdown), right-aligned above cards
 // -----------------------------------------------------------------------------
 
-.todo-sort-bar {
+.todo-table-actions {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  justify-content: space-between;
+  gap: 1rem;
   margin-bottom: 1rem;
+}
+
+.todo-table-actions__left {
+  display: flex;
+  align-items: center;
+}
+
+.todo-table-actions__right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-left: auto;
+}
+
+.todo-search-form {
+  margin: 0;
+}
+
+.todo-sort-dropdown {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   color: var(--text4);
   font-size: 0.75rem;
 }
 
 .todo-sort-label {
-  margin-right: 0.25rem;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
-.todo-sort-btn {
-  padding: 0.2rem 0.5rem;
-  border: none;
+.todo-sort-current {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.5rem;
   border-radius: var(--border-radius1);
-  background: transparent;
-  color: var(--text4);
+  color: var(--text1);
   cursor: pointer;
-  font-size: 0.75rem;
-  transition: all 0.15s ease;
+  font-size: 0.85rem;
   white-space: nowrap;
+  transition: background-color 0.15s ease;
 
   &:hover {
     background-color: var(--hover-bg);
-    color: var(--text1);
   }
+}
 
-  &.active {
-    background-color: var(--form-bg);
-    color: var(--text1);
-    font-weight: 600;
-  }
+.todo-sort-caret {
+  font-size: 0.65rem;
+  opacity: 0.7;
 }
 
 // -----------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef, useLayoutEffect } from "react";
+import React, { ReactNode, useState, useCallback, useMemo, useRef, useLayoutEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faGripVertical,
@@ -9,6 +9,9 @@ import {
   faCalendarAlt,
   faTag,
   faExclamationCircle,
+  faList,
+  faBars,
+  faChevronDown,
 } from "@fortawesome/free-solid-svg-icons";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -32,7 +35,9 @@ interface TodoTableProps {
   isSortable: boolean;
   showTags: boolean;
   viewType: ViewType;
+  leftSlot?: ReactNode;
   onSort: (field: string, direction: "asc" | "desc") => void;
+  onViewTypeChange: (type: ViewType) => void;
   onMoveToTop: (todo: Todo) => void;
   onEdit: (todo: Todo) => void;
   onDelete: (todo: Todo) => void;
@@ -68,7 +73,9 @@ export function TodoTable({
   isSortable,
   showTags,
   viewType,
+  leftSlot,
   onSort,
+  onViewTypeChange,
   onMoveToTop,
   onEdit,
   onDelete,
@@ -148,41 +155,81 @@ export function TodoTable({
     { field: "created_unixtime", label: "Date" },
   ];
 
-  if (items.length === 0) {
-    return <div className="todo-empty-state">No tasks found</div>;
-  }
+  const currentSortLabel = sortOptions.find(opt => opt.field === sortField)?.label ?? "Manual";
 
   return (
     <>
-      <div className="todo-sort-bar">
-        <span className="todo-sort-label">Sort:</span>
-        {sortOptions.map(opt => (
-          <button
-            key={opt.field}
-            className={`todo-sort-btn ${sortField === opt.field ? "active" : ""}`}
-            data-sort-field={opt.field}
-            onClick={() => handleSort(opt.field)}
-          >
-            {opt.label}
-            {renderSortIcon(opt.field)}
-          </button>
-        ))}
+      <div className="todo-table-actions">
+        <div className="todo-table-actions__left">{leftSlot}</div>
+        <div className="todo-table-actions__right">
+          <div className="btn-group" role="group" aria-label="List View">
+            <button
+              type="button"
+              className={`btn btn-primary ${viewType === "normal" ? "active" : ""}`}
+              onClick={() => onViewTypeChange("normal")}
+              title="Normal view"
+            >
+              <FontAwesomeIcon icon={faList} />
+            </button>
+            <button
+              type="button"
+              className={`btn btn-primary ${viewType === "compact" ? "active" : ""}`}
+              onClick={() => onViewTypeChange("compact")}
+              title="Compact view"
+            >
+              <FontAwesomeIcon icon={faBars} />
+            </button>
+          </div>
+
+          <div className="todo-sort-dropdown">
+            <span className="todo-sort-label">Sort by:</span>
+            <DropDownMenu
+              direction="dropend"
+              showTarget={false}
+              iconSlot={
+                <span className="todo-sort-current">
+                  {currentSortLabel}
+                  {renderSortIcon(sortField)}
+                  <FontAwesomeIcon icon={faChevronDown} className="todo-sort-caret" />
+                </span>
+              }
+              dropdownSlot={
+                <ul className="dropdown-menu-list">
+                  {sortOptions.map(opt => (
+                    <li key={opt.field}>
+                      <button
+                        className={`dropdown-menu-item ${sortField === opt.field ? "active" : ""}`}
+                        onClick={() => handleSort(opt.field)}
+                      >
+                        <span className="dropdown-menu-text">{opt.label}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              }
+            />
+          </div>
+        </div>
       </div>
-      <div className={`todo-cards ${viewType === "compact" ? "compact" : ""}`} role="list">
-        {sortedItems.map(todo => (
-          <SortableCard
-            key={todo.uuid}
-            todo={todo}
-            canDrag={canDrag}
-            isSortable={isSortable}
-            showTags={showTags}
-            viewType={viewType}
-            onMoveToTop={onMoveToTop}
-            onEdit={onEdit}
-            onDelete={onDelete}
-          />
-        ))}
-      </div>
+      {items.length === 0 ? (
+        <div className="todo-empty-state">No tasks found</div>
+      ) : (
+        <div className={`todo-cards ${viewType === "compact" ? "compact" : ""}`} role="list">
+          {sortedItems.map(todo => (
+            <SortableCard
+              key={todo.uuid}
+              todo={todo}
+              canDrag={canDrag}
+              isSortable={isSortable}
+              showTags={showTags}
+              viewType={viewType}
+              onMoveToTop={onMoveToTop}
+              onEdit={onEdit}
+              onDelete={onDelete}
+            />
+          ))}
+        </div>
+      )}
     </>
   );
 }

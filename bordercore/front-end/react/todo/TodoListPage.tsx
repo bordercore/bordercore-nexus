@@ -8,7 +8,6 @@ import {
   faGripVertical,
   faCalendarAlt,
   faTag,
-  faList,
 } from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
 import {
@@ -457,63 +456,17 @@ export function TodoListPage({
             </span>
           </div>
 
-          {/* Toolbar: mobile filter toggle, search, new button */}
-          <div className="todo-toolbar">
+          {/* Mobile-only filter drawer toggle */}
+          <div className="todo-toolbar d-lg-none">
             <button
               type="button"
-              className="btn btn-primary todo-filters-drawer-toggle d-lg-none"
+              className="btn btn-primary todo-filters-drawer-toggle"
               onClick={toggleDrawer}
               aria-label="Toggle Filters"
             >
               <FontAwesomeIcon icon={faBars} className="me-2" />
               Filters
             </button>
-
-            <form className="form-inline" role="form" onSubmit={e => e.preventDefault()}>
-              <div className="position-relative">
-                <input
-                  type="text"
-                  value={filterSearch}
-                  onChange={e => setFilterSearch(e.target.value)}
-                  className="form-control"
-                  placeholder="Search"
-                  onKeyDown={handleSearchKeyDown}
-                />
-                {currentSearchFilter && (
-                  <div className="search-input-cancel">
-                    <a
-                      className="ms-1"
-                      href="#"
-                      onClick={e => {
-                        e.preventDefault();
-                        removeSearchFilter();
-                      }}
-                    >
-                      <FontAwesomeIcon icon={faTimes} className="text-primary" />
-                    </a>
-                  </div>
-                )}
-              </div>
-            </form>
-
-            <div className="btn-group ms-3" role="group" aria-label="List View">
-              <button
-                type="button"
-                className={`btn btn-primary ${viewType === "normal" ? "active" : ""}`}
-                onClick={() => switchViewType("normal")}
-                title="Normal view"
-              >
-                <FontAwesomeIcon icon={faList} />
-              </button>
-              <button
-                type="button"
-                className={`btn btn-primary ${viewType === "compact" ? "active" : ""}`}
-                onClick={() => switchViewType("compact")}
-                title="Compact view"
-              >
-                <FontAwesomeIcon icon={faBars} />
-              </button>
-            </div>
           </div>
 
           {/* Card list with drag-and-drop */}
@@ -533,7 +486,36 @@ export function TodoListPage({
                 isSortable={isSortable}
                 showTags={filterTag === ""}
                 viewType={viewType}
+                leftSlot={
+                  <form className="todo-search-form" role="form" onSubmit={e => e.preventDefault()}>
+                    <div className="position-relative">
+                      <input
+                        type="text"
+                        value={filterSearch}
+                        onChange={e => setFilterSearch(e.target.value)}
+                        className="form-control"
+                        placeholder="Search"
+                        onKeyDown={handleSearchKeyDown}
+                      />
+                      {currentSearchFilter && (
+                        <div className="search-input-cancel">
+                          <a
+                            className="ms-1"
+                            href="#"
+                            onClick={e => {
+                              e.preventDefault();
+                              removeSearchFilter();
+                            }}
+                          >
+                            <FontAwesomeIcon icon={faTimes} className="text-primary" />
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  </form>
+                }
                 onSort={handleSort}
+                onViewTypeChange={switchViewType}
                 onMoveToTop={handleMoveToTop}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
