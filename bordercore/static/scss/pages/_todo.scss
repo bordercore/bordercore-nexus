@@ -258,6 +258,21 @@
   opacity: 1;
 }
 
+// Disabled state: preserve layout space but never reveal the icon
+.todo-card__drag--disabled {
+  cursor: default;
+  pointer-events: none;
+
+  &:active {
+    cursor: default;
+  }
+}
+
+.todo-card:hover .todo-card__drag--disabled,
+.todo-card:focus-within .todo-card__drag--disabled {
+  opacity: 0;
+}
+
 // Card content area
 .todo-card__content {
   flex: 1;
@@ -409,6 +424,10 @@
   .todo-card__drag {
     opacity: 1;
   }
+
+  .todo-card__drag--disabled {
+    opacity: 0;
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -489,7 +508,9 @@
 }
 
 .todo-card.compact {
-  padding: 0.6rem 1rem;
+  // Match normal view's horizontal padding so the drag handle column
+  // stays aligned across views — only vertical padding tightens.
+  padding: 0.6rem 1.5rem;
 
   .todo-card__note,
   .todo-card__meta {

@@ -12,7 +12,13 @@ class TodoPage:
     TODO_ELEMENTS = (By.CSS_SELECTOR, "div.todo-cards div.todo-card")
     FIRST_TASK = (By.CSS_SELECTOR, "div.todo-card .todo-task-name")
     NO_TASKS = (By.CSS_SELECTOR, "div#react-root .todo-empty-state")
-    PRIORITY_SORT = (By.CSS_SELECTOR, "button.todo-sort-btn[data-sort-field='priority']")
+    SORT_DROPDOWN_TRIGGER = (By.CSS_SELECTOR, "div.todo-sort-dropdown div.dropdown-trigger")
+    PRIORITY_SORT_OPTION = (
+        By.XPATH,
+        "//div[contains(@class,'popover-floating')]"
+        "//button[contains(@class,'dropdown-menu-item')]"
+        "[.//span[contains(@class,'dropdown-menu-text') and normalize-space()='Priority']]",
+    )
     LOW_PRIORITY_FILTER = (By.CSS_SELECTOR, "div[data-priority='3']")
 
     def __init__(self, browser):
@@ -54,8 +60,19 @@ class TodoPage:
 
     def sort_by_priority(self):
 
-        priority_button = self.browser.find_element(*self.PRIORITY_SORT)
-        priority_button.click()
+        # Open the sort dropdown menu
+        sort_trigger = self.browser.find_element(*self.SORT_DROPDOWN_TRIGGER)
+        sort_trigger.click()
+
+        # Wait for the popover to mount and the transition to complete
+        time.sleep(0.5)
+
+        # Click the "Priority" option in the dropdown
+        priority_option = self.browser.find_element(*self.PRIORITY_SORT_OPTION)
+        priority_option.click()
+
+        # Wait for the re-sort to apply
+        time.sleep(0.5)
 
         todo_element = self.browser.find_elements(*self.FIRST_TASK)
         return todo_element[0].text

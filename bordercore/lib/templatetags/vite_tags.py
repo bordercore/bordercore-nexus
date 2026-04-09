@@ -19,6 +19,8 @@ register = template.Library()
 logger = logging.getLogger(__name__)
 _MANIFEST_CACHE: dict[str, dict[str, Any]] | None = None
 _MANIFEST_MTIME: float = 0.0
+_VITE_PORT = os.environ.get("VITE_PORT", "5174")
+_VITE_DEV_SERVER = f"http://localhost:{_VITE_PORT}"
 
 def _manifest_path() -> str | None:
     """Locate the Vite manifest.json file on disk.
@@ -127,7 +129,7 @@ def vite_asset(entry_name: str) -> SafeString | str:
       - Legacy: entry_name matches the key directly (e.g. "dist/js/javascript")
       - Vite 5+: entry_name matches the "name" field or manifest key (src path)
 
-    In DEBUG mode, serves from Vite dev server (http://localhost:5173).
+    In DEBUG mode, serves from the Vite dev server.
     In production, serves from built manifest.json.
     """
     parts: list[str] = []
@@ -139,21 +141,21 @@ def vite_asset(entry_name: str) -> SafeString | str:
         source_path = _get_source_path(entry_name)
 
         # Add Vite client for HMR
-        parts.append('<script type="module" src="http://localhost:5173/@vite/client"></script>')
+        parts.append(f'<script type="module" src="{_VITE_DEV_SERVER}/@vite/client"></script>')
 
         # Add React Refresh preamble (required by @vitejs/plugin-react)
         # This must be added before any React components are loaded
         if "react" in entry_name or "react" in source_path or source_path.endswith(".tsx") or source_path.endswith(".jsx"):
-            parts.append('''<script type="module">
-  import { injectIntoGlobalHook } from "http://localhost:5173/@react-refresh"
+            parts.append(f'''<script type="module">
+  import {{ injectIntoGlobalHook }} from "{_VITE_DEV_SERVER}/@react-refresh"
   injectIntoGlobalHook(window)
-  window.$RefreshReg$ = () => {}
+  window.$RefreshReg$ = () => {{}}
   window.$RefreshSig$ = () => (type) => type
   window.__vite_plugin_react_preamble_installed__ = true
 </script>''')
 
         # Add the entry point
-        parts.append(f'<script type="module" src="http://localhost:5173/{source_path}"></script>')
+        parts.append(f'<script type="module" src="{_VITE_DEV_SERVER}/{source_path}"></script>')
 
         return mark_safe("\n".join(parts))
 

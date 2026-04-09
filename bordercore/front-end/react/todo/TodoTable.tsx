@@ -294,17 +294,16 @@ function SortableCard({
       className={`todo-card todo-card--${priorityClass} sortable-row ${isDragging ? "dragging" : ""} ${viewType === "compact" ? "compact" : ""}`}
       onClick={() => onEdit(todo)}
     >
-      {canDrag && (
-        <div
-          className="todo-card__drag"
-          aria-label="Drag to reorder"
-          {...attributes}
-          {...listeners}
-          onClick={e => e.stopPropagation()}
-        >
-          <FontAwesomeIcon icon={faGripVertical} />
-        </div>
-      )}
+      <div
+        className={`todo-card__drag${canDrag ? "" : " todo-card__drag--disabled"}`}
+        aria-label={canDrag ? "Drag to reorder" : undefined}
+        aria-hidden={canDrag ? undefined : true}
+        {...(canDrag ? attributes : {})}
+        {...(canDrag ? listeners : {})}
+        onClick={e => e.stopPropagation()}
+      >
+        <FontAwesomeIcon icon={faGripVertical} />
+      </div>
 
       <div className="todo-card__content">
         <div className="todo-card__header">

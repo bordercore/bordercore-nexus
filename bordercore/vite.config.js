@@ -4,6 +4,7 @@ const react = require("@vitejs/plugin-react");
 
 // Determine if we're in production mode
 const isProduction = process.env.NODE_ENV === "production";
+const vitePort = Number(process.env.VITE_PORT || 5174);
 
 module.exports = defineConfig({
   plugins: [
@@ -16,12 +17,12 @@ module.exports = defineConfig({
   // Root is where vite.config.js is located (bordercore directory)
   root: __dirname,
   server: {
-    port: 5173,
+    port: vitePort,
     strictPort: true,
     cors: true,
     hmr: {
       host: "localhost",
-      port: 5173,
+      port: vitePort,
     },
   },
   build: {
