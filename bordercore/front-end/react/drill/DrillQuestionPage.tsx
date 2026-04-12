@@ -12,19 +12,29 @@ import { faPython } from "@fortawesome/free-brands-svg-icons";
 import hotkeys from "hotkeys-js";
 import MarkdownIt from "markdown-it";
 import Prism from "prismjs";
-import "prismjs/components/prism-python";
-import "prismjs/components/prism-bash";
-import "prismjs/components/prism-sql";
-import "prismjs/components/prism-json";
-import "prismjs/components/prism-yaml";
-import "prismjs/components/prism-go";
-import "prismjs/components/prism-rust";
-import "prismjs/components/prism-java";
-import "prismjs/components/prism-typescript";
-import "prismjs/components/prism-c";
-import "prismjs/components/prism-cpp";
-import "prismjs/components/prism-ruby";
-import "prismjs/components/prism-markdown";
+
+// PrismJS language components are CJS modules that modify the global `Prism`
+// object at evaluation time.  Vite 6's CJS-to-ESM interop wraps the core in a
+// lazy getter, so the global isn't set when static language imports execute in
+// the same chunk.  Setting it here (module-level code runs after all static
+// imports) lets the dynamic imports below find the global.
+(globalThis as any).Prism = Prism;
+
+const prismLanguagesLoaded = Promise.all([
+  import("prismjs/components/prism-python"),
+  import("prismjs/components/prism-bash"),
+  import("prismjs/components/prism-sql"),
+  import("prismjs/components/prism-json"),
+  import("prismjs/components/prism-yaml"),
+  import("prismjs/components/prism-go"),
+  import("prismjs/components/prism-rust"),
+  import("prismjs/components/prism-java"),
+  import("prismjs/components/prism-typescript"),
+  import("prismjs/components/prism-c"),
+  import("prismjs/components/prism-cpp"),
+  import("prismjs/components/prism-ruby"),
+  import("prismjs/components/prism-markdown"),
+]);
 
 // Add copy button to code blocks after Prism highlighting
 // Based on util.js addCopyButton() - uses wrapper div because pre has
@@ -228,7 +238,7 @@ export function DrillQuestionPage({
       if (typeof (window as any).MathJax?.typeset === "function") {
         (window as any).MathJax.typeset();
       }
-      Prism.highlightAll();
+      prismLanguagesLoaded.then(() => Prism.highlightAll());
     }, 10);
   }, []);
 
@@ -315,7 +325,7 @@ export function DrillQuestionPage({
       if (typeof (window as any).MathJax?.typeset === "function") {
         (window as any).MathJax.typeset();
       }
-      Prism.highlightAll();
+      prismLanguagesLoaded.then(() => Prism.highlightAll());
     }, 10);
 
     // Set up keyboard shortcuts

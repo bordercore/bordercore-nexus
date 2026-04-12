@@ -123,8 +123,8 @@ class SummaryPage:
 
     def question_text(self):
         """Find the question text."""
-        return self.browser.find_element(*self.QUESTION).text
+        return self.find_element(*self.QUESTION).text
 
     def breadcrumb(self):
         """Find the breadcrumb text."""
-        return self.browser.find_element(*self.BREADCRUMB).text
+        return self.find_element(*self.BREADCRUMB).text

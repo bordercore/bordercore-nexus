@@ -11,6 +11,33 @@ module.exports = defineConfig({
     react({
       include: /\.(jsx|tsx)$/,
     }),
+    // PrismJS language components are CJS modules that reference the global
+    // `Prism` at evaluation time.  Vite 6's CJS-to-ESM interop wraps the
+    // core in a lazy getter so the global is never set.  This plugin patches
+    // the prismjs output chunk to export AND set the global in one step.
+    {
+      name: "prismjs-global",
+      renderChunk(code, chunk) {
+        if (chunk.name !== "prismjs") return;
+        // The chunk exports the Prism object.  Find the export and add a
+        // globalThis assignment so the global is available to language chunks
+        // that are evaluated later in the same import graph.
+        const exportMatch = code.match(/export\s*\{([^}]*)\}/);
+        if (!exportMatch) return;
+        // Find the Prism export name (the local binding)
+        const exports = exportMatch[1].split(",").map(s => s.trim());
+        const prismExport = exports.find(e =>
+          e.includes(" as P") || e.match(/^P$/)
+        );
+        if (!prismExport) return;
+        const localName = prismExport.split(" as ")[0].trim();
+        // Prepend the global assignment just before the export statement
+        return code.replace(
+          exportMatch[0],
+          `globalThis.Prism=${localName};${exportMatch[0]}`
+        );
+      },
+    },
   ],
   // Base path: use /static/vite/ for production, / for dev
   base: isProduction ? "/static/vite/" : "/",
@@ -82,24 +109,16 @@ module.exports = defineConfig({
       output: {
         entryFileNames: "[name]-[hash].js",
         assetFileNames: "[name]-[hash][extname]",
-        manualChunks: {
-          "react-select": ["react-select"],
-          "prismjs": [
-            "prismjs",
-            "prismjs/components/prism-python",
-            "prismjs/components/prism-bash",
-            "prismjs/components/prism-sql",
-            "prismjs/components/prism-json",
-            "prismjs/components/prism-yaml",
-            "prismjs/components/prism-go",
-            "prismjs/components/prism-rust",
-            "prismjs/components/prism-java",
-            "prismjs/components/prism-typescript",
-            "prismjs/components/prism-c",
-            "prismjs/components/prism-cpp",
-            "prismjs/components/prism-ruby",
-            "prismjs/components/prism-markdown",
-          ],
+        manualChunks(id) {
+          if (id.includes("prismjs/components/")) {
+            return "prism-languages";
+          }
+          if (id.includes("node_modules/prismjs")) {
+            return "prismjs";
+          }
+          if (id.includes("node_modules/react-select")) {
+            return "react-select";
+          }
         },
       },
     },
