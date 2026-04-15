@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import { Modal } from "bootstrap";
-import FeedInfo from "./FeedInfo";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import FeedList from "./FeedList";
 import FeedItemList from "./FeedItemList";
 import FeedEditorModal from "./FeedEditorModal";
@@ -122,16 +123,21 @@ export function FeedPage({
   }, [currentFeed, editFeedUrl]);
 
   return (
-    <div className="row g-0 mx-2">
-      <div className="col-lg-3 d-flex flex-column flex-grow-last pe-gutter">
-        <FeedInfo currentFeed={currentFeed} onNewFeed={handleNewFeed} />
-      </div>
-
-      <div className="col-lg-3 d-flex flex-column pe-gutter">
+    <div className="row g-0 mx-2 feed-page">
+      <div className="col-lg-4 d-flex flex-column pe-gutter">
         <div className="card">
           <div className="card-body backdrop-filter">
-            <div className="d-flex">
-              <h3>Feed List</h3>
+            <div className="d-flex align-items-center">
+              <h3 className="mb-0">Feed List</h3>
+              <button
+                type="button"
+                className="btn btn-sm btn-primary ms-auto"
+                onClick={handleNewFeed}
+                aria-label="New Feed"
+                title="New Feed"
+              >
+                <FontAwesomeIcon icon={faPlus} />
+              </button>
             </div>
             <hr />
             <FeedList
@@ -147,7 +153,7 @@ export function FeedPage({
         </div>
       </div>
 
-      <div className="col-lg-6 d-flex flex-column flex-grow-last">
+      <div className="col-lg-8 d-flex flex-column flex-grow-last">
         <FeedItemList
           currentFeed={currentFeed}
           onOpenModal={handleOpenModal}

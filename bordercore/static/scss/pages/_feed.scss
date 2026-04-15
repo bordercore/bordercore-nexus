@@ -3,8 +3,28 @@
 // =============================================================================
 // Feed list and feed item styles
 
+.feed-page .card {
+  background: linear-gradient(to right, var(--surface2), var(--surface3));
+}
+
 .feed-item {
+  border-radius: var(--border-radius1);
+
   &.selected {
     background-color: var(--selected-bg);
   }
+
+  a {
+    display: block;
+    overflow: hidden;
+    min-width: 0;
+    flex: 1 1 auto;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.feed-items-list li {
+  padding-left: 0.5rem;
+  border-radius: var(--border-radius1);
 }

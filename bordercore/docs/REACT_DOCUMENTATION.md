@@ -408,7 +408,6 @@ front-end/react/
 │   └── index.ts
 ├── feed/
 │   ├── FeedEditorModal.tsx
-│   ├── FeedInfo.tsx
 │   ├── FeedItemList.tsx
 │   ├── FeedList.tsx
 │   ├── FeedPage.tsx
