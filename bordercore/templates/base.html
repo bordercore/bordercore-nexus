@@ -123,6 +123,7 @@
                     staticUrl: "{{ STATIC_URL }}",
                     csrfToken: "{{ csrf_token }}",
                     initialSidebarCollapsed: {% if request.session.show_sidebar == "false" %}true{% else %}false{% endif %},
+                    initialSidebarOrder: {{ user.userprofile.sidebar_order_json|safe }},
                     failedTestCount: {{ failed_test_count }},
                     title: "",
                     username: "{{ user.get_username }}",
@@ -185,6 +186,7 @@
                     },
                     sidebarConfig: {
                         storeInSessionUrl: "{% url "accounts:store_in_session" %}",
+                        updateSidebarOrderUrl: "{% url "accounts:update_sidebar_order" %}",
                         getNewBookmarksCountUrl: "{% url "bookmark:get_new_bookmarks_count" 666 %}",
                         todoCount: {{ todo_count|default:0 }},
                         exerciseCount: {{ exercise_count|default:0 }},

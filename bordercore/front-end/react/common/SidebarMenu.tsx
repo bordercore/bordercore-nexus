@@ -1,5 +1,4 @@
-import React, { ReactNode } from "react";
-import { Sidebar, Menu, MenuItem, MenuItemStyles } from "react-pro-sidebar";
+import React, { ReactNode, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faHome,
@@ -17,8 +16,28 @@ import {
   faRunning,
   faClock,
   faCheckDouble,
-  faArrowsAltH,
+  faPen,
+  faCheck,
+  faChevronLeft,
+  faChevronRight,
 } from "@fortawesome/free-solid-svg-icons";
+import {
+  DndContext,
+  DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface MenuIcon {
   element: string;
@@ -33,27 +52,24 @@ interface MenuBadge {
   class: string;
 }
 
-interface MenuItemData {
+export interface MenuItemData {
   href: string;
   title: string;
   alias?: string | string[];
   icon?: MenuIcon;
   badge?: MenuBadge;
   class?: string;
-  child?: MenuItemData[];
+  color?: string;
 }
 
 interface SidebarMenuProps {
   menu: MenuItemData[];
   collapsed: boolean;
   onToggleCollapse?: (collapsed: boolean) => void;
-  onItemClick?: (event: React.MouseEvent, item: MenuItemData, node?: any) => void;
-  headerSlot?: React.ReactNode;
-  toggleIconSlot?: React.ReactNode;
-  dropdownIconSlot?: React.ReactNode;
+  onReorder?: (newOrder: string[]) => void;
+  headerSlot?: ReactNode;
 }
 
-// Map icon names to FontAwesome icons
 const iconMap: Record<string, any> = {
   home: faHome,
   search: faSearch,
@@ -72,228 +88,180 @@ const iconMap: Record<string, any> = {
   "check-double": faCheckDouble,
 };
 
-// Helper function to get the current path
-const getCurrentPath = (): string => {
-  if (typeof window !== "undefined") {
-    return window.location.pathname;
-  }
-  return "";
-};
+const getCurrentPath = (): string =>
+  typeof window !== "undefined" ? window.location.pathname : "";
 
-// Helper function to check if a path matches an item's href or alias
 const isActiveRoute = (item: MenuItemData, currentPath: string): boolean => {
   if (currentPath === item.href) {
     return true;
   }
-
-  if (item.alias) {
-    const aliases = Array.isArray(item.alias) ? item.alias : [item.alias];
-    return aliases.some(alias => {
-      // Convert wildcard pattern to regex
-      const pattern = alias.replace(/\*/g, ".*");
-      const regex = new RegExp(`^${pattern}$`);
-      return regex.test(currentPath);
-    });
+  if (!item.alias) {
+    return false;
   }
-
-  return false;
+  const aliases = Array.isArray(item.alias) ? item.alias : [item.alias];
+  return aliases.some(alias => {
+    const pattern = alias.replace(/\*/g, ".*");
+    return new RegExp(`^${pattern}$`).test(currentPath);
+  });
 };
 
-// Helper function to render icon
-const renderIcon = (icon?: MenuIcon): ReactNode => {
-  if (!icon || icon.element !== "font-awesome-icon") {
-    return null;
+interface SortableRowProps {
+  item: MenuItemData;
+  collapsed: boolean;
+  editMode: boolean;
+  active: boolean;
+}
+
+function SortableRow({ item, collapsed, editMode, active }: SortableRowProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: item.href,
+    disabled: !editMode,
+  });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    ...(item.color ? ({ "--row-color": item.color } as React.CSSProperties) : {}),
+  };
+
+  const faIcon = item.icon ? iconMap[item.icon.attributes.icon] : null;
+
+  const rowClasses = [
+    "sidebar-row",
+    active ? "is-active" : "",
+    editMode ? "is-editing" : "",
+    isDragging ? "is-dragging" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const body = (
+    <>
+      <span className="sidebar-row-icon">
+        {faIcon && <FontAwesomeIcon icon={faIcon} className={item.icon?.class} />}
+      </span>
+      {!collapsed && (
+        <>
+          <span className="sidebar-row-label">{item.title}</span>
+          {item.badge?.text ? (
+            <span className={`sidebar-row-badge ${item.badge.class || ""}`}>{item.badge.text}</span>
+          ) : null}
+        </>
+      )}
+    </>
+  );
+
+  if (editMode) {
+    return (
+      // dnd-kit transform + --row-color CSS var must remain inline
+      <li ref={setNodeRef} style={style} className={rowClasses} {...attributes} {...listeners}>
+        <div className="sidebar-row-inner">{body}</div>
+      </li>
+    );
   }
 
-  const iconName = icon.attributes.icon;
-  const faIcon = iconMap[iconName];
-  if (!faIcon) {
-    return null;
-  }
-
-  // Use the CSS classes for color (sidebar-icon-1, sidebar-icon-2, sidebar-icon-3)
-  // No inline styles - colors come from CSS
-  return <FontAwesomeIcon icon={faIcon} className={icon.class} />;
-};
+  return (
+    // dnd-kit transform + --row-color CSS var must remain inline
+    <li ref={setNodeRef} style={style} className={rowClasses}>
+      <a href={item.href} className="sidebar-row-inner" title={collapsed ? item.title : undefined}>
+        {body}
+      </a>
+    </li>
+  );
+}
 
 export function SidebarMenu({
   menu,
   collapsed,
   onToggleCollapse,
-  onItemClick,
+  onReorder,
   headerSlot,
-  toggleIconSlot,
 }: SidebarMenuProps) {
   const currentPath = getCurrentPath();
+  const [editMode, setEditMode] = useState(false);
+  const [preEditCollapsed, setPreEditCollapsed] = useState<boolean | null>(null);
 
-  const handleToggleCollapse = () => {
-    const newCollapsed = !collapsed;
-    onToggleCollapse?.(newCollapsed);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) {
+      return;
+    }
+    const oldIndex = menu.findIndex(m => m.href === active.id);
+    const newIndex = menu.findIndex(m => m.href === over.id);
+    if (oldIndex < 0 || newIndex < 0) {
+      return;
+    }
+    const next = arrayMove(menu, oldIndex, newIndex);
+    onReorder?.(next.map(m => m.href));
   };
 
-  // Custom menu item styles to match existing design
-  const menuItemStyles: MenuItemStyles = {
-    root: {
-      fontSize: "14px",
-      fontWeight: 400,
-      color: "var(--sidebar-color)",
-      "&:hover": {
-        backgroundColor: "var(--sidebar-hover-bg) !important",
-        color: "var(--sidebar-hover-color)",
-        boxShadow: "0px 0px 10px 1px rgba(115, 103, 240, 0.7)",
-        borderRadius: "5px",
-        "& .ps-menu-icon": {
-          color: "var(--sidebar-hover-color) !important",
-        },
-      },
-      "&.ps-active": {
-        backgroundColor: "var(--sidebar-active-bg)",
-        color: "var(--sidebar-active-color)",
-        boxShadow: "0px 0px 10px 1px rgba(115, 103, 240, 0.7)",
-        backgroundImage: "linear-gradient(90deg, #0000, #00000003)",
-        borderRadius: "5px",
-        "& .ps-menu-icon": {
-          color: "var(--sidebar-active-color)",
-        },
-      },
-    },
-    icon: {
-      color: "inherit",
-      "& svg": {
-        color: "inherit",
-      },
-      ...(collapsed && {
-        margin: 0,
-      }),
-    },
-    subMenuContent: {
-      backgroundColor: "transparent",
-    },
-    label: {
-      color: "inherit",
-    },
-    prefix: {
-      color: "inherit",
-    },
-    suffix: {
-      fontSize: "12px",
-      fontWeight: 600,
-      textTransform: "uppercase",
-      padding: "0px 6px",
-      borderRadius: "3px",
-      height: "20px",
-      lineHeight: "20px",
-      backgroundColor: "var(--bs-primary, #0d6efd)",
-      color: "var(--sidebar-color)",
-    },
-  };
-
-  // Sidebar root styles with gradient background
-  const sidebarRootStyles = {
-    background:
-      "linear-gradient(180deg, var(--sidebar-gradient-start) 29%, var(--sidebar-gradient-end) 90%)",
-    color: "var(--sidebar-color)",
-    height: "100vh",
-    position: "fixed" as const,
-    left: 0,
-    top: 0,
-    zIndex: 999,
-    paddingBottom: "50px", // Add padding at bottom for the toggle button
+  const handleToggleEdit = () => {
+    if (editMode) {
+      setEditMode(false);
+      if (preEditCollapsed !== null && preEditCollapsed !== collapsed) {
+        onToggleCollapse?.(preEditCollapsed);
+      }
+      setPreEditCollapsed(null);
+    } else {
+      setPreEditCollapsed(collapsed);
+      if (collapsed) {
+        onToggleCollapse?.(false);
+      }
+      setEditMode(true);
+    }
   };
 
   return (
-    <>
-      <style>{`
-        /* Override react-pro-sidebar styles to match existing design */
-        .ps-sidebar-container {
-          background: linear-gradient(180deg, var(--sidebar-gradient-start) 29%, var(--sidebar-gradient-end) 90%) !important;
-        }
-        .ps-menu-button:hover {
-          background-color: var(--sidebar-hover-bg) !important;
-        }
-        .ps-menu-button:hover .sidebar-icon-1,
-        .ps-menu-button:hover .sidebar-icon-2,
-        .ps-menu-button:hover .sidebar-icon-3,
-        .ps-menu-button:hover .ps-menu-icon svg {
-          color: var(--sidebar-hover-color) !important;
-        }
-        .ps-menu-button.ps-active .sidebar-icon-1,
-        .ps-menu-button.ps-active .sidebar-icon-2,
-        .ps-menu-button.ps-active .sidebar-icon-3,
-        .ps-menu-button.ps-active .ps-menu-icon svg {
-          color: var(--sidebar-active-color) !important;
-        }
-        .ps-menu-button .ps-menu-icon {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        /* Center icons when sidebar is collapsed */
-        .ps-sidebar-root[data-collapsed="true"] .ps-menu-button {
-          padding: 0 !important;
-          display: flex !important;
-          justify-content: center !important;
-        }
-        .ps-sidebar-root[data-collapsed="true"] .ps-menu-icon {
-          margin: 0 !important;
-          min-width: unset !important;
-          width: 100% !important;
-          display: flex !important;
-          justify-content: center !important;
-          align-items: center !important;
-        }
-        .ps-sidebar-root[data-collapsed="true"] .ps-menu-label {
-          display: none !important;
-        }
-        .ps-sidebar-root[data-collapsed="true"] .ps-menu-root > ul {
-          padding: 0 !important;
-        }
-        /* Ensure the sub-menu-content is also centered if it exists */
-        .ps-sidebar-root[data-collapsed="true"] .ps-submenu-content {
-          padding: 0 !important;
-        }
-      `}</style>
-      <Sidebar
-        collapsed={collapsed}
-        rootStyles={sidebarRootStyles}
-        width="240px"
-        collapsedWidth="64px"
-        transitionDuration={300}
-      >
-        {headerSlot}
-        <Menu menuItemStyles={menuItemStyles}>
-          {menu.map(item => {
-            const isActive = isActiveRoute(item, currentPath);
-            const icon = renderIcon(item.icon);
-            const suffix =
-              item.badge && item.badge.text ? (
-                <span className={item.badge.class || ""}>{item.badge.text}</span>
-              ) : undefined;
-
-            return (
-              <MenuItem
-                key={item.href}
-                icon={icon}
-                active={isActive}
-                suffix={suffix}
-                onClick={e => {
-                  // Navigate using window.location for regular href navigation
-                  window.location.href = item.href;
-                  if (onItemClick) {
-                    onItemClick(e as any, item);
-                  }
-                }}
-              >
-                {item.title}
-              </MenuItem>
-            );
-          })}
-        </Menu>
-        <div className="sidebar-toggle-button" onClick={handleToggleCollapse}>
-          {toggleIconSlot || <FontAwesomeIcon icon={faArrowsAltH} />}
-        </div>
-      </Sidebar>
-    </>
+    <aside className="sidebar" data-collapsed={collapsed} data-editing={editMode}>
+      {headerSlot && <div className="sidebar-header">{headerSlot}</div>}
+      <nav className="sidebar-nav">
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={menu.map(m => m.href)} strategy={verticalListSortingStrategy}>
+            <ul className="sidebar-list">
+              {menu.map(item => (
+                <SortableRow
+                  key={item.href}
+                  item={item}
+                  collapsed={collapsed}
+                  editMode={editMode}
+                  active={isActiveRoute(item, currentPath)}
+                />
+              ))}
+            </ul>
+          </SortableContext>
+        </DndContext>
+      </nav>
+      <div className="sidebar-footer">
+        {!collapsed && (
+          <button
+            type="button"
+            className="sidebar-footer-btn"
+            onClick={handleToggleEdit}
+            title={editMode ? "Done reordering" : "Reorder items"}
+          >
+            <FontAwesomeIcon icon={editMode ? faCheck : faPen} />
+            <span className="sidebar-footer-btn-label">{editMode ? "Done" : "Edit"}</span>
+          </button>
+        )}
+        {!editMode && (
+          <button
+            type="button"
+            className="sidebar-footer-btn sidebar-footer-btn-collapse"
+            onClick={() => onToggleCollapse?.(!collapsed)}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            <FontAwesomeIcon icon={collapsed ? faChevronRight : faChevronLeft} />
+          </button>
+        )}
+      </div>
+    </aside>
   );
 }
 

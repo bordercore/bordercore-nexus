@@ -3,6 +3,7 @@
 This module contains views for managing user profiles, authentication,
 password changes, and user-related operations.
 """
+import json
 from typing import Any, cast
 
 from rest_framework import status
@@ -326,6 +327,40 @@ ALLOWED_SESSION_KEYS = frozenset({
     "todo_view_type",
     "top_search_filter",
 })
+
+SIDEBAR_ORDER_MAX_ITEMS = 100
+
+
+@api_view(["POST"])
+@validate_post_data("order")
+def update_sidebar_order(request: HttpRequest) -> Response:
+    """Persist the authenticated user's sidebar item order on their profile.
+
+    Args:
+        request: The HTTP request containing:
+            - order: JSON-encoded array of href strings.
+
+    Returns:
+        JSON response with operation status.
+    """
+    try:
+        parsed = json.loads(request.POST["order"])
+    except json.JSONDecodeError:
+        return Response({"detail": "order must be valid JSON"}, status=400)
+
+    if not isinstance(parsed, list) or not all(isinstance(h, str) for h in parsed):
+        return Response({"detail": "order must be a list of strings"}, status=400)
+
+    if len(parsed) > SIDEBAR_ORDER_MAX_ITEMS:
+        return Response(
+            {"detail": f"order may contain at most {SIDEBAR_ORDER_MAX_ITEMS} items"},
+            status=400,
+        )
+
+    user = cast(User, request.user)
+    user.userprofile.sidebar_order = parsed
+    user.userprofile.save(update_fields=["sidebar_order"])
+    return Response()
 
 
 @api_view(["POST"])

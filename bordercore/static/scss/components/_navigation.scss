@@ -6,8 +6,8 @@
 // Dropdowns
 .dropdown-menu {
   border: 1px solid var(--border-color);
-  background-color: var(--surface2);
   border-radius: var(--border-radius1);
+  background-color: var(--surface2);
   box-shadow: 0 0.5rem 1rem rgb(0 0 0 / 15%);
 }
 
@@ -45,8 +45,8 @@
   .page-link {
     padding: 0.5rem 0.75rem;
     border: 1px solid var(--border-color);
-    background-color: var(--surface2);
     border-radius: var(--border-radius1);
+    background-color: var(--surface2);
     color: var(--text1);
     
     &:hover {
@@ -166,17 +166,199 @@ li {
   }
 }
 
-// SidebarMenu toggle button
-.sidebar-toggle-button {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
+// Main left sidebar
+.sidebar {
+  position: fixed;
+  z-index: 999;
   display: flex;
+  overflow: hidden;
+  width: 240px;
+  height: 100vh;
+  flex-direction: column;
+  background: linear-gradient(
+    180deg,
+    var(--sidebar-gradient-start) 29%,
+    var(--sidebar-gradient-end) 90%
+  );
+  color: var(--sidebar-color);
+  inset: 0 auto 0 0;
+  transition: width 250ms ease;
+
+  &[data-collapsed="true"] {
+    width: 64px;
+  }
+}
+
+.sidebar-header {
+  flex-shrink: 0;
+}
+
+.sidebar-nav {
+  overflow: hidden auto;
+  flex: 1 1 auto;
+  padding: 0.5rem;
+
+  .sidebar[data-collapsed="true"] & {
+    padding: 0.5rem 0;
+  }
+}
+
+.sidebar-list {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  margin: 0;
+  gap: 2px;
+  list-style: none;
+}
+
+.sidebar-row-inner {
+  position: relative;
+  display: flex;
+  height: 40px;
+  align-items: center;
+  padding: 0 14px;
+  border-radius: 6px;
+  color: var(--sidebar-color);
+  font-size: 14px;
+  font-weight: 400;
+  text-decoration: none;
+
+  // Fade in the hover tint on enter; revert instantly on leave (no gray flash).
+  &:hover {
+    background-color: rgb(255 255 255 / 6%);
+    color: var(--sidebar-hover-color, var(--sidebar-color));
+    transition:
+      background-color 150ms ease,
+      color 150ms ease;
+  }
+
+  .sidebar[data-collapsed="true"] & {
+    height: 44px;
+    justify-content: center;
+    padding: 0;
+    margin: 0 8px;
+  }
+}
+
+.sidebar-row {
+  position: relative;
+  list-style: none;
+
+  &.is-editing .sidebar-row-inner {
+    cursor: grab;
+    user-select: none;
+  }
+
+  &.is-dragging {
+    z-index: 1;
+
+    .sidebar-row-inner {
+      background-color: rgb(255 255 255 / 10%);
+      box-shadow: 0 4px 12px rgb(0 0 0 / 25%);
+      cursor: grabbing;
+    }
+  }
+}
+
+.sidebar-row.is-active .sidebar-row-inner {
+  background-color: rgb(255 255 255 / 8%);
+  color: var(--sidebar-active-color, var(--sidebar-color));
+  font-weight: 500;
+
+  // Left accent bar
+  &::before {
+    position: absolute;
+    top: 20%;
+    bottom: 20%;
+    left: 0;
+    width: 3px;
+    border-radius: 0 2px 2px 0;
+    background-color: var(--row-color, var(--bs-primary, #7367f0));
+    content: "";
+  }
+}
+
+// In collapsed mode the row is inset by 8px; shift the accent bar to hug the sidebar edge
+.sidebar[data-collapsed="true"] .sidebar-row.is-active .sidebar-row-inner::before {
+  left: -8px;
+}
+
+.sidebar-row-icon {
+  display: flex;
+  width: 22px;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  padding: 10px;
-  border-top: 1px solid rgb(255 255 255 / 10%);
-  background-color: transparent;
+  font-size: 16px;
+
+  svg {
+    color: var(--row-color, currentColor);
+    filter: saturate(0.55) opacity(0.85);
+  }
+}
+
+.sidebar-row:hover .sidebar-row-icon svg,
+.sidebar-row.is-active .sidebar-row-icon svg {
+  filter: none;
+  transition: filter 150ms ease;
+}
+
+.sidebar-row-label {
+  overflow: hidden;
+  flex: 1 1 auto;
+  margin-left: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-row-badge {
+  height: 20px;
+  flex-shrink: 0;
+  padding: 0 6px;
+  border-radius: 3px;
+  background-color: var(--bs-primary, #0d6efd);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 20px;
+  text-transform: uppercase;
+}
+
+.sidebar-footer {
+  display: flex;
+  flex-shrink: 0;
+  padding: 10px 12px;
+  border-top: 1px solid rgb(255 255 255 / 8%);
+  gap: 4px;
+
+  .sidebar[data-collapsed="true"] & {
+    flex-direction: column;
+    padding: 10px 8px;
+  }
+}
+
+.sidebar-footer-btn {
+  display: flex;
+  height: 32px;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--sidebar-color);
   cursor: pointer;
+  font-size: 13px;
+  gap: 8px;
+  transition: background-color 150ms ease;
+
+  &:hover {
+    background-color: rgb(255 255 255 / 8%);
+  }
+
+  .sidebar[data-editing="true"] & {
+    background-color: rgb(255 255 255 / 6%);
+  }
 }

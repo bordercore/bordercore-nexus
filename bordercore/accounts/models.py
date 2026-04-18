@@ -6,6 +6,7 @@ settings, and integrations with external services (Google Calendar, Instagram,
 weather, etc.). It also includes through-models for managing sortable
 relationships between users and tags, notes, and feeds.
 """
+import json
 import uuid
 from typing import Any
 
@@ -66,12 +67,18 @@ class UserProfile(models.Model):
     drill_intervals = ArrayField(models.IntegerField(), default=drill_intervals_default)
     eye_candy = models.BooleanField(default=False)
     drill_tags_muted = models.ManyToManyField(Tag, related_name="drill_tags_muted")
+    sidebar_order = JSONField(default=list, blank=True)
 
     theme = models.CharField(
         max_length=20,
         choices=get_theme_choices,
         default=DEFAULT_THEME,
     )
+
+    @property
+    def sidebar_order_json(self) -> str:
+        """Return sidebar_order serialized as a JSON string for template embedding."""
+        return json.dumps(self.sidebar_order or [])
 
     def get_tags(self) -> str:
         """Return a comma-separated string of pinned tag names.

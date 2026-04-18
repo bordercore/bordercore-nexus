@@ -235,6 +235,35 @@ function ChatBotContent() {
   );
 }
 
+function parseInitialOrder(raw: unknown): string[] {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  return raw.filter((h): h is string => typeof h === "string");
+}
+
+function applyOrder<T extends { href: string }>(items: T[], order: string[]): T[] {
+  if (!order.length) {
+    return items;
+  }
+  const byHref = new Map(items.map(i => [i.href, i]));
+  const ordered: T[] = [];
+  for (const href of order) {
+    const item = byHref.get(href);
+    if (item) {
+      ordered.push(item);
+      byHref.delete(href);
+    }
+  }
+  // Append any items not present in the saved order (e.g., new menu entries)
+  for (const item of items) {
+    if (byHref.has(item.href)) {
+      ordered.push(item);
+    }
+  }
+  return ordered;
+}
+
 function SidebarContent() {
   const { sidebarCollapsed, setSidebarCollapsed } = useBaseStore();
   const data = window.BASE_TEMPLATE_DATA || {};
@@ -259,66 +288,77 @@ function SidebarContent() {
         href: "/",
         title: "Home",
         class: "first-item",
-        icon: { element: "font-awesome-icon", attributes: { icon: "home" }, class: "fa-xs sidebar-icon-1" },
+        color: "#cbd5e1",
+        icon: { element: "font-awesome-icon", attributes: { icon: "home" }, class: "fa-xs" },
       },
       {
         href: "/search/",
         title: "Search",
         alias: "/search/*",
-        icon: { element: "font-awesome-icon", attributes: { icon: "search" }, class: "sidebar-icon-2" },
+        color: "#38bdf8",
+        icon: { element: "font-awesome-icon", attributes: { icon: "search" }, class: "" },
       },
       {
         href: "/bookmark/",
         title: "Bookmarks",
         alias: "/bookmark/*",
-        icon: { element: "font-awesome-icon", attributes: { icon: "bookmark" }, class: "sidebar-icon-3" },
+        color: "#fcd34d",
+        icon: { element: "font-awesome-icon", attributes: { icon: "bookmark" }, class: "" },
         badge: { text: "", class: "" },
       },
       {
         href: "/node/",
         title: "Nodes",
         alias: "/node/*",
-        icon: { element: "font-awesome-icon", attributes: { icon: "box" }, class: "sidebar-icon-1" },
+        color: "#818cf8",
+        icon: { element: "font-awesome-icon", attributes: { icon: "box" }, class: "" },
       },
       {
         href: "/collection/",
         title: "Collections",
         alias: "/collection/*",
-        icon: { element: "font-awesome-icon", attributes: { icon: "grip-horizontal" }, class: "sidebar-icon-2" },
+        color: "#22d3ee",
+        icon: { element: "font-awesome-icon", attributes: { icon: "grip-horizontal" }, class: "" },
       },
       {
         href: "/feed/",
         title: "Feeds",
-        icon: { element: "font-awesome-icon", attributes: { icon: "newspaper" }, class: "sidebar-icon-3" },
+        color: "#fb7185",
+        icon: { element: "font-awesome-icon", attributes: { icon: "newspaper" }, class: "" },
       },
       {
         href: "/search/notes",
         title: "Notes",
-        icon: { element: "font-awesome-icon", attributes: { icon: "sticky-note" }, class: "sidebar-icon-1" },
+        color: "#eab308",
+        icon: { element: "font-awesome-icon", attributes: { icon: "sticky-note" }, class: "" },
       },
       {
         href: "/blob/list",
         title: "Blobs",
         alias: "/blob/list",
-        icon: { element: "font-awesome-icon", attributes: { icon: "copy" }, class: "sidebar-icon-2" },
+        color: "#94a3b8",
+        icon: { element: "font-awesome-icon", attributes: { icon: "copy" }, class: "" },
       },
       {
         href: "/drill/",
         title: "Drill",
         alias: "/drill/*",
-        icon: { element: "font-awesome-icon", attributes: { icon: "graduation-cap" }, class: "sidebar-icon-3" },
+        color: "#a78bfa",
+        icon: { element: "font-awesome-icon", attributes: { icon: "graduation-cap" }, class: "" },
       },
       {
         href: "/music/",
         title: "Music",
         alias: ["/music/artist/*", "/music/album/*", "/music/tag/*"],
-        icon: { element: "font-awesome-icon", attributes: { icon: "music" }, class: "sidebar-icon-1" },
+        color: "#e879f9",
+        icon: { element: "font-awesome-icon", attributes: { icon: "music" }, class: "" },
       },
       {
         href: "/todo/",
         title: "Todo",
         alias: "/todo/*",
-        icon: { element: "font-awesome-icon", attributes: { icon: "tasks" }, class: "sidebar-icon-3" },
+        color: "#fb923c",
+        icon: { element: "font-awesome-icon", attributes: { icon: "tasks" }, class: "" },
         badge: data.sidebarConfig?.todoCount
           ? { text: data.sidebarConfig.todoCount, class: "vsm--badge_default" }
           : undefined,
@@ -327,32 +367,37 @@ function SidebarContent() {
         href: "/reminder/",
         title: "Reminders",
         alias: "/reminder/*",
-        icon: { element: "font-awesome-icon", attributes: { icon: "clock" }, class: "sidebar-icon-1" },
+        color: "#fbbf24",
+        icon: { element: "font-awesome-icon", attributes: { icon: "clock" }, class: "" },
       },
       {
         href: "/habit/",
         title: "Habits",
         alias: "/habit/*",
-        icon: { element: "font-awesome-icon", attributes: { icon: "check-double" }, class: "sidebar-icon-2" },
+        color: "#2dd4bf",
+        icon: { element: "font-awesome-icon", attributes: { icon: "check-double" }, class: "" },
       },
       {
         href: "/tag/list",
         title: "Tags",
         alias: "/tag/list",
-        icon: { element: "font-awesome-icon", attributes: { icon: "tags" }, class: "sidebar-icon-1" },
+        color: "#f472b6",
+        icon: { element: "font-awesome-icon", attributes: { icon: "tags" }, class: "" },
       },
       {
         href: "/fitness/",
         title: "Fitness",
         alias: "/fitness/*",
-        icon: { element: "font-awesome-icon", attributes: { icon: "running" }, class: "sidebar-icon-2" },
+        color: "#a3e635",
+        icon: { element: "font-awesome-icon", attributes: { icon: "running" }, class: "" },
         badge: data.sidebarConfig?.exerciseCount
           ? { text: data.sidebarConfig.exerciseCount, class: "vsm--badge_default" }
           : undefined,
       },
     ];
-    setMenu(menuItems);
-  }, [data.sidebarConfig]);
+    const savedOrder = parseInitialOrder(data.initialSidebarOrder);
+    setMenu(applyOrder(menuItems, savedOrder));
+  }, [data.sidebarConfig, data.initialSidebarOrder]);
 
   React.useEffect(() => {
     // Update bookmark count every minute
@@ -386,7 +431,6 @@ function SidebarContent() {
 
   const onToggleCollapse = (newCollapsed: boolean) => {
     setSidebarCollapsed(newCollapsed);
-    // Sidebar is an overlay, no need to modify wrapper classes
 
     if (data.sidebarConfig?.storeInSessionUrl) {
       doPost(
@@ -397,9 +441,15 @@ function SidebarContent() {
     }
   };
 
-  const onItemClick = () => {
-    // Update scrollbar if needed
-    // This would require access to PerfectScrollbar instance
+  const onReorder = (newOrder: string[]) => {
+    setMenu(prev => applyOrder(prev, newOrder));
+    if (data.sidebarConfig?.updateSidebarOrderUrl) {
+      doPost(
+        data.sidebarConfig.updateSidebarOrderUrl,
+        { order: JSON.stringify(newOrder) },
+        () => {}
+      );
+    }
   };
 
   return (
@@ -407,7 +457,7 @@ function SidebarContent() {
       menu={menu}
       collapsed={sidebarCollapsed}
       onToggleCollapse={onToggleCollapse}
-      onItemClick={onItemClick}
+      onReorder={onReorder}
       headerSlot={
         <div
           className="d-flex align-items-center"

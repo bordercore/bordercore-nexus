@@ -15,6 +15,11 @@ urlpatterns = [
         name="store_in_session"
     ),
     path(
+        route="sidebar_order/",
+        view=views.update_sidebar_order,
+        name="update_sidebar_order"
+    ),
+    path(
         route="prefs/",
         view=views.UserProfileUpdateView.as_view(),
         name="prefs"
