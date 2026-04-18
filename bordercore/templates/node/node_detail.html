@@ -28,6 +28,7 @@
         data-delete-note-url="{% url 'node:delete_note' %}"
         data-set-note-color-url="{% url 'node:set_note_color' %}"
         data-blob-detail-template="{% url 'blob:detail' '00000000-0000-0000-0000-000000000000' %}"
+        data-blob-api-template="{% url 'blob-detail' '00000000-0000-0000-0000-000000000000' %}"
         data-add-todo-list-url="{% url 'node:add_todo_list' %}"
         data-delete-todo-list-url="{% url 'node:delete_todo_list' %}"
         data-get-todo-list-url="{% url 'node:get_todo_list' object.uuid %}"

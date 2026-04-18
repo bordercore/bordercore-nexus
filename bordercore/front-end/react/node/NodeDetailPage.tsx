@@ -85,6 +85,7 @@ interface NodeDetailUrls {
   deleteNote: string;
   setNoteColor: string;
   blobDetailTemplate: string;
+  blobApiTemplate: string;
   addTodoList: string;
   deleteTodoList: string;
   getTodoList: string;
@@ -540,7 +541,7 @@ export default function NodeDetailPage({
             key={key}
             nodeUuid={nodeUuid}
             noteInitial={note}
-            noteUrl={replaceUuid(urls.blobDetailTemplate, note.uuid)}
+            noteUrl={replaceUuid(urls.blobApiTemplate, note.uuid)}
             setNoteColorUrl={urls.setNoteColor}
             deleteNoteUrl={urls.deleteNote}
             colorPreview={noteColorPreview?.uuid === note.uuid ? noteColorPreview.color : undefined}

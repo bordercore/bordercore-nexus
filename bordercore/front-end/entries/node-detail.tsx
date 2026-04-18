@@ -31,6 +31,7 @@ if (container) {
     deleteNote: container.getAttribute("data-delete-note-url") || "",
     setNoteColor: container.getAttribute("data-set-note-color-url") || "",
     blobDetailTemplate: container.getAttribute("data-blob-detail-template") || "",
+    blobApiTemplate: container.getAttribute("data-blob-api-template") || "",
     // Todo URLs
     addTodoList: container.getAttribute("data-add-todo-list-url") || "",
     deleteTodoList: container.getAttribute("data-delete-todo-list-url") || "",
