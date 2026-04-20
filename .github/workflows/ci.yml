@@ -26,7 +26,7 @@ jobs:
       DJANGO_SETTINGS_MODULE: config.settings.dev
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Install uv
       uses: astral-sh/setup-uv@v4
@@ -57,10 +57,10 @@ jobs:
         working-directory: bordercore
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Set up Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v5
       with:
         node-version: 22
         cache: npm
