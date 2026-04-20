@@ -49,3 +49,37 @@ jobs:
         DATABASE_PASSWORD: postgres
       run: |
         uv run pytest -m "not data_quality and not functional" ./bordercore/ -v -n auto
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: bordercore
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22
+        cache: npm
+        cache-dependency-path: bordercore/package-lock.json
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Typecheck
+      run: npm run typecheck
+
+    - name: Lint (ESLint)
+      run: npm run lint:react
+
+    - name: Format check (Prettier)
+      run: npm run format:check:react
+
+    - name: Lint SCSS (stylelint)
+      run: npx stylelint "static/scss/**/*.{scss,css}"
+
+    - name: Build
+      run: npm run vite:build

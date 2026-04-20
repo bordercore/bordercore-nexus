@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+#
+# Git pre-push hook
+#
+# Purpose:
+# 1. Block pushes with frontend TypeScript type errors (tsc --noEmit).
+#
+# Usage:
+# Run 'git config core.hooksPath .githooks' to enable these hooks.
+
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+BORDERCORE_DIR="$REPO_ROOT/bordercore"
+
+echo "--- Starting Pre-push Checks ---"
+
+# ----------------------------------------------------------------------
+# 1. Frontend Type Checking (tsc --noEmit)
+# ----------------------------------------------------------------------
+echo "Running TypeScript typecheck..."
+cd "$BORDERCORE_DIR"
+if [ -d "node_modules" ]; then
+  npm run -s typecheck
+  echo "✅ TypeScript typecheck passed."
+else
+  echo "⚠️ Warning: node_modules not found. Skipping typecheck."
+fi
+
+echo "--- Pre-push Checks Finished Successfully ---"
+exit 0
