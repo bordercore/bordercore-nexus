@@ -9,6 +9,7 @@
     "scripts": {
         "test": "vitest run",
         "test:watch": "vitest",
+        "test:coverage": "vitest run --coverage",
         "copy-sqlite-wasm": "node scripts/copy-sqlite-wasm.js",
         "postinstall": "npm run copy-sqlite-wasm",
         "vite:dev": "vite",
@@ -48,6 +49,7 @@
         "@types/uuid": "^8.3.4",
         "@typescript-eslint/parser": "^8.58.2",
         "@vitejs/plugin-react": "^4.2.0",
+        "@vitest/coverage-v8": "^4.1.4",
         "eslint": "^9.39.4",
         "eslint-plugin-react": "^7.37.5",
         "globals": "^15.15.0",

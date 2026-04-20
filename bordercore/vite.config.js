@@ -129,5 +129,13 @@ module.exports = defineConfig({
     environment: "jsdom",
     setupFiles: ["./front-end/react/test/setup.ts"],
     include: ["front-end/**/*.{test,spec}.{ts,tsx,js,jsx}"],
+    coverage: {
+      provider: "v8",
+      include: ["front-end/**"],
+      exclude: [
+        "front-end/**/*.{test,spec}.{ts,tsx,js,jsx}",
+        "front-end/react/test/**",
+      ],
+    },
   },
 });

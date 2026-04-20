@@ -27,6 +27,7 @@ logs/
 # Build artifacts and coverage
 **/htmlcov/*
 *.coverage
+bordercore/coverage/
 packaged.yaml
 
 # AWS Lambda functions
