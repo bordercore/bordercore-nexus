@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 const path = require("path");
 const { defineConfig } = require("vite");
 const react = require("@vitejs/plugin-react");
@@ -122,5 +123,11 @@ module.exports = defineConfig({
         },
       },
     },
+  },
+  test: {
+    globals: true,
+    environment: "jsdom",
+    setupFiles: ["./front-end/react/test/setup.ts"],
+    include: ["front-end/**/*.{test,spec}.{ts,tsx,js,jsx}"],
   },
 });

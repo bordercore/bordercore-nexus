@@ -7,7 +7,8 @@
         "lib": "lib"
     },
     "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1",
+        "test": "vitest run",
+        "test:watch": "vitest",
         "copy-sqlite-wasm": "node scripts/copy-sqlite-wasm.js",
         "postinstall": "npm run copy-sqlite-wasm",
         "vite:dev": "vite",
@@ -35,6 +36,9 @@
     "author": "",
     "license": "ISC",
     "devDependencies": {
+        "@testing-library/jest-dom": "^6.9.1",
+        "@testing-library/react": "^16.3.2",
+        "@testing-library/user-event": "^14.6.1",
         "@types/bootstrap": "^5.2.10",
         "@types/lodash": "^4.17.24",
         "@types/markdown-it": "^12.2.3",
@@ -47,6 +51,7 @@
         "eslint": "^9.39.4",
         "eslint-plugin-react": "^7.37.5",
         "globals": "^15.15.0",
+        "jsdom": "^29.0.2",
         "lint-staged": "^16.2.7",
         "postcss-scss": "^4.0.9",
         "prettier": "^3.1.0",
@@ -58,7 +63,8 @@
         "stylelint-order": "^6.0.4",
         "stylelint-scss": "^6.13.0",
         "typescript": "^5.3.3",
-        "vite": "^6.4.2"
+        "vite": "^6.4.2",
+        "vitest": "^4.1.4"
     },
     "dependencies": {
         "@babel/core": "^7.23.2",

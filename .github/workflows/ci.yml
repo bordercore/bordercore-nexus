@@ -81,5 +81,8 @@ jobs:
     - name: Lint SCSS (stylelint)
       run: npx stylelint "static/scss/**/*.{scss,css}"
 
+    - name: Test (Vitest)
+      run: npm test
+
     - name: Build
       run: npm run vite:build
