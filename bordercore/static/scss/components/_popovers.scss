@@ -8,9 +8,9 @@
   z-index: 10000;
   min-width: 12rem;
   border: 1px solid rgb(103 232 249 / 25%);
+  border-radius: var(--border-radius1);
   backdrop-filter: blur(10px);
   background-color: var(--surface2);
-  border-radius: var(--border-radius1);
   box-shadow:
     0 0.5rem 1rem rgb(0 0 0 / 15%),
     0 0.25rem 0.5rem rgb(0 0 0 / 10%);
@@ -125,8 +125,8 @@
   align-items: center;
   padding: 0.625rem 0.875rem;
   border: none;
-  background: transparent;
   border-radius: var(--border-radius1);
+  background: transparent;
   color: var(--text1);
   cursor: pointer;
   gap: 0.75rem;
@@ -166,8 +166,8 @@
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  background-color: var(--surface5);
   border-radius: 50%;
+  background-color: var(--surface5);
   color: var(--text2);
   font-size: 0.75rem;
   font-weight: 600;
@@ -237,8 +237,8 @@
   display: inline-flex;
   align-items: center;
   padding: 0 0.375rem 0 0.5rem;
-  background: linear-gradient(135deg, var(--surface4) 0%, var(--surface5) 100%);
   border-radius: 9999px;
+  background: linear-gradient(135deg, var(--surface4) 0%, var(--surface5) 100%);
   gap: 0.5rem;
   line-height: 1.5rem;
   pointer-events: auto;
@@ -259,8 +259,8 @@
   justify-content: center;
   padding: 0;
   border: none;
-  background: transparent;
   border-radius: 50%;
+  background: transparent;
   color: var(--text3);
   cursor: pointer;
   transition: all 0.15s ease;
@@ -289,10 +289,10 @@
   align-items: center;
   justify-content: center;
   padding: 0.5rem;
+  border-radius: var(--border-radius1) var(--border-radius1) 0 0;
   border-bottom: 1px solid var(--border-color);
   margin-bottom: 0.5rem;
   background-color: var(--surface3);
-  border-radius: var(--border-radius1) var(--border-radius1) 0 0;
   color: var(--text3);
   font-size: 0.75rem;
   font-weight: 600;
@@ -320,8 +320,8 @@
   align-items: center;
   padding: 0.5rem 0.75rem;
   border: none;
-  background: transparent;
   border-radius: var(--border-radius1);
+  background: transparent;
   color: var(--text1);
   cursor: pointer;
   gap: 0.75rem;
@@ -356,8 +356,8 @@
   align-items: center;
   padding: 0.5rem 0.75rem;
   border: none;
-  background: transparent;
   border-radius: var(--border-radius1);
+  background: transparent;
   color: var(--text1);
   cursor: pointer;
   gap: 0.75rem;
@@ -399,14 +399,14 @@
   gap: 0.5rem;
 
   &:hover {
-    background-color: var(--hover-bg);
     border-radius: var(--border-radius1);
+    background-color: var(--hover-bg);
   }
 }
 
 .highlighted {
-  background-color: var(--hover-bg);
   border-radius: var(--border-radius1);
+  background-color: var(--hover-bg);
 
   .search-suggestion {
     background-color: var(--hover-bg);
@@ -448,10 +448,10 @@
   align-items: center;
   justify-content: center;
   padding: 0.5rem;
+  border-radius: var(--border-radius1) var(--border-radius1) 0 0;
   border-bottom: 1px solid var(--border-color);
   margin-bottom: 0.5rem;
   background-color: var(--surface3);
-  border-radius: var(--border-radius1) var(--border-radius1) 0 0;
   color: var(--text3);
   font-size: 0.75rem;
   font-weight: 600;
@@ -558,8 +558,8 @@
 
 .recent-blobs-error {
   padding: 0.75rem;
-  background-color: rgb(239 68 68 / 10%);
   border-radius: var(--border-radius1);
+  background-color: rgb(239 68 68 / 10%);
   color: rgb(248 113 113);
   font-size: 0.875rem;
 }

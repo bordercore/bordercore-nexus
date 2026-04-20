@@ -10,8 +10,8 @@
 .react-select-container {
   .react-select__control {
     border: 1px solid var(--border-color);
-    background-color: var(--form-bg);
     border-radius: var(--border-radius1);
+    background-color: var(--form-bg);
 
     &:hover {
       border-color: var(--accent);
@@ -44,10 +44,10 @@
     padding-bottom: 0.15rem;
     padding-left: 0.5rem;
     border: 1px solid hsl(var(--tag-hue, 0) var(--tag-saturation) var(--tag-border-lightness) / 40%);
+    border-radius: 0.375rem;
     margin-right: 0.37rem;
     margin-bottom: 0;
     background-color: hsl(var(--tag-hue, 0) var(--tag-saturation) var(--tag-bg-lightness) / 15%);
-    border-radius: 0.375rem;
   }
 
   .react-select__multi-value__label {
@@ -68,8 +68,8 @@
   .react-select__menu {
     z-index: 1050;
     border: 1px solid var(--border-color);
-    background-color: var(--surface2);
     border-radius: var(--border-radius1);
+    background-color: var(--surface2);
   }
 
   .react-select__menu-list {

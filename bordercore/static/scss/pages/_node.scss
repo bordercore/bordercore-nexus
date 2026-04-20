@@ -117,8 +117,8 @@
 }
 
 .dragging .slicklist-list-item-inner {
-  background: var(--surface-bg);
   border-radius: var(--border-radius1);
+  background: var(--surface-bg);
   box-shadow: 0 0 20px rgb(var(--bs-primary-rgb) / 50%);
   transform: scale(1.08);
 }
@@ -148,9 +148,9 @@
 // Drop position indicator
 .drop-indicator {
   height: 3px;
+  border-radius: 2px;
   margin-bottom: var(--column-gutter);
   background-color: var(--link-color);
-  border-radius: 2px;
 }
 
 // Layout drag overlay - rendered outside normal flow via portal (dnd-kit DragOverlay)

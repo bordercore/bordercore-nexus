@@ -6,8 +6,8 @@
   width: 100%;
 
   .chatbot-container {
-    background-color: var(--chatbot-container-bg);
     border-radius: var(--border-radius1);
+    background-color: var(--chatbot-container-bg);
     box-shadow: 0 0 15px rgb(0 0 0 / 20%);
     line-height: 1.75rem;
   }

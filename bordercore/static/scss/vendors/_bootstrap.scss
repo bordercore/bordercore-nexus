@@ -24,8 +24,8 @@
 // Alerts
 .alert {
   padding: 1rem;
-  margin-bottom: 1rem;
   border-radius: var(--border-radius1);
+  margin-bottom: 1rem;
 }
 
 .alert-danger {
@@ -55,8 +55,8 @@
 // Progress bars
 .progress {
   height: 1rem;
-  background-color: var(--surface3);
   border-radius: var(--border-radius1);
+  background-color: var(--surface3);
 }
 
 .progress-bar {
@@ -71,8 +71,8 @@
 // Tooltips
 .tooltip-inner {
   padding: 0.5rem 0.75rem;
-  background-color: var(--surface3);
   border-radius: var(--border-radius1);
+  background-color: var(--surface3);
   color: var(--text1);
 }
 

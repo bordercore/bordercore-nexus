@@ -10,8 +10,8 @@
 .data-table-container {
   overflow: hidden;
   border: 1px solid var(--border-color);
-  background-color: var(--surface2);
   border-radius: var(--data-table-container-radius);
+  background-color: var(--surface2);
   box-shadow: var(--data-table-container-shadow);
 }
 
@@ -110,9 +110,9 @@
     overflow: hidden;
     width: 100%;
     border: 1px solid var(--border-color);
+    border-radius: var(--border-radius1);
     margin: 0.5rem 0;
     border-collapse: collapse;
-    border-radius: var(--border-radius1);
     color: var(--text1);
 
     thead {
@@ -141,8 +141,8 @@
 }
 
 .table-responsive {
-  background-color: var(--surface2);
   border-radius: var(--border-radius1);
+  background-color: var(--surface2);
 
   .table {
     margin-bottom: 0;
@@ -154,8 +154,8 @@
 /* stylelint-disable no-descending-specificity */
 .o-table {
   width: 100%;
-  background-color: var(--surface2);
   border-radius: var(--border-radius1);
+  background-color: var(--surface2);
 
   th {
     padding: 0.75rem;
@@ -199,9 +199,9 @@
 .o-table__mobile-cards .o-table__mobile-card {
   padding: 1rem;
   border: 1px solid var(--border-color);
+  border-radius: var(--border-radius1);
   margin-bottom: 1rem;
   background-color: var(--surface2);
-  border-radius: var(--border-radius1);
 }
 
 // Table column width utilities
@@ -222,8 +222,8 @@
 .data-grid-container {
   overflow: hidden;
   border: 1px solid var(--border-color);
-  background-color: var(--surface2);
   border-radius: var(--data-table-container-radius);
+  background-color: var(--surface2);
   box-shadow: var(--data-table-container-shadow);
 }
 
@@ -325,8 +325,8 @@
 /* stylelint-disable no-descending-specificity */
 .data-table-drag-overlay {
   padding: 0;
-  background-color: var(--surface2);
   border-radius: var(--border-radius1);
+  background-color: var(--surface2);
   box-shadow: var(--data-table-container-shadow);
   color: var(--text1);
 

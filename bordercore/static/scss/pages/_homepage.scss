@@ -7,9 +7,9 @@
   .card-body {
     flex-grow: 0;
     padding: 1.25rem;
+    border-radius: 0.4rem;
     margin: 0;
     background-color: var(--surface2);
-    border-radius: 0.4rem;
   }
 
   // Backdrop filter support for glass effect (matches _music.scss)

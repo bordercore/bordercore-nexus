@@ -116,17 +116,17 @@
 
 #exercise-detail-chart {
   padding: 1.5rem;
+  border-radius: var(--border-radius1);
   margin-top: 1rem;
   background-color: var(--surface2);
-  border-radius: var(--border-radius1);
 }
 
 .exercise-item {
   padding: 1rem;
   border: 1px solid var(--border-color);
+  border-radius: var(--border-radius1);
   margin-bottom: 0.5rem;
   background-color: var(--surface2);
-  border-radius: var(--border-radius1);
   transition: background-color 0.2s ease;
 
   &:hover {
@@ -147,9 +147,9 @@
 
 .workout-summary {
   padding: 1rem;
+  border-radius: var(--border-radius1);
   margin-bottom: 1rem;
   background-color: var(--surface3);
-  border-radius: var(--border-radius1);
 
   .summary-stat {
     display: flex;

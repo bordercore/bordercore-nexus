@@ -28,9 +28,9 @@
 // Site banner
 .site-banner {
   padding: 0.75rem 1.5rem;
+  border-radius: var(--border-radius1);
   margin-bottom: 1rem;
   background-color: var(--banner-bg);
-  border-radius: var(--border-radius1);
   color: var(--banner-text);
   font-weight: 600;
   text-align: center;
@@ -43,9 +43,9 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem var(--grid-margin);
+  border-radius: var(--border-radius1);
   margin: var(--grid-margin) var(--grid-margin) var(--grid-margin) var(--grid-margin);
   background-color: transparent;
-  border-radius: var(--border-radius1);
 }
 
 .top-title-container {
@@ -199,8 +199,8 @@
 
 .card {
   border: 1px solid var(--border-color);
-  background-color: var(--surface2);
   border-radius: var(--border-radius1);
+  background-color: var(--surface2);
 
   .card-header {
     padding: 0.75rem 1rem;
@@ -241,8 +241,8 @@
   height: 43.75rem;
   padding: 2rem;
   border: 0.12rem solid var(--text1);
-  background-color: var(--surface2);
   border-radius: 1.5rem;
+  background-color: var(--surface2);
   opacity: 0.9;
   text-align: center;
 
@@ -294,13 +294,13 @@
 
 .animated-gradient-box {
   border: 3px solid #0000;
+  border-radius: 12px;
   animation: 8s rotate linear infinite;
   background: linear-gradient(#131219, #131219) padding-box, linear-gradient(
     var(--angle),
     #070707,
     #687aff
   ) border-box;
-  border-radius: 12px;
 }
 
 @keyframes rotate {
