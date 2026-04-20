@@ -1,6 +1,6 @@
 import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faListUl, faFlag, faClock, faTags, faPlus } from "@fortawesome/free-solid-svg-icons";
+import { faListUl, faPlus } from "@fortawesome/free-solid-svg-icons";
 import type { Tag, PriorityOption, TimeOption } from "./types";
 import { tagStyle } from "../utils/tagColors";
 
@@ -114,15 +114,12 @@ export function TodoFiltersSidebar({
             </div>
           </div>
 
-          <h4>
-            <FontAwesomeIcon icon={faFlag} className="me-2 sidebar-heading-icon" />
-            Priority
-          </h4>
+          <h4>Priority</h4>
           {priorityOptions.map(option => (
             <div
               key={option[0]}
               data-priority={option[0]}
-              className={`list-with-counts ps-2 py-1 pe-1 d-flex ${getPriorityClass(option[0])}`}
+              className={`list-with-counts py-1 pe-1 d-flex ${getPriorityClass(option[0])}`}
               onClick={() => handlePriorityClick(option[0])}
             >
               <div>{option[1]}</div>
@@ -134,14 +131,11 @@ export function TodoFiltersSidebar({
 
           <hr className="divider" />
 
-          <h4>
-            <FontAwesomeIcon icon={faClock} className="me-2 sidebar-heading-icon" />
-            Created
-          </h4>
+          <h4>Created</h4>
           {timeOptions.map(option => (
             <div
               key={option[0]}
-              className={`list-with-counts ps-2 py-1 pe-1 d-flex ${getTimeClass(option[0])}`}
+              className={`list-with-counts py-1 pe-1 d-flex ${getTimeClass(option[0])}`}
               onClick={() => handleTimeClick(option[0])}
             >
               <div>{option[1]}</div>
@@ -153,15 +147,12 @@ export function TodoFiltersSidebar({
 
           <hr className="divider" />
 
-          <h4>
-            <FontAwesomeIcon icon={faTags} className="me-2 sidebar-heading-icon" />
-            Tags
-          </h4>
+          <h4>Tags</h4>
           {tags.length > 0 ? (
             tags.map(tag => (
               <div
                 key={tag.name}
-                className={`list-with-counts ps-2 py-1 pe-1 d-flex ${getTagClass(tag.name)}`}
+                className={`list-with-counts py-1 pe-1 d-flex ${getTagClass(tag.name)}`}
                 onClick={() => handleTagClick(tag.name)}
               >
                 <span

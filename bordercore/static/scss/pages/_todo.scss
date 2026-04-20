@@ -18,6 +18,11 @@
 
   .sticky-top {
     z-index: 1;
+
+    > * {
+      margin-left: 10px;
+      padding-left: 10px;
+    }
   }
 
   .filter-section-title {
@@ -41,7 +46,7 @@
   }
 
   .selected {
-    border-right: 4px solid var(--text3);
+    background-color: color-mix(in srgb, var(--surface2) 88%, white);
     color: var(--text3);
     font-weight: 700;
   }
@@ -203,7 +208,7 @@
   position: relative;
   display: flex;
   align-items: stretch;
-  padding: 1.25rem 1.5rem;
+  padding: 0.8rem 1.5rem 10px;
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius1);
   background-color: var(--surface2);
@@ -315,6 +320,10 @@
   font-size: 0.875rem;
   -webkit-line-clamp: 2;
   line-height: 1.5;
+
+  li:hover {
+    background-color: transparent;
+  }
 }
 
 // Metadata row (tags, date, due date)
@@ -412,6 +421,13 @@
   margin-left: 0.5rem;
   opacity: 0;
   transition: opacity 0.15s ease;
+
+  // Align the dropdown trigger's visible icon with the priority badge top.
+  // The trigger is a 2.5rem circle with the icon centered, so it sits
+  // ~0.75rem below the trigger top. Shift the whole trigger up to compensate.
+  .dropdown-trigger.dropdownmenu {
+    margin-top: -0.5rem;
+  }
 }
 
 .todo-card:hover .todo-card__actions,
