@@ -57,7 +57,7 @@ if (container) {
     content: "",
     note: "",
     filename: "",
-    importance: false,
+    importance: false as boolean | number,
     is_note: false,
     math_support: false,
   });

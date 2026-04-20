@@ -4,4 +4,7 @@ export function animateCSS(
     prefix?: string,
 ): Promise<string>;
 
-export function boldenOption(optionName: string, substring: string): string;
+export function boldenOption(
+    optionName: string | undefined,
+    substring: string | undefined,
+): string;

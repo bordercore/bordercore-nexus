@@ -238,10 +238,7 @@ function SortableSongRow({
   useLayoutEffect(() => {
     const el = elRef.current;
     if (el) {
-      el.style.setProperty(
-        "--sortable-transform",
-        transform ? CSS.Transform.toString(transform) : "none"
-      );
+      el.style.setProperty("--sortable-transform", CSS.Transform.toString(transform) ?? "none");
       el.style.setProperty("--sortable-transition", transition ?? "none");
     }
   }, [transform, transition]);
@@ -253,10 +250,10 @@ function SortableSongRow({
       className={`data-grid-row playlist-grid-row sortable-row hover-target hover-reveal-target cursor-pointer sortable-song-row ${isDragging ? "dragging" : ""} ${isManualPlaylist ? "manual" : "no-drag"}`}
     >
       <div
-        role="cell"
-        className="playlist-col-drag drag-handle-cell"
         {...attributes}
         {...listeners}
+        role="cell"
+        className="playlist-col-drag drag-handle-cell"
         onClick={e => e.stopPropagation()}
       >
         <div className="hover-reveal-object">

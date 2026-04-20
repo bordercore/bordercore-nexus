@@ -142,43 +142,43 @@ export function TagListPage({ initialTagInfo, urls }: TagListPageProps) {
             <div className={`d-flex flex-column ${dataLoading ? "d-none" : ""}`}>
               <div className="list-header-border mb-2 pb-2 mt-4">Objects using this tag</div>
 
-              {tagInfo.blob__count > 0 && (
+              {(tagInfo.blob__count ?? 0) > 0 && (
                 <div>
                   <span className="text-name">Blobs</span>:{" "}
                   <span className="text-value">{tagInfo.blob__count}</span>
                 </div>
               )}
-              {tagInfo.bookmark__count > 0 && (
+              {(tagInfo.bookmark__count ?? 0) > 0 && (
                 <div>
                   <span className="text-name">Bookmarks</span>:{" "}
                   <span className="text-value">{tagInfo.bookmark__count}</span>
                 </div>
               )}
-              {tagInfo.todo__count > 0 && (
+              {(tagInfo.todo__count ?? 0) > 0 && (
                 <div>
                   <span className="text-name">Todos</span>:{" "}
                   <span className="text-value">{tagInfo.todo__count}</span>
                 </div>
               )}
-              {tagInfo.question__count > 0 && (
+              {(tagInfo.question__count ?? 0) > 0 && (
                 <div>
                   <span className="text-name">Questions</span>:{" "}
                   <span className="text-value">{tagInfo.question__count}</span>
                 </div>
               )}
-              {tagInfo.song__count > 0 && (
+              {(tagInfo.song__count ?? 0) > 0 && (
                 <div>
                   <span className="text-name">Songs</span>:{" "}
                   <span className="text-value">{tagInfo.song__count}</span>
                 </div>
               )}
-              {tagInfo.album__count > 0 && (
+              {(tagInfo.album__count ?? 0) > 0 && (
                 <div>
                   <span className="text-name">Albums</span>:{" "}
                   <span className="text-value">{tagInfo.album__count}</span>
                 </div>
               )}
-              {tagInfo.collection__count > 0 && (
+              {(tagInfo.collection__count ?? 0) > 0 && (
                 <div>
                   <span className="text-name">Collections</span>:{" "}
                   <span className="text-value">{tagInfo.collection__count}</span>

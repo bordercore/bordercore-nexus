@@ -24,10 +24,10 @@ interface SelectValueProps {
   optionsLimit?: number;
   searchIcon?: boolean;
   onKeyDown?: (event: React.KeyboardEvent) => void;
-  onSearch?: (selection: Option) => void;
+  onSearch?: (selection: any) => void;
   onSearchChange?: (query: string) => void;
-  onSelect?: (selection: Option) => void;
-  optionSlot?: (props: { option: Option; search: string }) => React.ReactNode;
+  onSelect?: (selection: any) => void;
+  optionSlot?: (props: { option: any; search: string }) => React.ReactNode;
 }
 
 export interface SelectValueHandle {

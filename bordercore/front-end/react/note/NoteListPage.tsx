@@ -49,8 +49,8 @@ function SortablePinnedNoteItem({ note }: SortablePinnedNoteItemProps) {
   useLayoutEffect(() => {
     const node = localRef.current;
     if (!node) return;
-    node.style.transform = CSS.Transform.toString(transform);
-    node.style.transition = transition;
+    node.style.transform = CSS.Transform.toString(transform) ?? "";
+    node.style.transition = transition ?? "";
   }, [transform, transition]);
 
   return (

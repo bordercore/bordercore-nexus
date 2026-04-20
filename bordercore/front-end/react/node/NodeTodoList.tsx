@@ -69,10 +69,9 @@ function SortableTodoItem({ element, onEdit, onRemove }: SortableTodoItemProps) 
   useLayoutEffect(() => {
     const el = nodeRef.current;
     if (!el) return;
-    el.style.transform = transform
-      ? CSS.Transform.toString({ ...transform, scaleX: 1, scaleY: 1 })
-      : "";
-    el.style.transition = transition;
+    el.style.transform =
+      CSS.Transform.toString(transform ? { ...transform, scaleX: 1, scaleY: 1 } : null) ?? "";
+    el.style.transition = transition ?? "";
   }, [transform, transition]);
 
   return (

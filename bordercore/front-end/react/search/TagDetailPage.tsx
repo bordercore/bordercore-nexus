@@ -90,8 +90,7 @@ export function TagDetailPage({
   );
 
   const totalCount = enrichedDoctypeCounts.reduce((sum, d) => sum + d.count, 0);
-  const currentMatches: TagDetailMatch[] =
-    (results as Record<string, TagDetailMatch[]>)[selectedDoctype] || [];
+  const currentMatches: TagDetailMatch[] = results[selectedDoctype] || [];
 
   const tagUrl = tagsChangedUrl;
 

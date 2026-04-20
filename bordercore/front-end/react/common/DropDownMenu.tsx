@@ -17,7 +17,7 @@ interface Link {
   id: string;
   title: string;
   url: string;
-  icon?: string;
+  icon?: string | IconDefinition;
   extra?: number | string;
   clickHandler?: () => void;
 }

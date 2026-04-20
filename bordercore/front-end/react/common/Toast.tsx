@@ -45,10 +45,10 @@ export function Toast({ initialMessages = [], defaultVariant = "info" }: ToastPr
     }
     setBody(payload.body);
     if (payload.autoHide !== undefined && bsToastRef.current) {
-      bsToastRef.current._config.autohide = payload.autoHide;
+      (bsToastRef.current as any)._config.autohide = payload.autoHide;
     }
     if (payload.delay && bsToastRef.current) {
-      bsToastRef.current._config.delay = payload.delay;
+      (bsToastRef.current as any)._config.delay = payload.delay;
     }
     if (bsToastRef.current) {
       bsToastRef.current.show();

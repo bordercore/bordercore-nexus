@@ -19,12 +19,12 @@ interface TodoInfo {
   priority?: number;
   note?: string;
   tags?: string[];
-  url?: string;
+  url?: string | null;
   due_date?: Date | string | null;
 }
 
 interface TodoEditorProps {
-  priorityList: [number, string][];
+  priorityList: [number, string, number?][];
   editTodoUrl: string;
   createTodoUrl: string;
   tagSearchUrl: string;

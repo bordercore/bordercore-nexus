@@ -212,7 +212,11 @@ export const AddToCollectionModal = forwardRef<
                   />
                   <div className="mt-3 d-flex">
                     <div className="me-3">Is Favorite</div>
-                    <ToggleSwitch checked={isFavorite} onChange={setIsFavorite} />
+                    <ToggleSwitch
+                      name="is_favorite"
+                      checked={isFavorite}
+                      onChange={setIsFavorite}
+                    />
                   </div>
                   <button
                     className="btn btn-primary d-flex ms-auto"

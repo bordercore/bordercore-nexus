@@ -81,6 +81,7 @@ export interface TagDetailMatch {
 
 // Results grouped by doctype for tag detail page
 export interface TagDetailResults {
+  [key: string]: TagDetailMatch[];
   blob: TagDetailMatch[];
   book: TagDetailMatch[];
   bookmark: TagDetailMatch[];

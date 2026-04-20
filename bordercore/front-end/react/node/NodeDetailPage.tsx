@@ -976,7 +976,7 @@ function SortableLayoutItem({ id, editLayout, children }: SortableLayoutItemProp
     if (el) {
       el.style.setProperty(
         "--sortable-transform",
-        transform ? CSS.Transform.toString({ ...transform, scaleX: 1, scaleY: 1 }) : "none"
+        CSS.Transform.toString(transform ? { ...transform, scaleX: 1, scaleY: 1 } : null) ?? "none"
       );
       el.style.setProperty("--sortable-transition", transition ?? "none");
     }

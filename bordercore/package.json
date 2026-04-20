@@ -19,7 +19,8 @@
         "format:react": "prettier --write \"front-end/react/**/*.{ts,tsx,jsx,js}\"",
         "format:check:react": "prettier --check \"front-end/react/**/*.{ts,tsx,jsx,js}\"",
         "lint:react": "eslint --no-eslintrc -c .eslintrc.react.json \"front-end/react/**/*.{ts,tsx,jsx}\"",
-        "lint:staged": "lint-staged"
+        "lint:staged": "lint-staged",
+        "typecheck": "tsc --noEmit"
     },
     "lint-staged": {
         "front-end/react/**/*.{ts,tsx,jsx}": [

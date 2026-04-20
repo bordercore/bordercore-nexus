@@ -691,11 +691,7 @@ export function BlobUpdatePage({
                       autoComplete="off"
                     />
                     <div className="ms-1">
-                      <DropDownMenu
-                        links={dateFormatMenuItems}
-                        initialHide={false}
-                        className="calendar-date-format-menu d-flex align-items-center justify-content-center"
-                      />
+                      <DropDownMenu links={dateFormatMenuItems} />
                     </div>
                   </div>
                 </div>

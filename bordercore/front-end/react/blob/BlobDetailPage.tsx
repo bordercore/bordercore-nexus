@@ -36,7 +36,7 @@ import { Card } from "../common/Card";
 import { DropDownMenu, DropDownMenuHandle } from "../common/DropDownMenu";
 import { RelatedObjects } from "../common/RelatedObjects";
 import { BackReferences } from "../common/BackReferences";
-import { ObjectSelectModal } from "../common/ObjectSelectModal";
+import { ObjectSelectModal, ObjectSelectModalHandle } from "../common/ObjectSelectModal";
 import { TreeMenuRoot } from "../common/TreeMenu";
 import { BlobDetailCover } from "./BlobDetailCover";
 import { CollectionsCard } from "./CollectionsCard";
@@ -119,7 +119,7 @@ export function BlobDetailPage({
   const [isPinnedNote, setIsPinnedNote] = useState(initialIsPinnedNote);
 
   const addToCollectionModalRef = useRef<AddToCollectionModalHandle>(null);
-  const objectSelectModalRef = useRef<{ open: () => void } | null>(null);
+  const objectSelectModalRef = useRef<ObjectSelectModalHandle | null>(null);
   const relatedObjectsRef = useRef<{ refresh: () => void } | null>(null);
   const dropdownMenuRef = useRef<DropDownMenuHandle>(null);
 

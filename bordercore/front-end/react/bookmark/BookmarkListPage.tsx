@@ -73,7 +73,7 @@ export function BookmarkListPage({
   });
 
   const selectValueRef = useRef<SelectValueHandle>(null);
-  const intervalIdRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalIdRef = useRef<number | null>(null);
 
   // Deselect bookmark when any element gets focus
   useEffect(() => {

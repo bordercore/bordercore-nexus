@@ -289,10 +289,7 @@ function SortablePinnedTag({ element, onDelete }: SortablePinnedTagProps) {
   useLayoutEffect(() => {
     const el = elRef.current;
     if (el) {
-      el.style.setProperty(
-        "--sortable-transform",
-        transform ? CSS.Transform.toString(transform) : "none"
-      );
+      el.style.setProperty("--sortable-transform", CSS.Transform.toString(transform) ?? "none");
       el.style.setProperty("--sortable-transition", transition ?? "none");
     }
   }, [transform, transition]);

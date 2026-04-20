@@ -60,7 +60,7 @@ function getScheduleIcon(scheduleType: string): any {
 }
 
 export function RemindersTable({ data }: RemindersTableProps) {
-  const columns = React.useMemo<ColumnDef<Reminder>[]>(
+  const columns = React.useMemo<ColumnDef<Reminder, any>[]>(
     () => [
       columnHelper.accessor("name", {
         header: "Name",

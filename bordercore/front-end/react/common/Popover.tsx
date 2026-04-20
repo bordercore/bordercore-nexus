@@ -97,7 +97,6 @@ export function Popover({
     open,
     onOpenChange: setOpen,
     placement,
-    alignment,
     strategy: "absolute",
     middleware: [
       getOffset(),

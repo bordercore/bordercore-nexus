@@ -46,8 +46,7 @@ export const AddToPlaylistModal = React.forwardRef<
           .filter(p => p.type === "manual")
           .map(p => ({
             uuid: p.uuid,
-            title: p.name,
-            playlist_type: p.type,
+            name: p.name,
           }));
         setPlaylists(manualPlaylists);
 
@@ -153,7 +152,7 @@ export const AddToPlaylistModal = React.forwardRef<
               >
                 {playlists.map(playlist => (
                   <option key={playlist.uuid} value={playlist.uuid}>
-                    {playlist.title}
+                    {playlist.name}
                   </option>
                 ))}
               </select>
