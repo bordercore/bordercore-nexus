@@ -68,6 +68,7 @@ dev = [
     "django-stubs==5.2.2",
     "django-watchfiles==1.1.0",
     "ipython>=9.10.0",
+    "mcp>=1.2.0",
     "moto==5.1.13",
     "mypy==1.17.1",
     "nplusone==1.0.0",

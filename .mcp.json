@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "bordercore-django": {
+      "command": ".venv/bin/python",
+      "args": ["manage.py", "mcp_server"],
+      "env": {
+        "DJANGO_SETTINGS_MODULE": "config.settings.dev"
+      }
+    }
+  }
+}
