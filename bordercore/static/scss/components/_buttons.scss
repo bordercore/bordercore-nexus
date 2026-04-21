@@ -1,7 +1,7 @@
 // =============================================================================
 // COMPONENTS: BUTTONS
 // =============================================================================
-// Button styles and button-related components
+// Button styles using the refined token set (--accent, --fg-*, --bg-*, etc.).
 
 .button-icon {
   display: flex;
@@ -9,12 +9,13 @@
   height: 2.5rem;
   align-items: center;
   justify-content: center;
-  border-radius: var(--border-radius1);
+  border-radius: var(--radius);
   cursor: pointer;
-  transition: background-color 0.2s ease;
-  
+  transition: background-color 0.18s ease, color 0.18s ease;
+
   &:hover {
-    background-color: var(--hover-bg);
+    background-color: color-mix(in oklch, var(--fg-0), transparent 90%);
+    color: var(--fg-0);
   }
 }
 
@@ -27,43 +28,73 @@
   filter: var(--btn-close-filter);
 }
 
+// Primary button — matches .refined-btn.primary
 .btn-primary {
-  border-color: var(--btn-primary-border);
-  background-color: var(--btn-primary-bg);
-  color: var(--btn-primary-text);
-  
+  border: 1px solid color-mix(in oklch, var(--accent), black 10%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklch, var(--accent), white 5%),
+    var(--accent)
+  );
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 20%) inset,
+    0 0 0 1px color-mix(in oklch, var(--accent), transparent 50%),
+    0 8px 20px color-mix(in oklch, var(--accent), transparent 70%);
+  color: var(--accent-fg);
+  font-weight: 600;
+
   &:hover {
-    background-color: var(--btn-primary-hover-bg);
+    border-color: color-mix(in oklch, var(--accent), black 10%);
+    background: linear-gradient(
+      180deg,
+      color-mix(in oklch, var(--accent), white 12%),
+      color-mix(in oklch, var(--accent), white 4%)
+    );
+    color: var(--accent-fg);
+  }
+
+  &:focus,
+  &:focus-visible {
+    box-shadow:
+      0 1px 0 rgb(255 255 255 / 20%) inset,
+      0 0 0 3px var(--accent-glow),
+      0 8px 20px color-mix(in oklch, var(--accent), transparent 70%);
   }
 }
 
+// Secondary — neutral refined button
 .btn-secondary {
-  border-color: var(--btn-secondary-border);
-  background-color: var(--btn-secondary-bg);
-  
+  border: 1px solid var(--line);
+  background-color: var(--bg-2);
+  color: var(--fg-0);
+
   &:hover {
-    background-color: var(--btn-secondary-hover-bg);
+    border-color: var(--fg-3);
+    background-color: var(--bg-3);
+    color: var(--fg-0);
   }
 }
 
+// Segmented button group
 .btn-group {
   .btn {
-    border-color: var(--surface4);
-    
+    border-color: var(--line);
+
     &:not(:first-child) {
       border-left-width: 1px;
     }
-    
+
     &.active {
-      border-color: var(--btn-active-border);
-      background-color: var(--btn-active-bg);
+      border-color: color-mix(in oklch, var(--accent), transparent 40%);
+      background-color: color-mix(in oklch, var(--accent), transparent 82%);
+      color: var(--fg-0);
     }
   }
-  
+
   @media (width < 992px) {
     display: flex;
     flex-wrap: wrap;
-    
+
     .btn {
       flex: 1 0 auto;
     }

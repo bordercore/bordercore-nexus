@@ -1,29 +1,38 @@
 // =============================================================================
 // COMPONENTS: FORMS
 // =============================================================================
-// Form inputs, textareas, checkboxes, tags, and form-related components
+// Form inputs, textareas, checkboxes, tags using the refined token set.
 
-// Form controls
+// Form controls — matches .refined-input
 input.form-control,
 textarea.form-control,
 select.form-control {
-  border: 0.06rem solid var(--surface1);
-  background-color: var(--form-bg);
-  color: var(--form-color) !important;
+  border: 1px solid var(--line);
+  background-color: var(--bg-2);
+  box-shadow: var(--shadow-sm);
+  color: var(--fg-0);
+  transition:
+    border-color 0.18s ease,
+    background-color 0.18s ease,
+    box-shadow 0.18s ease;
 
   &:hover {
-    border-color: var(--form-border-color-hover);
+    border-color: var(--fg-3);
   }
 
   &:focus {
-    border-color: var(--form-border-color-hover);
-    background-color: var(--form-bg-focus);
-    color: var(--text4);
+    border-color: var(--accent);
+    background-color: var(--bg-2);
+    box-shadow:
+      0 0 0 3px var(--accent-glow),
+      var(--shadow-sm);
+    color: var(--fg-0);
   }
 
   &:disabled {
-    border: none;
-    background-color: var(--form-bg-disabled);
+    border: 1px solid var(--line-soft);
+    background-color: color-mix(in oklch, var(--bg-2), transparent 40%);
+    color: var(--fg-3);
 
     &:hover {
       cursor: not-allowed;
@@ -34,6 +43,7 @@ select.form-control {
 input[type="radio"],
 input[type="checkbox"] {
   margin-right: 0.5rem;
+  accent-color: var(--accent);
   cursor: pointer;
 }
 
@@ -41,29 +51,29 @@ input[type="checkbox"] {
   width: 100%;
   min-height: 5rem;
   padding: 0.5rem;
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius1);
-  background-color: var(--surface2);
-  color: var(--text1);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background-color: var(--bg-2);
+  color: var(--fg-0);
   font-family: inherit;
   resize: vertical;
 }
 
 .form-error {
   margin-top: 0.25rem;
-  color: var(--error-text);
+  color: var(--danger);
   font-size: 0.875rem;
 }
 
 .form-section {
   margin-bottom: 1.5rem;
-  color: var(--text3);
+  color: var(--accent);
   font-size: larger;
   font-weight: bold;
 }
 
 ::placeholder {
-  color: var(--text3);
+  color: var(--fg-3);
   opacity: 0.7;
 }
 
@@ -99,50 +109,51 @@ a.tag,
   }
 }
 
-// UI chrome tags (filter pills, selected tag chips) — keep theme accent color
+// UI chrome tags (filter pills, selected tag chips) — accent-tinted
 .tag-accent {
-  border-color: color-mix(in srgb, var(--text3) 25%, transparent);
-  background-color: color-mix(in srgb, var(--text3) 10%, transparent);
-  color: var(--text3);
+  border-color: color-mix(in oklch, var(--accent), transparent 70%);
+  background-color: color-mix(in oklch, var(--accent), transparent 82%);
+  color: color-mix(in oklch, var(--accent), white 15%);
 
   &:link,
   &:visited {
-    color: var(--text3);
+    color: color-mix(in oklch, var(--accent), white 15%);
   }
 
   &:hover {
-    border-color: color-mix(in srgb, var(--text3) 40%, transparent);
-    background-color: color-mix(in srgb, var(--text3) 20%, transparent);
-    color: var(--text3);
+    border-color: color-mix(in oklch, var(--accent), transparent 55%);
+    background-color: color-mix(in oklch, var(--accent), transparent 70%);
+    color: color-mix(in oklch, var(--accent), white 15%);
   }
 }
 
 // Input groups
 .input-group-text {
-  border-color: var(--border-color);
-  background-color: var(--surface2);
-  color: var(--text1);
+  border-color: var(--line);
+  background-color: var(--bg-2);
+  color: var(--fg-1);
 }
 
 // Object select
 .object-select-suggestion {
   padding: 0.5rem 1rem;
   cursor: pointer;
-  transition: background-color 0.2s ease;
-  
+  transition: background-color 0.18s ease;
+
   &:hover {
-    background-color: var(--hover-bg);
+    background-color: color-mix(in oklch, var(--fg-0), transparent 90%);
   }
-  
+
   &.selected {
-    background-color: var(--selected-bg);
+    background-color: color-mix(in oklch, var(--accent), transparent 82%);
+    color: var(--fg-0);
   }
 }
 
 .object-select-misc-item-below {
   padding: 0.5rem 1rem;
-  border-top: 1px solid var(--border-color);
-  color: var(--text2);
+  border-top: 1px solid var(--line-soft);
+  color: var(--fg-2);
   font-size: 0.875rem;
 }
 
@@ -165,7 +176,6 @@ a.tag,
 // PythonConsole component
 .python-console-root {
   // Dynamic height is handled via inline style when needed
-  // This class provides base styling
 }
 
 // Weather component

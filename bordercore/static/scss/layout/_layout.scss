@@ -178,14 +178,14 @@
 }
 
 .card {
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius1);
-  background-color: var(--surface2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  background-color: var(--bg-1);
 
   .card-header {
     padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--border-color);
-    background-color: var(--surface3);
+    border-bottom: 1px solid var(--line-soft);
+    background-color: var(--bg-2);
     font-weight: 600;
   }
 
@@ -195,8 +195,8 @@
 
   .card-footer {
     padding: 0.75rem 1rem;
-    border-top: 1px solid var(--border-color);
-    background-color: var(--surface3);
+    border-top: 1px solid var(--line-soft);
+    background-color: var(--bg-2);
   }
 }
 
