@@ -21,15 +21,15 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius1);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
     aspect-ratio: 1;
-    background-color: var(--surface2);
+    background-color: var(--bg-1);
     cursor: pointer;
     transition: background-color 0.2s ease;
 
     &:hover {
-      background-color: var(--hover-bg);
+      background-color: color-mix(in oklch, var(--fg-0), transparent 92%);
     }
   }
 }
@@ -37,13 +37,13 @@
 // Base blob content (less specific; must come before .blob-list .blob-content)
 .blob-content {
   padding: 1.5rem;
-  border-radius: var(--border-radius1);
-  background-color: var(--surface2);
+  border-radius: var(--radius);
+  background-color: var(--bg-1);
 
   pre {
     padding: 1rem;
-    border-radius: var(--border-radius1);
-    background-color: var(--surface1);
+    border-radius: var(--radius);
+    background-color: var(--bg-0);
     overflow-x: auto;
   }
 }
@@ -51,8 +51,8 @@
 // Note content base (less specific p; must come before .blob-list .blob-content p)
 .note-content {
   padding: 1.5rem;
-  border-radius: var(--border-radius1);
-  background-color: var(--surface2);
+  border-radius: var(--radius);
+  background-color: var(--bg-1);
 
   h1, h2, h3, h4, h5, h6 {
     margin-top: 1.5rem;
@@ -66,14 +66,14 @@
   code {
     padding: 0.125rem 0.25rem;
     border-radius: 0.25rem;
-    background-color: var(--surface1);
+    background-color: var(--bg-0);
   }
 
   blockquote {
     padding-left: 1rem;
-    border-left: 4px solid var(--border-color);
+    border-left: 4px solid var(--line-soft);
     margin: 1rem 0;
-    color: var(--text2);
+    color: var(--fg-2);
   }
 }
 
@@ -97,21 +97,21 @@
   }
 
   &:hover {
-    background-color: var(--hover-bg);
+    background-color: color-mix(in oklch, var(--fg-0), transparent 92%);
   }
 }
 
 #blob-metadata {
   padding: 1rem;
-  border-radius: var(--border-radius1);
+  border-radius: var(--radius);
   margin-top: 1rem;
-  background-color: var(--surface3);
+  background-color: var(--bg-2);
 
   .metadata-row {
     display: flex;
     justify-content: space-between;
     padding: 0.5rem 0;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--line-soft);
 
     &:last-child {
       border-bottom: none;
@@ -122,8 +122,8 @@
 .tree-menu {
   padding: 1rem;
   padding-left: 0;
-  border-radius: var(--border-radius1);
-  background-color: var(--surface2);
+  border-radius: var(--radius);
+  background-color: var(--bg-1);
   list-style: none;
 
   ul {
@@ -167,19 +167,19 @@
 
 #file-upload {
   padding: 2rem;
-  border: 2px dashed var(--border-color);
-  border-radius: var(--border-radius1);
+  border: 2px dashed var(--line-soft);
+  border-radius: var(--radius);
   cursor: pointer;
   text-align: center;
   transition: background-color 0.2s ease;
 
   &:hover {
-    background-color: var(--hover-bg);
+    background-color: color-mix(in oklch, var(--fg-0), transparent 92%);
   }
 
   &.drag-over {
-    border-color: var(--link-color);
-    background-color: var(--selected-bg);
+    border-color: var(--accent);
+    background-color: color-mix(in oklch, var(--accent), transparent 82%);
   }
 }
 
@@ -205,7 +205,7 @@
     position: absolute;
     top: 50%;
     padding: 1rem;
-    border-radius: var(--border-radius1);
+    border-radius: var(--radius);
     background-color: rgb(255 255 255 / 20%);
     color: white;
     cursor: pointer;
@@ -233,19 +233,19 @@ $blob-detail-gutter: 1rem;
   $blob-heading-pink: hsl(330deg 85% 58%);
 
   h1 {
-    color: var(--text2);
+    color: var(--fg-2);
   }
 
   h2 {
-    color: color-mix(in srgb, var(--text2) 55%, $blob-heading-pink);
+    color: color-mix(in srgb, var(--fg-2) 55%, $blob-heading-pink);
   }
 
   h3 {
-    color: color-mix(in srgb, var(--text2) 30%, $blob-heading-pink);
+    color: color-mix(in srgb, var(--fg-2) 30%, $blob-heading-pink);
   }
 
   h4 {
-    color: color-mix(in srgb, var(--text2) 10%, $blob-heading-pink);
+    color: color-mix(in srgb, var(--fg-2) 10%, $blob-heading-pink);
   }
 
   h5 {
@@ -291,22 +291,22 @@ $blob-detail-gutter: 1rem;
   table {
     overflow: hidden;
     width: 100%;
-    border: 1px solid color-mix(in srgb, var(--border-color) 50%, $blob-heading-pink);
-    border-radius: var(--border-radius1);
+    border: 1px solid color-mix(in srgb, var(--line-soft) 50%, $blob-heading-pink);
+    border-radius: var(--radius);
     margin: 0.5rem 0;
     border-collapse: collapse;
 
     th,
     td {
       padding: 0.5rem 0.75rem;
-      border: 1px solid color-mix(in srgb, var(--border-color) 50%, $blob-heading-pink);
+      border: 1px solid color-mix(in srgb, var(--line-soft) 50%, $blob-heading-pink);
     }
 
     thead {
-      background-color: var(--surface3);
+      background-color: var(--bg-2);
 
       th {
-        color: var(--text6);
+        color: var(--fg-2);
         font-weight: 600;
         text-align: left;
       }
@@ -332,7 +332,7 @@ $blob-detail-gutter: 1rem;
   img {
     max-width: 100%;
     max-height: 85vh;
-    border-radius: var(--border-radius1);
+    border-radius: var(--radius);
     object-fit: contain;
   }
 }
@@ -344,7 +344,7 @@ $blob-detail-gutter: 1rem;
   img {
     max-width: 100%;
     max-height: 50vh;
-    border-radius: var(--border-radius1);
+    border-radius: var(--radius);
     object-fit: contain;
   }
 }
@@ -361,7 +361,7 @@ $blob-detail-gutter: 1rem;
   transition: color 0.2s ease;
 
   &:hover {
-    color: var(--link-color);
+    color: var(--accent);
   }
 }
 
@@ -394,19 +394,19 @@ $note-list-gutter: 1rem;
 
   // Match the progressive heading colors from the blob detail page
   h1 {
-    color: var(--text2);
+    color: var(--fg-2);
   }
 
   h2 {
-    color: color-mix(in srgb, var(--text2) 55%, $note-heading-pink);
+    color: color-mix(in srgb, var(--fg-2) 55%, $note-heading-pink);
   }
 
   h3 {
-    color: color-mix(in srgb, var(--text2) 30%, $note-heading-pink);
+    color: color-mix(in srgb, var(--fg-2) 30%, $note-heading-pink);
   }
 
   h4 {
-    color: color-mix(in srgb, var(--text2) 10%, $note-heading-pink);
+    color: color-mix(in srgb, var(--fg-2) 10%, $note-heading-pink);
   }
 
   h5 {
@@ -416,12 +416,12 @@ $note-list-gutter: 1rem;
 
 .note-search-result {
   padding: 1rem;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--line-soft);
   cursor: pointer;
   transition: background-color 0.2s ease;
 
   &:hover {
-    background-color: var(--hover-bg);
+    background-color: color-mix(in oklch, var(--fg-0), transparent 92%);
   }
 }
 
@@ -434,5 +434,5 @@ $note-list-gutter: 1rem;
   max-height: none;
   padding: 1.5rem;
   margin-top: 1rem;
-  background-color: var(--surface2);
+  background-color: var(--bg-1);
 }

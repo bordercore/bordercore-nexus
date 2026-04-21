@@ -32,15 +32,15 @@
     padding: 1.25rem;
     border-radius: 0.4rem;
     margin: 0 0.5rem 1rem;
-    background-color: var(--surface2);
+    background-color: var(--bg-1);
     box-shadow: rgb(0 0 0 / 25%) 0 54px 55px, rgb(0 0 0 / 12%) 0 -12px 30px, rgb(0 0 0 / 12%) 0 0.25rem 0.37rem, rgb(0 0 0 / 17%) 0 12px 13px, rgb(0 0 0 / 9%) 0 -0.18rem 0.31rem;
 
     .card-title {
-      color: var(--text4);
+      color: var(--accent);
       font-size: 1.2rem;
 
       a {
-        color: var(--text4);
+        color: var(--accent);
       }
     }
   }
@@ -49,7 +49,7 @@
   @supports (backdrop-filter: blur(1.56rem) brightness(170%)) {
     .card-body.backdrop-filter {
       backdrop-filter: var(--eye-candy);
-      background: var(--surface1-transparent);
+      background: color-mix(in oklch, var(--bg-1), transparent 100%);
     }
   }
 
@@ -61,39 +61,39 @@
   }
 
   li.list-group-item-secondary {
-    background-color: var(--surface2);
+    background-color: var(--bg-1);
   }
 }
 
 .music-nav {
   display: flex;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--line-soft);
   margin-bottom: 1.5rem;
   gap: 1rem;
 
   .music-nav-item {
     padding: 0.75rem 1rem;
     border-bottom: 2px solid transparent;
-    color: var(--text2);
+    color: var(--fg-2);
     text-decoration: none;
     transition: color 0.2s ease, border-color 0.2s ease;
 
     &:hover {
-      color: var(--text1);
+      color: var(--fg-0);
     }
 
     &.active {
-      border-bottom-color: var(--link-color);
-      color: var(--text1);
+      border-bottom-color: var(--accent);
+      color: var(--fg-0);
     }
   }
 }
 
 #create-album-container {
   padding: 1.5rem;
-  border-radius: var(--border-radius1);
+  border-radius: var(--radius);
   margin-bottom: 1.5rem;
-  background-color: var(--surface2);
+  background-color: var(--bg-1);
 }
 
 .album-grid {
@@ -103,31 +103,31 @@
 
   .album-item {
     padding: 1rem;
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius1);
-    background-color: var(--surface2);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    background-color: var(--bg-1);
     cursor: pointer;
     transition: background-color 0.2s ease;
 
     &:hover {
-      background-color: var(--hover-bg);
+      background-color: color-mix(in oklch, var(--fg-0), transparent 92%);
     }
 
     .album-cover {
       width: 100%;
-      border-radius: var(--border-radius1);
+      border-radius: var(--radius);
       margin-bottom: 0.5rem;
       aspect-ratio: 1;
       object-fit: cover;
     }
 
     .album-title {
-      color: var(--text1);
+      color: var(--fg-0);
       font-weight: 600;
     }
 
     .album-artist {
-      color: var(--text2);
+      color: var(--fg-2);
       font-size: 0.875rem;
     }
   }
@@ -138,30 +138,30 @@
     display: flex;
     align-items: center;
     padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--line-soft);
     cursor: pointer;
     transition: background-color 0.2s ease;
 
     &:hover {
-      background-color: var(--hover-bg);
+      background-color: color-mix(in oklch, var(--fg-0), transparent 92%);
     }
 
     &.playing {
-      background-color: var(--selected-bg);
+      background-color: color-mix(in oklch, var(--accent), transparent 82%);
     }
 
     .track-number {
       width: 2rem;
-      color: var(--text3);
+      color: var(--accent);
     }
 
     .track-title {
       flex: 1;
-      color: var(--text1);
+      color: var(--fg-0);
     }
 
     .track-duration {
-      color: var(--text2);
+      color: var(--fg-2);
     }
   }
 }
@@ -225,12 +225,12 @@
 // Star rating in song table
 .rating {
   display: inline-block;
-  color: var(--surface2);
+  color: var(--bg-1);
   transition: color 0.15s ease;
 }
 
 .rating-star-selected {
-  color: var(--surface7);
+  color: var(--accent);
 }
 
 @keyframes star-pulse {
@@ -247,7 +247,7 @@
 
 tr.hover-target:hover {
   .rating:not(.rating-star-selected) {
-    color: var(--surface4);
+    color: var(--bg-3);
   }
 }
 
@@ -260,8 +260,8 @@ tr.hover-target:hover {
   display: flex;
   align-items: center;
   padding: 1rem;
-  border-top: 1px solid var(--border-color);
-  background-color: var(--surface2);
+  border-top: 1px solid var(--line-soft);
+  background-color: var(--bg-1);
   gap: 1rem;
 
   .player-controls {
@@ -273,12 +273,12 @@ tr.hover-target:hover {
     flex: 1;
 
     .player-track-title {
-      color: var(--text1);
+      color: var(--fg-0);
       font-weight: 600;
     }
 
     .player-artist {
-      color: var(--text2);
+      color: var(--fg-2);
       font-size: 0.875rem;
     }
   }

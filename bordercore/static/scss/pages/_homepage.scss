@@ -9,7 +9,7 @@
     padding: 1.25rem;
     border-radius: 0.4rem;
     margin: 0;
-    background-color: var(--surface2);
+    background-color: var(--bg-1);
   }
 
   // Backdrop filter support for glass effect (matches _music.scss)
@@ -27,16 +27,16 @@
   }
 
   .card-title {
-    color: var(--text4);
+    color: var(--accent);
     font-size: 1.2rem;
 
     a {
-      color: var(--text4);
+      color: var(--accent);
     }
   }
 
   li.list-group-item-secondary {
-    background-color: var(--surface2);
+    background-color: var(--bg-1);
   }
 
 
@@ -50,7 +50,7 @@
     }
 
     text {
-      fill: var(--text4);
+      fill: var(--accent);
     }
   }
 }

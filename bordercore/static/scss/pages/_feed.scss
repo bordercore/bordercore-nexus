@@ -4,14 +4,14 @@
 // Feed list and feed item styles
 
 .feed-page .card {
-  background: linear-gradient(to right, var(--surface2), var(--surface3));
+  background: linear-gradient(to right, var(--bg-1), var(--bg-2));
 }
 
 .feed-item {
-  border-radius: var(--border-radius1);
+  border-radius: var(--radius);
 
   &.selected {
-    background-color: var(--selected-bg);
+    background-color: color-mix(in oklch, var(--accent), transparent 82%);
   }
 
   a {
@@ -26,5 +26,5 @@
 
 .feed-items-list li {
   padding-left: 0.5rem;
-  border-radius: var(--border-radius1);
+  border-radius: var(--radius);
 }

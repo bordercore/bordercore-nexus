@@ -12,7 +12,7 @@
 }
 
 .node-name {
-  color: var(--text4);
+  color: var(--accent);
 }
 
 .node-note {
@@ -20,7 +20,7 @@
 }
 
 .node-object-note {
-  color: var(--text4);
+  color: var(--accent);
   font-size: 0.87rem;
 }
 
@@ -117,9 +117,9 @@
 }
 
 .dragging .slicklist-list-item-inner {
-  border-radius: var(--border-radius1);
-  background: var(--surface-bg);
-  box-shadow: 0 0 20px rgb(var(--bs-primary-rgb) / 50%);
+  border-radius: var(--radius);
+  background: var(--bg-1);
+  box-shadow: 0 0 20px var(--accent-glow);
   transform: scale(1.08);
 }
 
@@ -150,12 +150,12 @@
   height: 3px;
   border-radius: 2px;
   margin-bottom: var(--column-gutter);
-  background-color: var(--link-color);
+  background-color: var(--accent);
 }
 
 // Layout drag overlay - rendered outside normal flow via portal (dnd-kit DragOverlay)
 .layout-drag-overlay {
   .card {
-    box-shadow: 0 0 20px rgb(var(--bs-primary-rgb) / 50%);
+    box-shadow: 0 0 20px var(--accent-glow);
   }
 }

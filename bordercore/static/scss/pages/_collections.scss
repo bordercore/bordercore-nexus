@@ -70,9 +70,9 @@
 
   &.dragging {
     z-index: 999;
-    border-radius: var(--border-radius1);
-    background: var(--surface-bg);
-    box-shadow: 0 0 20px rgb(var(--bs-primary-rgb) / 50%);
+    border-radius: var(--radius);
+    background: var(--bg-1);
+    box-shadow: 0 0 20px var(--accent-glow);
   }
 }
 
@@ -82,14 +82,14 @@
 
 // Collection object grid drag target
 .collection-sortable .drag-target {
-  background-color: var(--surface2);
+  background-color: var(--bg-1);
   transition: box-shadow 0.2s ease, outline-color 0.2s ease;
 }
 
 hr.collection-list-divider {
   height: 0.3rem;
   margin-top: 0;
-  background-color: var(--surface7);
+  background-color: var(--accent);
 }
 
 #collection-list {
@@ -109,8 +109,8 @@ hr.collection-list-divider {
 
 // Tag filter list badges
 .list-with-counts .badge {
-  background-color: var(--surface4);
-  color: var(--text2);
+  background-color: var(--bg-3);
+  color: var(--fg-2);
 }
 
 // Collection detail page breadcrumb
