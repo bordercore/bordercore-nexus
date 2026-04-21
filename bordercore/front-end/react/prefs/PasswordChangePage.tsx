@@ -1,134 +1,277 @@
-import React from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faInfo } from "@fortawesome/free-solid-svg-icons";
+import axios from "axios";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import PasswordStrength, { computeStrength } from "./components/PasswordStrength";
+import PreferencesLayout from "./components/PreferencesLayout";
+import Row from "./components/Row";
+import SecretField from "./components/SecretField";
+import SectionCard from "./components/SectionCard";
+import Toggle from "./components/Toggle";
 
-interface PasswordChangePageProps {
+export interface PasswordChangePageProps {
   formAction: string;
   csrfToken: string;
   prefsUrl: string;
+  passwordUrl: string;
+  username: string;
+  sessionsUrl: string;
+  sessionsRevokeUrlTemplate: string;
 }
 
-export function PasswordChangePage({ formAction, csrfToken, prefsUrl }: PasswordChangePageProps) {
+interface SessionRow {
+  uuid: string;
+  device: string;
+  ip_address: string | null;
+  last_seen_at: string;
+  created_at: string;
+  is_current: boolean;
+}
+
+function formatRelative(iso: string): string {
+  const then = new Date(iso).getTime();
+  const now = Date.now();
+  const secs = Math.max(0, Math.round((now - then) / 1000));
+  if (secs < 60) return "now";
+  const mins = Math.round(secs / 60);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.round(hrs / 24);
+  if (days < 30) return `${days}d ago`;
+  const months = Math.round(days / 30);
+  if (months < 12) return `${months}mo ago`;
+  return `${Math.round(months / 12)}y ago`;
+}
+
+export function PasswordChangePage({
+  formAction,
+  csrfToken,
+  prefsUrl,
+  passwordUrl,
+  username,
+  sessionsUrl,
+  sessionsRevokeUrlTemplate,
+}: PasswordChangePageProps) {
+  const [current, setCurrent] = useState("");
+  const [next, setNext] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string[]>>({});
+
+  const strength = useMemo(() => computeStrength(next, confirm), [next, confirm]);
+  const canSubmit =
+    !saving && current.length > 0 && next.length > 0 && next === confirm && strength.score >= 3;
+
+  const [sessions, setSessions] = useState<SessionRow[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(true);
+  const [sessionsError, setSessionsError] = useState<string | null>(null);
+  const [revoking, setRevoking] = useState<string | null>(null);
+
+  const loadSessions = useCallback(async () => {
+    if (!sessionsUrl) return;
+    setSessionsLoading(true);
+    setSessionsError(null);
+    try {
+      const resp = await axios.get<SessionRow[]>(sessionsUrl, {
+        withCredentials: true,
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+      });
+      setSessions(resp.data);
+    } catch {
+      setSessionsError("Unable to load active sessions.");
+    } finally {
+      setSessionsLoading(false);
+    }
+  }, [sessionsUrl]);
+
+  useEffect(() => {
+    loadSessions();
+  }, [loadSessions]);
+
+  const revokeSession = useCallback(
+    async (uuid: string) => {
+      if (!sessionsRevokeUrlTemplate) return;
+      setRevoking(uuid);
+      try {
+        const url = sessionsRevokeUrlTemplate.replace("00000000-0000-0000-0000-000000000000", uuid);
+        await axios.post(url, null, {
+          headers: { "X-CSRFToken": csrfToken, "X-Requested-With": "XMLHttpRequest" },
+          withCredentials: true,
+        });
+        setSessions(prev => prev.filter(s => s.uuid !== uuid));
+      } catch {
+        setSessionsError("Unable to revoke that session.");
+      } finally {
+        setRevoking(null);
+      }
+    },
+    [csrfToken, sessionsRevokeUrlTemplate]
+  );
+
+  const submit = useCallback(async () => {
+    if (!canSubmit) return;
+    setSaving(true);
+    setErrors({});
+    setSuccess(false);
+
+    const form = new FormData();
+    form.append("csrfmiddlewaretoken", csrfToken);
+    form.append("old_password", current);
+    form.append("new_password1", next);
+    form.append("new_password2", confirm);
+
+    try {
+      const resp = await axios.post(formAction, form, {
+        headers: { "X-CSRFToken": csrfToken, "X-Requested-With": "XMLHttpRequest" },
+        withCredentials: true,
+        maxRedirects: 0,
+        validateStatus: s => s < 500,
+      });
+
+      // Django's PasswordChangeView redirects on success and re-renders the
+      // form (with errors in the HTML response body) on failure. A 302/200
+      // response status we can't easily introspect on the form itself, so
+      // treat a successful POST as success unless the server returns 400.
+      if (resp.status === 400 && resp.data && typeof resp.data === "object") {
+        setErrors(resp.data as Record<string, string[]>);
+      } else {
+        setSuccess(true);
+        setCurrent("");
+        setNext("");
+        setConfirm("");
+      }
+    } catch (err) {
+      const response = axios.isAxiosError(err) ? err.response : undefined;
+      if (response?.status === 400 && response.data && typeof response.data === "object") {
+        setErrors(response.data as Record<string, string[]>);
+      } else {
+        setErrors({ __all__: ["Unable to change password. Try again."] });
+      }
+    } finally {
+      setSaving(false);
+    }
+  }, [canSubmit, confirm, csrfToken, current, formAction, next]);
+
   return (
-    <div className="row g-0 h-100 mx-2">
-      {/* Left sidebar with info */}
-      <div className="col-lg-3 d-flex flex-column">
-        <div className="card-body">
-          <div className="d-flex flex-column mt-3">
-            <div className="d-flex align-items-center me-2 pt-1">
-              <div className="circle me-3 mb-2">
-                <FontAwesomeIcon icon={faInfo} />
-              </div>
-              <h6 className="text-secondary">Password change</h6>
-            </div>
-            <div>
-              <span>Change your password</span> by first verifying your existing password, then
-              entering your new password with confirmation.
-            </div>
+    <div className="prefs-app">
+      <PreferencesLayout
+        activeTab="password"
+        prefsUrl={prefsUrl}
+        passwordUrl={passwordUrl}
+        pageTitle="Password &amp; Security"
+        pageSubtitle="account protection"
+        pageDescription="Rotate your password, manage active sessions, and review two-factor enrollment."
+        sidebarInfo={{
+          title: "Password change",
+          body: "Choose a long, unique password. Use a password manager so you don't have to remember it.",
+        }}
+      >
+        {errors.__all__ && (
+          <div className="prefs-errors prefs-errors-banner">
+            {errors.__all__.map((e, i) => (
+              <span key={i} className="err">
+                {e}
+              </span>
+            ))}
           </div>
-        </div>
-      </div>
+        )}
 
-      {/* Main content */}
-      <div className="col-lg-9">
-        <div className="card-grid ms-3 me-3">
-          {/* Tab navigation */}
-          <ul
-            className="nav nav-tabs justify-content-center mb-4"
-            id="v-pills-tab"
-            role="tablist"
-            aria-orientation="vertical"
+        <SectionCard title="Change password">
+          <Row label="Current password" errors={errors.old_password}>
+            <SecretField
+              value={current}
+              onChange={setCurrent}
+              placeholder="enter current password"
+              autoComplete="current-password"
+            />
+          </Row>
+
+          <Row
+            label="New password"
+            hint="at least 12 characters with mixed case, numbers, and symbols"
+            errors={errors.new_password1}
           >
-            <li className="nav-item">
-              <a
-                className="nav-link"
-                href={prefsUrl}
-                role="tab"
-                aria-controls="v-pills-main"
-                aria-selected="false"
+            <SecretField
+              value={next}
+              onChange={setNext}
+              placeholder="choose a new password"
+              autoComplete="new-password"
+            />
+            <PasswordStrength password={next} confirm={confirm} />
+          </Row>
+
+          <Row label="Confirm password" errors={errors.new_password2}>
+            <SecretField
+              value={confirm}
+              onChange={setConfirm}
+              placeholder="repeat new password"
+              autoComplete="new-password"
+            />
+          </Row>
+
+          <Row label="" hint="">
+            <div className="prefs-actions-row">
+              <button
+                type="button"
+                className="prefs-btn primary"
+                disabled={!canSubmit}
+                onClick={submit}
               >
-                Main
-              </a>
-            </li>
-            <li className="nav-item">
-              <a
-                className="nav-link active"
-                href={formAction}
-                role="tab"
-                aria-controls="v-pills-password"
-                aria-selected="true"
-              >
-                Password
-              </a>
-            </li>
-          </ul>
-
-          {/* Password change form */}
-          <form encType="multipart/form-data" action={formAction} method="post">
-            <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken} />
-
-            <div className="row mb-3">
-              <label className="fw-bold col-lg-3 col-form-label text-end" htmlFor="id_old_password">
-                Old Password
-              </label>
-              <div className="col-lg-6">
-                <input
-                  type="password"
-                  name="old_password"
-                  className="form-control"
-                  autoFocus
-                  required
-                  id="id_old_password"
-                />
-              </div>
+                {saving ? "updating…" : "update password"}
+              </button>
+              {success && <span className="prefs-ok-note">✓ Password updated.</span>}
             </div>
+          </Row>
+        </SectionCard>
 
-            <div className="row mb-3">
-              <label
-                className="fw-bold col-lg-3 col-form-label text-end"
-                htmlFor="id_new_password1"
-              >
-                New Password
-              </label>
-              <div className="col-lg-6">
-                <input
-                  type="password"
-                  name="new_password1"
-                  className="form-control"
-                  required
-                  id="id_new_password1"
-                />
-              </div>
+        <SectionCard title="Sessions &amp; security">
+          <Row label="Active sessions" hint="sign out of other devices">
+            <div className="prefs-session-list">
+              {sessionsLoading && <div className="prefs-empty-note">loading…</div>}
+              {sessionsError && (
+                <div className="prefs-errors">
+                  <span className="err">{sessionsError}</span>
+                </div>
+              )}
+              {!sessionsLoading && sessions.length === 0 && !sessionsError && (
+                <div className="prefs-empty-note">no active sessions</div>
+              )}
+              {sessions.map(s => (
+                <div key={s.uuid} className="prefs-session">
+                  <div>
+                    <div className="device">{s.device}</div>
+                    <div className="meta">
+                      {s.ip_address || "unknown ip"} · {formatRelative(s.last_seen_at)}
+                    </div>
+                  </div>
+                  {s.is_current ? (
+                    <span className="prefs-badge ok">this device</span>
+                  ) : (
+                    <button
+                      type="button"
+                      className="prefs-btn danger-ghost"
+                      onClick={() => revokeSession(s.uuid)}
+                      disabled={revoking === s.uuid}
+                    >
+                      {revoking === s.uuid ? "revoking…" : "revoke"}
+                    </button>
+                  )}
+                </div>
+              ))}
             </div>
-
-            <div className="row mb-3">
-              <label
-                className="fw-bold col-lg-3 col-form-label text-end"
-                htmlFor="id_new_password2"
-              >
-                New Password Confirmation
-              </label>
-              <div className="col-lg-6">
-                <input
-                  type="password"
-                  name="new_password2"
-                  className="form-control"
-                  required
-                  id="id_new_password2"
-                />
-              </div>
-            </div>
-
-            <div className="row mb-3">
-              <div className="col-lg-3 offset-lg-3">
-                <button className="btn btn-primary" type="submit">
-                  Update
-                </button>
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
+          </Row>
+          <Row label="Two-factor auth" hint="TOTP via authenticator app">
+            <Toggle
+              value={false}
+              onChange={() => {
+                /* TODO: wire TOTP enrollment modal */
+              }}
+              onLabel="enrolled"
+              offLabel="disabled"
+            />
+          </Row>
+        </SectionCard>
+      </PreferencesLayout>
     </div>
   );
 }

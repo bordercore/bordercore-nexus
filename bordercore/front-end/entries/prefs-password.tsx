@@ -7,6 +7,11 @@ if (container) {
   const formAction = container.getAttribute("data-form-action") || "";
   const csrfToken = container.getAttribute("data-csrf-token") || "";
   const prefsUrl = container.getAttribute("data-prefs-url") || "";
+  const passwordUrl = container.getAttribute("data-password-url") || formAction;
+  const username = container.getAttribute("data-username") || "";
+  const sessionsUrl = container.getAttribute("data-sessions-url") || "";
+  const sessionsRevokeUrlTemplate =
+    container.getAttribute("data-sessions-revoke-url-template") || "";
 
   const root = createRoot(container);
   root.render(
@@ -14,6 +19,10 @@ if (container) {
       formAction={formAction}
       csrfToken={csrfToken}
       prefsUrl={prefsUrl}
+      passwordUrl={passwordUrl}
+      username={username}
+      sessionsUrl={sessionsUrl}
+      sessionsRevokeUrlTemplate={sessionsRevokeUrlTemplate}
     />
   );
 }

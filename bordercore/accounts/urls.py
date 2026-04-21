@@ -54,4 +54,14 @@ urlpatterns = [
         view=views.get_weather,
         name="get_weather"
     ),
+    path(
+        route="sessions/",
+        view=views.list_sessions,
+        name="list_sessions"
+    ),
+    path(
+        route="sessions/<uuid:session_uuid>/revoke/",
+        view=views.revoke_session,
+        name="revoke_session"
+    ),
 ]

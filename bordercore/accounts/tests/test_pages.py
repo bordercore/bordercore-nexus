@@ -34,7 +34,7 @@ def test_prefs(collection, login, live_server, browser, settings, s3_resource, s
     # Test that preferences were successfully updated
     page.update()
     time.sleep(1)
-    assert page.prefs_updated_message() == "Success\nPreferences edited"
+    assert "saved" in page.prefs_updated_message().lower()
 
     # Test that the theme was switched
     assert page.selected_theme() == THEME_NAME

@@ -15,22 +15,22 @@ interface FormField {
 
 const container = document.getElementById("react-root");
 if (container) {
-  // Get data from data attributes
   const formAction = container.getAttribute("data-form-action") || "";
   const csrfToken = container.getAttribute("data-csrf-token") || "";
   const tagSearchUrl = container.getAttribute("data-tag-search-url") || "";
   const passwordUrl = container.getAttribute("data-password-url") || "";
+  const prefsUrl = container.getAttribute("data-prefs-url") || formAction;
   const authToken = container.getAttribute("data-auth-token") || "";
+  const username = container.getAttribute("data-username") || "";
   const groups = container.getAttribute("data-groups") || "";
-  const sidebarImage = container.getAttribute("data-sidebar-image") || "";
-  const backgroundImage = container.getAttribute("data-background-image") || "";
+  const sidebarImageUrl = container.getAttribute("data-sidebar-image-url") || "";
+  const sidebarImageName = container.getAttribute("data-sidebar-image-name") || "";
+  const backgroundImageUrl = container.getAttribute("data-background-image-url") || "";
+  const backgroundImageName = container.getAttribute("data-background-image-name") || "";
   const eyeCandy = container.getAttribute("data-eye-candy") === "true";
-  const instagramUsername =
-    container.getAttribute("data-instagram-username") || "";
-  const instagramPassword =
-    container.getAttribute("data-instagram-password") || "";
+  const instagramUsername = container.getAttribute("data-instagram-username") || "";
+  const instagramPassword = container.getAttribute("data-instagram-password") || "";
 
-  // Parse initial tags from json_script
   let initialTags: string[] = [];
   const tagsScript = document.getElementById("initial-tags");
   if (tagsScript) {
@@ -41,7 +41,6 @@ if (container) {
     }
   }
 
-  // Parse form fields from json_script
   let formFields: FormField[] = [];
   const fieldsScript = document.getElementById("formFields");
   if (fieldsScript) {
@@ -59,10 +58,14 @@ if (container) {
       csrfToken={csrfToken}
       tagSearchUrl={tagSearchUrl}
       passwordUrl={passwordUrl}
+      prefsUrl={prefsUrl}
       authToken={authToken}
+      username={username}
       groups={groups}
-      sidebarImage={sidebarImage}
-      backgroundImage={backgroundImage}
+      sidebarImageUrl={sidebarImageUrl}
+      sidebarImageName={sidebarImageName}
+      backgroundImageUrl={backgroundImageUrl}
+      backgroundImageName={backgroundImageName}
       eyeCandy={eyeCandy}
       initialTags={initialTags}
       instagramUsername={instagramUsername}

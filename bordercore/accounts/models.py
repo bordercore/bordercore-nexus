@@ -13,11 +13,13 @@ from typing import Any
 from feed.models import Feed
 
 from django.contrib.auth.models import User
+from django.contrib.auth.signals import user_logged_in
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.db.models import JSONField, UniqueConstraint
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
+from django.http import HttpRequest
 
 from accounts.themes import DEFAULT_THEME, get_theme_choices
 from blob.models import Blob
@@ -68,6 +70,7 @@ class UserProfile(models.Model):
     eye_candy = models.BooleanField(default=False)
     drill_tags_muted = models.ManyToManyField(Tag, related_name="drill_tags_muted")
     sidebar_order = JSONField(default=list, blank=True)
+    bookmarks_per_page = models.PositiveIntegerField(default=50)
 
     theme = models.CharField(
         max_length=20,
@@ -258,3 +261,56 @@ def create_user_profile(sender: type[User], instance: User, created: bool, **kwa
     """
     if created:
         UserProfile.objects.create(user=instance)
+
+
+class UserSession(models.Model):
+    """A row per active browser session for a user.
+
+    Mirrors ``django.contrib.sessions`` rows and adds metadata that Django's
+    built-in session model doesn't track (user agent, IP, last seen, creation
+    time) so the preferences page can show a "where am I signed in" list and
+    let users revoke individual sessions.
+    """
+
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="active_sessions")
+    session_key = models.CharField(max_length=40, unique=True)
+    user_agent = models.TextField(blank=True, default="")
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_seen_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("-last_seen_at",)
+
+    def __str__(self) -> str:
+        """Return string representation of the session."""
+        return f"UserSession({self.user.username}, {self.session_key[:8]}…)"
+
+
+def _client_ip(request: HttpRequest) -> str | None:
+    """Best-effort extraction of the originating IP from a request."""
+    forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "")
+    if forwarded:
+        return forwarded.split(",")[0].strip() or None
+    return request.META.get("REMOTE_ADDR") or None
+
+
+@receiver(user_logged_in)
+def record_user_session(sender: Any, request: HttpRequest, user: User, **kwargs: Any) -> None:
+    """Create or refresh a ``UserSession`` row when a user logs in."""
+    session = getattr(request, "session", None)
+    if session is None:
+        return
+    # Force a session key to exist so we can attach the UserSession row to it.
+    if not session.session_key:
+        session.save()
+
+    UserSession.objects.update_or_create(
+        session_key=session.session_key,
+        defaults={
+            "user": user,
+            "user_agent": request.META.get("HTTP_USER_AGENT", "")[:500],
+            "ip_address": _client_ip(request),
+        },
+    )

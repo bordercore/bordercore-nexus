@@ -11,8 +11,6 @@ except ModuleNotFoundError:
     # Don't worry if this import doesn't exist in production
     pass
 
-from accounts.themes import get_display_name
-
 from test_page import Page
 
 
@@ -21,11 +19,10 @@ class PrefsPage(Page):
     URL = reverse("accounts:prefs")
 
     TITLE = (By.TAG_NAME, "title")
-    THEME_ID = (By.ID, "id_theme")
     COLLECTION_ID = (By.ID, "id_homepage_default_collection")
-    UPDATE_BUTTON = (By.CSS_SELECTOR, "input[value='Update']")
-    THEME_SELECTED = (By.CSS_SELECTOR, "select#id_theme option")
-    PREFS_UPDATED_MESSAGE = (By.CSS_SELECTOR, "div.toast-wrapper.success")
+    UPDATE_BUTTON = (By.CSS_SELECTOR, "button[data-testid='prefs-save']")
+    THEME_SELECTED = (By.CSS_SELECTOR, "button.prefs-theme-card.selected")
+    SAVED_MESSAGE = (By.CSS_SELECTOR, ".prefs-savebar .msg")
     DEFAULT_COLLECTION_SELECTED = (By.CSS_SELECTOR, "select#id_homepage_default_collection option")
 
     def __init__(self, browser):
@@ -43,12 +40,13 @@ class PrefsPage(Page):
 
     def choose_theme(self, theme_css_id):
         """
-        Select a theme by its CSS ID (e.g., 'dark').
-        Looks up the display name to select by visible text.
+        Select a theme by clicking the matching theme card.
         """
-        display_name = get_display_name(theme_css_id)
-        select = Select(self.browser.find_element(*self.THEME_ID))
-        select.select_by_visible_text(display_name)
+        card = self.browser.find_element(
+            By.CSS_SELECTOR, f"button.prefs-theme-card[data-theme='{theme_css_id}']"
+        )
+        self.browser.execute_script("arguments[0].scrollIntoView();", card)
+        card.click()
 
     def choose_default_collection(self, collection_name):
         """
@@ -59,35 +57,31 @@ class PrefsPage(Page):
 
     def selected_theme(self):
         """
-        Return the CSS ID (value attribute) of the selected theme option.
+        Return the CSS ID (value attribute) of the selected theme card.
         """
-        options = self.browser.find_elements(*self.THEME_SELECTED)
-        selected_option = [x for x in options if x.is_selected()][0]
-        return selected_option.get_attribute("value")
+        selected_card = self.browser.find_element(*self.THEME_SELECTED)
+        return selected_card.get_attribute("data-theme")
 
     def selected_default_collection(self):
-        # selected_option = self.browser.find_element(*self.DEFAULT_COLLECTION_SELECTED).text
         options = self.browser.find_elements(*self.DEFAULT_COLLECTION_SELECTED)
         return [x for x in options if x.is_selected()][0].text
 
     def update(self):
         """
-        Click the 'Update' button
+        Click the 'save changes' button in the save bar.
         """
         update_input = self.browser.find_element(*self.UPDATE_BUTTON)
-
-        # Scroll the page to avoid 'Element...could not be scrolled into view' error
         self.browser.execute_script("arguments[0].scrollIntoView();", update_input)
         time.sleep(1)
-
         update_input.click()
 
     def prefs_updated_message(self):
         """
-        Find the success message after updating preference options
+        Read the save bar's confirmation message after saving.
         """
-        # Wait for the alert to appear after form submission
         wait = WebDriverWait(self.browser, timeout=10)
-        wait.until(lambda driver: driver.find_element(*self.PREFS_UPDATED_MESSAGE))
-        message = self.browser.find_element(*self.PREFS_UPDATED_MESSAGE)
+        wait.until(
+            lambda driver: "saved" in driver.find_element(*self.SAVED_MESSAGE).text.lower()
+        )
+        message = self.browser.find_element(*self.SAVED_MESSAGE)
         return message.text

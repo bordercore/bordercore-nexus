@@ -6,12 +6,19 @@ including validation and field configuration.
 from typing import Any
 
 from django.forms import (ModelChoiceField, ModelForm, Select, Textarea,
-                          TextInput)
+                          TextInput, TypedChoiceField)
 
 from accounts.models import UserProfile
 from collection.models import Collection
 from lib.fields import ModelCommaSeparatedChoiceField
 from tag.models import Tag
+
+BOOKMARKS_PER_PAGE_CHOICES = [
+    (25, "25"),
+    (50, "50"),
+    (100, "100"),
+    (200, "200"),
+]
 
 
 class UserProfileForm(ModelForm):
@@ -46,6 +53,13 @@ class UserProfileForm(ModelForm):
 
         self.fields["drill_intervals"].widget.attrs["class"] = "form-control"
         self.fields["nytimes_api_key"].label = "NYTimes API key"
+
+        self.fields["bookmarks_per_page"] = TypedChoiceField(
+            label="Bookmarks per page",
+            choices=BOOKMARKS_PER_PAGE_CHOICES,
+            coerce=int,
+            required=True,
+        )
 
         self.fields["drill_tags_muted"] = ModelCommaSeparatedChoiceField(
             request=self.request,
@@ -95,7 +109,8 @@ class UserProfileForm(ModelForm):
             "instagram_credentials",
             "google_calendar",
             "google_calendar_email",
-            "eye_candy"
+            "eye_candy",
+            "bookmarks_per_page",
         )
         widgets = {
             "google_calendar": Textarea(attrs={"class": "form-control"}),

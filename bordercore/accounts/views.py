@@ -20,15 +20,18 @@ from django.contrib.auth.models import User
 from django.contrib.auth.views import PasswordChangeView
 from django.core.files.uploadedfile import UploadedFile
 from django.forms import BaseModelForm
-from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
+from django.http import (HttpRequest, HttpResponse, HttpResponseRedirect,
+                         JsonResponse)
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_http_methods
 from django.views.generic.edit import UpdateView
 
+from django.contrib.sessions.models import Session
+
 from accounts.forms import UserProfileForm
-from accounts.models import UserNote, UserProfile
+from accounts.models import UserNote, UserProfile, UserSession
 from accounts.services import delete_profile_image, upload_profile_image
 from blob.models import Blob
 from lib.decorators import validate_post_data
@@ -69,6 +72,17 @@ class UserProfileUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView):
         if user.userprofile.instagram_credentials:
             context["instagram_username"] = user.userprofile.instagram_credentials.get("username", "")
             context["instagram_password"] = user.userprofile.instagram_credentials.get("password", "")
+
+        profile_uuid = str(self.object.uuid)
+        s3_host = "https://bordercore-blobs.s3.amazonaws.com"
+        if self.object.background_image:
+            context["background_image_url"] = (
+                f"{s3_host}/background/{profile_uuid}/{self.object.background_image}"
+            )
+        if self.object.sidebar_image:
+            context["sidebar_image_url"] = (
+                f"{s3_host}/sidebar/{profile_uuid}/{self.object.sidebar_image}"
+            )
 
         return context
 
@@ -112,8 +126,21 @@ class UserProfileUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView):
         # Save the drill_tags_muted field
         form.save_m2m()
 
+        if self._is_ajax():
+            return JsonResponse({"status": "ok"})
+
         messages.success(self.request, "Preferences edited")
         return redirect("accounts:prefs")  # or whatever route
+
+    def form_invalid(self, form: BaseModelForm) -> HttpResponse:
+        """Render form errors as JSON for XHR submissions."""
+        if self._is_ajax():
+            return JsonResponse(form.errors, status=400)
+        return super().form_invalid(form)
+
+    def _is_ajax(self) -> bool:
+        """Return True when the request was made with XMLHttpRequest."""
+        return self.request.headers.get("X-Requested-With") == "XMLHttpRequest"
 
     def _handle_s3_image(
         self,
@@ -218,6 +245,9 @@ class ChangePasswordView(LoginRequiredMixin, PasswordChangeView):
         user = form.save()
         update_session_auth_hash(self.request, user)
 
+        if self._is_ajax():
+            return JsonResponse({"status": "ok"})
+
         messages.success(self.request, "Your password has been updated.")
         return super().form_valid(form)
 
@@ -233,6 +263,9 @@ class ChangePasswordView(LoginRequiredMixin, PasswordChangeView):
         Returns:
             HTTP response rendering the form with error messages.
         """
+        if self._is_ajax():
+            return JsonResponse(form.errors, status=400)
+
         # Non-field errors (e.g. "Your old password was entered incorrectly")
         for error in form.non_field_errors():
             messages.error(self.request, str(error))
@@ -248,6 +281,10 @@ class ChangePasswordView(LoginRequiredMixin, PasswordChangeView):
 
         # Let the base view re-render the form with errors as well
         return super().form_invalid(form)
+
+    def _is_ajax(self) -> bool:
+        """Return True when the request was made with XMLHttpRequest."""
+        return self.request.headers.get("X-Requested-With") == "XMLHttpRequest"
 
 
 @api_view(["POST"])
@@ -462,3 +499,93 @@ def get_weather(request: HttpRequest) -> Response:
     weather_data = user.userprofile.weather if hasattr(user, "userprofile") else None
 
     return Response({"weather": weather_data})
+
+
+def _parse_user_agent(ua: str) -> tuple[str, str]:
+    """Return ``(os_label, browser_label)`` from a User-Agent string.
+
+    Intentionally minimal — covers the common desktop + mobile combinations
+    without pulling in a UA-parser dependency.
+    """
+    ua_lower = ua.lower()
+
+    if "iphone" in ua_lower:
+        os_name = "iPhone"
+    elif "ipad" in ua_lower:
+        os_name = "iPad"
+    elif "android" in ua_lower:
+        os_name = "Android"
+    elif "macintosh" in ua_lower or "mac os x" in ua_lower:
+        os_name = "macOS"
+    elif "windows" in ua_lower:
+        os_name = "Windows"
+    elif "linux" in ua_lower:
+        os_name = "Linux"
+    else:
+        os_name = "Unknown device"
+
+    if "edg/" in ua_lower or "edge/" in ua_lower:
+        browser = "Edge"
+    elif "opr/" in ua_lower or "opera" in ua_lower:
+        browser = "Opera"
+    elif "chrome/" in ua_lower and "chromium" not in ua_lower:
+        browser = "Chrome"
+    elif "firefox/" in ua_lower:
+        browser = "Firefox"
+    elif "safari/" in ua_lower:
+        browser = "Safari"
+    else:
+        browser = "browser"
+
+    return os_name, browser
+
+
+@api_view(["GET"])
+def list_sessions(request: HttpRequest) -> Response:
+    """List the current user's active browser sessions."""
+    user = cast(User, request.user)
+    current_key = request.session.session_key
+
+    # Only include UserSession rows whose underlying Django session still exists.
+    our_keys = UserSession.objects.filter(user=user).values_list("session_key", flat=True)
+    live_keys = set(
+        Session.objects.filter(session_key__in=list(our_keys)).values_list(
+            "session_key", flat=True
+        )
+    )
+
+    sessions = (
+        UserSession.objects.filter(user=user, session_key__in=live_keys)
+        .order_by("-last_seen_at")
+    )
+
+    data = []
+    for s in sessions:
+        os_name, browser = _parse_user_agent(s.user_agent)
+        data.append({
+            "uuid": str(s.uuid),
+            "device": f"{os_name} · {browser}",
+            "ip_address": s.ip_address,
+            "last_seen_at": s.last_seen_at.isoformat(),
+            "created_at": s.created_at.isoformat(),
+            "is_current": s.session_key == current_key,
+        })
+
+    return Response(data)
+
+
+@api_view(["POST"])
+def revoke_session(request: HttpRequest, session_uuid: str) -> Response:
+    """Revoke (sign out) a specific session owned by the current user."""
+    user = cast(User, request.user)
+    user_session = get_object_or_404(UserSession, uuid=session_uuid, user=user)
+
+    if user_session.session_key == request.session.session_key:
+        return Response(
+            {"detail": "Cannot revoke the current session. Sign out instead."},
+            status=400,
+        )
+
+    Session.objects.filter(session_key=user_session.session_key).delete()
+    user_session.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)

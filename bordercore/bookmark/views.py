@@ -341,7 +341,15 @@ class BookmarkListView(APIView):
     """
 
     model = Bookmark
-    paginate_by = BOOKMARKS_PER_PAGE
+
+    @property
+    def paginate_by(self) -> int:
+        """Per-user page size, falling back to the module default."""
+        user = cast(User, self.request.user)
+        profile = getattr(user, "userprofile", None)
+        if profile is not None and profile.bookmarks_per_page:
+            return profile.bookmarks_per_page
+        return BOOKMARKS_PER_PAGE
 
     def get_queryset(self) -> Any:
         """Get the queryset of bookmarks for the current user.
@@ -368,7 +376,7 @@ class BookmarkListView(APIView):
         query = query.order_by("-created")
 
         page_number = self.kwargs.get("page_number", 1)
-        paginator = Paginator(query, BOOKMARKS_PER_PAGE)
+        paginator = Paginator(query, self.paginate_by)
         page_obj = paginator.get_page(page_number)
 
         return page_obj
