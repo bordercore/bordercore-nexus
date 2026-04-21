@@ -172,4 +172,34 @@
   --media-control-background: var(--surface1);
   --media-background-color: var(--surface2);
   --media-icon-color: var(--text1);
+
+  // =========================================================================
+  // Refined design tokens — cobalt accent
+  // =========================================================================
+  --accent-h: 220;
+  --accent: oklch(70% 0.15 var(--accent-h));
+  --accent-soft: oklch(70% 0.15 var(--accent-h) / 18%);
+  --accent-glow: oklch(70% 0.15 var(--accent-h) / 22%);
+  --accent-fg: oklch(99% 0.01 var(--accent-h));
+  --bg-0: oklch(16% 0.012 225deg);
+  --bg-1: oklch(20% 0.013 225deg);
+  --bg-2: oklch(23.5% 0.014 225deg);
+  --bg-3: oklch(27.5% 0.015 225deg);
+  --line: oklch(32% 0.014 225deg);
+  --line-soft: oklch(27% 0.012 225deg);
+  --fg-0: oklch(98% 0.006 225deg);
+  --fg-1: oklch(86% 0.012 225deg);
+  --fg-2: oklch(66% 0.016 225deg);
+  --fg-3: oklch(50% 0.016 225deg);
+  --ok: oklch(80% 0.11 160deg);
+  --warn: oklch(82% 0.12 80deg);
+  --danger: oklch(72% 0.17 25deg);
+  --font-ui: "Inter", -apple-system, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, sfmono-regular, menlo, consolas, monospace;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --shadow-sm: 0 1px 0 rgb(255 255 255 / 4%) inset, 0 1px 2px rgb(0 0 0 / 30%);
+  --shadow-md: 0 1px 0 rgb(255 255 255 / 5%) inset, 0 8px 20px rgb(0 0 0 / 35%);
+  --shadow-lg: 0 1px 0 rgb(255 255 255 / 5%) inset, 0 20px 50px rgb(0 0 0 / 50%);
 }

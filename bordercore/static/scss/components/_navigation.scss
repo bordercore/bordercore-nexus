@@ -226,7 +226,7 @@ li {
 
   // Fade in the hover tint on enter; revert instantly on leave (no gray flash).
   &:hover {
-    background-color: rgb(255 255 255 / 6%);
+    background-color: color-mix(in oklch, var(--fg-0), transparent 92%);
     color: var(--sidebar-hover-color, var(--sidebar-color));
     transition:
       background-color 150ms ease,
@@ -254,7 +254,7 @@ li {
     z-index: 1;
 
     .sidebar-row-inner {
-      background-color: rgb(255 255 255 / 10%);
+      background-color: color-mix(in oklch, var(--fg-0), transparent 88%);
       box-shadow: 0 4px 12px rgb(0 0 0 / 25%);
       cursor: grabbing;
     }
@@ -262,7 +262,7 @@ li {
 }
 
 .sidebar-row.is-active .sidebar-row-inner {
-  background-color: rgb(255 255 255 / 8%);
+  background-color: color-mix(in oklch, var(--accent), transparent 85%);
   color: var(--sidebar-active-color, var(--sidebar-color));
   font-weight: 500;
 
@@ -274,7 +274,8 @@ li {
     left: 0;
     width: 3px;
     border-radius: 0 2px 2px 0;
-    background-color: var(--row-color, var(--bs-primary, #7367f0));
+    background-color: var(--row-color, var(--accent));
+    box-shadow: 0 0 10px var(--accent-glow);
     content: "";
   }
 }

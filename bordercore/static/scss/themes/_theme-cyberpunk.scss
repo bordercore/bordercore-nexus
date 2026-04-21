@@ -196,4 +196,34 @@
   :not(pre) > code[class*="language-"], pre[class*="language-"] {
     background: hsl(280 80% 15%);
   }
+
+  // =========================================================================
+  // Refined design tokens — neon magenta accent
+  // =========================================================================
+  --accent-h: 325;
+  --accent: oklch(72% 0.22 var(--accent-h));
+  --accent-soft: oklch(72% 0.22 var(--accent-h) / 18%);
+  --accent-glow: oklch(72% 0.22 var(--accent-h) / 28%);
+  --accent-fg: oklch(99% 0.01 var(--accent-h));
+  --bg-0: oklch(12% 0.04 300deg);
+  --bg-1: oklch(17% 0.045 300deg);
+  --bg-2: oklch(21% 0.050 300deg);
+  --bg-3: oklch(25% 0.055 300deg);
+  --line: oklch(32% 0.050 305deg);
+  --line-soft: oklch(24% 0.045 305deg);
+  --fg-0: oklch(98% 0.010 310deg);
+  --fg-1: oklch(86% 0.020 310deg);
+  --fg-2: oklch(66% 0.025 310deg);
+  --fg-3: oklch(50% 0.025 310deg);
+  --ok: oklch(82% 0.18 150deg);
+  --warn: oklch(85% 0.16 85deg);
+  --danger: oklch(72% 0.20 25deg);
+  --font-ui: "Inter", -apple-system, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, sfmono-regular, menlo, consolas, monospace;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --shadow-sm: 0 1px 0 rgb(255 255 255 / 4%) inset, 0 1px 2px rgb(0 0 0 / 35%);
+  --shadow-md: 0 1px 0 rgb(255 255 255 / 5%) inset, 0 8px 20px rgb(0 0 0 / 45%);
+  --shadow-lg: 0 1px 0 rgb(255 255 255 / 5%) inset, 0 20px 50px rgb(0 0 0 / 55%);
 }

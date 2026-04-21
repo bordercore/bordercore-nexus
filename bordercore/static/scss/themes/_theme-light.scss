@@ -150,4 +150,35 @@
   --media-control-background: var(--surface1);
   --media-background-color: var(--surface1);
   --media-icon-color: var(--text1);
+
+  // =========================================================================
+  // Refined design tokens — light mode
+  // Inverted lightness; softer shadows; muted accent glow.
+  // =========================================================================
+  --accent-h: 278;
+  --accent: oklch(55% 0.20 var(--accent-h));
+  --accent-soft: oklch(55% 0.20 var(--accent-h) / 15%);
+  --accent-glow: oklch(55% 0.20 var(--accent-h) / 18%);
+  --accent-fg: oklch(99% 0.01 var(--accent-h));
+  --bg-0: oklch(99% 0.003 280deg);
+  --bg-1: oklch(97% 0.005 280deg);
+  --bg-2: oklch(94% 0.007 280deg);
+  --bg-3: oklch(90% 0.009 280deg);
+  --line: oklch(82% 0.010 280deg);
+  --line-soft: oklch(90% 0.008 280deg);
+  --fg-0: oklch(20% 0.020 280deg);
+  --fg-1: oklch(35% 0.015 280deg);
+  --fg-2: oklch(50% 0.012 280deg);
+  --fg-3: oklch(65% 0.010 280deg);
+  --ok: oklch(50% 0.15 160deg);
+  --warn: oklch(62% 0.18 75deg);
+  --danger: oklch(55% 0.22 25deg);
+  --font-ui: "Inter", -apple-system, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, sfmono-regular, menlo, consolas, monospace;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --shadow-sm: 0 1px 0 rgb(255 255 255 / 80%) inset, 0 1px 2px rgb(0 0 0 / 6%);
+  --shadow-md: 0 1px 0 rgb(255 255 255 / 80%) inset, 0 8px 20px rgb(0 0 0 / 8%);
+  --shadow-lg: 0 1px 0 rgb(255 255 255 / 80%) inset, 0 20px 50px rgb(0 0 0 / 12%);
 }

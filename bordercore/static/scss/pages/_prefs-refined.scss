@@ -6,15 +6,14 @@
 // selectors below keep working without change.
 // =============================================================================
 
-@import "../abstracts/refined-tokens";
-
 // Each occurrence of common class names (.dim, .actions) lives inside a
 // distinct component scope, so the cascade can't actually clash; suppress
 // the ordering warning rather than renaming across components.
 // stylelint-disable no-descending-specificity
 
 .prefs-app {
-  @include refined-tokens;
+  // Refined tokens (--bg-0, --fg-0, --accent, etc.) come from the per-theme
+  // :root[color-mode="…"] blocks in static/scss/themes/.
 
   // Legacy --prefs-* aliases → shared unprefixed tokens.
   --prefs-bg-0: var(--bg-0);

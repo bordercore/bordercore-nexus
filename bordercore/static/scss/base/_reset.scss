@@ -21,11 +21,42 @@
 // Common HTML elements
 body {
   // Use CSS variable for body background (defined in theme files)
+  position: relative;
+  min-height: 100vh;
   background-color: var(--body-bg);
   color: var(--text1);
   font-family: Roboto, sans-serif;
   font-size: 1rem;
   line-height: 2rem;
+}
+
+// Ambient radial-gradient accents on dark-family themes.
+:root[color-mode="dark"] body::before,
+:root[color-mode="cobalt-abyss"] body::before,
+:root[color-mode="purple"] body::before,
+:root[color-mode="cyberpunk"] body::before {
+  position: fixed;
+  z-index: 0;
+  background:
+    radial-gradient(
+      1100px 700px at 90% -5%,
+      color-mix(in oklch, var(--accent), transparent 85%),
+      transparent 55%
+    ),
+    radial-gradient(
+      900px 600px at 10% 110%,
+      color-mix(in oklch, var(--accent), transparent 92%),
+      transparent 60%
+    );
+  content: "";
+  inset: 0;
+  pointer-events: none;
+}
+
+// Keep actual page content above the ambient background.
+body > * {
+  position: relative;
+  z-index: 1;
 }
 
 h1, h2, h3, h4, h5, h6 {

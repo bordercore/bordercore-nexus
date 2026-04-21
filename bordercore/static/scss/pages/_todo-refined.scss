@@ -6,12 +6,11 @@
 // either live under .todo-app directly, or are descendant selectors off it.
 // =============================================================================
 
-@import "../abstracts/refined-tokens";
-
 // stylelint-disable no-descending-specificity
 
 .todo-app {
-  @include refined-tokens;
+  // Refined tokens (--bg-0, --fg-0, --accent, etc.) come from the per-theme
+  // :root[color-mode="…"] blocks in static/scss/themes/.
 
   position: relative;
   min-height: 100vh;
