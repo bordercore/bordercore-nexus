@@ -13,3 +13,8 @@ function hashTagName(name: string): number {
 export function tagStyle(name: string): CSSProperties {
   return { "--tag-hue": hashTagName(name) } as CSSProperties;
 }
+
+/** OKLch color string for a tag — used for swatch dots in the refined UI. */
+export function tagSwatchColor(name: string): string {
+  return `oklch(0.72 0.15 ${hashTagName(name)})`;
+}

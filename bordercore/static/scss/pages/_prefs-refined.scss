@@ -1,7 +1,12 @@
 // =============================================================================
 // Preferences — "Refined Dark" redesign
 // Scoped under .prefs-app so it does not leak into the rest of the site.
+// Tokens now live in abstracts/_refined-tokens.scss and are shared with the
+// Todo redesign; legacy --prefs-* names remain as thin aliases so existing
+// selectors below keep working without change.
 // =============================================================================
+
+@import "../abstracts/refined-tokens";
 
 // Each occurrence of common class names (.dim, .actions) lives inside a
 // distinct component scope, so the cascade can't actually clash; suppress
@@ -9,36 +14,36 @@
 // stylelint-disable no-descending-specificity
 
 .prefs-app {
-  --accent-h: 278;
-  --accent: oklch(70% 0.15 var(--accent-h));
-  --accent-soft: oklch(70% 0.15 var(--accent-h) / 18%);
-  --accent-glow: oklch(70% 0.15 var(--accent-h) / 22%);
-  --accent-fg: oklch(99% 0.01 var(--accent-h));
-  --prefs-bg-0: oklch(17% 0.012 280deg);
-  --prefs-bg-1: oklch(21% 0.013 280deg);
-  --prefs-bg-2: oklch(24.5% 0.014 280deg);
-  --prefs-bg-3: oklch(28.5% 0.015 280deg);
-  --prefs-line: oklch(32% 0.014 280deg);
-  --prefs-line-soft: oklch(27% 0.012 280deg);
-  --prefs-fg-0: oklch(98% 0.006 280deg);
-  --prefs-fg-1: oklch(86% 0.012 280deg);
-  --prefs-fg-2: oklch(66% 0.016 280deg);
-  --prefs-fg-3: oklch(50% 0.016 280deg);
-  --prefs-ok: oklch(80% 0.11 160deg);
-  --prefs-warn: oklch(82% 0.12 80deg);
-  --prefs-danger: oklch(72% 0.17 25deg);
+  @include refined-tokens;
+
+  // Legacy --prefs-* aliases → shared unprefixed tokens.
+  --prefs-bg-0: var(--bg-0);
+  --prefs-bg-1: var(--bg-1);
+  --prefs-bg-2: var(--bg-2);
+  --prefs-bg-3: var(--bg-3);
+  --prefs-line: var(--line);
+  --prefs-line-soft: var(--line-soft);
+  --prefs-fg-0: var(--fg-0);
+  --prefs-fg-1: var(--fg-1);
+  --prefs-fg-2: var(--fg-2);
+  --prefs-fg-3: var(--fg-3);
+  --prefs-ok: var(--ok);
+  --prefs-warn: var(--warn);
+  --prefs-danger: var(--danger);
+  --prefs-font-ui: var(--font-ui);
+  --prefs-font-mono: var(--font-mono);
+  --prefs-radius: var(--radius);
+  --prefs-radius-lg: var(--radius-lg);
+  --prefs-radius-xl: var(--radius-xl);
+  --prefs-shadow-sm: var(--shadow-sm);
+  --prefs-shadow-md: var(--shadow-md);
+  --prefs-shadow-lg: var(--shadow-lg);
+
+  // Preferences-specific layout tokens (not shared).
   --prefs-row-pad-y: 16px;
   --prefs-row-gap: 28px;
   --prefs-section-gap: 40px;
   --prefs-label-w: 200px;
-  --prefs-font-ui: "Inter", -apple-system, system-ui, sans-serif;
-  --prefs-font-mono: "JetBrains Mono", ui-monospace, sfmono-regular, menlo, consolas, monospace;
-  --prefs-radius: 10px;
-  --prefs-radius-lg: 14px;
-  --prefs-radius-xl: 18px;
-  --prefs-shadow-sm: 0 1px 0 rgb(255 255 255 / 4%) inset, 0 1px 2px rgb(0 0 0 / 30%);
-  --prefs-shadow-md: 0 1px 0 rgb(255 255 255 / 5%) inset, 0 8px 20px rgb(0 0 0 / 35%);
-  --prefs-shadow-lg: 0 1px 0 rgb(255 255 255 / 5%) inset, 0 20px 50px rgb(0 0 0 / 50%);
 
   position: relative;
   min-height: 100vh;

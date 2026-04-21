@@ -1,14 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faBars,
-  faTimes,
-  faPlus,
-  faLink,
-  faGripVertical,
-  faCalendarAlt,
-  faTag,
-} from "@fortawesome/free-solid-svg-icons";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import {
   DndContext,
@@ -36,20 +26,52 @@ import type {
   TodoListResponse,
   ViewType,
 } from "./types";
-import { getPriorityClass } from "./types";
-import TodoFiltersSidebar from "./TodoFiltersSidebar";
-import TodoTable from "./TodoTable";
 import { TodoEditor, TodoEditorHandle } from "./TodoEditor";
-import DropDownMenu from "../common/DropDownMenu";
 import { doPost, doDelete, EventBus } from "../utils/reactUtils";
-import { tagStyle } from "../utils/tagColors";
-import MarkdownIt from "markdown-it";
+import TodoFilterSidebar, { FilterValue } from "./TodoFilterSidebar";
+import TodoBreadcrumb, { ActiveFilter } from "./TodoBreadcrumb";
+import TodoToolbar, { SortField } from "./TodoToolbar";
+import TodoRow from "./TodoRow";
+import PriorityBadge from "./PriorityBadge";
 
-const markdown = MarkdownIt({
-  html: true,
-  linkify: true,
-  typographer: true,
-});
+const VIEW_STORAGE_KEY = "todo_view_density";
+const SORT_STORAGE_KEY = "todo_sort_field";
+const SEARCH_DEBOUNCE_MS = 200;
+
+function filterFromUrl(): FilterValue | null {
+  if (typeof window === "undefined") return null;
+  const params = new URLSearchParams(window.location.search);
+  const tag = params.get("tag");
+  if (tag) return { type: "tag", value: tag };
+  const priority = params.get("priority");
+  if (priority) return { type: "priority", value: priority };
+  const created = params.get("created");
+  if (created) return { type: "created", value: created };
+  // "all" only wins if the URL explicitly asks for it (so Django's session
+  // filter still takes effect on first load when no URL params are present).
+  if (params.get("all") === "1") return { type: "all" };
+  return null;
+}
+
+function searchFromUrl(): string {
+  if (typeof window === "undefined") return "";
+  return new URLSearchParams(window.location.search).get("q") ?? "";
+}
+
+function syncUrl(filter: FilterValue, search: string) {
+  if (typeof window === "undefined") return;
+  const params = new URLSearchParams();
+  if (filter.type === "tag") params.set("tag", filter.value);
+  else if (filter.type === "priority") params.set("priority", filter.value);
+  else if (filter.type === "created") params.set("created", filter.value);
+  else if (filter.type === "all") params.set("all", "1");
+  if (search) params.set("q", search);
+  const qs = params.toString();
+  const next = `${window.location.pathname}${qs ? `?${qs}` : ""}`;
+  if (next !== `${window.location.pathname}${window.location.search}`) {
+    window.history.replaceState(null, "", next);
+  }
+}
 
 interface TodoListPageProps {
   getTasksUrl: string;
@@ -71,6 +93,40 @@ interface TodoListPageProps {
   initialViewType: ViewType;
 }
 
+function filterFromInitial(f: TodoListPageProps["initialFilters"]): FilterValue {
+  if (f.tag) return { type: "tag", value: f.tag };
+  if (f.priority) return { type: "priority", value: f.priority };
+  if (f.time) return { type: "created", value: f.time };
+  return { type: "all" };
+}
+
+function readStoredView(fallback: ViewType): ViewType {
+  try {
+    const stored = localStorage.getItem(VIEW_STORAGE_KEY);
+    if (stored === "normal" || stored === "compact") return stored;
+  } catch {
+    // ignore storage errors
+  }
+  return fallback;
+}
+
+function readStoredSort(fallback: SortField): SortField {
+  try {
+    const stored = localStorage.getItem(SORT_STORAGE_KEY);
+    if (
+      stored === "sort_order" ||
+      stored === "name" ||
+      stored === "priority" ||
+      stored === "created_unixtime"
+    ) {
+      return stored;
+    }
+  } catch {
+    // ignore storage errors
+  }
+  return fallback;
+}
+
 export function TodoListPage({
   getTasksUrl,
   sortUrl,
@@ -87,93 +143,55 @@ export function TodoListPage({
   initialViewType,
 }: TodoListPageProps) {
   const [items, setItems] = useState<Todo[]>([]);
-  const [filterTag, setFilterTag] = useState(initialFilters.tag);
-  const [filterPriority, setFilterPriority] = useState(initialFilters.priority);
-  const [filterTime, setFilterTime] = useState(initialFilters.time);
-  const [filterSearch, setFilterSearch] = useState("");
-  const [currentSearchFilter, setCurrentSearchFilter] = useState("");
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [active, setActive] = useState<FilterValue>(
+    () => filterFromUrl() ?? filterFromInitial(initialFilters)
+  );
+  const initialSearch = searchFromUrl();
+  const [searchInput, setSearchInput] = useState(initialSearch);
+  const [activeSearch, setActiveSearch] = useState(initialSearch);
   const [priorityOptions, setPriorityOptions] = useState<PriorityOption[]>([]);
   const [timeOptions, setTimeOptions] = useState<TimeOption[]>([]);
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [viewType, setViewType] = useState<ViewType>(initialViewType);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [view, setView] = useState<ViewType>(readStoredView(initialViewType));
+  const [sortField, setSortField] = useState<SortField>(
+    readStoredSort(defaultSort.field as SortField)
   );
 
-  const filterCacheRef = useRef<{ priority: string; tag: string; time: string } | null>(null);
   const editTodoRef = useRef<TodoEditorHandle>(null);
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
-  // Computed: Is sortable (only with tag filter and no other filters)
-  const isSortable = useMemo(() => {
-    return filterTime === "" && filterPriority === "" && filterTag !== "";
-  }, [filterTime, filterPriority, filterTag]);
+  const isSortable = useMemo(
+    () => active.type === "tag" && activeSearch === "",
+    [active, activeSearch]
+  );
+  const canDrag = isSortable && sortField === "sort_order";
 
-  // Computed: Title based on active filters
-  const title = useMemo(() => {
-    if (currentSearchFilter) {
-      return (
-        <>
-          Results for &ldquo;<span className="filter-value">{currentSearchFilter}</span>&rdquo;
-        </>
-      );
+  const breadcrumbFilter: ActiveFilter = useMemo(() => {
+    if (activeSearch) return { type: "search", value: activeSearch };
+    if (active.type === "priority") {
+      const opt = priorityOptions.find(p => String(p[0]) === active.value);
+      return { type: "priority", value: opt ? opt[1] : active.value };
     }
-    const parts: React.ReactNode[] = [];
-    if (filterTag) {
-      parts.push(
-        <span key="tag">
-          Tag: <span className="filter-value">{filterTag}</span>
-        </span>
-      );
+    if (active.type === "created") {
+      const opt = timeOptions.find(t => t[0] === active.value);
+      return { type: "created", value: opt ? opt[1] : active.value };
     }
-    if (filterPriority && priorityOptions.length > 0) {
-      const priorityIdx = parseInt(filterPriority) - 1;
-      if (priorityOptions[priorityIdx]) {
-        parts.push(
-          <span key="priority">
-            Priority: <span className="filter-value">{priorityOptions[priorityIdx][1]}</span>
-          </span>
-        );
-      }
-    }
-    if (filterTime && timeOptions.length > 0) {
-      const timeOption = timeOptions.find(opt => opt[0] === filterTime);
-      if (timeOption) {
-        parts.push(
-          <span key="time">
-            Time: <span className="filter-value">{timeOption[1]}</span>
-          </span>
-        );
-      }
-    }
-    if (parts.length === 0) {
-      return "All Tasks";
-    }
-    return parts.reduce(
-      (prev, curr, i) =>
-        i === 0 ? (
-          curr
-        ) : (
-          <>
-            {prev}, {curr}
-          </>
-        ),
-      null as React.ReactNode
-    );
-  }, [currentSearchFilter, filterTag, filterPriority, filterTime, priorityOptions, timeOptions]);
+    if (active.type === "tag") return { type: "tag", value: active.value };
+    return { type: "all" };
+  }, [active, activeSearch, priorityOptions, timeOptions]);
 
-  // Fetch todo list
-  const getTodoList = useCallback(
+  const totalCount = useMemo(() => tags.reduce((sum, t) => sum + t.count, 0), [tags]);
+
+  const fetchTodos = useCallback(
     (uuid?: string) => {
       const params = new URLSearchParams();
-      params.append("tag", filterTag);
-      params.append("priority", filterPriority);
-      params.append("time", filterTime);
-      params.append("search", filterSearch);
+      params.append("tag", active.type === "tag" ? active.value : "");
+      params.append("priority", active.type === "priority" ? active.value : "");
+      params.append("time", active.type === "created" ? active.value : "");
+      params.append("search", activeSearch);
 
       axios
         .get<TodoListResponse>(`${getTasksUrl}?${params.toString()}`)
@@ -181,13 +199,9 @@ export function TodoListPage({
           setItems(response.data.todo_list);
           setPriorityOptions(response.data.priority_counts);
           setTimeOptions(response.data.created_counts);
-
-          // If a uuid is given, open the modal dialog for that todo task
           if (uuid) {
             const todo = response.data.todo_list.find(x => x.uuid === uuid);
-            if (todo) {
-              handleEdit(todo);
-            }
+            if (todo) handleEdit(todo);
           }
         })
         .catch(error => {
@@ -199,161 +213,114 @@ export function TodoListPage({
           });
         });
     },
-    [getTasksUrl, filterTag, filterPriority, filterTime, filterSearch]
+    // handleEdit is stable below; intentionally omitted
+    [getTasksUrl, active, activeSearch]
   );
 
   // Initial load
   useEffect(() => {
-    getTodoList(initialUuid);
+    fetchTodos(initialUuid);
   }, []);
 
-  // Reload when filters change (but not on initial load)
-  const isInitialMount = useRef(true);
+  // Refetch when filter or active search changes (skip initial render)
+  const isInitial = useRef(true);
   useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
+    if (isInitial.current) {
+      isInitial.current = false;
       return;
     }
-    getTodoList();
-  }, [filterTag, filterPriority, filterTime]);
+    fetchTodos();
+  }, [active, activeSearch, fetchTodos]);
 
-  const toggleDrawer = () => {
-    setDrawerOpen(!drawerOpen);
-  };
+  // Debounce search input into activeSearch
+  useEffect(() => {
+    const handle = window.setTimeout(() => {
+      setActiveSearch(searchInput.trim());
+    }, SEARCH_DEBOUNCE_MS);
+    return () => window.clearTimeout(handle);
+  }, [searchInput]);
 
-  const handleTagClick = useCallback(
-    (tag: string) => {
-      setCurrentSearchFilter("");
-      setFilterSearch("");
-      setFilterTag(tag);
-      if (drawerOpen && window.innerWidth < 992) {
-        setDrawerOpen(false);
+  // Mirror filter + active search into the URL
+  useEffect(() => {
+    syncUrl(active, activeSearch);
+  }, [active, activeSearch]);
+
+  // Respond to browser back/forward by re-reading the URL
+  useEffect(() => {
+    const onPop = () => {
+      const fromUrl = filterFromUrl();
+      if (fromUrl) setActive(fromUrl);
+      const q = searchFromUrl();
+      setSearchInput(q);
+      setActiveSearch(q);
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  const handleSelectFilter = useCallback((filter: FilterValue) => {
+    setSearchInput("");
+    setActiveSearch("");
+    setActive(filter);
+  }, []);
+
+  const handleSortChange = useCallback(
+    (field: SortField) => {
+      setSortField(field);
+      try {
+        localStorage.setItem(SORT_STORAGE_KEY, field);
+      } catch {
+        // ignore storage errors
       }
+      const direction: "asc" | "desc" = field === "sort_order" ? "asc" : "asc";
+      doPost(storeInSessionUrl, { todo_sort: JSON.stringify({ field, direction }) }, () => {});
     },
-    [drawerOpen]
+    [storeInSessionUrl]
   );
 
-  const handlePriorityClick = useCallback(
-    (priority: string) => {
-      setCurrentSearchFilter("");
-      setFilterSearch("");
-      setFilterPriority(priority);
-      if (drawerOpen && window.innerWidth < 992) {
-        setDrawerOpen(false);
+  const handleViewChange = useCallback(
+    (v: ViewType) => {
+      setView(v);
+      try {
+        localStorage.setItem(VIEW_STORAGE_KEY, v);
+      } catch {
+        // ignore storage errors
       }
-    },
-    [drawerOpen]
-  );
-
-  const handleTimeClick = useCallback(
-    (time: string) => {
-      setCurrentSearchFilter("");
-      setFilterSearch("");
-      setFilterTime(time);
-      if (drawerOpen && window.innerWidth < 992) {
-        setDrawerOpen(false);
-      }
-    },
-    [drawerOpen]
-  );
-
-  const handleSearch = useCallback(() => {
-    if (filterSearch === "") {
-      setCurrentSearchFilter("");
-      if (filterCacheRef.current) {
-        setFilterPriority(filterCacheRef.current.priority);
-        setFilterTag(filterCacheRef.current.tag);
-        setFilterTime(filterCacheRef.current.time);
-        filterCacheRef.current = null;
-      }
-    } else {
-      setCurrentSearchFilter(filterSearch);
-      filterCacheRef.current = {
-        priority: filterPriority,
-        tag: filterTag,
-        time: filterTime,
-      };
-      setFilterPriority("");
-      setFilterTag("");
-      setFilterTime("");
-    }
-    getTodoList();
-  }, [filterSearch, filterPriority, filterTag, filterTime, getTodoList]);
-
-  const removeSearchFilter = useCallback(() => {
-    setFilterSearch("");
-    setCurrentSearchFilter("");
-    if (filterCacheRef.current) {
-      setFilterPriority(filterCacheRef.current.priority);
-      setFilterTag(filterCacheRef.current.tag);
-      setFilterTime(filterCacheRef.current.time);
-      filterCacheRef.current = null;
-    }
-    getTodoList();
-  }, [getTodoList]);
-
-  const handleSort = useCallback(
-    (field: string, direction: "asc" | "desc") => {
-      const sort = { field, direction };
-      doPost(storeInSessionUrl, { todo_sort: JSON.stringify(sort) }, () => {});
+      doPost(storeInSessionUrl, { todo_view_type: v }, () => {});
     },
     [storeInSessionUrl]
   );
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
-    setActiveId(event.active.id as string);
+    setDragId(event.active.id as string);
   }, []);
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
-      setActiveId(null);
-      const { active, over } = event;
+      setDragId(null);
+      const { active: dragged, over } = event;
+      if (!over || dragged.id === over.id) return;
+      if (active.type !== "tag") return;
 
-      if (over && active.id !== over.id) {
-        const oldIndex = items.findIndex(item => item.uuid === active.id);
-        const newIndex = items.findIndex(item => item.uuid === over.id);
-
-        const newItems = arrayMove(items, oldIndex, newIndex);
-        setItems(newItems);
-
-        doPost(
-          sortUrl,
-          {
-            todo_uuid: active.id as string,
-            position: (newIndex + 1).toString(),
-            tag: filterTag,
-          },
-          () => {
-            getTodoList();
-          }
-        );
-      }
-    },
-    [items, filterTag, sortUrl, getTodoList]
-  );
-
-  const activeTodo = useMemo(() => {
-    return activeId ? items.find(item => item.uuid === activeId) : null;
-  }, [activeId, items]);
-
-  const handleMoveToTop = useCallback(
-    (todo: Todo) => {
+      const oldIndex = items.findIndex(i => i.uuid === dragged.id);
+      const newIndex = items.findIndex(i => i.uuid === over.id);
+      const next = arrayMove(items, oldIndex, newIndex);
+      setItems(next);
       doPost(
-        moveToTopUrl,
+        sortUrl,
         {
-          tag: filterTag,
-          todo_uuid: todo.uuid,
+          todo_uuid: dragged.id as string,
+          position: String(newIndex + 1),
+          tag: active.value,
         },
-        () => {
-          getTodoList();
-        }
+        () => fetchTodos()
       );
     },
-    [filterTag, moveToTopUrl, getTodoList]
+    [items, active, sortUrl, fetchTodos]
   );
 
   const handleEdit = useCallback((todo: Todo) => {
-    const todoInfo = {
+    editTodoRef.current?.openModal("Edit", {
       uuid: todo.uuid,
       name: todo.name,
       priority: todo.priority,
@@ -361,115 +328,117 @@ export function TodoListPage({
       tags: todo.tags,
       url: todo.url || undefined,
       due_date: todo.due_date ? new Date(todo.due_date) : undefined,
-    };
-    editTodoRef.current?.openModal("Edit", todoInfo);
+    });
   }, []);
 
   const handleDelete = useCallback(
     (todo: Todo) => {
       doDelete(
         editTodoUrl.replace("00000000-0000-0000-0000-000000000000", todo.uuid),
-        () => {
-          getTodoList();
-        },
+        () => fetchTodos(),
         "Todo task deleted"
       );
     },
-    [editTodoUrl, getTodoList]
+    [editTodoUrl, fetchTodos]
   );
 
-  // Wrapper for TodoEditor's onDelete which receives TodoInfo instead of Todo
   const handleEditorDelete = useCallback(
     (todoInfo: { uuid?: string }) => {
       if (todoInfo.uuid) {
         doDelete(
           editTodoUrl.replace("00000000-0000-0000-0000-000000000000", todoInfo.uuid),
-          () => {
-            getTodoList();
-          },
+          () => fetchTodos(),
           "Todo task deleted"
         );
       }
     },
-    [editTodoUrl, getTodoList]
+    [editTodoUrl, fetchTodos]
+  );
+
+  const handleMoveToTop = useCallback(
+    (todo: Todo) => {
+      if (active.type !== "tag") return;
+      doPost(moveToTopUrl, { tag: active.value, todo_uuid: todo.uuid }, () => fetchTodos());
+    },
+    [active, moveToTopUrl, fetchTodos]
   );
 
   const handleCreateTodo = useCallback(() => {
-    const initialTagList = filterTag ? [filterTag] : [];
-    const todoInfo = {
+    const initialTagList = active.type === "tag" ? [active.value] : [];
+    editTodoRef.current?.openModal("Create", {
       note: "",
-      priority: filterPriority ? parseInt(filterPriority) : 3,
+      priority: active.type === "priority" && active.value ? parseInt(active.value, 10) || 3 : 3,
       tags: initialTagList,
-    };
-    editTodoRef.current?.openModal("Create", todoInfo);
-    if (filterTag) {
-      editTodoRef.current?.setTags(initialTagList);
-    }
-  }, [filterTag, filterPriority]);
+    });
+    if (initialTagList.length) editTodoRef.current?.setTags(initialTagList);
+  }, [active]);
 
-  const switchViewType = useCallback(
-    (type: ViewType) => {
-      setViewType(type);
-      doPost(storeInSessionUrl, { todo_view_type: type }, () => {});
-    },
-    [storeInSessionUrl]
-  );
+  const sortedItems = useMemo(() => {
+    if (sortField === "sort_order" && canDrag) return items;
+    const copy = [...items];
+    copy.sort((a, b) => {
+      switch (sortField) {
+        case "sort_order":
+          return a.sort_order - b.sort_order;
+        case "priority":
+          return a.priority - b.priority;
+        case "created_unixtime":
+          return Number(b.created_unixtime) - Number(a.created_unixtime);
+        case "name":
+          return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+        default:
+          return 0;
+      }
+    });
+    return copy;
+  }, [items, sortField, canDrag]);
 
-  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      handleSearch();
-    }
-  };
-
-  // When search input is cleared while a search is active, restore previous filters
-  useEffect(() => {
-    if (filterSearch === "" && currentSearchFilter !== "") {
-      removeSearchFilter();
-    }
-  }, [filterSearch, currentSearchFilter, removeSearchFilter]);
+  const activeTodo = dragId ? items.find(i => i.uuid === dragId) : null;
+  const totalFiltered = items.length;
+  const subheadPhrase = activeSearch
+    ? " · matching search"
+    : active.type === "tag"
+      ? " · filtered by tag"
+      : active.type === "priority"
+        ? " · filtered by priority"
+        : active.type === "created"
+          ? " · filtered by recency"
+          : "";
+  const showTagsOnRows = active.type !== "tag";
 
   return (
-    <div className="row g-0 h-100 mx-2">
-      <TodoFiltersSidebar
-        tags={tags}
-        priorityOptions={priorityOptions}
-        timeOptions={timeOptions}
-        filterTag={filterTag}
-        filterPriority={filterPriority}
-        filterTime={filterTime}
-        drawerOpen={drawerOpen}
-        onToggleDrawer={toggleDrawer}
-        onClickTag={handleTagClick}
-        onClickPriority={handlePriorityClick}
-        onClickTime={handleTimeClick}
-        onCreateTodo={handleCreateTodo}
-      />
+    <div className={`todo-app view-${view === "compact" ? "compact" : "normal"}`}>
+      <div className="todo-shell">
+        <TodoFilterSidebar
+          tags={tags}
+          priorityOptions={priorityOptions}
+          timeOptions={timeOptions}
+          active={active}
+          totalCount={totalCount}
+          onSelect={handleSelectFilter}
+          onCreateTodo={handleCreateTodo}
+        />
 
-      <div className="col-lg-9">
-        <div className="card-grid ms-gutter">
-          {/* Page header */}
-          <div className="todo-page-header">
-            <h1 className="todo-page-title">{title}</h1>
-            <span className="todo-task-count">
-              {items.length} {items.length === 1 ? "task" : "tasks"}
-            </span>
+        <main className="todo-main">
+          <div className="todo-head">
+            <TodoBreadcrumb filter={breadcrumbFilter} />
+            <p className="todo-subhead">
+              <span className="count">{totalFiltered}</span>{" "}
+              {totalFiltered === 1 ? "task" : "tasks"}
+              {subheadPhrase}
+            </p>
           </div>
 
-          {/* Mobile-only filter drawer toggle */}
-          <div className="todo-toolbar d-lg-none">
-            <button
-              type="button"
-              className="btn btn-primary todo-filters-drawer-toggle"
-              onClick={toggleDrawer}
-              aria-label="Toggle Filters"
-            >
-              <FontAwesomeIcon icon={faBars} className="me-2" />
-              Filters
-            </button>
-          </div>
+          <TodoToolbar
+            search={searchInput}
+            view={view}
+            sortField={sortField}
+            onSearch={setSearchInput}
+            onClearSearch={() => setSearchInput("")}
+            onViewChange={handleViewChange}
+            onSortChange={handleSortChange}
+          />
 
-          {/* Card list with drag-and-drop */}
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
@@ -477,120 +446,49 @@ export function TodoListPage({
             onDragEnd={handleDragEnd}
           >
             <SortableContext
-              items={items.map(item => item.uuid)}
+              items={sortedItems.map(t => t.uuid)}
               strategy={verticalListSortingStrategy}
             >
-              <TodoTable
-                items={items}
-                defaultSort={defaultSort}
-                isSortable={isSortable}
-                showTags={filterTag === ""}
-                viewType={viewType}
-                leftSlot={
-                  <form className="todo-search-form" role="form" onSubmit={e => e.preventDefault()}>
-                    <div className="position-relative">
-                      <input
-                        type="text"
-                        value={filterSearch}
-                        onChange={e => setFilterSearch(e.target.value)}
-                        className="form-control"
-                        placeholder="Search"
-                        onKeyDown={handleSearchKeyDown}
-                      />
-                      {currentSearchFilter && (
-                        <div className="search-input-cancel">
-                          <a
-                            className="ms-1"
-                            href="#"
-                            onClick={e => {
-                              e.preventDefault();
-                              removeSearchFilter();
-                            }}
-                          >
-                            <FontAwesomeIcon icon={faTimes} className="text-primary" />
-                          </a>
-                        </div>
-                      )}
-                    </div>
-                  </form>
-                }
-                onSort={handleSort}
-                onViewTypeChange={switchViewType}
-                onMoveToTop={handleMoveToTop}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
+              {sortedItems.length === 0 ? (
+                <div className="todo-empty">No tasks match your filter.</div>
+              ) : (
+                <div className="todo-list" role="list">
+                  {sortedItems.map(todo => (
+                    <TodoRow
+                      key={todo.uuid}
+                      todo={todo}
+                      canDrag={canDrag}
+                      isSortable={isSortable}
+                      showTags={showTagsOnRows}
+                      view={view}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                      onMoveToTop={handleMoveToTop}
+                    />
+                  ))}
+                </div>
+              )}
             </SortableContext>
             <DragOverlay>
               {activeTodo ? (
-                <div
-                  className={`todo-card todo-card--${getPriorityClass(activeTodo.priority)} todo-card-drag-overlay ${viewType === "compact" ? "compact" : ""}`}
-                >
-                  <div className="todo-card__drag">
-                    <FontAwesomeIcon icon={faGripVertical} />
-                  </div>
-                  <div className="todo-card__content">
-                    <div className="todo-card__header">
-                      <div className="todo-card__name">
-                        {activeTodo.name}
-                        {activeTodo.url && (
-                          <a href={activeTodo.url} target="_blank" rel="noopener noreferrer">
-                            <FontAwesomeIcon icon={faLink} />
-                          </a>
-                        )}
-                      </div>
-                      <span
-                        className={`todo-card__badge todo-card__badge--${getPriorityClass(activeTodo.priority)}`}
-                      >
-                        <span className="badge-dot" />
-                        {activeTodo.priority_name}
-                      </span>
+                <div className="todo-row todo-row-drag-overlay">
+                  <div className="todo-row-drag" aria-hidden="true" />
+                  <div className="todo-row-body">
+                    <div className="todo-row-title">
+                      <span>{activeTodo.name}</span>
                     </div>
-                    {viewType !== "compact" && activeTodo.note && (
-                      <div
-                        className="todo-card__note"
-                        dangerouslySetInnerHTML={{ __html: markdown.render(activeTodo.note) }}
-                      />
-                    )}
-                    {viewType === "compact" ? (
-                      <span className="todo-card__compact-date">
-                        {new Date(activeTodo.created).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </span>
-                    ) : (
-                      <div className="todo-card__meta">
-                        {filterTag === "" &&
-                          activeTodo.tags.map(tag => (
-                            <span
-                              key={tag}
-                              className="tag"
-                              style={tagStyle(tag)} // must remain inline
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        <span className="todo-card__meta-item">
-                          <FontAwesomeIcon icon={faCalendarAlt} />
-                          {new Date(activeTodo.created).toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                          })}
-                        </span>
-                      </div>
-                    )}
                   </div>
-                  <div className="todo-card__actions">
-                    <DropDownMenu dropdownSlot={<></>} />
+                  <div className="todo-row-right">
+                    <PriorityBadge
+                      priority={activeTodo.priority}
+                      label={activeTodo.priority_name}
+                    />
                   </div>
                 </div>
               ) : null}
             </DragOverlay>
           </DndContext>
-        </div>
+        </main>
       </div>
 
       <TodoEditor
@@ -599,9 +497,9 @@ export function TodoListPage({
         editTodoUrl={editTodoUrl}
         createTodoUrl={createTodoUrl}
         tagSearchUrl={tagSearchUrl}
-        onAdd={() => getTodoList()}
+        onAdd={() => fetchTodos()}
         onDelete={handleEditorDelete}
-        onEdit={() => getTodoList()}
+        onEdit={() => fetchTodos()}
       />
     </div>
   );

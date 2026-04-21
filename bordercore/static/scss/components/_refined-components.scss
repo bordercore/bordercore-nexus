@@ -1,0 +1,428 @@
+// =============================================================================
+// Refined-dark shared component classes
+// =============================================================================
+// Unprefixed classes (.refined-*) that consume the tokens defined by
+// abstracts/_refined-tokens.scss. Any page-root that @includes refined-tokens
+// (e.g. .prefs-app, .todo-app) can drop these component classes into its
+// markup and get the same visual treatment.
+// Preferences still uses its own .prefs-* classes internally; these shared
+// components exist for new work (Todo redesign first).
+
+// stylelint-disable no-descending-specificity
+
+// ==== Top bar ====
+.refined-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.refined-brand {
+  display: flex;
+  align-items: center;
+  color: var(--fg-0);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 600;
+  gap: 10px;
+  letter-spacing: -0.01em;
+}
+
+.refined-brand-dot {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 30% 30%,
+    color-mix(in oklch, var(--accent), white 30%),
+    var(--accent) 60%,
+    color-mix(in oklch, var(--accent), black 40%)
+  );
+  box-shadow:
+    0 0 20px var(--accent-glow),
+    0 1px 0 rgb(255 255 255 / 10%) inset;
+}
+
+.refined-brand-path {
+  color: var(--fg-3);
+  font-weight: 400;
+
+  .slash {
+    margin: 0 8px;
+    color: var(--fg-3);
+    opacity: 0.5;
+  }
+
+  .leaf {
+    color: var(--fg-1);
+    font-weight: 500;
+  }
+}
+
+.refined-topbar-right {
+  display: flex;
+  align-items: center;
+  color: var(--fg-2);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  gap: 14px;
+
+  .user em {
+    color: var(--fg-0);
+    font-style: normal;
+    font-weight: 600;
+  }
+
+  .sep {
+    margin: 0 4px;
+    color: var(--line);
+  }
+}
+
+.refined-kbd {
+  display: inline-flex;
+  min-width: 22px;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 7px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg-2);
+  box-shadow: var(--shadow-sm);
+  color: var(--fg-1);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.refined-avatar {
+  display: inline-grid;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklch, var(--accent), white 20%),
+    var(--accent)
+  );
+  box-shadow:
+    0 0 0 1px color-mix(in oklch, var(--accent), transparent 50%),
+    0 1px 0 rgb(255 255 255 / 15%) inset;
+  color: var(--accent-fg);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  place-items: center;
+  text-transform: uppercase;
+}
+
+// ==== Sidebar nav (row with optional swatch + count badge, active accent pill) ====
+.refined-side-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.refined-side-group {
+  margin-bottom: 24px;
+
+  h3 {
+    padding-left: 14px;
+    margin: 0 0 10px;
+    color: var(--fg-3);
+    font-family: var(--font-ui);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+}
+
+.refined-side-item {
+  position: relative;
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 14px;
+  border: none;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--fg-1);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 13.5px;
+  font-weight: 500;
+  gap: 10px;
+  text-align: left;
+  text-decoration: none;
+  transition:
+    background 0.18s,
+    color 0.18s;
+
+  &:hover {
+    background: color-mix(in oklch, var(--bg-1), transparent 40%);
+    color: var(--fg-0);
+  }
+
+  &.active {
+    background: color-mix(in oklch, var(--accent), var(--bg-1) 82%);
+    color: var(--fg-0);
+  }
+
+  &.active::before {
+    position: absolute;
+    top: 50%;
+    left: -12px;
+    width: 3px;
+    height: 18px;
+    border-radius: 2px;
+    background: var(--accent);
+    box-shadow: 0 0 10px var(--accent-glow);
+    content: "";
+    transform: translateY(-50%);
+  }
+
+  .label {
+    display: inline-flex;
+    min-width: 0;
+    align-items: center;
+    gap: 9px;
+  }
+
+  .text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .swatch {
+    width: 7px;
+    height: 7px;
+    flex-shrink: 0;
+    border-radius: 2px;
+    background: var(--swatch-color, var(--fg-3));
+    box-shadow: 0 0 0 1px color-mix(in oklch, var(--swatch-color, var(--fg-3)), transparent 70%);
+  }
+
+  &.active .swatch {
+    box-shadow: 0 0 8px var(--swatch-color, var(--accent));
+  }
+}
+
+.refined-count-badge {
+  display: inline-flex;
+  min-width: 28px;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  border: 1px solid var(--line-soft);
+  border-radius: 999px;
+  background: var(--bg-2);
+  color: var(--fg-3);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  text-align: center;
+  transition:
+    background 0.18s,
+    color 0.18s,
+    border-color 0.18s;
+
+  .refined-side-item:hover & {
+    color: var(--fg-1);
+  }
+
+  .refined-side-item.active & {
+    border-color: color-mix(in oklch, var(--accent), transparent 60%);
+    background: color-mix(in oklch, var(--accent), transparent 82%);
+    color: color-mix(in oklch, var(--accent), white 15%);
+  }
+}
+
+// ==== Section card ====
+.refined-section {
+  padding: 28px 32px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-xl);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklch, var(--bg-1), transparent 25%),
+    color-mix(in oklch, var(--bg-1), transparent 55%)
+  );
+  box-shadow: var(--shadow-md);
+}
+
+// ==== Breadcrumb-style page title ====
+.refined-breadcrumb-h1 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  margin: 0 0 4px;
+  color: var(--fg-0);
+  font-family: var(--font-ui);
+  font-size: 32px;
+  font-weight: 600;
+  gap: 12px;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+
+  .dim {
+    color: var(--fg-3);
+    font-weight: 300;
+    letter-spacing: -0.02em;
+  }
+
+  .sep {
+    margin: 0 2px;
+    color: var(--fg-3);
+    font-weight: 300;
+    opacity: 0.5;
+  }
+
+  .current {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .current.neutral {
+    color: var(--fg-0);
+  }
+}
+
+// ==== Inputs ====
+.refined-input {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-2);
+  box-shadow: var(--shadow-sm);
+  color: var(--fg-0);
+  font-family: var(--font-ui);
+  font-size: 13.5px;
+  outline: none;
+  transition:
+    border-color 0.18s,
+    background 0.18s,
+    box-shadow 0.18s;
+
+  &:focus {
+    border-color: var(--accent);
+    box-shadow:
+      0 0 0 3px var(--accent-glow),
+      var(--shadow-sm);
+  }
+
+  &::placeholder {
+    color: var(--fg-3);
+  }
+}
+
+// ==== Select ====
+.refined-select-wrap {
+  position: relative;
+
+  &::after {
+    position: absolute;
+    top: 50%;
+    right: 14px;
+    color: var(--fg-3);
+    content: "⌄";
+    font-size: 14px;
+    pointer-events: none;
+    transform: translateY(-65%);
+  }
+}
+
+.refined-select {
+  width: 100%;
+  padding: 11px 38px 11px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  appearance: none;
+  background: var(--bg-2);
+  box-shadow: var(--shadow-sm);
+  color: var(--fg-0);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 13.5px;
+  outline: none;
+  transition:
+    border-color 0.18s,
+    box-shadow 0.18s;
+
+  &:focus {
+    border-color: var(--accent);
+    box-shadow:
+      0 0 0 3px var(--accent-glow),
+      var(--shadow-sm);
+  }
+}
+
+// ==== Buttons ====
+.refined-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-2);
+  box-shadow: var(--shadow-sm);
+  color: var(--fg-0);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 500;
+  gap: 8px;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    transform 0.08s;
+
+  &:hover {
+    border-color: var(--fg-3);
+    background: var(--bg-3);
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+
+  &.primary {
+    border-color: color-mix(in oklch, var(--accent), black 10%);
+    background: linear-gradient(
+      180deg,
+      color-mix(in oklch, var(--accent), white 5%),
+      var(--accent)
+    );
+    box-shadow:
+      0 1px 0 rgb(255 255 255 / 20%) inset,
+      0 0 0 1px color-mix(in oklch, var(--accent), transparent 50%),
+      0 8px 20px color-mix(in oklch, var(--accent), transparent 70%);
+    color: var(--accent-fg);
+    font-weight: 600;
+
+    &:hover {
+      background: linear-gradient(
+        180deg,
+        color-mix(in oklch, var(--accent), white 12%),
+        color-mix(in oklch, var(--accent), white 4%)
+      );
+    }
+  }
+
+  &.ghost {
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+    color: var(--fg-2);
+
+    &:hover {
+      background: var(--bg-1);
+      color: var(--fg-0);
+    }
+  }
+}
