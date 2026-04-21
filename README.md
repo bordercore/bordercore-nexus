@@ -1,5 +1,8 @@
 ![Bordercore Logo](/bordercore/static/img/bordercore-title.png)
 
+[![Backend](https://github.com/bordercore/bordercore-nexus/actions/workflows/backend.yml/badge.svg)](https://github.com/bordercore/bordercore-nexus/actions/workflows/backend.yml)
+[![Frontend](https://github.com/bordercore/bordercore-nexus/actions/workflows/frontend.yml/badge.svg)](https://github.com/bordercore/bordercore-nexus/actions/workflows/frontend.yml)
+
 ---
 
 *Bordercore* is a "Second Brain" personal knowledge base platform, designed to organize your digital life. Imagine a digital sanctuary where all your vital information converges -- notes whispering insights, PDFs sharing knowledge, bookmarks guiding your web exploration, flashcards sparking memory, and todos orchestrating your day.
