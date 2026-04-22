@@ -236,22 +236,20 @@
 // Bookmark Grid - card-based layout (base styles in _tables.scss)
 // =============================================================================
 
-// Theme-aware custom properties scoped to bookmark page
+// Theme-aware custom properties scoped to bookmark page — matches .todo-row hover recipe.
 #bookmark-list-page {
   --bookmark-row-bg: var(--bg-1);
-  --bookmark-row-border: rgb(255 255 255 / 5%);
-  --bookmark-row-hover-border: var(--accent);
-  --bookmark-row-hover-shadow: 0 0 10px color-mix(in oklch, var(--accent), transparent 75%), 0 0 20px color-mix(in oklch, var(--accent), transparent 75%);
-  --bookmark-row-selected-shadow: 0 0 15px color-mix(in oklch, var(--accent), transparent 75%), 0 0 30px color-mix(in oklch, var(--accent), transparent 75%);
-  --bookmark-icon-box-bg: var(--bg-2);
-}
-
-// Light theme: tone down glow to subtle drop shadow
-[data-theme="light"] #bookmark-list-page,
-.theme-light #bookmark-list-page {
   --bookmark-row-border: var(--line-soft);
-  --bookmark-row-hover-shadow: 0 2px 8px rgb(0 0 0 / 10%);
-  --bookmark-row-selected-shadow: 0 2px 12px rgb(0 0 0 / 15%);
+  --bookmark-row-hover-border: color-mix(in oklch, var(--accent), transparent 55%);
+  --bookmark-row-hover-shadow:
+    0 0 10px color-mix(in oklch, var(--accent), transparent 80%),
+    0 0 20px color-mix(in oklch, var(--accent), transparent 88%),
+    var(--shadow-md);
+  --bookmark-row-selected-shadow:
+    0 0 15px color-mix(in oklch, var(--accent), transparent 75%),
+    0 0 30px color-mix(in oklch, var(--accent), transparent 85%),
+    var(--shadow-md);
+  --bookmark-icon-box-bg: var(--bg-2);
 }
 
 // Grid columns: drag | content | tags | date | actions
@@ -415,21 +413,23 @@
     }
   }
 
-  // Card rows
+  // Card rows — hover recipe mirrors .todo-row
   .bookmark-row {
     position: relative;
     border: 1px solid var(--bookmark-row-border);
-    border-radius: 0.5rem;
+    border-radius: var(--radius-lg);
     background-color: var(--bookmark-row-bg);
     transition:
-      border-color 0.2s ease,
-      box-shadow 0.2s ease,
-      background-color 0.15s ease;
+      border-color 0.18s ease,
+      box-shadow 0.18s ease,
+      background-color 0.15s ease,
+      transform 0.12s ease;
 
     &:hover {
       border-color: var(--bookmark-row-hover-border);
       background-color: var(--bookmark-row-bg);
       box-shadow: var(--bookmark-row-hover-shadow);
+      transform: translateY(-1px);
     }
 
     &.selected {
