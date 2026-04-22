@@ -497,19 +497,21 @@ export function BookmarkListPage({
                     />
                   </form>
                 </div>
-                <div className="btn-group ms-3" role="group" aria-label="List View">
+                <div className="refined-seg ms-3" role="group" aria-label="View density">
                   <button
                     type="button"
-                    className={`btn btn-primary ${viewType === "normal" ? "active" : ""}`}
+                    className={viewType === "normal" ? "active" : ""}
                     onClick={() => switchViewType("normal")}
+                    aria-pressed={viewType === "normal"}
                     title="Normal view"
                   >
                     <FontAwesomeIcon icon={faList} />
                   </button>
                   <button
                     type="button"
-                    className={`btn btn-primary ${viewType === "compact" ? "active" : ""}`}
+                    className={viewType === "compact" ? "active" : ""}
                     onClick={() => switchViewType("compact")}
+                    aria-pressed={viewType === "compact"}
                     title="Compact view"
                   >
                     <FontAwesomeIcon icon={faBars} />

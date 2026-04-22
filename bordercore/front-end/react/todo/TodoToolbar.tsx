@@ -49,7 +49,7 @@ export function TodoToolbar({
         )}
       </div>
 
-      <div className="todo-seg" role="group" aria-label="View density">
+      <div className="refined-seg" role="group" aria-label="View density">
         <button
           type="button"
           className={view === "normal" ? "active" : ""}

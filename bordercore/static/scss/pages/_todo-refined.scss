@@ -155,41 +155,6 @@
     font-size: 13.5px;
   }
 
-  .todo-seg {
-    display: inline-flex;
-    padding: 3px;
-    border: 1px solid var(--line-soft);
-    border-radius: 10px;
-    background: var(--bg-1);
-
-    button {
-      display: inline-flex;
-      align-items: center;
-      padding: 7px 10px;
-      border: none;
-      border-radius: 7px;
-      background: transparent;
-      color: var(--fg-2);
-      cursor: pointer;
-      font-family: var(--font-ui);
-      font-size: 13px;
-      gap: 6px;
-      transition:
-        color 0.15s,
-        background 0.15s;
-
-      &:hover {
-        color: var(--fg-0);
-      }
-
-      &.active {
-        background: var(--bg-3);
-        box-shadow: var(--shadow-sm);
-        color: var(--fg-0);
-      }
-    }
-  }
-
   .todo-sort-wrap {
     display: inline-flex;
     align-items: center;
