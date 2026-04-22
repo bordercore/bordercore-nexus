@@ -35,6 +35,11 @@ urlpatterns = [
         name="edit_note"
     ),
     path(
+        route="pin/",
+        view=views.pin_node,
+        name="pin"
+    ),
+    path(
         route="todo/add/",
         view=views.add_todo,
         name="add_todo"

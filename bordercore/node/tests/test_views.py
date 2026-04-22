@@ -66,6 +66,23 @@ def test_edit_note(authenticated_client, node):
     assert resp.status_code == 200
 
 
+def test_pin_node(authenticated_client, node):
+
+    _, client = authenticated_client()
+
+    url = urls.reverse("node:pin")
+
+    resp = client.post(url, {"node_uuid": node.uuid, "pinned": "true"})
+    assert resp.status_code == 200
+    node.refresh_from_db()
+    assert node.is_pinned is True
+
+    resp = client.post(url, {"node_uuid": node.uuid, "pinned": "false"})
+    assert resp.status_code == 200
+    node.refresh_from_db()
+    assert node.is_pinned is False
+
+
 def test_change_layout(authenticated_client, node):
 
     _, client = authenticated_client()

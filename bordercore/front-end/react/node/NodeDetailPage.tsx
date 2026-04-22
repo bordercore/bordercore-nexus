@@ -9,6 +9,7 @@ import {
   faBox,
   faSplotch,
   faStickyNote,
+  faThumbtack,
 } from "@fortawesome/free-solid-svg-icons";
 import { Modal } from "bootstrap";
 import cloneDeep from "lodash/cloneDeep";
@@ -69,6 +70,7 @@ import type {
 interface NodeDetailUrls {
   nodeList: string;
   editNode: string;
+  pinNode: string;
   changeLayout: string;
   addCollection: string;
   updateCollection: string;
@@ -112,6 +114,7 @@ interface NodeDetailUrls {
 interface NodeDetailPageProps {
   nodeUuid: string;
   initialNodeName: string;
+  initialIsPinned: boolean;
   initialLayout: Layout;
   priorityList: PriorityOption[];
   urls: NodeDetailUrls;
@@ -136,12 +139,14 @@ function findItemPosition(layout: Layout, id: string): [number, number] | null {
 export default function NodeDetailPage({
   nodeUuid,
   initialNodeName,
+  initialIsPinned,
   initialLayout,
   priorityList,
   urls,
 }: NodeDetailPageProps) {
   const [layout, setLayout] = useState<Layout>(initialLayout);
   const [nodeName, setNodeName] = useState(initialNodeName);
+  const [isPinned, setIsPinned] = useState(initialIsPinned);
   const [editLayout, setEditLayout] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
 
@@ -312,6 +317,18 @@ export default function NodeDetailPage({
   const handleNodeNameSave = () => {
     setIsEditingName(false);
     doPut(urls.editNode, { name: nodeName }, () => {}, "Node name updated");
+  };
+
+  const handleTogglePin = () => {
+    const next = !isPinned;
+    setIsPinned(next);
+    dropdownMenuRef.current?.close();
+    doPost(
+      urls.pinNode,
+      { node_uuid: nodeUuid, pinned: next ? "true" : "false" },
+      () => {},
+      next ? "Node pinned" : "Node unpinned"
+    );
   };
 
   // Add new components
@@ -664,6 +681,21 @@ export default function NodeDetailPage({
             <FontAwesomeIcon icon={faPencilAlt} className="text-primary" />
           </span>
           <span className="dropdown-menu-text">Edit node</span>
+        </a>
+      </li>
+      <li>
+        <a
+          href="#"
+          className="dropdown-menu-item"
+          onClick={e => {
+            e.preventDefault();
+            handleTogglePin();
+          }}
+        >
+          <span className="dropdown-menu-icon">
+            <FontAwesomeIcon icon={faThumbtack} className="text-primary" />
+          </span>
+          <span className="dropdown-menu-text">{isPinned ? "Unpin node" : "Pin node"}</span>
         </a>
       </li>
       <li>

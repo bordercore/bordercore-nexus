@@ -8,11 +8,13 @@ if (container) {
   // Read node data from data attributes
   const nodeUuid = container.getAttribute("data-node-uuid") || "";
   const nodeName = container.getAttribute("data-node-name") || "";
+  const isPinned = container.getAttribute("data-node-is-pinned") === "true";
 
   // Read URLs from data attributes
   const urls = {
     nodeList: container.getAttribute("data-node-list-url") || "",
     editNode: container.getAttribute("data-edit-node-url") || "",
+    pinNode: container.getAttribute("data-pin-node-url") || "",
     changeLayout: container.getAttribute("data-change-layout-url") || "",
     // Collection URLs
     addCollection: container.getAttribute("data-add-collection-url") || "",
@@ -83,6 +85,7 @@ if (container) {
     <NodeDetailPage
       nodeUuid={nodeUuid}
       initialNodeName={nodeName}
+      initialIsPinned={isPinned}
       initialLayout={layout}
       priorityList={priorityList}
       urls={urls}

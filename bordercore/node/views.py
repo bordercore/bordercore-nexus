@@ -195,6 +195,29 @@ def edit_note(request: HttpRequest) -> Response:
     return Response()
 
 
+@api_view(["POST"])
+@validate_post_data("node_uuid", "pinned")
+def pin_node(request: HttpRequest) -> Response:
+    """Set a node's pinned state.
+
+    Args:
+        request: The HTTP request object.
+
+    Returns:
+        JSON response with the new ``is_pinned`` value.
+    """
+    node_uuid = request.POST.get("node_uuid", "").strip()
+    pinned = request.POST.get("pinned", "").strip().lower() == "true"
+    user = cast(User, request.user)
+
+    with transaction.atomic():
+        node = get_user_object_or_404(user, Node, uuid=node_uuid)
+        node.is_pinned = pinned
+        node.save(update_fields=["is_pinned"])
+
+    return Response({"is_pinned": pinned})
+
+
 @api_view(["GET"])
 def get_todo_list(request: HttpRequest, uuid: str) -> Response:
     """Return the serialized todo list for a node.
