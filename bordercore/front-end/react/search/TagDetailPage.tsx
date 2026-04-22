@@ -103,15 +103,19 @@ export function TagDetailPage({
 
         <div className="search-sidebar-section">
           <h6 className="search-sidebar-label">CONTENT TYPE</h6>
-          <div className="search-mode-list">
+          <div className="refined-side-nav">
             {enrichedDoctypeCounts.map(doctype => (
               <button
                 key={doctype.key}
-                className={`search-mode-btn ${selectedDoctype === doctype.key ? "active" : ""}`}
+                type="button"
+                className={`refined-side-item ${selectedDoctype === doctype.key ? "active" : ""}`}
                 onClick={() => handleDoctypeSelect(doctype.key)}
+                aria-current={selectedDoctype === doctype.key ? "true" : undefined}
               >
-                <span>{doctype.displayName}</span>
-                <span className="ms-auto badge rounded-pill bg-secondary">{doctype.count}</span>
+                <span className="label">
+                  <span className="text">{doctype.displayName}</span>
+                </span>
+                <span className="refined-count-badge">{doctype.count}</span>
               </button>
             ))}
           </div>

@@ -48,13 +48,6 @@ export function SearchSidebar({
     [onSortChange]
   );
 
-  const handleDoctypeChange = useCallback(
-    (e: React.ChangeEvent<HTMLSelectElement>) => {
-      onDoctypeSelect(e.target.value);
-    },
-    [onDoctypeSelect]
-  );
-
   return (
     <aside className="search-sidebar">
       <SearchModeNav activeMode={searchMode} onModeChange={onSearchModeChange} />
@@ -71,19 +64,36 @@ export function SearchSidebar({
 
         <div className="search-filter-group">
           <label className="search-filter-label">Content Type</label>
-          <select
-            className="search-filter-select"
-            value={currentDoctype || ""}
-            onChange={handleDoctypeChange}
-            disabled={filtersDisabled}
-          >
-            <option value="">All Types</option>
+          <div className="refined-side-nav">
+            <button
+              type="button"
+              className={`refined-side-item ${!currentDoctype ? "active" : ""}`}
+              onClick={() => !filtersDisabled && onDoctypeSelect("")}
+              disabled={filtersDisabled}
+              aria-current={!currentDoctype ? "true" : undefined}
+            >
+              <span className="label">
+                <span className="text">All Types</span>
+              </span>
+            </button>
             {aggList.map(agg => (
-              <option key={agg.doctype} value={agg.doctype}>
-                {agg.doctype.charAt(0).toUpperCase() + agg.doctype.slice(1)} ({agg.count})
-              </option>
+              <button
+                key={agg.doctype}
+                type="button"
+                className={`refined-side-item ${currentDoctype === agg.doctype ? "active" : ""}`}
+                onClick={() => !filtersDisabled && onDoctypeSelect(agg.doctype)}
+                disabled={filtersDisabled}
+                aria-current={currentDoctype === agg.doctype ? "true" : undefined}
+              >
+                <span className="label">
+                  <span className="text">
+                    {agg.doctype.charAt(0).toUpperCase() + agg.doctype.slice(1)}
+                  </span>
+                </span>
+                <span className="refined-count-badge">{agg.count}</span>
+              </button>
             ))}
-          </select>
+          </div>
         </div>
 
         <div className="search-filter-group search-filter-inline">
