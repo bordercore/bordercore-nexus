@@ -45,11 +45,6 @@
   .search-input,
   .form-control {
     padding-left: 2.5rem;
-
-    &::placeholder {
-      color: var(--fg-3);
-      opacity: 1;
-    }
   }
 }
 
@@ -322,23 +317,11 @@
   flex: 1;
 }
 
+// Inherits surface from .form-control (applied via className); only the
+// search-specific icon padding is added here.
 .search-bar-input {
   width: 100%;
-  padding: 0.75rem 1rem 0.75rem 2.5rem;
-  border: 1px solid var(--line-soft);
-  border-radius: 0.5rem;
-  background: var(--bg-2);
-  color: var(--fg-0);
-  font-size: 0.95rem;
-
-  &:focus {
-    border-color: var(--accent);
-    outline: none;
-  }
-
-  &::placeholder {
-    color: var(--fg-3);
-  }
+  padding-left: 2.5rem;
 }
 
 .search-bar-tag-input-wrap {

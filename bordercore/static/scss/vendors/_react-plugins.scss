@@ -6,24 +6,27 @@
 // don't conform to kebab-case; disable selector-class-pattern for this file.
 /* stylelint-disable selector-class-pattern */
 
-// React Select — fonts match .refined-input / .form-control (Inter 13.5px)
+// React Select — control surface uses the shared refined-input-surface mixin.
 .react-select-container {
   font-family: var(--font-ui);
   font-size: 13.5px;
 
   .react-select__control {
+    @include refined-input-surface;
+
     min-height: 46px;
-    border: 1px solid var(--line-soft);
-    border-radius: var(--radius);
-    background-color: var(--bg-2);
 
-    &:hover {
-      border-color: var(--accent);
-    }
-
+    // react-select applies focus via modifier class, not :focus, so mirror
+    // the refined-input focus ring on --is-focused.
     &--is-focused {
       border-color: var(--accent);
-      box-shadow: 0 0 0 1px var(--accent);
+      box-shadow:
+        0 0 0 3px var(--accent-glow),
+        var(--shadow-sm);
+    }
+
+    &:hover:not(.react-select__control--is-focused) {
+      border-color: var(--fg-3);
     }
   }
 
@@ -32,7 +35,8 @@
   }
 
   .react-select__input-container,
-  .react-select__input {
+  .react-select__input,
+  .react-select__single-value {
     color: var(--fg-0);
     font-family: var(--font-ui);
     font-size: 13.5px;
@@ -40,12 +44,6 @@
 
   .react-select__placeholder {
     color: var(--fg-3);
-    font-family: var(--font-ui);
-    font-size: 13.5px;
-  }
-
-  .react-select__single-value {
-    color: var(--fg-0);
     font-family: var(--font-ui);
     font-size: 13.5px;
   }

@@ -293,9 +293,9 @@
 }
 
 // ==== Inputs ====
-.refined-input {
-  width: 100%;
-  padding: 11px 14px;
+// Canonical input surface. @include this on any new input so the border,
+// background, focus ring, placeholder and typography all stay in one place.
+@mixin refined-input-surface {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--bg-2);
@@ -309,16 +309,25 @@
     background 0.18s,
     box-shadow 0.18s;
 
-  &:focus {
+  &::placeholder {
+    color: var(--fg-3);
+    opacity: 1;
+  }
+
+  &:focus,
+  &:focus-within {
     border-color: var(--accent);
     box-shadow:
       0 0 0 3px var(--accent-glow),
       var(--shadow-sm);
   }
+}
 
-  &::placeholder {
-    color: var(--fg-3);
-  }
+.refined-input {
+  width: 100%;
+  padding: 11px 14px;
+
+  @include refined-input-surface;
 }
 
 // ==== Select ====

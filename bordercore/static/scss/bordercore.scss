@@ -37,6 +37,9 @@ $table-cell-padding-x: .75rem;
 @import "base/utilities";
 
 // 3. Components - Reusable UI components
+// refined-components defines @mixin refined-input-surface, so it must come
+// before any partial that @includes it.
+@import "components/refined-components";
 @import "components/buttons";
 @import "components/forms";
 @import "components/tables";
@@ -45,7 +48,6 @@ $table-cell-padding-x: .75rem;
 @import "components/navigation";
 @import "components/popovers";
 @import "components/chatbot";
-@import "components/refined-components";
 
 // 4. Layout - Page structure and search
 @import "layout/layout";
