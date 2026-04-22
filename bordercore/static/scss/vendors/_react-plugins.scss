@@ -6,8 +6,11 @@
 // don't conform to kebab-case; disable selector-class-pattern for this file.
 /* stylelint-disable selector-class-pattern */
 
-// React Select
+// React Select — fonts match .refined-input / .form-control (Inter 13.5px)
 .react-select-container {
+  font-family: var(--font-ui);
+  font-size: 13.5px;
+
   .react-select__control {
     border: 1px solid var(--line-soft);
     border-radius: var(--radius);
@@ -27,16 +30,23 @@
     padding: 0.25rem 0.5rem;
   }
 
-  .react-select__input-container {
+  .react-select__input-container,
+  .react-select__input {
     color: var(--fg-0);
+    font-family: var(--font-ui);
+    font-size: 13.5px;
   }
 
   .react-select__placeholder {
-    color: var(--fg-1);
+    color: var(--fg-3);
+    font-family: var(--font-ui);
+    font-size: 13.5px;
   }
 
   .react-select__single-value {
     color: var(--fg-0);
+    font-family: var(--font-ui);
+    font-size: 13.5px;
   }
 
   .react-select__multi-value {

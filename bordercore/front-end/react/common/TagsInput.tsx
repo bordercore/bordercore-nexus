@@ -192,10 +192,6 @@ export const TagsInput = forwardRef<TagsInputHandle, TagsInputProps>(function Ta
         className="react-select-container"
         styles={
           {
-            placeholder: base => ({
-              ...base,
-              color: "var(--fg-1)",
-            }),
             multiValue: (base, state) => ({
               ...base,
               ...tagStyle(state.data.label),
