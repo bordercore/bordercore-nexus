@@ -12,6 +12,7 @@
   font-size: 13.5px;
 
   .react-select__control {
+    min-height: 46px;
     border: 1px solid var(--line-soft);
     border-radius: var(--radius);
     background-color: var(--bg-2);
@@ -27,7 +28,7 @@
   }
 
   .react-select__value-container {
-    padding: 0.25rem 0.5rem;
+    padding: 2px 8px;
   }
 
   .react-select__input-container,
