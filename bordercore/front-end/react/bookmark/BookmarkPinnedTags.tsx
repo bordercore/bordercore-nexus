@@ -84,9 +84,9 @@ function SortableTagItem({
     >
       <div className="slicklist-list-item-inner">
         <li
-          className={`list-with-counts d-flex align-items-center ${
-            isSelected ? "selected" : ""
-          } ${isDragOver ? "hover-tag" : ""}`}
+          className={`refined-side-item ${isSelected ? "active" : ""} ${
+            isDragOver ? "hover-tag" : ""
+          }`}
           data-tag={tag.name}
           data-id={tag.id}
           onClick={() => onClickTag(tag.name)}
@@ -95,11 +95,11 @@ function SortableTagItem({
           onDrop={handleDrop}
           {...(isUntagged ? {} : { ...attributes, ...listeners })}
         >
-          <div className="text-truncate">{tag.name}</div>
+          <span className="label">
+            <span className="text">{tag.name}</span>
+          </span>
           {tag.bookmark_count !== undefined && tag.bookmark_count > 0 && (
-            <div className="ms-auto">
-              <span className="badge">{tag.bookmark_count}</span>
-            </div>
+            <span className="refined-count-badge">{tag.bookmark_count}</span>
           )}
         </li>
       </div>
