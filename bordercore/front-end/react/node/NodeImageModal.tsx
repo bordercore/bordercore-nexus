@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Modal } from "bootstrap";
 
 interface NodeImageModalProps {
@@ -32,7 +33,7 @@ export default function NodeImageModal({ isOpen, imageUrl, onClose }: NodeImageM
     }
   }, [isOpen]);
 
-  return (
+  return createPortal(
     <div
       ref={modalRef}
       className="modal fade"
@@ -56,6 +57,7 @@ export default function NodeImageModal({ isOpen, imageUrl, onClose }: NodeImageM
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -1,0 +1,739 @@
+// =============================================================================
+// Node detail — "Refined Dark" redesign (3-column masonry, hi-fi chrome)
+// =============================================================================
+// Scoped under .node-detail-app. The palette is locked to prototype hex values
+// via local --nd-* variables so the card rhythm, glows, and chip tones stay
+// pixel-faithful regardless of the active theme. Mirrors the approach used
+// by _node-refined.scss (the node list page redesign).
+// =============================================================================
+
+// stylelint-disable no-descending-specificity, color-function-notation, selector-class-pattern
+
+.node-detail-app {
+  // --- Tokens (prototype bc-* values, renamed to --nd-*) ---
+  --nd-accent: #b36bff;
+  --nd-accent-2: #7c7fff;
+  --nd-accent-3: #f3b;
+  --nd-accent-4: #4cc2ff;
+  --nd-accent-hover: #c98bff;
+  --nd-accent-soft: rgb(179, 107, 255, 25%);
+  --nd-ok: #3fd29c;
+  --nd-warn: #f0b840;
+  --nd-danger: #f57;
+  --nd-bg-0: #07070c;
+  --nd-bg-1: #0b0d14;
+  --nd-bg-2: #12141c;
+  --nd-bg-3: #1a1d28;
+  --nd-bg-4: #242836;
+  --nd-fg-1: #e6e8f0;
+  --nd-fg-2: #b8bcc9;
+  --nd-fg-3: #8a8fa0;
+  --nd-fg-4: #5a5f72;
+  --nd-border-1: #2a2e3d;
+  --nd-border-2: #3a3f52;
+  --nd-hairline: #1e212d;
+  --nd-radius-sm: 6px;
+  --nd-radius-md: 10px;
+  --nd-radius-lg: 14px;
+  --nd-elev-1:
+    0 1px 0 0 rgb(255, 255, 255, 2%) inset,
+    0 1px 2px rgb(0, 0, 0, 35%),
+    0 0 0 1px var(--nd-border-1);
+  --nd-elev-2:
+    0 1px 0 0 rgb(255, 255, 255, 3%) inset,
+    0 8px 24px -8px rgb(0, 0, 0, 55%),
+    0 0 0 1px var(--nd-border-1);
+  --nd-elev-3:
+    0 1px 0 0 rgb(255, 255, 255, 4%) inset,
+    0 20px 60px -12px rgb(0, 0, 0, 70%),
+    0 0 0 1px var(--nd-border-1);
+  --nd-font-sans: "Inter", -apple-system, blinkmacsystemfont, "Segoe UI", roboto, "Helvetica Neue", arial, sans-serif;
+  --nd-font-display: "Inter", -apple-system, blinkmacsystemfont, "Segoe UI", sans-serif;
+  --nd-font-mono: "JetBrains Mono", ui-monospace, sfmono-regular, "SF Mono", menlo, consolas, monospace;
+  --nd-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --nd-t-fast: 120ms;
+  --nd-t-base: 180ms;
+  --nd-t-slow: 280ms;
+
+  // --- Root surface (escape base layout padding; match .node-app pattern) ---
+  // NOTE: We deliberately do NOT create a stacking context here (no z-index).
+  // Bootstrap modals render their backdrop at document.body level with
+  // z-index: 1050; if .node-detail-app established a stacking context, the
+  // modal would be trapped inside it and the backdrop would overlay it,
+  // blocking all input. The aurora is painted as a multi-layer background
+  // directly on this element to avoid needing a pseudo-element + z-index.
+  position: relative;
+  min-height: 100vh;
+  padding: 0;
+  margin: -1rem -1.5rem 0;
+  background:
+    radial-gradient(1200px 800px at 10% -10%, rgb(179, 107, 255, 14%), transparent 60%),
+    radial-gradient(900px 700px at 110% 20%, rgb(76, 194, 255, 8%), transparent 55%),
+    radial-gradient(700px 500px at 50% 110%, rgb(255, 61, 189, 6%), transparent 65%),
+    var(--nd-bg-0);
+  color: var(--nd-fg-1);
+  font-family: var(--nd-font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+
+  * { box-sizing: border-box; }
+
+  ::selection {
+    background: rgb(179, 107, 255, 35%);
+    color: var(--nd-fg-1);
+  }
+
+  // Reset Bootstrap hr / list defaults inside node-detail
+  hr { color: inherit; }
+
+  // --- Page container ---
+  .nd-page {
+    position: relative;
+    max-width: 1400px;
+    padding: 28px 40px 120px;
+    margin: 0 auto;
+  }
+
+  // ========================================================================
+  // Node header
+  // ========================================================================
+  .nd-head { margin-bottom: 28px; }
+
+  .nd-crumb {
+    display: flex;
+    align-items: center;
+    margin-bottom: 14px;
+    color: var(--nd-fg-3);
+    font-family: var(--nd-font-mono);
+    font-size: 12px;
+    gap: 6px;
+
+    a {
+      color: var(--nd-accent-hover);
+      cursor: pointer;
+      text-decoration: none;
+
+      &:hover { text-decoration: underline; }
+    }
+
+    .slash { color: var(--nd-fg-4); }
+    .leaf { color: var(--nd-fg-1); }
+
+    .nd-crumb-icon {
+      margin-right: 6px;
+      font-size: 10px;
+    }
+  }
+
+  .nd-title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 18px;
+    gap: 24px;
+  }
+
+  .nd-title-col {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .nd-h1 {
+    display: flex;
+    align-items: center;
+    margin: 0 0 8px;
+    color: var(--nd-fg-1);
+    font: 600 34px/1.2 var(--nd-font-display);
+    gap: 14px;
+    letter-spacing: -0.015em;
+    text-transform: none;
+
+    .nd-name {
+      padding: 2px 8px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      margin-left: -8px;
+      cursor: text;
+      transition: all var(--nd-t-fast) var(--nd-ease-out);
+
+      &:hover {
+        border-color: var(--nd-border-1);
+        background: var(--nd-bg-2);
+      }
+    }
+
+    .nd-name-input {
+      width: 100%;
+      max-width: 520px;
+      padding: 2px 8px;
+      border: 1px solid var(--nd-accent);
+      border-radius: 6px;
+      background: var(--nd-bg-2);
+      box-shadow: 0 0 0 2px rgb(179, 107, 255, 25%);
+      color: var(--nd-fg-1);
+      font: 600 34px/1.2 var(--nd-font-display);
+      letter-spacing: -0.015em;
+      outline: none;
+    }
+  }
+
+  .nd-pin {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: 1px solid var(--nd-border-1);
+    border-radius: 8px;
+    background: var(--nd-bg-2);
+    color: var(--nd-fg-4);
+    cursor: pointer;
+    font-size: 14px;
+    place-items: center;
+    transition: all var(--nd-t-base) var(--nd-ease-out);
+
+    &:hover {
+      border-color: var(--nd-border-2);
+      color: var(--nd-accent);
+    }
+
+    &.on {
+      border-color: rgb(179, 107, 255, 40%);
+      background: rgb(179, 107, 255, 14%);
+      box-shadow: 0 0 14px -2px rgb(179, 107, 255, 50%);
+      color: var(--nd-accent);
+    }
+  }
+
+  .nd-head-actions {
+    position: relative;
+    display: flex;
+    flex-shrink: 0;
+    gap: 8px;
+  }
+
+  .nd-add-wrap { position: relative; }
+
+  // ========================================================================
+  // Buttons
+  // ========================================================================
+  .nd-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 14px;
+    border: 1px solid var(--nd-border-1);
+    border-radius: var(--nd-radius-md);
+    background: var(--nd-bg-3);
+    color: var(--nd-fg-1);
+    cursor: pointer;
+    font: 500 13px/1 var(--nd-font-sans);
+    gap: 8px;
+    text-decoration: none;
+    transition:
+      background var(--nd-t-fast) var(--nd-ease-out),
+      border-color var(--nd-t-fast) var(--nd-ease-out),
+      transform 80ms var(--nd-ease-out);
+
+    &:hover {
+      border-color: var(--nd-border-2);
+      background: var(--nd-bg-4);
+    }
+
+    &:active { transform: translateY(1px); }
+
+    &:disabled,
+    &[aria-disabled="true"] {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
+    &.primary {
+      border-color: rgb(255, 255, 255, 12%);
+      background: linear-gradient(180deg, #b36bff, #9355ef);
+      box-shadow:
+        0 0 0 1px rgb(179, 107, 255, 30%),
+        0 0 16px -2px rgb(179, 107, 255, 50%);
+      color: #fff;
+
+      &:hover:not(:disabled) { filter: brightness(1.08); }
+
+      &:active { transform: translateY(1px); }
+    }
+
+    &.ghost {
+      background: transparent;
+
+      &:hover:not(:disabled) {
+        background: var(--nd-bg-2);
+        color: var(--nd-fg-1);
+      }
+    }
+
+    &.icon {
+      min-width: 34px;
+      justify-content: center;
+      padding: 8px 10px;
+    }
+
+    &.danger-ghost {
+      border-color: rgb(255, 85, 119, 30%);
+      background: transparent;
+      color: var(--nd-danger);
+
+      &:hover:not(:disabled) { background: rgb(255, 85, 119, 8%); }
+    }
+  }
+
+  // ========================================================================
+  // Meta row (stat chips)
+  // ========================================================================
+  .nd-meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    padding-top: 16px;
+    border-top: 1px solid var(--nd-hairline);
+    gap: 8px;
+  }
+
+  .nd-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border: 1px solid var(--nd-border-1);
+    border-radius: 999px;
+    background: var(--nd-bg-2);
+    color: var(--nd-fg-3);
+    font: 500 11px/1 var(--nd-font-mono);
+    gap: 6px;
+
+    svg, i {
+      color: var(--nd-fg-4);
+      font-size: 10px;
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--nd-accent);
+      box-shadow: 0 0 6px var(--nd-accent);
+    }
+
+    &.primary {
+      border-color: rgb(179, 107, 255, 30%);
+      background: rgb(179, 107, 255, 10%);
+      color: var(--nd-fg-1);
+
+      .dot {
+        background: var(--nd-accent);
+        box-shadow: 0 0 8px var(--nd-accent);
+      }
+    }
+  }
+
+  .nd-meta-times {
+    margin-left: auto;
+    color: var(--nd-fg-4);
+    font-family: var(--nd-font-mono);
+    font-size: 11px;
+  }
+
+  // ========================================================================
+  // Add component menu
+  // ========================================================================
+  .nd-menu {
+    position: absolute;
+    z-index: 30;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 260px;
+    padding: 6px;
+    border: 1px solid var(--nd-border-1);
+    border-radius: var(--nd-radius-md);
+    animation: nd-pop-in 140ms var(--nd-ease-out);
+    backdrop-filter: blur(14px);
+    background: rgb(18, 20, 28, 95%);
+    box-shadow: var(--nd-elev-3);
+
+    .nd-menu-head {
+      padding: 8px 10px 6px;
+      color: var(--nd-fg-4);
+      font-family: var(--nd-font-mono);
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    button {
+      display: flex;
+      width: 100%;
+      align-items: center;
+      padding: 8px 10px;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--nd-fg-1);
+      cursor: pointer;
+      font-size: 13px;
+      gap: 10px;
+      text-align: left;
+
+      i, svg {
+        width: 14px;
+        color: var(--nd-fg-3);
+      }
+
+      .hint {
+        margin-left: auto;
+        color: var(--nd-fg-4);
+        font-size: 10px;
+      }
+
+      &:hover {
+        background: rgb(179, 107, 255, 14%);
+
+        i, svg { color: var(--nd-accent); }
+      }
+
+      &.danger {
+        color: var(--nd-danger);
+
+        i, svg { color: var(--nd-danger); }
+
+        &:hover { background: rgb(255, 85, 119, 10%); }
+      }
+    }
+
+    .sep {
+      height: 1px;
+      margin: 4px 0;
+      background: var(--nd-hairline);
+    }
+  }
+
+  @keyframes nd-pop-in {
+    from {
+      opacity: 0;
+      transform: translateY(-4px) scale(0.98);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  // ========================================================================
+  // 3-column grid
+  // ========================================================================
+  .nd-grid {
+    display: grid;
+    align-items: start;
+    gap: 18px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .nd-col {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 18px;
+
+    &.empty {
+      min-height: 120px;
+      padding: 28px 12px;
+      border: 1px dashed var(--nd-border-1);
+      border-radius: var(--nd-radius-md);
+      color: var(--nd-fg-4);
+      font-family: var(--nd-font-mono);
+      font-size: 11px;
+      letter-spacing: 0.02em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+  }
+
+  // ========================================================================
+  // Card shell (wraps each layout item). Actual card content lives in the
+  // existing sub-components, which ship their own .card / .card-body markup.
+  // We re-skin Bootstrap's .card inside the shell instead of refactoring
+  // each sub-component.
+  // ========================================================================
+  .nd-item {
+    position: relative;
+
+    // Grip handle rendered by SortableLayoutItem in edit-layout mode.
+    .nd-grip {
+      position: absolute;
+      z-index: 2;
+      top: 18px;
+      right: 46px;
+      color: var(--nd-fg-4);
+      cursor: grab;
+      font-size: 12px;
+      opacity: 0;
+      transition: opacity var(--nd-t-fast);
+    }
+
+    &:hover .nd-grip { opacity: 1; }
+  }
+
+  // Re-skin the Bootstrap .card surface that each sub-component still renders
+  .card {
+    border: 1px solid var(--nd-border-1);
+    border-radius: var(--nd-radius-lg);
+    background: var(--nd-bg-2);
+    box-shadow: var(--nd-elev-1);
+    color: var(--nd-fg-1);
+    transition:
+      border-color var(--nd-t-base) var(--nd-ease-out),
+      box-shadow var(--nd-t-base) var(--nd-ease-out);
+
+    &:hover {
+      border-color: var(--nd-border-2);
+      box-shadow: var(--nd-elev-2);
+    }
+
+    // Per-node color overrides that sub-components apply (NodeNote)
+    &.node-color-1 { background: var(--nd-bg-2); }
+
+    &.node-color-2 {
+      background: linear-gradient(180deg, rgb(179, 107, 255, 8%), var(--nd-bg-2) 40%);
+    }
+
+    &.node-color-3 {
+      background: linear-gradient(180deg, rgb(76, 194, 255, 8%), var(--nd-bg-2) 40%);
+    }
+
+    &.node-color-4 {
+      background: linear-gradient(180deg, rgb(255, 61, 189, 7%), var(--nd-bg-2) 40%);
+    }
+
+    .card-body { padding: 16px 18px; }
+
+    .card-title {
+      display: flex;
+      align-items: center;
+      margin: 0 0 12px;
+      color: var(--nd-fg-1);
+      font: 500 13px/1.2 var(--nd-font-sans);
+      text-transform: none;
+
+      .node-title,
+      > span > span,
+      .cursor-pointer,
+      > .w-100 > span {
+        color: var(--nd-accent-hover);
+      }
+    }
+
+    hr.divider,
+    .divider,
+    hr {
+      padding: 0;
+      border: none;
+      margin: 0 -18px 14px;
+      background: var(--nd-hairline);
+      block-size: 1px;
+      opacity: 1;
+    }
+  }
+
+  // Soften Bootstrap text-muted inside cards
+  .text-muted { color: var(--nd-fg-4) !important; }
+
+  // Links in card bodies pick up the accent
+  .card a:not(.nd-btn) {
+    color: var(--nd-accent-hover);
+
+    &:hover { color: var(--nd-accent); }
+  }
+
+  // Breadcrumb on top of page — hide the default (the React page renders its own)
+  .legacy-breadcrumb { display: none; }
+
+  // ========================================================================
+  // Density variants (tweak: airy | default | dense)
+  // ========================================================================
+  &.d-airy {
+    .nd-grid { gap: 28px; }
+    .nd-col { gap: 28px; }
+    .nd-page { padding: 40px 56px 140px; }
+    .nd-h1 { font-size: 40px; }
+    .card .card-body { padding: 22px; }
+  }
+
+  &.d-dense {
+    .nd-grid { gap: 10px; }
+    .nd-col { gap: 10px; }
+    .nd-page { padding: 20px 28px 80px; }
+    .nd-h1 { font-size: 28px; }
+    .card .card-body { padding: 12px 14px; }
+
+    .card hr.divider,
+    .card .divider,
+    .card hr { margin: 0 -14px 10px; }
+
+    .nd-item .nd-grip { top: 14px; }
+  }
+
+  // ========================================================================
+  // Tweaks (density toggle, floating bottom-right)
+  // ========================================================================
+  .nd-tweaks-fab {
+    position: fixed;
+    z-index: 90;
+    right: 20px;
+    bottom: 20px;
+    width: 44px;
+    height: 44px;
+    border: 1px solid rgb(179, 107, 255, 30%);
+    border-radius: 50%;
+    backdrop-filter: blur(14px);
+    background: rgb(18, 20, 28, 90%);
+    box-shadow:
+      0 0 24px -4px rgb(179, 107, 255, 50%),
+      var(--nd-elev-3);
+    color: var(--nd-accent);
+    cursor: pointer;
+    font-size: 14px;
+    transition: all var(--nd-t-base) var(--nd-ease-out);
+
+    &:hover { transform: scale(1.05); }
+
+    &.open {
+      background: var(--nd-accent);
+      color: #fff;
+    }
+  }
+
+  .nd-tweaks-panel {
+    position: fixed;
+    z-index: 90;
+    right: 20px;
+    bottom: 76px;
+    width: 240px;
+    padding: 4px;
+    border: 1px solid rgb(179, 107, 255, 18%);
+    border-radius: var(--nd-radius-lg);
+    animation: nd-pop-in 160ms var(--nd-ease-out);
+    backdrop-filter: blur(18px);
+    background: rgb(18, 20, 28, 92%);
+    box-shadow:
+      var(--nd-elev-3),
+      0 0 40px -8px rgb(179, 107, 255, 30%);
+  }
+
+  .nd-tweaks-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px 8px;
+    border-bottom: 1px solid var(--nd-hairline);
+    color: var(--nd-fg-3);
+    font-family: var(--nd-font-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .nd-tweak-group {
+    padding: 12px 14px 10px;
+
+    .label {
+      margin-bottom: 8px;
+      color: var(--nd-fg-4);
+      font-family: var(--nd-font-mono);
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .options {
+      display: grid;
+      gap: 4px;
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    button {
+      padding: 7px 8px;
+      border: 1px solid var(--nd-border-1);
+      border-radius: 6px;
+      background: var(--nd-bg-3);
+      color: var(--nd-fg-2);
+      cursor: pointer;
+      font-size: 12px;
+      text-align: center;
+      transition: all var(--nd-t-fast) var(--nd-ease-out);
+
+      &:hover {
+        border-color: var(--nd-border-2);
+        color: var(--nd-fg-1);
+      }
+
+      &.on {
+        border-color: rgb(179, 107, 255, 40%);
+        background: rgb(179, 107, 255, 15%);
+        box-shadow: 0 0 10px -2px rgb(179, 107, 255, 40%);
+        color: var(--nd-accent-hover);
+      }
+    }
+  }
+
+  // ========================================================================
+  // Responsive
+  // ========================================================================
+  @media (width <= 1100px) {
+    .nd-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+
+  @media (width <= 720px) {
+    .nd-grid { grid-template-columns: 1fr; }
+    .nd-page { padding: 20px 16px 80px; }
+    .nd-title-row { flex-direction: column; }
+    .nd-head-actions { width: 100%; }
+  }
+}
+
+// =============================================================================
+// Toast — rendered via portal at document root, so it sits outside .node-detail-app
+// =============================================================================
+
+.nd-toast {
+  position: fixed;
+  z-index: 1080;
+  bottom: 28px;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  padding: 10px 18px;
+  border: 1px solid rgb(63, 210, 156, 30%);
+  border-radius: 999px;
+  animation: nd-slide-up 180ms cubic-bezier(0.22, 1, 0.36, 1);
+  backdrop-filter: blur(14px);
+  background: rgb(18, 20, 28, 95%);
+  box-shadow:
+    0 20px 60px -12px rgb(0, 0, 0, 70%),
+    0 0 20px -4px rgb(63, 210, 156, 40%);
+  color: #e6e8f0;
+  font: 500 13px/1 Inter, sans-serif;
+  gap: 10px;
+  transform: translateX(-50%);
+
+  .ok {
+    color: #3fd29c;
+    font-weight: 700;
+  }
+}
+
+@keyframes nd-slide-up {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}

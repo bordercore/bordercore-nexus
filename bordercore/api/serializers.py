@@ -344,7 +344,7 @@ class NodeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Node
-        fields = ["name", "user"]
+        fields = ["name", "note", "is_pinned", "user"]
 
 
 class QuestionSerializer(serializers.ModelSerializer):

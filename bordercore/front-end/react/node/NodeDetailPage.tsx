@@ -1,17 +1,22 @@
-import React, { useState, useRef, useCallback, useLayoutEffect } from "react";
+import React, { useState, useRef, useCallback, useEffect, useLayoutEffect, useMemo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faPlus,
   faPencilAlt,
   faImage,
-  faQuoteLeft,
-  faTasks,
-  faBox,
-  faSplotch,
+  faQuoteRight,
+  faSquareCheck,
+  faLayerGroup,
   faStickyNote,
+  faNoteSticky,
   faThumbtack,
+  faEllipsisVertical,
+  faGripVertical,
+  faTableCellsLarge,
+  faClone,
+  faTimes,
+  faDiagramProject,
 } from "@fortawesome/free-solid-svg-icons";
-import { Modal } from "bootstrap";
 import cloneDeep from "lodash/cloneDeep";
 import {
   DndContext,
@@ -36,8 +41,7 @@ import {
   type AnimateLayoutChanges,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { DropDownMenu, DropDownMenuHandle } from "../common/DropDownMenu";
-import { doPost, doPut } from "../utils/reactUtils";
+import { doPost, doPatch } from "../utils/reactUtils";
 import { TodoEditor, TodoEditorHandle } from "../todo/TodoEditor";
 import { ObjectSelectModal, ObjectSelectModalHandle } from "../common/ObjectSelectModal";
 import NodeCollectionCard from "./NodeCollectionCard";
@@ -51,6 +55,7 @@ import NodeQuote from "./NodeQuote";
 import NodeQuoteModal from "./NodeQuoteModal";
 import NodeNode from "./NodeNode";
 import NodeNodeModal from "./NodeNodeModal";
+import EditNodeModal from "./EditNodeModal";
 import type {
   Layout,
   LayoutItem,
@@ -70,7 +75,6 @@ import type {
 interface NodeDetailUrls {
   nodeList: string;
   editNode: string;
-  pinNode: string;
   changeLayout: string;
   addCollection: string;
   updateCollection: string;
@@ -115,12 +119,18 @@ interface NodeDetailPageProps {
   nodeUuid: string;
   initialNodeName: string;
   initialIsPinned: boolean;
+  initialNote: string;
+  modifiedAt: string;
+  createdAt: string;
   initialLayout: Layout;
   priorityList: PriorityOption[];
   urls: NodeDetailUrls;
 }
 
 const UUID_PLACEHOLDER = "00000000-0000-0000-0000-000000000000";
+const DENSITY_STORAGE_KEY = "bc:node-detail:density";
+
+type Density = "airy" | "default" | "dense";
 
 function getLayoutItemKey(item: LayoutItem): string {
   if (item.type === "todo") return "todo";
@@ -136,10 +146,40 @@ function findItemPosition(layout: Layout, id: string): [number, number] | null {
   return null;
 }
 
+function formatRelative(iso: string): string {
+  if (!iso) return "";
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return "";
+  const diffMs = Date.now() - then;
+  const minutes = Math.round(diffMs / 60_000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.round(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  const months = Math.round(days / 30);
+  if (months < 12) return `${months}mo ago`;
+  const years = Math.round(months / 12);
+  return `${years}y ago`;
+}
+
+function formatAbsolute(iso: string): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d
+    .toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })
+    .toLowerCase();
+}
+
 export default function NodeDetailPage({
   nodeUuid,
   initialNodeName,
   initialIsPinned,
+  initialNote,
+  modifiedAt,
+  createdAt,
   initialLayout,
   priorityList,
   urls,
@@ -147,8 +187,43 @@ export default function NodeDetailPage({
   const [layout, setLayout] = useState<Layout>(initialLayout);
   const [nodeName, setNodeName] = useState(initialNodeName);
   const [isPinned, setIsPinned] = useState(initialIsPinned);
+  const [nodeNote, setNodeNote] = useState(initialNote);
   const [editLayout, setEditLayout] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
+  const [showAddMenu, setShowAddMenu] = useState(false);
+  const [showActionsMenu, setShowActionsMenu] = useState(false);
+  const [showTweaks, setShowTweaks] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const [density, setDensity] = useState<Density>(() => {
+    if (typeof window === "undefined") return "default";
+    const v = window.localStorage.getItem(DENSITY_STORAGE_KEY);
+    return v === "airy" || v === "dense" ? v : "default";
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(DENSITY_STORAGE_KEY, density);
+  }, [density]);
+
+  const flash = useCallback((msg: string) => {
+    setToast(msg);
+    window.setTimeout(() => setToast(null), 1800);
+  }, []);
+
+  // Dismiss open popovers when clicking outside
+  const headerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!showAddMenu && !showActionsMenu) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (!headerRef.current) return;
+      if (headerRef.current.contains(e.target as Node)) return;
+      setShowAddMenu(false);
+      setShowActionsMenu(false);
+    };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [showAddMenu, showActionsMenu]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -187,21 +262,37 @@ export default function NodeDetailPage({
     callback: ((settings: CollectionSettings) => void) | null;
     data: CollectionSettings | null;
   }>({ isOpen: false, action: "Add", callback: null, data: null });
-  const [objectSelectModalData, setObjectSelectModalData] = useState<{
-    callback: (() => void) | null;
-    collectionUuid: string;
-  } | null>(null);
 
   // Refs
   const todoEditorRef = useRef<TodoEditorHandle>(null);
   const todoListRefs = useRef<Map<string, NodeTodoListHandle>>(new Map());
   const objectSelectModalRef = useRef<ObjectSelectModalHandle>(null);
-  const dropdownMenuRef = useRef<DropDownMenuHandle>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
 
-  // Helper function to replace UUID placeholder in URLs
+  useEffect(() => {
+    if (isEditingName && nameInputRef.current) {
+      nameInputRef.current.focus();
+      nameInputRef.current.select();
+    }
+  }, [isEditingName]);
+
   const replaceUuid = (url: string, uuid: string) => url.replace(UUID_PLACEHOLDER, uuid);
 
-  // Layout change handler
+  // Live stats from layout
+  const stats = useMemo(() => {
+    const flat = layout.flat();
+    return {
+      total: flat.length,
+      collections: flat.filter(i => i.type === "collection").length,
+      images: flat.filter(i => i.type === "image").length,
+      notes: flat.filter(i => i.type === "note").length,
+      todos: flat.filter(i => i.type === "todo").length,
+      quotes: flat.filter(i => i.type === "quote").length,
+      nodes: flat.filter(i => i.type === "node").length,
+    };
+  }, [layout]);
+
+  // Layout handlers
   const handleEditLayout = (newLayoutJson: string) => {
     const newLayout = JSON.parse(newLayoutJson) as Layout;
     setLayout(newLayout);
@@ -212,7 +303,6 @@ export default function NodeDetailPage({
   const layoutRef = useRef(layout);
   layoutRef.current = layout;
 
-  // Sync layout to backend
   const syncLayout = useCallback(
     (newLayout: Layout) => {
       doPost(
@@ -245,7 +335,6 @@ export default function NodeDetailPage({
       const activePos = findItemPosition(prev, activeId);
       if (!activePos) return prev;
 
-      // Dragged over a column droppable (for empty columns)
       if (overId.startsWith("column-")) {
         const targetCol = parseInt(overId.split("-")[1]);
         if (activePos[0] === targetCol) return prev;
@@ -255,10 +344,9 @@ export default function NodeDetailPage({
         return newLayout;
       }
 
-      // Dragged over another item
       const overPos = findItemPosition(prev, overId);
       if (!overPos) return prev;
-      if (activePos[0] === overPos[0]) return prev; // same column — sortable handles it
+      if (activePos[0] === overPos[0]) return prev;
 
       const newLayout = cloneDeep(prev);
       const [item] = newLayout[activePos[0]].splice(activePos[1], 1);
@@ -273,7 +361,6 @@ export default function NodeDetailPage({
       const { active, over } = event;
 
       if (!over || active.id === over.id) {
-        // Dropped in place — sync in case dragOver changed columns
         syncLayout(layoutRef.current);
         return;
       }
@@ -281,7 +368,6 @@ export default function NodeDetailPage({
       const activeId = active.id as string;
       const overId = over.id as string;
 
-      // Column target — dragOver already moved it
       if (overId.startsWith("column-")) {
         syncLayout(layoutRef.current);
         return;
@@ -300,39 +386,59 @@ export default function NodeDetailPage({
       const [overCol, overRow] = overPos;
 
       if (activeCol === overCol && activeRow !== overRow) {
-        // Same column reorder
         const newLayout = cloneDeep(currentLayout);
         newLayout[activeCol] = arrayMove(newLayout[activeCol], activeRow, overRow);
         setLayout(newLayout);
         syncLayout(newLayout);
       } else {
-        // Cross-column was handled by dragOver
         syncLayout(currentLayout);
       }
     },
     [syncLayout]
   );
 
-  // Node name editing (editNode URL is the API node detail endpoint; use PUT to update)
+  // Node name editing (inline)
   const handleNodeNameSave = () => {
     setIsEditingName(false);
-    doPut(urls.editNode, { name: nodeName }, () => {}, "Node name updated");
+    if (nodeName === initialNodeName) return;
+    doPatch(urls.editNode, { name: nodeName }, () => {}, "Node renamed");
+  };
+
+  const handleNodeNameCancel = () => {
+    setNodeName(initialNodeName);
+    setIsEditingName(false);
+  };
+
+  const handleEditNodeSave = (nextName: string, nextNote: string) => {
+    const patch: Record<string, string> = {};
+    if (nextName !== nodeName) {
+      patch.name = nextName;
+      setNodeName(nextName);
+    }
+    if (nextNote !== nodeNote) {
+      patch.note = nextNote;
+      setNodeNote(nextNote);
+    }
+    setEditModalOpen(false);
+    if (Object.keys(patch).length === 0) return;
+    doPatch(urls.editNode, patch, () => {}, "Node updated");
   };
 
   const handleTogglePin = () => {
     const next = !isPinned;
     setIsPinned(next);
-    dropdownMenuRef.current?.close();
-    doPost(
-      urls.pinNode,
-      { node_uuid: nodeUuid, pinned: next ? "true" : "false" },
+    setShowActionsMenu(false);
+    doPatch(
+      urls.editNode,
+      { is_pinned: next ? "true" : "false" },
       () => {},
-      next ? "Node pinned" : "Node unpinned"
+      next ? "Pinned to home" : "Unpinned"
     );
   };
 
-  // Add new components
+  // Add component handlers
   const handleAddCollection = () => {
+    setShowAddMenu(false);
     setCollectionModalState({
       isOpen: true,
       action: "Add",
@@ -368,6 +474,7 @@ export default function NodeDetailPage({
   };
 
   const handleAddNote = () => {
+    setShowAddMenu(false);
     setNoteModalState({
       isOpen: true,
       action: "Add",
@@ -392,11 +499,10 @@ export default function NodeDetailPage({
   };
 
   const handleAddTodoList = () => {
+    setShowAddMenu(false);
     doPost(
       urls.addTodoList,
-      {
-        node_uuid: nodeUuid,
-      },
+      { node_uuid: nodeUuid },
       response => {
         handleEditLayout(response.data.layout);
       },
@@ -405,6 +511,7 @@ export default function NodeDetailPage({
   };
 
   const handleAddImage = () => {
+    setShowAddMenu(false);
     objectSelectModalRef.current?.open(selectedObject => {
       doPost(
         urls.addImage,
@@ -421,6 +528,7 @@ export default function NodeDetailPage({
   };
 
   const handleAddQuote = () => {
+    setShowAddMenu(false);
     setQuoteModalState({
       isOpen: true,
       action: "Add",
@@ -449,6 +557,7 @@ export default function NodeDetailPage({
   };
 
   const handleAddNode = () => {
+    setShowAddMenu(false);
     setNodeModalState({
       isOpen: true,
       action: "Add",
@@ -478,24 +587,19 @@ export default function NodeDetailPage({
   };
 
   const handleTodoAdd = (uuid: string) => {
-    // Add todo to node and refresh todo list
     todoListRefs.current.forEach(ref => {
       ref.addNodeTodo(uuid);
     });
   };
 
   const handleTodoEdit = () => {
-    // Refresh todo list after edit
     todoListRefs.current.forEach(ref => {
       ref.getTodoList();
     });
   };
 
-  // Object select modal handlers
   const handleOpenObjectSelectModal = (callback: () => void, data: { collectionUuid: string }) => {
-    setObjectSelectModalData({ callback, collectionUuid: data.collectionUuid });
     objectSelectModalRef.current?.open(selectedObject => {
-      // Backend expects blob_uuid or bookmark_uuid based on object type
       const doctype = (selectedObject.doctype || "").toLowerCase();
       const postData: Record<string, string> = {
         collection_uuid: data.collectionUuid,
@@ -516,7 +620,7 @@ export default function NodeDetailPage({
     });
   };
 
-  // Render a single layout item
+  // Render a single layout item body
   const renderLayoutItem = (item: LayoutItem) => {
     const key = getLayoutItemKey(item);
 
@@ -666,311 +770,422 @@ export default function NodeDetailPage({
     }
   };
 
-  const dropdownContent = (
-    <ul className="dropdown-menu-list">
-      <li>
-        <a
-          href="#"
-          className="dropdown-menu-item"
-          onClick={e => {
-            e.preventDefault();
-            setIsEditingName(true);
-          }}
-        >
-          <span className="dropdown-menu-icon">
-            <FontAwesomeIcon icon={faPencilAlt} className="text-primary" />
-          </span>
-          <span className="dropdown-menu-text">Edit node</span>
-        </a>
-      </li>
-      <li>
-        <a
-          href="#"
-          className="dropdown-menu-item"
-          onClick={e => {
-            e.preventDefault();
-            handleTogglePin();
-          }}
-        >
-          <span className="dropdown-menu-icon">
-            <FontAwesomeIcon icon={faThumbtack} className="text-primary" />
-          </span>
-          <span className="dropdown-menu-text">{isPinned ? "Unpin node" : "Pin node"}</span>
-        </a>
-      </li>
-      <li>
-        <a
-          href="#"
-          className="dropdown-menu-item"
-          onClick={e => {
-            e.preventDefault();
-            handleAddCollection();
-          }}
-        >
-          <span className="dropdown-menu-icon">
-            <FontAwesomeIcon icon={faSplotch} className="text-primary" />
-          </span>
-          <span className="dropdown-menu-text">New collection</span>
-        </a>
-      </li>
-      <li>
-        <a
-          href="#"
-          className="dropdown-menu-item"
-          onClick={e => {
-            e.preventDefault();
-            handleAddNote();
-          }}
-        >
-          <span className="dropdown-menu-icon">
-            <FontAwesomeIcon icon={faStickyNote} className="text-primary" />
-          </span>
-          <span className="dropdown-menu-text">New note</span>
-        </a>
-      </li>
-      <li>
-        <a
-          href="#"
-          className="dropdown-menu-item"
-          onClick={e => {
-            e.preventDefault();
-            handleAddImage();
-          }}
-        >
-          <span className="dropdown-menu-icon">
-            <FontAwesomeIcon icon={faImage} className="text-primary" />
-          </span>
-          <span className="dropdown-menu-text">New media</span>
-        </a>
-      </li>
-      <li>
-        <a
-          href="#"
-          className="dropdown-menu-item"
-          onClick={e => {
-            e.preventDefault();
-            handleAddQuote();
-          }}
-        >
-          <span className="dropdown-menu-icon">
-            <FontAwesomeIcon icon={faQuoteLeft} className="text-primary" />
-          </span>
-          <span className="dropdown-menu-text">New quote</span>
-        </a>
-      </li>
-      <li>
-        <a
-          href="#"
-          className="dropdown-menu-item"
-          onClick={e => {
-            e.preventDefault();
-            handleAddTodoList();
-          }}
-        >
-          <span className="dropdown-menu-icon">
-            <FontAwesomeIcon icon={faTasks} className="text-primary" />
-          </span>
-          <span className="dropdown-menu-text">New todo list</span>
-        </a>
-      </li>
-      <li>
-        <a
-          href="#"
-          className="dropdown-menu-item"
-          onClick={e => {
-            e.preventDefault();
-            handleAddNode();
-          }}
-        >
-          <span className="dropdown-menu-icon">
-            <FontAwesomeIcon icon={faBox} className="text-primary" />
-          </span>
-          <span className="dropdown-menu-text">New node</span>
-        </a>
-      </li>
-      <li>
-        <a
-          href="#"
-          className="dropdown-menu-item"
-          onClick={e => {
-            e.preventDefault();
-            setEditLayout(!editLayout);
-            dropdownMenuRef.current?.close();
-          }}
-        >
-          <span className="dropdown-menu-icon">
-            <FontAwesomeIcon icon={faPencilAlt} className="text-primary" />
-          </span>
-          <span className="dropdown-menu-text">
-            {editLayout ? "Done editing layout" : "Edit layout"}
-          </span>
-        </a>
-      </li>
-    </ul>
-  );
+  const addMenuItems: Array<{
+    key: string;
+    icon: typeof faLayerGroup;
+    label: string;
+    hint: string;
+    onClick: () => void;
+  }> = [
+    {
+      key: "collection",
+      icon: faLayerGroup,
+      label: "Collection",
+      hint: "images, bookmarks, or notes",
+      onClick: handleAddCollection,
+    },
+    {
+      key: "note",
+      icon: faNoteSticky,
+      label: "Note",
+      hint: "freeform markdown",
+      onClick: handleAddNote,
+    },
+    {
+      key: "image",
+      icon: faImage,
+      label: "Image",
+      hint: "single blob reference",
+      onClick: handleAddImage,
+    },
+    {
+      key: "todo",
+      icon: faSquareCheck,
+      label: "Todo list",
+      hint: "sortable checklist",
+      onClick: handleAddTodoList,
+    },
+    {
+      key: "quote",
+      icon: faQuoteRight,
+      label: "Quote",
+      hint: "random from favorites",
+      onClick: handleAddQuote,
+    },
+    {
+      key: "node",
+      icon: faDiagramProject,
+      label: "Node ref",
+      hint: "embed another node",
+      onClick: handleAddNode,
+    },
+  ];
+
+  const relModified = formatRelative(modifiedAt);
+  const absCreated = formatAbsolute(createdAt);
 
   return (
-    <div>
-      {/* Header row with breadcrumb and dropdown */}
-      <div className="d-flex align-items-center mb-gutter px-3">
-        <nav aria-label="breadcrumb" className="flex-grow-1">
-          <ol className="breadcrumb mb-0 ps-0">
-            <li className="breadcrumb-item mt-0">
-              <a href={urls.nodeList}>Nodes</a>
-            </li>
-            <li className="breadcrumb-item mt-0 active" aria-current="page">
-              {isEditingName ? (
-                <input
-                  type="text"
-                  className="form-control form-control-sm d-inline-block w-auto"
-                  value={nodeName}
-                  onChange={e => setNodeName(e.target.value)}
-                  onBlur={handleNodeNameSave}
-                  onKeyDown={e => {
-                    if (e.key === "Enter") handleNodeNameSave();
-                  }}
-                  autoFocus
-                />
-              ) : (
-                <span
-                  className="node-name cursor-pointer"
-                  onDoubleClick={() => setIsEditingName(true)}
+    <div className={`node-detail-app d-${density}`}>
+      <main className="nd-page">
+        <header className="nd-head" ref={headerRef}>
+          <nav className="nd-crumb" aria-label="breadcrumb">
+            <a href={urls.nodeList}>
+              <FontAwesomeIcon icon={faDiagramProject} className="nd-crumb-icon" />
+              nodes
+            </a>
+            <span className="slash">/</span>
+            <span className="leaf">{nodeName.toLowerCase()}</span>
+          </nav>
+
+          <div className="nd-title-row">
+            <div className="nd-title-col">
+              <h1 className="nd-h1">
+                <button
+                  type="button"
+                  className={`nd-pin ${isPinned ? "on" : ""}`}
+                  onClick={handleTogglePin}
+                  title={isPinned ? "Unpin" : "Pin to home"}
+                  aria-label={isPinned ? "Unpin node" : "Pin node"}
                 >
-                  {nodeName}
-                </span>
-              )}
-            </li>
-          </ol>
-        </nav>
-        <span
-          className="text-primary me-4 text-nowrap"
-          // must remain inline
-          style={{ opacity: editLayout ? 1 : 0 }}
-        >
-          Edit Layout
-        </span>
-        <DropDownMenu ref={dropdownMenuRef} dropdownSlot={dropdownContent} />
-      </div>
-
-      {/* 3-column layout */}
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragStart={handleLayoutDragStart}
-        onDragOver={handleDragOver}
-        onDragEnd={handleDragEnd}
-      >
-        <div className="row px-3">
-          {layout.map((column, colIndex) => (
-            <DroppableColumn key={colIndex} colId={`column-${colIndex}`} editLayout={editLayout}>
-              <SortableContext
-                items={column.map(item => getLayoutItemKey(item))}
-                strategy={verticalListSortingStrategy}
-              >
-                {column.map(item => (
-                  <SortableLayoutItem
-                    key={getLayoutItemKey(item)}
-                    id={getLayoutItemKey(item)}
-                    editLayout={editLayout}
+                  <FontAwesomeIcon icon={faThumbtack} />
+                </button>
+                {isEditingName ? (
+                  <input
+                    ref={nameInputRef}
+                    className="nd-name-input"
+                    value={nodeName}
+                    onChange={e => setNodeName(e.target.value)}
+                    onBlur={handleNodeNameSave}
+                    onKeyDown={e => {
+                      if (e.key === "Enter") handleNodeNameSave();
+                      if (e.key === "Escape") handleNodeNameCancel();
+                    }}
+                  />
+                ) : (
+                  <span
+                    className="nd-name"
+                    onDoubleClick={() => setIsEditingName(true)}
+                    title="Double-click to rename"
                   >
-                    {renderLayoutItem(item)}
-                  </SortableLayoutItem>
+                    {nodeName}
+                  </span>
+                )}
+              </h1>
+            </div>
+
+            <div className="nd-head-actions">
+              <div className="nd-add-wrap">
+                <button
+                  type="button"
+                  className="nd-btn primary"
+                  onClick={() => {
+                    setShowAddMenu(v => !v);
+                    setShowActionsMenu(false);
+                  }}
+                  aria-haspopup="true"
+                  aria-expanded={showAddMenu}
+                >
+                  <FontAwesomeIcon icon={faPlus} />
+                  add component
+                </button>
+                {showAddMenu && (
+                  <div className="nd-menu" role="menu">
+                    <div className="nd-menu-head">// add component</div>
+                    {addMenuItems.map(m => (
+                      <button key={m.key} type="button" role="menuitem" onClick={m.onClick}>
+                        <FontAwesomeIcon icon={m.icon} />
+                        <span>{m.label}</span>
+                        <span className="hint">{m.hint}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="nd-add-wrap">
+                <button
+                  type="button"
+                  className="nd-btn ghost icon"
+                  onClick={() => {
+                    setShowActionsMenu(v => !v);
+                    setShowAddMenu(false);
+                  }}
+                  aria-haspopup="true"
+                  aria-expanded={showActionsMenu}
+                  aria-label="Node actions"
+                >
+                  <FontAwesomeIcon icon={faEllipsisVertical} />
+                </button>
+                {showActionsMenu && (
+                  <div className="nd-menu" role="menu">
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setShowActionsMenu(false);
+                        setEditModalOpen(true);
+                      }}
+                    >
+                      <FontAwesomeIcon icon={faPencilAlt} />
+                      <span>Edit node…</span>
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setEditLayout(v => !v);
+                        setShowActionsMenu(false);
+                        flash(editLayout ? "Layout locked" : "Layout unlocked");
+                      }}
+                    >
+                      <FontAwesomeIcon icon={faTableCellsLarge} />
+                      <span>{editLayout ? "Lock layout" : "Edit layout"}</span>
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setShowActionsMenu(false);
+                        handleTogglePin();
+                      }}
+                    >
+                      <FontAwesomeIcon icon={faThumbtack} />
+                      <span>{isPinned ? "Unpin node" : "Pin node"}</span>
+                    </button>
+                    <div className="sep" />
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setShowActionsMenu(false);
+                        setShowTweaks(v => !v);
+                      }}
+                    >
+                      <FontAwesomeIcon icon={faClone} />
+                      <span>Tweaks…</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="nd-meta-row">
+            <span className="nd-chip primary">
+              <span className="dot" />
+              {stats.total} component{stats.total === 1 ? "" : "s"}
+            </span>
+            <span className="nd-chip">
+              <FontAwesomeIcon icon={faLayerGroup} /> {stats.collections} collections
+            </span>
+            <span className="nd-chip">
+              <FontAwesomeIcon icon={faImage} /> {stats.images} images
+            </span>
+            <span className="nd-chip">
+              <FontAwesomeIcon icon={faStickyNote} /> {stats.notes} notes
+            </span>
+            <span className="nd-chip">
+              <FontAwesomeIcon icon={faSquareCheck} /> {stats.todos} todo lists
+            </span>
+            {stats.quotes > 0 && (
+              <span className="nd-chip">
+                <FontAwesomeIcon icon={faQuoteRight} /> {stats.quotes} quotes
+              </span>
+            )}
+            {stats.nodes > 0 && (
+              <span className="nd-chip">
+                <FontAwesomeIcon icon={faDiagramProject} /> {stats.nodes} linked
+              </span>
+            )}
+            <span className="nd-meta-times">
+              {relModified && `modified ${relModified}`}
+              {absCreated && ` · created ${absCreated}`}
+              {editLayout && " · edit mode"}
+            </span>
+          </div>
+        </header>
+
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleLayoutDragStart}
+          onDragOver={handleDragOver}
+          onDragEnd={handleDragEnd}
+        >
+          <div className="nd-grid">
+            {layout.map((column, colIndex) => (
+              <DroppableColumn
+                key={colIndex}
+                colId={`column-${colIndex}`}
+                editLayout={editLayout}
+                empty={column.length === 0}
+              >
+                <SortableContext
+                  items={column.map(item => getLayoutItemKey(item))}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {column.map(item => (
+                    <SortableLayoutItem
+                      key={getLayoutItemKey(item)}
+                      id={getLayoutItemKey(item)}
+                      itemType={item.type}
+                      editLayout={editLayout}
+                    >
+                      {renderLayoutItem(item)}
+                    </SortableLayoutItem>
+                  ))}
+                </SortableContext>
+              </DroppableColumn>
+            ))}
+          </div>
+          <DragOverlay>
+            {activeLayoutId ? <LayoutDragOverlay nodeRef={dragOverlayNodeRef} /> : null}
+          </DragOverlay>
+        </DndContext>
+
+        {showTweaks && (
+          <div className="nd-tweaks-panel">
+            <div className="nd-tweaks-head">
+              <span>// tweaks</span>
+              <button
+                type="button"
+                className="nd-btn ghost icon"
+                onClick={() => setShowTweaks(false)}
+                aria-label="Close tweaks"
+              >
+                <FontAwesomeIcon icon={faTimes} />
+              </button>
+            </div>
+            <div className="nd-tweak-group">
+              <div className="label">density</div>
+              <div className="options">
+                {(["airy", "default", "dense"] as Density[]).map(v => (
+                  <button
+                    key={v}
+                    type="button"
+                    className={density === v ? "on" : ""}
+                    onClick={() => setDensity(v)}
+                  >
+                    {v}
+                  </button>
                 ))}
-              </SortableContext>
-            </DroppableColumn>
-          ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <button
+          type="button"
+          className={`nd-tweaks-fab ${showTweaks ? "open" : ""}`}
+          onClick={() => setShowTweaks(v => !v)}
+          aria-label="Tweaks"
+          title="Tweaks"
+        >
+          <FontAwesomeIcon icon={showTweaks ? faTimes : faGripVertical} />
+        </button>
+
+        {/* Modals */}
+        <NodeImageModal
+          isOpen={imageModalState.isOpen}
+          imageUrl={imageModalState.imageUrl}
+          onClose={() => setImageModalState({ isOpen: false, imageUrl: "" })}
+        />
+
+        <NodeNoteModal
+          isOpen={noteModalState.isOpen}
+          action={noteModalState.action}
+          data={noteModalState.data}
+          onSave={data => {
+            if (noteModalState.callback) {
+              noteModalState.callback(data);
+            }
+            setNoteModalState(prev => ({ ...prev, isOpen: false }));
+            setNoteColorPreview(null);
+          }}
+          onColorChange={color => {
+            if (noteModalState.data?.uuid) {
+              setNoteColorPreview({ uuid: noteModalState.data.uuid, color });
+            }
+          }}
+          onClose={() => {
+            setNoteModalState(prev => ({ ...prev, isOpen: false }));
+            setNoteColorPreview(null);
+          }}
+        />
+
+        <NodeQuoteModal
+          isOpen={quoteModalState.isOpen}
+          action={quoteModalState.action}
+          nodeUuid={nodeUuid}
+          addQuoteUrl={urls.addQuote}
+          data={quoteModalState.data}
+          onSave={options => {
+            if (quoteModalState.callback) {
+              quoteModalState.callback(options);
+            }
+            setQuoteModalState(prev => ({ ...prev, isOpen: false }));
+          }}
+          onAddQuote={handleQuoteAdd}
+          onClose={() => setQuoteModalState(prev => ({ ...prev, isOpen: false }))}
+        />
+
+        <NodeNodeModal
+          isOpen={nodeModalState.isOpen}
+          action={nodeModalState.action}
+          searchUrl={`${urls.nodeSearch}?query=`}
+          data={nodeModalState.data}
+          onSave={options => {
+            if (nodeModalState.callback) {
+              nodeModalState.callback(options);
+            }
+            setNodeModalState(prev => ({ ...prev, isOpen: false }));
+          }}
+          onSelectNode={handleNodeSelect}
+          onClose={() => setNodeModalState(prev => ({ ...prev, isOpen: false }))}
+        />
+
+        <NodeCollectionModal
+          isOpen={collectionModalState.isOpen}
+          action={collectionModalState.action}
+          searchUrl={urls.collectionSearchUrl}
+          data={collectionModalState.data}
+          onSave={settings => {
+            if (collectionModalState.callback) {
+              collectionModalState.callback(settings);
+            }
+            setCollectionModalState(prev => ({ ...prev, isOpen: false }));
+          }}
+          onAddCollection={handleCollectionAdd}
+          onClose={() => setCollectionModalState(prev => ({ ...prev, isOpen: false }))}
+        />
+
+        <TodoEditor
+          ref={todoEditorRef}
+          priorityList={priorityList}
+          editTodoUrl={urls.editTodoTemplate}
+          createTodoUrl={urls.createTodo}
+          tagSearchUrl={urls.tagSearch}
+          onAdd={handleTodoAdd}
+          onEdit={handleTodoEdit}
+        />
+
+        <ObjectSelectModal ref={objectSelectModalRef} searchObjectUrl={urls.searchNames} />
+
+        <EditNodeModal
+          open={editModalOpen}
+          initialName={nodeName}
+          initialNote={nodeNote}
+          onClose={() => setEditModalOpen(false)}
+          onSave={handleEditNodeSave}
+        />
+      </main>
+
+      {toast && (
+        <div className="nd-toast" role="status">
+          <span className="ok">✓</span>
+          {toast}
         </div>
-        <DragOverlay>
-          {activeLayoutId ? <LayoutDragOverlay nodeRef={dragOverlayNodeRef} /> : null}
-        </DragOverlay>
-      </DndContext>
-
-      {/* Modals */}
-      <NodeImageModal
-        isOpen={imageModalState.isOpen}
-        imageUrl={imageModalState.imageUrl}
-        onClose={() => setImageModalState({ isOpen: false, imageUrl: "" })}
-      />
-
-      <NodeNoteModal
-        isOpen={noteModalState.isOpen}
-        action={noteModalState.action}
-        data={noteModalState.data}
-        onSave={data => {
-          if (noteModalState.callback) {
-            noteModalState.callback(data);
-          }
-          setNoteModalState(prev => ({ ...prev, isOpen: false }));
-          setNoteColorPreview(null);
-        }}
-        onColorChange={color => {
-          if (noteModalState.data?.uuid) {
-            setNoteColorPreview({ uuid: noteModalState.data.uuid, color });
-          }
-        }}
-        onClose={() => {
-          setNoteModalState(prev => ({ ...prev, isOpen: false }));
-          setNoteColorPreview(null);
-        }}
-      />
-
-      <NodeQuoteModal
-        isOpen={quoteModalState.isOpen}
-        action={quoteModalState.action}
-        nodeUuid={nodeUuid}
-        addQuoteUrl={urls.addQuote}
-        data={quoteModalState.data}
-        onSave={options => {
-          if (quoteModalState.callback) {
-            quoteModalState.callback(options);
-          }
-          setQuoteModalState(prev => ({ ...prev, isOpen: false }));
-        }}
-        onAddQuote={handleQuoteAdd}
-        onClose={() => setQuoteModalState(prev => ({ ...prev, isOpen: false }))}
-      />
-
-      <NodeNodeModal
-        isOpen={nodeModalState.isOpen}
-        action={nodeModalState.action}
-        searchUrl={`${urls.nodeSearch}?query=`}
-        data={nodeModalState.data}
-        onSave={options => {
-          if (nodeModalState.callback) {
-            nodeModalState.callback(options);
-          }
-          setNodeModalState(prev => ({ ...prev, isOpen: false }));
-        }}
-        onSelectNode={handleNodeSelect}
-        onClose={() => setNodeModalState(prev => ({ ...prev, isOpen: false }))}
-      />
-
-      <NodeCollectionModal
-        isOpen={collectionModalState.isOpen}
-        action={collectionModalState.action}
-        searchUrl={urls.collectionSearchUrl}
-        data={collectionModalState.data}
-        onSave={settings => {
-          if (collectionModalState.callback) {
-            collectionModalState.callback(settings);
-          }
-          setCollectionModalState(prev => ({ ...prev, isOpen: false }));
-        }}
-        onAddCollection={handleCollectionAdd}
-        onClose={() => setCollectionModalState(prev => ({ ...prev, isOpen: false }))}
-      />
-
-      <TodoEditor
-        ref={todoEditorRef}
-        priorityList={priorityList}
-        editTodoUrl={urls.editTodoTemplate}
-        createTodoUrl={urls.createTodo}
-        tagSearchUrl={urls.tagSearch}
-        onAdd={handleTodoAdd}
-        onEdit={handleTodoEdit}
-      />
-
-      <ObjectSelectModal ref={objectSelectModalRef} searchObjectUrl={urls.searchNames} />
+      )}
     </div>
   );
 }
@@ -983,11 +1198,12 @@ const animateLayoutChanges: AnimateLayoutChanges = args => {
 
 interface SortableLayoutItemProps {
   id: string;
+  itemType: LayoutItem["type"];
   editLayout: boolean;
   children: React.ReactNode;
 }
 
-function SortableLayoutItem({ id, editLayout, children }: SortableLayoutItemProps) {
+function SortableLayoutItem({ id, itemType, editLayout, children }: SortableLayoutItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id,
     disabled: !editLayout,
@@ -1018,9 +1234,17 @@ function SortableLayoutItem({ id, editLayout, children }: SortableLayoutItemProp
     <div
       ref={refCallback}
       data-layout-item-id={id}
-      className={`mb-gutter sortable-layout-item ${editLayout ? "draggable-item" : ""} ${isDragging ? "dragging opacity-0" : ""}`}
+      data-type={itemType}
+      className={`nd-item sortable-layout-item ${editLayout ? "draggable-item" : ""} ${
+        isDragging ? "dragging opacity-0" : ""
+      }`}
       {...(editLayout ? { ...attributes, ...listeners } : {})}
     >
+      {editLayout && (
+        <span className="nd-grip" aria-hidden="true" title="Drag to reorder">
+          <FontAwesomeIcon icon={faGripVertical} />
+        </span>
+      )}
       {children}
     </div>
   );
@@ -1029,14 +1253,18 @@ function SortableLayoutItem({ id, editLayout, children }: SortableLayoutItemProp
 interface DroppableColumnProps {
   colId: string;
   editLayout: boolean;
+  empty: boolean;
   children: React.ReactNode;
 }
 
-function DroppableColumn({ colId, editLayout, children }: DroppableColumnProps) {
+function DroppableColumn({ colId, editLayout, empty, children }: DroppableColumnProps) {
   const { setNodeRef } = useDroppable({ id: colId });
   return (
-    <div ref={setNodeRef} className={`col-lg-4 ${editLayout ? "edit-layout-mode" : ""}`}>
-      {children}
+    <div
+      ref={setNodeRef}
+      className={`nd-col ${editLayout ? "edit-layout-mode" : ""} ${empty ? "empty" : ""}`}
+    >
+      {empty ? "// drop here" : children}
     </div>
   );
 }

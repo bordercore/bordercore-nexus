@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { Modal } from "bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart, faStickyNote } from "@fortawesome/free-solid-svg-icons";
@@ -197,7 +198,7 @@ export const ObjectSelectModal = React.forwardRef<ObjectSelectModalHandle, Objec
       [handleObjectSelect]
     );
 
-    return (
+    return createPortal(
       <div ref={modalRef} id={id} className="modal fade" tabIndex={-1} role="dialog">
         <div className="modal-dialog" role="document">
           <div className="modal-content">
@@ -225,7 +226,8 @@ export const ObjectSelectModal = React.forwardRef<ObjectSelectModalHandle, Objec
             </div>
           </div>
         </div>
-      </div>
+      </div>,
+      document.body
     );
   }
 );

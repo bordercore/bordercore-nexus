@@ -30,16 +30,6 @@ urlpatterns = [
         name="get_todo_list"
     ),
     path(
-        route="edit_note/",
-        view=views.edit_note,
-        name="edit_note"
-    ),
-    path(
-        route="pin/",
-        view=views.pin_node,
-        name="pin"
-    ),
-    path(
         route="todo/add/",
         view=views.add_todo,
         name="add_todo"

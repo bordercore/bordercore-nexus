@@ -14,7 +14,7 @@ export const EventBus = {
 axios.defaults.xsrfCookieName = "csrftoken";
 axios.defaults.xsrfHeaderName = "X-CSRFToken";
 // Note: withCredentials is NOT set globally here to avoid CORS issues with wildcard origins on S3.
-// It is set per-request for same-origin calls in doPost, doPut, and doDelete.
+// It is set per-request for same-origin calls in doPost, doPut, doPatch, and doDelete.
 
 // Helper function to get CSRF token from cookie
 // Django validates the header token against the cookie token, so we must use the cookie value
@@ -180,6 +180,65 @@ export function doPut(
       EventBus.$emit("toast", {
         title: "Error",
         body: error.response?.data?.detail || error.message,
+        variant: "danger",
+        autoHide: true,
+      });
+      console.error(error);
+    });
+}
+
+/**
+ * Use axios to perform an HTTP PATCH call.
+ * @param {string} url The url to request.
+ * @param {object} params The parameters for the PATCH body.
+ * @param {Function} callback An optional callback function.
+ * @param {string} successMsg The message to display on success.
+ * @param {string} errorMsg The message to display on error.
+ */
+export function doPatch(
+  url: string,
+  params: Record<string, any>,
+  callback: (response: any) => void,
+  successMsg = "",
+  errorMsg = ""
+): void {
+  const bodyFormData = new URLSearchParams();
+
+  const csrfToken = getCsrfToken();
+
+  if (csrfToken) {
+    bodyFormData.append("csrfmiddlewaretoken", csrfToken);
+  }
+
+  for (const [key, value] of Object.entries(params)) {
+    bodyFormData.append(key, value as string);
+  }
+
+  const headers: Record<string, string> = {};
+  if (csrfToken) {
+    headers["X-CSRFToken"] = csrfToken;
+  }
+
+  axios(url, {
+    method: "PATCH",
+    data: bodyFormData,
+    headers: headers,
+    withCredentials: true,
+  })
+    .then(response => {
+      if (successMsg) {
+        EventBus.$emit("toast", {
+          title: "Success",
+          body: successMsg,
+          variant: "info",
+        });
+      }
+      callback(response);
+    })
+    .catch(error => {
+      EventBus.$emit("toast", {
+        title: "Error",
+        body: errorMsg || error.response?.data?.detail || error.message,
         variant: "danger",
         autoHide: true,
       });

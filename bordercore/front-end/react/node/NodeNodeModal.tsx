@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Modal } from "bootstrap";
 import { SelectValue } from "../common/SelectValue";
 import { ROTATE_OPTIONS, type NodeOptions } from "./types";
@@ -86,7 +87,7 @@ export default function NodeNodeModal({
     modalInstanceRef.current?.hide();
   };
 
-  return (
+  return createPortal(
     <div
       ref={modalRef}
       className="modal fade"
@@ -152,6 +153,7 @@ export default function NodeNodeModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

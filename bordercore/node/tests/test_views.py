@@ -53,31 +53,30 @@ def test_node_create(authenticated_client, node):
     assert Node.objects.filter(name=node_name).exists()
 
 
-def test_edit_note(authenticated_client, node):
+def test_patch_node_note(authenticated_client, node):
 
     _, client = authenticated_client()
 
-    url = urls.reverse("node:edit_note")
-    resp = client.post(url, {
-        "uuid": node.uuid,
-        "note": "Sample Changed Note"
-    })
+    url = urls.reverse("node-detail", kwargs={"uuid": node.uuid})
+    resp = client.patch(url, {"note": "Sample Changed Note"}, content_type="application/json")
 
     assert resp.status_code == 200
+    node.refresh_from_db()
+    assert node.note == "Sample Changed Note"
 
 
-def test_pin_node(authenticated_client, node):
+def test_patch_node_pin(authenticated_client, node):
 
     _, client = authenticated_client()
 
-    url = urls.reverse("node:pin")
+    url = urls.reverse("node-detail", kwargs={"uuid": node.uuid})
 
-    resp = client.post(url, {"node_uuid": node.uuid, "pinned": "true"})
+    resp = client.patch(url, {"is_pinned": True}, content_type="application/json")
     assert resp.status_code == 200
     node.refresh_from_db()
     assert node.is_pinned is True
 
-    resp = client.post(url, {"node_uuid": node.uuid, "pinned": "false"})
+    resp = client.patch(url, {"is_pinned": False}, content_type="application/json")
     assert resp.status_code == 200
     node.refresh_from_db()
     assert node.is_pinned is False

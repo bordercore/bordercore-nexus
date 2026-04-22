@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Modal } from "bootstrap";
 import {
   NODE_COLORS,
@@ -79,7 +80,7 @@ export default function NodeQuoteModal({
     return `node-color node-color-${c} ${selected}`;
   };
 
-  return (
+  return createPortal(
     <div
       ref={modalRef}
       className="modal fade"
@@ -193,6 +194,7 @@ export default function NodeQuoteModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
