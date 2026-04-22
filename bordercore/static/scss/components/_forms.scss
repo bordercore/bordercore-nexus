@@ -11,6 +11,8 @@ select.form-control {
   background-color: var(--bg-2);
   box-shadow: var(--shadow-sm);
   color: var(--fg-0);
+  font-family: var(--font-ui);
+  font-size: 13.5px;
   transition:
     border-color 0.18s ease,
     background-color 0.18s ease,
@@ -74,7 +76,7 @@ input[type="checkbox"] {
 
 ::placeholder {
   color: var(--fg-3);
-  opacity: 0.7;
+  opacity: 1;
 }
 
 // Tags — deterministic per-tag coloring via --tag-hue (set inline by JS)
