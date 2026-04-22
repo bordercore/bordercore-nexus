@@ -1,156 +1,279 @@
 // =============================================================================
 // COMPONENTS: REMINDERS TABLE
 // =============================================================================
-// Custom styling for the reminders table to match modern mockup design
+// Styled so each row reads like a .todo-row card — gradient background,
+// rounded edges, vertical gap between rows, accent-glow + 1px lift on hover.
 
-// Reminders table - uses .data-table-container + .data-table; background overrides below
 .reminders-table-container {
-  background-color: white;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
-:root[color-mode="dark"] .reminders-table-container {
-  background-color: #1a2230;
+// Core table: separate borders so each row floats as its own card
+.reminders-table {
+  border-collapse: separate;
+  border-spacing: 0 10px;
+
+  thead tr {
+    background: transparent;
+
+    th {
+      padding: 0 20px 8px;
+      border: none;
+    }
+  }
+
+  // Per-cell styling — the row's "card" is built from its tds. Every cell
+  // shares the same solid bg so there are no seams between columns; outer
+  // borders and radii live on the first/last tds.
+  tbody tr {
+    cursor: pointer;
+
+    td {
+      padding: 16px 20px;
+      border-top: 1px solid var(--line-soft);
+      border-bottom: 1px solid var(--line-soft);
+      background: color-mix(in oklch, var(--bg-1), transparent 40%);
+      background-clip: padding-box;
+      transition:
+        background 0.18s ease,
+        border-color 0.18s ease,
+        transform 0.12s ease;
+      vertical-align: middle;
+
+      &:first-child {
+        border-left: 1px solid var(--line-soft);
+        border-bottom-left-radius: var(--radius-lg);
+        border-top-left-radius: var(--radius-lg);
+      }
+
+      &:last-child {
+        border-right: 1px solid var(--line-soft);
+        border-bottom-right-radius: var(--radius-lg);
+        border-top-right-radius: var(--radius-lg);
+      }
+    }
+
+    &:hover td {
+      border-top-color: color-mix(in oklch, var(--accent), transparent 55%);
+      border-bottom-color: color-mix(in oklch, var(--accent), transparent 55%);
+      transform: translateY(-1px);
+    }
+
+    &:hover td:first-child {
+      border-left-color: color-mix(in oklch, var(--accent), transparent 55%);
+    }
+
+    &:hover td:last-child {
+      border-right-color: color-mix(in oklch, var(--accent), transparent 55%);
+    }
+  }
 }
 
-// Name column styling
+// Name column
 .reminder-name {
   display: flex;
   flex-direction: column;
 
   .reminder-name-main {
     color: var(--fg-0);
-    font-weight: 500;
+    font-size: 14.5px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
     text-decoration: none;
 
     &:hover {
-      color: var(--fg-2);
+      color: var(--accent);
       text-decoration: none;
     }
   }
 
   .reminder-name-note {
-    margin-top: 0.25rem;
+    margin-top: 4px;
     color: var(--fg-2);
-    font-size: 0.75rem;
+    font-size: 13px;
+    line-height: 1.55;
   }
 }
 
-// Schedule badge styling
+// Schedule — matches .todo-row-meta (accent-tinted monospace row)
 .reminder-schedule-badge {
   display: inline-flex;
   align-items: center;
-  padding: 0.25rem 0.625rem;
-  border: 1px solid var(--line-soft);
-  border-radius: 0.375rem;
-  background-color: var(--bg-2);
-  color: var(--fg-2);
-  font-size: 0.875rem;
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 12px;
   font-weight: 500;
-  gap: 0.375rem;
+  gap: 6px;
+  opacity: 0.85;
 
   .schedule-icon {
-    font-size: 1rem;
+    font-size: 11px;
+    opacity: 0.9;
   }
 }
 
-// Status badge styling
+// Status pill — matches .priority-badge recipe
 .reminder-status-badge {
   display: inline-flex;
   align-items: center;
-  padding: 0.25rem 0.625rem;
+  padding: 4px 10px;
   border: 1px solid;
-  border-radius: 9999px;
-  font-size: 0.75rem;
+  border-radius: 999px;
+  font-family: var(--font-ui);
+  font-size: 10.5px;
   font-weight: 600;
-  gap: 0.375rem;
+  gap: 6px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  white-space: nowrap;
 
   .status-dot {
-    width: 0.375rem;
-    height: 0.375rem;
+    width: 5px;
+    height: 5px;
     border-radius: 50%;
+    background: currentcolor;
+    box-shadow: 0 0 6px currentcolor;
   }
 
   &.status-ready {
-    border-color: rgb(16 185 129 / 20%);
-    background-color: rgb(16 185 129 / 10%);
-    color: rgb(16 185 129);
-
-    .status-dot {
-      background-color: rgb(16 185 129);
-    }
+    border-color: color-mix(in oklch, var(--ok), transparent 65%);
+    background-color: color-mix(in oklch, var(--ok), transparent 85%);
+    color: var(--ok);
   }
 
   &.status-active {
-    border-color: rgb(59 130 246 / 20%);
-    background-color: rgb(59 130 246 / 10%);
-    color: rgb(59 130 246);
-
-    .status-dot {
-      background-color: rgb(59 130 246);
-    }
+    border-color: color-mix(in oklch, var(--accent), transparent 70%);
+    background-color: var(--accent-soft);
+    color: color-mix(in oklch, var(--accent), white 15%);
   }
 
   &.status-inactive {
     border-color: var(--line-soft);
     background-color: var(--bg-2);
-    color: var(--fg-2);
-
-    .status-dot {
-      background-color: var(--fg-2);
-    }
+    color: var(--fg-3);
   }
 }
 
-// Next trigger styling
+// Next trigger — monospace date, accent-tinted like todo-row meta
 .reminder-next-trigger {
   display: flex;
   align-items: center;
-  color: var(--fg-2);
-  font-size: 0.875rem;
-  gap: 0.5rem;
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  gap: 6px;
+  opacity: 0.85;
 
   .trigger-icon {
-    font-size: 1.125rem;
+    font-size: 11px;
+    opacity: 0.9;
   }
 
   .trigger-date {
-    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    font-family: var(--font-mono);
   }
 }
 
-// Actions button styling
+// Actions ellipsis (dropdown trigger) — reveal on row hover
 .reminder-actions-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.375rem;
+  padding: 6px 8px;
   border: none;
-  border-radius: 0.375rem;
+  border-radius: var(--radius);
   background: transparent;
-  color: var(--fg-2);
+  color: var(--fg-3);
   cursor: pointer;
-  transition: all 0.15s ease;
+  opacity: 0;
+  transition:
+    opacity 0.15s ease,
+    background-color 0.15s ease,
+    color 0.15s ease;
 
   &:hover {
-    background-color: var(--bg-2);
+    background-color: color-mix(in oklch, var(--fg-0), transparent 90%);
     color: var(--fg-0);
   }
 
   &:focus {
-    box-shadow: 0 0 0 2px var(--fg-2);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+    opacity: 1;
     outline: none;
   }
 }
 
-// Pagination footer styling
+/* stylelint-disable-next-line no-descending-specificity */
+.reminders-table tbody tr:hover .reminder-actions-button,
+.reminders-table tbody tr:focus-within .reminder-actions-button {
+  opacity: 1;
+}
+
+// New Reminder button — matches the canonical refined primary button recipe.
+.reminder-new-button {
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 14px;
+  border: 1px solid color-mix(in oklch, var(--accent), black 10%);
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklch, var(--accent), white 5%),
+    var(--accent)
+  );
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 20%) inset,
+    0 0 0 1px color-mix(in oklch, var(--accent), transparent 50%),
+    0 8px 20px color-mix(in oklch, var(--accent), transparent 70%);
+  color: var(--accent-fg);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  gap: 8px;
+  text-decoration: none;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    transform 0.08s;
+
+  &:hover {
+    background: linear-gradient(
+      180deg,
+      color-mix(in oklch, var(--accent), white 12%),
+      color-mix(in oklch, var(--accent), white 4%)
+    );
+    color: var(--accent-fg);
+    text-decoration: none;
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+
+  &:focus {
+    box-shadow:
+      0 1px 0 rgb(255 255 255 / 20%) inset,
+      0 0 0 3px var(--accent-glow),
+      0 8px 20px color-mix(in oklch, var(--accent), transparent 70%);
+    outline: none;
+  }
+}
+
+// Pagination footer
 .reminders-pagination-footer {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem;
+  padding: 16px 20px;
   border-top: 1px solid var(--line-soft);
-  background-color: var(--bg-2);
+  margin-top: 8px;
+  background-color: transparent;
   gap: 1rem;
 
   @media (width >= 640px) {
@@ -159,18 +282,18 @@
 
   .pagination-info {
     color: var(--fg-2);
-    font-size: 0.875rem;
+    font-size: 13px;
 
     .pagination-count {
       color: var(--fg-0);
-      font-weight: 500;
+      font-weight: 600;
     }
   }
 
   .pagination-controls {
     display: flex;
     align-items: center;
-    gap: 0.25rem;
+    gap: 4px;
 
     .pagination-button {
       display: flex;
@@ -178,14 +301,18 @@
       height: 2rem;
       align-items: center;
       justify-content: center;
-      border: none;
-      border-radius: 0.5rem;
-      background: transparent;
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius);
+      background: var(--bg-2);
       color: var(--fg-2);
       cursor: pointer;
-      font-size: 0.875rem;
+      font-family: var(--font-mono);
+      font-size: 12px;
       font-weight: 500;
-      transition: all 0.15s ease;
+      transition:
+        background 0.15s,
+        border-color 0.15s,
+        color 0.15s;
 
       &:disabled {
         cursor: not-allowed;
@@ -193,24 +320,25 @@
       }
 
       &:hover:not(:disabled) {
-        background-color: var(--bg-2);
+        border-color: var(--fg-3);
+        background: var(--bg-3);
         color: var(--fg-0);
       }
 
       &.pagination-button-active {
-        background-color: var(--fg-2);
-        box-shadow: 0 1px 2px 0 rgb(0 0 0 / 5%);
-        color: white;
+        border-color: color-mix(in oklch, var(--accent), transparent 40%);
+        background: color-mix(in oklch, var(--accent), transparent 82%);
+        color: color-mix(in oklch, var(--accent), white 15%);
       }
 
       &.pagination-button-icon {
         padding: 0.5rem;
-        font-size: 1.25rem;
       }
 
       &.pagination-button-ellipsis {
-        padding: 0 0.5rem;
-        color: var(--fg-2);
+        border: none;
+        background: transparent;
+        color: var(--fg-3);
         cursor: default;
 
         &:hover {
@@ -221,54 +349,18 @@
   }
 }
 
-// Empty state styling
 .reminders-empty-state {
-  padding: 2rem;
-  color: var(--fg-2);
+  padding: 48px 20px;
+  color: var(--fg-3);
+  font-size: 13.5px;
   text-align: center;
 
   h5 {
-    margin-bottom: 0.5rem;
+    margin-bottom: 8px;
     color: var(--fg-0);
   }
 
   p {
-    margin-bottom: 1rem;
+    margin-bottom: 16px;
   }
 }
-
-// New Reminder button styling
-.reminder-new-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.625rem 1.25rem;
-  border: none;
-  border-radius: 0.5rem;
-  background-color: #135bec;
-  box-shadow: 0 10px 15px -3px rgb(19 91 236 / 25%), 0 4px 6px -2px rgb(19 91 236 / 10%);
-  color: white;
-  cursor: pointer;
-  font-weight: 600;
-  gap: 0.5rem;
-  text-decoration: none;
-  transition: all 0.15s ease;
-
-  &:hover {
-    background-color: #2563eb;
-    box-shadow: 0 10px 15px -3px rgb(19 91 236 / 30%), 0 4px 6px -2px rgb(19 91 236 / 15%);
-    color: white;
-    text-decoration: none;
-    transform: translateY(-1px);
-  }
-
-  &:active {
-    transform: scale(0.95);
-  }
-
-  &:focus {
-    box-shadow: 0 0 0 3px rgb(19 91 236 / 30%), 0 10px 15px -3px rgb(19 91 236 / 25%);
-    outline: none;
-  }
-}
-
