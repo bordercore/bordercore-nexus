@@ -330,6 +330,38 @@
   @include refined-input-surface;
 }
 
+// ==== Tag chip ====
+// Canonical tag look — accent-tinted chip with a subtle gradient. Matches
+// the muted-drill tag chip on the Preferences page.
+@mixin refined-tag-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border: 1px solid color-mix(in oklch, var(--accent), transparent 55%);
+  border-radius: 6px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklch, var(--accent), var(--bg-1) 55%),
+    color-mix(in oklch, var(--accent), var(--bg-1) 70%)
+  );
+  box-shadow: 0 1px 0 rgb(255 255 255 / 6%) inset;
+  color: var(--fg-0);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 500;
+  gap: 4px;
+  line-height: 1.25rem;
+  text-decoration: none;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+  white-space: nowrap;
+}
+
+.refined-tag {
+  @include refined-tag-chip;
+}
+
 // ==== Select ====
 .refined-select-wrap {
   position: relative;

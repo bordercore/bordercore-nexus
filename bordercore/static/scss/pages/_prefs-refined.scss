@@ -728,21 +728,9 @@
     }
 
     .chip {
-      display: inline-flex;
-      align-items: center;
+      @include refined-tag-chip;
+
       padding: 4px 6px 4px 10px;
-      border: 1px solid color-mix(in oklch, var(--accent), transparent 55%);
-      border-radius: 6px;
-      background: linear-gradient(
-        180deg,
-        color-mix(in oklch, var(--accent), var(--prefs-bg-1) 55%),
-        color-mix(in oklch, var(--accent), var(--prefs-bg-1) 70%)
-      );
-      box-shadow: 0 1px 0 rgb(255 255 255 / 6%) inset;
-      color: var(--prefs-fg-0);
-      font-size: 12px;
-      font-weight: 500;
-      gap: 4px;
 
       button {
         padding: 0 4px;

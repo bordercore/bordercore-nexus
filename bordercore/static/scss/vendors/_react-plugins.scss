@@ -49,28 +49,28 @@
   }
 
   .react-select__multi-value {
-    padding-top: 0.15rem;
-    padding-bottom: 0.15rem;
-    padding-left: 0.5rem;
-    border: 1px solid hsl(var(--tag-hue, 0) var(--tag-saturation) var(--tag-border-lightness) / 40%);
-    border-radius: 0.375rem;
+    @include refined-tag-chip;
+
     margin-right: 0.37rem;
     margin-bottom: 0;
-    background-color: hsl(var(--tag-hue, 0) var(--tag-saturation) var(--tag-bg-lightness) / 15%);
   }
 
   .react-select__multi-value__label {
     padding: 0;
-    color: hsl(var(--tag-hue, 0) var(--tag-saturation) var(--tag-text-lightness));
+    color: var(--fg-0);
+    font-size: 12px;
   }
 
   .react-select__multi-value__remove {
-    color: hsl(var(--tag-hue, 0) var(--tag-saturation) var(--tag-text-lightness));
+    color: var(--fg-0);
     cursor: pointer;
+    opacity: 0.55;
+    transition: opacity 0.15s;
 
     &:hover {
-      background-color: hsl(var(--tag-hue, 0) var(--tag-saturation) var(--tag-bg-lightness) / 25%);
-      color: hsl(var(--tag-hue, 0) var(--tag-saturation) var(--tag-text-lightness));
+      background: transparent;
+      color: var(--fg-0);
+      opacity: 1;
     }
   }
 

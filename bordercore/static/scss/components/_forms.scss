@@ -71,53 +71,30 @@ input[type="checkbox"] {
   opacity: 1;
 }
 
-// Tags — deterministic per-tag coloring via --tag-hue (set inline by JS)
+// Tags — canonical accent-tinted chip (matches the Preferences muted-drill chip).
+// Use @include refined-tag-chip on any new tag-style element.
 .tag,
 a.tag,
-.ti-input .ti-tag {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.25rem 0.625rem;
-  border: 1px solid hsl(var(--tag-hue, 0) var(--tag-saturation) var(--tag-border-lightness) / 40%);
-  border-radius: 0.375rem;
-  margin: 0 0.125rem;
-  background-color: hsl(var(--tag-hue, 0) var(--tag-saturation) var(--tag-bg-lightness) / 15%);
-  color: hsl(var(--tag-hue, 0) var(--tag-saturation) var(--tag-text-lightness));
-  font-size: 0.75rem;
-  font-weight: 500;
-  line-height: 1.25rem;
-  text-decoration: none;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
-  white-space: nowrap;
-
-  &:link,
-  &:visited {
-    color: hsl(var(--tag-hue, 0) var(--tag-saturation) var(--tag-text-lightness));
-  }
-
-  &:hover {
-    border-color: hsl(var(--tag-hue, 0) var(--tag-saturation) var(--tag-border-lightness) / 60%);
-    background-color: hsl(var(--tag-hue, 0) var(--tag-saturation) var(--tag-bg-lightness) / 25%);
-    color: hsl(var(--tag-hue, 0) var(--tag-saturation) var(--tag-text-lightness));
-    text-decoration: none;
-  }
-}
-
-// UI chrome tags (filter pills, selected tag chips) — accent-tinted
+.ti-input .ti-tag,
 .tag-accent {
-  border-color: color-mix(in oklch, var(--accent), transparent 70%);
-  background-color: color-mix(in oklch, var(--accent), transparent 82%);
-  color: color-mix(in oklch, var(--accent), white 15%);
+  @include refined-tag-chip;
+
+  margin: 0 0.125rem;
 
   &:link,
   &:visited {
-    color: color-mix(in oklch, var(--accent), white 15%);
+    color: var(--fg-0);
   }
 
   &:hover {
-    border-color: color-mix(in oklch, var(--accent), transparent 55%);
-    background-color: color-mix(in oklch, var(--accent), transparent 70%);
-    color: color-mix(in oklch, var(--accent), white 15%);
+    border-color: color-mix(in oklch, var(--accent), transparent 40%);
+    background: linear-gradient(
+      180deg,
+      color-mix(in oklch, var(--accent), var(--bg-1) 45%),
+      color-mix(in oklch, var(--accent), var(--bg-1) 60%)
+    );
+    color: var(--fg-0);
+    text-decoration: none;
   }
 }
 
