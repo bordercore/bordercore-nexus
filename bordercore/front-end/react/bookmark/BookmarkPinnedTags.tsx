@@ -84,7 +84,7 @@ function SortableTagItem({
     >
       <div className="slicklist-list-item-inner">
         <li
-          className={`list-with-counts rounded d-flex ps-2 py-1 pr-1 ${
+          className={`list-with-counts d-flex align-items-center ${
             isSelected ? "selected" : ""
           } ${isDragOver ? "hover-tag" : ""}`}
           data-tag={tag.name}
@@ -95,10 +95,10 @@ function SortableTagItem({
           onDrop={handleDrop}
           {...(isUntagged ? {} : { ...attributes, ...listeners })}
         >
-          <div className="ps-2 text-truncate">{tag.name}</div>
+          <div className="text-truncate">{tag.name}</div>
           {tag.bookmark_count !== undefined && tag.bookmark_count > 0 && (
-            <div className="ms-auto pe-2">
-              <span className="px-2 badge rounded-pill">{tag.bookmark_count}</span>
+            <div className="ms-auto">
+              <span className="badge">{tag.bookmark_count}</span>
             </div>
           )}
         </li>
