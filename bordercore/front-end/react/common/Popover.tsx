@@ -21,6 +21,7 @@ import {
   useHover,
   safePolygon,
   useTransitionStyles,
+  FloatingPortal,
 } from "@floating-ui/react";
 
 export interface PopoverProps {
@@ -153,33 +154,38 @@ export function Popover({
     <div className="popover-container">
       {triggerElement}
       {isMounted && (
-        <div
-          ref={refs.setFloating}
-          // Dynamic styles from floating-ui library - must remain inline
-          style={{
-            ...floatingStyles,
-            transform:
-              `${floatingStyles.transform || ""} ${transitionStyles.transform || ""}`.trim() ||
-              undefined,
-            opacity: transitionStyles.opacity,
-            ...style,
-          }}
-          className={`popover-floating ${className}`}
-          {...getFloatingProps()}
-        >
-          {showArrow && (
-            <div
-              ref={arrowRef}
-              className="popover-arrow"
-              // Dynamic arrow positioning from floating-ui - must remain inline
-              style={{
-                left: middlewareData.arrow?.x,
-                top: middlewareData.arrow?.y,
-              }}
-            />
-          )}
-          {children}
-        </div>
+        // Portal to <body> so the floating panel escapes any stacking context
+        // created by ancestor rows (e.g. transform on hover in .bookmark-row /
+        // .todo-row), which would otherwise clip it behind later siblings.
+        <FloatingPortal>
+          <div
+            ref={refs.setFloating}
+            // Dynamic styles from floating-ui library - must remain inline
+            style={{
+              ...floatingStyles,
+              transform:
+                `${floatingStyles.transform || ""} ${transitionStyles.transform || ""}`.trim() ||
+                undefined,
+              opacity: transitionStyles.opacity,
+              ...style,
+            }}
+            className={`popover-floating ${className}`}
+            {...getFloatingProps()}
+          >
+            {showArrow && (
+              <div
+                ref={arrowRef}
+                className="popover-arrow"
+                // Dynamic arrow positioning from floating-ui - must remain inline
+                style={{
+                  left: middlewareData.arrow?.x,
+                  top: middlewareData.arrow?.y,
+                }}
+              />
+            )}
+            {children}
+          </div>
+        </FloatingPortal>
       )}
     </div>
   );
