@@ -133,19 +133,35 @@
   background-color: var(--bg-1);
 
   .bookmark-tag {
+    position: relative;
     display: block;
     padding: 0.5rem;
     border-radius: var(--radius);
-    color: var(--fg-0);
+    color: var(--fg-1);
     text-decoration: none;
-    transition: background-color 0.2s ease;
+    transition: background-color 0.18s ease, color 0.18s ease;
 
     &:hover {
-      background-color: color-mix(in oklch, var(--fg-0), transparent 92%);
+      background-color: color-mix(in oklch, var(--bg-1), transparent 40%);
+      color: var(--fg-0);
     }
 
     &.active {
-      background-color: color-mix(in oklch, var(--accent), transparent 82%);
+      background-color: color-mix(in oklch, var(--accent), var(--bg-1) 82%);
+      color: var(--fg-0);
+    }
+
+    &.active::before {
+      position: absolute;
+      top: 50%;
+      left: -12px;
+      width: 3px;
+      height: 18px;
+      border-radius: 2px;
+      background: var(--accent);
+      box-shadow: 0 0 10px var(--accent-glow);
+      content: "";
+      transform: translateY(-50%);
     }
   }
 
@@ -241,15 +257,32 @@
   }
 
   .list-with-counts {
+    position: relative;
+    color: var(--fg-1);
     cursor: pointer;
-    transition: background-color 0.1s ease;
+    transition: background-color 0.18s ease, color 0.18s ease;
 
     &:hover {
-      background-color: color-mix(in oklch, var(--fg-0), transparent 92%);
+      background-color: color-mix(in oklch, var(--bg-1), transparent 40%);
+      color: var(--fg-0);
     }
 
     &.selected {
-      background-color: var(--bg-2);
+      background-color: color-mix(in oklch, var(--accent), var(--bg-1) 82%);
+      color: var(--fg-0);
+    }
+
+    &.selected::before {
+      position: absolute;
+      top: 50%;
+      left: -12px;
+      width: 3px;
+      height: 18px;
+      border-radius: 2px;
+      background: var(--accent);
+      box-shadow: 0 0 10px var(--accent-glow);
+      content: "";
+      transform: translateY(-50%);
     }
   }
 }
