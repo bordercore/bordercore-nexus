@@ -47,7 +47,7 @@
     padding-left: 2.5rem;
 
     &::placeholder {
-      color: var(--fg-1);
+      color: var(--fg-3);
       opacity: 1;
     }
   }
@@ -337,7 +337,7 @@
   }
 
   &::placeholder {
-    color: var(--fg-1);
+    color: var(--fg-3);
   }
 }
 
