@@ -6,7 +6,7 @@
   width: 100%;
 
   .chatbot-container {
-    border-radius: var(--border-radius1);
+    border-radius: var(--radius);
     background-color: var(--chatbot-container-bg);
     box-shadow: 0 0 15px rgb(0 0 0 / 20%);
     line-height: 1.75rem;
@@ -23,7 +23,7 @@
     overflow: scroll;
     height: 40rem;
     flex-direction: column;
-    background-color: var(--surface6);
+    background-color: var(--bg-2);
   }
 
   .chatbot-mode {
@@ -31,14 +31,14 @@
   }
 
   .chatbot-user {
-    color: var(--text1);
+    color: var(--fg-0);
   }
 
   .chatbot-assistant {
-    color: var(--text4);
+    color: var(--accent);
   }
 
   .chatbot-waiting {
-    color: var(--text3);
+    color: var(--accent);
   }
 }

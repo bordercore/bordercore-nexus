@@ -28,7 +28,7 @@
 // Site banner
 .site-banner {
   padding: 0.75rem 1.5rem;
-  border-radius: var(--border-radius1);
+  border-radius: var(--radius);
   margin-bottom: 1rem;
   background-color: var(--banner-bg);
   color: var(--banner-text);
@@ -43,7 +43,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem var(--grid-margin);
-  border-radius: var(--border-radius1);
+  border-radius: var(--radius);
   margin: var(--grid-margin) var(--grid-margin) var(--grid-margin) var(--grid-margin);
   background-color: transparent;
 }
@@ -211,7 +211,7 @@
   min-height: 100vh;
   align-items: center;
   justify-content: center;
-  background-color: var(--surface1);
+  background-color: var(--bg-0);
   background-image: url("/static/img/header_cyber.jpg");
   background-size: cover;
 }
@@ -220,14 +220,14 @@
   width: 37.5rem;
   height: 43.75rem;
   padding: 2rem;
-  border: 0.12rem solid var(--text1);
+  border: 0.12rem solid var(--fg-0);
   border-radius: 1.5rem;
-  background-color: var(--surface2);
+  background-color: var(--bg-1);
   opacity: 0.9;
   text-align: center;
 
   .input-group-text {
-    background-color: var(--text4);
+    background-color: var(--accent);
   }
 
   > div {
@@ -243,14 +243,14 @@
   }
 
   hr {
-    border-color: var(--text2);
+    border-color: var(--fg-2);
     opacity: 0.5;
   }
 }
 
 .response-code {
   margin-bottom: 1rem;
-  color: var(--text1);
+  color: var(--fg-0);
   font-size: 6rem;
   font-weight: 700;
 }
@@ -261,7 +261,7 @@
   text-align: center;
 
   small {
-    color: var(--text2);
+    color: var(--fg-2);
   }
 }
 
@@ -303,17 +303,17 @@
   display: flex;
   align-items: center;
   padding: 0.75rem 1rem;
-  color: var(--text1);
+  color: var(--fg-0);
   gap: 0.5rem;
   text-decoration: none;
   transition: background-color 0.2s ease;
 
   &:hover {
-    background-color: var(--hover-bg);
+    background-color: color-mix(in oklch, var(--fg-0), transparent 92%);
   }
 
   &.active {
-    background-color: var(--selected-bg);
+    background-color: color-mix(in oklch, var(--accent), transparent 82%);
   }
 }
 

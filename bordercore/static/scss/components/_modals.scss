@@ -5,26 +5,26 @@
 
 .modal-header {
   padding: 1rem 1.5rem;
-  border-radius: var(--border-radius1) var(--border-radius1) 0 0;
-  border-bottom: 1px solid var(--border-color);
-  background-color: var(--surface2);
-  color: var(--text3);
+  border-radius: var(--radius) var(--radius) 0 0;
+  border-bottom: 1px solid var(--line-soft);
+  background-color: var(--bg-1);
+  color: var(--accent);
   font-size: 1.5rem;
 
   // The close button for Bootstrap modals
   .close {
-    color: var(--text1);
+    color: var(--fg-0);
   }
 }
 
 .modal-footer {
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid var(--line-soft);
 }
 
 .modal-content {
-  border: 1px solid var(--border-color);
-  background-color: var(--surface1);
-  color: var(--text1);
+  border: 1px solid var(--line-soft);
+  background-color: var(--bg-0);
+  color: var(--fg-0);
 }
 
 // Keep ObjectSelect modals above other layered content
@@ -47,17 +47,17 @@
 
 // Bootstrap Popovers
 .popover {
-  border-color: var(--border-color);
-  background-color: var(--surface2);
-  color: var(--text1);
+  border-color: var(--line-soft);
+  background-color: var(--bg-1);
+  color: var(--fg-0);
   
   .popover-header {
-    border-bottom: 1px solid var(--border-color);
-    background-color: var(--surface3);
+    border-bottom: 1px solid var(--line-soft);
+    background-color: var(--bg-2);
   }
   
   .popover-body {
-    color: var(--text1);
+    color: var(--fg-0);
   }
 }
 
@@ -71,23 +71,23 @@
 
 .toast {
   padding: 0;
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius1);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
   margin-bottom: 0.5rem;
-  background-color: var(--surface2);
+  background-color: var(--bg-1);
   box-shadow: 0 0.5rem 1rem rgb(0 0 0 / 15%);
-  color: var(--text1);
+  color: var(--fg-0);
 }
 
 .toast-header {
   padding: 0.25rem 1rem;
-  border-radius: var(--border-radius1) var(--border-radius1) 0 0;
-  border-bottom: 1px solid var(--border-color);
-  background-color: var(--surface3);
-  color: var(--link-color);
+  border-radius: var(--radius) var(--radius) 0 0;
+  border-bottom: 1px solid var(--line-soft);
+  background-color: var(--bg-2);
+  color: var(--accent);
 
   strong {
-    color: var(--link-color);
+    color: var(--accent);
   }
 }
 

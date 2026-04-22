@@ -6,7 +6,7 @@
 // Badges
 .badge {
   padding: 0.35em 0.65em;
-  border-radius: var(--border-radius1);
+  border-radius: var(--radius);
   font-size: 0.875rem;
   font-weight: 600;
 }
@@ -24,7 +24,7 @@
 // Alerts
 .alert {
   padding: 1rem;
-  border-radius: var(--border-radius1);
+  border-radius: var(--radius);
   margin-bottom: 1rem;
 }
 
@@ -55,59 +55,59 @@
 // Progress bars
 .progress {
   height: 1rem;
-  border-radius: var(--border-radius1);
-  background-color: var(--surface3);
+  border-radius: var(--radius);
+  background-color: var(--bg-2);
 }
 
 .progress-bar {
-  border-radius: var(--border-radius1);
+  border-radius: var(--radius);
 }
 
 // Spinners
 .spinner-border {
-  color: var(--link-color);
+  color: var(--accent);
 }
 
 // Tooltips
 .tooltip-inner {
   padding: 0.5rem 0.75rem;
-  border-radius: var(--border-radius1);
-  background-color: var(--surface3);
-  color: var(--text1);
+  border-radius: var(--radius);
+  background-color: var(--bg-2);
+  color: var(--fg-0);
 }
 
 // Accordion
 .accordion-item {
-  border: 1px solid var(--border-color);
-  background-color: var(--surface2);
+  border: 1px solid var(--line-soft);
+  background-color: var(--bg-1);
   
   &:first-child {
-    border-top-left-radius: var(--border-radius1);
-    border-top-right-radius: var(--border-radius1);
+    border-top-left-radius: var(--radius);
+    border-top-right-radius: var(--radius);
   }
   
   &:last-child {
-    border-bottom-left-radius: var(--border-radius1);
-    border-bottom-right-radius: var(--border-radius1);
+    border-bottom-left-radius: var(--radius);
+    border-bottom-right-radius: var(--radius);
   }
 }
 
 .accordion-button {
-  background-color: var(--surface2);
-  color: var(--text1);
+  background-color: var(--bg-1);
+  color: var(--fg-0);
   
   &:not(.collapsed) {
-    background-color: var(--surface3);
-    color: var(--text1);
+    background-color: var(--bg-2);
+    color: var(--fg-0);
   }
   
   &:focus {
-    border-color: var(--border-color);
+    border-color: var(--line-soft);
     box-shadow: none;
   }
 }
 
 .accordion-body {
-  background-color: var(--surface2);
-  color: var(--text1);
+  background-color: var(--bg-1);
+  color: var(--fg-0);
 }

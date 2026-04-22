@@ -1,17 +1,7 @@
 :root[color-mode="cyberpunk"] {
-  --brand-hue: 320;
-  --brand-saturation: 100%;
-  --brand-lightness: 10%;
 
-  --text1: #ffffff;
-  --text2: hsl(180, 100%, 70%);
 
   // highlight - neon pink
-  --text3-hue: 320;
-  --text3-saturation: 100%;
-  --text3-lightness: 60%;
-  --text3: hsl(var(--text3-hue), var(--text3-saturation), var(--text3-lightness));
-  --text3-transparent: hsl(var(--text3-hue), var(--text3-saturation), var(--text3-lightness), 0.25);
 
   // Per-tag coloring
   --tag-saturation: 85%;
@@ -20,42 +10,21 @@
   --tag-border-lightness: 55%;
 
   // secondary accent - electric cyan
-  --text4-hue: 180;
-  --text4-saturation: 100%;
-  --text4-lightness: 50%;
-  --text4: hsl(var(--text4-hue), var(--text4-saturation), var(--text4-lightness));
-  --text4-1: hsl(var(--text4-hue), calc(var(--text4-saturation)), calc(var(--text4-lightness) + 20%));
-  --text4-2: hsl(var(--text4-hue), calc(var(--text4-saturation) - 20%), calc(var(--text4-lightness) - 20%));
 
   // "on hover" links - neon green
-  --text5: #39ff14;
+  --text5: var(--ok);
 
-  --text6: #ff00ff;
-  --text7: #00ffff;
 
-  --text-disabled: #444;
-  --text-em: #ff6ec7;
-  --text-notice: var(--text6);
-  --text-error: #ff3333;
-  --favorite-color: var(--text3); // neon pink for favorites
+  --text-notice: var(--accent);
+  --favorite-color: oklch(60% 0.20 25deg); // neon pink for favorites
 
   // Dark background with slight purple tint
-  --surface1: #0d0221;
-  --surface1-transparent: #0d022100;
 
   // on-hover - deeper purple
-  --surface2: #1a0533;
-  --surface2-transparent: #1a053300;
 
-  --surface3: #2d1b4e;
-  --surface4: #3d2066;
-  --surface5: #541675;
-  --surface5-transparent: #54167500;
 
   // Slightly lighter than the background
-  --surface6: #150430;
 
-  --surface7: #ff00ff;
 
   // Body background color - near black with purple
   --body-bg: #0a0118;
@@ -74,103 +43,50 @@
   --chatbot-container-bg: #541675;
 
   // Chart colors
-  --chart-title-color: var(--text2);
-  --chart-bg: var(--surface5);
-  --chart-fill-color: var(--text1);
-  --chart-tick-color: var(--text4);
-  --chart-gradient-start: #ff00ff;
-  --chart-gradient-end: #00ffff;
 
   // Background sphere - neon glow
-  --sphere-color-1: #ff00ff;
-  --sphere-color-2: #00ffff;
-  --sphere-color-3: #39ff14;
 
-  --blob-file-upload-gradient-start: var(--surface6);
-  --blob-file-upload-gradient-end: var(--surface1);
   --btn-close-filter: invert(1) grayscale(100%) brightness(200%);
-  --btn-primary-hover-color: var(--text1);
   --drill-progress-circle-full: var(--surface5);
   --drill-progress-circle-partial: var(--text5);
-  --drag-color: var(--text3);
-  --dropdown-item-extra-color: var(--text2);
   --fitness-overdue-bg: var(--surface7);
   --fitness-overdue-color: var(--text1);
-  --form-bg: var(--surface5);
-  --form-bg-disabled: var(--surface2);
-  --form-bg-focus: var(--surface6);
-  --form-border-color-hover: var(--text3);
-  --form-color: var(--text4);
-  --border-color: var(--surface5);
-  --hr-border-color: var(--surface5);
-  --btn-active-border: var(--text3);
-  --btn-active-bg: var(--surface4);
-  --hover-bg: var(--surface3);
-  --link-color: var(--text3);
-  --notice-color: var(--text1);
-  --notice-title-color: var(--text1);
-  --search-splitter-bg: var(--surface6);
-  --search-splitter-color: var(--text6);
-  --selected-bg: var(--surface5);
-  --selected-color: var(--text1);
-  --selected-secondary-color: var(--text4);
-  --sidebar-active-bg: var(--surface5);
-  --sidebar-active-color: var(--text3);
-  --sidebar-bg: var(--surface6);
-  --sidebar-color: var(--text1);
-  --sidebar-gradient-start: var(--surface5);
-  --sidebar-gradient-end: var(--surface1);
-  --sidebar-hover-bg: var(--surface3);
-  --sidebar-hover-color: var(--text3);
-  --sidebar-icon-color1: var(--text4);
-  --sidebar-icon-color2: var(--text3);
-  --sidebar-icon-color3: var(--text6);
-  --title-gradient-end: #00ffff;
-  --title-gradient-start: #ff00ff;
-  --toggle-button-color-toggled: var(--text4);
-  --tooltip-bg: var(--surface3);
-  --tooltip-color: var(--color1);
+  --form-bg: var(--bg-2);
+  --form-bg-focus: var(--bg-2);
+  --form-border-color-hover: var(--fg-3);
+  --border-color: var(--line-soft);
+  --hr-border-color: var(--line-soft);
+  --selected-color: var(--fg-0);
+  --sidebar-active-color: var(--accent);
+  --sidebar-color: var(--fg-1);
+  --sidebar-gradient-start: var(--bg-0);
+  --sidebar-gradient-end: var(--bg-1);
+  --sidebar-hover-color: var(--fg-0);
 
   // Override Bootstrap CSS properties
-  --bs-body-color: var(--text1);
-  --bs-body-bg: var(--surface1);
-  --bs-list-group-bg: var(--surface2);
-  --bs-list-group-color: var(--text3);
+  --bs-body-color: var(--fg-1);
+  --bs-body-bg: var(--bg-0);
+  --bs-list-group-bg: var(--bg-1);
+  --bs-list-group-color: var(--fg-1);
   --bs-list-group-item-padding-x: 1.25rem;
   --bs-list-group-item-padding-y: .75rem;
-  --bs-list-group-item-secondary: var(--text3);
-  --bs-modal-header-border-color: var(--text3);
-  --bs-secondary: var(--text3);
+  --bs-list-group-item-secondary: var(--fg-2);
+  --bs-modal-header-border-color: var(--line-soft);
+  --bs-secondary: var(--fg-2);
   --card-spacer-y: 1.25;
   --card-spacer-x: 1.25;
 
   // Oruga
-  --oruga-table-color: var(--text1);
-  --oruga-table-background-color: transparent;
-  --oruga-table-hoverable-background-color: var(--hover-bg);
-  --oruga-table-td-border: var(--text1);
 
   // Vue MultiSelect
-  --vms-controls-color: var(--text2);
-  --vms-controls-color-hover: var(--text1);
-  --vms-selected-bg: var(--surface2);
-  --vms-selected-color: var(--text4);
 
   // Vue 3 Datepicker
-  --vdp-bg-color: var(--surface1);
-  --vdp-heading-hover-color: var(--surface4);
-  --vdp-hover-bg-color: var(--surface3);
-  --vdp-text-color: var(--text1);
-  --vdp-selected-bg-color: var(--surface5);
 
   .list-group {
-    --bs-list-group-border-color: var(--surface5);
+    --bs-list-group-border-color: var(--line-soft);
   }
 
   // Media Chrome
-  --media-control-background: var(--surface1);
-  --media-background-color: var(--surface2);
-  --media-icon-color: var(--text1);
 
   // Reminders table container override
   .reminders-table-container {

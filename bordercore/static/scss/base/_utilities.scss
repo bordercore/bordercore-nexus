@@ -79,11 +79,11 @@ div.sphere {
 
 // Text utilities
 .text4 {
-  color: var(--text4);
+  color: var(--accent);
 }
 
 .text5 {
-  color: var(--text5);
+  color: var(--ok);
 }
 
 .text-name {
@@ -91,11 +91,11 @@ div.sphere {
 }
 
 .text-value {
-  color: var(--text2);
+  color: var(--fg-2);
 }
 
 .text-emphasis {
-  color: var(--text1) !important;
+  color: var(--fg-0) !important;
   font-weight: 600;
 }
 
@@ -108,7 +108,7 @@ div.sphere {
 }
 
 .text-secondary {
-  color: var(--text2);
+  color: var(--fg-2);
 }
 
 .z-index-positive {
@@ -159,7 +159,7 @@ div.sphere {
 // Messages
 .message-error {
   padding: 1rem;
-  border-radius: var(--border-radius1);
+  border-radius: var(--radius);
   margin-bottom: 1rem;
   background-color: var(--error-bg);
   color: var(--error-text);
@@ -167,7 +167,7 @@ div.sphere {
 
 .message-info {
   padding: 1rem;
-  border-radius: var(--border-radius1);
+  border-radius: var(--radius);
   margin-bottom: 1rem;
   background-color: var(--info-bg);
   color: var(--info-text);
@@ -208,17 +208,17 @@ div.drag-target {
 // Visual effects
 .highlight-box {
   padding: 0.5rem;
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius1);
-  background-color: var(--surface3);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  background-color: var(--bg-2);
 }
 
 .notice-big {
   padding: 2rem;
-  border-radius: var(--border-radius1);
+  border-radius: var(--radius);
   margin: 2rem 0;
-  background-color: var(--surface2);
-  color: var(--text1);
+  background-color: var(--bg-1);
+  color: var(--fg-0);
   font-size: 1.5rem;
   font-weight: 600;
   text-align: center;
@@ -231,8 +231,8 @@ div.drag-target {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background-color: var(--surface2);
-  color: var(--text1);
+  background-color: var(--bg-1);
+  color: var(--fg-0);
 }
 
 .icon-hover {
@@ -243,10 +243,10 @@ div.drag-target {
   }
 
   &:hover {
-    color: var(--link-color);
+    color: var(--accent);
 
     svg {
-      filter: drop-shadow(0.12rem 0.12rem 0.62rem var(--text3)) drop-shadow(-0.12rem -0.12rem 0.62rem var(--text3));
+      filter: drop-shadow(0.12rem 0.12rem 0.62rem var(--accent)) drop-shadow(-0.12rem -0.12rem 0.62rem var(--accent));
     }
   }
 }
@@ -261,7 +261,7 @@ div.drag-target {
   transition: transform 1s;
 
   &:hover {
-    filter: drop-shadow(0.12rem 0.12rem 0.62rem var(--text3-transparent)) drop-shadow(-0.12rem -0.12rem 0.62rem var(--text3-transparent));
+    filter: drop-shadow(0.12rem 0.12rem 0.62rem color-mix(in oklch, var(--accent), transparent 75%)) drop-shadow(-0.12rem -0.12rem 0.62rem color-mix(in oklch, var(--accent), transparent 75%));
     transform: scale(1.1);
   }
 }
@@ -306,7 +306,7 @@ div.drag-target {
 hr.divider {
   height: 0.15rem;
   margin-top: 0.25rem;
-  background-color: var(--surface7);
+  background-color: var(--accent);
 }
 
 // Fader effect
@@ -316,7 +316,7 @@ hr.divider {
   bottom: 0;
   left: 0;
   height: 3rem;
-  background: linear-gradient(to bottom, transparent, var(--surface1));
+  background: linear-gradient(to bottom, transparent, var(--bg-0));
   content: "";
   pointer-events: none;
 }
@@ -371,7 +371,7 @@ hr.divider {
   }
 
   text {
-    fill: var(--text4);
+    fill: var(--accent);
   }
 }
 
@@ -399,7 +399,7 @@ hr.divider {
   color: #cfacd9;
   font-size: 0.8em;
   opacity: 0;
-  text-shadow: 0 0 0.12rem #100c0f, 0 0 0.31rem #dc078e33, 0 0 0.62rem var(--text1);
+  text-shadow: 0 0 0.12rem #100c0f, 0 0 0.31rem #dc078e33, 0 0 0.62rem var(--fg-0);
   transition: opacity 0.3s ease-in-out;
 
   &:hover {

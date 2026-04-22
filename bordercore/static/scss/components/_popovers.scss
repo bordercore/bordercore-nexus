@@ -8,9 +8,9 @@
   z-index: 10000;
   min-width: 12rem;
   border: 1px solid rgb(103 232 249 / 25%);
-  border-radius: var(--border-radius1);
+  border-radius: var(--radius);
   backdrop-filter: blur(10px);
-  background-color: var(--surface2);
+  background-color: var(--bg-1);
   box-shadow:
     0 0.5rem 1rem rgb(0 0 0 / 15%),
     0 0.25rem 0.5rem rgb(0 0 0 / 10%);
@@ -30,7 +30,7 @@
   border: 1px solid rgb(103 232 249 / 25%);
   border-right: none;
   border-bottom: none;
-  background: var(--surface2);
+  background: var(--bg-1);
   transform: rotate(45deg);
 }
 
@@ -86,7 +86,7 @@
     transition: background-color 0.15s ease, opacity 0.15s ease, visibility 0.15s ease;
 
     &:hover {
-      background-color: var(--hover-bg);
+      background-color: color-mix(in oklch, var(--fg-0), transparent 92%);
     }
   }
 
@@ -125,9 +125,9 @@
   align-items: center;
   padding: 0.625rem 0.875rem;
   border: none;
-  border-radius: var(--border-radius1);
+  border-radius: var(--radius);
   background: transparent;
-  color: var(--text1);
+  color: var(--fg-0);
   cursor: pointer;
   gap: 0.75rem;
   text-align: left;
@@ -135,13 +135,13 @@
   transition: background-color 0.15s ease;
 
   &:hover {
-    background-color: var(--hover-bg);
-    color: var(--text1);
+    background-color: color-mix(in oklch, var(--fg-0), transparent 92%);
+    color: var(--fg-0);
     text-decoration: none;
   }
 
   &:active {
-    background-color: var(--selected-bg);
+    background-color: color-mix(in oklch, var(--accent), transparent 82%);
   }
 }
 
@@ -151,7 +151,7 @@
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  color: var(--text3);
+  color: var(--accent);
 }
 
 .dropdown-menu-text {
@@ -167,8 +167,8 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background-color: var(--surface5);
-  color: var(--text2);
+  background-color: var(--bg-2);
+  color: var(--fg-2);
   font-size: 0.75rem;
   font-weight: 600;
 }
@@ -238,7 +238,7 @@
   align-items: center;
   padding: 0 0.375rem 0 0.5rem;
   border-radius: 9999px;
-  background: linear-gradient(135deg, var(--surface4) 0%, var(--surface5) 100%);
+  background: linear-gradient(135deg, var(--bg-3) 0%, var(--bg-2) 100%);
   gap: 0.5rem;
   line-height: 1.5rem;
   pointer-events: auto;
@@ -246,7 +246,7 @@
 }
 
 .filter-label {
-  color: var(--text1);
+  color: var(--fg-0);
   font-size: 0.8125rem;
   font-weight: 500;
 }
@@ -261,13 +261,13 @@
   border: none;
   border-radius: 50%;
   background: transparent;
-  color: var(--text3);
+  color: var(--accent);
   cursor: pointer;
   transition: all 0.15s ease;
 
   &:hover {
-    background-color: var(--hover-bg);
-    color: var(--text1);
+    background-color: color-mix(in oklch, var(--fg-0), transparent 92%);
+    color: var(--fg-0);
   }
 }
 
@@ -289,11 +289,11 @@
   align-items: center;
   justify-content: center;
   padding: 0.5rem;
-  border-radius: var(--border-radius1) var(--border-radius1) 0 0;
-  border-bottom: 1px solid var(--border-color);
+  border-radius: var(--radius) var(--radius) 0 0;
+  border-bottom: 1px solid var(--line-soft);
   margin-bottom: 0.5rem;
-  background-color: var(--surface3);
-  color: var(--text3);
+  background-color: var(--bg-2);
+  color: var(--accent);
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.05em;
@@ -312,7 +312,7 @@
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  color: var(--text3);
+  color: var(--accent);
 }
 
 .search-filter-item {
@@ -320,23 +320,23 @@
   align-items: center;
   padding: 0.5rem 0.75rem;
   border: none;
-  border-radius: var(--border-radius1);
+  border-radius: var(--radius);
   background: transparent;
-  color: var(--text1);
+  color: var(--fg-0);
   cursor: pointer;
   gap: 0.75rem;
   text-align: left;
   transition: all 0.15s ease;
 
   &:hover {
-    background-color: var(--hover-bg);
+    background-color: color-mix(in oklch, var(--fg-0), transparent 92%);
   }
 
   &.active {
-    background: linear-gradient(135deg, var(--surface4) 0%, var(--surface5) 100%);
+    background: linear-gradient(135deg, var(--bg-3) 0%, var(--bg-2) 100%);
 
     .search-filter-icon {
-      color: var(--link-color);
+      color: var(--accent);
     }
   }
 }
@@ -356,16 +356,16 @@
   align-items: center;
   padding: 0.5rem 0.75rem;
   border: none;
-  border-radius: var(--border-radius1);
+  border-radius: var(--radius);
   background: transparent;
-  color: var(--text1);
+  color: var(--fg-0);
   cursor: pointer;
   gap: 0.75rem;
   text-align: left;
   transition: background-color 0.15s ease;
 
   &:hover {
-    background-color: var(--hover-bg);
+    background-color: color-mix(in oklch, var(--fg-0), transparent 92%);
   }
 }
 
@@ -375,7 +375,7 @@
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  color: var(--text3);
+  color: var(--accent);
 }
 
 .search-recent-text {
@@ -387,7 +387,7 @@
 
 .search-object-type {
   align-self: flex-start;
-  color: var(--text3);
+  color: var(--accent);
   font-style: italic;
 }
 
@@ -395,29 +395,29 @@
   display: flex;
   align-items: center;
   padding: 0.5rem 0.75rem;
-  color: var(--text2);
+  color: var(--fg-2);
   gap: 0.5rem;
 
   &:hover {
-    border-radius: var(--border-radius1);
-    background-color: var(--hover-bg);
+    border-radius: var(--radius);
+    background-color: color-mix(in oklch, var(--fg-0), transparent 92%);
   }
 }
 
 .highlighted {
-  border-radius: var(--border-radius1);
-  background-color: var(--hover-bg);
+  border-radius: var(--radius);
+  background-color: color-mix(in oklch, var(--fg-0), transparent 92%);
 
   .search-suggestion {
-    background-color: var(--hover-bg);
+    background-color: color-mix(in oklch, var(--fg-0), transparent 92%);
   }
 }
 
 .search-splitter {
   padding: 0.5rem 0.75rem 0.25rem;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--line-soft);
   margin-bottom: 0.25rem;
-  color: var(--text3);
+  color: var(--accent);
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.05em;
@@ -448,11 +448,11 @@
   align-items: center;
   justify-content: center;
   padding: 0.5rem;
-  border-radius: var(--border-radius1) var(--border-radius1) 0 0;
-  border-bottom: 1px solid var(--border-color);
+  border-radius: var(--radius) var(--radius) 0 0;
+  border-bottom: 1px solid var(--line-soft);
   margin-bottom: 0.5rem;
-  background-color: var(--surface3);
-  color: var(--text3);
+  background-color: var(--bg-2);
+  color: var(--accent);
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.05em;
@@ -476,15 +476,15 @@
   display: flex;
   align-items: center;
   padding: 0.5rem 0.75rem;
-  border-radius: var(--border-radius1);
-  color: var(--text1);
+  border-radius: var(--radius);
+  color: var(--fg-0);
   gap: 0.75rem;
   text-decoration: none;
   transition: background-color 0.15s ease;
 
   &:hover {
-    background-color: var(--hover-bg);
-    color: var(--text1);
+    background-color: color-mix(in oklch, var(--fg-0), transparent 92%);
+    color: var(--fg-0);
     text-decoration: none;
   }
 }
@@ -498,7 +498,7 @@
   justify-content: center;
   padding: 0.25rem;
   border-radius: 9999px;
-  color: var(--text2);
+  color: var(--fg-2);
   font-size: 0.875rem;
 
   &.doctype-node {
@@ -551,14 +551,14 @@
 
 .recent-blobs-empty {
   padding: 1rem;
-  color: var(--text3);
+  color: var(--accent);
   font-size: 0.875rem;
   text-align: center;
 }
 
 .recent-blobs-error {
   padding: 0.75rem;
-  border-radius: var(--border-radius1);
+  border-radius: var(--radius);
   background-color: rgb(239 68 68 / 10%);
   color: rgb(248 113 113);
   font-size: 0.875rem;

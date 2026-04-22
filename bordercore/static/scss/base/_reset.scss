@@ -24,7 +24,7 @@ body {
   position: relative;
   min-height: 100vh;
   background-color: var(--body-bg);
-  color: var(--text1);
+  color: var(--fg-0);
   font-family: Roboto, sans-serif;
   font-size: 1rem;
   line-height: 2rem;
@@ -68,7 +68,7 @@ p {
 }
 
 a {
-  color: var(--link-color);
+  color: var(--accent);
   text-decoration: none;
   transition: color 0.15s ease-in-out;
 
@@ -83,12 +83,12 @@ hr {
 }
 
 strong {
-  color: var(--text4);
+  color: var(--accent);
   font-weight: 700;
 }
 
 em {
-  color: var(--text2);
+  color: var(--fg-2);
   font-style: italic;
 }
 

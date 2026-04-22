@@ -194,7 +194,7 @@ export const TagsInput = forwardRef<TagsInputHandle, TagsInputProps>(function Ta
           {
             placeholder: base => ({
               ...base,
-              color: "var(--form-color)",
+              color: "var(--fg-1)",
             }),
             multiValue: (base, state) => ({
               ...base,
