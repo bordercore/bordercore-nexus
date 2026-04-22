@@ -440,53 +440,26 @@
   grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
 }
 
+// Hover recipe mirrors .bookmark-row / .todo-row
 .search-result-card {
   position: relative;
-  overflow: hidden;
   padding: 1.25rem 1.5rem;
-  border: 1px solid rgb(103 232 249 / 15%);
-  border-radius: 20px;
-  backdrop-filter: blur(10px);
-  background: rgb(18 25 40 / 80%);
-  box-shadow: 0 10px 40px rgb(0 0 0 / 50%);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
-  &::before {
-    position: absolute;
-    z-index: 1;
-    height: 3px;
-    background: linear-gradient(90deg, #67e8f9 0%, #9c42f5 100%);
-    content: "";
-    inset: 0 auto auto 0;
-    transform: scaleX(0);
-    transform-origin: left;
-    transition: transform 0.3s ease;
-  }
-
-  &::after {
-    position: absolute;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgb(103 232 249 / 40%) 0%, transparent 70%);
-    content: "";
-    inset: -50% 0 0 -50%;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s ease;
-  }
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-lg);
+  background: var(--bg-1);
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background-color 0.15s ease,
+    transform 0.12s ease;
 
   &:hover {
-    border-color: #67e8f9;
-    box-shadow: 0 10px 40px rgb(0 0 0 / 50%), 0 0 30px rgb(103 232 249 / 30%);
-    transform: translateY(-8px);
-  }
-
-  &:hover::before {
-    transform: scaleX(1);
-  }
-
-  &:hover::after {
-    opacity: 0.2;
+    border-color: color-mix(in oklch, var(--accent), transparent 55%);
+    box-shadow:
+      0 0 10px color-mix(in oklch, var(--accent), transparent 80%),
+      0 0 20px color-mix(in oklch, var(--accent), transparent 88%),
+      var(--shadow-md);
+    transform: translateY(-1px);
   }
 
   &.important {
