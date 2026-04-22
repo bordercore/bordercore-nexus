@@ -316,10 +316,15 @@
 
   &:focus,
   &:focus-within {
+    // Bootstrap's .form-control:focus overrides background-color (#fff) and
+    // color (#212529) — reassert the tokens so focused inputs keep the same
+    // surface and legible text as the default state.
     border-color: var(--accent);
+    background: var(--bg-2);
     box-shadow:
       0 0 0 3px var(--accent-glow),
       var(--shadow-sm);
+    color: var(--fg-0);
   }
 }
 

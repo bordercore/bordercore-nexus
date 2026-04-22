@@ -14,21 +14,6 @@
   }
 }
 
-.search-input {
-  width: 100%;
-  padding: 0.5rem 1rem;
-  border: 1px solid var(--line-soft);
-  border-radius: var(--radius);
-  background-color: var(--bg-0);
-  color: var(--fg-0);
-  transition: border-color 0.2s ease;
-
-  &:focus {
-    border-color: var(--accent);
-    outline: none;
-  }
-}
-
 .has-search {
   position: relative;
 
@@ -42,7 +27,6 @@
     transform: translateY(-50%);
   }
 
-  .search-input,
   .form-control {
     padding-left: 2.5rem;
   }
