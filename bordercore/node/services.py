@@ -34,7 +34,8 @@ def get_node_list(user: Any) -> QuerySet:
     ).annotate(
         todo_count=Count("todos")
     ).order_by(
-        "-modified"
+        "-is_pinned",
+        "-modified",
     )
 
     for node in nodes:

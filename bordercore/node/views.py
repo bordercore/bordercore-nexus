@@ -79,6 +79,7 @@ class NodeListView(LoginRequiredMixin, ListView, FormMixin):
                 "modified": node.modified.isoformat() if node.modified else "",
                 "collection_count": node.collection_count,
                 "todo_count": node.todo_count,
+                "pinned": node.is_pinned,
             }
             for node in context["object_list"]
         ]

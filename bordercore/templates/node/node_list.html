@@ -6,7 +6,9 @@
 {% block content %}
 
     <div id="react-root"
+        class="node-app"
         data-create-url="{% url 'node:create' %}"
+        data-detail-url="{% url 'node:detail' '00000000-0000-0000-0000-000000000000' %}"
     >
     </div>
     {{ node_list_data|json_script:"node-list-data" }}

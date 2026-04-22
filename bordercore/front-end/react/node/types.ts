@@ -6,6 +6,23 @@ export interface NodeListItem {
   modified: string;
   collection_count: number;
   todo_count: number;
+  pinned?: boolean;
+}
+
+export type NodeSort = "modified" | "name" | "coll" | "todos";
+
+export type NodeFilter =
+  | { type: "all" }
+  | { type: "pinned" }
+  | { type: "with-todos" }
+  | { type: "empty" }
+  | { type: "archive" }
+  | { type: "year"; year: number };
+
+export interface AgeTone {
+  rail: string;
+  glow: string;
+  label: "fresh" | "recent" | "current" | "older" | "archive";
 }
 
 export interface FormField {

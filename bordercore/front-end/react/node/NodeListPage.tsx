@@ -1,176 +1,253 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Modal } from "bootstrap";
+import React, { useEffect, useMemo, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus } from "@fortawesome/free-solid-svg-icons";
-import { DropDownMenu } from "../common/DropDownMenu";
-import type { NodeListItem, FormField } from "./types";
+import NodeCard from "./NodeCard";
+import NodeToolbar from "./NodeToolbar";
+import NodeSidebar from "./NodeSidebar";
+import NewNodeModal from "./NewNodeModal";
+import type { NodeFilter, NodeListItem, NodeSort } from "./types";
+import { matchesFilter, yearOf } from "./nodeListUtils";
+
+const DENSITY_STORAGE_KEY = "bc:nodes:density";
 
 interface NodeListPageProps {
   nodes: NodeListItem[];
   createUrl: string;
-  formFields: FormField[];
+  detailUrl: string;
+  csrfToken: string;
 }
 
-export default function NodeListPage({ nodes, createUrl, formFields }: NodeListPageProps) {
-  const [modalInstance, setModalInstance] = useState<Modal | null>(null);
-  const modalRef = useRef<HTMLDivElement>(null);
-  const nameInputRef = useRef<HTMLInputElement>(null);
+interface YearGroup {
+  year: number | "pinned" | null;
+  items: NodeListItem[];
+}
+
+export default function NodeListPage({
+  nodes: initialNodes,
+  createUrl,
+  detailUrl,
+  csrfToken,
+}: NodeListPageProps) {
+  const [nodes] = useState<NodeListItem[]>(initialNodes);
+  const [q, setQ] = useState("");
+  const [sort, setSort] = useState<NodeSort>("modified");
+  const [filter, setFilter] = useState<NodeFilter>({ type: "all" });
+  const [dense, setDense] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem(DENSITY_STORAGE_KEY) === "compact";
+  });
+  const [newOpen, setNewOpen] = useState(false);
 
   useEffect(() => {
-    if (modalRef.current) {
-      const modal = new Modal(modalRef.current);
-      setModalInstance(modal);
-    }
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(DENSITY_STORAGE_KEY, dense ? "compact" : "grid");
+  }, [dense]);
+
+  // "/" focuses search, "N" opens the new-node modal. Ignored while typing.
+  useEffect(() => {
+    const isEditable = (el: EventTarget | null): boolean => {
+      if (!(el instanceof HTMLElement)) return false;
+      const tag = el.tagName;
+      return tag === "INPUT" || tag === "TEXTAREA" || el.isContentEditable;
+    };
+    const handler = (e: KeyboardEvent) => {
+      if (isEditable(e.target)) return;
+      if (e.key === "/") {
+        const input = document.querySelector<HTMLInputElement>(".node-app .nl-search input");
+        if (input) {
+          e.preventDefault();
+          input.focus();
+        }
+      } else if (e.key.toLowerCase() === "n" && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault();
+        setNewOpen(true);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  const handleClickCreate = () => {
-    if (modalInstance) {
-      modalInstance.show();
-      // Focus the name input after modal opens
-      setTimeout(() => {
-        nameInputRef.current?.focus();
-      }, 500);
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
+  const filtered = useMemo(() => {
+    const needle = q.toLowerCase();
+    const base = nodes.filter(
+      n => matchesFilter(n, filter) && n.name.toLowerCase().includes(needle)
+    );
+    const sorted = [...base].sort((a, b) => {
+      const aPinned = !!a.pinned;
+      const bPinned = !!b.pinned;
+      if (aPinned !== bPinned) return aPinned ? -1 : 1;
+      if (sort === "modified") {
+        return new Date(b.modified).getTime() - new Date(a.modified).getTime();
+      }
+      if (sort === "name") return a.name.localeCompare(b.name);
+      if (sort === "coll") return b.collection_count - a.collection_count;
+      if (sort === "todos") return b.todo_count - a.todo_count;
+      return 0;
     });
-  };
+    return sorted;
+  }, [nodes, q, sort, filter]);
 
-  const dropdownContent = (
-    <ul className="dropdown-menu-list">
-      <li>
-        <a
-          href="#"
-          className="dropdown-menu-item"
-          onClick={e => {
-            e.preventDefault();
-            handleClickCreate();
-          }}
-        >
-          <span className="dropdown-menu-icon">
-            <FontAwesomeIcon icon={faPlus} className="text-primary" />
-          </span>
-          <span className="dropdown-menu-text">New Node</span>
-        </a>
-      </li>
-    </ul>
-  );
+  const grouped = useMemo<YearGroup[]>(() => {
+    // Year-grouping only makes sense for the unfiltered, modified-sort, no-search view.
+    if (sort !== "modified" || q || filter.type !== "all") {
+      return [{ year: null, items: filtered }];
+    }
+    const out: YearGroup[] = [];
+    let current: YearGroup | null = null;
+    for (const n of filtered) {
+      if (n.pinned) {
+        if (!current || current.year !== "pinned") {
+          current = { year: "pinned", items: [] };
+          out.push(current);
+        }
+        current.items.push(n);
+        continue;
+      }
+      const y = yearOf(n.modified);
+      if (!current || current.year !== y) {
+        current = { year: y, items: [] };
+        out.push(current);
+      }
+      current.items.push(n);
+    }
+    return out;
+  }, [filtered, sort, q, filter]);
+
+  const totalColl = nodes.reduce((s, n) => s + n.collection_count, 0);
+  const totalTodo = nodes.reduce((s, n) => s + n.todo_count, 0);
+
+  const detailUrlFor = (uuid: string): string => {
+    // detailUrl is reversed with a zero-uuid sentinel — swap in the real one.
+    return detailUrl.replace("00000000-0000-0000-0000-000000000000", uuid);
+  };
 
   return (
     <>
-      <div className="card-grid d-flex ms-3">
-        <div className="d-flex flex-row flex-wrap">
-          {nodes.map(node => (
-            <div key={node.uuid} className="w-50">
-              <h4>
-                <a href={`/node/${node.uuid}/`} data-name={node.name}>
-                  {node.name}
-                </a>
-                <div className="ps-2 pt-1 text-primary">
-                  <ul className="list-unstyled">
-                    <li>
-                      Last modified:{" "}
-                      <span className="text-emphasis">{formatDate(node.modified)}</span>
-                    </li>
-                    <li>
-                      Collection count:{" "}
-                      <span className="text-emphasis">{node.collection_count}</span>
-                    </li>
-                    <li>
-                      Todo count: <span className="text-emphasis">{node.todo_count}</span>
-                    </li>
-                  </ul>
-                </div>
-              </h4>
+      <div className="nl-shell">
+        <NodeSidebar
+          nodes={nodes}
+          totalColl={totalColl}
+          totalTodo={totalTodo}
+          filter={filter}
+          onFilterChange={setFilter}
+        />
+
+        <main className="nl-main">
+          <div className="nl-head">
+            <div>
+              <h1>Nodes</h1>
+              <p>
+                every topic is a node. attach collections, notes, todos, images, and nested nodes.
+                they surface in the homepage and drill queue when you revisit them.
+              </p>
             </div>
-          ))}
-        </div>
-
-        <div className="me-2">
-          <DropDownMenu dropdownSlot={dropdownContent} />
-        </div>
-      </div>
-
-      {/* Create Node Modal - Traditional Form POST */}
-      <div className="card-grid ms-3">
-        <form action={createUrl} method="post" id="form-node-create">
-          <input
-            type="hidden"
-            name="csrfmiddlewaretoken"
-            value={window.BASE_TEMPLATE_DATA?.csrfToken || ""}
-          />
-          <div
-            ref={modalRef}
-            className="modal fade"
-            id="modalAdd"
-            tabIndex={-1}
-            role="dialog"
-            aria-labelledby="myModalLabel"
-          >
-            <div className="modal-dialog" role="document">
-              <div className="modal-content">
-                <div className="modal-header">
-                  <h4 className="modal-title" id="myModalLabel">
-                    New Node
-                  </h4>
-                  <button
-                    type="button"
-                    className="btn-close"
-                    data-bs-dismiss="modal"
-                    aria-label="Close"
-                  />
-                </div>
-                <div className="modal-body">
-                  {formFields.map(field => (
-                    <div key={field.name} className="row mb-3">
-                      <label className="col-lg-3 col-form-label" htmlFor={`id_${field.name}`}>
-                        {field.label}
-                      </label>
-                      <div className="col-lg-9">
-                        {field.type === "textarea" ? (
-                          <textarea
-                            id={`id_${field.name}`}
-                            name={field.name}
-                            className="form-control"
-                            defaultValue={field.value || ""}
-                          />
-                        ) : (
-                          <input
-                            ref={field.name === "name" ? nameInputRef : undefined}
-                            type="text"
-                            id={`id_${field.name}`}
-                            name={field.name}
-                            className="form-control"
-                            autoComplete="off"
-                            maxLength={field.maxLength || 200}
-                            required={field.required}
-                            defaultValue={field.value || ""}
-                          />
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="modal-footer">
-                  <input
-                    id="btn-action"
-                    className="btn btn-primary"
-                    type="submit"
-                    name="Go"
-                    value="Create"
-                  />
-                </div>
+            <div className="nl-head-meta">
+              <div className="nl-head-stat">
+                <span className="v">{nodes.length}</span>
+                <span className="k">nodes</span>
               </div>
+              <div className="nl-head-stat">
+                <span className="v">{totalColl}</span>
+                <span className="k">collections</span>
+              </div>
+              <div className="nl-head-stat">
+                <span className="v">{totalTodo}</span>
+                <span className="k">todos</span>
+              </div>
+              <button
+                type="button"
+                className="nl-btn primary nl-new-btn"
+                onClick={() => setNewOpen(true)}
+              >
+                <FontAwesomeIcon icon={faPlus} className="nl-btn-icon" />
+                New Node
+              </button>
             </div>
           </div>
-        </form>
+
+          <NodeToolbar
+            q={q}
+            setQ={setQ}
+            sort={sort}
+            setSort={setSort}
+            dense={dense}
+            setDense={setDense}
+            total={nodes.length}
+            showing={filtered.length}
+          />
+
+          {filtered.length === 0 ? (
+            <div className="nl-empty">
+              <div className="nl-empty-glyph">∅</div>
+              {q ? (
+                <>
+                  <h3>
+                    no nodes match <code>{q}</code>
+                  </h3>
+                  <p>try a shorter query, or clear the filter to see all nodes.</p>
+                  <button type="button" className="nl-btn ghost" onClick={() => setQ("")}>
+                    clear search
+                  </button>
+                </>
+              ) : (
+                <>
+                  <h3>no nodes in this view</h3>
+                  <p>switch to another view or clear the filter.</p>
+                  <button
+                    type="button"
+                    className="nl-btn ghost"
+                    onClick={() => setFilter({ type: "all" })}
+                  >
+                    show all nodes
+                  </button>
+                </>
+              )}
+            </div>
+          ) : (
+            <div className={`nl-groups${dense ? " dense" : ""}`}>
+              {grouped.map((g, gi) => (
+                <section key={gi} className="nl-group">
+                  {g.year !== null && (
+                    <div className="nl-year">
+                      <div className="nl-year-line" />
+                      <div className="nl-year-label">
+                        <span className="y">{g.year === "pinned" ? "pinned" : g.year}</span>
+                        <span className="c">
+                          {g.items.length} node{g.items.length === 1 ? "" : "s"}
+                        </span>
+                      </div>
+                      <div className="nl-year-line" />
+                    </div>
+                  )}
+                  <div className={`nl-grid${dense ? " dense" : ""}`}>
+                    {g.items.map(n => (
+                      <NodeCard
+                        key={n.uuid}
+                        node={n}
+                        dense={dense}
+                        detailUrl={detailUrlFor(n.uuid)}
+                      />
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          )}
+
+          <footer className="nl-footer">
+            <span className="meta">
+              // bordercore / nodes · press <kbd>N</kbd> to create, <kbd>/</kbd> to search
+            </span>
+          </footer>
+        </main>
       </div>
+
+      <NewNodeModal
+        open={newOpen}
+        onClose={() => setNewOpen(false)}
+        createUrl={createUrl}
+        csrfToken={csrfToken}
+      />
     </>
   );
 }

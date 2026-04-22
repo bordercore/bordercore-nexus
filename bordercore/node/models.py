@@ -70,6 +70,7 @@ class Node(TimeStampedModel):
     note = models.TextField(blank=True, null=True)
     todos: models.ManyToManyField = models.ManyToManyField(Todo, through="NodeTodo")
     layout = JSONField(default=default_layout, null=True, blank=True)
+    is_pinned = models.BooleanField(default=False)
 
     def __str__(self) -> str:
         """Return string representation of the node."""
