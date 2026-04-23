@@ -59,3 +59,6 @@ bordercore/static/img/favicons/*
 !bordercore/static/img/favicons/README
 bordercore/static/blobs
 bordercore/static/fonts/*zip
+
+# Superpowers brainstorming artifacts
+.superpowers/
