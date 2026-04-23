@@ -58,7 +58,7 @@ def test_node_list(node, bookmark, login, live_server, browser, settings, mock_e
     menu = page.collection_menu()
     action.move_to_element(menu).perform()
     page.dropdown_menu_container(menu).click()
-    page.menu_item(menu).click()
+    page.menu_item().click()
 
     modal = page.select_object_modal()
     time.sleep(0.5)

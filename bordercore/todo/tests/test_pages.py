@@ -26,9 +26,8 @@ def test_todo(todo, login, live_server, browser, settings):
     # There should be initially three low priority tasks visible
     assert page.todo_count() == 3
 
-    # Select 'Low' to toggle the selection and reveal all tasks
-    low_priority_filter = page.low_priority_filter()
-    low_priority_filter.click()
+    # Select 'Low' to filter down to low-priority tasks
+    page.click_low_priority_filter()
 
     # Wait for the browser to refresh after the click
     time.sleep(1)
@@ -56,5 +55,5 @@ def test_todo_no_fixtures(login, live_server, browser, settings):
     # There should be no todo tasks, just a "No tasks found" message
     assert page.todo_count() == 1
 
-    # Get the first todo task text
-    assert page.todo_no_tasks_text() == "No tasks found"
+    # The empty-state message should be displayed
+    assert page.todo_no_tasks_text() == "No tasks match your filter."

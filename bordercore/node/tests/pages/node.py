@@ -10,7 +10,7 @@ from test_page import Page
 class NodeListPage(Page):
 
     TITLE = (By.TAG_NAME, "title")
-    NODE_DETAIL_LINK = (By.CSS_SELECTOR, "a[data-name='node_0']")
+    NODE_DETAIL_LINK = (By.CSS_SELECTOR, "a.nl-card")
     COLLECTION_MENU = (By.CSS_SELECTOR, "div.hover-reveal-target")
     DROPDOWN_MENU_CONTAINER = (By.CSS_SELECTOR, "div[class*='dropdown-menu-container']")
     MENU_ITEM = (By.CSS_SELECTOR, "a[class*='dropdown-menu-item']")
@@ -53,12 +53,15 @@ class NodeListPage(Page):
 
         return self.find_element(element, self.DROPDOWN_MENU_CONTAINER)
 
-    def menu_item(self, element):
+    def menu_item(self):
         """
-        Find the "Add Object" menu item
+        Find the "Add Object" menu item.
+
+        The DropDownMenu's popover is portaled to <body>, so scope the
+        lookup at the document root rather than the triggering element.
         """
 
-        return self.find_element(element, self.MENU_ITEM, wait=True)
+        return self.find_element(self.browser, self.MENU_ITEM, wait=True)
 
     def select_object_modal(self):
         """

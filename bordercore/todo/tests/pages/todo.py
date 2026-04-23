@@ -1,5 +1,6 @@
 try:
     from selenium.webdriver.common.by import By
+    from selenium.webdriver.support.ui import Select
     import time
 except ModuleNotFoundError:
     # Don't worry if this import doesn't exist in production
@@ -9,17 +10,16 @@ except ModuleNotFoundError:
 class TodoPage:
 
     TITLE = (By.TAG_NAME, "title")
-    TODO_ELEMENTS = (By.CSS_SELECTOR, "div.todo-cards div.todo-card")
-    FIRST_TASK = (By.CSS_SELECTOR, "div.todo-card .todo-task-name")
-    NO_TASKS = (By.CSS_SELECTOR, "div#react-root .todo-empty-state")
-    SORT_DROPDOWN_TRIGGER = (By.CSS_SELECTOR, "div.todo-sort-dropdown div.dropdown-trigger")
-    PRIORITY_SORT_OPTION = (
+    TODO_ELEMENTS = (By.CSS_SELECTOR, "div.todo-list div.todo-row")
+    FIRST_TASK = (By.CSS_SELECTOR, "div.todo-row .todo-row-title > span")
+    NO_TASKS = (By.CSS_SELECTOR, "div.todo-empty")
+    SORT_SELECT = (By.CSS_SELECTOR, "select.refined-select")
+    LOW_PRIORITY_FILTER = (
         By.XPATH,
-        "//div[contains(@class,'popover-floating')]"
-        "//button[contains(@class,'dropdown-menu-item')]"
-        "[.//span[contains(@class,'dropdown-menu-text') and normalize-space()='Priority']]",
+        "//div[contains(@class,'refined-side-group')][.//h3[normalize-space()='Priority']]"
+        "//button[contains(@class,'refined-side-item')]"
+        "[.//span[contains(@class,'text') and normalize-space()='Low']]",
     )
-    LOW_PRIORITY_FILTER = (By.CSS_SELECTOR, "div[data-priority='3']")
 
     def __init__(self, browser):
         self.browser = browser
@@ -33,14 +33,14 @@ class TodoPage:
 
     def todo_count(self):
         """
-        Find all todo tasks bookmarks.
-        Returns 1 if "No tasks found" message is present, otherwise returns count of table rows.
+        Find all todo tasks.
+        Returns 1 if the empty-state message is present, otherwise returns
+        count of rendered todo rows.
         """
         todo_elements = self.browser.find_elements(*self.TODO_ELEMENTS)
         if len(todo_elements) == 0:
-            # Check if "No tasks found" message is present
             no_tasks_elements = self.browser.find_elements(*self.NO_TASKS)
-            if len(no_tasks_elements) > 0 and "No tasks found" in no_tasks_elements[0].text:
+            if len(no_tasks_elements) > 0 and no_tasks_elements[0].text.strip():
                 return 1
         return len(todo_elements)
 
@@ -53,23 +53,14 @@ class TodoPage:
 
     def todo_no_tasks_text(self):
         """
-        Find the text of the first ask
+        Find the text of the empty-state element
         """
         todo_element = self.browser.find_elements(*self.NO_TASKS)
         return todo_element[0].text
 
     def sort_by_priority(self):
-
-        # Open the sort dropdown menu
-        sort_trigger = self.browser.find_element(*self.SORT_DROPDOWN_TRIGGER)
-        sort_trigger.click()
-
-        # Wait for the popover to mount and the transition to complete
-        time.sleep(0.5)
-
-        # Click the "Priority" option in the dropdown
-        priority_option = self.browser.find_element(*self.PRIORITY_SORT_OPTION)
-        priority_option.click()
+        sort_select = Select(self.browser.find_element(*self.SORT_SELECT))
+        sort_select.select_by_value("priority")
 
         # Wait for the re-sort to apply
         time.sleep(0.5)
@@ -77,13 +68,12 @@ class TodoPage:
         todo_element = self.browser.find_elements(*self.FIRST_TASK)
         return todo_element[0].text
 
-    def low_priority_filter(self):
+    def click_low_priority_filter(self):
         """
-        Find the low priority filter element and scroll it into view to avoid click interception
+        Click the Low priority filter in the sidebar.
+
+        The sticky sidebar nav overlaps the button at its native position, so
+        drive the click through JavaScript to bypass the occluding element.
         """
-        todo_element = self.browser.find_elements(*self.LOW_PRIORITY_FILTER)
-        element = todo_element[0]
-        # Scroll into view to avoid click interception
-        self.browser.execute_script("arguments[0].scrollIntoView(true);", element)
-        time.sleep(0.5)  # Brief wait for scroll
-        return element
+        element = self.browser.find_element(*self.LOW_PRIORITY_FILTER)
+        self.browser.execute_script("arguments[0].click();", element)
