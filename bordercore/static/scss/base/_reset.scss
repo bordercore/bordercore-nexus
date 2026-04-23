@@ -53,10 +53,13 @@ body {
   pointer-events: none;
 }
 
-// Keep actual page content above the ambient background.
+// Keep actual page content above the ambient body::before background.
+// Do not add a z-index here: it creates a stacking context that traps
+// Bootstrap modals (z-index 1055) below the body-level backdrop
+// (z-index 1050). position: relative alone is enough to paint above
+// the fixed ambient pseudo-element.
 body > * {
   position: relative;
-  z-index: 1;
 }
 
 h1, h2, h3, h4, h5, h6 {
