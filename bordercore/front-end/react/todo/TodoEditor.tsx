@@ -6,7 +6,7 @@ import React, {
   useImperativeHandle,
   useCallback,
 } from "react";
-import { flushSync } from "react-dom";
+import { flushSync, createPortal } from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCalendarAlt, faTrashAlt } from "@fortawesome/free-solid-svg-icons";
 import { Modal } from "bootstrap";
@@ -209,7 +209,7 @@ export const TodoEditor = forwardRef<TodoEditorHandle, TodoEditorProps>(function
     target.style.height = target.scrollHeight + 3 + "px";
   };
 
-  return (
+  return createPortal(
     <div
       id="modalEditTodo"
       className="modal fade"
@@ -426,7 +426,8 @@ export const TodoEditor = forwardRef<TodoEditorHandle, TodoEditorProps>(function
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 });
 

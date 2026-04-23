@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import axios from "axios";
 import { Modal } from "bootstrap";
 import type { Playlist } from "./types";
@@ -120,7 +121,7 @@ export const AddToPlaylistModal = React.forwardRef<
     }
   };
 
-  return (
+  return createPortal(
     <div
       ref={modalRef}
       id="modalAddToPlaylist"
@@ -171,7 +172,8 @@ export const AddToPlaylistModal = React.forwardRef<
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 });
 

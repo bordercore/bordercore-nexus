@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Modal } from "bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus } from "@fortawesome/free-solid-svg-icons";
@@ -162,45 +163,48 @@ export function FeedPage({
       </div>
 
       {/* Delete Confirmation Modal */}
-      <div
-        ref={deleteModalRef}
-        id="modalDeleteFeed"
-        className="modal fade"
-        tabIndex={-1}
-        role="dialog"
-        aria-labelledby="myModalLabel"
-      >
-        <div className="modal-dialog" role="document">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h4 id="myModalLabel" className="modal-title">
-                Delete Feed
-              </h4>
-              <button
-                type="button"
-                className="btn-close"
-                data-bs-dismiss="modal"
-                aria-label="Close"
-              />
-            </div>
-            <div className="modal-body">
-              <div>Are you sure you want to delete this feed?</div>
-              <div className="mt-3">
-                <input
-                  id="btn-action"
-                  className="btn btn-primary"
+      {createPortal(
+        <div
+          ref={deleteModalRef}
+          id="modalDeleteFeed"
+          className="modal fade"
+          tabIndex={-1}
+          role="dialog"
+          aria-labelledby="myModalLabel"
+        >
+          <div className="modal-dialog" role="document">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h4 id="myModalLabel" className="modal-title">
+                  Delete Feed
+                </h4>
+                <button
                   type="button"
-                  value="Confirm"
-                  onClick={handleDeleteFeedConfirm}
+                  className="btn-close"
+                  data-bs-dismiss="modal"
+                  aria-label="Close"
                 />
-                <a href="#" data-bs-dismiss="modal" className="ms-3">
-                  Cancel
-                </a>
+              </div>
+              <div className="modal-body">
+                <div>Are you sure you want to delete this feed?</div>
+                <div className="mt-3">
+                  <input
+                    id="btn-action"
+                    className="btn btn-primary"
+                    type="button"
+                    value="Confirm"
+                    onClick={handleDeleteFeedConfirm}
+                  />
+                  <a href="#" data-bs-dismiss="modal" className="ms-3">
+                    Cancel
+                  </a>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        </div>,
+        document.body
+      )}
 
       {/* Feed Editor Modal */}
       <FeedEditorModal

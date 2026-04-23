@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Modal } from "bootstrap";
 import { Card } from "../common/Card";
 import { doPost } from "../utils/reactUtils";
@@ -120,29 +121,32 @@ export function ExerciseDetailPage({
   return (
     <div id="exercise-detail" className="row g-0 h-100 mx-2">
       {/* Timer Modal */}
-      <div
-        ref={timerModalRef}
-        id="modalTimer"
-        className="modal fade"
-        tabIndex={-1}
-        role="dialog"
-        aria-labelledby="myModalLabel"
-      >
-        <div className="modal-dialog modal-sm" role="document">
-          <div className="modal-content">
-            <div className="modal-body d-flex align-items-center">
-              <h4 className="mb-0">Timer done!</h4>
-              <input
-                type="button"
-                className="btn btn-primary ms-auto"
-                value="Close"
-                data-bs-dismiss="modal"
-                aria-label="Close"
-              />
+      {createPortal(
+        <div
+          ref={timerModalRef}
+          id="modalTimer"
+          className="modal fade"
+          tabIndex={-1}
+          role="dialog"
+          aria-labelledby="myModalLabel"
+        >
+          <div className="modal-dialog modal-sm" role="document">
+            <div className="modal-content">
+              <div className="modal-body d-flex align-items-center">
+                <h4 className="mb-0">Timer done!</h4>
+                <input
+                  type="button"
+                  className="btn btn-primary ms-auto"
+                  value="Close"
+                  data-bs-dismiss="modal"
+                  aria-label="Close"
+                />
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        </div>,
+        document.body
+      )}
 
       {/* Left Column */}
       <div className="col-lg-3 d-flex flex-column">

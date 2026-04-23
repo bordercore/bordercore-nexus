@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCheck, faExchangeAlt, faCalendarAlt } from "@fortawesome/free-solid-svg-icons";
 import { Modal } from "bootstrap";
@@ -189,121 +190,131 @@ export function Schedule({
   return (
     <div>
       {/* Switch Exercise Modal */}
-      <div
-        ref={switchExerciseModalRef}
-        id="modalSwitchExercise"
-        className="modal fade"
-        tabIndex={-1}
-        role="dialog"
-        aria-labelledby="myModalLabel"
-      >
-        <div className="modal-dialog" role="document">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h4 id="myModalLabel" className="modal-title">
-                Switch Exercise
-              </h4>
-              <button
-                type="button"
-                className="btn-close"
-                data-bs-dismiss="modal"
-                aria-label="Close"
-              />
-            </div>
-            <div className="modal-body">
-              <div className="mb-3 text-primary">
-                <small>
-                  Selecting an exercise from the list below will make it <em>active</em> and make
-                  the exercise <strong>{exerciseName}</strong> <em>inactive</em>.
-                </small>
+      {createPortal(
+        <div
+          ref={switchExerciseModalRef}
+          id="modalSwitchExercise"
+          className="modal fade"
+          tabIndex={-1}
+          role="dialog"
+          aria-labelledby="myModalLabel"
+        >
+          <div className="modal-dialog" role="document">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h4 id="myModalLabel" className="modal-title">
+                  Switch Exercise
+                </h4>
+                <button
+                  type="button"
+                  className="btn-close"
+                  data-bs-dismiss="modal"
+                  aria-label="Close"
+                />
               </div>
-              <table className="table table-hover">
-                <thead>
-                  <tr>
-                    <th>Exercise</th>
-                    <th>Last Active</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {relatedExercises.length === 0 ? (
+              <div className="modal-body">
+                <div className="mb-3 text-primary">
+                  <small>
+                    Selecting an exercise from the list below will make it <em>active</em> and make
+                    the exercise <strong>{exerciseName}</strong> <em>inactive</em>.
+                  </small>
+                </div>
+                <table className="table table-hover">
+                  <thead>
                     <tr>
-                      <td colSpan={2} className="text-center">
-                        No related exercises
-                      </td>
+                      <th>Exercise</th>
+                      <th>Last Active</th>
                     </tr>
-                  ) : (
-                    relatedExercises.map(exercise => (
-                      <tr
-                        key={exercise.uuid}
-                        className="cursor-pointer"
-                        onClick={() => handleSelectRelatedExercise(exercise.uuid, exercise.name)}
-                      >
-                        <td>{exercise.name}</td>
-                        <td>{exercise.last_active}</td>
+                  </thead>
+                  <tbody>
+                    {relatedExercises.length === 0 ? (
+                      <tr>
+                        <td colSpan={2} className="text-center">
+                          No related exercises
+                        </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ) : (
+                      relatedExercises.map(exercise => (
+                        <tr
+                          key={exercise.uuid}
+                          className="cursor-pointer"
+                          onClick={() => handleSelectRelatedExercise(exercise.uuid, exercise.name)}
+                        >
+                          <td>{exercise.name}</td>
+                          <td>{exercise.last_active}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        </div>,
+        document.body
+      )}
 
       {/* Change Schedule Modal */}
-      <div
-        ref={changeScheduleModalRef}
-        id="modalChangeSchedule"
-        className="modal fade"
-        tabIndex={-1}
-        role="dialog"
-        aria-labelledby="myModalLabel"
-      >
-        <div className="modal-dialog" role="document">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h4 id="myModalLabel" className="modal-title">
-                Change Exercise Schedule
-              </h4>
-              <button
-                type="button"
-                className="btn-close"
-                data-bs-dismiss="modal"
-                aria-label="Close"
-              />
-            </div>
-            <div className="modal-body">
-              <div className="d-flex">
-                <div className="text-nowrap">Workout every</div>
-                <div className="ms-3">
-                  {DAYS_OF_THE_WEEK.map((day, index) => (
-                    <div key={index} className="d-flex">
-                      <div id="fitness-schedule-d-o-t-w" className="text-info me-2">
-                        {day}
-                      </div>
-                      <div className="d-flex align-items-center">
-                        <div className="form-check form-switch">
-                          <input
-                            className="form-check-input"
-                            type="checkbox"
-                            checked={schedule[index]}
-                            onChange={() => handleScheduleToggle(index)}
-                          />
+      {createPortal(
+        <div
+          ref={changeScheduleModalRef}
+          id="modalChangeSchedule"
+          className="modal fade"
+          tabIndex={-1}
+          role="dialog"
+          aria-labelledby="myModalLabel"
+        >
+          <div className="modal-dialog" role="document">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h4 id="myModalLabel" className="modal-title">
+                  Change Exercise Schedule
+                </h4>
+                <button
+                  type="button"
+                  className="btn-close"
+                  data-bs-dismiss="modal"
+                  aria-label="Close"
+                />
+              </div>
+              <div className="modal-body">
+                <div className="d-flex">
+                  <div className="text-nowrap">Workout every</div>
+                  <div className="ms-3">
+                    {DAYS_OF_THE_WEEK.map((day, index) => (
+                      <div key={index} className="d-flex">
+                        <div id="fitness-schedule-d-o-t-w" className="text-info me-2">
+                          {day}
+                        </div>
+                        <div className="d-flex align-items-center">
+                          <div className="form-check form-switch">
+                            <input
+                              className="form-check-input"
+                              type="checkbox"
+                              checked={schedule[index]}
+                              onChange={() => handleScheduleToggle(index)}
+                            />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="ms-5 mt-2">
-                  <button type="button" className="btn btn-primary" onClick={handleScheduleChange}>
-                    Change
-                  </button>
+                    ))}
+                  </div>
+                  <div className="ms-5 mt-2">
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={handleScheduleChange}
+                    >
+                      Change
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        </div>,
+        document.body
+      )}
 
       {/* Schedule Card */}
       <div className={isActive ? "hover-target" : ""}>

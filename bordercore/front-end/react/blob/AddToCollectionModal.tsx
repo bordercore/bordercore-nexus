@@ -6,6 +6,7 @@ import React, {
   forwardRef,
   useImperativeHandle,
 } from "react";
+import { createPortal } from "react-dom";
 import { Modal } from "bootstrap";
 import { SelectValue, SelectValueHandle } from "../common/SelectValue";
 import { ToggleSwitch } from "../common/ToggleSwitch";
@@ -155,7 +156,7 @@ export const AddToCollectionModal = forwardRef<
     [handleCollectionSelect]
   );
 
-  return (
+  return createPortal(
     <div
       ref={modalRef}
       className="modal fade"
@@ -230,7 +231,8 @@ export const AddToCollectionModal = forwardRef<
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 });
 

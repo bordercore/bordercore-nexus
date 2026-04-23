@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { createPortal } from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCheck, faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
 import { getReasonPhrase, StatusCodes } from "http-status-codes";
@@ -199,7 +200,7 @@ export function FeedEditorModal({
     }
   };
 
-  return (
+  return createPortal(
     <div
       ref={modalRef}
       id="modalEditFeed"
@@ -313,7 +314,8 @@ export function FeedEditorModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useLayoutEffect } from "react";
+import { createPortal } from "react-dom";
 import { Modal } from "bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTimesCircle, faEllipsisV, faPencilAlt } from "@fortawesome/free-solid-svg-icons";
@@ -173,58 +174,61 @@ export function DrillPinnedTags({
   return (
     <>
       {/* Modal for managing pinned tags */}
-      <div ref={modalRef} id="modalNewTag" className="modal fade" tabIndex={-1} role="dialog">
-        <div className="modal-dialog" role="document">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h4 id="myModalLabel" className="modal-title">
-                Pinned Tags
-              </h4>
-              <button type="button" className="close-button btn-close" data-bs-dismiss="modal" />
-            </div>
-            <div className="modal-body">
-              <div className="form-row align-items-center">
-                <div className="form-row mx-1 w-100">
-                  <SelectValue
-                    ref={selectValueRef}
-                    searchUrl={`${tagSearchUrl}?doctype=drill&query=`}
-                    placeHolder="New Tag"
-                    onSelect={handleTagSelect}
-                  />
-                </div>
+      {createPortal(
+        <div ref={modalRef} id="modalNewTag" className="modal fade" tabIndex={-1} role="dialog">
+          <div className="modal-dialog" role="document">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h4 id="myModalLabel" className="modal-title">
+                  Pinned Tags
+                </h4>
+                <button type="button" className="close-button btn-close" data-bs-dismiss="modal" />
               </div>
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
-              >
-                <SortableContext
-                  items={tagList.map(item => item.name)}
-                  strategy={verticalListSortingStrategy}
+              <div className="modal-body">
+                <div className="form-row align-items-center">
+                  <div className="form-row mx-1 w-100">
+                    <SelectValue
+                      ref={selectValueRef}
+                      searchUrl={`${tagSearchUrl}?doctype=drill&query=`}
+                      placeHolder="New Tag"
+                      onSelect={handleTagSelect}
+                    />
+                  </div>
+                </div>
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
                 >
-                  <ul id="drill-pinned-tags" className="interior-borders p-2 mb-0 wide-list">
-                    {tagList.map((element, index) => (
-                      <SortablePinnedTag
-                        key={element.name}
-                        element={element}
-                        onDelete={handleTagDelete}
-                      />
-                    ))}
-                  </ul>
-                </SortableContext>
-              </DndContext>
-            </div>
-            <div className="modal-footer justify-content-start">
-              <input
-                className="btn btn-primary"
-                type="button"
-                value="Save"
-                data-bs-dismiss="modal"
-              />
+                  <SortableContext
+                    items={tagList.map(item => item.name)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <ul id="drill-pinned-tags" className="interior-borders p-2 mb-0 wide-list">
+                      {tagList.map((element, index) => (
+                        <SortablePinnedTag
+                          key={element.name}
+                          element={element}
+                          onDelete={handleTagDelete}
+                        />
+                      ))}
+                    </ul>
+                  </SortableContext>
+                </DndContext>
+              </div>
+              <div className="modal-footer justify-content-start">
+                <input
+                  className="btn btn-primary"
+                  type="button"
+                  value="Save"
+                  data-bs-dismiss="modal"
+                />
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        </div>,
+        document.body
+      )}
 
       {/* Card component */}
       <Card
