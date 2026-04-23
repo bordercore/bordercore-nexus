@@ -29,7 +29,7 @@ This project uses **React 18** with **TypeScript** and **Vite** as the build too
 - **State Management**: React Context API (`BaseStore`)
 - **UI Libraries**: Bootstrap 5, FontAwesome (React version)
 - **HTTP Client**: Axios
-- **Additional Libraries**: react-select, react-pro-sidebar, @tanstack/react-table, chart.js, prismjs, markdown-it, @dnd-kit
+- **Additional Libraries**: react-select, react-pro-sidebar, @tanstack/react-table, recharts, prismjs, markdown-it, @dnd-kit
 
 ## Configuration Files
 
