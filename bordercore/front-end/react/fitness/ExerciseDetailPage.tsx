@@ -32,7 +32,6 @@ interface ExerciseDetailPageProps {
     date: string;
     description: string;
     note: string;
-    deltaDays: number;
     latestWeight: number[];
     latestReps: number[];
     latestDuration: number[];
@@ -113,7 +112,6 @@ export function ExerciseDetailPage({
           />
           <LastWorkoutCard
             date={lastWorkout.date}
-            deltaDays={lastWorkout.deltaDays}
             hasWeight={exercise.hasWeight}
             hasDuration={exercise.hasDuration}
             latestWeight={lastWorkout.latestWeight}

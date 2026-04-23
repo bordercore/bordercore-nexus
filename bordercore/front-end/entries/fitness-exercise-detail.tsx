@@ -39,8 +39,6 @@ if (container) {
   const description = descriptionRaw ? JSON.parse(`"${descriptionRaw}"`) : "";
   const noteRaw = container.getAttribute("data-note") || "";
   const note = noteRaw ? JSON.parse(`"${noteRaw}"`) : "";
-  const deltaDays = parseInt(container.getAttribute("data-delta-days") || "7", 10);
-
   const latestWeight = readJson<number[]>(container, "data-latest-weight", [0]);
   const latestReps = readJson<number[]>(container, "data-latest-reps", [0]);
   const latestDuration = readJson<number[]>(container, "data-latest-duration", [0]);
@@ -71,7 +69,6 @@ if (container) {
         date: lastWorkoutDate,
         description,
         note,
-        deltaDays,
         latestWeight,
         latestReps,
         latestDuration,

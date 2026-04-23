@@ -12,7 +12,6 @@ interface SetGroup {
 
 interface LastWorkoutCardProps {
   date: string;
-  deltaDays: number;
   hasWeight: boolean;
   hasDuration: boolean;
   latestWeight: number[];
@@ -37,15 +36,33 @@ function delta(cur: number, prev?: number): { cls: string; txt: string } {
   return { cls: "flat", txt: "±0" };
 }
 
-function formatDeltaDays(days: number): string {
-  if (days <= 0) return "today";
-  if (days === 1) return "1 day ago";
-  return `${days} days ago`;
+const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+const dateFmt = new Intl.DateTimeFormat("en", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+});
+
+function formatRelative(iso: string): string {
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return "";
+  const seconds = Math.round((then - Date.now()) / 1000);
+  const abs = Math.abs(seconds);
+  if (abs < 60) return rtf.format(seconds, "second");
+  if (abs < 3600) return rtf.format(Math.round(seconds / 60), "minute");
+  if (abs < 86400) return rtf.format(Math.round(seconds / 3600), "hour");
+  if (abs < 2592000) return rtf.format(Math.round(seconds / 86400), "day");
+  if (abs < 31536000) return rtf.format(Math.round(seconds / 2592000), "month");
+  return rtf.format(Math.round(seconds / 31536000), "year");
+}
+
+function formatDisplayDate(iso: string): string {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? iso : dateFmt.format(d);
 }
 
 export function LastWorkoutCard({
   date,
-  deltaDays,
   hasWeight,
   hasDuration,
   latestWeight,
@@ -85,7 +102,9 @@ export function LastWorkoutCard({
   }
 
   const hasWorkout = groups.length > 0 && date !== "";
-  const metaText = hasWorkout ? `${date} · ${formatDeltaDays(deltaDays)}` : "none logged yet";
+  const metaText = hasWorkout
+    ? `${formatDisplayDate(date)} · ${formatRelative(date)}`
+    : "none logged yet";
 
   return (
     <div className="ex-card">

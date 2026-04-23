@@ -124,7 +124,7 @@ class Exercise(models.Model):
             "latest_reps": [x.reps or 0 for x in recent_data],
             "latest_weight": [x.weight or 0 for x in recent_data],
             "latest_duration": [x.duration or 0 for x in recent_data],
-            "delta_days": (timezone.now() - recent_data[0].date).days + 1,
+            "delta_days": (timezone.now() - recent_data[0].date).days,
         }
         return info
 

@@ -108,9 +108,8 @@ class ExerciseDetailView(LoginRequiredMixin, DetailView):
         # Last workout data for React
         recent_data = last_workout.get("recent_data", [])
         context["last_workout_date"] = (
-            recent_data[0].date.strftime("%b %d, %Y") if recent_data else ""
+            recent_data[0].date.isoformat() if recent_data else ""
         )
-        context["delta_days"] = last_workout.get("delta_days", 7)
         context["latest_weight_json"] = json.dumps(last_workout.get("latest_weight", [0]))
         context["latest_reps_json"] = json.dumps(last_workout.get("latest_reps", [0]))
         context["latest_duration_json"] = json.dumps(last_workout.get("latest_duration", [0]))
