@@ -1,32 +1,30 @@
-import React, { useState, useRef, useEffect } from "react";
-import { createPortal } from "react-dom";
-import { Modal } from "bootstrap";
-import { Card } from "../common/Card";
-import { doPost } from "../utils/reactUtils";
-import { Schedule } from "./Schedule";
-import { LastWorkout } from "./LastWorkout";
-import { WorkoutGraph } from "./WorkoutGraph";
-import { AddWorkoutForm } from "./AddWorkoutForm";
+import React, { useState } from "react";
+import { ActivityCard } from "./exercise_detail/ActivityCard";
+import { DescriptionCard } from "./exercise_detail/DescriptionCard";
+import { LastWorkoutCard } from "./exercise_detail/LastWorkoutCard";
+import { LogSetCard } from "./exercise_detail/LogSetCard";
+import { MusclesCard } from "./exercise_detail/MusclesCard";
+import { RelatedExercisesCard } from "./exercise_detail/RelatedExercisesCard";
+import { RestTimerCard } from "./exercise_detail/RestTimerCard";
+import { WorkoutChartCard } from "./exercise_detail/WorkoutChartCard";
 import type { ActivityInfo, RelatedExercise, TargetedMuscles } from "./types";
 
-function pluralize(word: string, count: number): string {
-  return count === 1 ? word : `${word}s`;
-}
-
 interface ExerciseDetailUrls {
-  changeActiveStatus: string;
-  editNote: string;
   getWorkoutData: string;
-  updateSchedule: string;
   updateRestPeriod: string;
-  addWorkout: string;
+  updateSchedule: string;
+  changeActiveStatus: string;
+  swapActiveExercise: string;
+  editNote: string;
+  logSet: string;
+  deleteSet: string;
+  summary: string;
 }
 
 interface ExerciseDetailPageProps {
   urls: ExerciseDetailUrls;
   exerciseUuid: string;
   exerciseName: string;
-  csrfToken: string;
   activityInfo: ActivityInfo;
   relatedExercises: RelatedExercise[];
   targetedMuscles: TargetedMuscles;
@@ -38,6 +36,9 @@ interface ExerciseDetailPageProps {
     latestWeight: number[];
     latestReps: number[];
     latestDuration: number[];
+    previousWeight: number[];
+    previousReps: number[];
+    previousDuration: number[];
   };
   exercise: {
     hasWeight: boolean;
@@ -45,11 +46,16 @@ interface ExerciseDetailPageProps {
   };
 }
 
+function defaultLoggedValue(values: number[]): string {
+  if (values.length === 0) return "0";
+  const last = values[values.length - 1];
+  return last === null || last === undefined ? "0" : String(last);
+}
+
 export function ExerciseDetailPage({
   urls,
   exerciseUuid,
   exerciseName,
-  csrfToken,
   activityInfo: initialActivityInfo,
   relatedExercises,
   targetedMuscles,
@@ -57,193 +63,103 @@ export function ExerciseDetailPage({
   exercise,
 }: ExerciseDetailPageProps) {
   const [activityInfo, setActivityInfo] = useState<ActivityInfo>(initialActivityInfo);
-  const [restPeriod, setRestPeriod] = useState<string>(
-    String(initialActivityInfo.rest_period || 3)
-  );
-  const [timerDisplay, setTimerDisplay] = useState<string>("");
-
-  const timerModalRef = useRef<HTMLDivElement>(null);
-  const timerModalInstanceRef = useRef<Modal | null>(null);
-  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    if (timerModalRef.current && !timerModalInstanceRef.current) {
-      timerModalInstanceRef.current = new Modal(timerModalRef.current);
-    }
-    return () => {
-      if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current);
-      }
-    };
-  }, []);
-
-  function handleChangeRestPeriod() {
-    doPost(
-      urls.updateRestPeriod,
-      {
-        uuid: exerciseUuid,
-        rest_period: restPeriod,
-      },
-      () => {},
-      "Rest period changed"
-    );
-  }
-
-  function handleStartTimer() {
-    const currentDate = new Date();
-    const timerEnd = new Date(currentDate.getTime() + Number(restPeriod) * 60000);
-
-    if (timerIntervalRef.current) {
-      clearInterval(timerIntervalRef.current);
-    }
-
-    timerIntervalRef.current = setInterval(() => {
-      const total = timerEnd.getTime() - new Date().getTime();
-      const seconds = Math.floor((total / 1000) % 60);
-      const minutes = Math.floor((total / 1000 / 60) % 60);
-
-      if (minutes < 1) {
-        setTimerDisplay(`${seconds} seconds`);
-      } else {
-        setTimerDisplay(`${minutes} ${pluralize("minute", minutes)} ${seconds} seconds`);
-      }
-
-      if (total <= 0) {
-        if (timerIntervalRef.current) {
-          clearInterval(timerIntervalRef.current);
-        }
-        setTimerDisplay("Done");
-        timerModalInstanceRef.current?.show();
-      }
-    }, 1000);
-  }
+  const isActive = activityInfo.is_active ?? false;
+  const scheduleDays = (activityInfo.schedule_days || "").toLowerCase();
+  const defaultMinutes =
+    typeof activityInfo.rest_period === "number" && activityInfo.rest_period > 0
+      ? activityInfo.rest_period
+      : 3;
 
   return (
-    <div id="exercise-detail" className="row g-0 h-100 mx-2">
-      {/* Timer Modal */}
-      {createPortal(
-        <div
-          ref={timerModalRef}
-          id="modalTimer"
-          className="modal fade"
-          tabIndex={-1}
-          role="dialog"
-          aria-labelledby="myModalLabel"
-        >
-          <div className="modal-dialog modal-sm" role="document">
-            <div className="modal-content">
-              <div className="modal-body d-flex align-items-center">
-                <h4 className="mb-0">Timer done!</h4>
-                <input
-                  type="button"
-                  className="btn btn-primary ms-auto"
-                  value="Close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
-                />
-              </div>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
-
-      {/* Left Column */}
-      <div className="col-lg-3 d-flex flex-column">
-        <div className="mb-gutter">
-          <Schedule
-            activityInfo={activityInfo}
-            relatedExercises={relatedExercises}
-            exerciseUuid={exerciseUuid}
-            exerciseName={exerciseName}
-            changeActiveStatusUrl={urls.changeActiveStatus}
-            editScheduleUrl={urls.updateSchedule}
-            onActivityInfoChange={setActivityInfo}
-          />
+    <div className="exercise-detail-app">
+      <div className="ex-page-head">
+        <div className="ex-breadcrumb">
+          <a href={urls.summary}>fitness</a>
+          <span className="sep">/</span>
+          <a href={urls.summary}>exercises</a>
+          <span className="sep">/</span>
+          <span className="leaf">{exerciseName.toLowerCase()}</span>
         </div>
-        <LastWorkout
-          date={lastWorkout.date}
-          description={lastWorkout.description}
-          exerciseUuid={exerciseUuid}
-          initialNote={lastWorkout.note}
-          duration={lastWorkout.latestDuration}
-          weight={lastWorkout.latestWeight}
-          reps={lastWorkout.latestReps}
-          interval={lastWorkout.deltaDays}
-          editNoteUrl={urls.editNote}
-        />
+        <div className="ex-title-row">
+          <h1 className="ex-title">{exerciseName}</h1>
+          {isActive && (
+            <div className="ex-status" title="active schedule">
+              <span className="pulse" />
+              <span>active</span>
+            </div>
+          )}
+          {scheduleDays && (
+            <div className="ex-title-meta">
+              <span>every {scheduleDays}</span>
+              {activityInfo.relative_date && (
+                <>
+                  <span className="dot" />
+                  <span>since {activityInfo.relative_date}</span>
+                </>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Right Column */}
-      <div className="col-lg-9 d-flex flex-column ps-gutter">
-        <WorkoutGraph getWorkoutDataUrl={urls.getWorkoutData} />
-        <div className="d-flex h-100">
-          <AddWorkoutForm
-            csrfToken={csrfToken}
-            initialWeight={String(lastWorkout.latestWeight[0] || 0)}
-            initialReps={String(lastWorkout.latestReps[0] || 0)}
-            initialDuration={String(lastWorkout.latestDuration[0] || 0)}
-            addWorkoutUrl={urls.addWorkout}
+      <div className="ex-grid">
+        <div className="ex-col">
+          <ActivityCard
+            activityInfo={activityInfo}
+            exerciseUuid={exerciseUuid}
+            updateScheduleUrl={urls.updateSchedule}
+            changeActiveStatusUrl={urls.changeActiveStatus}
+            onActivityInfoChange={setActivityInfo}
+          />
+          <LastWorkoutCard
+            date={lastWorkout.date}
+            deltaDays={lastWorkout.deltaDays}
+            hasWeight={exercise.hasWeight}
+            hasDuration={exercise.hasDuration}
+            latestWeight={lastWorkout.latestWeight}
+            latestReps={lastWorkout.latestReps}
+            latestDuration={lastWorkout.latestDuration}
+            previousWeight={lastWorkout.previousWeight}
+            previousReps={lastWorkout.previousReps}
+            previousDuration={lastWorkout.previousDuration}
+          />
+          <DescriptionCard
+            description={lastWorkout.description}
+            note={lastWorkout.note}
+            exerciseUuid={exerciseUuid}
+            editNoteUrl={urls.editNote}
+          />
+          <RestTimerCard
+            exerciseUuid={exerciseUuid}
+            defaultMinutes={defaultMinutes}
+            updateRestPeriodUrl={urls.updateRestPeriod}
+          />
+        </div>
+
+        <div className="ex-col">
+          <WorkoutChartCard
+            exerciseUuid={exerciseUuid}
+            getWorkoutDataUrl={urls.getWorkoutData}
             hasWeight={exercise.hasWeight}
             hasDuration={exercise.hasDuration}
           />
-          <div className="d-flex flex-column w-50">
-            <Card cardClassName="me-2 mb-gutter backdrop-filter" title="" id="muscles-targeted">
-              <div className="d-flex">
-                <div className="card-title text-primary">
-                  Muscles Targeted:
-                  <ul>
-                    {targetedMuscles.primary.map(muscle => (
-                      <li key={muscle}>
-                        <span className="item-name">{muscle}</span>
-                        <span className="item-value small text-muted">PRIMARY</span>
-                      </li>
-                    ))}
-                    {targetedMuscles.secondary.map(muscle => (
-                      <li key={muscle}>
-                        <span className="item-name">{muscle}</span>
-                        <span className="item-value small text-muted">SECONDARY</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </Card>
-            <Card cardClassName="backdrop-filter flex-grow-1" title="">
-              <div className="d-flex">
-                <div className="card-title text-primary">
-                  Rest between sets:
-                  <div className="d-flex align-items-center my-2">
-                    <label className="w-50">Minutes</label>
-                    <input
-                      className="form-control w-50 ms-3"
-                      type="text"
-                      size={3}
-                      value={restPeriod}
-                      onChange={e => setRestPeriod(e.target.value)}
-                      autoComplete="off"
-                    />
-                    <input
-                      className="btn btn-primary ms-3"
-                      type="button"
-                      value="Change"
-                      onClick={handleChangeRestPeriod}
-                    />
-                  </div>
-                  <div className="d-flex mt-3">
-                    <input
-                      className="btn btn-primary"
-                      type="button"
-                      value="Start Timer"
-                      onClick={handleStartTimer}
-                    />
-                    <div id="timer" className="ms-3">
-                      {timerDisplay}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </Card>
+          <LogSetCard
+            hasWeight={exercise.hasWeight}
+            hasDuration={exercise.hasDuration}
+            logSetUrl={urls.logSet}
+            deleteSetUrl={urls.deleteSet}
+            defaultWeight={defaultLoggedValue(lastWorkout.latestWeight)}
+            defaultReps={defaultLoggedValue(lastWorkout.latestReps)}
+            defaultDuration={defaultLoggedValue(lastWorkout.latestDuration)}
+          />
+          <div className="ex-row-split">
+            <MusclesCard muscles={targetedMuscles} />
+            <RelatedExercisesCard
+              related={relatedExercises}
+              exerciseUuid={exerciseUuid}
+              isActive={isActive}
+              swapActiveExerciseUrl={urls.swapActiveExercise}
+            />
           </div>
         </div>
       </div>

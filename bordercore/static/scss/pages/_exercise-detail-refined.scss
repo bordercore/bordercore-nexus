@@ -1,0 +1,1431 @@
+// =============================================================================
+// Exercise detail — "Refined Dark" redesign (page-scoped cyberpunk palette)
+// =============================================================================
+// Scoped under .exercise-detail-app so the redesigned page can coexist with
+// the legacy fitness summary and avoids leaking Space Grotesk / the bespoke
+// neon palette to other themes. Mirrors the prototype's --bc-* tokens as
+// page-local --ex-* tokens, per the precedent set by _node-refined.scss.
+// =============================================================================
+
+// stylelint-disable no-descending-specificity, color-function-notation
+
+@import "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap";
+
+.exercise-detail-app {
+  // --- Token bridge (prototype bc-* values, renamed to --ex-*) ----------------
+  --ex-accent: #b36bff;
+  --ex-accent-2: #7c7fff;
+  --ex-accent-3: #ff3dbd;
+  --ex-accent-4: #4cc2ff;
+  --ex-accent-soft: rgb(179, 107, 255, 25%);
+  --ex-bg-0: #07070c;
+  --ex-bg-1: #0b0d14;
+  --ex-bg-2: #12141c;
+  --ex-bg-3: #1a1d28;
+  --ex-bg-4: #242836;
+  --ex-fg-1: #e6e8f0;
+  --ex-fg-2: #b8bcc9;
+  --ex-fg-3: #8a8fa0;
+  --ex-fg-4: #5a5f72;
+  --ex-ok: #3fd29c;
+  --ex-danger: #f57;
+  --ex-border-1: #2a2e3d;
+  --ex-border-2: #3a3f52;
+  --ex-hairline: #1e212d;
+  --ex-radius-sm: 6px;
+  --ex-radius-md: 10px;
+  --ex-radius-lg: 14px;
+  --ex-elev-2:
+    0 1px 0 0 rgb(255, 255, 255, 3%) inset,
+    0 8px 24px -8px rgb(0, 0, 0, 55%),
+    0 0 0 1px var(--ex-border-1);
+  --ex-font-sans: "Inter", -apple-system, blinkmacsystemfont, "Segoe UI", roboto, "Helvetica Neue", arial, sans-serif;
+  --ex-font-display: "Space Grotesk", "Inter", -apple-system, "Segoe UI", sans-serif;
+  --ex-font-mono: "JetBrains Mono", ui-monospace, sfmono-regular, "SF Mono", menlo, consolas, monospace;
+  --ex-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ex-t-fast: 120ms;
+  --ex-t-base: 180ms;
+
+  position: relative;
+  z-index: 0;
+  min-height: calc(100vh - 56px);
+  padding: 28px 36px 120px;
+  margin: -1rem -1.5rem 0;
+  background: var(--ex-bg-0);
+  color: var(--ex-fg-1);
+  font-family: var(--ex-font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+
+  * { box-sizing: border-box; }
+
+  &::before {
+    position: absolute;
+    z-index: 0;
+    background:
+      radial-gradient(1400px 900px at 15% -10%, rgb(179, 107, 255, 13%), transparent 60%),
+      radial-gradient(900px 700px at 110% 30%, rgb(76, 194, 255, 8%), transparent 55%),
+      radial-gradient(600px 400px at 80% 110%, rgb(255, 61, 189, 6%), transparent 50%);
+    content: "";
+    inset: 0;
+    pointer-events: none;
+  }
+
+  > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  // --- Hero ------------------------------------------------------------------
+  .ex-page-head { margin-bottom: 22px; }
+
+  .ex-breadcrumb {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    color: var(--ex-fg-3);
+    font-family: var(--ex-font-mono);
+    font-size: 12px;
+    gap: 4px;
+
+    a {
+      color: var(--ex-fg-3);
+      text-decoration: none;
+      transition: color var(--ex-t-fast);
+    }
+
+    a:hover { color: var(--ex-accent); }
+
+    .sep {
+      margin: 0 2px;
+      color: var(--ex-fg-4);
+    }
+    .leaf { color: var(--ex-accent); }
+  }
+
+  .ex-title-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 18px;
+  }
+
+  .ex-title {
+    background: linear-gradient(100deg, #c98bff 0%, #7c7fff 50%, #4cc2ff 100%);
+    // stylelint-disable-next-line property-no-vendor-prefix
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-family: var(--ex-font-display);
+    font-size: 44px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    text-shadow: 0 0 48px rgb(179, 107, 255, 25%);
+  }
+
+  .ex-title-meta {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+    color: var(--ex-fg-4);
+    font-family: var(--ex-font-mono);
+    font-size: 11px;
+    gap: 10px;
+
+    .dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--ex-fg-4);
+    }
+  }
+
+  .ex-status {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px 6px 10px;
+    border: 1px solid rgb(63, 210, 156, 30%);
+    border-radius: 999px;
+    background: rgb(63, 210, 156, 8%);
+    box-shadow: 0 0 18px -4px rgb(63, 210, 156, 40%);
+    color: var(--ex-ok);
+    font: 600 11px/1 var(--ex-font-sans);
+    gap: 8px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+
+    .pulse {
+      position: relative;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--ex-ok);
+      box-shadow: 0 0 10px var(--ex-ok);
+    }
+
+    .pulse::after {
+      position: absolute;
+      border-radius: 50%;
+      animation: ex-pulse 1.8s ease-out infinite;
+      background: var(--ex-ok);
+      content: "";
+      inset: -3px;
+      opacity: 0.3;
+    }
+  }
+
+  @keyframes ex-pulse {
+    0% {
+      opacity: 0.45;
+      transform: scale(0.6);
+    }
+
+    100% {
+      opacity: 0;
+      transform: scale(2.2);
+    }
+  }
+
+  // --- Grid ------------------------------------------------------------------
+  .ex-grid {
+    display: grid;
+    align-items: start;
+    gap: 20px;
+    grid-template-columns: 300px 1fr;
+  }
+
+  @media (width <= 1280px) {
+    .ex-grid { grid-template-columns: 1fr; }
+  }
+
+  .ex-row-split {
+    display: grid;
+    align-items: start;
+    gap: 20px;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  @media (width <= 900px) {
+    .ex-row-split { grid-template-columns: 1fr; }
+  }
+
+  .ex-col {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  // --- Card shell ------------------------------------------------------------
+  .ex-card {
+    position: relative;
+    padding: 20px;
+    border: 1px solid var(--ex-border-1);
+    border-radius: var(--ex-radius-lg);
+    background: var(--ex-bg-2);
+    box-shadow: var(--ex-elev-2);
+
+    h3 {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 0 0 14px;
+      color: var(--ex-fg-3);
+      font-family: var(--ex-font-sans);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    // Small right-aligned hint tucked into a card h3 (e.g. "between sets",
+    // "Apr 19, 2026 · 4 days ago", "N today").
+    h3 .ex-card-hint {
+      color: var(--ex-fg-4);
+      font-family: var(--ex-font-mono);
+      font-size: 10px;
+      font-weight: 400;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+  }
+
+  .ex-card.accent {
+    border-color: rgb(179, 107, 255, 22%);
+    background:
+      linear-gradient(180deg, rgb(179, 107, 255, 6%), transparent 60%),
+      var(--ex-bg-2);
+  }
+
+  .ex-hair {
+    height: 1px;
+    margin: 14px -20px;
+    background: var(--ex-hairline);
+  }
+
+  // --- Activity card ---------------------------------------------------------
+  .ex-meta-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 13px;
+
+    .k {
+      color: var(--ex-fg-3);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .v {
+      color: var(--ex-fg-1);
+      font-family: var(--ex-font-mono);
+      font-size: 12px;
+    }
+
+    .v.accent { color: var(--ex-accent); }
+  }
+
+  .ex-schedule-label {
+    margin-bottom: 10px;
+    color: var(--ex-fg-3);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .ex-schedule {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    .dot {
+      display: grid;
+      width: 22px;
+      height: 22px;
+      padding: 0;
+      border: 1px solid var(--ex-border-1);
+      border-radius: 6px;
+      background: var(--ex-bg-1);
+      color: var(--ex-fg-4);
+      cursor: pointer;
+      font: 600 10px/1 var(--ex-font-mono);
+      place-items: center;
+      text-transform: uppercase;
+      transition:
+        background var(--ex-t-fast) var(--ex-ease-out),
+        border-color var(--ex-t-fast) var(--ex-ease-out),
+        color var(--ex-t-fast) var(--ex-ease-out),
+        box-shadow var(--ex-t-fast) var(--ex-ease-out);
+    }
+
+    .dot:hover:not(:disabled) {
+      border-color: rgb(179, 107, 255, 35%);
+      background: var(--ex-bg-3);
+      color: var(--ex-fg-2);
+    }
+
+    .dot:focus-visible {
+      border-color: var(--ex-accent);
+      box-shadow: 0 0 0 2px rgb(179, 107, 255, 35%);
+      outline: none;
+    }
+
+    .dot:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+
+    .dot.on {
+      border-color: rgb(179, 107, 255, 40%);
+      background: rgb(179, 107, 255, 14%);
+      box-shadow: 0 0 12px -3px rgb(179, 107, 255, 50%);
+      color: var(--ex-accent);
+    }
+
+    .dot.on:hover:not(:disabled) {
+      border-color: rgb(179, 107, 255, 60%);
+      background: rgb(179, 107, 255, 22%);
+      box-shadow: 0 0 16px -2px rgb(179, 107, 255, 60%);
+      color: var(--ex-accent);
+    }
+  }
+
+  .ex-next-session {
+    margin-top: 10px;
+    color: var(--ex-fg-4);
+    font-family: var(--ex-font-mono);
+    font-size: 11px;
+
+    .when { color: var(--ex-accent); }
+  }
+
+  // --- Last workout ----------------------------------------------------------
+  .ex-set-group + .ex-set-group { margin-top: 14px; }
+
+  .ex-set-group-label {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    color: var(--ex-fg-3);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+
+    .sum {
+      color: var(--ex-fg-4);
+      font-family: var(--ex-font-mono);
+      letter-spacing: 0;
+      text-transform: none;
+    }
+  }
+
+  .ex-sets {
+    display: grid;
+    gap: 8px;
+    grid-template-columns: repeat(5, 1fr);
+  }
+
+  .ex-set {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 8px 8px;
+    border: 1px solid var(--ex-border-1);
+    border-radius: var(--ex-radius-md);
+    background: var(--ex-bg-1);
+    gap: 2px;
+    transition: all 160ms var(--ex-ease-out);
+
+    &:hover {
+      border-color: rgb(179, 107, 255, 30%);
+      background: var(--ex-bg-3);
+      transform: translateY(-1px);
+    }
+
+    .num {
+      color: var(--ex-fg-1);
+      font-family: var(--ex-font-display);
+      font-size: 20px;
+      font-weight: 600;
+      line-height: 1;
+    }
+
+    .unit {
+      margin-top: 2px;
+      color: var(--ex-fg-4);
+      font: 500 9px/1 var(--ex-font-mono);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .label {
+      margin-top: 6px;
+      color: var(--ex-fg-3);
+      font: 500 10px/1 var(--ex-font-sans);
+    }
+
+    .delta {
+      margin-top: 3px;
+      font: 500 9px/1 var(--ex-font-mono);
+      letter-spacing: 0.04em;
+    }
+
+    .delta.up { color: var(--ex-ok); }
+    .delta.down { color: var(--ex-danger); }
+    .delta.flat { color: var(--ex-fg-4); }
+  }
+
+  // --- Small icon-only action buttons (card header) -------------------------
+  // Hidden until the card is hovered or something inside it has focus, so the
+  // resting state of the page is quieter. On touch / no-hover devices they
+  // stay visible so they remain reachable.
+  .ex-card-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--ex-t-base) var(--ex-ease-out);
+  }
+
+  .ex-card:hover .ex-card-actions,
+  .ex-card:focus-within .ex-card-actions {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  @media (hover: none) {
+    .ex-card-actions {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+
+  .ex-icon-btn {
+    display: grid;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--ex-fg-4);
+    cursor: pointer;
+    font-size: 11px;
+    place-items: center;
+    transition: all var(--ex-t-fast) var(--ex-ease-out);
+  }
+
+  .ex-icon-btn:hover:not(:disabled) {
+    border-color: var(--ex-border-1);
+    background: var(--ex-bg-3);
+    color: var(--ex-accent);
+  }
+
+  .ex-icon-btn:focus-visible {
+    border-color: var(--ex-accent);
+    box-shadow: 0 0 0 2px rgb(179, 107, 255, 35%);
+    outline: none;
+  }
+
+  .ex-icon-btn.active {
+    border-color: rgb(179, 107, 255, 40%);
+    background: rgb(179, 107, 255, 14%);
+    color: var(--ex-accent);
+  }
+
+  .ex-icon-btn.danger:hover:not(:disabled) {
+    border-color: rgb(255, 85, 119, 30%);
+    background: rgb(255, 85, 119, 12%);
+    color: var(--ex-danger);
+  }
+
+  .ex-icon-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  // --- Description card ------------------------------------------------------
+  .ex-no-description {
+    margin: 0;
+    color: var(--ex-fg-4);
+    font-size: 13px;
+    font-style: italic;
+  }
+
+  // Inactive-schedule nudge shown above the day pills when the exercise has
+  // no ExerciseUser row. Leaves a little breathing room before the pills.
+  .ex-activity-inactive {
+    margin: 0 0 14px;
+    color: var(--ex-fg-4);
+    font-size: 13px;
+    font-style: italic;
+  }
+
+  .ex-description {
+    margin: 0;
+    color: var(--ex-fg-2);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .ex-note-editor {
+    display: block;
+    width: 100%;
+    min-height: 88px;
+    padding: 12px 14px;
+    border: 1px solid var(--ex-border-1);
+    border-radius: var(--ex-radius-md);
+    border-left: 2px solid var(--ex-accent);
+    margin-top: 10px;
+    background: var(--ex-bg-1);
+    color: var(--ex-fg-1);
+    font-family: var(--ex-font-mono);
+    font-size: 13px;
+    line-height: 1.55;
+    outline: none;
+    resize: vertical;
+    transition: all var(--ex-t-fast);
+  }
+
+  .ex-note-editor:focus {
+    border-color: var(--ex-accent);
+    box-shadow: 0 0 0 2px rgb(179, 107, 255, 20%);
+  }
+
+  .ex-note {
+    position: relative;
+    padding: 12px 14px;
+    border: 1px solid var(--ex-border-1);
+    border-radius: var(--ex-radius-md);
+    border-left: 2px solid var(--ex-accent);
+    margin-top: 10px;
+    background: var(--ex-bg-1);
+    color: var(--ex-fg-2);
+    font-size: 13px;
+    line-height: 1.55;
+
+    &::before {
+      position: absolute;
+      top: -8px;
+      left: 10px;
+      padding: 0 6px;
+      background: var(--ex-bg-2);
+      color: var(--ex-fg-4);
+      content: "// coach";
+      font-family: var(--ex-font-mono);
+      font-size: 10px;
+    }
+
+    // Markdown prose inside the coach note. Kept compact: the container is a
+    // small card so headings/paragraphs share the body font-size and tight
+    // vertical rhythm.
+    &.ex-note-md {
+      p,
+      ul,
+      ol,
+      pre,
+      blockquote {
+        margin: 0 0 8px;
+      }
+
+      p:last-child,
+      ul:last-child,
+      ol:last-child,
+      pre:last-child,
+      blockquote:last-child {
+        margin-bottom: 0;
+      }
+
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
+        margin: 0 0 6px;
+        color: var(--ex-fg-1);
+        font-family: var(--ex-font-display);
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0;
+        text-transform: none;
+      }
+
+      strong {
+        color: var(--ex-accent-3);
+        font-weight: 600;
+      }
+
+      em {
+        color: var(--ex-fg-1);
+        font-style: italic;
+      }
+
+      a {
+        color: var(--ex-accent);
+        text-decoration: underline;
+        text-decoration-color: rgb(179, 107, 255, 35%);
+        text-underline-offset: 2px;
+        transition: color var(--ex-t-fast);
+      }
+
+      a:hover { color: var(--ex-accent-hover, #c98bff); }
+
+      code {
+        padding: 1px 6px;
+        border-radius: var(--ex-radius-xs, 4px);
+        background: var(--ex-bg-3);
+        color: var(--ex-accent-2);
+        font-family: var(--ex-font-mono);
+        font-size: 12px;
+      }
+
+      pre {
+        padding: 10px 12px;
+        border: 1px solid var(--ex-border-1);
+        border-radius: var(--ex-radius-sm);
+        background: var(--ex-bg-2);
+        overflow-x: auto;
+      }
+
+      pre code {
+        padding: 0;
+        background: transparent;
+        color: var(--ex-fg-1);
+      }
+
+      ul,
+      ol { padding-left: 20px; }
+      li { margin: 0 0 2px; }
+
+      blockquote {
+        padding: 2px 10px;
+        border-left: 2px solid var(--ex-border-2);
+        color: var(--ex-fg-3);
+      }
+
+      hr {
+        height: 1px;
+        border: 0;
+        margin: 10px 0;
+        background: var(--ex-hairline);
+      }
+    }
+  }
+
+  // --- Rest timer ------------------------------------------------------------
+  .ex-timer-ring {
+    --size: 170px;
+
+    position: relative;
+    width: var(--size);
+    height: var(--size);
+    margin: 6px auto 12px;
+
+    svg {
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
+
+    .track {
+      fill: none;
+      stroke: var(--ex-bg-3);
+      stroke-width: 6;
+    }
+
+    .prog {
+      fill: none;
+      stroke: url("#ex-timer-grad");
+      stroke-linecap: round;
+      stroke-width: 6;
+      transition: stroke-dashoffset 250ms linear;
+    }
+
+    .center {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      inset: 0;
+    }
+
+    .time {
+      color: var(--ex-fg-1);
+      font-family: var(--ex-font-display);
+      font-size: 38px;
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    .label {
+      color: var(--ex-fg-4);
+      font: 500 10px/1 var(--ex-font-mono);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    &.running .time {
+      color: var(--ex-accent);
+      text-shadow: 0 0 20px rgb(179, 107, 255, 50%);
+    }
+
+    &.done .prog {
+      animation: ex-timer-done 800ms ease-out;
+      stroke: var(--ex-ok);
+    }
+  }
+
+  @keyframes ex-timer-done {
+    0% { filter: drop-shadow(0 0 12px var(--ex-ok)); }
+    100% { filter: none; }
+  }
+
+  .ex-timer-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 4px;
+    gap: 8px;
+  }
+
+  .ex-timer-set {
+    display: flex;
+    align-items: center;
+    padding-top: 12px;
+    border-top: 1px dashed var(--ex-hairline);
+    margin-top: 12px;
+    color: var(--ex-fg-3);
+    font: 500 11px/1 var(--ex-font-sans);
+    gap: 6px;
+
+    input {
+      width: 46px;
+      padding: 5px 8px;
+      border: 1px solid var(--ex-border-1);
+      border-radius: 5px;
+      background: var(--ex-bg-1);
+      color: var(--ex-fg-1);
+      font: 500 12px/1 var(--ex-font-mono);
+      text-align: center;
+    }
+
+    input:focus {
+      border-color: var(--ex-accent);
+      box-shadow: 0 0 0 2px rgb(179, 107, 255, 20%);
+      outline: none;
+    }
+
+    .stepper {
+      display: inline-flex;
+      margin-left: auto;
+      gap: 2px;
+
+      button {
+        display: grid;
+        width: 22px;
+        height: 22px;
+        border: 1px solid var(--ex-border-1);
+        border-radius: 4px;
+        background: var(--ex-bg-1);
+        color: var(--ex-fg-3);
+        cursor: pointer;
+        place-items: center;
+      }
+
+      button:hover {
+        background: var(--ex-bg-3);
+        color: var(--ex-accent);
+      }
+    }
+  }
+
+  // --- Workout chart card ----------------------------------------------------
+  .ex-chart-card {
+    display: flex;
+    min-height: 460px;
+    flex-direction: column;
+  }
+
+  .ex-chart-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+    gap: 14px;
+  }
+
+  .ex-chart-title {
+    display: flex;
+    align-items: center;
+    color: var(--ex-fg-1);
+    font-family: var(--ex-font-display);
+    font-size: 16px;
+    font-weight: 600;
+    gap: 10px;
+
+    .spark {
+      color: var(--ex-fg-4);
+      font-family: var(--ex-font-mono);
+      font-size: 11px;
+      font-weight: 400;
+    }
+  }
+
+  .ex-seg {
+    display: inline-flex;
+    padding: 3px;
+    border: 1px solid var(--ex-border-1);
+    border-radius: 8px;
+    background: var(--ex-bg-1);
+    gap: 2px;
+
+    button {
+      display: flex;
+      align-items: center;
+      padding: 6px 12px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--ex-fg-3);
+      cursor: pointer;
+      font: 500 12px/1 var(--ex-font-sans);
+      gap: 6px;
+      transition: all var(--ex-t-fast);
+    }
+
+    button:hover { color: var(--ex-fg-1); }
+
+    button.active {
+      background: rgb(179, 107, 255, 14%);
+      box-shadow: 0 0 10px -2px rgb(179, 107, 255, 50%);
+      color: var(--ex-accent);
+    }
+
+    button .badge {
+      color: var(--ex-fg-4);
+      font-family: var(--ex-font-mono);
+      font-size: 10px;
+    }
+
+    button.active .badge {
+      color: var(--ex-accent);
+      opacity: 0.75;
+    }
+  }
+
+  .ex-chart-body {
+    position: relative;
+    min-height: 320px;
+    flex: 1;
+    margin-top: 14px;
+  }
+
+  // Loading / empty state placeholder inside the chart body
+  .ex-chart-state {
+    display: grid;
+    height: 100%;
+    color: var(--ex-fg-4);
+    font-family: var(--ex-font-mono);
+    font-size: 11px;
+    place-items: center;
+  }
+
+  // Custom tooltip rendered inside the Recharts surface. Kept visually
+  // consistent with the card palette.
+  .ex-chart-tooltip {
+    padding: 8px 10px;
+    border: 1px solid var(--ex-border-2);
+    border-radius: 8px;
+    background: var(--ex-bg-3);
+    box-shadow: 0 8px 24px -8px rgb(0, 0, 0, 60%);
+    color: var(--ex-fg-1);
+    font-family: var(--ex-font-mono);
+    font-size: 11px;
+
+    .label {
+      margin-bottom: 4px;
+      color: var(--ex-fg-3);
+    }
+
+    .entry {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .swatch {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+    }
+
+    .key {
+      color: var(--ex-fg-3);
+    }
+
+    .value {
+      margin-left: auto;
+      font-weight: 600;
+    }
+
+    .unit {
+      margin-left: 2px;
+      color: var(--ex-fg-4);
+    }
+
+    .note {
+      margin-top: 6px;
+      color: var(--ex-fg-3);
+      font-family: var(--ex-font-sans);
+    }
+  }
+
+  .ex-chart-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 14px;
+    color: var(--ex-fg-4);
+    font-family: var(--ex-font-mono);
+    font-size: 11px;
+    gap: 14px;
+  }
+
+  .ex-chart-note {
+    display: flex;
+    align-items: center;
+    color: var(--ex-fg-3);
+    font-family: var(--ex-font-sans);
+    font-size: 12px;
+    gap: 8px;
+
+    &::before {
+      color: var(--ex-fg-4);
+      content: "//";
+      font-family: var(--ex-font-mono);
+    }
+  }
+
+  .ex-pager {
+    display: inline-flex;
+    gap: 2px;
+
+    button {
+      display: grid;
+      width: 26px;
+      height: 24px;
+      border: 1px solid var(--ex-border-1);
+      border-radius: 5px;
+      background: var(--ex-bg-1);
+      color: var(--ex-fg-3);
+      cursor: pointer;
+      font-family: var(--ex-font-mono);
+      font-size: 11px;
+      place-items: center;
+      transition: all var(--ex-t-fast);
+    }
+
+    button:first-child {
+      border-bottom-right-radius: 0;
+      border-top-right-radius: 0;
+    }
+
+    button:last-child {
+      border-left: 0;
+      border-bottom-left-radius: 0;
+      border-top-left-radius: 0;
+    }
+
+    button:hover:not(:disabled) {
+      background: var(--ex-bg-3);
+      color: var(--ex-accent);
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.4;
+    }
+  }
+
+  // --- Stats strip -----------------------------------------------------------
+  .ex-stats {
+    display: grid;
+    overflow: hidden;
+    border: 1px solid var(--ex-border-1);
+    border-radius: var(--ex-radius-md);
+    background: var(--ex-bg-1);
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .ex-stat {
+    padding: 12px 14px;
+    border-right: 1px solid var(--ex-hairline);
+
+    &:last-child { border-right: 0; }
+
+    .k {
+      color: var(--ex-fg-3);
+      font: 500 10px/1 var(--ex-font-sans);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .v {
+      display: flex;
+      align-items: baseline;
+      margin-top: 4px;
+      color: var(--ex-fg-1);
+      font-family: var(--ex-font-display);
+      font-size: 20px;
+      font-weight: 600;
+      gap: 4px;
+
+      .u {
+        color: var(--ex-fg-4);
+        font-family: var(--ex-font-mono);
+        font-size: 11px;
+        font-weight: 400;
+      }
+    }
+
+    .d {
+      margin-top: 4px;
+      font: 500 10px/1 var(--ex-font-mono);
+    }
+
+    .d.up { color: var(--ex-ok); }
+    .d.down { color: var(--ex-danger); }
+  }
+
+  // --- Log set composer ------------------------------------------------------
+  .ex-composer {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    .row {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--ex-fg-3);
+      font: 500 10px/1 var(--ex-font-sans);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--ex-border-1);
+      border-radius: 8px;
+      background: var(--ex-bg-1);
+      color: var(--ex-fg-1);
+      font: 500 14px/1.2 var(--ex-font-mono);
+      outline: none;
+      transition: all var(--ex-t-fast);
+    }
+
+    textarea {
+      min-height: 52px;
+      font-family: var(--ex-font-sans);
+      font-size: 13px;
+      resize: vertical;
+    }
+
+    input:focus,
+    textarea:focus {
+      border-color: var(--ex-accent);
+      box-shadow: 0 0 0 2px rgb(179, 107, 255, 20%);
+    }
+
+    .hint {
+      color: var(--ex-fg-4);
+      font-family: var(--ex-font-mono);
+      font-size: 11px;
+    }
+
+    .submit-row {
+      display: flex;
+      align-items: center;
+      margin-top: 6px;
+      gap: 10px;
+    }
+
+    .submit-row .hint { margin-right: auto; }
+  }
+
+  // --- Log table -------------------------------------------------------------
+  .ex-log-table {
+    overflow: hidden;
+    border: 1px solid var(--ex-border-1);
+    border-radius: var(--ex-radius-md);
+    margin-top: 14px;
+    background: var(--ex-bg-1);
+  }
+
+  .ex-log-head {
+    display: grid;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--ex-hairline);
+    background: var(--ex-bg-2);
+    color: var(--ex-fg-4);
+    font: 600 10px/1 var(--ex-font-sans);
+    gap: 10px;
+    grid-template-columns: 40px 1fr 1fr 28px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .ex-log-empty {
+    padding: 22px 14px;
+    color: var(--ex-fg-4);
+    font: 400 12px/1.4 var(--ex-font-mono);
+    text-align: center;
+  }
+
+  .ex-log {
+    display: flex;
+    max-height: 180px;
+    flex-direction: column;
+    overflow-y: auto;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      border-radius: 3px;
+      background: var(--ex-border-1);
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+      background: var(--ex-border-2);
+    }
+  }
+
+  .ex-log-row {
+    display: grid;
+    align-items: center;
+    padding: 9px 12px;
+    border-top: 1px solid var(--ex-hairline);
+    color: var(--ex-fg-2);
+    font-family: var(--ex-font-mono);
+    font-size: 12px;
+    gap: 10px;
+    grid-template-columns: 40px 1fr 1fr 28px;
+    transition: background var(--ex-t-fast);
+
+    &:first-child { border-top: 0; }
+    &:hover { background: var(--ex-bg-2); }
+    &.new { animation: ex-flash 1.2s ease-out; }
+
+    .n {
+      color: var(--ex-fg-4);
+      font-size: 11px;
+    }
+
+    .w {
+      color: var(--ex-accent);
+      font-weight: 600;
+
+      .u {
+        margin-left: 2px;
+        color: var(--ex-fg-4);
+        font-size: 10px;
+        font-weight: 400;
+      }
+    }
+
+    .r {
+      color: var(--ex-accent-4);
+      font-weight: 600;
+    }
+  }
+
+  .ex-log-x {
+    display: grid;
+    width: 22px;
+    height: 22px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--ex-fg-4);
+    cursor: pointer;
+    font-size: 14px;
+    place-items: center;
+
+    &:hover {
+      background: rgb(255, 85, 119, 12%);
+      color: var(--ex-danger);
+    }
+  }
+
+  @keyframes ex-flash {
+    0% { background: rgb(179, 107, 255, 25%); }
+    100% { background: transparent; }
+  }
+
+  // --- Muscles card ----------------------------------------------------------
+  .ex-muscle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--ex-hairline);
+
+    &:last-child { border-bottom: 0; }
+
+    .name {
+      color: var(--ex-fg-1);
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .tag {
+      padding: 3px 7px;
+      border-radius: 4px;
+      font: 700 9px/1 var(--ex-font-mono);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .tag.primary {
+      border: 1px solid rgb(179, 107, 255, 35%);
+      background: rgb(179, 107, 255, 16%);
+      color: var(--ex-accent);
+    }
+
+    .tag.secondary {
+      border: 1px solid var(--ex-border-1);
+      background: var(--ex-bg-3);
+      color: var(--ex-fg-3);
+    }
+  }
+
+  // --- Related exercises card ------------------------------------------------
+  .ex-related {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    a {
+      display: flex;
+      align-items: center;
+      padding: 10px 12px;
+      border: 1px solid var(--ex-border-1);
+      border-radius: var(--ex-radius-md);
+      background: var(--ex-bg-1);
+      color: var(--ex-fg-2);
+      gap: 12px;
+      text-decoration: none;
+      transition: all var(--ex-t-fast) var(--ex-ease-out);
+    }
+
+    a:hover {
+      border-color: rgb(179, 107, 255, 30%);
+      background: var(--ex-bg-3);
+      color: var(--ex-fg-1);
+      transform: translateX(2px);
+    }
+
+    .mini {
+      display: grid;
+      width: 36px;
+      height: 26px;
+      flex-shrink: 0;
+      border-radius: 5px;
+      background: var(--ex-bg-3);
+      place-items: center;
+
+      svg {
+        width: 100%;
+        height: 100%;
+      }
+    }
+
+    .info {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .name {
+      color: var(--ex-fg-1);
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .when {
+      margin-top: 2px;
+      color: var(--ex-fg-4);
+      font-family: var(--ex-font-mono);
+      font-size: 10px;
+    }
+
+    // Row-level swap action: hidden until the row is hovered/focused so the
+    // rail reads as a calm list; pops to the accent color on hover.
+    .ex-related-swap {
+      width: 24px;
+      height: 24px;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    a:hover .ex-related-swap,
+    a:focus-within .ex-related-swap,
+    .ex-related-swap:disabled {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    a.is-busy {
+      opacity: 0.7;
+      pointer-events: none;
+    }
+
+    .arrow {
+      color: var(--ex-fg-4);
+      font-family: var(--ex-font-mono);
+    }
+  }
+
+  // --- Buttons ---------------------------------------------------------------
+  .ex-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 9px 14px;
+    border: 1px solid var(--ex-border-1);
+    border-radius: 8px;
+    background: var(--ex-bg-3);
+    color: var(--ex-fg-1);
+    cursor: pointer;
+    font: 600 12px/1 var(--ex-font-sans);
+    gap: 8px;
+    letter-spacing: 0.02em;
+    transition: all var(--ex-t-fast) var(--ex-ease-out);
+
+    &:hover {
+      border-color: var(--ex-border-2);
+      background: var(--ex-bg-4);
+    }
+
+    &:focus-visible {
+      border-color: var(--ex-accent);
+      box-shadow: 0 0 0 2px rgb(179, 107, 255, 35%);
+      outline: none;
+    }
+
+    &.primary {
+      border-color: rgb(255, 255, 255, 15%);
+      background: linear-gradient(180deg, #b36bff, #9355ef);
+      box-shadow:
+        0 0 0 1px rgb(179, 107, 255, 30%),
+        0 0 20px -4px rgb(179, 107, 255, 60%);
+      color: #fff;
+    }
+
+    &.primary:hover { filter: brightness(1.08); }
+    &.primary:active { transform: translateY(1px); }
+
+    &.ghost {
+      background: transparent;
+    }
+
+    &.ghost:hover { background: var(--ex-bg-2); }
+
+    &.sm {
+      padding: 6px 10px;
+      font-size: 11px;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
+    .icon {
+      font-family: var(--ex-font-mono);
+      font-size: 11px;
+      opacity: 0.75;
+    }
+  }
+}

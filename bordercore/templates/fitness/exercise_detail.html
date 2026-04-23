@@ -3,29 +3,19 @@
 
 {% block title %}{{ object.name }}{% endblock %}
 
-{% block nav %}
-    <div class="d-flex mb-3">
-        <div class="me-auto align-self-center">
-            <ul class="breadcrumb mb-0 pt-0 pb-0">
-                <li class="breadcrumb-item">
-                    <a href="{% url 'fitness:summary' %}">Exercises</a>
-                </li>
-                <li class="breadcrumb-item active">
-                    {{ object.name }}
-                </li>
-            </ul>
-        </div>
-    </div>
-{% endblock %}
+{% block nav %}{% endblock %}
 
 {% block content %}
     <div id="react-root"
+        data-fitness-summary-url="{% url 'fitness:summary' %}"
         data-change-active-status-url="{% url 'fitness:change_active_status' %}"
+        data-swap-active-exercise-url="{% url 'fitness:swap_active_exercise' %}"
         data-edit-note-url="{% url 'fitness:edit_note' %}"
         data-get-workout-data-url="{% url 'fitness:get_workout_data' %}?uuid={{ object.uuid }}&page_number="
         data-update-schedule-url="{% url 'fitness:update_schedule' %}"
         data-update-rest-period-url="{% url 'fitness:update_rest_period' %}"
-        data-add-workout-url="{% url 'fitness:add' object.uuid %}"
+        data-log-set-url="{% url 'fitness:log_set' object.uuid %}"
+        data-delete-set-url="{% url 'fitness:delete_set' %}"
         data-exercise-uuid="{{ object.uuid }}"
         data-exercise-name="{{ object.name }}"
         data-has-weight="{{ object.has_weight|yesno:'true,false' }}"
@@ -35,12 +25,15 @@
         data-related-exercises="{{ related_exercises_json }}"
         data-targeted-muscles="{{ targeted_muscles_json }}"
         data-last-workout-date="{{ last_workout_date }}"
-        data-description="{{ object.description|default:'No description'|escapejs }}"
+        data-description="{{ object.description|escapejs }}"
         data-note="{{ object.note|escapejs }}"
         data-delta-days="{{ delta_days|default:7 }}"
         data-latest-weight="{{ latest_weight_json }}"
         data-latest-reps="{{ latest_reps_json }}"
         data-latest-duration="{{ latest_duration_json }}"
+        data-previous-weight="{{ previous_weight_json }}"
+        data-previous-reps="{{ previous_reps_json }}"
+        data-previous-duration="{{ previous_duration_json }}"
     ></div>
 {% endblock %}
 

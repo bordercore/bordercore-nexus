@@ -17,13 +17,27 @@ export interface ActivityInfo {
   started?: string;
   relative_date?: string;
   schedule: boolean[];
-  rest_period?: number;
+  rest_period?: number | null;
+  frequency?: number;
+  schedule_days?: string;
+  is_active?: boolean;
+}
+
+export interface LoggedSet {
+  id: number;
+  weight: number;
+  reps: number;
+  duration: number;
+  note?: string;
+  index: number;
+  new?: boolean;
 }
 
 export interface RelatedExercise {
   uuid: string;
   name: string;
   last_active: string;
+  exercise_url?: string;
 }
 
 export interface Paginator {

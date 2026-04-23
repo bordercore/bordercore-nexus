@@ -15,9 +15,24 @@ urlpatterns = [
         name="add"
     ),
     path(
+        route="log_set/<uuid:exercise_uuid>/",
+        view=views.log_set,
+        name="log_set"
+    ),
+    path(
+        route="delete_set/",
+        view=views.delete_set,
+        name="delete_set"
+    ),
+    path(
         route="change_active_status/",
         view=views.change_active_status,
         name="change_active_status"
+    ),
+    path(
+        route="swap_active_exercise/",
+        view=views.swap_active_exercise,
+        name="swap_active_exercise"
     ),
     path(
         route="<uuid:uuid>/",

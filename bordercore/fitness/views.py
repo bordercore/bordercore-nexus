@@ -20,6 +20,8 @@ from django.contrib.auth.models import User
 from django.db import transaction
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.utils import timezone
 
 from lib.mixins import get_user_object_or_404
 from django.views.decorators.http import require_POST
@@ -68,6 +70,7 @@ class ExerciseDetailView(LoginRequiredMixin, DetailView):
                 "uuid": str(x.uuid),
                 "name": x.name,
                 "last_active": x.last_active.strftime("%Y-%m-%d") if x.last_active else "Never",
+                "exercise_url": reverse("fitness:exercise_detail", args=[x.uuid]),
             }
             for x in self.object.get_related_exercises()
         ]
@@ -78,7 +81,17 @@ class ExerciseDetailView(LoginRequiredMixin, DetailView):
             exercise__id=self.object.id,
         ).first()
 
-        activity_info = active.activity_info() if active else {"schedule": [False] * 7}
+        if active:
+            activity_info = active.activity_info()
+            activity_info["rest_period"] = active.rest_period
+            activity_info["schedule_days"] = ExerciseUser.schedule_days(active.schedule)
+            activity_info["is_active"] = True
+        else:
+            activity_info = {
+                "schedule": [False] * 7,
+                "schedule_days": "",
+                "is_active": False,
+            }
 
         # Get targeted muscles (convert Muscle objects to strings)
         targeted_muscles_raw = self.object.get_targeted_muscles()
@@ -102,6 +115,26 @@ class ExerciseDetailView(LoginRequiredMixin, DetailView):
         context["latest_reps_json"] = json.dumps(last_workout.get("latest_reps", [0]))
         context["latest_duration_json"] = json.dumps(last_workout.get("latest_duration", [0]))
 
+        # Previous workout data for delta computation on the Last Workout card.
+        recent_workout_ids = list(
+            Workout.objects.filter(user=user, exercise=self.object)
+            .order_by("-date")
+            .values_list("pk", flat=True)[:2]
+        )
+        prev_weight: list[float] = []
+        prev_reps: list[int] = []
+        prev_duration: list[int] = []
+        if len(recent_workout_ids) >= 2:
+            prev_data = list(
+                Data.objects.filter(workout_id=recent_workout_ids[1]).order_by("id")
+            )
+            prev_weight = [d.weight or 0 for d in prev_data]
+            prev_reps = [d.reps or 0 for d in prev_data]
+            prev_duration = [d.duration or 0 for d in prev_data]
+        context["previous_weight_json"] = json.dumps(prev_weight)
+        context["previous_reps_json"] = json.dumps(prev_reps)
+        context["previous_duration_json"] = json.dumps(prev_duration)
+
         # Merge and return final context.
         return {
             **context,
@@ -109,6 +142,121 @@ class ExerciseDetailView(LoginRequiredMixin, DetailView):
             "title": f"Exercise Detail :: {self.object.name}",
             "related_exercises": related_exercises,
         }
+
+
+@api_view(["POST"])
+@validate_post_data("reps")
+def log_set(request: HttpRequest, exercise_uuid: str) -> Response:
+    """Create a single :class:`Data` row against today's :class:`Workout`.
+
+    Gets or creates the :class:`Workout` for (user, exercise) dated today
+    (in the server's local timezone), then appends one set. Supports the
+    per-set "log set" composer in the redesigned exercise detail page.
+
+    Expects a POST with:
+        - ``reps`` (required): integer string.
+        - ``weight`` (optional): numeric string; stored as 0 when omitted.
+        - ``duration`` (optional): integer string; stored as 0 when omitted.
+        - ``note`` (optional): appended to the Workout's note on first set.
+
+    Args:
+        request: The HTTP request object.
+        exercise_uuid: The UUID of the :class:`Exercise` being logged.
+
+    Returns:
+        JSON response with the newly created set (``id``, ``weight``,
+        ``reps``, ``duration``, ``index``).
+    """
+    exercise = get_object_or_404(Exercise, uuid=exercise_uuid)
+    user = cast(User, request.user)
+
+    try:
+        reps = int(request.POST["reps"])
+    except (TypeError, ValueError):
+        return Response({"detail": "reps must be an integer"}, status=400)
+
+    try:
+        weight = float(request.POST.get("weight") or 0)
+    except (TypeError, ValueError):
+        return Response({"detail": "weight must be numeric"}, status=400)
+
+    try:
+        duration = int(request.POST.get("duration") or 0)
+    except (TypeError, ValueError):
+        return Response({"detail": "duration must be an integer"}, status=400)
+
+    today_local = timezone.localdate()
+    note = request.POST.get("note", "")
+
+    with transaction.atomic():
+        workout = (
+            Workout.objects.filter(
+                user=user, exercise=exercise, date__date=today_local
+            )
+            .order_by("-date")
+            .first()
+        )
+        if workout is None:
+            workout = Workout.objects.create(user=user, exercise=exercise, note=note)
+        elif note and not workout.note:
+            workout.note = note
+            workout.save(update_fields=["note"])
+
+        datum = Data.objects.create(
+            workout=workout,
+            weight=weight,
+            reps=reps,
+            duration=duration,
+        )
+        index = workout.data_set.count()
+
+    return Response({
+        "set": {
+            "id": datum.id,
+            "weight": datum.weight,
+            "reps": datum.reps,
+            "duration": datum.duration,
+            "index": index,
+        }
+    })
+
+
+@api_view(["POST"])
+@validate_post_data("id")
+def delete_set(request: HttpRequest) -> Response:
+    """Delete a single :class:`Data` row owned by the requesting user.
+
+    If the parent :class:`Workout` has no remaining sets after the deletion,
+    the Workout is also deleted.
+
+    Expects a POST with:
+        - ``id`` (required): Data row primary key.
+
+    Args:
+        request: The HTTP request object.
+
+    Returns:
+        JSON response with a ``workout_deleted`` flag indicating whether the
+        parent Workout was also removed.
+    """
+    user = cast(User, request.user)
+
+    try:
+        set_id = int(request.POST["id"])
+    except (TypeError, ValueError):
+        return Response({"detail": "id must be an integer"}, status=400)
+
+    datum = get_object_or_404(Data, pk=set_id, workout__user=user)
+
+    with transaction.atomic():
+        workout = datum.workout
+        datum.delete()
+        workout_deleted = False
+        if not workout.data_set.exists():
+            workout.delete()
+            workout_deleted = True
+
+    return Response({"workout_deleted": workout_deleted})
 
 
 @login_required
@@ -257,6 +405,63 @@ def change_active_status(request: HttpRequest) -> Response:
 
 
 @api_view(["POST"])
+@validate_post_data("from_uuid", "to_uuid")
+def swap_active_exercise(request: HttpRequest) -> Response:
+    """Swap which exercise in a muscle group is on the user's active list.
+
+    Rotates the active slot from ``from_uuid`` to ``to_uuid`` atomically:
+    the source :class:`ExerciseUser` is deleted and a new one is created
+    for the target exercise. The source exercise's schedule and rest period
+    are carried over so the user keeps the same cadence on the replacement.
+
+    Expects a POST with:
+        - ``from_uuid``: UUID of the currently-active exercise to step off.
+        - ``to_uuid``: UUID of the replacement exercise to activate.
+
+    Args:
+        request: The HTTP request object.
+
+    Returns:
+        JSON response with ``info`` (activity_info for the newly-active
+        exercise) and ``to_url`` (the detail-page URL to navigate to).
+    """
+    from_uuid = request.POST["from_uuid"]
+    to_uuid = request.POST["to_uuid"]
+
+    user = cast(User, request.user)
+
+    from_exercise = get_object_or_404(Exercise, uuid=from_uuid)
+    to_exercise = get_object_or_404(Exercise, uuid=to_uuid)
+    from_eu = get_user_object_or_404(user, ExerciseUser, exercise=from_exercise)
+
+    carried_schedule = list(from_eu.schedule) if from_eu.schedule else [False] * 7
+    carried_rest_period = from_eu.rest_period
+
+    with transaction.atomic():
+        from_eu.delete()
+        to_eu, _ = ExerciseUser.objects.get_or_create(
+            user=user,
+            exercise=to_exercise,
+            defaults={
+                "schedule": carried_schedule,
+                "rest_period": carried_rest_period,
+            },
+        )
+        # On collision (to_exercise was already active), keep its existing
+        # values — don't overwrite the user's intent there.
+
+    info = to_eu.activity_info()
+    info["rest_period"] = to_eu.rest_period
+    info["schedule_days"] = ExerciseUser.schedule_days(to_eu.schedule)
+    info["is_active"] = True
+
+    return Response({
+        "info": info,
+        "to_url": reverse("fitness:exercise_detail", args=[to_exercise.uuid]),
+    })
+
+
+@api_view(["POST"])
 @validate_post_data("uuid", "note")
 def edit_note(request: HttpRequest) -> Response:
     """Update the ``note`` field for an :class:`Exercise`.
@@ -320,7 +525,11 @@ def get_workout_data(request: HttpRequest) -> Response:
 @api_view(["POST"])
 @validate_post_data("uuid", "schedule")
 def update_schedule(request: HttpRequest) -> Response:
-    """Update the weekly schedule for a user's :class:`ExerciseUser` record.
+    """Update (or create) the weekly schedule for a user's :class:`ExerciseUser`.
+
+    Clicking a day pill on an inactive exercise auto-activates the exercise
+    with the clicked day set, so this view does a get_or_create on the
+    :class:`ExerciseUser` row.
 
     Expects a POST with:
         - ``uuid``: Exercise UUID.
@@ -330,7 +539,8 @@ def update_schedule(request: HttpRequest) -> Response:
         request: The HTTP request object.
 
     Returns:
-        JSON response with operation status.
+        JSON response containing ``info`` (the activity_info bundle) so the
+        client can reflect newly-active state in the UI.
     """
     uuid = request.POST["uuid"]
     schedule = request.POST["schedule"]
@@ -340,11 +550,21 @@ def update_schedule(request: HttpRequest) -> Response:
     boolean_values = [s.lower() == "true" for s in schedule.split(",")]
 
     user = cast(User, request.user)
-    eu = get_user_object_or_404(user, ExerciseUser, exercise__uuid=uuid)
+    exercise = get_object_or_404(Exercise, uuid=uuid)
+    eu, _ = ExerciseUser.objects.get_or_create(
+        user=user,
+        exercise=exercise,
+        defaults={"schedule": boolean_values},
+    )
     eu.schedule = boolean_values
     eu.save()
 
-    return Response()
+    info = eu.activity_info()
+    info["rest_period"] = eu.rest_period
+    info["schedule_days"] = ExerciseUser.schedule_days(eu.schedule)
+    info["is_active"] = True
+
+    return Response({"info": info})
 
 
 @api_view(["POST"])
