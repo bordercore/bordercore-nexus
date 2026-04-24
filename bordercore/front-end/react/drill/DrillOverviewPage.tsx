@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import RingDefs from "./components/RingDefs";
 import Sidebar from "./components/Sidebar";
 import ActionCard from "./components/ActionCard";
@@ -8,8 +8,15 @@ import TagsNeedingReview from "./components/TagsNeedingReview";
 import PinnedTagsCard from "./components/PinnedTagsCard";
 import FeaturedTagCard from "./components/FeaturedTagCard";
 import DisabledTagsCard from "./components/DisabledTagsCard";
+import StudyModal, { StudyModalHandle } from "./components/StudyModal";
 import type { DrillPayload } from "./types";
 import { pluralize } from "./utils";
+
+const VALID_METHODS = new Set(["all", "favorites", "recent", "tag", "random", "keyword"]);
+function normalizedScope(key: string): string {
+  if (key === "review") return "all"; // sidebar "review" maps to method=all + filter=review
+  return VALID_METHODS.has(key) ? key : "all";
+}
 
 interface Props {
   payload: DrillPayload;
@@ -17,10 +24,11 @@ interface Props {
 
 export default function DrillOverviewPage({ payload }: Props) {
   const [activeScope, setActiveScope] = useState<string>(payload.session?.type ?? "all");
+  const studyModalRef = useRef<StudyModalHandle>(null);
 
   const startStudy = useCallback(() => {
-    window.location.href = `${payload.urls.startStudySession}?study_method=${activeScope}`;
-  }, [activeScope, payload.urls.startStudySession]);
+    studyModalRef.current?.show();
+  }, []);
 
   const newQuestion = useCallback(() => {
     window.location.href = payload.urls.drillAdd;
@@ -105,6 +113,12 @@ export default function DrillOverviewPage({ payload }: Props) {
           </div>
         </div>
       </main>
+      <StudyModal
+        ref={studyModalRef}
+        initialMethod={normalizedScope(activeScope)}
+        startStudySessionUrl={payload.urls.startStudySession}
+        tagSearchUrl={payload.urls.tagSearch}
+      />
     </div>
   );
 }
