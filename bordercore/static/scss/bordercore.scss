@@ -40,6 +40,7 @@ $table-cell-padding-x: .75rem;
 // refined-components defines @mixin refined-input-surface, so it must come
 // before any partial that @includes it.
 @import "components/refined-components";
+@import "components/refined-modal";
 @import "components/buttons";
 @import "components/forms";
 @import "components/tables";

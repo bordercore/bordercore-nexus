@@ -50,24 +50,24 @@ export function EditNodeModal({
 
   return createPortal(
     <>
-      <div className="nl-modal-scrim" onClick={onClose} />
-      <div className="nl-modal" role="dialog" aria-label="edit node">
-        <button type="button" className="nl-drawer-close" onClick={onClose} aria-label="close">
+      <div className="refined-modal-scrim" onClick={onClose} />
+      <div className="refined-modal" role="dialog" aria-label="edit node">
+        <button type="button" className="refined-modal-close" onClick={onClose} aria-label="close">
           <FontAwesomeIcon icon={faTimes} />
         </button>
 
-        <div className="nl-drawer-eyebrow">
+        <div className="refined-modal-eyebrow">
           <span>edit node</span>
           <span className="dot">·</span>
           <span className="mono">bordercore / nodes / edit</span>
         </div>
 
-        <h2 className="nl-drawer-title">Edit this node</h2>
-        <p className="nl-modal-lead">
+        <h2 className="refined-modal-title">Edit this node</h2>
+        <p className="refined-modal-lead">
           rename the node and update its freeform note. components are unaffected.
         </p>
 
-        <div className="nl-field">
+        <div className="refined-field">
           <label htmlFor="id_edit_name">name</label>
           <input
             ref={inputRef}
@@ -87,7 +87,7 @@ export function EditNodeModal({
           />
         </div>
 
-        <div className="nl-field">
+        <div className="refined-field">
           <label htmlFor="id_edit_note">
             note <span className="optional">· optional</span>
           </label>
@@ -100,12 +100,17 @@ export function EditNodeModal({
           />
         </div>
 
-        <div className="nl-drawer-actions">
-          <button type="button" className="nl-btn ghost" onClick={onClose}>
+        <div className="refined-modal-actions">
+          <button type="button" className="refined-btn ghost" onClick={onClose}>
             cancel
           </button>
-          <button type="button" className="nl-btn primary" onClick={submit} disabled={!canSubmit}>
-            <FontAwesomeIcon icon={faCheck} className="nl-btn-icon" />
+          <button
+            type="button"
+            className="refined-btn primary"
+            onClick={submit}
+            disabled={!canSubmit}
+          >
+            <FontAwesomeIcon icon={faCheck} className="refined-btn-icon" />
             save changes <span className="kbd">⏎</span>
           </button>
         </div>

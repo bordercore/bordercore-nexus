@@ -53,31 +53,31 @@ export default function StudyModal({
 
   return createPortal(
     <>
-      <div className="nl-modal-scrim" onClick={onClose} />
+      <div className="refined-modal-scrim" onClick={onClose} />
       <form
         ref={formRef}
         action={startStudySessionUrl}
-        className="nl-modal study-modal"
+        className="refined-modal"
         role="dialog"
         aria-label="start study session"
       >
-        <button type="button" className="nl-drawer-close" onClick={onClose} aria-label="close">
+        <button type="button" className="refined-modal-close" onClick={onClose} aria-label="close">
           <FontAwesomeIcon icon={faTimes} />
         </button>
 
-        <div className="nl-drawer-eyebrow">
+        <div className="refined-modal-eyebrow">
           <span>start study session</span>
           <span className="dot">·</span>
           <span className="mono">bordercore / drill</span>
         </div>
 
-        <h2 className="nl-drawer-title">Start a session</h2>
-        <p className="nl-modal-lead">
+        <h2 className="refined-modal-title">Start a session</h2>
+        <p className="refined-modal-lead">
           Pick a scope and a filter, then start. The scope can be a tag, a keyword, or one of the
           built-in selections.
         </p>
 
-        <div className="nl-field">
+        <div className="refined-field">
           <label>method</label>
           <div className="study-method-grid">
             {METHODS.map(m => (
@@ -100,7 +100,7 @@ export default function StudyModal({
         </div>
 
         {studyMethod === "recent" && (
-          <div className="nl-field">
+          <div className="refined-field">
             <label htmlFor="study-modal-interval">interval</label>
             <select id="study-modal-interval" name="interval" defaultValue="7">
               <option value="1">Past Day</option>
@@ -116,7 +116,7 @@ export default function StudyModal({
         )}
 
         {studyMethod === "tag" && (
-          <div className="nl-field">
+          <div className="refined-field">
             <label htmlFor="study-modal-tags">tags</label>
             <TagsInput
               ref={tagsInputRef}
@@ -129,7 +129,7 @@ export default function StudyModal({
         )}
 
         {studyMethod === "random" && (
-          <div className="nl-field">
+          <div className="refined-field">
             <label htmlFor="study-modal-count">count</label>
             <select id="study-modal-count" name="count" defaultValue="10">
               <option value="5">5</option>
@@ -141,7 +141,7 @@ export default function StudyModal({
         )}
 
         {studyMethod === "keyword" && (
-          <div className="nl-field">
+          <div className="refined-field">
             <label htmlFor="study-modal-keyword">keyword</label>
             <input
               id="study-modal-keyword"
@@ -158,7 +158,7 @@ export default function StudyModal({
           </div>
         )}
 
-        <div className="nl-field">
+        <div className="refined-field">
           <label htmlFor="study-modal-filter">filter</label>
           <select id="study-modal-filter" name="filter" defaultValue="review">
             <option value="review">Questions needing review</option>
@@ -166,12 +166,12 @@ export default function StudyModal({
           </select>
         </div>
 
-        <div className="nl-drawer-actions">
-          <button type="button" className="nl-btn ghost" onClick={onClose}>
+        <div className="refined-modal-actions">
+          <button type="button" className="refined-btn ghost" onClick={onClose}>
             cancel
           </button>
-          <button type="button" className="nl-btn primary" onClick={submit}>
-            <FontAwesomeIcon icon={faBolt} className="nl-btn-icon" />
+          <button type="button" className="refined-btn primary" onClick={submit}>
+            <FontAwesomeIcon icon={faBolt} className="refined-btn-icon" />
             start session <span className="kbd">⏎</span>
           </button>
         </div>

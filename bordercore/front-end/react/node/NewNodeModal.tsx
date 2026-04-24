@@ -47,34 +47,34 @@ export function NewNodeModal({ open, onClose, createUrl, csrfToken }: NewNodeMod
 
   return createPortal(
     <>
-      <div className="nl-modal-scrim" onClick={onClose} />
+      <div className="refined-modal-scrim" onClick={onClose} />
       <form
         ref={formRef}
         action={createUrl}
         method="post"
-        className="nl-modal"
+        className="refined-modal"
         role="dialog"
         aria-label="create new node"
       >
         <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken} />
 
-        <button type="button" className="nl-drawer-close" onClick={onClose} aria-label="close">
+        <button type="button" className="refined-modal-close" onClick={onClose} aria-label="close">
           <FontAwesomeIcon icon={faTimes} />
         </button>
 
-        <div className="nl-drawer-eyebrow">
+        <div className="refined-modal-eyebrow">
           <span>new node</span>
           <span className="dot">·</span>
           <span className="mono">bordercore / nodes / create</span>
         </div>
 
-        <h2 className="nl-drawer-title">Create a node</h2>
-        <p className="nl-modal-lead">
+        <h2 className="refined-modal-title">Create a node</h2>
+        <p className="refined-modal-lead">
           a node is a topic container. you can attach collections, notes, todos, and images after
           it's created.
         </p>
 
-        <div className="nl-field">
+        <div className="refined-field">
           <label htmlFor="id_name">name</label>
           <input
             ref={inputRef}
@@ -95,7 +95,7 @@ export function NewNodeModal({ open, onClose, createUrl, csrfToken }: NewNodeMod
           />
         </div>
 
-        <div className="nl-field">
+        <div className="refined-field">
           <label htmlFor="id_note">
             note <span className="optional">· optional</span>
           </label>
@@ -108,12 +108,17 @@ export function NewNodeModal({ open, onClose, createUrl, csrfToken }: NewNodeMod
           />
         </div>
 
-        <div className="nl-drawer-actions">
-          <button type="button" className="nl-btn ghost" onClick={onClose}>
+        <div className="refined-modal-actions">
+          <button type="button" className="refined-btn ghost" onClick={onClose}>
             cancel
           </button>
-          <button type="button" className="nl-btn primary" onClick={submit} disabled={!canSubmit}>
-            <FontAwesomeIcon icon={faPlus} className="nl-btn-icon" />
+          <button
+            type="button"
+            className="refined-btn primary"
+            onClick={submit}
+            disabled={!canSubmit}
+          >
+            <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" />
             create node <span className="kbd">⏎</span>
           </button>
         </div>

@@ -1137,29 +1137,10 @@
 
 // =============================================================================
 // Study Session modal — rendered via portal (document.body), so selectors
-// live OUTSIDE .drill-app. Reuses .nl-modal / .nl-field / .nl-drawer-* shell
-// from _node-refined.scss; only the drill-specific method-grid + select
+// live OUTSIDE .drill-app. The shared modal shell lives in
+// components/_refined-modal.scss; only the drill-specific method-grid
 // styling lives here.
 // =============================================================================
-
-// stylelint-disable selector-class-pattern
-
-.nl-field select {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--bg-0);
-  color: var(--fg-1);
-  font: 400 13.5px/1.4 var(--font-ui);
-  outline: none;
-  transition: border-color 120ms, box-shadow 120ms;
-
-  &:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent), transparent 80%);
-  }
-}
 
 .study-method-grid {
   display: grid;

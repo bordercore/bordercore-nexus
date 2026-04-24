@@ -1,0 +1,186 @@
+// =============================================================================
+// Portal-rendered modal — shared shell used by NewNodeModal, EditNodeModal,
+// StudyModal, etc. Rendered via createPortal(..., document.body) so all
+// selectors live at root scope (NOT nested under any page-app class).
+// Uses the refined design tokens (--accent, --bg-*, --fg-*, --line, etc.)
+// so it re-tints across themes.
+// =============================================================================
+
+// stylelint-disable selector-class-pattern
+
+@keyframes refined-modal-fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes refined-modal-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 8px));
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+.refined-modal-scrim {
+  position: fixed;
+  z-index: 60;
+  animation: refined-modal-fade 160ms cubic-bezier(0.22, 1, 0.36, 1);
+  backdrop-filter: blur(4px);
+  background: rgb(5 6 12 / 64%);
+  inset: 0;
+}
+
+.refined-modal {
+  position: fixed;
+  z-index: 70;
+  top: 50%;
+  left: 50%;
+  width: min(520px, calc(100vw - 40px));
+  padding: 28px 28px 24px 32px;
+  border: 1px solid color-mix(in oklch, var(--accent), transparent 82%);
+  border-radius: 14px;
+  animation: refined-modal-in 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  backdrop-filter: blur(20px);
+  background: color-mix(in oklch, var(--bg-1), transparent 4%);
+  box-shadow:
+    0 1px 0 0 rgb(255 255 255 / 4%) inset,
+    0 20px 60px -12px rgb(0 0 0 / 70%),
+    0 0 40px -4px color-mix(in oklch, var(--accent), transparent 70%);
+  color: var(--fg-1);
+  font-family: var(--font-ui);
+  transform: translate(-50%, -50%);
+}
+
+.refined-modal-eyebrow {
+  display: flex;
+  align-items: baseline;
+  margin-bottom: 8px;
+  color: var(--fg-3);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  gap: 8px;
+
+  .dot {
+    color: var(--fg-3);
+  }
+
+  .mono {
+    color: var(--accent);
+  }
+}
+
+.refined-modal-title {
+  margin: 0 0 10px;
+  color: var(--fg-1);
+  font: 600 24px/1.2 var(--font-ui);
+  letter-spacing: -0.01em;
+  text-transform: none;
+}
+
+.refined-modal-lead {
+  margin: 6px 0 20px;
+  color: var(--fg-2);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.refined-field {
+  display: grid;
+  margin-bottom: 16px;
+  gap: 6px;
+
+  &:last-of-type {
+    margin-bottom: 20px;
+  }
+
+  label {
+    color: var(--fg-2);
+    font-family: var(--font-ui);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+
+    .optional {
+      color: var(--fg-3);
+      font-weight: 400;
+      letter-spacing: 0;
+      text-transform: lowercase;
+    }
+  }
+
+  input,
+  select,
+  textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--bg-0);
+    color: var(--fg-1);
+    font: 400 13.5px/1.4 var(--font-ui);
+    outline: none;
+    transition: border-color 120ms, box-shadow 120ms;
+
+    &::placeholder {
+      color: var(--fg-3);
+    }
+
+    &:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent), transparent 80%);
+    }
+
+  }
+
+  // stylelint-disable-next-line no-descending-specificity
+  textarea {
+    min-height: 96px;
+    resize: vertical;
+  }
+}
+
+.refined-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  .refined-btn {
+    flex: 0 0 auto;
+  }
+
+  .refined-btn.primary {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+.refined-modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: grid;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg-2);
+  cursor: pointer;
+  place-items: center;
+  transition: all 120ms;
+
+  &:hover {
+    background: var(--bg-2);
+    color: var(--fg-1);
+  }
+}
