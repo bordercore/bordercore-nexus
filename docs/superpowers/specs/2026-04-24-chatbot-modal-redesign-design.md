@@ -97,7 +97,7 @@ Replace `<select>` with a horizontal pill row above the message list. Five modes
 
 ### Multi-line input
 
-`<textarea>` with auto-grow (1 row min, 6 rows max, then scrolls). Enter sends, Shift-Enter inserts newline, Esc closes the modal (or unfocuses + collapses pinned mode — see open question Q1). Same `--bg-0` background and accent focus ring as `.refined-field` inputs.
+`<textarea>` with auto-grow (1 row min, 6 rows max, then scrolls). Enter sends, Shift-Enter inserts newline. Esc behavior is mode-dependent: in modal mode it closes the modal; in pinned mode it only unfocuses the input (the dock stays open — Alt-C is the close toggle). Same `--bg-0` background and accent focus ring as `.refined-field` inputs.
 
 ### Streaming cursor + stop button
 
@@ -139,7 +139,7 @@ The reason we add a small dedicated endpoint rather than reusing `BlobCreateView
 
 ### Code blocks with syntax highlighting
 
-For fenced code blocks rendered through markdown-it, run output through `highlight.js`. Each code block gets:
+For fenced code blocks rendered through markdown-it, run output through `highlight.js`. We register only a curated set of common languages — `python`, `javascript`, `typescript`, `bash`, `sql`, `json`, `yaml`, `html`, `css` (~25kb gzipped vs. ~80kb for the full bundle). Auto-detection is scoped to that set. Each code block gets:
 
 - A small uppercase language label in the top-left corner
 - A `copy` button in the top-right corner that copies the raw source
@@ -166,7 +166,7 @@ When streaming completes (and the assistant message is non-empty), fire a separa
 
 **Backend implementation:** new view in `blob/views.py`, calls a new function `chatbot_followups()` in `blob/services.py`. Uses GPT-3.5 (cheaper, faster than the main model). System prompt: "Given this assistant reply, suggest 2-3 short follow-up questions the user might ask next. Return JSON: `{\"suggestions\": [\"…\",\"…\"]}`. Each under 8 words." Parses with `json.loads`; on parse failure, returns `{ suggestions: [] }` (chips just don't appear — graceful degradation). Non-streaming response.
 
-**Frontend:** chips render below the actions row with a small fade-in (120ms). Clicking a chip puts its text in the input, focuses, and (per Open question Q3) optionally auto-sends.
+**Frontend:** chips render below the actions row with a small fade-in (120ms). Clicking a chip auto-sends it as the next user message — the chips exist to reduce friction, so a second click would defeat the point.
 
 Chips are cleared the moment the user starts typing or sends a new message.
 
@@ -188,7 +188,7 @@ Alt-C behavior:
 - If unpinned and hidden → open in modal mode
 - If unpinned and visible → close (unchanged)
 
-Esc only closes when in modal mode (in pinned mode, Esc just unfocuses the input — see Open question Q1).
+Esc only closes when in modal mode. In pinned mode, Esc unfocuses the input but leaves the dock open.
 
 ### Resize (pinned mode only)
 
@@ -260,10 +260,8 @@ Stored in component state (no global store needed). Persistence is just `localSt
 - Test stop-mid-stream: assistant message is preserved with whatever streamed before abort.
 - Backend: standard view tests for `chat_followups` (happy path, parse-error fallback) and `chat_save_as_note` (happy path, missing-title 400, owner check).
 
-## Open questions
+## Resolved decisions
 
-1. **Esc behavior in pinned mode** — should it close the dock, or just unfocus the input? Recommendation: unfocus only (pinning implies you want it persistent), with Alt-C as the close toggle.
-2. **highlight.js language scope** — load all common languages (~80kb gzipped) or just a curated set (python, javascript/ts, bash, sql, json, yaml, html, css, ~25kb)? Recommendation: curated set; auto-detect within that scope.
-3. **Follow-up chip click — auto-send or just fill input?** Recommendation: auto-send. The chips exist to reduce friction; making them require a second click defeats the point.
-
-These can be resolved in the planning step or punted to implementation.
+- **Esc in pinned mode:** unfocuses the input only; dock stays open.
+- **highlight.js scope:** curated language set (python, js/ts, bash, sql, json, yaml, html, css). ~25kb gzipped.
+- **Follow-up chip click:** auto-sends.
