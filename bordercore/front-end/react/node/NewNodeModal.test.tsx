@@ -90,7 +90,7 @@ describe("NewNodeModal", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
 
     // The modal portals to <body>, so reach the scrim through document.
-    await user.click(document.querySelector(".nl-modal-scrim")!);
+    await user.click(document.querySelector(".refined-modal-scrim")!);
     expect(onClose).toHaveBeenCalledTimes(2);
 
     await user.click(screen.getByRole("button", { name: /^close$/i }));
