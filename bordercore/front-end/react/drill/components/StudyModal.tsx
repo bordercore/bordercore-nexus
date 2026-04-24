@@ -1,235 +1,182 @@
-import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
-import { Modal } from "bootstrap";
+import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faBolt, faTimes } from "@fortawesome/free-solid-svg-icons";
 import TagsInput, { TagsInputHandle } from "../../common/TagsInput";
 
-export interface StudyModalHandle {
-  show: () => void;
-}
-
 interface Props {
+  open: boolean;
   initialMethod: string;
   startStudySessionUrl: string;
   tagSearchUrl: string;
+  onClose: () => void;
 }
 
-const StudyModal = forwardRef<StudyModalHandle, Props>(function StudyModal(
-  { initialMethod, startStudySessionUrl, tagSearchUrl },
-  ref
-) {
+const METHODS = [
+  { key: "all", label: "All questions", hint: "Every question in your library" },
+  { key: "favorites", label: "Favorites", hint: "Just your starred questions" },
+  { key: "recent", label: "Recent", hint: "Created in the last N days" },
+  { key: "tag", label: "Tag", hint: "Pick one or more tags" },
+  { key: "random", label: "Random", hint: "A small random sample" },
+  { key: "keyword", label: "Keyword", hint: "Match question or answer text" },
+];
+
+export default function StudyModal({
+  open,
+  initialMethod,
+  startStudySessionUrl,
+  tagSearchUrl,
+  onClose,
+}: Props) {
   const [studyMethod, setStudyMethod] = useState(initialMethod);
-  const modalRef = useRef<HTMLDivElement>(null);
-  const modalInstanceRef = useRef<Modal | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const tagsInputRef = useRef<TagsInputHandle>(null);
 
+  // Re-sync method when the modal re-opens with a new initial scope
   useEffect(() => {
-    if (modalRef.current && !modalInstanceRef.current) {
-      modalInstanceRef.current = new Modal(modalRef.current);
-    }
-  }, []);
+    if (open) setStudyMethod(initialMethod);
+  }, [open, initialMethod]);
 
-  // Re-sync method state if the parent's active scope changes between opens.
+  // ESC closes
   useEffect(() => {
-    setStudyMethod(initialMethod);
-  }, [initialMethod]);
+    if (!open) return;
+    const h = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [open, onClose]);
 
-  useImperativeHandle(ref, () => ({
-    show: () => modalInstanceRef.current?.show(),
-  }));
+  if (!open) return null;
 
-  return (
-    <div
-      ref={modalRef}
-      className="modal fade"
-      tabIndex={-1}
-      role="dialog"
-      aria-labelledby="studyModalLabel"
-    >
-      <div className="modal-dialog" role="document">
-        <div className="modal-content">
-          <div className="modal-header">
-            <h4 id="studyModalLabel" className="modal-title">
-              Start Study Session
-            </h4>
-            <button
-              type="button"
-              className="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-            />
-          </div>
-          <div className="modal-body">
-            <form action={startStudySessionUrl}>
-              <h5>
-                Choose your study method
-                <hr />
-              </h5>
+  const submit = () => formRef.current?.submit();
 
-              {/* All */}
-              <div className="form-check d-flex align-items-center mt-3">
+  return createPortal(
+    <>
+      <div className="nl-modal-scrim" onClick={onClose} />
+      <form
+        ref={formRef}
+        action={startStudySessionUrl}
+        className="nl-modal study-modal"
+        role="dialog"
+        aria-label="start study session"
+      >
+        <button type="button" className="nl-drawer-close" onClick={onClose} aria-label="close">
+          <FontAwesomeIcon icon={faTimes} />
+        </button>
+
+        <div className="nl-drawer-eyebrow">
+          <span>start study session</span>
+          <span className="dot">·</span>
+          <span className="mono">bordercore / drill</span>
+        </div>
+
+        <h2 className="nl-drawer-title">Start a session</h2>
+        <p className="nl-modal-lead">
+          Pick a scope and a filter, then start. The scope can be a tag, a keyword, or one of the
+          built-in selections.
+        </p>
+
+        <div className="nl-field">
+          <label>method</label>
+          <div className="study-method-grid">
+            {METHODS.map(m => (
+              <label
+                key={m.key}
+                className={`study-method-card ${studyMethod === m.key ? "active" : ""}`}
+              >
                 <input
-                  id="id_studymethod_all"
-                  name="study_method"
-                  className="form-check-input"
                   type="radio"
-                  value="all"
-                  checked={studyMethod === "all"}
-                  onChange={e => setStudyMethod(e.target.value)}
-                />
-                <label className="form-check-label ms-2" htmlFor="id_studymethod_all">
-                  All questions
-                </label>
-              </div>
-
-              {/* Favorites */}
-              <div className="form-check d-flex align-items-center mt-3">
-                <input
-                  id="id_studymethod_favorites"
                   name="study_method"
-                  className="form-check-input"
-                  type="radio"
-                  value="favorites"
-                  checked={studyMethod === "favorites"}
-                  onChange={e => setStudyMethod(e.target.value)}
+                  value={m.key}
+                  checked={studyMethod === m.key}
+                  onChange={() => setStudyMethod(m.key)}
                 />
-                <label className="form-check-label ms-2" htmlFor="id_studymethod_favorites">
-                  Favorite questions
-                </label>
-              </div>
-
-              {/* Recent */}
-              <div className="form-check d-flex align-items-center mt-3">
-                <input
-                  id="id_studymethod_recent"
-                  name="study_method"
-                  className="form-check-input"
-                  type="radio"
-                  value="recent"
-                  checked={studyMethod === "recent"}
-                  onChange={e => setStudyMethod(e.target.value)}
-                />
-                <label
-                  className="form-check-label ms-2 d-flex align-items-center"
-                  htmlFor="id_studymethod_recent"
-                >
-                  <div className="text-nowrap me-3">Recent questions</div>
-                  <select
-                    name="interval"
-                    className="form-control form-select"
-                    disabled={studyMethod !== "recent"}
-                  >
-                    <option value="1">Past Day</option>
-                    <option value="3">Past 3 Days</option>
-                    <option value="7">Past Week</option>
-                    <option value="14">Past Two Weeks</option>
-                    <option value="21">Past Three Weeks</option>
-                    <option value="30">Past Month</option>
-                    <option value="60">Past Two Months</option>
-                    <option value="90">Past Three Months</option>
-                  </select>
-                </label>
-              </div>
-
-              {/* Tag */}
-              <div className="form-check d-flex align-items-center mt-3">
-                <input
-                  id="id_studymethod_tag"
-                  name="study_method"
-                  className="form-check-input"
-                  type="radio"
-                  value="tag"
-                  checked={studyMethod === "tag"}
-                  onChange={e => setStudyMethod(e.target.value)}
-                />
-                <label
-                  className="form-check-label ms-2 d-flex align-items-center"
-                  htmlFor="id_studymethod_tag"
-                >
-                  <div className="me-4">Tag</div>
-                </label>
-                <TagsInput
-                  ref={tagsInputRef}
-                  searchUrl={`${tagSearchUrl}?doctype=drill&query=`}
-                  name="tags"
-                  id="study-modal-tags"
-                  placeholder="Tag name"
-                  disabled={studyMethod !== "tag"}
-                />
-              </div>
-
-              {/* Random */}
-              <div className="form-check d-flex align-items-center mt-3">
-                <input
-                  id="id_studymethod_random"
-                  name="study_method"
-                  className="form-check-input"
-                  type="radio"
-                  value="random"
-                  checked={studyMethod === "random"}
-                  onChange={e => setStudyMethod(e.target.value)}
-                />
-                <label
-                  className="form-check-label ms-2 d-flex align-items-center"
-                  htmlFor="id_studymethod_random"
-                >
-                  <div className="text-nowrap me-3">Random questions, count of</div>
-                  <select
-                    name="count"
-                    className="form-control form-select"
-                    disabled={studyMethod !== "random"}
-                  >
-                    <option value="5">5</option>
-                    <option value="10">10</option>
-                    <option value="20">20</option>
-                    <option value="100">100</option>
-                  </select>
-                </label>
-              </div>
-
-              {/* Keyword */}
-              <div className="form-check d-flex align-items-center mt-3">
-                <input
-                  id="id_studymethod_keyword"
-                  name="study_method"
-                  className="form-check-input"
-                  type="radio"
-                  value="keyword"
-                  checked={studyMethod === "keyword"}
-                  onChange={e => setStudyMethod(e.target.value)}
-                />
-                <label
-                  className="form-check-label ms-2 d-flex align-items-center"
-                  htmlFor="id_studymethod_keyword"
-                >
-                  <div className="me-3">Questions matching keyword</div>
-                  <input
-                    className="form-control"
-                    name="keyword"
-                    id="study-modal-keyword"
-                    placeholder="Keyword"
-                    autoComplete="off"
-                    disabled={studyMethod !== "keyword"}
-                  />
-                </label>
-              </div>
-
-              <hr />
-
-              {/* Filter */}
-              <div className="d-flex align-items-center my-3">
-                <div className="me-3">Filter</div>
-                <select name="filter" className="form-control form-select">
-                  <option value="review">Questions needing review</option>
-                  <option value="all">All questions</option>
-                </select>
-              </div>
-
-              <input type="submit" className="btn btn-primary mt-2" value="Study" />
-            </form>
+                <span className="title">{m.label}</span>
+                <span className="hint">{m.hint}</span>
+              </label>
+            ))}
           </div>
         </div>
-      </div>
-    </div>
-  );
-});
 
-export default StudyModal;
+        {studyMethod === "recent" && (
+          <div className="nl-field">
+            <label htmlFor="study-modal-interval">interval</label>
+            <select id="study-modal-interval" name="interval" defaultValue="7">
+              <option value="1">Past Day</option>
+              <option value="3">Past 3 Days</option>
+              <option value="7">Past Week</option>
+              <option value="14">Past Two Weeks</option>
+              <option value="21">Past Three Weeks</option>
+              <option value="30">Past Month</option>
+              <option value="60">Past Two Months</option>
+              <option value="90">Past Three Months</option>
+            </select>
+          </div>
+        )}
+
+        {studyMethod === "tag" && (
+          <div className="nl-field">
+            <label htmlFor="study-modal-tags">tags</label>
+            <TagsInput
+              ref={tagsInputRef}
+              searchUrl={`${tagSearchUrl}?doctype=drill&query=`}
+              name="tags"
+              id="study-modal-tags"
+              placeholder="Tag name"
+            />
+          </div>
+        )}
+
+        {studyMethod === "random" && (
+          <div className="nl-field">
+            <label htmlFor="study-modal-count">count</label>
+            <select id="study-modal-count" name="count" defaultValue="10">
+              <option value="5">5</option>
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="100">100</option>
+            </select>
+          </div>
+        )}
+
+        {studyMethod === "keyword" && (
+          <div className="nl-field">
+            <label htmlFor="study-modal-keyword">keyword</label>
+            <input
+              id="study-modal-keyword"
+              name="keyword"
+              autoComplete="off"
+              placeholder="word or phrase"
+              onKeyDown={e => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  submit();
+                }
+              }}
+            />
+          </div>
+        )}
+
+        <div className="nl-field">
+          <label htmlFor="study-modal-filter">filter</label>
+          <select id="study-modal-filter" name="filter" defaultValue="review">
+            <option value="review">Questions needing review</option>
+            <option value="all">All questions</option>
+          </select>
+        </div>
+
+        <div className="nl-drawer-actions">
+          <button type="button" className="nl-btn ghost" onClick={onClose}>
+            cancel
+          </button>
+          <button type="button" className="nl-btn primary" onClick={submit}>
+            <FontAwesomeIcon icon={faBolt} className="nl-btn-icon" />
+            start session <span className="kbd">⏎</span>
+          </button>
+        </div>
+      </form>
+    </>,
+    document.body
+  );
+}

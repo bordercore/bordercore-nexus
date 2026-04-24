@@ -1134,3 +1134,84 @@
     }
   }
 }
+
+// =============================================================================
+// Study Session modal — rendered via portal (document.body), so selectors
+// live OUTSIDE .drill-app. Reuses .nl-modal / .nl-field / .nl-drawer-* shell
+// from _node-refined.scss; only the drill-specific method-grid + select
+// styling lives here.
+// =============================================================================
+
+// stylelint-disable selector-class-pattern
+
+.nl-field select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg-0);
+  color: var(--fg-1);
+  font: 400 13.5px/1.4 var(--font-ui);
+  outline: none;
+  transition: border-color 120ms, box-shadow 120ms;
+
+  &:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent), transparent 80%);
+  }
+}
+
+.study-method-grid {
+  display: grid;
+  margin-top: 4px;
+  gap: 8px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.study-method-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg-0);
+  cursor: pointer;
+  gap: 2px;
+  transition: border-color 120ms, background 120ms, box-shadow 120ms;
+
+  input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .title {
+    color: var(--fg-1);
+    font: 500 13.5px/1.2 var(--font-ui);
+  }
+
+  .hint {
+    color: var(--fg-3);
+    font-size: 11.5px;
+  }
+
+  &:hover {
+    border-color: color-mix(in oklch, var(--line), white 20%);
+    background: var(--bg-1);
+  }
+
+  &.active {
+    border-color: color-mix(in oklch, var(--accent), transparent 40%);
+    background: color-mix(in oklch, var(--accent), transparent 88%);
+    box-shadow: 0 0 12px -2px color-mix(in oklch, var(--accent), transparent 65%);
+  }
+
+  &.active .title {
+    color: var(--fg-0);
+  }
+}
+
+@media (width <= 480px) {
+  .study-method-grid { grid-template-columns: 1fr; }
+}

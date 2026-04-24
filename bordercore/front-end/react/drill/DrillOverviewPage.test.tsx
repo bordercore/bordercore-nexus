@@ -1,6 +1,6 @@
 import React from "react";
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import DrillOverviewPage from "./DrillOverviewPage";
 import type { DrillPayload } from "./types";
 
@@ -15,7 +15,7 @@ vi.mock("axios", () => {
   return { default: mock };
 });
 
-// Also mock bootstrap's Modal since DrillPinnedTags / DrillDisabledTags / StudyModal reference it.
+// Also mock bootstrap's Modal since DrillPinnedTags / DrillDisabledTags reference it.
 // vi.fn() with an arrow function can't be used as a constructor (new Modal(...)).
 // Use a plain class so React's useEffect that calls `new Modal(el)` doesn't throw.
 const mockModalShow = vi.fn();
@@ -164,7 +164,7 @@ describe("DrillOverviewPage", () => {
     expect(favoritesNavItem?.closest("a")).toHaveClass("active");
   });
 
-  it("opens the study modal when the Study button is clicked", async () => {
+  it("opens the study modal when the Study button is clicked", () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ tag_list: [] }),
@@ -172,19 +172,16 @@ describe("DrillOverviewPage", () => {
 
     render(<DrillOverviewPage payload={payload} />);
 
-    // Modal is in the DOM but hidden initially.
-    expect(screen.getByText("Start Study Session")).toBeInTheDocument();
+    // Modal closed initially: title isn't rendered.
+    expect(screen.queryByText("Start a session")).not.toBeInTheDocument();
 
-    // The ActionCard "Study" button is the first match; the modal's submit is also /Study/.
-    const studyButtons = screen.getAllByRole("button", { name: /Study/i });
-    try {
-      studyButtons[0].click();
-    } catch {
-      // Bootstrap may throw in jsdom; we still verify the modal structure mounted.
-    }
+    // Click Study (the hero button).
+    const studyButton = screen.getAllByRole("button", { name: /Study/i })[0];
+    fireEvent.click(studyButton);
 
-    // Smoke check: the modal heading is still queryable, and the form action
-    // points at startStudySession.
+    // Modal title is now in the DOM (portaled to body — testing-library still finds it).
+    expect(screen.getByText("Start a session")).toBeInTheDocument();
+    // Form action points at startStudySession.
     const form = document.querySelector(`form[action="${payload.urls.startStudySession}"]`);
     expect(form).not.toBeNull();
   });

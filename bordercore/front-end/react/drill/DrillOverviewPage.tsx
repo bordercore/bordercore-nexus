@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useState } from "react";
 import RingDefs from "./components/RingDefs";
 import Sidebar from "./components/Sidebar";
 import ActionCard from "./components/ActionCard";
@@ -8,7 +8,7 @@ import TagsNeedingReview from "./components/TagsNeedingReview";
 import PinnedTagsCard from "./components/PinnedTagsCard";
 import FeaturedTagCard from "./components/FeaturedTagCard";
 import DisabledTagsCard from "./components/DisabledTagsCard";
-import StudyModal, { StudyModalHandle } from "./components/StudyModal";
+import StudyModal from "./components/StudyModal";
 import type { DrillPayload } from "./types";
 import { pluralize } from "./utils";
 
@@ -24,10 +24,10 @@ interface Props {
 
 export default function DrillOverviewPage({ payload }: Props) {
   const [activeScope, setActiveScope] = useState<string>(payload.session?.type ?? "all");
-  const studyModalRef = useRef<StudyModalHandle>(null);
+  const [studyOpen, setStudyOpen] = useState(false);
 
   const startStudy = useCallback(() => {
-    studyModalRef.current?.show();
+    setStudyOpen(true);
   }, []);
 
   const newQuestion = useCallback(() => {
@@ -114,10 +114,11 @@ export default function DrillOverviewPage({ payload }: Props) {
         </div>
       </main>
       <StudyModal
-        ref={studyModalRef}
+        open={studyOpen}
         initialMethod={normalizedScope(activeScope)}
         startStudySessionUrl={payload.urls.startStudySession}
         tagSearchUrl={payload.urls.tagSearch}
+        onClose={() => setStudyOpen(false)}
       />
     </div>
   );
