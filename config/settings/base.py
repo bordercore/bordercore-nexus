@@ -162,7 +162,8 @@ INSTALLED_APPS = (
     "rest_framework.authtoken",
     "search",
     "storages",
-    "todo"
+    "todo",
+    "visualize",
 
 )
 

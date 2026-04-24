@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load vite_tags %}
+
+{% block title %}Constellation{% endblock %}
+
+{% block css %}
+    {% vite_asset "dist/css/bordercore" %}
+{% endblock %}
+
+{% block javascript_bundles %}
+    {{ block.super }}
+    {% vite_asset "dist/js/visualize" %}
+{% endblock %}
+
+{% block content %}
+    <div
+        id="react-root"
+        data-graph-url="{% url 'visualize:graph_api' %}"
+    ></div>
+{% endblock %}

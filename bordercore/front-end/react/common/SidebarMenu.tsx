@@ -16,6 +16,7 @@ import {
   faRunning,
   faClock,
   faCheckDouble,
+  faProjectDiagram,
   faPen,
   faCheck,
   faChevronLeft,
@@ -86,6 +87,7 @@ const iconMap: Record<string, any> = {
   running: faRunning,
   clock: faClock,
   "check-double": faCheckDouble,
+  "project-diagram": faProjectDiagram,
 };
 
 const getCurrentPath = (): string =>

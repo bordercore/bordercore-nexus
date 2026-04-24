@@ -394,6 +394,13 @@ function SidebarContent() {
           ? { text: data.sidebarConfig.exerciseCount, class: "vsm--badge_default" }
           : undefined,
       },
+      {
+        href: "/visualize/",
+        title: "Constellation",
+        alias: "/visualize/*",
+        color: "#8ab4ff",
+        icon: { element: "font-awesome-icon", attributes: { icon: "project-diagram" }, class: "" },
+      },
     ];
     const savedOrder = parseInitialOrder(data.initialSidebarOrder);
     setMenu(applyOrder(menuItems, savedOrder));
