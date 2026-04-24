@@ -1054,7 +1054,7 @@ def chatbot_followups(assistant_reply: str, mode: str = "chat") -> list[str]:
         if not isinstance(suggestions, list):
             return []
         return [str(s) for s in suggestions[:3]]
-    except (json.JSONDecodeError, KeyError, AttributeError, IndexError):
+    except Exception:  # noqa: BLE001 — graceful degradation: any failure → no chips
         return []
 
 

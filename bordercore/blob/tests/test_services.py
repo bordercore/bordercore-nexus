@@ -373,3 +373,15 @@ def test_chatbot_followups_returns_empty_on_missing_key(mock_openai_cls):
     result = chatbot_followups("Some reply.", mode="chat")
 
     assert result == []
+
+
+@patch("blob.services.OpenAI")
+def test_chatbot_followups_returns_empty_on_api_error(mock_openai_cls):
+    """chatbot_followups returns [] when the OpenAI client itself raises."""
+    mock_client = MagicMock()
+    mock_openai_cls.return_value = mock_client
+    mock_client.chat.completions.create.side_effect = RuntimeError("api down")
+
+    result = chatbot_followups("Some reply.", mode="chat")
+
+    assert result == []
