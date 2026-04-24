@@ -108,7 +108,7 @@ def get_recent_blobs(user: User, limit: int = 10, skip_content: bool = False) ->
     blob_list = Blob.objects.filter(
         user=user
     ).prefetch_related(
-        "tags", "metadata"
+        "tags"
     ).order_by(
         "-created"
     )[:limit]
@@ -192,7 +192,7 @@ def get_recent_media(user: User, limit: int = 10) -> list[dict[str, Any]]:
             | Q(file__endswith="mp4") | Q(file__endswith="webm")
         )
     ).prefetch_related(
-        "tags", "metadata"
+        "tags"
     ).order_by(
         "-created"
     )[:limit]
