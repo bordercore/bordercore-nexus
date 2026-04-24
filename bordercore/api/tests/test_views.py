@@ -544,6 +544,12 @@ def test_todo_create(authenticated_client):
 
 def test_todo_delete(authenticated_client):
     """DELETE on a todo removes it."""
+    # TodoViewSet.get_queryset prefetches tags for the list/retrieve hot path
+    # (TodoSerializer renders tags); on destroy the prefetch is idle.
+    settings.NPLUSONE_WHITELIST = [
+        {"label": "unused_eager_load", "model": "todo.Todo"},
+    ]
+
     user, client = authenticated_client()
 
     todo = TodoFactory(user=user)
@@ -554,6 +560,12 @@ def test_todo_delete(authenticated_client):
 
 def test_todo_patch(authenticated_client):
     """PATCH on a todo updates it."""
+    # TodoViewSet.get_queryset prefetches tags for the list/retrieve hot path;
+    # on patch the prefetch is invalidated by instance.tags.set() in update().
+    settings.NPLUSONE_WHITELIST = [
+        {"label": "unused_eager_load", "model": "todo.Todo"},
+    ]
+
     user, client = authenticated_client()
 
     todo = TodoFactory(user=user)
@@ -564,6 +576,12 @@ def test_todo_patch(authenticated_client):
 
 def test_collection_delete(authenticated_client, collection):
     """DELETE on a collection removes it."""
+    # CollectionViewSet.get_queryset prefetches tags for the list/retrieve hot
+    # path (CollectionSerializer nests TagSerializer); on destroy it is idle.
+    settings.NPLUSONE_WHITELIST = [
+        {"label": "unused_eager_load", "model": "collection.Collection"},
+    ]
+
     _, client = authenticated_client()
 
     url = urls.reverse("collection-detail", kwargs={"uuid": collection[0].uuid})

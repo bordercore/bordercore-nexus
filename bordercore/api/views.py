@@ -181,8 +181,8 @@ class BookmarkViewSet(UserScopedQuerysetMixin, viewsets.ModelViewSet):
     ordering = ["-created"]
 
     def get_queryset(self) -> QuerySet[Bookmark]:
-        """Return bookmarks owned by the current user with prefetched tags."""
-        return super().get_queryset().prefetch_related("tags")
+        """Return bookmarks owned by the current user."""
+        return super().get_queryset()
 
     def perform_create(self, serializer: BookmarkSerializer) -> None:
         """Save the bookmark and index it in Elasticsearch.
