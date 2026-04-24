@@ -4,30 +4,10 @@
 {% block title %} Drill :: {{ title }} {% endblock %}
 
 {% block content %}
-
-    <div id="react-root"
-        data-title="{{ title }}"
-        data-drill-list-url="{% url 'drill:list' %}"
-        data-drill-add-url="{% url 'drill:add' %}"
-        data-start-study-session-url="{% url 'drill:start_study_session' %}"
-        data-resume-url="{% url 'drill:resume' %}"
-        data-get-pinned-tags-url="{% url 'drill:get_pinned_tags' %}"
-        data-pin-tag-url="{% url 'drill:pin_tag' %}"
-        data-unpin-tag-url="{% url 'drill:unpin_tag' %}"
-        data-sort-pinned-tags-url="{% url 'drill:sort_pinned_tags' %}"
-        data-get-disabled-tags-url="{% url 'drill:get_disabled_tags' %}"
-        data-disable-tag-url="{% url 'drill:disable_tag' %}"
-        data-enable-tag-url="{% url 'drill:enable_tag' %}"
-        data-tag-search-url="{% url 'tag:search' %}"
-        data-study-session="{{ study_session_json|default:'null' }}"
-        data-study-session-progress="{{ study_session_progress|default:0 }}"
-        data-total-progress="{{ total_progress_json }}"
-        data-favorite-progress="{{ favorite_progress_json }}"
-        data-tags-last-reviewed="{{ tags_last_reviewed_json }}"
-        data-featured-tag="{{ featured_tag_json }}"
-    >
+    <div class="drill-app">
+        <div id="drill-overview-root"></div>
+        {{ payload|json_script:"drill-overview-payload" }}
     </div>
-
 {% endblock %}
 
 {% block javascript_bundles %}

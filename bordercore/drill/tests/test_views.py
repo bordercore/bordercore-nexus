@@ -1,4 +1,5 @@
 import json
+from datetime import timedelta
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -6,10 +7,13 @@ import pytest
 import responses
 
 from django import urls
+from django.utils import timezone
 
+from accounts.tests.factories import UserFactory
 from drill.models import Question, QuestionToObject
 from drill.tests.factories import QuestionFactory
 from drill.views import handle_related_objects
+from tag.tests.factories import TagFactory
 
 pytestmark = [pytest.mark.django_db]
 
@@ -452,6 +456,28 @@ def test_drill_add_object(authenticated_client, question, blob_note):
     assert QuestionToObject.objects.filter(node=question[0]).count() == 3
 
 
+def test_featured_tag_info_returns_progress_and_histo(client):
+    user = UserFactory(username="user-featured-tag-info")
+    tag = TagFactory(user=user, name="lisp-info")
+    QuestionFactory(user=user, last_reviewed=timezone.now() - timedelta(days=10)).tags.add(tag)
+    client.force_login(user)
+
+    response = client.get(urls.reverse("drill:featured_tag_info"), {"tag": "lisp-info"})
+    assert response.status_code == 200
+    data = response.json()
+    for k in ["name", "progress", "count", "last_reviewed", "url", "histo"]:
+        assert k in data
+    assert data["name"] == "lisp-info"
+    assert isinstance(data["histo"], list) and len(data["histo"]) == 12
+
+
+def test_featured_tag_info_requires_tag_param(client):
+    user = UserFactory(username="user-featured-tag-info-empty")
+    client.force_login(user)
+    response = client.get(urls.reverse("drill:featured_tag_info"))
+    assert response.status_code == 400
+
+
 def test_drill_remove_object(authenticated_client, question, blob_note):
 
     _, client = authenticated_client()
@@ -491,3 +517,39 @@ def test_drill_update_related_object_note(authenticated_client, question, blob_n
     question_to_object = QuestionToObject.objects.get(node=question[0], blob=blob_note[0])
     # bc_object = question[0].bc_objects.filter(blob=blob_note[0]).first()
     assert question_to_object.note == note
+
+
+def test_drill_list_view_payload_has_all_keys(client):
+    user = UserFactory(username="user-drill-list-payload")
+    client.force_login(user)
+    response = client.get(urls.reverse("drill:list"))
+    assert response.status_code == 200
+    payload = response.context["payload"]
+    assert isinstance(payload, dict)
+    for key in [
+        "title", "urls", "session", "studyScope", "intervals",
+        "responsesByKind", "totalProgress", "favoritesProgress",
+        "schedule", "tagsNeedingReview", "pinned", "disabled",
+        "featured", "streak", "nextDue", "activity28d", "recentResponses",
+    ]:
+        assert key in payload, f"missing payload key: {key}"
+    assert isinstance(payload["activity28d"], list) and len(payload["activity28d"]) == 28
+    assert isinstance(payload["schedule"], list) and len(payload["schedule"]) == 7
+    assert "featuredTagInfo" in payload["urls"]
+    # Smoke-check the template actually rendered the json_script tag:
+    assert b'id="drill-overview-payload"' in response.content
+    assert b'type="application/json"' in response.content
+
+
+def test_question_detail_view_renders_with_tagged_question(client):
+    user = UserFactory(username="user-question-detail-tagged")
+    tag = TagFactory(user=user, name="alpha-qd")
+    q = QuestionFactory(user=user, last_reviewed=timezone.now() - timedelta(days=100))
+    q.tags.add(tag)
+
+    client.force_login(user)
+    response = client.get(urls.reverse("drill:detail", kwargs={"uuid": q.uuid}))
+    assert response.status_code == 200
+    # Confirm tag_info_json is present in context (would raise TypeError pre-fix
+    # because json.dumps couldn't serialize the raw last_reviewed_dt datetime):
+    assert "tag_info_json" in response.context

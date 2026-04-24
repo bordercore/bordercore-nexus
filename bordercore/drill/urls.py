@@ -109,4 +109,9 @@ urlpatterns = [
         view=views.get_related_objects,
         name="related_objects"
     ),
+    path(
+        route="featured_tag_info",
+        view=views.featured_tag_info,
+        name="featured_tag_info"
+    ),
 ]

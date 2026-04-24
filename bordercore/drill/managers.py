@@ -8,12 +8,14 @@ drill system.
 
 from __future__ import annotations
 
+from datetime import date, datetime, timedelta
 from typing import Any
 
 from django.apps import apps
 from django.contrib.auth.models import User
 from django.db import models
-from django.db.models import Count, F, Max, Q, QuerySet
+from django.db.models import Count, DateTimeField, ExpressionWrapper, F, Max, Min, Q, QuerySet
+from django.db.models.functions import TruncDate, TruncWeek
 from django.urls import reverse
 from django.utils import timezone
 
@@ -48,6 +50,39 @@ class DrillManager(models.Manager):
                           .exclude(pk__in=user.userprofile.drill_tags_muted.all()) \
                           .annotate(last_reviewed=Max("question__last_reviewed")) \
                           .order_by(F("last_reviewed").asc(nulls_first=True))
+
+    def tags_needing_review(self, user: User) -> list[dict[str, Any]]:
+        """Return tag-progress rows for tags with at least one due question.
+
+        Tags whose questions are all disabled are excluded; muted tags are
+        excluded. Results are sorted by the most recent review date ascending
+        (oldest-recent-review first), so tags overdue the longest appear first.
+
+        Note: progress/count numbers in each row come from
+        ``_batch_tag_progress`` and currently include disabled questions in
+        their counts (matching the rest of the manager's behaviour).
+
+        Args:
+            user: The user whose tags to inspect.
+
+        Returns:
+            List of tag progress dicts (as produced by ``_batch_tag_progress``),
+            filtered to rows where ``todo > 0``.
+        """
+        tags = (
+            Tag.objects.filter(
+                user=user,
+                question__isnull=False,
+                question__is_disabled=False,
+            )
+            .exclude(pk__in=user.userprofile.drill_tags_muted.all())
+            .annotate(last_reviewed=Max("question__last_reviewed"))
+            .order_by(F("last_reviewed").asc(nulls_first=True))
+            .distinct()
+            .values_list("name", flat=True)
+        )
+        rows = self._batch_tag_progress(user, list(tags))
+        return [r for r in rows if r["todo"] > 0]
 
     def total_tag_progress(self, user: User) -> dict[str, float | int]:
         """Get percentage of all tags not needing review.
@@ -186,9 +221,229 @@ class DrillManager(models.Manager):
             "-max"
         )
 
+    def next_due_in(self, user: User) -> str | None:
+        """Humanized time until the next question becomes due.
+
+        Args:
+            user: The user whose schedule to inspect.
+
+        Returns:
+            Strings like ``"in 02h 14m"``, ``"in 5d"``, or ``"due now"``;
+            ``None`` if the user has no scheduled (non-disabled, reviewed)
+            questions.
+        """
+        Question = apps.get_model("drill", "Question")
+        qs = Question.objects.filter(
+            user=user, is_disabled=False, last_reviewed__isnull=False
+        )
+        next_due = qs.annotate(
+            due_at=F("last_reviewed") + F("interval"),
+        ).aggregate(soonest=Min("due_at"))["soonest"]
+        if next_due is None:
+            return None
+        delta = next_due - timezone.now()
+        seconds = int(delta.total_seconds())
+        if seconds <= 0:
+            return "due now"
+        hours, remainder = divmod(seconds, 3600)
+        minutes = remainder // 60
+        if hours >= 24:
+            return f"in {hours // 24}d"
+        return f"in {hours:02d}h {minutes:02d}m"
+
+    def reviewed_count(self, user: User, since: datetime) -> int:
+        """Count QuestionResponse rows for ``user`` since the given datetime.
+
+        Args:
+            user: The user whose responses to count.
+            since: Lower-bound datetime (inclusive).
+
+        Returns:
+            Number of responses recorded at or after ``since``.
+        """
+        QuestionResponse = apps.get_model("drill", "QuestionResponse")
+        return QuestionResponse.objects.filter(
+            question__user=user, date__gte=since
+        ).count()
+
+    def study_streak(self, user: User) -> int:
+        """Number of consecutive days (ending today) with at least one response.
+
+        Args:
+            user: The user whose streak to compute.
+
+        Returns:
+            Integer count of consecutive days ending at today; 0 if no
+            response was recorded today.
+        """
+        QuestionResponse = apps.get_model("drill", "QuestionResponse")
+        today = timezone.localdate()
+        days_with_any = set(
+            QuestionResponse.objects.filter(question__user=user)
+            .annotate(d=TruncDate("date"))
+            .values_list("d", flat=True)
+            .distinct()
+        )
+        streak = 0
+        cursor = today
+        while cursor in days_with_any:
+            streak += 1
+            cursor -= timedelta(days=1)
+        return streak
+
+    def featured_tag_histogram(
+        self, tag: str, user: User, weeks: int = 12
+    ) -> list[int]:
+        """Per-week QuestionResponse counts for ``tag`` over the last ``weeks`` weeks.
+
+        Args:
+            tag: Tag name.
+            user: The user whose responses to count.
+            weeks: Number of trailing weeks to include.
+
+        Returns:
+            List of ``weeks`` integers, oldest first; each is the number of
+            QuestionResponse rows in that week for questions tagged ``tag``.
+        """
+        QuestionResponse = apps.get_model("drill", "QuestionResponse")
+        today = timezone.localdate()
+        start_monday = today - timedelta(days=today.weekday() + 7 * (weeks - 1))
+        rows = (
+            QuestionResponse.objects.filter(
+                question__user=user,
+                question__tags__name=tag,
+                date__date__gte=start_monday,
+            )
+            .annotate(week_start=TruncWeek("date"))
+            .values("week_start")
+            .annotate(n=Count("id"))
+        )
+        by_week = {r["week_start"].date(): r["n"] for r in rows}
+        return [by_week.get(start_monday + timedelta(weeks=i), 0) for i in range(weeks)]
+
+    def schedule(self, user: User, span_days: int = 3) -> list[dict[str, Any]]:
+        """Return a 7-day schedule strip centered on today.
+
+        Span is ``[today - span_days, today + span_days]``. The today cell
+        rolls up everything currently overdue plus questions due today
+        (and questions never reviewed). Past cells show questions whose
+        natural due-date (last_reviewed + interval) fell on that day.
+
+        Args:
+            user: The user whose schedule to compute.
+            span_days: Number of days on either side of today.
+
+        Returns:
+            List of dicts shaped ``{"dow": str, "date": str, "due": int, "state": str}``.
+            ``state`` is one of ``"over"``, ``"today"``, ``"upcoming"``, ``"empty"``.
+        """
+        Question = apps.get_model("drill", "Question")
+        today = timezone.localdate()
+        base = Question.objects.filter(
+            user=user, is_disabled=False, last_reviewed__isnull=False
+        )
+        due_at = ExpressionWrapper(
+            F("last_reviewed") + F("interval"),
+            output_field=DateTimeField(),
+        )
+        base = base.annotate(due_at=due_at)
+        out: list[dict[str, Any]] = []
+        for offset in range(-span_days, span_days + 1):
+            d = today + timedelta(days=offset)
+            if offset < 0:
+                start_dt, end_dt = _local_day_bounds(d)
+                count = base.filter(due_at__gte=start_dt, due_at__lt=end_dt).count()
+                state = "over" if count else "empty"
+            elif offset == 0:
+                # `base` excludes never-reviewed questions; the second .count() picks them up.
+                # Two round-trips at slightly different instants is acceptable for a display strip.
+                count = base.filter(
+                    Q(interval__lte=timezone.now() - F("last_reviewed"))  # type: ignore[operator]
+                ).count() + Question.objects.filter(
+                    user=user, is_disabled=False, last_reviewed__isnull=True
+                ).count()
+                state = "today"
+            else:
+                start_dt, end_dt = _local_day_bounds(d)
+                count = base.filter(due_at__gte=start_dt, due_at__lt=end_dt).count()
+                state = "upcoming" if count else "empty"
+            out.append({
+                "dow": d.strftime("%a").lower(),
+                "date": d.strftime("%-d"),
+                "due": count,
+                "state": state,
+            })
+        return out
+
+    def activity_heatmap(self, user: User, days: int = 28) -> list[int]:
+        """Return per-day response counts for the last ``days`` days, oldest first.
+
+        Args:
+            user: The user whose activity to summarize.
+            days: Number of trailing days to include (default 28).
+
+        Returns:
+            List of ``days`` integers; element 0 is the count for ``days - 1``
+            days ago, element ``-1`` is today's count.
+        """
+        QuestionResponse = apps.get_model("drill", "QuestionResponse")
+        today = timezone.localdate()
+        start = today - timedelta(days=days - 1)
+        rows = (
+            QuestionResponse.objects.filter(question__user=user, date__date__gte=start)
+            .values("date__date")
+            .annotate(n=Count("id"))
+        )
+        by_day = {r["date__date"]: r["n"] for r in rows}
+        return [by_day.get(start + timedelta(days=i), 0) for i in range(days)]
+
+    def recent_responses(self, user: User, n: int = 5) -> list[dict[str, Any]]:
+        """Latest ``n`` QuestionResponse rows for the user, newest first.
+
+        Args:
+            user: The user whose responses to fetch.
+            n: How many to return.
+
+        Returns:
+            List of dicts shaped ``{"question": str, "response": str, "date": datetime}``.
+        """
+        QuestionResponse = apps.get_model("drill", "QuestionResponse")
+        qs = (
+            QuestionResponse.objects.filter(question__user=user)
+            .select_related("question")
+            .order_by("-date")[:n]
+        )
+        return [
+            {"question": r.question.question, "response": r.response, "date": r.date}
+            for r in qs
+        ]
+
+    def responses_by_kind(self, user: User) -> dict[str, int]:
+        """Count of QuestionResponse rows per response kind for this user.
+
+        Args:
+            user: The user whose responses to count.
+
+        Returns:
+            Dict with keys ``easy``, ``good``, ``hard``, ``reset``; missing
+            kinds default to zero.
+        """
+        QuestionResponse = apps.get_model("drill", "QuestionResponse")
+        rows = (
+            QuestionResponse.objects.filter(question__user=user)
+            .values("response")
+            .annotate(n=Count("id"))
+        )
+        # Keys must stay in sync with VALID_RESPONSES in drill/models.py.
+        counts = {"easy": 0, "good": 0, "hard": 0, "reset": 0}
+        for row in rows:
+            if row["response"] in counts:
+                counts[row["response"]] = row["n"]
+        return counts
+
     def _batch_tag_progress(
         self, user: User, tag_names: list[str]
-    ) -> list[dict[str, str | int]]:
+    ) -> list[dict[str, Any]]:
         """Compute progress for multiple tags in bulk.
 
         Args:
@@ -242,9 +497,18 @@ class DrillManager(models.Manager):
             results.append({
                 "name": name,
                 "progress": progress,
+                "todo": todo,
                 "last_reviewed": last_reviewed_str,
+                "last_reviewed_dt": stat.q_last_reviewed if stat else None,
                 "url": reverse("drill:start_study_session")
                 + f"?study_method=tag&tags={name}",
                 "count": count,
             })
         return results
+
+
+def _local_day_bounds(d: date) -> tuple[datetime, datetime]:
+    """Return ``(start_dt, end_dt)`` spanning local calendar day ``d``."""
+    tz = timezone.get_current_timezone()
+    start = timezone.make_aware(datetime.combine(d, datetime.min.time()), tz)
+    return start, start + timedelta(days=1)

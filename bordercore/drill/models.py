@@ -294,15 +294,23 @@ class Question(ElasticsearchMixin, TimeStampedModel):
             .first()
         )
 
-    def get_all_tags_progress(self) -> list[dict[str, str | int]]:
-        """Return review/progress summaries for each tag on this question.
+    def get_all_tags_progress(self) -> list[dict[str, Any]]:
+        """Return review/progress summaries for each tag on this question (JSON-safe; no raw datetimes).
+
+        Internally wraps :meth:`DrillManager._batch_tag_progress` and drops the
+        raw ``last_reviewed_dt`` field so callers may safely ``json.dumps`` the
+        result.
 
         Returns:
             A list of tag progress dicts. Each dict includes fields such as
-            "name", "progress", "last_reviewed", and "count".
+            "name", "progress", "last_reviewed", and "count".  The raw
+            ``last_reviewed_dt`` datetime is stripped before returning.
         """
         tag_names = list(self.tags.values_list("name", flat=True))
-        return Question.objects._batch_tag_progress(self.user, tag_names)
+        rows = Question.objects._batch_tag_progress(self.user, tag_names)
+        for r in rows:
+            r.pop("last_reviewed_dt", None)
+        return rows
 
     def delete(
             self,

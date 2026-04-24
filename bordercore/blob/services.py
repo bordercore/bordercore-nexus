@@ -108,7 +108,7 @@ def get_recent_blobs(user: User, limit: int = 10, skip_content: bool = False) ->
     blob_list = Blob.objects.filter(
         user=user
     ).prefetch_related(
-        "tags"
+        "tags", "metadata"
     ).order_by(
         "-created"
     )[:limit]

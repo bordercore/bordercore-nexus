@@ -67,11 +67,6 @@ def _wrap_element(browser, element):
 
 class SummaryPage:
 
-    STUDY_BUTTON = (By.CSS_SELECTOR, "button[data-bs-target='#modal-study']")
-    TAG_RADIO_OPTION = (By.CSS_SELECTOR, "input[value='tag']")
-    TAG_INPUT = (By.CSS_SELECTOR, "#tag-name input")
-    START_STUDY_SESSION_BUTTON = (By.CSS_SELECTOR, "input[type='submit']")
-    TAG_DROPDOWN = (By.CSS_SELECTOR, "#tag-name .react-select__option")
     QUESTION = (By.CSS_SELECTOR, "h3.drill-text p")
     BREADCRUMB = (By.CSS_SELECTOR, ".breadcrumb-item strong:first-child")
 
@@ -89,37 +84,13 @@ class SummaryPage:
         found_element = self.browser.find_element(*selector)
         return _wrap_element(self.browser, found_element)
 
-    def study_button(self):
-        """Find the 'Study' button."""
-        return self.find_element(*self.STUDY_BUTTON)
-
-    def tag_radio_option(self):
-        """Find the 'Tag' study method option."""
-        return self.find_element(*self.TAG_RADIO_OPTION)
-
-    def tag_input(self):
-        """Find the 'Tag' text input."""
-        return self.find_element(*self.TAG_INPUT)
-
-    def start_study_session_button(self):
-        """Find the 'Start Study Session' button."""
-        return self.find_element(*self.START_STUDY_SESSION_BUTTON)
-
-    def tag_dropdown_option(self, tag_name):
-        """Find the dropdown option with display name 'tag_name'."""
-        wait = WebDriverWait(self.browser, timeout=10)
-        try:
-            wait.until(
-                lambda driver: len(driver.find_elements(*self.TAG_DROPDOWN)) > 0
-            )
-        except Exception:
-            pass
-
-        tag_list = self.browser.find_elements(*self.TAG_DROPDOWN)
-
-        for option in tag_list:
-            if option.text.strip() == tag_name:
-                return _wrap_element(self.browser, option)
+    def tag_row(self, tag_name):
+        """Find the tag-row link in the 'Tags needing review' table for tag_name."""
+        selector = (
+            By.CSS_SELECTOR,
+            f'a.drill-tag-row[href*="study_method=tag&tags={tag_name}"]',
+        )
+        return self.find_element(*selector)
 
     def question_text(self):
         """Find the question text."""

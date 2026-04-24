@@ -15,6 +15,7 @@ from blob.services import (get_authors, get_blob_naturalsize, get_recent_blobs,
                            get_recent_media, import_artstation,
                            import_instagram, import_newyorktimes, parse_date,
                            parse_shortcode)
+from blob.tests.factories import BlobFactory
 
 faker = FakerFactory.create()
 
@@ -288,3 +289,36 @@ def test_parse_date():
     assert parse_date("2021-08-15 23:40:56") == "2021-08-15"
     assert parse_date("2021-11-15T15:56:23.875-06:00") == "2021-11-15"
     assert parse_date("January 1, 2022") == "January 1, 2022"
+
+
+@patch("blob.services.get_blob_sizes")
+def test_get_recent_blobs_does_not_n_plus_one_on_metadata(
+    mock_get_blob_sizes, authenticated_client, django_assert_num_queries
+):
+    """Verify get_recent_blobs prefetches metadata so Blob.doctype does not fire
+    one extra SELECT per blob (the N+1 that was introduced by commit 948c3e99)."""
+
+    mock_get_blob_sizes.return_value = {}
+
+    user, _ = authenticated_client()
+
+    # Seed 3 blobs belonging to the same user. BlobFactory always creates at
+    # least one MetaData row (the "Url" entry), which is what Blob.doctype reads.
+    for _ in range(3):
+        BlobFactory(user=user)
+
+    # Warm-up call to settle any session/connection overhead.
+    get_recent_blobs(user)
+
+    with django_assert_num_queries(3) as ctx_3:
+        blobs, doctypes = get_recent_blobs(user)
+    assert len(blobs) == 3
+
+    # Add 3 more blobs: query count must stay constant — proving the prefetch
+    # is in effect and metadata is NOT fetched one-per-blob.
+    for _ in range(3):
+        BlobFactory(user=user)
+
+    with django_assert_num_queries(3) as ctx_6:
+        blobs2, doctypes2 = get_recent_blobs(user)
+    assert len(blobs2) == 6

@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import logging
 import random
+from datetime import datetime, timedelta
 from typing import Any, cast
 from urllib.parse import unquote, urlparse
 
@@ -20,11 +21,13 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
+from django.db.models import F, Q
 from django.db.models.query import QuerySet as QuerySetType
 from django.forms import BaseModelForm
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
+from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
@@ -41,6 +44,23 @@ from tag.models import Tag
 from .models import VALID_RESPONSES, Question
 
 log = logging.getLogger(f"bordercore.{__name__}")
+
+
+def _humanize_ago(dt: datetime) -> str:
+    """Humanize a past datetime as ``"5s"``/``"3m"``/``"2h"``/``"1d"``."""
+    delta = timezone.now() - dt
+    seconds = int(delta.total_seconds())
+    if seconds < 60:
+        return f"{seconds}s"
+    if seconds < 3600:
+        return f"{seconds // 60}m"
+    if seconds < 86400:
+        return f"{seconds // 3600}h"
+    return f"{seconds // 86400}d"
+
+
+PIP_DANGER_DAYS = 295
+PIP_WARN_DAYS = 280
 
 
 class DrillListView(LoginRequiredMixin, ListView):
@@ -61,47 +81,142 @@ class DrillListView(LoginRequiredMixin, ListView):
 
         Returns:
             Context dictionary containing:
-                - cols: Column names for the table
                 - title: Page title
-                - tags_last_reviewed: List of tags with last reviewed dates
-                - random_tag: A random tag for the user
-                - favorite_questions_progress: Progress on favorite questions
-                - total_progress: Total tag progress for the user
-                - study_session_progress: Current study session progress
-                - JSON versions of the above for React
+                - payload: Unified data dict for the React overview page
         """
         context = super().get_context_data(**kwargs)
-
         user = cast(User, self.request.user)
+        qs = Question.objects
 
-        tags_last_reviewed = Question.objects.tags_last_reviewed(user)[:20]
-        random_tag = Question.objects.get_random_tag(user)
-        favorite_questions_progress = Question.objects.favorite_questions_progress(user)
-        total_progress = Question.objects.total_tag_progress(user)
-        study_session_progress = Question.get_study_session_progress(self.request.session)
+        total_progress = qs.total_tag_progress(user)
+        favorites_progress = qs.favorite_questions_progress(user)
+        favorites_total = qs.filter(user=user, is_favorite=True).count()
+        all_total = qs.filter(user=user).count()
+        needs_review = total_progress["count"]
 
-        # Get study session from request for React
-        study_session = self.request.session.get("drill_study_session", None)
+        local_today = timezone.localdate()
+        today_start = timezone.make_aware(
+            datetime.combine(local_today, datetime.min.time()),
+            timezone.get_current_timezone(),
+        )
+        now = timezone.now()
+        week_start = now - timedelta(days=7)
+        reviewed_today = qs.reviewed_count(user, today_start)
+        reviewed_week = qs.reviewed_count(user, week_start)
 
+        intervals = list(user.userprofile.drill_intervals or [])
+        tags_needing = qs.tags_needing_review(user)
+        today = local_today
+        for r in tags_needing:
+            last_dt = r.pop("last_reviewed_dt", None)
+            r["overdueDays"] = (today - last_dt.date()).days if last_dt else None
+            r["pip"] = (
+                "danger" if (r["overdueDays"] or 0) > PIP_DANGER_DAYS
+                else "warm" if (r["overdueDays"] or 0) > PIP_WARN_DAYS
+                else "cool"
+            )
+
+        pinned_rows = qs.get_pinned_tags(user)
+        for r in pinned_rows:
+            r.pop("last_reviewed_dt", None)
+        disabled_rows = qs.get_disabled_tags(user)
+        for r in disabled_rows:
+            r.pop("last_reviewed_dt", None)
+
+        featured_raw = qs.get_random_tag(user)
+        featured: dict[str, Any] | None = None
+        if featured_raw:
+            featured = dict(featured_raw)
+            featured.pop("last_reviewed_dt", None)
+            featured["histo"] = qs.featured_tag_histogram(str(featured["name"]), user, weeks=12)
+
+        next_due = qs.next_due_in(user)
+        session = self.request.session.get("drill_study_session")
+        session_payload = None
+        if session:
+            idx = Question.get_study_session_progress(self.request.session)
+            session_payload = {
+                "type": session.get("type"),
+                "tag": session.get("tag"),
+                "list": session.get("list", []),
+                "current": session.get("current"),
+                "completed": idx,
+                "total": len(session.get("list", [])),
+                "scopeLabel": session.get("type", "all"),
+                "nextIn": next_due,
+            }
+
+        favorites_remaining = qs.filter(
+            Q(user=user, is_favorite=True),
+            Q(interval__lte=timezone.now() - F("last_reviewed"))  # type: ignore[operator]
+            | Q(last_reviewed__isnull=True),
+        ).count()
+
+        page_title = "Drill"
+        payload = {
+            "title": page_title,
+            "urls": {
+                "drillList": reverse("drill:list"),
+                "drillAdd": reverse("drill:add"),
+                "startStudySession": reverse("drill:start_study_session"),
+                "resume": reverse("drill:resume"),
+                "getPinnedTags": reverse("drill:get_pinned_tags"),
+                "pinTag": reverse("drill:pin_tag"),
+                "unpinTag": reverse("drill:unpin_tag"),
+                "sortPinnedTags": reverse("drill:sort_pinned_tags"),
+                "getDisabledTags": reverse("drill:get_disabled_tags"),
+                "disableTag": reverse("drill:disable_tag"),
+                "enableTag": reverse("drill:enable_tag"),
+                "tagSearch": reverse("tag:search"),
+                "featuredTagInfo": reverse("drill:featured_tag_info"),
+            },
+            "session": session_payload,
+            "studyScope": [
+                {"key": "all",       "label": "all questions", "count": all_total},
+                {"key": "review",    "label": "needs review",  "count": needs_review},
+                {"key": "favorites", "label": "favorites",     "count": favorites_total},
+                {"key": "recent",    "label": "recent · 7d",
+                 "count": qs.filter(user=user, created__gte=week_start).count()},
+                {"key": "random",    "label": "random · 10",   "count": 10},
+                {"key": "keyword",   "label": "keyword search","count": None},
+            ],
+            "intervals": intervals,
+            "responsesByKind": qs.responses_by_kind(user),
+            "totalProgress": {
+                "pct": int(round(total_progress["percentage"])),
+                "remaining": needs_review,
+                "total": all_total,
+                "reviewedToday": reviewed_today,
+                "reviewedWeek": reviewed_week,
+            },
+            "favoritesProgress": {
+                "pct": int(round(favorites_progress["percentage"])),
+                "remaining": favorites_remaining,
+                "total": favorites_total,
+                "reviewedToday": reviewed_today,
+                "reviewedWeek": reviewed_week,
+            },
+            "schedule": qs.schedule(user, span_days=3),
+            "tagsNeedingReview": tags_needing,
+            "pinned": pinned_rows,
+            "disabled": disabled_rows,
+            "featured": featured,
+            "streak": qs.study_streak(user),
+            "nextDue": next_due,
+            "activity28d": qs.activity_heatmap(user, days=28),
+            "recentResponses": [
+                {
+                    "question": r["question"],
+                    "response": r["response"],
+                    "ago": _humanize_ago(r["date"]),
+                }
+                for r in qs.recent_responses(user, n=5)
+            ],
+        }
         return {
             **context,
-            "cols": ["tag_name", "question_count", "last_reviewed", "lastreviewed_sort", "id"],
-            "title": "Home",
-            "tags_last_reviewed": tags_last_reviewed,
-            "random_tag": random_tag,
-            "favorite_questions_progress": favorite_questions_progress,
-            "total_progress": total_progress,
-            "study_session_progress": study_session_progress,
-            # JSON versions for React
-            "study_session_json": json.dumps(study_session) if study_session else "null",
-            "total_progress_json": json.dumps({"count": total_progress["count"], "percentage": total_progress["percentage"]}),
-            "favorite_progress_json": json.dumps({"count": favorite_questions_progress["count"], "percentage": favorite_questions_progress["percentage"]}),
-            "tags_last_reviewed_json": json.dumps([
-                {"name": t.name, "last_reviewed": (lr.strftime("%B %d, %Y") if lr else None)}
-                for t in tags_last_reviewed
-                for lr in [getattr(t, "last_reviewed", None)]
-            ]),
-            "featured_tag_json": json.dumps(random_tag) if random_tag else "null",
+            "title": page_title,
+            "payload": payload,
         }
 
 
@@ -871,3 +986,33 @@ def get_related_objects(request: HttpRequest, uuid: str) -> Response:
     }
 
     return Response(response)
+
+
+@api_view(["GET"])
+def featured_tag_info(request: HttpRequest) -> Response:
+    """Return featured-tag info dict for a single tag.
+
+    Used by the drill overview's Featured Tag card to swap the displayed
+    tag in place when the user picks a different one. Returns the same
+    shape the initial page payload uses for ``featured``.
+
+    Args:
+        request: HTTP request with query param ``tag`` (the tag name).
+
+    Returns:
+        JSON response shaped:
+            ``{"name", "progress", "count", "last_reviewed", "url", "histo"}``
+    """
+    tag_name = request.GET.get("tag", "").strip()
+    if not tag_name:
+        return Response({"detail": "tag query parameter is required"}, status=400)
+
+    user = cast(User, request.user)
+    rows = Question.objects._batch_tag_progress(user, [tag_name])
+    if not rows:
+        return Response({"detail": "tag not found"}, status=404)
+
+    row = {**rows[0]}
+    row.pop("last_reviewed_dt", None)
+    row["histo"] = Question.objects.featured_tag_histogram(tag_name, user, weeks=12)
+    return Response(row)
