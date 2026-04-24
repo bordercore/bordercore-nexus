@@ -1,3 +1,4 @@
+import json
 import os
 import urllib.request
 import uuid
@@ -11,8 +12,8 @@ from instaloader.instaloader import Instaloader
 pytestmark = [pytest.mark.django_db]
 
 from blob.models import Blob
-from blob.services import (get_authors, get_blob_naturalsize, get_recent_blobs,
-                           get_recent_media, import_artstation,
+from blob.services import (chatbot_followups, get_authors, get_blob_naturalsize,
+                           get_recent_blobs, get_recent_media, import_artstation,
                            import_instagram, import_newyorktimes, parse_date,
                            parse_shortcode)
 from blob.tests.factories import BlobFactory
@@ -322,3 +323,53 @@ def test_get_recent_blobs_does_not_n_plus_one_on_metadata(
     with django_assert_num_queries(3) as ctx_6:
         blobs2, doctypes2 = get_recent_blobs(user)
     assert len(blobs2) == 6
+
+
+@patch("blob.services.OpenAI")
+def test_chatbot_followups_returns_suggestions(mock_openai_cls):
+    """chatbot_followups returns the suggestions list parsed from the model response."""
+    mock_client = MagicMock()
+    mock_openai_cls.return_value = mock_client
+    mock_client.chat.completions.create.return_value = MagicMock(
+        choices=[
+            MagicMock(message=MagicMock(content=json.dumps({
+                "suggestions": ["explain more", "give an example", "related notes"]
+            })))
+        ]
+    )
+
+    result = chatbot_followups("Some assistant reply.", mode="chat")
+
+    assert result == ["explain more", "give an example", "related notes"]
+
+
+@patch("blob.services.OpenAI")
+def test_chatbot_followups_returns_empty_on_parse_error(mock_openai_cls):
+    """chatbot_followups returns [] when the model response is not valid JSON."""
+    mock_client = MagicMock()
+    mock_openai_cls.return_value = mock_client
+    mock_client.chat.completions.create.return_value = MagicMock(
+        choices=[
+            MagicMock(message=MagicMock(content="not json at all"))
+        ]
+    )
+
+    result = chatbot_followups("Some reply.", mode="chat")
+
+    assert result == []
+
+
+@patch("blob.services.OpenAI")
+def test_chatbot_followups_returns_empty_on_missing_key(mock_openai_cls):
+    """chatbot_followups returns [] when JSON has no 'suggestions' key."""
+    mock_client = MagicMock()
+    mock_openai_cls.return_value = mock_client
+    mock_client.chat.completions.create.return_value = MagicMock(
+        choices=[
+            MagicMock(message=MagicMock(content=json.dumps({"other": []})))
+        ]
+    )
+
+    result = chatbot_followups("Some reply.", mode="chat")
+
+    assert result == []

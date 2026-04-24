@@ -1025,6 +1025,39 @@ def chatbot(request: HttpRequest, args: dict[str, Any]) -> Generator[str, None, 
                 yield choice_content
 
 
+def chatbot_followups(assistant_reply: str, mode: str = "chat") -> list[str]:
+    """Generate 2-3 follow-up question suggestions for an assistant reply.
+
+    Uses gpt-3.5-turbo for cost / latency. Returns [] on any failure so the
+    UI degrades gracefully (chips simply don't appear).
+    """
+    system = (
+        "Given an assistant reply, suggest 2-3 short follow-up questions the "
+        "user might ask next. Respond with JSON only, in the form "
+        '{"suggestions": ["...", "..."]}. Each suggestion must be under 8 words.'
+    )
+    user_msg = f"Mode: {mode}\n\nAssistant reply:\n{assistant_reply}"
+
+    try:
+        client = OpenAI()
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": user_msg},
+            ],
+            response_format={"type": "json_object"},
+        )
+        content = response.choices[0].message.content or ""
+        parsed = json.loads(content)
+        suggestions = parsed.get("suggestions", [])
+        if not isinstance(suggestions, list):
+            return []
+        return [str(s) for s in suggestions[:3]]
+    except (json.JSONDecodeError, KeyError, AttributeError, IndexError):
+        return []
+
+
 def get_node_to_object_query(node_uuid: str, object_uuid: str, user: User) -> Q:
     """Build a Q expression for finding a node-to-object relationship.
 
