@@ -1,5 +1,6 @@
 import React from "react";
 import "./login-tokens.css";
+import { MirrorCube } from "./MirrorCube";
 
 interface LoginPageProps {
   message?: string;
@@ -118,10 +119,69 @@ function BrandBar() {
   );
 }
 
+function CubeStage() {
+  return (
+    <>
+      <div
+        className="bc-login-cubes"
+        aria-hidden="true"
+        // must remain inline — absolute position with perspective and z-index
+        style={{
+          position: "absolute",
+          left: "22%",
+          top: "50%",
+          transform: "translate(-50%, -50%)",
+          perspective: 1200,
+          zIndex: 1,
+        }}
+      >
+        <MirrorCube size={200} dir={1} />
+      </div>
+      <div
+        className="bc-login-cubes"
+        aria-hidden="true"
+        // must remain inline — absolute position with perspective and z-index
+        style={{
+          position: "absolute",
+          left: "42%",
+          top: "50%",
+          transform: "translate(-50%, -50%)",
+          perspective: 1200,
+          zIndex: 1,
+        }}
+      >
+        <MirrorCube size={200} dir={-1} />
+      </div>
+    </>
+  );
+}
+
+function SyncLine() {
+  return (
+    <div
+      className="bc-login-syncline"
+      aria-hidden="true"
+      // must remain inline — gradient hairline with glow
+      style={{
+        position: "absolute",
+        left: "22%",
+        right: "58%",
+        top: "50%",
+        height: 1,
+        background: "linear-gradient(90deg, transparent, rgba(179,107,255,0.6), transparent)",
+        boxShadow: "0 0 8px rgba(179,107,255,0.4)",
+        zIndex: 2,
+      }}
+    />
+  );
+}
+
 export function LoginPage(_props: LoginPageProps) {
   return (
     <div className="bc-login-root">
       <BackdropGrid />
+      <CubeStage />
+      <SyncLine />
       <BrandBar />
     </div>
   );
