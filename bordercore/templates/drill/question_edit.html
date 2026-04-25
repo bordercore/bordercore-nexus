@@ -77,8 +77,8 @@
 {% block content %}
     <div
         id="react-root"
-        data-initial-question="{{ object.question|default:form.question.value|default_if_none:''|escapejs }}"
-        data-initial-answer="{{ object.answer|default:form.answer.value|default_if_none:''|escapejs }}"
+        data-initial-question="{{ object.question|default:form.question.value|default_if_none:'' }}"
+        data-initial-answer="{{ object.answer|default:form.answer.value|default_if_none:'' }}"
         data-is-reversible="{{ form.is_reversible.value|yesno:'true,false' }}"
         data-object-uuid="{{ object.uuid|default:'' }}"
         data-action="{{ action }}"
