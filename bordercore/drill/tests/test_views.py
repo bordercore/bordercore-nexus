@@ -553,3 +553,25 @@ def test_question_detail_view_renders_with_tagged_question(client):
     # Confirm tag_info_json is present in context (would raise TypeError pre-fix
     # because json.dumps couldn't serialize the raw last_reviewed_dt datetime):
     assert "tag_info_json" in response.context
+
+
+def test_question_detail_view_passes_full_intervals_and_extra_fields(client):
+    user = UserFactory(username="user-detail-full")
+    tag = TagFactory(user=user, name="alpha-detail-full")
+    q = QuestionFactory(user=user, last_reviewed=timezone.now() - timedelta(days=100))
+    q.tags.add(tag)
+
+    client.force_login(user)
+    response = client.get(urls.reverse("drill:detail", kwargs={"uuid": q.uuid}))
+    assert response.status_code == 200
+
+    intervals_json = response.context["intervals_json"]
+    intervals = json.loads(intervals_json)
+    for key in ("good", "easy", "hard", "reset"):
+        assert key in intervals
+        assert "days" in intervals[key], f"{key} should expose 'days' for the rating button"
+        assert "interval_index" in intervals[key]
+
+    question_json = json.loads(response.context["question_json"])
+    for key in ("intervalIndex", "timesFailed", "created"):
+        assert key in question_json, f"question_json missing key: {key}"

@@ -384,7 +384,7 @@ class QuestionDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView
                 - tag_list: Comma-separated list of tag names
                 - study_session_progress: Current study session progress
                 - last_response: The last response recorded for this question
-                - intervals: Question intervals (description only)
+                - intervals: Question intervals with full data (description, days, interval_index)
                 - reverse_question: Whether to show the question in reverse
                 - sql_db: SQL database information if applicable
                 - JSON versions of the above for React
@@ -394,7 +394,16 @@ class QuestionDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView
         tags = list(self.object.tags.all())
         tag_info = self.object.get_all_tags_progress()
         last_response = self.object.get_last_response()
-        intervals = self.object.get_intervals(description_only=True)
+
+        raw_intervals = self.object.get_intervals(description_only=False)
+        intervals: dict[str, dict[str, Any]] = {}
+        for key, value in raw_intervals.items():
+            intervals[key] = {
+                "description": value["description"],
+                "days": value["interval"].days,
+                "interval_index": value["interval_index"],
+            }
+
         reverse_question = self.object.is_reversible and random.choice([True, False])
         sql_db = self.object.sql_db
         study_session = self.request.session.get("drill_study_session", None)
@@ -405,8 +414,15 @@ class QuestionDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView
             "uuid": str(self.object.uuid),
             "question": self.object.question,
             "answer": self.object.answer,
-            "lastReviewed": self.object.last_reviewed.strftime("%B %d, %Y") if self.object.last_reviewed else None,
+            "lastReviewed": (
+                self.object.last_reviewed.strftime("%B %d, %Y")
+                if self.object.last_reviewed else None
+            ),
             "interval": self.object.interval.days,
+            "intervalIndex": self.object.interval_index,
+            "intervalCount": len(cast(User, self.request.user).userprofile.drill_intervals or []),
+            "timesFailed": self.object.times_failed,
+            "created": self.object.created.strftime("%B %d, %Y"),
             "needsReview": self.object.needs_review,
             "isFavorite": self.object.is_favorite,
             "isDisabled": self.object.is_disabled,
