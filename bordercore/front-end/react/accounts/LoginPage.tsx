@@ -176,12 +176,72 @@ function SyncLine() {
   );
 }
 
+interface TagItem {
+  label: string;
+  x: number;
+  y: number;
+  hue: number;
+}
+
+const TAG_ITEMS: TagItem[] = [
+  { label: "primary", x: 6, y: 36, hue: 270 },
+  { label: "replica", x: 48, y: 36, hue: 200 },
+  { label: "in-sync", x: 24, y: 18, hue: 270 },
+  { label: "lag 4ms", x: 30, y: 78, hue: 200 },
+  { label: "writes ←", x: 14, y: 60, hue: 320 },
+  { label: "reads →", x: 38, y: 60, hue: 320 },
+];
+
+function FloatingTags() {
+  return (
+    <div
+      className="bc-login-tags"
+      aria-hidden="true"
+      // must remain inline — fixed full-bleed positioning under cubes
+      style={{
+        position: "absolute",
+        inset: 0,
+        pointerEvents: "none",
+        overflow: "hidden",
+        zIndex: 2,
+      }}
+    >
+      {TAG_ITEMS.map((it, i) => (
+        <span
+          key={it.label}
+          data-anim
+          // must remain inline — per-tag position, hue, and animation index
+          style={{
+            position: "absolute",
+            left: `${it.x}%`,
+            top: `${it.y}%`,
+            fontFamily: "var(--bc-font-mono)",
+            fontSize: 11,
+            letterSpacing: "0.05em",
+            color: `hsla(${it.hue}, 70%, 75%, 0.6)`,
+            padding: "3px 9px",
+            border: `1px solid hsla(${it.hue}, 70%, 60%, 0.28)`,
+            borderRadius: 999,
+            background: "rgba(11, 13, 20, 0.45)",
+            backdropFilter: "blur(4px)",
+            WebkitBackdropFilter: "blur(4px)",
+            animation: `fl${i % 3} ${14 + (i % 4) * 3}s ease-in-out infinite`,
+          }}
+        >
+          {it.label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export function LoginPage(_props: LoginPageProps) {
   return (
     <div className="bc-login-root">
       <BackdropGrid />
       <CubeStage />
       <SyncLine />
+      <FloatingTags />
       <BrandBar />
     </div>
   );
