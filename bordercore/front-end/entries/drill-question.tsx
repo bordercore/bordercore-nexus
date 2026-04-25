@@ -6,6 +6,14 @@ interface TagInfo {
   name: string;
   count: number;
   progress: number;
+  last_reviewed: string;
+  url: string;
+}
+
+interface IntervalEntry {
+  description: string;
+  days: number;
+  interval_index: number;
 }
 
 interface StudySession {
@@ -17,6 +25,7 @@ interface StudySession {
 const container = document.getElementById("react-root");
 if (container) {
   // Get URLs from data attributes
+  const homeUrl = container.getAttribute("data-home-url") || "/";
   const drillListUrl = container.getAttribute("data-drill-list-url") || "";
   const drillAddUrl = container.getAttribute("data-drill-add-url") || "";
   const drillAddWithTagUrl = container.getAttribute("data-drill-add-with-tag-url") || "";
@@ -33,7 +42,6 @@ if (container) {
   const sortRelatedObjectsUrl = container.getAttribute("data-sort-related-objects-url") || "";
   const editRelatedObjectNoteUrl = container.getAttribute("data-edit-related-object-note-url") || "";
   const searchNamesUrl = container.getAttribute("data-search-names-url") || "";
-  const getRelatedTagsUrl = container.getAttribute("data-get-related-tags-url") || "";
   const sqlPlaygroundUrl = container.getAttribute("data-sql-playground-url") || "";
   const startStudySessionUrl = container.getAttribute("data-start-study-session-url") || "";
   const currentPath = container.getAttribute("data-current-path") || "";
@@ -59,9 +67,13 @@ if (container) {
     isDisabled: false,
     isReversible: false,
     tags: [] as { name: string }[],
+    intervalIndex: 0,
+    intervalCount: 0,
+    timesFailed: 0,
+    created: "",
   };
   let tagInfo: TagInfo[] = [];
-  let intervals: Record<string, { description: string }> = {};
+  let intervals: Record<string, IntervalEntry> = {};
   let studySession: StudySession | null = null;
   let sqlDb: { blob: { uuid: string } } | null = null;
 
@@ -107,6 +119,7 @@ if (container) {
       studySession={studySession}
       sqlDb={sqlDb}
       urls={{
+        home: homeUrl,
         drillList: drillListUrl,
         drillAdd: drillAddUrl,
         drillAddWithTag: drillAddWithTagUrl,
@@ -123,7 +136,6 @@ if (container) {
         sortRelatedObjects: sortRelatedObjectsUrl,
         editRelatedObjectNote: editRelatedObjectNoteUrl,
         searchNames: searchNamesUrl,
-        getRelatedTags: getRelatedTagsUrl,
         sqlPlayground: sqlPlaygroundUrl,
         startStudySession: startStudySessionUrl,
       }}

@@ -19,6 +19,7 @@
 {% block content %}
 
     <div id="react-root" class="flex-grow-1 d-flex flex-column min-h-0"
+        data-home-url="{% url 'homepage:homepage' %}"
         data-drill-list-url="{% url 'drill:list' %}"
         data-drill-add-url="{% url 'drill:add' %}"
         data-drill-add-with-tag-url="{% if object.tags.all %}{% url 'drill:add_with_tag' object.tags.all.0 %}{% else %}{% url 'drill:add' %}{% endif %}"
