@@ -9,6 +9,8 @@ interface LoginPageProps {
   csrfToken: string;
 }
 
+const MARK_GRAD_ID = "bc-mark-grad-login";
+
 function Mark({ size = 20 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -18,12 +20,20 @@ function Mark({ size = 20 }: { size?: number }) {
         width="18"
         height="18"
         rx="4"
-        stroke="url(#bc-mark-grad)"
+        stroke={`url(#${MARK_GRAD_ID})`}
         strokeWidth="1.5"
       />
-      <rect x="7" y="7" width="10" height="10" rx="2" fill="url(#bc-mark-grad)" opacity="0.85" />
+      <rect
+        x="7"
+        y="7"
+        width="10"
+        height="10"
+        rx="2"
+        fill={`url(#${MARK_GRAD_ID})`}
+        opacity="0.85"
+      />
       <defs>
-        <linearGradient id="bc-mark-grad" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id={MARK_GRAD_ID} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#b36bff" />
           <stop offset="100%" stopColor="#4cc2ff" />
         </linearGradient>
