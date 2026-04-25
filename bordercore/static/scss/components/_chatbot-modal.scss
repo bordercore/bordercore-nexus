@@ -196,6 +196,10 @@
   margin-bottom: 0;
 }
 
+.chatbot-message-text li:hover {
+  background-color: transparent;
+}
+
 .chatbot-message-text a {
   color: var(--accent);
   text-decoration: underline;
