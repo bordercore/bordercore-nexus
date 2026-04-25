@@ -175,6 +175,8 @@
                     chatBotConfig: {
                         blobUuid: "{{ blob.uuid|default:'' }}",
                         chatUrl: "{% url 'blob:chat' %}",
+                        followupsUrl: "{% url 'blob:chat_followups' %}",
+                        saveAsNoteUrl: "{% url 'blob:chat_save_as_note' %}",
                         csrfToken: "{{ csrf_token }}",
                     },
                     overdueTasksConfig: {
