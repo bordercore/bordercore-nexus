@@ -1,0 +1,497 @@
+// =============================================================================
+// Chatbot modal — extends _refined-modal.scss with chat-specific styles.
+// Two display modes: centered modal (default, uses .refined-modal) and
+// right-docked panel (.chatbot-modal--pinned). The shell shares scrim,
+// eyebrow, title, lead, and close button with refined-modal.
+// =============================================================================
+
+// stylelint-disable selector-class-pattern
+
+@keyframes chatbot-cursor-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes chatbot-pinned-in {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes chatbot-followup-in {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Modal mode — width override of refined-modal (default is 520px)
+// -----------------------------------------------------------------------------
+.refined-modal.chatbot-modal {
+  display: flex;
+  width: min(640px, calc(100vw - 40px));
+  max-height: min(720px, calc(100vh - 80px));
+  flex-direction: column;
+  padding: 24px 24px 16px;
+}
+
+// -----------------------------------------------------------------------------
+// Pinned mode — docked to right edge, no scrim, page interactive
+// -----------------------------------------------------------------------------
+.chatbot-modal--pinned {
+  position: fixed;
+  z-index: 70;
+  top: 16px;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 18px 12px 22px;
+  border: 1px solid color-mix(in oklch, var(--accent), transparent 82%);
+  border-radius: 14px;
+  animation: chatbot-pinned-in 160ms cubic-bezier(0.22, 1, 0.36, 1);
+  backdrop-filter: blur(20px);
+  background: color-mix(in oklch, var(--bg-1), transparent 4%);
+  box-shadow:
+    0 1px 0 0 rgb(255 255 255 / 4%) inset,
+    0 20px 60px -12px rgb(0 0 0 / 70%);
+  color: var(--fg-1);
+  font-family: var(--font-ui);
+}
+
+// -----------------------------------------------------------------------------
+// Header
+// -----------------------------------------------------------------------------
+.chatbot-header {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.chatbot-pin-btn {
+  position: absolute;
+  top: 0;
+  right: 40px;
+  display: grid;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg-2);
+  cursor: pointer;
+  place-items: center;
+  transition: all 120ms;
+}
+
+.chatbot-pin-btn:hover {
+  background: var(--bg-2);
+  color: var(--fg-1);
+}
+
+.chatbot-pin-btn--active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+// -----------------------------------------------------------------------------
+// Mode chips
+// -----------------------------------------------------------------------------
+.chatbot-mode-chips {
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  gap: 6px;
+}
+
+.chatbot-mode-chip {
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  background: var(--bg-1);
+  color: var(--fg-2);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  transition: all 120ms;
+}
+
+.chatbot-mode-chip:hover {
+  border-color: color-mix(in oklch, var(--accent), transparent 60%);
+  color: var(--fg-1);
+}
+
+.chatbot-mode-chip--active {
+  border-color: var(--accent);
+  background: color-mix(in oklch, var(--accent), transparent 88%);
+  color: var(--accent);
+}
+
+.chatbot-mode-chip--readonly {
+  cursor: default;
+}
+
+// -----------------------------------------------------------------------------
+// Message list
+// -----------------------------------------------------------------------------
+.chatbot-message-list {
+  display: flex;
+  min-height: 240px;
+  flex: 1;
+  flex-direction: column;
+  padding-right: 6px;
+  margin-bottom: 12px;
+  gap: 14px;
+  overflow-y: auto;
+}
+
+.chatbot-modal--pinned .chatbot-message-list {
+  min-height: 0;
+}
+
+.chatbot-message {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.chatbot-message-who {
+  color: var(--fg-3);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.chatbot-message--user .chatbot-message-who {
+  color: var(--accent);
+}
+
+.chatbot-message-text {
+  color: var(--fg-1);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+.chatbot-modal--pinned .chatbot-message-text {
+  font-size: 12.5px;
+}
+
+.chatbot-message-text p {
+  margin: 0 0 8px;
+}
+
+.chatbot-message-text p:last-child {
+  margin-bottom: 0;
+}
+
+.chatbot-message-text a {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.chatbot-cursor {
+  display: inline-block;
+  width: 5px;
+  height: 14px;
+  margin-left: 2px;
+  animation: chatbot-cursor-blink 1s steps(1) infinite;
+  background: var(--accent);
+  vertical-align: -1px;
+}
+
+// -----------------------------------------------------------------------------
+// Code blocks (hljs)
+// -----------------------------------------------------------------------------
+.chatbot-message-text pre.hljs {
+  position: relative;
+  padding: 12px 12px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin: 8px 0;
+  background: var(--bg-0);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-x: auto;
+}
+
+.chatbot-message-text pre.hljs code {
+  background: none;
+  color: var(--fg-1);
+  font-family: inherit;
+  font-size: inherit;
+}
+
+// stylelint-disable-next-line no-descending-specificity
+.chatbot-message-text .hljs-keyword,
+.chatbot-message-text .hljs-selector-tag,
+.chatbot-message-text .hljs-built_in {
+  color: color-mix(in oklch, var(--accent), white 10%);
+}
+
+.chatbot-message-text .hljs-string,
+.chatbot-message-text .hljs-attr {
+  color: color-mix(in oklch, var(--accent), #88c070 50%);
+}
+
+.chatbot-message-text .hljs-number,
+.chatbot-message-text .hljs-literal {
+  color: color-mix(in oklch, var(--accent), #d8a853 60%);
+}
+
+.chatbot-message-text .hljs-comment,
+.chatbot-message-text .hljs-quote {
+  color: var(--fg-3);
+  font-style: italic;
+}
+
+.chatbot-message-text .hljs-function,
+.chatbot-message-text .hljs-title {
+  color: color-mix(in oklch, var(--accent), white 30%);
+}
+
+// -----------------------------------------------------------------------------
+// Per-message actions
+// -----------------------------------------------------------------------------
+.chatbot-message-actions {
+  display: flex;
+  margin-top: 4px;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity 120ms;
+}
+
+.chatbot-message:hover .chatbot-message-actions {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .chatbot-message-actions {
+    opacity: 1;
+  }
+}
+
+.chatbot-action-btn {
+  padding: 3px 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg-2);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  transition: all 120ms;
+}
+
+.chatbot-action-btn:hover {
+  border-color: var(--line);
+  background: var(--bg-2);
+  color: var(--fg-1);
+}
+
+.chatbot-action-btn--primary {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+// -----------------------------------------------------------------------------
+// Save-as-note inline strip
+// -----------------------------------------------------------------------------
+.chatbot-save-as-note {
+  display: grid;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin-top: 8px;
+  background: var(--bg-0);
+  gap: 8px;
+}
+
+.chatbot-save-field {
+  display: grid;
+  gap: 4px;
+}
+
+.chatbot-save-field label {
+  color: var(--fg-2);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.chatbot-save-field label .optional {
+  color: var(--fg-3);
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: lowercase;
+}
+
+.chatbot-save-field input {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg-1);
+  color: var(--fg-1);
+  font: 400 12.5px/1.4 var(--font-ui);
+  outline: none;
+  transition: border-color 120ms, box-shadow 120ms;
+}
+
+.chatbot-save-field input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent), transparent 80%);
+}
+
+.chatbot-save-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+// -----------------------------------------------------------------------------
+// Follow-up chips
+// -----------------------------------------------------------------------------
+.chatbot-followups {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  animation: chatbot-followup-in 120ms cubic-bezier(0.22, 1, 0.36, 1);
+  gap: 6px;
+}
+
+.chatbot-followup-chip {
+  padding: 3px 10px;
+  border: 1px dashed color-mix(in oklch, var(--accent), transparent 60%);
+  border-radius: 99px;
+  background: transparent;
+  color: var(--fg-2);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  transition: all 120ms;
+}
+
+.chatbot-followup-chip:hover {
+  border-style: solid;
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+// -----------------------------------------------------------------------------
+// Input area
+// -----------------------------------------------------------------------------
+.chatbot-input-area {
+  padding-top: 10px;
+  border-top: 1px solid color-mix(in oklch, var(--line), transparent 30%);
+  margin-top: auto;
+}
+
+.chatbot-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg-0);
+  color: var(--fg-1);
+  font: 400 13.5px/1.4 var(--font-ui);
+  outline: none;
+  resize: none;
+  transition: border-color 120ms, box-shadow 120ms;
+}
+
+.chatbot-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent), transparent 80%);
+}
+
+.chatbot-input::placeholder {
+  color: var(--fg-3);
+}
+
+.chatbot-keyboard-hints {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  color: var(--fg-3);
+  font-family: var(--font-ui);
+  font-size: 10px;
+}
+
+.chatbot-keyboard-hints kbd {
+  padding: 1px 5px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  margin: 0 2px;
+  background: var(--bg-1);
+  color: var(--fg-2);
+  font-family: var(--font-mono);
+  font-size: 9px;
+}
+
+.chatbot-stop-btn {
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #f87171;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 10px;
+}
+
+// -----------------------------------------------------------------------------
+// Resize handle (pinned mode only)
+// -----------------------------------------------------------------------------
+.chatbot-resize-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -4px;
+  width: 8px;
+  cursor: ew-resize;
+}
+
+.chatbot-resize-handle::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 4px;
+  width: 2px;
+  background: transparent;
+  content: "";
+  transition: background 120ms;
+}
+
+.chatbot-resize-handle:hover::before {
+  background: var(--accent);
+}
+
+// -----------------------------------------------------------------------------
+// Toast (save confirmation)
+// -----------------------------------------------------------------------------
+.chatbot-toast {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg-2);
+  color: var(--fg-1);
+  font-size: 11px;
+  transform: translateX(-50%);
+}
