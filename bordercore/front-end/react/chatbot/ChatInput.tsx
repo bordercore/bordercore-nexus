@@ -39,6 +39,9 @@ export function ChatInput({
   }, [autoFocus]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Chat owns the keystroke — don't let underlying page shortcuts (drill, blob,
+    // etc.) react to letters the user is typing into the chat.
+    e.stopPropagation();
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       onSend();
@@ -60,6 +63,7 @@ export function ChatInput({
         value={value}
         onChange={e => onChange(e.target.value)}
         onKeyDown={handleKeyDown}
+        onKeyUp={e => e.stopPropagation()}
       />
       <div className="chatbot-keyboard-hints">
         <span>

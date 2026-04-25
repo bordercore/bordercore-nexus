@@ -22,6 +22,8 @@ export function SaveAsNoteForm({ defaultTitle, onSave, onCancel }: SaveAsNoteFor
   };
 
   const handleKey = (e: React.KeyboardEvent) => {
+    // Chat owns the keystroke — don't let underlying page shortcuts react.
+    e.stopPropagation();
     if (e.key === "Enter") {
       e.preventDefault();
       submit();
@@ -32,7 +34,7 @@ export function SaveAsNoteForm({ defaultTitle, onSave, onCancel }: SaveAsNoteFor
   };
 
   return (
-    <div className="chatbot-save-as-note" onKeyDown={handleKey}>
+    <div className="chatbot-save-as-note" onKeyDown={handleKey} onKeyUp={e => e.stopPropagation()}>
       <div className="chatbot-save-field">
         <label htmlFor="chatbot-save-title">title</label>
         <input
