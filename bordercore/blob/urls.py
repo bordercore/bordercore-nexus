@@ -110,6 +110,11 @@ urlpatterns = [
         name="chat"
     ),
     path(
+        route="chat/followups",
+        view=views.chat_followups,
+        name="chat_followups"
+    ),
+    path(
         route="bookshelf",
         view=views.BookshelfListView.as_view(),
         name="bookshelf"

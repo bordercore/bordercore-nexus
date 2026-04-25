@@ -751,3 +751,46 @@ def test_sort_related_objects(authenticated_client):
     })
 
     assert resp.status_code == 200
+
+
+@patch("blob.views.chatbot_followups")
+def test_chat_followups_returns_suggestions(mock_followups, authenticated_client):
+    """chat_followups view returns suggestions as JSON."""
+    mock_followups.return_value = ["a", "b", "c"]
+
+    _, client = authenticated_client()
+    url = urls.reverse("blob:chat_followups")
+    resp = client.post(
+        url,
+        data=json.dumps({"assistant_reply": "Hello", "mode": "chat"}),
+        content_type="application/json",
+    )
+
+    assert resp.status_code == 200
+    assert resp.json() == {"suggestions": ["a", "b", "c"]}
+    mock_followups.assert_called_once_with("Hello", mode="chat")
+
+
+def test_chat_followups_requires_login(client):
+    """chat_followups view returns 403 for unauthenticated requests."""
+    url = urls.reverse("blob:chat_followups")
+    resp = client.post(
+        url,
+        data=json.dumps({"assistant_reply": "x", "mode": "chat"}),
+        content_type="application/json",
+    )
+    assert resp.status_code == 403
+
+
+@patch("blob.views.chatbot_followups")
+def test_chat_followups_handles_missing_fields(mock_followups, authenticated_client):
+    """chat_followups view tolerates missing fields by defaulting them."""
+    mock_followups.return_value = []
+
+    _, client = authenticated_client()
+    url = urls.reverse("blob:chat_followups")
+    resp = client.post(url, data=json.dumps({}), content_type="application/json")
+
+    assert resp.status_code == 200
+    assert resp.json() == {"suggestions": []}
+    mock_followups.assert_called_once_with("", mode="chat")

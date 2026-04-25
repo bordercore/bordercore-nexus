@@ -14,6 +14,7 @@ from botocore.exceptions import BotoCoreError, ClientError
 
 from rest_framework import status
 from rest_framework.decorators import api_view
+from rest_framework.request import Request
 from rest_framework.response import Response
 
 from django.conf import settings
@@ -40,8 +41,8 @@ from blob.forms import BlobForm
 from blob.models import (Blob, BlobTemplate, BlobToObject, MetaData,
                          RecentlyViewedBlob)
 from blob.services import add_related_object as add_related_object_service
-from blob.services import (chatbot, generate_note_thumbnail, get_books,
-                           get_node_to_object_query, import_blob)
+from blob.services import (chatbot, chatbot_followups, generate_note_thumbnail,
+                           get_books, get_node_to_object_query, import_blob)
 from collection.models import Collection, CollectionObject
 from lib.decorators import validate_post_data
 from lib.exceptions import (InvalidNodeTypeError, NodeNotFoundError,
@@ -1172,6 +1173,15 @@ def chat(request: HttpRequest) -> StreamingHttpResponse:
         content_iterator = error_generator()
 
     return StreamingHttpResponse(content_iterator, content_type="text/plain")
+
+
+@api_view(["POST"])
+def chat_followups(request: Request) -> Response:
+    """Return 2-3 suggested follow-up prompts for a given assistant reply."""
+    assistant_reply = request.data.get("assistant_reply", "")
+    mode = request.data.get("mode", "chat")
+    suggestions = chatbot_followups(assistant_reply, mode=mode)
+    return Response({"suggestions": suggestions})
 
 
 class BookshelfListView(LoginRequiredMixin, ListView):
