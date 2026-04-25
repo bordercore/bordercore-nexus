@@ -40,8 +40,6 @@
 .bc-login-root {
   position: fixed;
   overflow: hidden;
-  width: 100vw;
-  height: 100vh;
   background: var(--bc-bg-0);
   color: var(--bc-fg-1);
   font-family: var(--bc-font-sans);
