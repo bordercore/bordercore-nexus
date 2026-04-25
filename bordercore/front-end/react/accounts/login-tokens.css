@@ -1,0 +1,113 @@
+@import "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap";
+
+:where(.bc-login-root) {
+  --bc-accent:           #b36bff;
+  --bc-accent-2:         #7c7fff;
+  --bc-accent-3:         #ff3dbd;
+  --bc-accent-4:         #4cc2ff;
+  --bc-accent-soft:      #b36bff40;
+  --bc-accent-hover:     #c98bff;
+  --bc-accent-press:     #9a55e8;
+  --bc-bg-0:             #07070c;
+  --bc-bg-1:             #0b0d14;
+  --bc-bg-2:             #12141c;
+  --bc-bg-3:             #1a1d28;
+  --bc-bg-4:             #242836;
+  --bc-fg-1:             #e6e8f0;
+  --bc-fg-2:             #b8bcc9;
+  --bc-fg-3:             #8a8fa0;
+  --bc-fg-4:             #5a5f72;
+  --bc-fg-disabled:      #3a3e4b;
+  --bc-ok:               #3fd29c;
+  --bc-warn:             #f0b840;
+  --bc-danger:           #f57;
+  --bc-border-1:         #2a2e3d;
+  --bc-border-2:         #3a3f52;
+  --bc-hairline:         #1e212d;
+  --bc-radius-md:        10px;
+  --bc-radius-lg:        14px;
+  --bc-radius-xl:        16px;
+  --bc-radius-pill:      999px;
+  --bc-font-sans:    "Inter", -apple-system, blinkmacsystemfont, "Segoe UI", roboto, "Helvetica Neue", arial, sans-serif;
+  --bc-font-display: "Space Grotesk", "Inter", -apple-system, "Segoe UI", sans-serif;
+  --bc-font-mono:    "JetBrains Mono", ui-monospace, sfmono-regular, "SF Mono", menlo, consolas, monospace;
+  --bc-ease-out:     cubic-bezier(0.22, 1, 0.36, 1);
+  --bc-t-fast:       120ms;
+  --bc-t-base:       180ms;
+  --bc-t-slow:       280ms;
+}
+
+.bc-login-root {
+  position: fixed;
+  overflow: hidden;
+  width: 100vw;
+  height: 100vh;
+  background: var(--bc-bg-0);
+  color: var(--bc-fg-1);
+  font-family: var(--bc-font-sans);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  inset: 0;
+  line-height: 1.5;
+}
+
+.bc-login-root *,
+.bc-login-root *::before,
+.bc-login-root *::after {
+  box-sizing: border-box;
+}
+
+.bc-login-root ::selection {
+  background: rgb(179 107 255 / 35%);
+  color: var(--bc-fg-1);
+}
+
+@keyframes mc-a {
+  from { transform: rotateX(-22deg) rotateY(0); }
+  to   { transform: rotateX(-22deg) rotateY(360deg); }
+}
+
+@keyframes mc-b {
+  from { transform: rotateX(-22deg) rotateY(0); }
+  to   { transform: rotateX(-22deg) rotateY(-360deg); }
+}
+
+@keyframes fl0 {
+  0%, 100% { transform: translate(0, 0); }
+  50%      { transform: translate(8px, -12px); }
+}
+
+@keyframes fl1 {
+  0%, 100% { transform: translate(0, 0); }
+  50%      { transform: translate(-10px, 8px); }
+}
+
+@keyframes fl2 {
+  0%, 100% { transform: translate(0, 0); }
+  50%      { transform: translate(6px, 10px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bc-login-root [data-anim] {
+    animation-play-state: paused !important;
+  }
+}
+
+@media (width <= 900px) {
+  .bc-login-cubes,
+  .bc-login-tags,
+  .bc-login-syncline {
+    display: none;
+  }
+
+  .bc-login-card {
+    position: static;
+    width: auto;
+    margin: 80px 24px 24px;
+    transform: none;
+  }
+
+  .bc-login-brandbar {
+    padding: 16px 20px;
+  }
+}
