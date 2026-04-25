@@ -82,27 +82,42 @@ interface FieldProps {
   label: string;
   type?: "text" | "password";
   name: string;
-  defaultValue?: string;
+  value: string;
+  onChange: (next: string) => void;
   placeholder?: string;
   autoFocus?: boolean;
   autoComplete?: string;
   adornment?: React.ReactNode;
+  error?: string | null;
 }
 
 function Field({
   label,
   type = "text",
   name,
-  defaultValue,
+  value,
+  onChange,
   placeholder,
   autoFocus,
   autoComplete,
   adornment,
+  error,
 }: FieldProps) {
   const [focused, setFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const isPassword = type === "password";
   const realType = isPassword && showPassword ? "text" : type;
+
+  const borderColor = error
+    ? "var(--bc-danger)"
+    : focused
+      ? "var(--bc-accent)"
+      : "var(--bc-border-1)";
+  const ringShadow = error
+    ? "0 0 0 3px rgba(255,85,119,0.15)"
+    : focused
+      ? "0 0 0 3px rgba(179,107,255,0.18)"
+      : "none";
 
   return (
     <label
@@ -123,15 +138,15 @@ function Field({
         {label}
       </div>
       <div
-        // must remain inline — focus ring depends on runtime focused state
+        // must remain inline — focus ring depends on runtime focused / error state
         style={{
           position: "relative",
           display: "flex",
           alignItems: "center",
           background: "var(--bc-bg-1)",
-          border: `1px solid ${focused ? "var(--bc-accent)" : "var(--bc-border-1)"}`,
+          border: `1px solid ${borderColor}`,
           borderRadius: 8,
-          boxShadow: focused ? "0 0 0 3px rgba(179,107,255,0.18)" : "none",
+          boxShadow: ringShadow,
           transition: "all 160ms cubic-bezier(.22, 1, .36, 1)",
         }}
       >
@@ -153,7 +168,8 @@ function Field({
         <input
           type={realType}
           name={name}
-          defaultValue={defaultValue}
+          value={value}
+          onChange={e => onChange(e.target.value)}
           placeholder={placeholder}
           autoFocus={autoFocus}
           autoComplete={autoComplete}
@@ -194,6 +210,19 @@ function Field({
           </button>
         )}
       </div>
+      {error && (
+        <div
+          role="alert"
+          // must remain inline — inline error text styling
+          style={{
+            fontSize: 11,
+            color: "var(--bc-danger)",
+            marginTop: 6,
+          }}
+        >
+          {error}
+        </div>
+      )}
     </label>
   );
 }
@@ -256,7 +285,25 @@ interface LoginCardProps {
   csrfToken: string;
 }
 
-function LoginCard({ initialUsername, loginUrl, nextUrl, csrfToken }: LoginCardProps) {
+function LoginCard({ message, initialUsername, loginUrl, nextUrl, csrfToken }: LoginCardProps) {
+  const [username, setUsername] = useState(initialUsername);
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [clientError, setClientError] = useState<string | null>(null);
+
+  const errorText = clientError ?? (message && message.length > 0 ? "invalid credentials" : null);
+
+  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    if (!username || !password) {
+      e.preventDefault();
+      setClientError("enter both username and password");
+      return;
+    }
+    setClientError(null);
+    setLoading(true);
+    // Do NOT call e.preventDefault(); let the browser submit the form natively.
+  }
+
   return (
     <div
       className="bc-login-card"
@@ -330,6 +377,7 @@ function LoginCard({ initialUsername, loginUrl, nextUrl, csrfToken }: LoginCardP
         <form
           action={loginUrl}
           method="post"
+          onSubmit={onSubmit}
           // must remain inline — form layout
           style={{ display: "flex", flexDirection: "column", gap: 14 }}
         >
@@ -338,7 +386,8 @@ function LoginCard({ initialUsername, loginUrl, nextUrl, csrfToken }: LoginCardP
           <Field
             label="username"
             name="username"
-            defaultValue={initialUsername}
+            value={username}
+            onChange={setUsername}
             placeholder="username"
             autoComplete="username"
             autoFocus
@@ -349,12 +398,15 @@ function LoginCard({ initialUsername, loginUrl, nextUrl, csrfToken }: LoginCardP
             label="password"
             type="password"
             name="password"
+            value={password}
+            onChange={setPassword}
             placeholder="••••••••"
             autoComplete="current-password"
             // must remain inline — icon size passed as prop to FontAwesomeIcon
             adornment={<FontAwesomeIcon icon={faLock} style={{ fontSize: 13 }} />}
+            error={errorText}
           />
-          <PrimaryButton>connect →</PrimaryButton>
+          <PrimaryButton loading={loading}>connect →</PrimaryButton>
         </form>
         <div
           // must remain inline — footer row layout
