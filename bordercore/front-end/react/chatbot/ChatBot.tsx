@@ -66,9 +66,13 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
   }, []);
 
   const sendMessage = useCallback(
-    async (content: string, opts: { questionUuid?: string; exerciseUuid?: string } = {}) => {
+    async (
+      content: string,
+      opts: { questionUuid?: string; exerciseUuid?: string; baseHistory?: ChatMessage[] } = {}
+    ) => {
+      const startingHistory = opts.baseHistory ?? history;
       let payload: Record<string, string> = {};
-      let nextHistory = history;
+      let nextHistory = startingHistory;
       let nextMode = mode;
 
       if (opts.questionUuid) {
@@ -84,11 +88,11 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
         payload = { content, blob_uuid: blobUuid };
       } else {
         const userMsg: ChatMessage = {
-          id: history.length + 1,
+          id: startingHistory.length + 1,
           content,
           role: "user",
         };
-        nextHistory = [...history, userMsg];
+        nextHistory = [...startingHistory, userMsg];
         payload = {
           chat_history: JSON.stringify(nextHistory),
           mode,
@@ -207,13 +211,15 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
   }, [pinned, closeChat]);
 
   const handleRegenerate = useCallback(() => {
-    // Drop the last assistant message and re-send the previous user prompt.
-    const visible = history.filter(m => m.role !== "system");
+    if (isStreaming) return;
+    const trimmed = history.filter(
+      (m, i, arr) => !(i === arr.length - 1 && m.role === "assistant")
+    );
+    const visible = trimmed.filter(m => m.role !== "system");
     const lastUser = [...visible].reverse().find(m => m.role === "user");
     if (!lastUser) return;
-    setHistory(history.filter((m, i, arr) => !(i === arr.length - 1 && m.role === "assistant")));
-    sendMessage(lastUser.content);
-  }, [history, sendMessage]);
+    sendMessage(lastUser.content, { baseHistory: trimmed });
+  }, [history, isStreaming, sendMessage]);
 
   const handleSaveAsNote = useCallback(
     async (data: { title: string; tags: string }) => {
