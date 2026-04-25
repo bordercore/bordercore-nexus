@@ -1203,17 +1203,18 @@ def chat_save_as_note(request: Request) -> Response:
             status=HTTPStatus.BAD_REQUEST,
         )
 
-    blob = Blob.objects.create(
-        user=user,
-        name=title,
-        content=content,
-        is_note=True,
-    )
+    with transaction.atomic():
+        blob = Blob.objects.create(
+            user=user,
+            name=title,
+            content=content,
+            is_note=True,
+        )
 
-    tag_names = [t.strip() for t in tags_raw.split(",") if t.strip()]
-    for tag_name in tag_names:
-        tag, _ = Tag.objects.get_or_create(name=tag_name, user=user)
-        blob.tags.add(tag)
+        tag_names = [t.strip() for t in tags_raw.split(",") if t.strip()]
+        for tag_name in tag_names:
+            tag, _ = Tag.objects.get_or_create(name=tag_name, user=user)
+            blob.tags.add(tag)
 
     return Response({
         "uuid": str(blob.uuid),
