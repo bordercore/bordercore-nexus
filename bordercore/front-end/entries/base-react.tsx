@@ -7,7 +7,7 @@ import TopSearch, { TopSearchHandle } from "../react/search/TopSearch";
 import RecentBlobs from "../react/blob/RecentBlobs";
 import DropDownMenu from "../react/common/DropDownMenu";
 import OverdueTasks from "../react/todo/OverdueTasks";
-import ChatBot, { ChatBotHandle } from "../react/blob/ChatBot";
+import ChatBot, { ChatBotHandle } from "../react/chatbot/ChatBot";
 import SidebarMenu from "../react/common/SidebarMenu";
 import GlobalAudioPlayer from "../react/music/GlobalAudioPlayer";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -230,6 +230,8 @@ function ChatBotContent() {
       ref={chatBotRef}
       blobUuid={data.chatBotConfig?.blobUuid || ""}
       chatUrl={data.chatBotConfig?.chatUrl || ""}
+      followupsUrl={data.chatBotConfig?.followupsUrl || ""}
+      saveAsNoteUrl={data.chatBotConfig?.saveAsNoteUrl || ""}
       csrfToken={data.chatBotConfig?.csrfToken || ""}
     />
   );
