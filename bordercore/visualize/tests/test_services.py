@@ -52,7 +52,7 @@ def test_direct_blob_to_blob_edge_emitted():
     assert direct[0]["weight"] == 1
 
 
-def test_direct_edges_to_bookmark_and_question():
+def test_direct_edges_to_bookmark_and_question(monkeypatch_bookmark):
     user = UserFactory.create()
     blob = BlobFactory.create(user=user)
     bookmark = BookmarkFactory.create(user=user)
@@ -68,7 +68,7 @@ def test_direct_edges_to_bookmark_and_question():
     assert all(e["kind"] == "direct" for e in payload["edges"])
 
 
-def test_orphan_bookmarks_and_questions_excluded():
+def test_orphan_bookmarks_and_questions_excluded(monkeypatch_bookmark):
     user = UserFactory.create()
     BlobFactory.create(user=user)
     BookmarkFactory.create(user=user)  # never linked
