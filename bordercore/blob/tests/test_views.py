@@ -794,3 +794,56 @@ def test_chat_followups_handles_missing_fields(mock_followups, authenticated_cli
     assert resp.status_code == 200
     assert resp.json() == {"suggestions": []}
     mock_followups.assert_called_once_with("", mode="chat")
+
+
+def test_chat_save_as_note_creates_note(authenticated_client):
+    """chat_save_as_note creates a note-typed Blob and returns its uuid + url."""
+    user, client = authenticated_client()
+    url = urls.reverse("blob:chat_save_as_note")
+    resp = client.post(
+        url,
+        data=json.dumps({
+            "title": "My answer",
+            "tags": "ai, chatbot",
+            "content": "The answer is 42.",
+        }),
+        content_type="application/json",
+    )
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "uuid" in body
+    assert "url" in body
+
+    from blob.models import Blob
+    blob = Blob.objects.get(uuid=body["uuid"])
+    assert blob.user_id == user.id
+    assert blob.is_note is True
+    assert blob.name == "My answer"
+    assert blob.content == "The answer is 42."
+    tag_names = sorted(t.name for t in blob.tags.all())
+    assert tag_names == ["ai", "chatbot"]
+
+
+def test_chat_save_as_note_requires_title(authenticated_client):
+    """chat_save_as_note returns 400 when title is missing or blank."""
+    _, client = authenticated_client()
+    url = urls.reverse("blob:chat_save_as_note")
+
+    resp = client.post(
+        url,
+        data=json.dumps({"title": "  ", "content": "x"}),
+        content_type="application/json",
+    )
+    assert resp.status_code == 400
+
+
+def test_chat_save_as_note_requires_login(client):
+    """chat_save_as_note returns 403 for unauthenticated requests."""
+    url = urls.reverse("blob:chat_save_as_note")
+    resp = client.post(
+        url,
+        data=json.dumps({"title": "x", "content": "y"}),
+        content_type="application/json",
+    )
+    assert resp.status_code == 403

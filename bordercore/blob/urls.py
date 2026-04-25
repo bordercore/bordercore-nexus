@@ -115,6 +115,11 @@ urlpatterns = [
         name="chat_followups"
     ),
     path(
+        route="chat/save_as_note",
+        view=views.chat_save_as_note,
+        name="chat_save_as_note"
+    ),
+    path(
         route="bookshelf",
         view=views.BookshelfListView.as_view(),
         name="bookshelf"

@@ -40,6 +40,7 @@ from django.views.generic.list import ListView
 from blob.forms import BlobForm
 from blob.models import (Blob, BlobTemplate, BlobToObject, MetaData,
                          RecentlyViewedBlob)
+from tag.models import Tag
 from blob.services import add_related_object as add_related_object_service
 from blob.services import (chatbot, chatbot_followups, generate_note_thumbnail,
                            get_books, get_node_to_object_query, import_blob)
@@ -1182,6 +1183,42 @@ def chat_followups(request: Request) -> Response:
     mode = request.data.get("mode", "chat")
     suggestions = chatbot_followups(assistant_reply, mode=mode)
     return Response({"suggestions": suggestions})
+
+
+@api_view(["POST"])
+def chat_save_as_note(request: Request) -> Response:
+    """Create a note-typed Blob from a chatbot assistant reply.
+
+    Body: { title: str, tags: str (comma-separated, optional), content: str }
+    Returns: { uuid: str, url: str }
+    """
+    user = cast(User, request.user)
+    title = (request.data.get("title") or "").strip()
+    content = request.data.get("content") or ""
+    tags_raw = request.data.get("tags") or ""
+
+    if not title:
+        return Response(
+            {"error": "title is required"},
+            status=HTTPStatus.BAD_REQUEST,
+        )
+
+    blob = Blob.objects.create(
+        user=user,
+        name=title,
+        content=content,
+        is_note=True,
+    )
+
+    tag_names = [t.strip() for t in tags_raw.split(",") if t.strip()]
+    for tag_name in tag_names:
+        tag, _ = Tag.objects.get_or_create(name=tag_name, user=user)
+        blob.tags.add(tag)
+
+    return Response({
+        "uuid": str(blob.uuid),
+        "url": reverse("blob:detail", kwargs={"uuid": blob.uuid}),
+    })
 
 
 class BookshelfListView(LoginRequiredMixin, ListView):
