@@ -60,6 +60,24 @@
   color: var(--bc-fg-1);
 }
 
+/* stylelint-disable selector-class-pattern */
+.bc-login-mirror-cube__face {
+  position: absolute;
+  border: 1px solid rgb(179 107 255 / 50%);
+  background: rgb(179 107 255 / 5%);
+  box-shadow: inset 0 0 50px rgb(179 107 255 / 18%);
+}
+
+.bc-login-mirror-cube__grid {
+  position: absolute;
+  background-image:
+    linear-gradient(rgb(179 107 255 / 18%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(179 107 255 / 18%) 1px, transparent 1px);
+  background-size: 32px 32px;
+  inset: 0;
+}
+/* stylelint-enable selector-class-pattern */
+
 @keyframes mc-a {
   from { transform: rotateX(-22deg) rotateY(0); }
   to   { transform: rotateX(-22deg) rotateY(360deg); }

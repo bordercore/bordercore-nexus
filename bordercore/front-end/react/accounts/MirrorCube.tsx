@@ -5,22 +5,6 @@ interface MirrorCubeProps {
   dir?: 1 | -1;
 }
 
-const FACE_BASE_STYLE: React.CSSProperties = {
-  position: "absolute",
-  border: "1px solid rgba(179, 107, 255, 0.5)",
-  background: "rgba(179, 107, 255, 0.05)",
-  boxShadow: "inset 0 0 50px rgba(179, 107, 255, 0.18)",
-};
-
-const INNER_GRID_STYLE: React.CSSProperties = {
-  position: "absolute",
-  inset: 0,
-  backgroundImage:
-    "linear-gradient(rgba(179,107,255,0.18) 1px, transparent 1px)," +
-    "linear-gradient(90deg, rgba(179,107,255,0.18) 1px, transparent 1px)",
-  backgroundSize: "32px 32px",
-};
-
 export function MirrorCube({ size = 200, dir = 1 }: MirrorCubeProps) {
   const half = size / 2;
   const faceTransforms = [
@@ -47,16 +31,15 @@ export function MirrorCube({ size = 200, dir = 1 }: MirrorCubeProps) {
       {faceTransforms.map((tf, i) => (
         <div
           key={i}
+          className="bc-login-mirror-cube__face"
           // must remain inline — width, height, and transform depend on runtime props
           style={{
-            ...FACE_BASE_STYLE,
             width: size,
             height: size,
             transform: tf,
           }}
         >
-          {/* must remain inline — object ref satisfies style prop type */}
-          <div style={INNER_GRID_STYLE} />
+          <div className="bc-login-mirror-cube__grid" />
         </div>
       ))}
     </div>
