@@ -36,4 +36,12 @@ describe("chatbot markdown", () => {
     const html = renderMarkdown('<a href="javascript:alert(1)">x</a>');
     expect(html).not.toMatch(/href=["']javascript:/);
   });
+
+  it("strips all on* event handlers (not just a hardcoded subset)", () => {
+    const handlers = ["onmouseover", "onfocus", "onblur", "onkeydown"];
+    for (const handler of handlers) {
+      const html = renderMarkdown(`<img src="x" ${handler}="alert(1)">`);
+      expect(html).not.toContain(handler);
+    }
+  });
 });

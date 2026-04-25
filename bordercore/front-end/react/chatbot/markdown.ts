@@ -74,10 +74,14 @@ const md: MarkdownIt = MarkdownIt({
   },
 });
 
+// DOMPurify defaults already strip all on* event handlers and javascript:
+// hrefs. We add a few belt-and-suspenders FORBID_TAGS for clarity (script
+// is in the default list; iframe/object/embed are not). Do NOT add
+// FORBID_ATTR — it REPLACES (not augments) the default attribute blocklist
+// and would silently allow on* handlers other than the listed three.
 const PURIFY_CONFIG = {
   ADD_ATTR: ["target"],
   FORBID_TAGS: ["script", "style", "iframe", "object", "embed"],
-  FORBID_ATTR: ["onerror", "onload", "onclick"],
 };
 
 export function renderMarkdown(source: string): string {
