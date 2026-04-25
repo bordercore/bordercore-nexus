@@ -87,6 +87,8 @@ interface FieldProps {
   placeholder?: string;
   autoFocus?: boolean;
   autoComplete?: string;
+  autoCorrect?: string;
+  autoCapitalize?: string;
   adornment?: React.ReactNode;
   error?: string | null;
 }
@@ -100,6 +102,8 @@ function Field({
   placeholder,
   autoFocus,
   autoComplete,
+  autoCorrect,
+  autoCapitalize,
   adornment,
   error,
 }: FieldProps) {
@@ -173,6 +177,8 @@ function Field({
           placeholder={placeholder}
           autoFocus={autoFocus}
           autoComplete={autoComplete}
+          autoCorrect={autoCorrect}
+          autoCapitalize={autoCapitalize}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           spellCheck={false}
@@ -390,6 +396,8 @@ function LoginCard({ message, initialUsername, loginUrl, nextUrl, csrfToken }: L
             onChange={setUsername}
             placeholder="username"
             autoComplete="username"
+            autoCorrect="off"
+            autoCapitalize="none"
             autoFocus
             // must remain inline — icon size passed as prop to FontAwesomeIcon
             adornment={<FontAwesomeIcon icon={faUser} style={{ fontSize: 13 }} />}
