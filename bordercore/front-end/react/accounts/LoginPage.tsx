@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import "./login-tokens.css";
 import { MirrorCube } from "./MirrorCube";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faUser, faLock } from "@fortawesome/free-solid-svg-icons";
 
 interface LoginPageProps {
   message?: string;
@@ -73,6 +75,336 @@ function BackdropGrid() {
         }}
       />
     </>
+  );
+}
+
+interface FieldProps {
+  label: string;
+  type?: "text" | "password";
+  name: string;
+  defaultValue?: string;
+  placeholder?: string;
+  autoFocus?: boolean;
+  autoComplete?: string;
+  adornment?: React.ReactNode;
+}
+
+function Field({
+  label,
+  type = "text",
+  name,
+  defaultValue,
+  placeholder,
+  autoFocus,
+  autoComplete,
+  adornment,
+}: FieldProps) {
+  const [focused, setFocused] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const isPassword = type === "password";
+  const realType = isPassword && showPassword ? "text" : type;
+
+  return (
+    <label
+      // must remain inline — display block wrapper
+      style={{ display: "block" }}
+    >
+      <div
+        // must remain inline — uppercase label styling
+        style={{
+          fontSize: 11,
+          fontWeight: 600,
+          textTransform: "uppercase",
+          letterSpacing: "0.1em",
+          color: "var(--bc-fg-3)",
+          marginBottom: 8,
+        }}
+      >
+        {label}
+      </div>
+      <div
+        // must remain inline — focus ring depends on runtime focused state
+        style={{
+          position: "relative",
+          display: "flex",
+          alignItems: "center",
+          background: "var(--bc-bg-1)",
+          border: `1px solid ${focused ? "var(--bc-accent)" : "var(--bc-border-1)"}`,
+          borderRadius: 8,
+          boxShadow: focused ? "0 0 0 3px rgba(179,107,255,0.18)" : "none",
+          transition: "all 160ms cubic-bezier(.22, 1, .36, 1)",
+        }}
+      >
+        {adornment && (
+          <div
+            aria-hidden="true"
+            // must remain inline — color depends on runtime focused state
+            style={{
+              paddingLeft: 12,
+              color: focused ? "var(--bc-accent)" : "var(--bc-fg-4)",
+              transition: "color 160ms",
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
+            {adornment}
+          </div>
+        )}
+        <input
+          type={realType}
+          name={name}
+          defaultValue={defaultValue}
+          placeholder={placeholder}
+          autoFocus={autoFocus}
+          autoComplete={autoComplete}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          spellCheck={false}
+          // must remain inline — input styling with adornment-aware padding
+          style={{
+            flex: 1,
+            padding: "11px 14px",
+            paddingLeft: adornment ? 10 : 14,
+            background: "transparent",
+            border: "none",
+            outline: "none",
+            color: "var(--bc-fg-1)",
+            fontFamily: "var(--bc-font-sans)",
+            fontSize: 14,
+          }}
+        />
+        {isPassword && (
+          <button
+            type="button"
+            onClick={() => setShowPassword(s => !s)}
+            aria-label={showPassword ? "hide password" : "show password"}
+            aria-pressed={showPassword}
+            // must remain inline — toggle button reset styles
+            style={{
+              all: "unset",
+              cursor: "pointer",
+              padding: "0 14px",
+              fontSize: 11,
+              color: "var(--bc-fg-3)",
+              fontFamily: "var(--bc-font-mono)",
+              userSelect: "none",
+            }}
+          >
+            {showPassword ? "⊙ hide" : "⊙ show"}
+          </button>
+        )}
+      </div>
+    </label>
+  );
+}
+
+interface PrimaryButtonProps {
+  children: React.ReactNode;
+  loading?: boolean;
+  type?: "button" | "submit";
+}
+
+function PrimaryButton({ children, loading, type = "submit" }: PrimaryButtonProps) {
+  return (
+    <button
+      type={type}
+      disabled={loading}
+      // must remain inline — primary CTA visual treatment
+      style={{
+        all: "unset",
+        cursor: loading ? "wait" : "pointer",
+        boxSizing: "border-box",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 10,
+        width: "100%",
+        padding: "12px 22px",
+        background: "linear-gradient(180deg, #b36bff 0%, #9355ef 100%)",
+        color: "#fff",
+        borderRadius: 10,
+        fontSize: 14,
+        fontWeight: 600,
+        boxShadow:
+          "0 0 0 1px rgba(179,107,255,0.35)," +
+          "0 8px 24px -6px rgba(179,107,255,0.55)," +
+          "inset 0 1px 0 rgba(255,255,255,0.15)",
+        transition: "all 160ms cubic-bezier(.22, 1, .36, 1)",
+        opacity: loading ? 0.7 : 1,
+        textAlign: "center",
+      }}
+    >
+      {loading ? (
+        <span
+          // must remain inline — mono font swap for loading state
+          style={{ fontFamily: "var(--bc-font-mono)" }}
+        >
+          authenticating…
+        </span>
+      ) : (
+        children
+      )}
+    </button>
+  );
+}
+
+interface LoginCardProps {
+  message?: string;
+  initialUsername: string;
+  loginUrl: string;
+  nextUrl: string;
+  csrfToken: string;
+}
+
+function LoginCard({ initialUsername, loginUrl, nextUrl, csrfToken }: LoginCardProps) {
+  return (
+    <div
+      className="bc-login-card"
+      // must remain inline — glass card visual treatment
+      style={{
+        position: "absolute",
+        right: 56,
+        top: "50%",
+        transform: "translateY(-50%)",
+        width: 380,
+        background: "rgba(18, 20, 28, 0.78)",
+        backdropFilter: "blur(18px)",
+        WebkitBackdropFilter: "blur(18px)",
+        border: "1px solid rgba(179, 107, 255, 0.22)",
+        borderRadius: 16,
+        boxShadow: "0 30px 80px -20px #000, 0 0 0 1px rgba(179,107,255,0.15)",
+        zIndex: 5,
+        display: "flex",
+      }}
+    >
+      <div
+        aria-hidden="true"
+        // must remain inline — vertical accent gradient bar
+        style={{
+          width: 4,
+          borderRadius: "16px 0 0 16px",
+          background: "linear-gradient(180deg, #b36bff 0%, #4cc2ff 50%, #ff3dbd 100%)",
+          boxShadow: "0 0 18px rgba(179, 107, 255, 0.5)",
+        }}
+      />
+      <div
+        // must remain inline — card content padding
+        style={{ padding: "30px 30px 26px", flex: 1 }}
+      >
+        <div
+          // must remain inline — kicker mono uppercase
+          style={{
+            fontSize: 11,
+            fontFamily: "var(--bc-font-mono)",
+            color: "var(--bc-fg-4)",
+            textTransform: "uppercase",
+            letterSpacing: "0.15em",
+            marginBottom: 8,
+          }}
+        >
+          // dual node
+        </div>
+        <h1
+          // must remain inline — display title
+          style={{
+            fontFamily: "var(--bc-font-display)",
+            fontSize: 24,
+            fontWeight: 600,
+            letterSpacing: "-0.01em",
+            margin: 0,
+            color: "var(--bc-fg-1)",
+          }}
+        >
+          Sign in to your brain
+        </h1>
+        <p
+          // must remain inline — subtitle line
+          style={{
+            fontSize: 13,
+            color: "var(--bc-fg-3)",
+            margin: "6px 0 24px",
+          }}
+        >
+          primary 0x4fa · replica 0x4fb · drift 4ms
+        </p>
+        <form
+          action={loginUrl}
+          method="post"
+          // must remain inline — form layout
+          style={{ display: "flex", flexDirection: "column", gap: 14 }}
+        >
+          <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken} />
+          <input type="hidden" name="next" value={nextUrl} />
+          <Field
+            label="username"
+            name="username"
+            defaultValue={initialUsername}
+            placeholder="username"
+            autoComplete="username"
+            autoFocus
+            // must remain inline — icon size passed as prop to FontAwesomeIcon
+            adornment={<FontAwesomeIcon icon={faUser} style={{ fontSize: 13 }} />}
+          />
+          <Field
+            label="password"
+            type="password"
+            name="password"
+            placeholder="••••••••"
+            autoComplete="current-password"
+            // must remain inline — icon size passed as prop to FontAwesomeIcon
+            adornment={<FontAwesomeIcon icon={faLock} style={{ fontSize: 13 }} />}
+          />
+          <PrimaryButton>connect →</PrimaryButton>
+        </form>
+        <div
+          // must remain inline — footer row layout
+          style={{
+            marginTop: 22,
+            paddingTop: 16,
+            borderTop: "1px solid var(--bc-hairline)",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            fontSize: 12,
+          }}
+        >
+          <a
+            href="#"
+            // must remain inline — link color
+            style={{
+              color: "var(--bc-fg-3)",
+              textDecoration: "none",
+            }}
+          >
+            recover access
+          </a>
+          <span
+            // must remain inline — status row mono styling
+            style={{
+              fontFamily: "var(--bc-font-mono)",
+              fontSize: 10,
+              color: "var(--bc-fg-4)",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            <span
+              aria-hidden="true"
+              // must remain inline — status dot
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: 3,
+                background: "var(--bc-ok)",
+                boxShadow: "0 0 8px var(--bc-ok)",
+              }}
+            />
+            both healthy
+          </span>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -235,7 +567,7 @@ function FloatingTags() {
   );
 }
 
-export function LoginPage(_props: LoginPageProps) {
+export function LoginPage(props: LoginPageProps) {
   return (
     <div className="bc-login-root">
       <BackdropGrid />
@@ -243,6 +575,7 @@ export function LoginPage(_props: LoginPageProps) {
       <SyncLine />
       <FloatingTags />
       <BrandBar />
+      <LoginCard {...props} />
     </div>
   );
 }
