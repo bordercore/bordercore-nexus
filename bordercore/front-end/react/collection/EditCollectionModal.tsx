@@ -1,5 +1,7 @@
-import React, { useRef, useImperativeHandle, forwardRef, useEffect } from "react";
-import { Modal } from "bootstrap";
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faTimes } from "@fortawesome/free-solid-svg-icons";
 import TagsInput, { TagsInputHandle } from "../common/TagsInput";
 import { ToggleSwitch } from "../common/ToggleSwitch";
 import type { CollectionDetail } from "./types";
@@ -21,16 +23,16 @@ export const EditCollectionModal = forwardRef<EditCollectionModalHandle, EditCol
     { collection, initialTags, updateUrl, tagSearchUrl, csrfToken },
     ref
   ) {
-    const [name, setName] = React.useState(collection.name);
-    const [description, setDescription] = React.useState(collection.description || "");
-    const [isFavorite, setIsFavorite] = React.useState(collection.is_favorite);
+    const [open, setOpen] = useState(false);
+    const [name, setName] = useState(collection.name);
+    const [description, setDescription] = useState(collection.description || "");
+    const [isFavorite, setIsFavorite] = useState(collection.is_favorite);
 
-    const modalRef = useRef<HTMLDivElement>(null);
-    const modalInstanceRef = useRef<Modal | null>(null);
     const nameInputRef = useRef<HTMLInputElement>(null);
     const tagsInputRef = useRef<TagsInputHandle>(null);
 
-    // Update state when collection changes
+    const close = () => setOpen(false);
+
     useEffect(() => {
       setName(collection.name);
       setDescription(collection.description || "");
@@ -39,124 +41,113 @@ export const EditCollectionModal = forwardRef<EditCollectionModalHandle, EditCol
 
     useImperativeHandle(ref, () => ({
       openModal: () => {
-        // Reset to current collection values
         setName(collection.name);
         setDescription(collection.description || "");
         setIsFavorite(collection.is_favorite);
         tagsInputRef.current?.setTagList(initialTags);
-
-        if (modalRef.current) {
-          modalInstanceRef.current = new Modal(modalRef.current);
-          modalInstanceRef.current.show();
-          setTimeout(() => {
-            nameInputRef.current?.focus();
-          }, 500);
-        }
+        setOpen(true);
       },
     }));
 
-    return (
-      <div
-        ref={modalRef}
-        id="modalEdit"
-        className="modal fade"
-        tabIndex={-1}
-        role="dialog"
-        aria-labelledby="editModalLabel"
-      >
-        <div className="modal-dialog" role="document">
-          <div className="modal-content">
-            <form action={updateUrl} method="post" id="form-collection-edit">
-              <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken} />
-              <div className="modal-header">
-                <h4 className="modal-title" id="editModalLabel">
-                  Edit Collection
-                </h4>
-                <button
-                  type="button"
-                  className="btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
-                />
-              </div>
-              <div className="modal-body">
-                <div className="row mb-3">
-                  <label className="col-lg-3 col-form-label" htmlFor="edit_id_name">
-                    Name
-                  </label>
-                  <div className="col-lg-9 d-flex">
-                    <input
-                      ref={nameInputRef}
-                      id="edit_id_name"
-                      type="text"
-                      name="name"
-                      value={name}
-                      onChange={e => setName(e.target.value)}
-                      autoComplete="off"
-                      maxLength={200}
-                      required
-                      className="form-control"
-                    />
-                  </div>
-                </div>
+    useEffect(() => {
+      if (!open) return;
+      const t = window.setTimeout(() => nameInputRef.current?.focus(), 40);
+      const handler = (e: KeyboardEvent) => {
+        if (e.key === "Escape") close();
+      };
+      window.addEventListener("keydown", handler);
+      return () => {
+        window.clearTimeout(t);
+        window.removeEventListener("keydown", handler);
+      };
+    }, [open]);
 
-                <div className="row mb-3">
-                  <label className="col-lg-3 col-form-label" htmlFor="edit_id_description">
-                    Description
-                  </label>
-                  <div className="col-lg-9 d-flex">
-                    <textarea
-                      id="edit_id_description"
-                      name="description"
-                      value={description}
-                      onChange={e => setDescription(e.target.value)}
-                      cols={40}
-                      rows={3}
-                      className="form-control"
-                    />
-                  </div>
-                </div>
+    if (!open) return null;
 
-                <div className="row mb-3">
-                  <label className="col-lg-3 col-form-label" htmlFor="edit_id_tags">
-                    Tags
-                  </label>
-                  <div className="col-lg-9 d-flex">
-                    <TagsInput
-                      ref={tagsInputRef}
-                      id="edit_id_tags"
-                      name="tags"
-                      searchUrl={`${tagSearchUrl}?query=`}
-                      initialTags={initialTags}
-                      placeholder="Add tags..."
-                    />
-                  </div>
-                </div>
+    const canSubmit = name.trim().length > 0;
 
-                <div className="row mb-3">
-                  <label className="col-lg-3 col-form-label">Is Favorite</label>
-                  <div className="col-lg-9 d-flex align-items-center">
-                    <ToggleSwitch
-                      name="is_favorite"
-                      checked={isFavorite}
-                      onChange={setIsFavorite}
-                    />
-                  </div>
-                </div>
-              </div>
-              <div className="modal-footer">
-                <input
-                  id="btn-edit-action"
-                  className="btn btn-primary"
-                  type="submit"
-                  name="Go"
-                  value="Save"
-                />
-              </div>
-            </form>
+    return createPortal(
+      <>
+        <div className="refined-modal-scrim" onClick={close} />
+        <form
+          className="refined-modal"
+          action={updateUrl}
+          method="post"
+          role="dialog"
+          aria-label="edit collection"
+        >
+          <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken} />
+
+          <button type="button" className="refined-modal-close" onClick={close} aria-label="close">
+            <FontAwesomeIcon icon={faTimes} />
+          </button>
+
+          <div className="refined-modal-eyebrow">
+            <span>edit collection</span>
+            <span className="dot">·</span>
+            <span className="mono">bordercore / collections / edit</span>
           </div>
-        </div>
-      </div>
+
+          <h2 className="refined-modal-title">Edit collection</h2>
+
+          <div className="refined-field">
+            <label htmlFor="collection-edit-name">name</label>
+            <input
+              ref={nameInputRef}
+              id="collection-edit-name"
+              type="text"
+              name="name"
+              autoComplete="off"
+              maxLength={200}
+              value={name}
+              onChange={e => setName(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="refined-field">
+            <label htmlFor="collection-edit-description">
+              description <span className="optional">· optional</span>
+            </label>
+            <textarea
+              id="collection-edit-description"
+              name="description"
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+            />
+          </div>
+
+          <div className="refined-field">
+            <label htmlFor="collection-edit-tags">
+              tags <span className="optional">· optional</span>
+            </label>
+            <TagsInput
+              ref={tagsInputRef}
+              id="collection-edit-tags"
+              name="tags"
+              searchUrl={`${tagSearchUrl}?query=`}
+              initialTags={initialTags}
+            />
+          </div>
+
+          <div className="refined-toggle-row">
+            <label className="refined-toggle">
+              <ToggleSwitch name="is_favorite" checked={isFavorite} onChange={setIsFavorite} />
+              <span>favorite</span>
+            </label>
+          </div>
+
+          <div className="refined-modal-actions compact">
+            <button type="button" className="refined-btn ghost" onClick={close}>
+              cancel
+            </button>
+            <button type="submit" className="refined-btn primary" disabled={!canSubmit}>
+              save
+            </button>
+          </div>
+        </form>
+      </>,
+      document.body
     );
   }
 );

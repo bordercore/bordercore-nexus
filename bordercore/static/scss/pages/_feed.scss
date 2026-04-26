@@ -74,14 +74,3 @@
   height: 14px;
   border-width: 2px;
 }
-
-// The feed editor has no danger/delete button to absorb flex slack on the
-// left, so the global `.refined-btn.primary { flex: 1 }` would stretch the
-// save button across the row. Right-align the buttons at natural width.
-.feed-editor-actions {
-  justify-content: flex-end;
-
-  .refined-btn.primary {
-    flex: 0 0 auto;
-  }
-}

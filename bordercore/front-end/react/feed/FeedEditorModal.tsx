@@ -242,7 +242,7 @@ export function FeedEditorModal({
           />
         </div>
 
-        <div className="refined-modal-actions feed-editor-actions">
+        <div className="refined-modal-actions compact">
           <button type="button" className="refined-btn ghost" onClick={onClose}>
             cancel
           </button>

@@ -227,6 +227,17 @@
     flex: 1;
     justify-content: center;
   }
+
+  // Modifier: keep buttons at natural width and right-align them. Used in
+  // 2-button rows (cancel + primary) where the global flex:1 stretch on
+  // primary would make it eat the whole row.
+  &.compact {
+    justify-content: flex-end;
+
+    .refined-btn.primary {
+      flex: 0 0 auto;
+    }
+  }
 }
 
 .refined-modal-close {

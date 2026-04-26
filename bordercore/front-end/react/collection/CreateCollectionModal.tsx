@@ -1,5 +1,7 @@
-import React, { useRef, useImperativeHandle, forwardRef } from "react";
-import { Modal } from "bootstrap";
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPlus, faTimes } from "@fortawesome/free-solid-svg-icons";
 import TagsInput from "../common/TagsInput";
 import { ToggleSwitch } from "../common/ToggleSwitch";
 
@@ -17,127 +19,119 @@ export const CreateCollectionModal = forwardRef<
   CreateCollectionModalHandle,
   CreateCollectionModalProps
 >(function CreateCollectionModal({ createUrl, tagSearchUrl, csrfToken }, ref) {
-  const [name, setName] = React.useState("");
-  const [description, setDescription] = React.useState("");
-  const [isFavorite, setIsFavorite] = React.useState(true);
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [isFavorite, setIsFavorite] = useState(true);
 
-  const modalRef = useRef<HTMLDivElement>(null);
-  const modalInstanceRef = useRef<Modal | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
+
+  const close = () => setOpen(false);
 
   useImperativeHandle(ref, () => ({
     openModal: () => {
-      // Reset form
       setName("");
       setDescription("");
       setIsFavorite(true);
-
-      if (modalRef.current) {
-        modalInstanceRef.current = new Modal(modalRef.current);
-        modalInstanceRef.current.show();
-        setTimeout(() => {
-          nameInputRef.current?.focus();
-        }, 500);
-      }
+      setOpen(true);
     },
   }));
 
-  return (
-    <div
-      ref={modalRef}
-      id="modalAdd"
-      className="modal fade"
-      tabIndex={-1}
-      role="dialog"
-      aria-labelledby="myModalLabel"
-    >
-      <div className="modal-dialog" role="document">
-        <div className="modal-content">
-          <form action={createUrl} method="post" id="form-collection-edit">
-            <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken} />
-            <div className="modal-header">
-              <h4 className="modal-title" id="myModalLabel">
-                New Collection
-              </h4>
-              <button
-                type="button"
-                className="btn-close"
-                data-bs-dismiss="modal"
-                aria-label="Close"
-              />
-            </div>
-            <div className="modal-body">
-              <div className="row mb-3">
-                <label className="col-lg-3 col-form-label" htmlFor="id_name">
-                  Name
-                </label>
-                <div className="col-lg-9 d-flex">
-                  <input
-                    ref={nameInputRef}
-                    id="id_name"
-                    type="text"
-                    name="name"
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                    autoComplete="off"
-                    maxLength={200}
-                    required
-                    className="form-control"
-                  />
-                </div>
-              </div>
+  useEffect(() => {
+    if (!open) return;
+    const t = window.setTimeout(() => nameInputRef.current?.focus(), 40);
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") close();
+    };
+    window.addEventListener("keydown", handler);
+    return () => {
+      window.clearTimeout(t);
+      window.removeEventListener("keydown", handler);
+    };
+  }, [open]);
 
-              <div className="row mb-3">
-                <label className="col-lg-3 col-form-label" htmlFor="id_description">
-                  Description
-                </label>
-                <div className="col-lg-9 d-flex">
-                  <textarea
-                    id="id_description"
-                    name="description"
-                    value={description}
-                    onChange={e => setDescription(e.target.value)}
-                    cols={40}
-                    rows={3}
-                    className="form-control"
-                  />
-                </div>
-              </div>
+  if (!open) return null;
 
-              <div className="row mb-3">
-                <label className="col-lg-3 col-form-label" htmlFor="id_tags">
-                  Tags
-                </label>
-                <div className="col-lg-9 d-flex">
-                  <TagsInput
-                    id="id_tags"
-                    name="tags"
-                    searchUrl={`${tagSearchUrl}?query=`}
-                    placeholder="Add tags..."
-                  />
-                </div>
-              </div>
+  const canSubmit = name.trim().length > 0;
 
-              <div className="row mb-3">
-                <label className="col-lg-3 col-form-label">Is Favorite</label>
-                <div className="col-lg-9 d-flex align-items-center">
-                  <ToggleSwitch name="is_favorite" checked={isFavorite} onChange={setIsFavorite} />
-                </div>
-              </div>
-            </div>
-            <div className="modal-footer">
-              <input
-                id="btn-action"
-                className="btn btn-primary"
-                type="submit"
-                name="Go"
-                value="Create"
-              />
-            </div>
-          </form>
+  return createPortal(
+    <>
+      <div className="refined-modal-scrim" onClick={close} />
+      <form
+        className="refined-modal"
+        action={createUrl}
+        method="post"
+        role="dialog"
+        aria-label="create new collection"
+      >
+        <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken} />
+
+        <button type="button" className="refined-modal-close" onClick={close} aria-label="close">
+          <FontAwesomeIcon icon={faTimes} />
+        </button>
+
+        <div className="refined-modal-eyebrow">
+          <span>new collection</span>
+          <span className="dot">·</span>
+          <span className="mono">bordercore / collections / create</span>
         </div>
-      </div>
-    </div>
+
+        <h2 className="refined-modal-title">Create a collection</h2>
+
+        <div className="refined-field">
+          <label htmlFor="collection-new-name">name</label>
+          <input
+            ref={nameInputRef}
+            id="collection-new-name"
+            type="text"
+            name="name"
+            autoComplete="off"
+            maxLength={200}
+            placeholder="e.g. travel photos"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            required
+          />
+        </div>
+
+        <div className="refined-field">
+          <label htmlFor="collection-new-description">
+            description <span className="optional">· optional</span>
+          </label>
+          <textarea
+            id="collection-new-description"
+            name="description"
+            value={description}
+            onChange={e => setDescription(e.target.value)}
+          />
+        </div>
+
+        <div className="refined-field">
+          <label htmlFor="collection-new-tags">
+            tags <span className="optional">· optional</span>
+          </label>
+          <TagsInput id="collection-new-tags" name="tags" searchUrl={`${tagSearchUrl}?query=`} />
+        </div>
+
+        <div className="refined-toggle-row">
+          <label className="refined-toggle">
+            <ToggleSwitch name="is_favorite" checked={isFavorite} onChange={setIsFavorite} />
+            <span>favorite</span>
+          </label>
+        </div>
+
+        <div className="refined-modal-actions compact">
+          <button type="button" className="refined-btn ghost" onClick={close}>
+            cancel
+          </button>
+          <button type="submit" className="refined-btn primary" disabled={!canSubmit}>
+            <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" />
+            create collection
+          </button>
+        </div>
+      </form>
+    </>,
+    document.body
   );
 });
 
