@@ -191,6 +191,62 @@ class BookmarkCreateView(LoginRequiredMixin, FormRequestMixin, BookmarkFormValid
         return context
 
 
+@api_view(["POST"])
+def create_bookmark(request: HttpRequest) -> Response:
+    """Create a bookmark via JSON API.
+
+    Reuses ``BookmarkForm`` for validation (duplicate-URL check, tag handling)
+    and the same post-save logic as ``BookmarkFormValidMixin`` (clear/add tags,
+    index, fetch favicon). Returns the new bookmark's identifying fields so
+    the caller can update list state without a page reload.
+
+    POST fields:
+        - url: bookmark URL
+        - name: title
+        - note: optional notes
+        - tags: comma-separated tag names
+        - importance: "true" or "false"
+        - is_pinned: "true" or "false"
+        - daily: "true" or "false"
+
+    Returns:
+        On success: {"uuid": ..., "url": ..., "name": ...}.
+        On validation failure: 400 with {"detail": "<field>: <message>"}.
+    """
+    user = cast(User, request.user)
+
+    # ModelForm requires the "id" field key to be present (it's part of the
+    # form's declared fields). For create flow we pass an empty string.
+    data = request.POST.copy()
+    data.setdefault("id", "")
+
+    form = BookmarkForm(data, request=request)
+    if not form.is_valid():
+        first_field = next(iter(form.errors))
+        first_msg = form.errors[first_field][0]
+        return Response(
+            {"detail": f"{first_field}: {first_msg}"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    with transaction.atomic():
+        bookmark = form.save(commit=False)
+        bookmark.user = user
+        bookmark.save()
+        bookmark.tags.clear()
+        for tag in form.cleaned_data["tags"]:
+            bookmark.tags.add(tag)
+
+    bookmark.index_bookmark()
+    bookmark.snarf_favicon()
+
+    return Response({
+        "uuid": str(bookmark.uuid),
+        "url": bookmark.url,
+        "name": bookmark.name,
+    })
+
+
 class BookmarkDeleteView(LoginRequiredMixin, UserScopedQuerysetMixin, DeleteView):
     """View for deleting a bookmark.
 

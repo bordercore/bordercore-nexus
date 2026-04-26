@@ -172,6 +172,40 @@
   }
 }
 
+// Horizontal row of labelled toggle switches. Used in modals where several
+// boolean flags would otherwise eat too many vertical lines.
+.refined-toggle-row {
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  gap: 18px;
+}
+
+.refined-toggle {
+  display: inline-flex;
+  align-items: center;
+  color: var(--fg-2);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  gap: 8px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+
+  // Bootstrap's .form-switch wrapper keeps the switch a fixed width, but it
+  // adds a padding-start that pushes the switch ~2.5em to the right. Reset
+  // it so the switch sits flush in our row.
+  .form-switch {
+    padding-left: 0;
+    margin-bottom: 0;
+
+    .form-check-input {
+      margin-left: 0;
+    }
+  }
+}
+
 .refined-modal-actions {
   display: flex;
   flex-wrap: wrap;

@@ -19,6 +19,7 @@ import BookmarkPinnedTags from "./BookmarkPinnedTags";
 import BookmarkStatsCards from "./BookmarkStatsCards";
 import BookmarkList from "./BookmarkList";
 import BookmarkPagination from "./BookmarkPagination";
+import NewBookmarkModal from "./NewBookmarkModal";
 import type { Bookmark, BookmarkStats, PinnedTag, Pagination, ViewType } from "./types";
 
 interface BookmarkListPageProps {
@@ -35,6 +36,9 @@ interface BookmarkListPageProps {
     bookmarkDetail: string;
     bookmarkUpdate: string;
     bookmarkCreate: string;
+    bookmarkCreateApi: string;
+    tagSearch: string;
+    getTitleFromUrl: string;
     bookmarkSort: string;
     addTag: string;
     removeTag: string;
@@ -67,6 +71,7 @@ export function BookmarkListPage({
   const [selectedBookmarkUuid, setSelectedBookmarkUuid] = useState<string | null>(null);
   const [viewType, setViewType] = useState<ViewType>(initialViewType);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [newBookmarkOpen, setNewBookmarkOpen] = useState(false);
   const [pinnedTags, setPinnedTags] = useState<PinnedTag[]>(() => {
     // Add "Untagged" as the first item
     return [{ id: -1, name: "Untagged", bookmark_count: untaggedCount }, ...initialPinnedTags];
@@ -537,7 +542,14 @@ export function BookmarkListPage({
                           </li>
                         )}
                         <li>
-                          <a className="dropdown-item" href={urls.bookmarkCreate}>
+                          <a
+                            className="dropdown-item"
+                            href="#"
+                            onClick={e => {
+                              e.preventDefault();
+                              setNewBookmarkOpen(true);
+                            }}
+                          >
                             <FontAwesomeIcon icon={faPlus} className="text-primary me-3" />
                             New Bookmark
                           </a>
@@ -569,6 +581,15 @@ export function BookmarkListPage({
           <BookmarkPagination pagination={pagination} onGetPage={getPage} />
         </div>
       </div>
+
+      <NewBookmarkModal
+        open={newBookmarkOpen}
+        onClose={() => setNewBookmarkOpen(false)}
+        createApiUrl={urls.bookmarkCreateApi}
+        tagSearchUrl={urls.tagSearch}
+        getTitleFromUrl={urls.getTitleFromUrl}
+        onAdd={() => getBookmarkList()}
+      />
     </div>
   );
 }

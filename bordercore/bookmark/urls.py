@@ -25,6 +25,11 @@ urlpatterns = [
         name="create"
     ),
     path(
+        route="api/create/",
+        view=views.create_bookmark,
+        name="api-create"
+    ),
+    path(
         route="update/<uuid:uuid>/",
         view=views.BookmarkUpdateView.as_view(),
         name="update"

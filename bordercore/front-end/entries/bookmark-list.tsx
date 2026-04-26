@@ -20,6 +20,11 @@ if (container) {
     container.getAttribute("data-bookmark-update-url") || "";
   const bookmarkCreateUrl =
     container.getAttribute("data-bookmark-create-url") || "";
+  const bookmarkCreateApiUrl =
+    container.getAttribute("data-bookmark-create-api-url") || "";
+  const tagSearchUrl = container.getAttribute("data-tag-search-url") || "";
+  const getTitleFromUrl =
+    container.getAttribute("data-get-title-from-url") || "";
   const bookmarkSortUrl =
     container.getAttribute("data-bookmark-sort-url") || "";
   const addTagUrl = container.getAttribute("data-add-tag-url") || "";
@@ -84,6 +89,9 @@ if (container) {
         bookmarkDetail: bookmarkDetailUrl,
         bookmarkUpdate: bookmarkUpdateUrl,
         bookmarkCreate: bookmarkCreateUrl,
+        bookmarkCreateApi: bookmarkCreateApiUrl,
+        tagSearch: tagSearchUrl,
+        getTitleFromUrl: getTitleFromUrl,
         bookmarkSort: bookmarkSortUrl,
         addTag: addTagUrl,
         removeTag: removeTagUrl,
