@@ -1,4 +1,4 @@
-lxml==4.9.1
+lxml==6.1.0
 Pillow==12.2.0
 PyMuPDF==1.26.0
 requests==2.33.0
