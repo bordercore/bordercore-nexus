@@ -401,6 +401,30 @@ def favicon_url(url: str | None, size: int = 32) -> str:
     )
 
 
+def favicon_img_url(url: str | None) -> str:
+    """Return just the bare favicon image URL for a bookmark URL.
+
+    Same domain extraction as ``favicon_url`` but returns only the image src,
+    suitable for passing through to clients that compose their own ``<img>``
+    tag (e.g. React).
+    """
+    if not url:
+        return ""
+
+    t = urlparse(url).netloc
+
+    if ":" in t:
+        t = t.split(":")[0]
+
+    parts = t.split(".")
+    if len(parts) <= 2:
+        domain = t
+    else:
+        domain = ".".join(parts[1:])
+
+    return f"https://www.bordercore.com/favicons/{domain}.ico"
+
+
 def get_field(obj: dict[str, Any] | Any, field_name: str) -> Any:
     """Retrieve a field value from an object or dictionary.
 

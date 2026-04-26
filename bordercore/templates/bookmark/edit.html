@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load vite_tags %}
+
+{% block title %} Bookmarks {% endblock %}
+
+{% block content %}
+
+    <div id="react-root"
+        data-uuid="{{ bookmark.uuid }}"
+        data-form-action="{{ request.path }}"
+        data-csrf-token="{{ csrf_token }}"
+        {% if object.thumbnail_url %}data-thumbnail-url="{{ object.thumbnail_url }}"{% endif %}
+        {% if favicon_img_url %}data-favicon-img-url="{{ favicon_img_url }}"{% endif %}
+        data-bookmark-name="{{ form.instance.name }}"
+        data-initial-importance="{{ form.importance.value|yesno:'true,false' }}"
+        data-initial-is-pinned="{{ form.is_pinned.value|yesno:'true,false' }}"
+        data-initial-daily="{{ form.daily.value|default:'0' }}"
+        data-created="{{ object.created|date:'c' }}"
+        data-modified="{{ object.modified|date:'c' }}"
+        {% if object.last_check %}data-last-check="{{ object.last_check|date:'c' }}"{% endif %}
+        {% if object.last_response_code is not None %}data-last-response-code="{{ object.last_response_code }}"{% endif %}
+        data-tag-search-url="{% url 'tag:search' %}"
+        data-related-tags-url="{% url 'tag:get_related_tags' %}"
+        data-delete-bookmark-url="{% url 'bookmark:delete' '00000000-0000-0000-0000-000000000000' %}"
+        data-bookmark-overview-url="{% url 'bookmark:overview' %}"
+    >
+    </div>
+
+    {{ back_references|json_script:"backReferences" }}
+    {{ tags|json_script:"initial-tags" }}
+    {{ related_nodes|json_script:"related_nodes" }}
+
+    <script id="formFields" type="application/json">
+    [
+        {% for field in form %}
+        {
+            "name": "{{ field.name }}",
+            "label": "{{ field.label }}",
+            "value": "{{ field.value|default:''|escapejs }}",
+            "type": "{% if field.name == 'url' %}url{% elif field.name == 'note' %}textarea{% else %}text{% endif %}",
+            "required": {% if field.field.required %}true{% else %}false{% endif %},
+            "errors": [{% for error in field.errors %}"{{ error|escapejs }}"{% if not forloop.last %}, {% endif %}{% endfor %}]
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ]
+    </script>
+
+{% endblock %}
+
+{% block javascript_bundles %}
+    {{ block.super }}
+    {% vite_asset "dist/js/bookmark-edit" %}
+{% endblock %}

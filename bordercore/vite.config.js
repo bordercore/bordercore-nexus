@@ -96,6 +96,7 @@ module.exports = defineConfig({
         "dist/js/node-detail": path.resolve(__dirname, "front-end", "entries", "node-detail.tsx"),
         "dist/js/bookmark-list": path.resolve(__dirname, "front-end", "entries", "bookmark-list.tsx"),
         "dist/js/bookmark-form": path.resolve(__dirname, "front-end", "entries", "bookmark-form.tsx"),
+        "dist/js/bookmark-edit": path.resolve(__dirname, "front-end", "entries", "bookmark-edit.tsx"),
         "dist/js/prefs": path.resolve(__dirname, "front-end", "entries", "prefs.tsx"),
         "dist/js/prefs-password": path.resolve(__dirname, "front-end", "entries", "prefs-password.tsx"),
         "dist/js/blob-list": path.resolve(__dirname, "front-end", "entries", "blob-list.tsx"),

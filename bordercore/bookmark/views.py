@@ -41,7 +41,7 @@ from bookmark.models import Bookmark
 from lib.decorators import validate_post_data
 from lib.exceptions import BookmarkSearchDeleteError
 from lib.mixins import FormRequestMixin, UserScopedQuerysetMixin, get_user_object_or_404
-from lib.util import favicon_url, get_pagination_range, parse_title_from_url
+from lib.util import favicon_img_url, get_pagination_range, parse_title_from_url
 from tag.models import Tag, TagBookmark
 
 BOOKMARKS_PER_PAGE = 50
@@ -133,7 +133,7 @@ class BookmarkUpdateView(LoginRequiredMixin, FormRequestMixin, BookmarkFormValid
     model = Bookmark
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
-    template_name = "bookmark/update.html"
+    template_name = "bookmark/edit.html"
     form_class = BookmarkForm
     success_url = reverse_lazy("bookmark:overview")
 
@@ -149,6 +149,7 @@ class BookmarkUpdateView(LoginRequiredMixin, FormRequestMixin, BookmarkFormValid
                 - tags: List of current tag names
                 - back_references: Back references from blobs
                 - related_nodes: Related node objects
+                - favicon_img_url: Bare favicon image URL for the bookmark domain
         """
         context = super().get_context_data(**kwargs)
         context["action"] = "Edit"
@@ -156,7 +157,7 @@ class BookmarkUpdateView(LoginRequiredMixin, FormRequestMixin, BookmarkFormValid
         context["tags"] = [x.name for x in self.object.tags.all()]
         context["back_references"] = Blob.back_references(self.object.uuid)
         context["related_nodes"] = self.object.related_nodes()
-        context["favicon_html"] = favicon_url(self.object.url)
+        context["favicon_img_url"] = favicon_img_url(self.object.url)
 
         return context
 

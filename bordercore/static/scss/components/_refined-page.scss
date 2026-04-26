@@ -1,0 +1,190 @@
+// =============================================================================
+// Refined page shell — outer wrapper + two-column grid used by
+// BookmarkEditPage and any future refined edit/detail pages.
+// Provides .refined-page-shell (outer), .refined-page-grid (sidebar+main),
+// .refined-section-title (panel heading), .refined-meta-strip (mono metadata
+// row under the page title), .refined-status-chip (last-check status pill)
+// and .refined-icon-btn (square icon-sized button).
+// =============================================================================
+
+// stylelint-disable no-descending-specificity, selector-class-pattern
+
+.refined-page-shell {
+  position: relative;
+  min-height: 100vh;
+  padding: 32px 40px 80px;
+  margin: -1rem -1.5rem 0; // escape base layout's card padding
+  background: var(--bg-0);
+  color: var(--fg-1);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  letter-spacing: -0.005em;
+  line-height: 1.55;
+
+  &::before {
+    position: absolute;
+    z-index: 0;
+    background:
+      radial-gradient(
+        1100px 700px at 90% -5%,
+        color-mix(in oklch, var(--accent), transparent 85%),
+        transparent 55%
+      ),
+      radial-gradient(
+        900px 600px at 10% 110%,
+        color-mix(in oklch, var(--accent), transparent 92%),
+        transparent 60%
+      );
+    content: "";
+    inset: 0;
+    pointer-events: none;
+  }
+
+  > * {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+.refined-page-header {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 24px;
+  gap: 4px;
+}
+
+.refined-page-grid {
+  display: grid;
+  align-items: start;
+  gap: 24px;
+  grid-template-columns: 280px 1fr;
+
+  @media (width <= 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.refined-page-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.refined-page-main {
+  display: flex;
+  min-width: 0; // let inner inputs/textareas shrink in narrow viewports
+  flex-direction: column;
+  gap: 16px;
+}
+
+.refined-section-title {
+  margin: 0 0 12px;
+  color: var(--fg-2);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.refined-meta-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  color: var(--fg-3);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  gap: 12px;
+
+  .meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .meta-label {
+    color: var(--fg-3);
+    text-transform: uppercase;
+  }
+
+  .meta-value {
+    color: var(--fg-2);
+  }
+}
+
+.refined-status-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border: 1px solid color-mix(in oklch, var(--fg-3), transparent 60%);
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--fg-3), transparent 90%);
+  color: var(--fg-2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  gap: 6px;
+  white-space: nowrap;
+
+  &.ok {
+    border-color: color-mix(in oklch, var(--accent), transparent 60%);
+    background: color-mix(in oklch, var(--accent), transparent 88%);
+    color: var(--accent);
+  }
+
+  &.warn {
+    border-color: color-mix(in oklch, #d39828, transparent 50%);
+    background: color-mix(in oklch, #d39828, transparent 85%);
+    color: #f0b958;
+  }
+
+  &.broken {
+    border-color: color-mix(in oklch, #c95757, transparent 50%);
+    background: color-mix(in oklch, #c95757, transparent 85%);
+    color: #f08585;
+  }
+
+  &.never {
+    color: var(--fg-3);
+    font-style: italic;
+  }
+}
+
+.refined-icon-btn {
+  display: inline-grid;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg-2);
+  color: var(--fg-2);
+  cursor: pointer;
+  place-items: center;
+  transition: all 120ms;
+
+  &:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+
+    &:hover {
+      border-color: var(--line);
+      color: var(--fg-2);
+    }
+  }
+}
+
+.refined-input-group {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+
+  > input,
+  > select,
+  > textarea {
+    flex: 1;
+  }
+}
