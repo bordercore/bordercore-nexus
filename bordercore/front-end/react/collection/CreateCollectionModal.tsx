@@ -1,6 +1,7 @@
 import React, { useRef, useImperativeHandle, forwardRef } from "react";
 import { Modal } from "bootstrap";
 import TagsInput from "../common/TagsInput";
+import { ToggleSwitch } from "../common/ToggleSwitch";
 
 export interface CreateCollectionModalHandle {
   openModal: () => void;
@@ -120,16 +121,7 @@ export const CreateCollectionModal = forwardRef<
               <div className="row mb-3">
                 <label className="col-lg-3 col-form-label">Is Favorite</label>
                 <div className="col-lg-9 d-flex align-items-center">
-                  <div className="form-check form-switch">
-                    <input
-                      type="checkbox"
-                      name="is_favorite"
-                      className="form-check-input"
-                      checked={isFavorite}
-                      onChange={e => setIsFavorite(e.target.checked)}
-                      value="true"
-                    />
-                  </div>
+                  <ToggleSwitch name="is_favorite" checked={isFavorite} onChange={setIsFavorite} />
                 </div>
               </div>
             </div>

@@ -1,5 +1,6 @@
 import React, { useRef, useImperativeHandle, forwardRef, useState } from "react";
 import { Modal } from "bootstrap";
+import { ToggleSwitch } from "../common/ToggleSwitch";
 import type { ObjectTag, SlideShowConfig } from "./types";
 
 export interface SlideShowModalHandle {
@@ -130,19 +131,16 @@ export const SlideShowModal = forwardRef<SlideShowModalHandle, SlideShowModalPro
                       </select>
                     </div>
                     <div className="d-flex ps-1 mt-2">
-                      <div className="form-check form-switch">
-                        <input
-                          type="checkbox"
-                          className="form-check-input"
-                          id="randomize-switch"
-                          checked={randomize}
-                          onChange={e => setRandomize(e.target.checked)}
-                          disabled={type === "manual"}
-                        />
-                        <label className="form-check-label" htmlFor="randomize-switch">
-                          Randomize
-                        </label>
-                      </div>
+                      <ToggleSwitch
+                        id="randomize-switch"
+                        name="randomize"
+                        checked={randomize}
+                        onChange={setRandomize}
+                        disabled={type === "manual"}
+                      />
+                      <label className="form-check-label ms-2" htmlFor="randomize-switch">
+                        Randomize
+                      </label>
                     </div>
                   </div>
                 </div>

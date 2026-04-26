@@ -4,6 +4,7 @@ import { faStar } from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
 import type { PlaylistDetail, PlaylistParameters } from "./types";
 import { TagsInput, TagsInputHandle } from "../common/TagsInput";
+import { ToggleSwitch } from "../common/ToggleSwitch";
 
 interface EditPlaylistModalProps {
   playlist: PlaylistDetail;
@@ -325,16 +326,12 @@ export const EditPlaylistModal = forwardRef<EditPlaylistModalHandle, EditPlaylis
                         Exclude Albums
                       </label>
                       <div className="col-lg-8 d-flex align-items-center">
-                        <div className="form-check form-switch">
-                          <input
-                            className="form-check-input"
-                            type="checkbox"
-                            id="excludeAlbums"
-                            name="excludeAlbums"
-                            checked={excludeAlbums}
-                            onChange={e => setExcludeAlbums(e.target.checked)}
-                          />
-                        </div>
+                        <ToggleSwitch
+                          id="excludeAlbums"
+                          name="excludeAlbums"
+                          checked={excludeAlbums}
+                          onChange={setExcludeAlbums}
+                        />
                       </div>
                     </div>
 
@@ -385,16 +382,12 @@ export const EditPlaylistModal = forwardRef<EditPlaylistModalHandle, EditPlaylis
                         Refresh Song List
                       </label>
                       <div className="col-lg-8 d-flex align-items-center">
-                        <div className="form-check form-switch">
-                          <input
-                            className="form-check-input"
-                            type="checkbox"
-                            id="refreshSongList"
-                            name="refreshSongList"
-                            checked={refreshSongList}
-                            onChange={e => setRefreshSongList(e.target.checked)}
-                          />
-                        </div>
+                        <ToggleSwitch
+                          id="refreshSongList"
+                          name="refreshSongList"
+                          checked={refreshSongList}
+                          onChange={setRefreshSongList}
+                        />
                       </div>
                     </div>
                   </>

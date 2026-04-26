@@ -3,6 +3,7 @@ import axios from "axios"; // Still needed for ID3 extraction and dupe check
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faStar, faMusic, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 import { SelectValue, SelectValueHandle } from "../common/SelectValue";
+import { ToggleSwitch } from "../common/ToggleSwitch";
 import { TagsInput, TagsInputHandle } from "../common/TagsInput";
 import Card from "../common/Card";
 
@@ -584,20 +585,15 @@ export function SongCreatePage({
           <div className="row align-items-center mb-3">
             <div className="col-lg-9 offset-lg-3 form-inline">
               <div className="d-flex align-items-center">
-                <div className="form-check form-switch">
-                  <input
-                    className="form-check-input"
-                    type="checkbox"
-                    role="switch"
-                    id="id_compilation"
-                    name="compilation"
-                    checked={formData.compilation}
-                    onChange={handleChange}
-                  />
-                  <label className="form-check-label ms-2" htmlFor="id_compilation">
-                    Compilation
-                  </label>
-                </div>
+                <ToggleSwitch
+                  id="id_compilation"
+                  name="compilation"
+                  checked={formData.compilation}
+                  onChange={checked => setFormData(prev => ({ ...prev, compilation: checked }))}
+                />
+                <label className="form-check-label ms-2" htmlFor="id_compilation">
+                  Compilation
+                </label>
               </div>
             </div>
           </div>

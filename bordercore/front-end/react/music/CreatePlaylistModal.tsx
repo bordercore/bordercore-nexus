@@ -2,6 +2,7 @@ import React from "react";
 import { Modal } from "bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faStar } from "@fortawesome/free-solid-svg-icons";
+import { ToggleSwitch } from "../common/ToggleSwitch";
 
 export interface CreatePlaylistModalHandle {
   openModal: () => void;
@@ -280,17 +281,12 @@ export const CreatePlaylistModal = React.forwardRef<
                       Exclude Albums
                     </label>
                     <div className="col-lg-8 d-flex align-items-center">
-                      <div className="form-check form-switch">
-                        <input
-                          type="checkbox"
-                          id="id_exclude_albums"
-                          name="exclude_albums"
-                          className="form-check-input"
-                          checked={excludeAlbums}
-                          onChange={e => setExcludeAlbums(e.target.checked)}
-                          value="true"
-                        />
-                      </div>
+                      <ToggleSwitch
+                        id="id_exclude_albums"
+                        name="exclude_albums"
+                        checked={excludeAlbums}
+                        onChange={setExcludeAlbums}
+                      />
                     </div>
                   </div>
                   <div className="row mt-3">

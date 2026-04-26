@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTags } from "@fortawesome/free-solid-svg-icons";
 
 import { TagsInput, TagsInputHandle } from "../common/TagsInput";
+import { ToggleSwitch } from "../common/ToggleSwitch";
 import { MarkdownEditor, MarkdownEditorHandle } from "../blob/MarkdownEditor";
 import RelatedObjects, { RelatedObjectsHandle } from "../common/RelatedObjects";
 import ObjectSelectModal, { ObjectSelectModalHandle } from "../common/ObjectSelectModal";
@@ -258,17 +259,12 @@ export function DrillQuestionEditPage({
             <div className="row mb-3">
               <label className="fw-bold col-lg-2 col-form-label text-end">Reversible</label>
               <div className="col-lg-9 d-flex align-items-center">
-                <div className="form-check form-switch">
-                  <input
-                    className="form-check-input"
-                    type="checkbox"
-                    role="switch"
-                    id="is_reversible"
-                    name="is_reversible"
-                    checked={isReversible}
-                    onChange={e => setIsReversible(e.target.checked)}
-                  />
-                </div>
+                <ToggleSwitch
+                  id="is_reversible"
+                  name="is_reversible"
+                  checked={isReversible}
+                  onChange={setIsReversible}
+                />
               </div>
             </div>
 
