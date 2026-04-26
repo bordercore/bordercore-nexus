@@ -147,6 +147,29 @@
     min-height: 96px;
     resize: vertical;
   }
+
+  // Native date picker indicator renders dark by default; invert + brighten so
+  // it's visible on the refined-modal's dark surface.
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    filter: invert(1);
+    opacity: 0.75;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+
+.refined-row-2 {
+  display: grid;
+  margin-bottom: 16px;
+  gap: 12px;
+  grid-template-columns: 1fr 1fr;
+
+  .refined-field {
+    margin-bottom: 0;
+  }
 }
 
 .refined-modal-actions {
@@ -156,6 +179,10 @@
 
   .refined-btn {
     flex: 0 0 auto;
+  }
+
+  .refined-btn.danger {
+    margin-right: auto;
   }
 
   .refined-btn.primary {

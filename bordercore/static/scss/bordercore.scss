@@ -41,6 +41,7 @@ $table-cell-padding-x: .75rem;
 // before any partial that @includes it.
 @import "components/refined-components";
 @import "components/refined-modal";
+@import "components/refined-datepicker";
 @import "components/buttons";
 @import "components/forms";
 @import "components/tables";

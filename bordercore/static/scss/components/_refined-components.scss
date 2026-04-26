@@ -507,6 +507,19 @@
       color: var(--fg-0);
     }
   }
+
+  &.danger {
+    border-color: color-mix(in oklch, #d65a78, transparent 60%);
+    background: transparent;
+    box-shadow: none;
+    color: #e08099;
+
+    &:hover {
+      border-color: #d65a78;
+      background: color-mix(in oklch, #d65a78, transparent 88%);
+      color: #ec8aa3;
+    }
+  }
 }
 
 .refined-btn-icon { font-size: 10px; }

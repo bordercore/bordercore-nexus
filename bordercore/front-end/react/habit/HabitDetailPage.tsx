@@ -2,6 +2,7 @@ import React, { useMemo, useRef, useState } from "react";
 import MarkdownIt from "markdown-it";
 import { doPost } from "../utils/reactUtils";
 import { DeactivateHabitModal, DeactivateHabitModalHandle } from "./DeactivateHabitModal";
+import { RefinedDatePicker } from "../common/RefinedDatePicker";
 
 interface HabitLog {
   uuid: string;
@@ -137,13 +138,7 @@ export default function HabitDetailPage({
               <div className="row g-2 align-items-end">
                 <div className="col-auto">
                   <label className="form-label small">Date</label>
-                  <input
-                    type="date"
-                    className="form-control form-control-sm"
-                    value={logDate}
-                    onChange={e => setLogDate(e.target.value)}
-                    required
-                  />
+                  <RefinedDatePicker value={logDate} onChange={setLogDate} />
                 </div>
                 <div className="col-auto">
                   <label className="form-label small">Completed</label>

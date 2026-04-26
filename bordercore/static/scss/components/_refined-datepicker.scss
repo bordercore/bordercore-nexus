@@ -1,0 +1,212 @@
+// =============================================================================
+// Refined date picker — popover containing a react-day-picker calendar, themed
+// to the refined-modal design tokens. The trigger renders as an input-styled
+// button so it slots into a .refined-field exactly like the native date input
+// it replaces.
+// =============================================================================
+
+// stylelint-disable selector-class-pattern
+// react-day-picker exposes its theming variables in snake_case (e.g.
+// --rdp-day_button-width). We have to spell them exactly like that.
+// stylelint-disable custom-property-pattern
+
+@import "../../node_modules/react-day-picker/src/style.css";
+
+.refined-datepicker {
+  position: relative;
+  width: 100%;
+}
+
+.refined-datetimepicker {
+  display: flex;
+  width: 100%;
+  gap: 8px;
+
+  .refined-datepicker {
+    flex: 1;
+  }
+}
+
+.refined-datetimepicker-time {
+  flex: 0 0 130px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg-0);
+  color: var(--fg-1);
+  font: 400 13.5px/1.4 var(--font-ui);
+  outline: none;
+  transition: border-color 120ms, box-shadow 120ms;
+
+  &:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent), transparent 80%);
+  }
+
+  &::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    filter: invert(1);
+    opacity: 0.75;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+
+.refined-datepicker-value {
+  overflow: hidden;
+  flex: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.refined-datepicker-clear,
+.refined-datepicker-icon {
+  display: inline-grid;
+  width: 20px;
+  height: 20px;
+  color: var(--fg-3);
+  font-size: 12px;
+  place-items: center;
+}
+
+.refined-datepicker-clear {
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 120ms, color 120ms;
+
+  &:hover {
+    background: var(--bg-2);
+    color: var(--fg-1);
+  }
+}
+
+.refined-datepicker-trigger {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg-0);
+  color: var(--fg-1);
+  cursor: pointer;
+  font: 400 13.5px/1.4 var(--font-ui);
+  gap: 8px;
+  text-align: left;
+  transition:
+    border-color 120ms,
+    box-shadow 120ms;
+
+  &:focus-visible {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent), transparent 80%);
+    outline: none;
+  }
+
+  // stylelint-disable-next-line no-descending-specificity
+  &.is-empty .refined-datepicker-value {
+    color: var(--fg-3);
+  }
+}
+
+.refined-datepicker-popover {
+  position: absolute;
+  z-index: 80;
+  top: calc(100% + 6px);
+  left: 0;
+  padding: 12px;
+  border: 1px solid color-mix(in oklch, var(--accent), transparent 78%);
+  border-radius: 12px;
+  backdrop-filter: blur(20px);
+  background: color-mix(in oklch, var(--bg-1), transparent 4%);
+  box-shadow:
+    0 1px 0 0 rgb(255 255 255 / 4%) inset,
+    0 12px 32px -8px rgb(0 0 0 / 60%),
+    0 0 24px -4px color-mix(in oklch, var(--accent), transparent 80%);
+  color: var(--fg-1);
+
+  .rdp-root {
+    --rdp-accent-color: var(--accent);
+    --rdp-accent-background-color: color-mix(in oklch, var(--accent), transparent 78%);
+    --rdp-day-height: 36px;
+    --rdp-day-width: 36px;
+    --rdp-day_button-height: 32px;
+    --rdp-day_button-width: 32px;
+    --rdp-day_button-border-radius: 8px;
+    --rdp-day_button-border: 1px solid transparent;
+    --rdp-selected-border: 1px solid var(--accent);
+    --rdp-today-color: var(--accent);
+    --rdp-weekday-padding: 6px 0;
+    --rdp-nav_button-height: 28px;
+    --rdp-nav_button-width: 28px;
+    --rdp-nav-height: 32px;
+
+    color: var(--fg-1);
+    font-family: var(--font-ui);
+  }
+
+  .rdp-month_caption,
+  .rdp-caption_label {
+    color: var(--fg-1);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+  }
+
+  .rdp-weekday {
+    color: var(--fg-3);
+    font-family: var(--font-ui);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .rdp-button_next,
+  .rdp-button_previous {
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--fg-2);
+    transition: background 120ms, color 120ms, border-color 120ms;
+
+    &:hover {
+      border-color: var(--fg-3);
+      background: var(--bg-2);
+      color: var(--fg-1);
+    }
+  }
+
+  .rdp-chevron {
+    fill: currentcolor;
+  }
+
+  .rdp-day_button {
+    color: var(--fg-1);
+    font-size: 12.5px;
+
+    &:hover:not(:disabled) {
+      background: var(--bg-2);
+    }
+  }
+
+  /* stylelint-disable no-descending-specificity */
+  .rdp-outside .rdp-day_button {
+    color: var(--fg-3);
+  }
+
+  .rdp-today:not(.rdp-outside) .rdp-day_button {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .rdp-selected .rdp-day_button {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--accent-fg, #fff);
+    font-weight: 600;
+  }
+  /* stylelint-enable no-descending-specificity */
+}

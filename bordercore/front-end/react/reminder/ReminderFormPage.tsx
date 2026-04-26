@@ -2,6 +2,7 @@ import React from "react";
 import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
+import { RefinedDateTimePicker } from "../common/RefinedDateTimePicker";
 
 interface ReminderFormData {
   name: string;
@@ -438,13 +439,19 @@ export function ReminderFormPage({
               <label htmlFor="start_at" className="form-label">
                 Start Date (optional)
               </label>
-              <input
-                type="datetime-local"
-                className={`form-control ${errors.start_at ? "is-invalid" : ""}`}
+              <RefinedDateTimePicker
                 id="start_at"
-                name="start_at"
                 value={formData.start_at}
-                onChange={handleChange}
+                onChange={newValue => {
+                  setFormData(prev => ({ ...prev, start_at: newValue }));
+                  if (errors.start_at) {
+                    setErrors(prev => {
+                      const next = { ...prev };
+                      delete next.start_at;
+                      return next;
+                    });
+                  }
+                }}
               />
               {errors.start_at && (
                 <div className="invalid-feedback d-block">

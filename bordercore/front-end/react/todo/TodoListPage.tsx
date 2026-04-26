@@ -26,7 +26,8 @@ import type {
   TodoListResponse,
   ViewType,
 } from "./types";
-import { TodoEditor, TodoEditorHandle } from "./TodoEditor";
+import { NewTodoModal } from "./NewTodoModal";
+import { EditTodoModal, EditTodoInfo } from "./EditTodoModal";
 import { doPost, doDelete, EventBus } from "../utils/reactUtils";
 import TodoFilterSidebar, { FilterValue } from "./TodoFilterSidebar";
 import TodoBreadcrumb, { ActiveFilter } from "./TodoBreadcrumb";
@@ -157,7 +158,13 @@ export function TodoListPage({
     readStoredSort(defaultSort.field as SortField)
   );
 
-  const editTodoRef = useRef<TodoEditorHandle>(null);
+  const [newModalOpen, setNewModalOpen] = useState(false);
+  const [newModalSeed, setNewModalSeed] = useState<{ tags: string[]; priority: number }>({
+    tags: [],
+    priority: 3,
+  });
+  const [editTodo, setEditTodo] = useState<EditTodoInfo | null>(null);
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -320,7 +327,7 @@ export function TodoListPage({
   );
 
   const handleEdit = useCallback((todo: Todo) => {
-    editTodoRef.current?.openModal("Edit", {
+    setEditTodo({
       uuid: todo.uuid,
       name: todo.name,
       priority: todo.priority,
@@ -343,7 +350,7 @@ export function TodoListPage({
   );
 
   const handleEditorDelete = useCallback(
-    (todoInfo: { uuid?: string }) => {
+    (todoInfo: EditTodoInfo) => {
       if (todoInfo.uuid) {
         doDelete(
           editTodoUrl.replace("00000000-0000-0000-0000-000000000000", todoInfo.uuid),
@@ -365,12 +372,10 @@ export function TodoListPage({
 
   const handleCreateTodo = useCallback(() => {
     const initialTagList = active.type === "tag" ? [active.value] : [];
-    editTodoRef.current?.openModal("Create", {
-      note: "",
-      priority: active.type === "priority" && active.value ? parseInt(active.value, 10) || 3 : 3,
-      tags: initialTagList,
-    });
-    if (initialTagList.length) editTodoRef.current?.setTags(initialTagList);
+    const initialPriority =
+      active.type === "priority" && active.value ? parseInt(active.value, 10) || 3 : 3;
+    setNewModalSeed({ tags: initialTagList, priority: initialPriority });
+    setNewModalOpen(true);
   }, [active]);
 
   const sortedItems = useMemo(() => {
@@ -491,15 +496,26 @@ export function TodoListPage({
         </main>
       </div>
 
-      <TodoEditor
-        ref={editTodoRef}
-        priorityList={priorityList}
-        editTodoUrl={editTodoUrl}
+      <NewTodoModal
+        open={newModalOpen}
+        onClose={() => setNewModalOpen(false)}
         createTodoUrl={createTodoUrl}
         tagSearchUrl={tagSearchUrl}
+        priorityList={priorityList}
+        initialTags={newModalSeed.tags}
+        initialPriority={newModalSeed.priority}
         onAdd={() => fetchTodos()}
-        onDelete={handleEditorDelete}
+      />
+
+      <EditTodoModal
+        open={editTodo !== null}
+        onClose={() => setEditTodo(null)}
+        editTodoUrl={editTodoUrl}
+        tagSearchUrl={tagSearchUrl}
+        priorityList={priorityList}
+        todoInfo={editTodo}
         onEdit={() => fetchTodos()}
+        onDelete={handleEditorDelete}
       />
     </div>
   );

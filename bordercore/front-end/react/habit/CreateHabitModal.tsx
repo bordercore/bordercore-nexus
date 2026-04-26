@@ -1,6 +1,7 @@
 import React, { useRef, useState, useImperativeHandle, forwardRef } from "react";
 import { Modal } from "bootstrap";
 import { doPost } from "../utils/reactUtils";
+import { RefinedDatePicker } from "../common/RefinedDatePicker";
 
 interface CreatedHabit {
   uuid: string;
@@ -108,13 +109,7 @@ export const CreateHabitModal = forwardRef<CreateHabitModalHandle, CreateHabitMo
                 </div>
                 <div className="mb-3">
                   <label className="form-label">Start Date</label>
-                  <input
-                    type="date"
-                    className="form-control"
-                    value={startDate}
-                    onChange={e => setStartDate(e.target.value)}
-                    required
-                  />
+                  <RefinedDatePicker value={startDate} onChange={setStartDate} />
                 </div>
               </div>
               <div className="modal-footer">

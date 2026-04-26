@@ -42,7 +42,8 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { doPost, doPatch } from "../utils/reactUtils";
-import { TodoEditor, TodoEditorHandle } from "../todo/TodoEditor";
+import { NewTodoModal } from "../todo/NewTodoModal";
+import { EditTodoModal, EditTodoInfo } from "../todo/EditTodoModal";
 import { ObjectSelectModal, ObjectSelectModalHandle } from "../common/ObjectSelectModal";
 import NodeCollectionCard from "./NodeCollectionCard";
 import NodeCollectionModal, { CollectionSettings } from "./NodeCollectionModal";
@@ -263,8 +264,11 @@ export default function NodeDetailPage({
     data: CollectionSettings | null;
   }>({ isOpen: false, action: "Add", callback: null, data: null });
 
+  // Todo modal state (replaces the old TodoEditor imperative ref)
+  const [newTodoOpen, setNewTodoOpen] = useState(false);
+  const [editTodo, setEditTodo] = useState<EditTodoInfo | null>(null);
+
   // Refs
-  const todoEditorRef = useRef<TodoEditorHandle>(null);
   const todoListRefs = useRef<Map<string, NodeTodoListHandle>>(new Map());
   const objectSelectModalRef = useRef<ObjectSelectModalHandle>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -581,9 +585,20 @@ export default function NodeDetailPage({
     );
   };
 
-  // TodoEditor integration
+  // Todo modal dispatch — NodeTodoList still calls a single callback, we route
+  // to the right modal based on action.
   const handleOpenTodoEditorModal = (action: "Create" | "Edit", todoInfo?: NodeTodoItem) => {
-    todoEditorRef.current?.openModal(action, todoInfo);
+    if (action === "Create") {
+      setNewTodoOpen(true);
+    } else if (todoInfo) {
+      setEditTodo({
+        uuid: todoInfo.uuid,
+        name: todoInfo.name,
+        note: todoInfo.note,
+        priority: todoInfo.priority,
+        url: todoInfo.url,
+      });
+    }
   };
 
   const handleTodoAdd = (uuid: string) => {
@@ -1159,13 +1174,22 @@ export default function NodeDetailPage({
           onClose={() => setCollectionModalState(prev => ({ ...prev, isOpen: false }))}
         />
 
-        <TodoEditor
-          ref={todoEditorRef}
-          priorityList={priorityList}
-          editTodoUrl={urls.editTodoTemplate}
+        <NewTodoModal
+          open={newTodoOpen}
+          onClose={() => setNewTodoOpen(false)}
           createTodoUrl={urls.createTodo}
           tagSearchUrl={urls.tagSearch}
+          priorityList={priorityList}
           onAdd={handleTodoAdd}
+        />
+
+        <EditTodoModal
+          open={editTodo !== null}
+          onClose={() => setEditTodo(null)}
+          editTodoUrl={urls.editTodoTemplate}
+          tagSearchUrl={urls.tagSearch}
+          priorityList={priorityList}
+          todoInfo={editTodo}
           onEdit={handleTodoEdit}
         />
 
