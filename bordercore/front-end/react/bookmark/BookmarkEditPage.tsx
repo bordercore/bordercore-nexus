@@ -324,7 +324,7 @@ export function BookmarkEditPage({
                 </label>
               </div>
 
-              <div className="refined-modal-actions">
+              <div className="refined-page-actions">
                 <button type="button" className="refined-btn danger" onClick={handleDelete}>
                   delete
                 </button>

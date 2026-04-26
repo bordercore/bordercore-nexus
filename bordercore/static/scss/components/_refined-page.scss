@@ -73,8 +73,27 @@
 .refined-page-main {
   display: flex;
   min-width: 0; // let inner inputs/textareas shrink in narrow viewports
+  max-width: 640px; // keep the form panel modal-shaped on wide viewports
   flex-direction: column;
   gap: 16px;
+}
+
+// Page-level button row. Distinct from .refined-modal-actions in that the
+// primary action does NOT stretch — at page width that produces an
+// awkwardly-long button.
+.refined-page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  gap: 8px;
+
+  .refined-btn {
+    flex: 0 0 auto;
+  }
+
+  .refined-btn.danger {
+    margin-right: auto;
+  }
 }
 
 .refined-section-title {
