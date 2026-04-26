@@ -67,8 +67,8 @@ def _wrap_element(browser, element):
 
 class SummaryPage:
 
-    QUESTION = (By.CSS_SELECTOR, "h3.drill-text p")
-    BREADCRUMB = (By.CSS_SELECTOR, ".breadcrumb-item strong:first-child")
+    QUESTION = (By.CSS_SELECTOR, ".q-prompt p")
+    BREADCRUMB = (By.CSS_SELECTOR, ".drill-path .leaf")
 
     def __init__(self, browser):
         self.browser = browser
