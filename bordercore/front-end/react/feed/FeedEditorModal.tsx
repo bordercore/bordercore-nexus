@@ -1,14 +1,15 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCheck, faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
+import { faCheck, faExclamationTriangle, faPlus, faTimes } from "@fortawesome/free-solid-svg-icons";
 import { getReasonPhrase, StatusCodes } from "http-status-codes";
-import { Modal } from "bootstrap";
 import { doGet, doPut, doPost } from "../utils/reactUtils";
 import type { Feed, FeedEditorData } from "./types";
 
+type StatusType = "ok" | "error" | "empty" | null;
+
 interface StatusMessage {
-  type: "ok" | "error" | "empty" | null;
+  type: StatusType;
   text?: string;
   count?: number;
 }
@@ -24,6 +25,8 @@ interface FeedEditorModalProps {
   onClose: () => void;
 }
 
+const PLACEHOLDER_UUID = "00000000-0000-0000-0000-000000000000";
+
 export function FeedEditorModal({
   isOpen,
   action,
@@ -34,96 +37,55 @@ export function FeedEditorModal({
   onAddFeed,
   onClose,
 }: FeedEditorModalProps) {
-  const [feedInfo, setFeedInfo] = useState<FeedEditorData>(initialFeedInfo);
+  const [name, setName] = useState("");
+  const [url, setUrl] = useState("");
+  const [homepage, setHomepage] = useState("");
+  const [uuid, setUuid] = useState<string | undefined>(undefined);
   const [checkingStatus, setCheckingStatus] = useState(false);
   const [statusMessage, setStatusMessage] = useState<StatusMessage>({ type: null });
-  const [lastResponseCode, setLastResponseCode] = useState<number | null>(null);
-  const modalRef = useRef<HTMLDivElement>(null);
-  const modalInstanceRef = useRef<Modal | null>(null);
 
-  // Reset form when modal opens with new data
+  const nameRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
-    setFeedInfo(initialFeedInfo);
+    if (!isOpen) return;
+    setName(initialFeedInfo.name ?? "");
+    setUrl(initialFeedInfo.url ?? "");
+    setHomepage(initialFeedInfo.homepage ?? "");
+    setUuid(initialFeedInfo.uuid);
+    setCheckingStatus(false);
     setStatusMessage({ type: null });
-    setLastResponseCode(null);
-  }, [initialFeedInfo]);
+    const t = window.setTimeout(() => nameRef.current?.focus(), 40);
+    return () => window.clearTimeout(t);
+  }, [isOpen, initialFeedInfo]);
 
-  // Handle modal visibility
   useEffect(() => {
-    if (modalRef.current && !modalInstanceRef.current) {
-      modalInstanceRef.current = new Modal(modalRef.current);
-    }
-
-    if (isOpen && modalInstanceRef.current) {
-      modalInstanceRef.current.show();
-    } else if (!isOpen && modalInstanceRef.current) {
-      modalInstanceRef.current.hide();
-    }
-  }, [isOpen]);
-
-  // Handle Bootstrap modal hidden event
-  useEffect(() => {
-    const modalElement = modalRef.current;
-    if (!modalElement) return;
-
-    const handleHidden = () => {
-      onClose();
+    if (!isOpen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
     };
-
-    modalElement.addEventListener("hidden.bs.modal", handleHidden);
-    return () => {
-      modalElement.removeEventListener("hidden.bs.modal", handleHidden);
-    };
-  }, [onClose]);
-
-  const statusIcon = useMemo(() => {
-    if (statusMessage.type === null) {
-      return {
-        className: "d-none",
-        icon: faCheck,
-      };
-    } else if (statusMessage.type === "ok") {
-      return {
-        className: "d-block text-success",
-        icon: faCheck,
-      };
-    } else {
-      return {
-        className: "d-block text-danger",
-        icon: faExclamationTriangle,
-      };
-    }
-  }, [statusMessage.type]);
-
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFeedInfo(prev => ({ ...prev, [name]: value }));
-  }, []);
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [isOpen, onClose]);
 
   const handleUrlBlur = useCallback(() => {
-    const feedUrl = feedInfo.url;
-    if (!feedUrl) {
-      return;
-    }
+    if (!url) return;
 
     setCheckingStatus(true);
 
-    // Auto-populate homepage if not set
-    if (!feedInfo.homepage) {
-      const baseUrl = feedUrl.match(/^(https?:\/\/.*?)\//);
+    if (!homepage) {
+      const baseUrl = url.match(/^(https?:\/\/.*?)\//);
       if (baseUrl) {
-        setFeedInfo(prev => ({ ...prev, homepage: baseUrl[1] }));
+        setHomepage(baseUrl[1]);
       }
     }
 
-    const encodedUrl = encodeURIComponent(feedUrl).replace(/%/g, "%25");
+    const encodedUrl = encodeURIComponent(url).replace(/%/g, "%25");
     const checkUrl = feedCheckUrl.replace(/666/, encodedUrl);
 
     doGet(
       checkUrl,
       response => {
         setCheckingStatus(false);
-        setLastResponseCode(response.data.status_code);
         if (!response || response.data.status_code !== StatusCodes.OK) {
           setStatusMessage({
             type: "error",
@@ -140,181 +102,157 @@ export function FeedEditorModal({
       },
       "Error getting feed info"
     );
-  }, [feedInfo.url, feedInfo.homepage, feedCheckUrl]);
+  }, [url, homepage, feedCheckUrl]);
 
-  const handleSubmit = useCallback(() => {
-    if (action === "Edit" && feedInfo.uuid) {
-      const url = editFeedUrl.replace(/00000000-0000-0000-0000-000000000000/, feedInfo.uuid);
-      doPut(
-        url,
-        {
-          feed_uuid: feedInfo.uuid,
-          homepage: feedInfo.homepage,
-          name: feedInfo.name,
-          url: feedInfo.url,
-        },
-        () => {
-          if (modalInstanceRef.current) {
-            modalInstanceRef.current.hide();
-          }
-        },
-        "Feed edited"
-      );
+  const canSubmit = name.trim().length > 0 && url.trim().length > 0 && !checkingStatus;
+
+  const submit = useCallback(() => {
+    if (!canSubmit) return;
+    if (action === "Edit" && uuid) {
+      const target = editFeedUrl.replace(PLACEHOLDER_UUID, uuid);
+      doPut(target, { feed_uuid: uuid, homepage, name, url }, () => onClose(), "Feed edited");
     } else {
       doPost(
         newFeedUrl,
-        {
-          homepage: feedInfo.homepage,
-          name: feedInfo.name,
-          url: feedInfo.url,
-        },
+        { homepage, name, url },
         response => {
           onAddFeed(response.data.feed_info);
-          if (modalInstanceRef.current) {
-            modalInstanceRef.current.hide();
-          }
+          onClose();
         },
         "Feed added. Please wait up to an hour for the feed to refresh."
       );
     }
-  }, [action, feedInfo, editFeedUrl, newFeedUrl, onAddFeed]);
+  }, [action, canSubmit, uuid, editFeedUrl, newFeedUrl, name, url, homepage, onAddFeed, onClose]);
 
-  const renderStatusMessage = () => {
+  const status = useMemo(() => {
+    if (checkingStatus) {
+      return (
+        <div className="feed-status checking">
+          <span
+            className="spinner-border spinner-border-sm feed-status-spinner"
+            role="status"
+            aria-hidden="true"
+          />
+          <span>checking feed status…</span>
+        </div>
+      );
+    }
     switch (statusMessage.type) {
       case "ok":
         return (
-          <>
-            Feed <strong>OK</strong>. Found <strong>{statusMessage.count}</strong> feed items.
-          </>
+          <div className="feed-status ok">
+            <FontAwesomeIcon icon={faCheck} className="feed-status-icon" />
+            <span>
+              feed ok · <strong>{statusMessage.count}</strong> items
+            </span>
+          </div>
         );
       case "error":
         return (
-          <>
-            Feed error. Status: <strong>{statusMessage.text}</strong>
-          </>
+          <div className="feed-status error">
+            <FontAwesomeIcon icon={faExclamationTriangle} className="feed-status-icon" />
+            <span>
+              feed error · <strong>{statusMessage.text}</strong>
+            </span>
+          </div>
         );
       case "empty":
-        return <>Feed error. Found no feed items.</>;
+        return (
+          <div className="feed-status error">
+            <FontAwesomeIcon icon={faExclamationTriangle} className="feed-status-icon" />
+            <span>feed error · no items found</span>
+          </div>
+        );
       default:
         return null;
     }
-  };
+  }, [checkingStatus, statusMessage]);
+
+  if (!isOpen) return null;
+
+  const isEdit = action === "Edit";
+  const eyebrowLabel = isEdit ? "edit feed" : "new feed";
+  const eyebrowPath = isEdit ? "bordercore / feeds / edit" : "bordercore / feeds / create";
+  const titleText = isEdit ? "Edit feed" : "Create a feed";
 
   return createPortal(
-    <div
-      ref={modalRef}
-      id="modalEditFeed"
-      className="modal fade"
-      tabIndex={-1}
-      role="dialog"
-      aria-labelledby="myModalLabel"
-    >
-      <div className="modal-dialog modal-lg" role="document">
-        <div className="modal-content">
-          <div className="modal-header">
-            <h4 id="myModalLabel" className="modal-title">
-              {action} Feed
-            </h4>
-            <button
-              type="button"
-              className="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-            />
-          </div>
-          <div className="modal-body">
-            <form onSubmit={e => e.preventDefault()}>
-              <div className="row mb-3">
-                <label className="fw-bold col-lg-3 col-form-label text-end" htmlFor="id_name">
-                  Name
-                </label>
-                <div className="col-lg-9">
-                  <input
-                    id="id_name"
-                    type="text"
-                    name="name"
-                    className="form-control"
-                    autoComplete="off"
-                    maxLength={200}
-                    required
-                    value={feedInfo.name}
-                    onChange={handleInputChange}
-                  />
-                </div>
-              </div>
+    <>
+      <div className="refined-modal-scrim" onClick={onClose} />
+      <form
+        className="refined-modal"
+        role="dialog"
+        aria-label={isEdit ? "edit feed" : "create new feed"}
+        onSubmit={e => {
+          e.preventDefault();
+          submit();
+        }}
+      >
+        <button type="button" className="refined-modal-close" onClick={onClose} aria-label="close">
+          <FontAwesomeIcon icon={faTimes} />
+        </button>
 
-              <div className="row mb-3">
-                <label className="fw-bold col-lg-3 col-form-label text-end" htmlFor="id_url">
-                  Url
-                </label>
-                <div className="col-lg-9">
-                  <input
-                    id="id_url"
-                    type="text"
-                    name="url"
-                    className="form-control"
-                    required
-                    autoComplete="off"
-                    value={feedInfo.url}
-                    onChange={handleInputChange}
-                    onBlur={handleUrlBlur}
-                  />
-                </div>
-              </div>
-
-              <div className="row mb-3">
-                <label className="fw-bold col-lg-3 col-form-label text-end" htmlFor="id_homepage">
-                  Homepage
-                </label>
-                <div className="col-lg-9">
-                  <input
-                    id="id_homepage"
-                    type="text"
-                    name="homepage"
-                    className="form-control"
-                    autoComplete="off"
-                    maxLength={200}
-                    required
-                    value={feedInfo.homepage}
-                    onChange={handleInputChange}
-                  />
-                </div>
-              </div>
-            </form>
-          </div>
-          <div className="modal-footer row g-0">
-            <div className="col-offset-3 col-lg-9 d-flex align-items-center ps-3">
-              <div id="feed-status">
-                <div className="d-flex align-items-center">
-                  {checkingStatus ? (
-                    <div className="d-flex align-items-center">
-                      <div className="spinner-border ms-2 text-secondary" role="status">
-                        <span className="sr-only">Checking feed status...</span>
-                      </div>
-                      <div className="ms-3">Checking feed status...</div>
-                    </div>
-                  ) : (
-                    <>
-                      <FontAwesomeIcon
-                        className={`me-2 ${statusIcon.className}`}
-                        icon={statusIcon.icon}
-                      />
-                      <div>{renderStatusMessage()}</div>
-                    </>
-                  )}
-                </div>
-              </div>
-              <input
-                className="btn btn-primary ms-auto"
-                type="submit"
-                value="Save"
-                onClick={handleSubmit}
-              />
-            </div>
-          </div>
+        <div className="refined-modal-eyebrow">
+          <span>{eyebrowLabel}</span>
+          <span className="dot">·</span>
+          <span className="mono">{eyebrowPath}</span>
         </div>
-      </div>
-    </div>,
+
+        <h2 className="refined-modal-title">{titleText}</h2>
+
+        <div className="refined-field">
+          <label htmlFor="feed-edit-name">name</label>
+          <input
+            ref={nameRef}
+            id="feed-edit-name"
+            type="text"
+            autoComplete="off"
+            maxLength={200}
+            placeholder={isEdit ? undefined : "e.g. NYT World News"}
+            value={name}
+            onChange={e => setName(e.target.value)}
+            required
+          />
+        </div>
+
+        <div className="refined-field">
+          <label htmlFor="feed-edit-url">url</label>
+          <input
+            id="feed-edit-url"
+            type="text"
+            autoComplete="off"
+            placeholder={isEdit ? undefined : "https://example.com/feed.xml"}
+            value={url}
+            onChange={e => setUrl(e.target.value)}
+            onBlur={handleUrlBlur}
+            required
+          />
+          {status}
+        </div>
+
+        <div className="refined-field">
+          <label htmlFor="feed-edit-homepage">homepage</label>
+          <input
+            id="feed-edit-homepage"
+            type="text"
+            autoComplete="off"
+            maxLength={200}
+            value={homepage}
+            onChange={e => setHomepage(e.target.value)}
+            required
+          />
+        </div>
+
+        <div className="refined-modal-actions feed-editor-actions">
+          <button type="button" className="refined-btn ghost" onClick={onClose}>
+            cancel
+          </button>
+          <button type="submit" className="refined-btn primary" disabled={!canSubmit}>
+            {!isEdit && <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" />}
+            {isEdit ? "save" : "create feed"}
+          </button>
+        </div>
+      </form>
+    </>,
     document.body
   );
 }

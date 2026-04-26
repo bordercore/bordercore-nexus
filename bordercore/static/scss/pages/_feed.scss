@@ -28,3 +28,60 @@
   padding-left: 0.5rem;
   border-radius: var(--radius);
 }
+
+// Inline status row beneath the URL field in the refined feed editor modal.
+// Mirrors the eyebrow's mono-uppercase typography so the verdict reads as
+// metadata about the field above, not a fresh sentence.
+.feed-status {
+  display: flex;
+  align-items: center;
+  margin-top: 8px;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  gap: 8px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+
+  strong {
+    color: inherit;
+    font-weight: 700;
+  }
+
+  &.checking {
+    color: var(--fg-3);
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  &.ok {
+    color: var(--ok);
+  }
+
+  &.error {
+    color: var(--danger);
+  }
+}
+
+.feed-status-icon {
+  font-size: 12px;
+}
+
+.feed-status-spinner {
+  width: 14px;
+  height: 14px;
+  border-width: 2px;
+}
+
+// The feed editor has no danger/delete button to absorb flex slack on the
+// left, so the global `.refined-btn.primary { flex: 1 }` would stretch the
+// save button across the row. Right-align the buttons at natural width.
+.feed-editor-actions {
+  justify-content: flex-end;
+
+  .refined-btn.primary {
+    flex: 0 0 auto;
+  }
+}
