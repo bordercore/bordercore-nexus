@@ -317,7 +317,7 @@ export function SearchPage({
     new Set(
       resultsList.flatMap(match => {
         try {
-          return JSON.parse(match.tags_json || "[]") as string[];
+          return (JSON.parse(match.tags_json || "[]") as string[] | null) ?? [];
         } catch {
           return [];
         }
@@ -416,7 +416,7 @@ export function SearchPage({
 
                   <div className={`search-results-${viewMode}`}>
                     {resultsList.map((match, index) => {
-                      const tags = JSON.parse(match.tags_json || "[]");
+                      const tags: string[] = JSON.parse(match.tags_json || "[]") ?? [];
                       const source = match.source;
                       const isImportant = source.importance === 10;
 
