@@ -1,6 +1,6 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-import BlobDetailPage from "../react/blob/BlobDetailPage";
+import BlobDetailPage from "../react/blob/detail/BlobDetailPage";
 import type {
   BlobDetail,
   BlobDetailUrls,

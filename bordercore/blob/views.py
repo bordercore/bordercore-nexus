@@ -481,6 +481,9 @@ class BlobDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView):
             "mathSupport": self.object.math_support,
             "hasBeenModified": self.object.has_been_modified,
             "modified": self.object.modified.strftime("%B %-d, %Y") if self.object.has_been_modified else "",
+            "created": self.object.created.strftime("%B %-d, %Y"),
+            "doctype": self.object.doctype,
+            "isIndexed": self.object.is_indexed,
             "coverUrl": self.object.get_cover_url() + "?nodefault=1" if self.object.sha1sum else "",
             "fileUrl": f"{settings.MEDIA_URL}blobs/{self.object.url}" if self.object.sha1sum else "",
             "tags": [
@@ -513,6 +516,7 @@ class BlobDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView):
             "awsUrl": context.get("aws_url", ""),
             "sqlPlayground": reverse("homepage:sql"),
             "pdfViewer": reverse("blob:pdf_viewer", kwargs={"uuid": self.object.uuid}),
+            "rename": reverse("blob:rename", kwargs={"uuid": self.object.uuid}),
         }
 
         context["blob_urls"] = context["urls"]
@@ -549,6 +553,38 @@ class BlobDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView):
         ]
 
         return context
+
+
+@api_view(["POST"])
+def rename_blob(request: Request, uuid: str) -> Response:
+    """Rename a blob via inline title edit.
+
+    Updates the blob's name field only and re-indexes it. Used by the blob
+    detail page's inline-editable h1.
+
+    Args:
+        request: HTTP request with form data containing a ``name`` field.
+        uuid: UUID of the blob to rename.
+
+    Returns:
+        JSON response with the updated name, or 400 on validation error.
+    """
+    user = cast(User, request.user)
+    blob = get_user_object_or_404(user, Blob, uuid=uuid)
+
+    new_name = (request.data.get("name") or "").strip()
+    if not new_name:
+        return Response({"detail": "name is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    blob.name = new_name
+    blob.save()
+
+    try:
+        blob.index_blob(file_changed=False, new_blob=False)
+    except (ClientError, BotoCoreError) as e:
+        log.warning("Failed to reindex blob %s after rename: %s", blob.uuid, e)
+
+    return Response({"name": blob.name})
 
 
 class BlobUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView, FormValidMixin):

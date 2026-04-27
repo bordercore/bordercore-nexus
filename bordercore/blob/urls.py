@@ -25,6 +25,11 @@ urlpatterns = [
         name="update"
     ),
     path(
+        route="<uuid:uuid>/rename/",
+        view=views.rename_blob,
+        name="rename"
+    ),
+    path(
         route="create/",
         view=views.BlobCreateView.as_view(),
         name="create"

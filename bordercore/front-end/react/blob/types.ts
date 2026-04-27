@@ -77,6 +77,9 @@ export interface BlobDetail {
   mathSupport: boolean;
   hasBeenModified: boolean;
   modified?: string;
+  created?: string;
+  doctype?: string;
+  isIndexed?: boolean;
   coverUrl?: string;
   fileUrl?: string;
   tags: Array<{ name: string; url: string }>;
@@ -103,6 +106,28 @@ export interface BlobDetailUrls {
   awsUrl?: string;
   sqlPlayground?: string;
   pdfViewer?: string;
+  rename?: string;
+}
+
+export interface RelatedObjectItem {
+  bc_object_uuid?: string;
+  uuid: string;
+  type: string;
+  name?: string;
+  url?: string;
+  cover_url?: string;
+  note?: string;
+}
+
+export interface SearchResult {
+  uuid: string;
+  name?: string;
+  question?: string;
+  doctype?: string;
+  type?: string;
+  url?: string;
+  cover_url?: string;
+  num_objects?: number;
 }
 
 export interface Collection {
