@@ -1,0 +1,483 @@
+// =============================================================================
+// Refined top bar — V1 "Refined Classic"
+// =============================================================================
+// Recreates design_handoff_top_bar/prototype/topbar.css scoped to .refined-tb.
+// Tokens ported from prototype/colors_and_type.css live at :root so other
+// refined-* surfaces can pick them up later.
+
+:root {
+  // Brand & accent
+  --bc-accent: #b36bff;
+  --bc-accent-2: #7c7fff;
+  --bc-accent-3: #ff3dbd;
+  --bc-accent-4: #4cc2ff;
+
+  // Backgrounds
+  --bc-bg-0: #07070c;
+  --bc-bg-1: #0b0d14;
+  --bc-bg-2: #12141c;
+  --bc-bg-3: #1a1d28;
+  --bc-bg-4: #242836;
+
+  // Foreground
+  --bc-fg-1: #e6e8f0;
+  --bc-fg-2: #b8bcc9;
+  --bc-fg-3: #8a8fa0;
+  --bc-fg-4: #5a5f72;
+
+  // Semantic
+  --bc-danger: #f57;
+  --bc-priority-high: #f57;
+
+  // Borders
+  --bc-border-1: #2a2e3d;
+  --bc-border-2: #3a3f52;
+  --bc-hairline: #1e212d;
+
+  // Glass
+  --bc-glass-bg: rgb(18 20 28 / 72%);
+  --bc-glass-border: rgb(179 107 255 / 18%);
+  --bc-glass-blur: 14px;
+
+  // Glows
+  --bc-glow-accent-sm:
+    0 0 0 1px rgb(179 107 255 / 28%),
+    0 0 10px -2px rgb(179 107 255 / 35%);
+  --bc-glow-danger: 0 0 16px -2px rgb(255 85 119 / 45%);
+
+  // Elevation
+  --bc-elev-3:
+    0 1px 0 0 rgb(255 255 255 / 4%) inset,
+    0 20px 60px -12px rgb(0 0 0 / 70%),
+    0 0 0 1px var(--bc-border-1);
+
+  // Radii
+  --bc-radius-xs: 4px;
+  --bc-radius-sm: 6px;
+  --bc-radius-md: 10px;
+  --bc-radius-pill: 999px;
+
+  // Type
+  --bc-font-sans:
+    "Inter", -apple-system, blinkmacsystemfont, "Segoe UI", roboto, "Helvetica Neue", arial,
+    sans-serif;
+  --bc-font-display: "Space Grotesk", "Inter", -apple-system, "Segoe UI", sans-serif;
+  --bc-font-mono:
+    "JetBrains Mono", ui-monospace, sfmono-regular, "SF Mono", menlo, consolas, monospace;
+
+  // Motion
+  --bc-t-fast: 120ms;
+  --bc-t-base: 180ms;
+  --bc-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+// stylelint-disable no-descending-specificity
+
+// ==== Surface ====
+.refined-tb {
+  position: relative;
+  display: flex;
+  overflow: hidden;
+  width: 100%;
+  height: 64px;
+  align-items: center;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--bc-hairline);
+  margin: 0;
+  backdrop-filter: blur(14px);
+  background: rgb(11 13 20 / 72%);
+  font-family: var(--bc-font-sans);
+  font-size: 14px;
+  gap: 12px;
+  isolation: isolate;
+
+  // Lift content above the bg layer
+  > *:not(.refined-tb-bg) {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+// ==== Background animation layer ====
+.refined-tb-bg {
+  position: absolute;
+  z-index: 0;
+  overflow: hidden;
+  inset: 0;
+  pointer-events: none;
+
+  &::after {
+    position: absolute;
+    background: linear-gradient(180deg, rgb(11 13 20 / 35%), rgb(11 13 20 / 55%));
+    content: "";
+    inset: 0;
+    pointer-events: none;
+  }
+}
+
+.refined-tb-bg-canvas {
+  position: absolute;
+  display: block;
+  width: 100%;
+  height: 100%;
+  inset: 0;
+}
+
+// ==== Section title ====
+.refined-tb-title {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+
+  .icon {
+    display: grid;
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    color: var(--bc-accent);
+    place-items: center;
+
+    i {
+      font-size: 18px;
+    }
+  }
+
+  h1 {
+    overflow: hidden;
+    max-width: 420px;
+    margin: 0;
+    background: linear-gradient(96deg, #ff7e3d 0%, #b36bff 65%, #7c7fff 100%);
+    background-clip: text;
+    color: transparent;
+    font-family: var(--bc-font-display);
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    -webkit-text-fill-color: transparent;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+// ==== Right cluster ====
+.refined-tb-right {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  gap: 6px;
+}
+
+// ==== Icon button ====
+.refined-tb-icon {
+  position: relative;
+  display: grid;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--bc-radius-sm);
+  background: none;
+  color: var(--bc-fg-2);
+  cursor: pointer;
+  font: inherit;
+  place-items: center;
+  transition: all var(--bc-t-fast) var(--bc-ease-out);
+
+  &:hover {
+    border-color: var(--bc-border-1);
+    background: var(--bc-bg-3);
+    color: var(--bc-fg-1);
+  }
+
+  i,
+  svg {
+    font-size: 14px;
+  }
+}
+
+// ==== Weather pill ====
+.refined-tb-weather {
+  display: flex;
+  height: 36px;
+  align-items: center;
+  padding: 0 12px 0 4px;
+  border: 1px solid transparent;
+  border-radius: var(--bc-radius-pill);
+  background: none;
+  color: inherit;
+  cursor: default;
+  font: inherit;
+  gap: 4px;
+  transition: all var(--bc-t-fast) var(--bc-ease-out);
+
+  &:hover {
+    border-color: var(--bc-border-1);
+    background: var(--bc-bg-3);
+  }
+
+  // Size the existing Weather component's Lottie animation to fit the pill.
+  .weather-icon {
+    display: grid;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    place-items: center;
+  }
+
+  .weather-lottie {
+    width: 32px;
+    height: 32px;
+  }
+
+  .temp {
+    color: var(--bc-fg-2);
+    font-family: var(--bc-font-mono);
+    font-size: 12px;
+    font-weight: 500;
+  }
+}
+
+// RecentBlobs wraps its trigger in a Bootstrap mx-2 span — neutralize so the
+// bar's own gap controls spacing.
+.refined-tb .mx-2 {
+  margin: 0 !important;
+}
+
+// ==== Search trigger ====
+// Styles the existing TopSearch trigger (.top-search-icon) inside the refined
+// top bar context so it matches the prototype's 36x36 icon button. The hover
+// transform/glow rules from layout/_layout.scss are reset here.
+.refined-tb .top-search-icon {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--bc-radius-sm);
+  background: none;
+  color: var(--bc-fg-3);
+  cursor: pointer;
+  font-size: inherit;
+  place-items: center;
+  transform: none;
+  transition: all var(--bc-t-fast) var(--bc-ease-out);
+
+  &:hover {
+    border-color: var(--bc-border-1);
+    background: var(--bc-bg-3);
+    color: var(--bc-fg-1);
+    transform: none;
+
+    svg,
+    .glow,
+    i {
+      filter: none;
+    }
+  }
+
+  svg {
+    font-size: 14px;
+  }
+}
+
+// ==== Alert pill ====
+.refined-tb-alert {
+  position: relative;
+  display: inline-flex;
+  height: 28px;
+  align-items: center;
+  padding: 0 10px 0 8px;
+  border: 1px solid rgb(255 85 119 / 32%);
+  border-radius: var(--bc-radius-pill);
+  background: rgb(255 85 119 / 12%);
+  color: var(--bc-priority-high);
+  cursor: pointer;
+  font-family: var(--bc-font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  gap: 6px;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-decoration: none;
+  transition: all var(--bc-t-fast) var(--bc-ease-out);
+
+  &:hover {
+    background: rgb(255 85 119 / 18%);
+    box-shadow: var(--bc-glow-danger);
+    color: var(--bc-priority-high);
+  }
+
+  .pulse-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    animation: refined-tb-pulse 1.6s ease-in-out infinite;
+    background: var(--bc-danger);
+    box-shadow: 0 0 8px var(--bc-danger);
+  }
+
+  .num {
+    font-family: var(--bc-font-mono);
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .word {
+    font-size: 11px;
+    text-transform: lowercase;
+  }
+}
+
+@keyframes refined-tb-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.55;
+    transform: scale(0.78);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .refined-tb-alert .pulse-dot {
+    animation: none;
+  }
+}
+
+// ==== Divider ====
+.refined-tb-div {
+  width: 1px;
+  height: 22px;
+  margin: 0 4px;
+  background: var(--bc-border-1);
+}
+
+// ==== User pill ====
+.refined-tb-user {
+  display: inline-flex;
+  height: 36px;
+  align-items: center;
+  padding: 0 10px 0 6px;
+  border: 1px solid transparent;
+  border-radius: var(--bc-radius-pill);
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  gap: 8px;
+  transition: all var(--bc-t-fast) var(--bc-ease-out);
+
+  &:hover {
+    border-color: var(--bc-border-1);
+    background: var(--bc-bg-3);
+  }
+
+  &.open {
+    border-color: rgb(179 107 255 / 30%);
+    background: var(--bc-bg-3);
+    box-shadow: var(--bc-glow-accent-sm);
+  }
+
+  .avatar {
+    display: grid;
+    width: 26px;
+    height: 26px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #b36bff, #4cc2ff);
+    color: #fff;
+    font: 700 11px / 1 var(--bc-font-sans);
+    place-items: center;
+    text-transform: uppercase;
+  }
+
+  .greeting {
+    display: flex;
+    color: var(--bc-fg-2);
+    font-size: 13px;
+    gap: 5px;
+
+    strong {
+      color: var(--bc-accent);
+      font-weight: 600;
+    }
+  }
+
+  .chev {
+    color: var(--bc-fg-4);
+    font-size: 10px;
+    transition: transform var(--bc-t-fast) var(--bc-ease-out);
+  }
+
+  &.open .chev {
+    color: var(--bc-accent);
+    transform: rotate(180deg);
+  }
+}
+
+// ==== Dropdown menu ====
+.refined-tb-menu {
+  min-width: 220px;
+  padding: 6px;
+  border: 1px solid var(--bc-glass-border);
+  border-radius: var(--bc-radius-md);
+  animation: refined-tb-menu-in 160ms var(--bc-ease-out);
+  backdrop-filter: blur(var(--bc-glass-blur));
+  background: var(--bc-glass-bg);
+  box-shadow:
+    var(--bc-elev-3),
+    var(--bc-glow-accent-sm);
+}
+
+@keyframes refined-tb-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.refined-tb-menu-item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--bc-radius-sm);
+  background: none;
+  color: var(--bc-fg-1);
+  cursor: pointer;
+  font-family: var(--bc-font-sans);
+  font-size: 13px;
+  gap: 10px;
+  text-align: left;
+  text-decoration: none;
+  transition: background var(--bc-t-fast);
+
+  &:hover {
+    background: rgb(179 107 255 / 10%);
+    color: var(--bc-fg-1);
+  }
+
+  i,
+  svg {
+    width: 16px;
+    color: var(--bc-accent);
+    font-size: 13px;
+    text-align: center;
+  }
+}
+
+.refined-tb-menu-divider {
+  height: 1px;
+  margin: 4px 8px;
+  background: var(--bc-hairline);
+}

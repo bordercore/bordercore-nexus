@@ -2,18 +2,10 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { BaseStoreProvider, useBaseStore } from "../react/stores/BaseStore";
 import Toast from "../react/common/Toast";
-import Weather from "../react/common/Weather";
-import TopSearch, { TopSearchHandle } from "../react/search/TopSearch";
-import RecentBlobs from "../react/blob/RecentBlobs";
-import DropDownMenu from "../react/common/DropDownMenu";
-import OverdueTasks from "../react/todo/OverdueTasks";
+import RefinedTopBar from "../react/topbar/RefinedTopBar";
 import ChatBot, { ChatBotHandle } from "../react/chatbot/ChatBot";
 import SidebarMenu from "../react/common/SidebarMenu";
 import GlobalAudioPlayer from "../react/music/GlobalAudioPlayer";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSearch, faAngleDown, faBriefcase, faChartBar, faComment, faQuestion, faSignOutAlt } from "@fortawesome/free-solid-svg-icons";
-import axios from "axios";
-import { Modal } from "bootstrap";
 import MarkdownIt from "markdown-it";
 import { EventBus, doGet, doPost } from "../react/utils/reactUtils";
 
@@ -41,184 +33,6 @@ declare global {
     doGet?: (url: string, callback: (response: any) => void, errorMsg?: string) => void;
     markdown?: any;
   }
-}
-
-function TopBarContent() {
-  const data = window.BASE_TEMPLATE_DATA || {};
-  const [weatherInfo, setWeatherInfo] = React.useState<any>(null);
-  const [recentBlobs, setRecentBlobs] = React.useState<any>(null);
-  const [recentlyViewed, setRecentlyViewed] = React.useState<any>(null);
-  const [recentSearches, setRecentSearches] = React.useState<any[]>([]);
-  const [overdueTasks, setOverdueTasks] = React.useState<any[]>([]);
-  const [failedTestCount, setFailedTestCount] = React.useState(data.failedTestCount || 0);
-  const [pageTitle, setPageTitle] = React.useState<string>(data.title || "");
-  const username = data.username || "User";
-  const topSearchRef = React.useRef<TopSearchHandle>(null);
-
-  React.useEffect(() => {
-    // Load data from json_script tags
-    const recentBlobsEl = document.getElementById("recent_blobs");
-    const recentlyViewedEl = document.getElementById("recently_viewed");
-    const recentSearchesEl = document.getElementById("recent_searches");
-    const overdueTasksEl = document.getElementById("overdue_tasks");
-    const weatherInfoEl = document.getElementById("weather_info");
-
-    if (recentBlobsEl) {
-      setRecentBlobs(JSON.parse(recentBlobsEl.textContent || "{}"));
-    }
-    if (recentlyViewedEl) {
-      setRecentlyViewed(JSON.parse(recentlyViewedEl.textContent || "{}"));
-    }
-    if (recentSearchesEl) {
-      setRecentSearches(JSON.parse(recentSearchesEl.textContent || "[]"));
-    }
-    if (overdueTasksEl) {
-      setOverdueTasks(JSON.parse(overdueTasksEl.textContent || "[]"));
-    }
-    if (weatherInfoEl) {
-      setWeatherInfo(JSON.parse(weatherInfoEl.textContent || "null"));
-    }
-  }, []);
-
-
-  React.useEffect(() => {
-    // Fetch weather data every 10 minutes
-    if (data.urls?.getWeather) {
-      const fetchWeather = async () => {
-        try {
-          const response = await axios.get(data.urls.getWeather);
-          if (response.data && response.data.weather) {
-            setWeatherInfo(response.data.weather);
-          }
-        } catch (error) {
-          console.error("Failed to fetch weather data:", error);
-        }
-      };
-      const interval = setInterval(fetchWeather, 600000); // 10 minutes
-      fetchWeather(); // Initial fetch
-      return () => clearInterval(interval);
-    }
-  }, [data.urls?.getWeather]);
-
-  React.useEffect(() => {
-    // Handle keyboard shortcuts
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "c" && event.altKey) {
-        // Toggle chatbot
-        EventBus.$emit("chat", {});
-      }
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, []);
-
-  const handleChatBot = () => {
-    EventBus.$emit("chat", {});
-  };
-
-  const showHelp = () => {
-    const helpTextEl = document.getElementById("help-text");
-    const modalBodyEl = document.getElementById("modal-body-help");
-    if (helpTextEl && modalBodyEl) {
-      const helpText = helpTextEl.innerHTML;
-      modalBodyEl.innerHTML = markdown.render(helpText);
-      const modalElement = document.getElementById("modalHelp");
-      if (modalElement) {
-        const modal = new Modal(modalElement);
-        modal.show();
-      }
-    }
-  };
-
-  const openSearchWindow = () => {
-    if (topSearchRef.current) {
-      topSearchRef.current.focusSearch();
-      // Also trigger the custom event for the component's internal handler
-      window.dispatchEvent(new CustomEvent("openSearchWindow"));
-    }
-  };
-
-  const userMenuItems = (data.userMenuItems || []).map((item: any) => {
-    if (item.clickHandler === "handleChatBot") {
-      return { ...item, clickHandler: handleChatBot };
-    } else if (item.clickHandler === "showHelp") {
-      return { ...item, clickHandler: showHelp };
-    }
-    return item;
-  });
-
-  const getIcon = (iconName: string) => {
-    const icons: Record<string, any> = {
-      briefcase: faBriefcase,
-      "chart-bar": faChartBar,
-      comment: faComment,
-      question: faQuestion,
-      "sign-out-alt": faSignOutAlt,
-    };
-    return icons[iconName] || faBriefcase;
-  };
-
-  return (
-    <>
-      <div className="top-title-container" id="top-title">
-        <span id="top-title-text">
-          {pageTitle}
-        </span>
-      </div>
-      <div className="top-bar-right">
-        {weatherInfo && (
-          <div id="weather-display" className="top-bar-item">
-            <Weather weatherInfo={weatherInfo} />
-          </div>
-        )}
-        <div id="top-search-bar" className="top-bar-item">
-          <TopSearch
-            ref={topSearchRef}
-            initialSearchFilter={data.topSearchConfig?.initialSearchFilter || ""}
-            initialSearchUrl={data.topSearchConfig?.initialSearchUrl || ""}
-            querySearchUrl={data.topSearchConfig?.querySearchUrl || ""}
-            noteQuerySearchUrl={data.topSearchConfig?.noteQuerySearchUrl || ""}
-            drillQuerySearchUrl={data.topSearchConfig?.drillQuerySearchUrl || ""}
-            storeInSessionUrl={data.topSearchConfig?.storeInSessionUrl || ""}
-            recentSearches={recentSearches}
-          />
-        </div>
-        {recentBlobs && recentlyViewed && (
-        <div id="rb-popover" className="top-bar-item">
-          <RecentBlobs
-            blobListInfo={recentBlobs}
-            blobDetailUrl={data.recentBlobsConfig?.blobDetailUrl || ""}
-            recentlyViewed={recentlyViewed}
-          />
-        </div>
-        )}
-        <div id="user-menu-wrapper" className="top-bar-item user-menu-wrapper">
-          <DropDownMenu
-            links={userMenuItems}
-            showTarget={false}
-            iconSlot={
-              <span className="user-greeting">
-                <span className="align-middle ms-2">
-                  Hello <strong>{username}</strong>
-                </span>
-                {failedTestCount > 0 && (
-                  <span className="dropdown-item-extra align-middle ms-2">{failedTestCount}</span>
-                )}
-                <FontAwesomeIcon icon={faAngleDown} className="align-middle ms-2" />
-              </span>
-            }
-          />
-        </div>
-      </div>
-      <div id="overdue-tasks">
-        <OverdueTasks
-          taskListInitial={overdueTasks}
-          rescheduleTaskUrl={data.overdueTasksConfig?.rescheduleTaskUrl || ""}
-          deleteTodoUrl={data.overdueTasksConfig?.deleteTodoUrl || ""}
-        />
-      </div>
-    </>
-  );
 }
 
 function ChatBotContent() {
@@ -519,7 +333,7 @@ if (topBarContainer) {
   const data = window.BASE_TEMPLATE_DATA || {};
   topBarRoot.render(
     <BaseStoreProvider initialCollapsed={data.initialSidebarCollapsed || false}>
-      <TopBarContent />
+      <RefinedTopBar />
     </BaseStoreProvider>
   );
 }
