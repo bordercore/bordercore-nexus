@@ -65,14 +65,9 @@ def homepage(request: HttpRequest) -> HttpResponse:
     } if quote else None)
 
     # Bookmarks
-    pinned_bookmarks = Bookmark.objects.filter(user=user, is_pinned=True)
     bookmarks = Bookmark.objects.bare_bookmarks(user, limit=50)
     daily_bookmarks = Bookmark.objects.filter(user=user, daily__isnull=False)
 
-    pinned_bookmarks_json = json_for_html_attr([
-        {"uuid": str(b.uuid), "name": b.name, "url": b.url}
-        for b in pinned_bookmarks
-    ])
     bookmarks_json = json_for_html_attr([
         {"uuid": str(b.uuid), "name": b.name, "url": b.url}
         for b in bookmarks
@@ -188,7 +183,6 @@ def homepage(request: HttpRequest) -> HttpResponse:
         "drill_progress_json": drill_progress_json,
         "overdue_exercises_json": overdue_exercises_json,
         "daily_bookmarks_json": daily_bookmarks_json,
-        "pinned_bookmarks_json": pinned_bookmarks_json,
         "bookmarks_json": bookmarks_json,
         "music_json": music_json,
         "quote_json": quote_json,
