@@ -102,6 +102,7 @@ omit = [
   "*aws-sam*",
   "*/static/pdfjs/*",
   "*/tests/pages/*",
+  "*/bordercore/coverage/*",
 ]
 
 # Plugin-specific configuration (Django)
