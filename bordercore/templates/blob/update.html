@@ -34,6 +34,7 @@
         {% if object %}
         data-detail-url="{% url 'blob:detail' object.uuid %}"
         data-clone-url="{% url 'blob:clone' object.uuid %}"
+        data-delete-url="{% url 'blob-detail' object.uuid %}"
         {% if file_url %}data-download-url="{{ file_url }}"{% endif %}
         {% endif %}
     ></div>

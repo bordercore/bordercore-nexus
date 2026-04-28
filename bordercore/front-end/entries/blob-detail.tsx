@@ -70,11 +70,7 @@ if (container) {
   const metadataMisc: Record<string, string> = parseJsonScript("metadata-misc", {});
   const nodeList: NodeInfo[] = parseJsonScript("node-list", []);
 
-  // Read data attributes
   const isPinnedNote = container.getAttribute("data-is-pinned-note") === "true";
-  const isAdmin = container.getAttribute("data-is-admin") === "true";
-  const showMetadata = container.getAttribute("data-show-metadata") === "true";
-  const mediaUrl = container.getAttribute("data-media-url") || "";
 
   const root = createRoot(container);
   root.render(
@@ -89,9 +85,6 @@ if (container) {
       metadataMisc={metadataMisc}
       nodeList={nodeList}
       isPinnedNote={isPinnedNote}
-      isAdmin={isAdmin}
-      showMetadata={showMetadata}
-      mediaUrl={mediaUrl}
     />
   );
 }

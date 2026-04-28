@@ -8,11 +8,10 @@ import {
   faClone,
   faDownload,
   faRedo,
-  faTrashAlt,
   faThumbtack,
-  faInfoCircle,
+  faPlay,
+  faCopy,
 } from "@fortawesome/free-solid-svg-icons";
-import axios from "axios";
 
 import { doPost, EventBus } from "../../utils/reactUtils";
 import { tagStyle } from "../../utils/tagColors";
@@ -24,17 +23,9 @@ interface HeroProps {
   isPinnedNote: boolean;
   onPinToggle: () => void;
   onTitleSaved: (newName: string) => void;
-  onOpenDrawer: () => void;
 }
 
-export function Hero({
-  blob,
-  urls,
-  isPinnedNote,
-  onPinToggle,
-  onTitleSaved,
-  onOpenDrawer,
-}: HeroProps) {
+export function Hero({ blob, urls, isPinnedNote, onPinToggle, onTitleSaved }: HeroProps) {
   const [moreOpen, setMoreOpen] = useState(false);
   const titleRef = useRef<HTMLHeadingElement | null>(null);
 
@@ -62,36 +53,28 @@ export function Hero({
     EventBus.$emit("toast", { body: "Link copied" });
   }, []);
 
-  const handleDelete = useCallback(() => {
-    if (!confirm("Are you sure you want to delete this blob?")) return;
-    axios
-      .delete(urls.delete)
-      .then(() => {
-        window.location.href = urls.list;
-      })
-      .catch(error => {
-        EventBus.$emit("toast", {
-          title: "Error",
-          body: `Error deleting blob: ${error}`,
-          variant: "danger",
-        });
-      });
-  }, [urls.delete, urls.list]);
+  const handleCopySha1 = useCallback(() => {
+    if (!blob.sha1sum) return;
+    navigator.clipboard.writeText(blob.sha1sum);
+    EventBus.$emit("toast", { body: "SHA1 copied to clipboard" });
+  }, [blob.sha1sum]);
+
+  const handlePlayAudio = useCallback(() => {
+    if (!blob.fileUrl) return;
+    const track = { uuid: blob.uuid, title: blob.name, musicSrc: blob.fileUrl };
+    EventBus.$emit("play-track", {
+      track,
+      trackList: [track],
+      songUrl: "",
+      markListenedToUrl: "",
+      csrfToken: (window as any).BASE_TEMPLATE_DATA?.csrfToken || "",
+    });
+  }, [blob.uuid, blob.name, blob.fileUrl]);
 
   return (
     <section className="bd-hero">
       <div className="bd-hero-body">
         <div className="bd-hero-eyebrow">
-          {blob.isNote && (
-            <button
-              type="button"
-              className={`bd-pin-toggle${isPinnedNote ? " active" : ""}`}
-              onClick={onPinToggle}
-            >
-              <FontAwesomeIcon icon={faThumbtack} />
-              {isPinnedNote ? "pinned to home" : "pin to home"}
-            </button>
-          )}
           <h1
             ref={titleRef}
             contentEditable
@@ -107,28 +90,16 @@ export function Hero({
             {blob.name}
             {blob.editionString ? <span className="edition"> — {blob.editionString}</span> : null}
           </h1>
-          <button
-            type="button"
-            className="bd-iconbtn is-end"
-            onClick={onOpenDrawer}
-            aria-label="Open details drawer"
-          >
-            <FontAwesomeIcon icon={faInfoCircle} />
-          </button>
         </div>
 
-        {(blob.created || blob.modified || blob.author) && (
+        {blob.subtitle && <div className="bd-hero-subtitle">{blob.subtitle}</div>}
+
+        {(blob.date || blob.author) && (
           <div className="bd-hero-meta">
-            {blob.created && <span>{blob.created}</span>}
-            {blob.modified && (
-              <>
-                <span className="sep">·</span>
-                <span>last edited {blob.modified}</span>
-              </>
-            )}
+            {blob.date && <span>{blob.date}</span>}
             {blob.author && (
               <>
-                <span className="sep">·</span>
+                {blob.date && <span className="sep">·</span>}
                 <span className="author">{blob.author}</span>
               </>
             )}
@@ -158,6 +129,11 @@ export function Hero({
               {blob.doctype}
             </span>
           )}
+          {blob.isAudio && blob.fileUrl && (
+            <button type="button" className="bd-iconbtn primary" onClick={handlePlayAudio}>
+              <FontAwesomeIcon icon={faPlay} /> play
+            </button>
+          )}
           <a className="bd-iconbtn" href={`${urls.create}?linked_blob_uuid=${blob.uuid}`}>
             <FontAwesomeIcon icon={faBolt} /> link new
           </a>
@@ -177,6 +153,19 @@ export function Hero({
               <>
                 <div className="bd-overlay-backdrop" onClick={() => setMoreOpen(false)} />
                 <div className="bd-more-menu">
+                  {blob.isNote && (
+                    <button
+                      type="button"
+                      className="bd-more-item"
+                      onClick={() => {
+                        setMoreOpen(false);
+                        onPinToggle();
+                      }}
+                    >
+                      <FontAwesomeIcon icon={faThumbtack} />{" "}
+                      {isPinnedNote ? "Unpin from home" : "Pin to home"}
+                    </button>
+                  )}
                   <a className="bd-more-item" href={urls.edit}>
                     <FontAwesomeIcon icon={faPencilAlt} /> Edit blob
                   </a>
@@ -198,17 +187,18 @@ export function Hero({
                   >
                     <FontAwesomeIcon icon={faRedo} /> Reindex
                   </button>
-                  <div className="bd-more-sep" />
-                  <button
-                    type="button"
-                    className="bd-more-item danger"
-                    onClick={() => {
-                      setMoreOpen(false);
-                      handleDelete();
-                    }}
-                  >
-                    <FontAwesomeIcon icon={faTrashAlt} /> Delete blob
-                  </button>
+                  {blob.sha1sum && (
+                    <button
+                      type="button"
+                      className="bd-more-item"
+                      onClick={() => {
+                        setMoreOpen(false);
+                        handleCopySha1();
+                      }}
+                    >
+                      <FontAwesomeIcon icon={faCopy} /> Copy SHA1
+                    </button>
+                  )}
                 </div>
               </>
             )}

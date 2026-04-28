@@ -1,6 +1,5 @@
 {% extends "base.html" %}
 {% load vite_tags %}
-{% load is_in_group %}
 
 {% block title %} {% if blob.name %}{{ blob }}{% else %}No Name{% endif%} {% endblock %}
 
@@ -8,9 +7,6 @@
 
     <div id="react-root"
          data-is-pinned-note="{% if is_pinned_note %}true{% else %}false{% endif %}"
-         data-is-admin="{% if request.user|is_in_group:'Admin' %}true{% else %}false{% endif %}"
-         data-show-metadata="{% if show_metadata %}true{% else %}false{% endif %}"
-         data-media-url="{{ MEDIA_URL }}"
          class="scrollable-panel-container row g-0 align-items-start h-100 mx-2">
     </div>
 

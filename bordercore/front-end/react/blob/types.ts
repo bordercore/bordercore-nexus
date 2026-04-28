@@ -184,7 +184,4 @@ export interface BlobDetailPageProps {
   metadataMisc: Record<string, string>;
   nodeList: NodeInfo[];
   isPinnedNote: boolean;
-  isAdmin: boolean;
-  showMetadata: boolean;
-  mediaUrl: string;
 }

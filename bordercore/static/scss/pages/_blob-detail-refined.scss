@@ -1,5 +1,5 @@
 // =============================================================================
-// Blob detail — "Refined Dark" redesign (drawer mode)
+// Blob detail — "Refined Dark" redesign
 // =============================================================================
 // Scoped under .bd-page. Tokens copied from the design handoff's
 // colors_and_type.css / page.css verbatim into page-local --bd-* variables so
@@ -70,7 +70,7 @@
 
   * { box-sizing: border-box; }
 
-  // ---- shell layout (drawer mode = left rail + main, no right rail) ----
+  // ---- shell layout (left rail + main) ----
   .bd-shell {
     display: grid;
     min-height: calc(100vh - 56px);
@@ -163,9 +163,7 @@
   // ---- main column ----
   .bd-main {
     width: 100%;
-    max-width: 920px;
     padding: 28px 40px 100px;
-    margin: 0 auto;
   }
 
   // ---- hero card ----
@@ -179,7 +177,7 @@
     background: var(--bd-bg-2);
     box-shadow: var(--bd-elev-2);
     gap: 22px;
-    grid-template-columns: auto 1fr;
+    grid-template-columns: 1fr;
   }
 
   .bd-hero::after {
@@ -298,7 +296,6 @@
 
   .bd-hero-eyebrow {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
     color: var(--bd-fg-4);
     font-family: var(--bd-font-mono);
@@ -373,6 +370,16 @@
     color: var(--bd-fg-3);
     font-size: 18px;
     font-weight: 500;
+  }
+
+  .bd-hero-subtitle {
+    margin-top: 2px;
+    color: var(--bd-fg-2);
+    font-family: var(--bd-font-display);
+    font-size: 16px;
+    font-style: italic;
+    font-weight: 400;
+    line-height: 1.35;
   }
 
   .bd-hero-meta {
@@ -514,6 +521,7 @@
   }
 
   .bd-iconbtn.is-end {
+    flex-shrink: 0;
     align-self: flex-start;
     margin-left: auto;
   }
@@ -639,7 +647,7 @@
     font-size: 12px;
   }
 
-  // ---- properties (shared by drawer) ----
+  // ---- properties ----
   .bd-props {
     display: flex;
     flex-direction: column;
@@ -685,7 +693,7 @@
 
   .bd-prop .v.copy:hover { color: var(--bd-accent); }
 
-  // ---- url list (drawer) ----
+  // ---- url list ----
   .bd-urls {
     display: flex;
     flex-direction: column;
@@ -1012,6 +1020,33 @@
     font-size: 11px;
   }
 
+  // ---- nodes ----
+  .bd-nodes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .bd-node {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border: 1px solid var(--bd-border-1);
+    border-radius: 999px;
+    background: var(--bd-bg-2);
+    color: var(--bd-fg-2);
+    font-family: var(--bd-font-mono);
+    font-size: 12px;
+    text-decoration: none;
+    transition: all var(--bd-t-fast);
+  }
+
+  .bd-node:hover {
+    border-color: rgb(76 194 255 / 40%);
+    background: rgb(76 194 255 / 10%);
+    color: var(--bd-accent-4);
+  }
+
   // ---- markdown content ----
   .bd-content {
     color: var(--bd-fg-2);
@@ -1293,193 +1328,3 @@
   }
 }
 
-// ---- drawer (mounts at body level via fixed positioning) ----
-.bd-drawer {
-  position: fixed;
-  z-index: 40;
-  top: 56px;
-  right: 0;
-  display: flex;
-  width: 360px;
-  height: calc(100vh - 56px);
-  flex-direction: column;
-  padding: 22px 22px 60px;
-  border-left: 1px solid rgb(179 107 255 / 25%);
-  backdrop-filter: blur(14px);
-  background: rgb(18 20 28 / 96%);
-  box-shadow: -16px 0 60px rgb(0 0 0 / 50%);
-  gap: 22px;
-  overflow-y: auto;
-  transform: translateX(100%);
-  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
-
-  &.open { transform: translateX(0); }
-
-  .bd-drawer-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-bottom: 12px;
-    border-bottom: 1px solid #1e212d;
-    margin: 0 0 4px;
-  }
-
-  .bd-drawer-head h2 {
-    margin: 0;
-    color: #e6e8f0;
-    font-family: "Space Grotesk", Inter, sans-serif;
-    font-size: 16px;
-    font-weight: 600;
-  }
-
-  // Reuse the same prop/url/section styles inside the drawer
-  .bd-rail-section h3 {
-    display: flex;
-    align-items: center;
-    margin: 0 0 10px;
-    color: #5a5f72;
-    font: 600 11px/1 Inter, sans-serif;
-    gap: 8px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-  }
-
-  .bd-rail-section h3 .bd-count {
-    margin-left: auto;
-    color: #5a5f72;
-    font-family: "JetBrains Mono", monospace;
-    font-weight: 500;
-  }
-
-  .bd-props {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-  }
-
-  .bd-prop {
-    display: grid;
-    padding: 8px 0;
-    border-bottom: 1px dashed #1e212d;
-    font-size: 13px;
-    gap: 10px;
-    grid-template-columns: 1fr auto;
-  }
-
-  .bd-prop:last-child { border-bottom: none; }
-
-  .bd-prop .k {
-    color: #5a5f72;
-    font-family: "JetBrains Mono", monospace;
-    font-size: 11px;
-    letter-spacing: 0.03em;
-  }
-
-  .bd-prop .v {
-    color: #e6e8f0;
-    font-family: "JetBrains Mono", monospace;
-    font-size: 12px;
-    text-align: right;
-    word-break: break-all;
-  }
-
-  .bd-prop .v.dim { color: #8a8fa0; }
-  .bd-prop .v.ok { color: #3fd29c; }
-
-  .bd-prop .v.copy {
-    display: inline-flex;
-    align-items: center;
-    justify-content: flex-end;
-    cursor: pointer;
-    gap: 6px;
-  }
-
-  .bd-prop .v.copy:hover { color: #b36bff; }
-
-  .bd-urls {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .bd-url {
-    display: grid;
-    align-items: center;
-    padding: 8px 10px;
-    border: 1px solid #2a2e3d;
-    border-radius: 6px;
-    background: #0b0d14;
-    color: #b8bcc9;
-    gap: 10px;
-    grid-template-columns: 16px 1fr auto;
-    text-decoration: none;
-    transition: all 120ms;
-  }
-
-  .bd-url:hover {
-    border-color: #3a3f52;
-    background: #12141c;
-  }
-
-  .bd-url .favicon {
-    display: grid;
-    width: 16px;
-    height: 16px;
-    flex-shrink: 0;
-    border-radius: 3px;
-    background: linear-gradient(135deg, #4cc2ff, #b36bff);
-    color: #fff;
-    font-family: "JetBrains Mono", monospace;
-    font-size: 10px;
-    place-items: center;
-  }
-
-  .bd-url .domain {
-    overflow: hidden;
-    color: #e6e8f0;
-    font-family: "JetBrains Mono", monospace;
-    font-size: 12px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .bd-url .path {
-    color: #5a5f72;
-    font-family: "JetBrains Mono", monospace;
-    font-size: 11px;
-  }
-
-  .bd-iconbtn {
-    display: inline-grid;
-    width: 30px;
-    height: 30px;
-    border: 1px solid transparent;
-    border-radius: 6px;
-    background: transparent;
-    color: #8a8fa0;
-    cursor: pointer;
-    font-size: 14px;
-    place-items: center;
-    transition: all 120ms;
-  }
-
-  .bd-iconbtn:hover {
-    border-color: #2a2e3d;
-    background: #1a1d28;
-    color: #e6e8f0;
-  }
-}
-
-.bd-drawer-backdrop {
-  position: fixed;
-  z-index: 39;
-  animation: bd-fade-in 200ms ease-out;
-  backdrop-filter: blur(2px);
-  background: rgb(5 6 12 / 50%);
-  inset: 0;
-}
-
-@keyframes bd-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}

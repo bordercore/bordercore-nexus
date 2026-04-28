@@ -13,9 +13,7 @@ export function UrlsSection({ urls }: UrlsSectionProps) {
   if (!urls || urls.length === 0) return null;
   return (
     <div className="bd-rail-section">
-      <h3>
-        URLs <span className="bd-count">{urls.length}</span>
-      </h3>
+      <h3>URLs</h3>
       <div className="bd-urls">
         {urls.map((u, i) => (
           <a

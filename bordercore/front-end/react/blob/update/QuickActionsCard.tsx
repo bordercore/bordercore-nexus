@@ -1,19 +1,12 @@
 import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faBroom,
-  faFont,
-  faClone,
-  faDownload,
-  faTrashAlt,
-} from "@fortawesome/free-solid-svg-icons";
+import { faBroom, faFont, faClone, faDownload } from "@fortawesome/free-solid-svg-icons";
 
 interface QuickActionsCardProps {
   onCleanupFilename: () => void;
   onUppercaseFirst: () => void;
   cloneUrl?: string;
   downloadUrl?: string;
-  onDelete?: () => void;
 }
 
 export function QuickActionsCard({
@@ -21,7 +14,6 @@ export function QuickActionsCard({
   onUppercaseFirst,
   cloneUrl,
   downloadUrl,
-  onDelete,
 }: QuickActionsCardProps) {
   return (
     <div className="be-section">
@@ -50,13 +42,6 @@ export function QuickActionsCard({
             <span>download file</span>
             <span />
           </a>
-        )}
-        {onDelete && (
-          <button type="button" className="be-nav-item danger" onClick={onDelete}>
-            <FontAwesomeIcon icon={faTrashAlt} className="icon" />
-            <span>delete blob</span>
-            <span />
-          </button>
         )}
       </nav>
     </div>

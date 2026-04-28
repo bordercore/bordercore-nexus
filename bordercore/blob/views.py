@@ -399,7 +399,6 @@ class BlobDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView):
                 - collection_list: List of collections containing this blob
                 - node_list: List of nodes containing this blob
                 - title: Blob name/title
-                - show_metadata: Boolean indicating if metadata should be shown
                 - tree: Tree structure of related blobs
                 - name: Blob name without edition string
         """
@@ -447,13 +446,6 @@ class BlobDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView):
         context["collection_list"] = collections
         context["node_list"] = self.object.get_nodes()
         context["title"] = str(self.object)
-
-        elasticsearch_info = context.get("elasticsearch_info") or {}
-        context["show_metadata"] = (
-            "content_type" in elasticsearch_info
-            or self.object.sha1sum
-            or context["metadata_misc"] != {}
-        )
 
         context["tree"] = {
             "label": "Root",

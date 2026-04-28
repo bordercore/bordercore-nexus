@@ -20,7 +20,6 @@ import hotkeys from "hotkeys-js";
 import { doGet, doPost, EventBus } from "../../utils/reactUtils";
 import { Hero } from "./Hero";
 import { Rail } from "./Rail";
-import { Drawer } from "./Drawer";
 import { BackrefsSection } from "./sections/BackrefsSection";
 import type { BlobDetailPageProps, Collection, ElasticsearchInfo, BackReference } from "../types";
 
@@ -73,6 +72,7 @@ export function BlobDetailPage({
   backReferences: initialBackRefs,
   tree,
   metadataMisc,
+  nodeList,
   isPinnedNote: initialIsPinnedNote,
 }: BlobDetailPageProps) {
   const [blob, setBlob] = useState(initialBlob);
@@ -82,7 +82,6 @@ export function BlobDetailPage({
     initialElasticsearchInfo
   );
   const [isPinnedNote, setIsPinnedNote] = useState(initialIsPinnedNote);
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [contentRoot, setContentRoot] = useState<HTMLElement | null>(null);
 
   const markdown = useMemo(() => markdownit(), []);
@@ -192,6 +191,10 @@ export function BlobDetailPage({
           contentRoot={contentRoot}
           collections={collections}
           backRefs={backRefs}
+          elasticsearchInfo={elasticsearchInfo}
+          metadataMisc={metadataMisc}
+          blobUrls={blobUrls}
+          nodeList={nodeList}
           onCollectionsChanged={refreshCollections}
           onBackrefsChanged={refreshBackRefs}
         />
@@ -203,7 +206,6 @@ export function BlobDetailPage({
             isPinnedNote={isPinnedNote}
             onPinToggle={handlePinToggle}
             onTitleSaved={handleTitleSaved}
-            onOpenDrawer={() => setDrawerOpen(true)}
           />
 
           {blob.note && (
@@ -228,6 +230,18 @@ export function BlobDetailPage({
             </a>
           )}
 
+          {elasticsearchInfo?.contentType === "SQLite Database" && urls.sqlPlayground && (
+            <a
+              className="bd-iconbtn primary"
+              href={`${urls.sqlPlayground}?sql_db_uuid=${blob.uuid}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              role="button"
+            >
+              SQL Playground
+            </a>
+          )}
+
           {blob.content && (
             <article
               className="bd-content"
@@ -249,15 +263,6 @@ export function BlobDetailPage({
           )}
         </div>
       </main>
-
-      <Drawer
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        blob={blob}
-        elasticsearchInfo={elasticsearchInfo}
-        metadataMisc={metadataMisc}
-        blobUrls={blobUrls}
-      />
     </div>
   );
 }

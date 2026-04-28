@@ -1,10 +1,22 @@
 import React from "react";
 
 import { ContentsSection } from "./sections/ContentsSection";
-import { RelatedObjectsSection } from "./sections/RelatedObjectsSection";
+import { PropertiesSection } from "./sections/PropertiesSection";
+import { MetadataSection } from "./sections/MetadataSection";
+import { UrlsSection } from "./sections/UrlsSection";
+import { NodesSection } from "./sections/NodesSection";
 import { CollectionsSection } from "./sections/CollectionsSection";
+import { RelatedObjectsSection } from "./sections/RelatedObjectsSection";
 import { BackrefsSection } from "./sections/BackrefsSection";
-import type { BlobDetail, BlobDetailUrls, Collection, TreeNode, BackReference } from "../types";
+import type {
+  BlobDetail,
+  BlobDetailUrls,
+  Collection,
+  ElasticsearchInfo,
+  TreeNode,
+  BackReference,
+  NodeInfo,
+} from "../types";
 
 interface RailProps {
   blob: BlobDetail;
@@ -13,6 +25,10 @@ interface RailProps {
   contentRoot: HTMLElement | null;
   collections: Collection[];
   backRefs: BackReference[];
+  elasticsearchInfo: ElasticsearchInfo | null;
+  metadataMisc: Record<string, string>;
+  blobUrls: Array<{ url: string; domain: string }>;
+  nodeList: NodeInfo[];
   onCollectionsChanged: () => void;
   onBackrefsChanged: () => void;
 }
@@ -24,20 +40,20 @@ export function Rail({
   contentRoot,
   collections,
   backRefs,
+  elasticsearchInfo,
+  metadataMisc,
+  blobUrls,
+  nodeList,
   onCollectionsChanged,
   onBackrefsChanged,
 }: RailProps) {
   return (
     <aside className="bd-rail-left">
       <ContentsSection nodes={treeNodes} contentRoot={contentRoot} />
-      <RelatedObjectsSection
-        blobUuid={blob.uuid}
-        relatedObjectsUrl={urls.relatedObjects}
-        addRelatedObjectUrl={urls.addRelatedObject}
-        removeRelatedObjectUrl={urls.removeRelatedObject}
-        searchNamesUrl={urls.searchNames}
-        createBlobUrl={urls.create}
-      />
+      <PropertiesSection blob={blob} elasticsearchInfo={elasticsearchInfo} />
+      <MetadataSection metadata={metadataMisc} />
+      <UrlsSection urls={blobUrls} />
+      <NodesSection nodes={nodeList} />
       <CollectionsSection
         blobUuid={blob.uuid}
         collections={collections}
@@ -45,6 +61,14 @@ export function Rail({
         addToCollectionUrl={urls.addToCollection}
         createCollectionUrl={urls.createCollection}
         onChanged={onCollectionsChanged}
+      />
+      <RelatedObjectsSection
+        blobUuid={blob.uuid}
+        relatedObjectsUrl={urls.relatedObjects}
+        addRelatedObjectUrl={urls.addRelatedObject}
+        removeRelatedObjectUrl={urls.removeRelatedObject}
+        searchNamesUrl={urls.searchNames}
+        createBlobUrl={urls.create}
       />
       <BackrefsSection
         blobUuid={blob.uuid}

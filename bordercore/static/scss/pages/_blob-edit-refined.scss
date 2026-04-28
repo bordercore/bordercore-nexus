@@ -116,13 +116,6 @@
   .be-header .be-crumb .uuid { color: var(--be-fg-2); }
   .be-header .be-crumb .here { color: var(--be-fg-1); }
 
-  .be-header-actions {
-    display: inline-flex;
-    align-items: center;
-    margin-left: auto;
-    gap: 8px;
-  }
-
   // ---- workspace grid ----
   .be-workspace {
     display: grid;
@@ -1013,6 +1006,43 @@
     @extend %be-input-base;
   }
 
+  .be-meta-key-wrap {
+    position: relative;
+  }
+
+  .be-meta-key-autocomplete {
+    position: absolute;
+    z-index: 30;
+    top: calc(100% + 4px);
+    right: 0;
+    left: 0;
+    max-height: 220px;
+    padding: 4px;
+    border: 1px solid var(--be-border-2);
+    border-radius: var(--be-radius-sm);
+    margin: 0;
+    background: var(--be-bg-3);
+    box-shadow: 0 12px 28px -8px rgb(0 0 0 / 55%);
+    list-style: none;
+    overflow-y: auto;
+
+    li {
+      padding: 6px 10px;
+      border-radius: var(--be-radius-xs);
+      color: var(--be-fg-2);
+      cursor: pointer;
+      font-family: var(--be-font-mono);
+      font-size: 12px;
+      line-height: 1.3;
+    }
+
+    li.active,
+    li:hover {
+      background: rgb(124 127 255 / 14%);
+      color: var(--be-accent-2);
+    }
+  }
+
   .be-meta-row .key {
     color: var(--be-accent-2);
     font-family: var(--be-font-mono);
@@ -1097,6 +1127,8 @@
     margin-top: 8px;
     gap: 12px;
   }
+
+  .be-save-bar .be-save-confirm { margin-left: auto; }
 
   // ---- linked banner (create mode) ----
   .be-banner {

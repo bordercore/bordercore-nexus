@@ -1,6 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowLeft, faTrashCan, faExpand, faCompress } from "@fortawesome/free-solid-svg-icons";
+import {
+  faArrowLeft,
+  faTrashCan,
+  faExpand,
+  faCompress,
+  faTimes,
+} from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
 import { Modal } from "bootstrap";
 
@@ -125,6 +132,7 @@ export function BlobUpdatePage({
   const [selectedTemplate, setSelectedTemplate] = useState("-1");
 
   const [contentExpanded, setContentExpanded] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const [flags, setFlags] = useState<FlagsState>({
     importance: initialImportance,
@@ -239,6 +247,20 @@ export function BlobUpdatePage({
     return () => window.removeEventListener("keydown", onKey, true);
   }, [contentExpanded]);
 
+  const cancelDeleteRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!deleteOpen) return;
+    const t = window.setTimeout(() => cancelDeleteRef.current?.focus(), 40);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setDeleteOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.clearTimeout(t);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [deleteOpen]);
+
   // Quick action: cleanup filename — strip extension off existing filename, replace with name
   const handleCleanupFilename = useCallback(() => {
     if (!name || !fileName) return;
@@ -257,16 +279,20 @@ export function BlobUpdatePage({
     );
   }, []);
 
-  // Quick action: delete blob — only edit mode, only if URL provided
   const handleDelete = useCallback(() => {
     if (!urls.delete) return;
-    if (!confirm("Are you sure you want to delete this blob?")) return;
+    setDeleteOpen(true);
+  }, [urls.delete]);
+
+  const confirmDelete = useCallback(() => {
+    if (!urls.delete) return;
     axios
       .delete(urls.delete)
       .then(() => {
         window.location.href = urls.list;
       })
       .catch(error => {
+        setDeleteOpen(false);
         EventBus.$emit("toast", {
           title: "Error",
           body: `Error deleting blob: ${error}`,
@@ -378,13 +404,6 @@ export function BlobUpdatePage({
           <span className="sep">/</span>
           <span className="here">{mode === "edit" ? "edit" : "new"}</span>
         </div>
-        <div className="be-header-actions">
-          {urls.delete && (
-            <button type="button" className="be-btn danger" onClick={handleDelete}>
-              <FontAwesomeIcon icon={faTrashCan} /> delete
-            </button>
-          )}
-        </div>
       </header>
 
       <div className="be-workspace">
@@ -419,7 +438,6 @@ export function BlobUpdatePage({
             onUppercaseFirst={handleUppercaseFirst}
             cloneUrl={mode === "edit" ? urls.clone : undefined}
             downloadUrl={mode === "edit" && !flags.is_note ? urls.download : undefined}
-            onDelete={mode === "edit" && urls.delete ? handleDelete : undefined}
           />
           {mode === "edit" && <CollectionsCard collections={collections} backrefs={backrefs} />}
           {mode === "create" && (
@@ -508,7 +526,11 @@ export function BlobUpdatePage({
             </div>
           </div>
 
-          <MetadataCard metadata={metadata} onChange={setMetadata} />
+          <MetadataCard
+            metadata={metadata}
+            onChange={setMetadata}
+            nameSearchUrl={urls.metadataNameSearch}
+          />
 
           <div>
             <div className="be-label">note</div>
@@ -521,12 +543,63 @@ export function BlobUpdatePage({
           </div>
 
           <div className="be-save-bar">
-            <button type="button" className="be-btn primary" onClick={handleSubmit}>
+            {urls.delete && (
+              <button type="button" className="be-btn danger" onClick={handleDelete}>
+                <FontAwesomeIcon icon={faTrashCan} /> delete blob
+              </button>
+            )}
+            <button type="button" className="be-btn primary be-save-confirm" onClick={handleSubmit}>
               Save changes
             </button>
           </div>
         </section>
       </div>
+
+      {deleteOpen &&
+        createPortal(
+          <>
+            <div className="refined-modal-scrim" onClick={() => setDeleteOpen(false)} />
+            <div className="refined-modal" role="dialog" aria-label="confirm delete blob">
+              <button
+                type="button"
+                className="refined-modal-close"
+                onClick={() => setDeleteOpen(false)}
+                aria-label="close"
+              >
+                <FontAwesomeIcon icon={faTimes} />
+              </button>
+
+              <div className="refined-modal-eyebrow">
+                <span>delete blob</span>
+                <span className="dot">·</span>
+                <span className="mono">bordercore / blob / delete</span>
+              </div>
+
+              <h2 className="refined-modal-title">Delete this blob?</h2>
+
+              <p className="refined-modal-lead">
+                <strong>{name || "This blob"}</strong> will be permanently removed. This cannot be
+                undone.
+              </p>
+
+              <div className="refined-modal-actions compact">
+                <button
+                  ref={cancelDeleteRef}
+                  type="button"
+                  className="refined-btn ghost"
+                  onClick={() => setDeleteOpen(false)}
+                >
+                  cancel
+                </button>
+                <button type="button" className="refined-btn danger" onClick={confirmDelete}>
+                  <FontAwesomeIcon icon={faTrashCan} className="refined-btn-icon" />
+                  delete blob
+                </button>
+              </div>
+            </div>
+          </>,
+          document.body
+        )}
     </div>
   );
 }
