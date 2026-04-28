@@ -1,99 +1,9 @@
 {% extends "base.html" %}
 {% load vite_tags %}
 
-{% block extra_head %}
-    <style>
-        /* Markdown editor styles - matching Vue v-md-editor */
-        .markdown-editor {
-            display: flex;
-            flex-direction: column;
-            border: 1px solid var(--surface1);
-            border-radius: 0.25rem;
-            background-color: var(--form-bg);
-            color: var(--text1);
-        }
-        .markdown-editor.drag-over {
-            border-color: var(--form-border-color-hover);
-        }
-        .markdown-editor:focus-within {
-            border-color: var(--form-border-color-hover);
-        }
-        .markdown-toolbar {
-            flex-shrink: 0;
-            background-color: var(--form-bg);
-        }
-        .markdown-toolbar-item {
-            padding: 0.5rem 0.625rem;
-            border: none;
-            background: transparent;
-            color: var(--text1);
-            cursor: pointer;
-        }
-        .markdown-toolbar-item:hover {
-            color: var(--form-bg);
-            background-color: var(--text1);
-        }
-        .toolbar-divider {
-            width: 1px;
-            height: 20px;
-            margin: 0 0.25rem;
-            background: var(--border-color);
-        }
-        .markdown-textarea {
-            border: none;
-            border-radius: 0 0 0.25rem 0.25rem;
-            background-color: var(--form-bg);
-            color: var(--text1);
-            height: 50vh;
-            resize: vertical;
-        }
-        .markdown-textarea:focus {
-            background-color: var(--form-bg-focus);
-            caret-color: var(--text4);
-            color: var(--text4);
-            box-shadow: none;
-        }
-        /* Date input fixed width */
-        .date-input {
-            width: 6rem;
-            flex: none;
-            color-scheme: dark;
-        }
-        /* Icon button styles */
-        .icon-button .icon-circle {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border: 2px solid var(--border-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
-        }
-        .icon-button .icon-circle.active {
-            border-color: var(--accent);
-            background: var(--surface2);
-        }
-        .icon-button:hover .icon-circle {
-            border-color: var(--accent);
-        }
-    </style>
-{% endblock %}
-
 {% block title %} {{ title }} {% endblock %}
 
-{% block nav %}
-    {% if object %}
-        <div class="d-flex mb-3">
-            <div class="me-auto align-self-center">
-                <ul class="breadcrumb mb-0 pt-0 pb-0">
-                    <li class="breadcrumb-item mt-0"><a href="{% url 'blob:detail' object.uuid %}">Blob Detail</a></li>
-                    <li class="breadcrumb-item mt-0 active">Edit Blob</li>
-                </ul>
-            </div>
-        </div>
-    {% endif %}
-{% endblock %}
+{% block nav %}{% endblock %}
 
 {% block content %}
     {% include "common/processing.html" %}
@@ -102,26 +12,41 @@
         id="react-root"
         data-blob-uuid="{{ object.uuid|default:'' }}"
         data-blob-sha1sum="{{ object.sha1sum|default:'' }}"
+        data-doctype="{{ doctype|default:'' }}"
         data-is-pdf="{{ object.is_pdf|yesno:'true,false'|default:'false' }}"
         data-pdf-page-number="{{ object.data.pdf_page_number|default:1 }}"
+        data-pdf-num-pages="{{ pdf_num_pages|default:'' }}"
         data-cover-url="{{ cover_url|default:'' }}"
+        data-file-size="{{ file_size|default:'' }}"
+        data-duration="{{ duration_label|default:'' }}"
         data-date-format="{{ date_format|default:'standard' }}"
         data-is-book="{{ is_book|yesno:'true,false'|default:'false' }}"
         data-csrf-token="{{ csrf_token }}"
         data-submit-url="{{ request.path }}"
         data-tag-search-url="{% url 'tag:search' %}?query="
-        data-related-tags-url="{% url 'tag:get_related_tags' %}"
         data-metadata-name-search-url="{% url 'blob:metadata_name_search' %}?query="
         data-get-template-url="{% url 'blob:get_template' %}"
         data-update-cover-image-url="{% url 'blob:update_cover_image' %}"
         data-update-page-number-url="{% url 'blob:update_page_number' %}"
         data-parse-date-url="{% url 'blob:parse_date' '666' %}"
         data-blob-detail-url="{% url 'blob:detail' '00000000-0000-0000-0000-000000000000' %}"
+        data-list-url="{% url 'blob:list' %}"
+        {% if object %}
+        data-detail-url="{% url 'blob:detail' object.uuid %}"
+        data-clone-url="{% url 'blob:clone' object.uuid %}"
+        {% if file_url %}data-download-url="{{ file_url }}"{% endif %}
+        {% endif %}
     ></div>
 
     {{ metadata|json_script:"metadata" }}
     {{ tags|json_script:"initial-tags" }}
     {{ template_list|json_script:"templateList" }}
+    {% if collection_list %}
+    {{ collection_list|json_script:"collections" }}
+    {% endif %}
+    {% if back_references %}
+    {{ back_references|json_script:"backrefs" }}
+    {% endif %}
     {% if linked_blob %}
     {{ linked_blob|json_script:"linked-blob" }}
     {% endif %}

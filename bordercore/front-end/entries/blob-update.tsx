@@ -28,10 +28,24 @@ interface LinkedCollection {
   blobs: Array<{ uuid: string; name: string }>;
 }
 
+interface CollectionItem {
+  uuid: string;
+  name: string;
+  num_objects: number;
+  url?: string;
+}
+
+interface BackrefItem {
+  uuid: string;
+  type: "blob" | "question";
+  name?: string;
+  question?: string;
+  url?: string;
+}
+
 const container = document.getElementById("react-root");
 
 if (container) {
-  // Parse JSON data from script tags
   const parseJsonScript = <T,>(id: string, defaultValue: T): T => {
     const script = document.getElementById(id);
     if (script) {
@@ -44,13 +58,17 @@ if (container) {
     return defaultValue;
   };
 
-  // Parse data from script tags
   const metadata: MetadataItem[] = parseJsonScript("metadata", []);
   const tags: string[] = parseJsonScript("initial-tags", []);
   const templateList: Template[] = parseJsonScript("templateList", []);
   const linkedBlob: LinkedBlob | undefined = parseJsonScript("linked-blob", undefined);
-  const linkedCollection: LinkedCollection | undefined = parseJsonScript("linked-collection", undefined);
+  const linkedCollection: LinkedCollection | undefined = parseJsonScript(
+    "linked-collection",
+    undefined
+  );
   const collectionInfo: CollectionInfo | undefined = parseJsonScript("collection-info", undefined);
+  const collections: CollectionItem[] = parseJsonScript("collections", []);
+  const backrefs: BackrefItem[] = parseJsonScript("backrefs", []);
   const formData = parseJsonScript("form-data", {
     name: "",
     date: new Date().toISOString().split("T")[0],
@@ -62,31 +80,44 @@ if (container) {
     math_support: false,
   });
 
-
-  // Read data attributes from container
+  const dateFormat = (container.dataset.dateFormat || "standard") as "standard" | "year";
   const blobUuid = container.dataset.blobUuid || undefined;
   const blobSha1sum = container.dataset.blobSha1sum || undefined;
   const isPdf = container.dataset.isPdf === "true";
   const pdfPageNumber = parseInt(container.dataset.pdfPageNumber || "1", 10);
+  const pdfNumPages = container.dataset.pdfNumPages
+    ? parseInt(container.dataset.pdfNumPages, 10)
+    : undefined;
   const coverUrl = container.dataset.coverUrl || undefined;
-  const dateFormat = (container.dataset.dateFormat || "standard") as "standard" | "year";
+  const doctype = (container.dataset.doctype as
+    | "video"
+    | "book"
+    | "image"
+    | "note"
+    | "audio"
+    | "blob"
+    | undefined) || undefined;
+  const fileSize = container.dataset.fileSize || undefined;
+  const durationLabel = container.dataset.duration || undefined;
   const isBook = container.dataset.isBook === "true";
   const csrfToken = container.dataset.csrfToken || "";
 
-  // URLs from data attributes
   const urls = {
     submit: container.dataset.submitUrl || "",
     tagSearch: container.dataset.tagSearchUrl || "",
-    relatedTags: container.dataset.relatedTagsUrl || "",
     metadataNameSearch: container.dataset.metadataNameSearchUrl || "",
     getTemplate: container.dataset.getTemplateUrl || "",
     updateCoverImage: container.dataset.updateCoverImageUrl || "",
     updatePageNumber: container.dataset.updatePageNumberUrl || "",
     parseDate: container.dataset.parseDateUrl || "",
     blobDetail: container.dataset.blobDetailUrl || "",
+    list: container.dataset.listUrl || "",
+    detail: container.dataset.detailUrl || "",
+    clone: container.dataset.cloneUrl || undefined,
+    delete: container.dataset.deleteUrl || undefined,
+    download: container.dataset.downloadUrl || undefined,
   };
 
-  // Parse date - strip time component if present (Django may pass "2026-01-30T00:00")
   let initialDate = formData.date || new Date().toISOString().split("T")[0];
   if (initialDate.includes("T")) {
     initialDate = initialDate.split("T")[0];
@@ -110,9 +141,15 @@ if (container) {
       templateList={templateList}
       blobUuid={blobUuid}
       blobSha1sum={blobSha1sum}
+      doctype={doctype}
       isPdf={isPdf}
       pdfPageNumber={pdfPageNumber}
+      pdfNumPages={pdfNumPages}
       coverUrl={coverUrl}
+      fileSize={fileSize}
+      durationLabel={durationLabel}
+      collections={collections}
+      backrefs={backrefs}
       linkedBlob={linkedBlob}
       linkedCollection={linkedCollection}
       collectionInfo={collectionInfo}

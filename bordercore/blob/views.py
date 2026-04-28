@@ -638,6 +638,24 @@ class BlobUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView, FormValid
         context["tags"] = [x.name for x in self.object.tags.all()]
         context["template_list"] = []  # Templates only used for new blobs
 
+        # Lists for the redesigned edit page's left rail
+        context["collection_list"] = self.object.collections
+        context["back_references"] = Blob.back_references(self.object.uuid)
+
+        # Surface doctype + file metadata for the React preview pane
+        context["doctype"] = self.object.doctype
+        context["file_url"] = (
+            f"{settings.MEDIA_URL}blobs/{self.object.url}"
+            if self.object.sha1sum else ""
+        )
+        try:
+            es_info = self.object.get_elasticsearch_info()
+        except Exception:
+            es_info = {}
+        context["pdf_num_pages"] = es_info.get("num_pages") if es_info else None
+        context["file_size"] = es_info.get("size") if es_info else None
+        context["duration_label"] = es_info.get("duration") if es_info else None
+
         form = context.get("form")
         context["form_data"] = _build_form_data_for_json(form)
 
