@@ -7,6 +7,7 @@
 {% block content %}
 
     <div id="react-root"
+        data-user-name="{{ request.user.first_name|default:request.user.username }}"
         data-todo-list-url="{% url 'todo:list' %}"
         data-drill-list-url="{% url 'drill:list' %}"
         data-bookmark-overview-url="{% url 'bookmark:overview' %}"

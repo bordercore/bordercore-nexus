@@ -5,7 +5,6 @@ import { FrontPageColumn } from "./FrontPageColumn";
 import { StudyDeskColumn } from "./StudyDeskColumn";
 import { AmbientColumn } from "./AmbientColumn";
 import { FooterRail } from "./FooterRail";
-import { Marquee } from "./Marquee";
 import type {
   Bookmark,
   DefaultCollection,
@@ -32,6 +31,7 @@ export interface MagazinePageProps {
   quote: Quote | null;
   randomImageInfo: RandomImageInfo | null;
   defaultCollection: DefaultCollection | null;
+  userName: string;
 
   exerciseDetailUrlTemplate: string;
   bookmarkClickUrlTemplate: string;
@@ -48,6 +48,7 @@ export function MagazinePage(props: MagazinePageProps) {
         defaultCollection={props.defaultCollection}
         blobDetailUrlTemplate={props.blobDetailUrlTemplate}
         collectionDetailUrlTemplate={props.collectionDetailUrlTemplate}
+        userName={props.userName}
       />
 
       <main className="mag-body">
@@ -57,21 +58,21 @@ export function MagazinePage(props: MagazinePageProps) {
           <FrontPageColumn
             tasks={props.tasks}
             todoListUrl={props.todoListUrl}
-            dailyBookmarks={props.dailyBookmarks}
-            bookmarkClickUrlTemplate={props.bookmarkClickUrlTemplate}
+            overdueExercises={props.overdueExercises}
+            exerciseDetailUrlTemplate={props.exerciseDetailUrlTemplate}
           />
 
           <StudyDeskColumn
             drillProgress={props.drillProgress}
             drillListUrl={props.drillListUrl}
-            getCalendarEventsUrl={props.getCalendarEventsUrl}
+            defaultCollection={props.defaultCollection}
+            collectionDetailUrlTemplate={props.collectionDetailUrlTemplate}
           />
 
           <AmbientColumn
             music={props.music}
             artistDetailUrlTemplate={props.artistDetailUrlTemplate}
-            defaultCollection={props.defaultCollection}
-            collectionDetailUrlTemplate={props.collectionDetailUrlTemplate}
+            getCalendarEventsUrl={props.getCalendarEventsUrl}
           />
         </div>
 
@@ -79,12 +80,9 @@ export function MagazinePage(props: MagazinePageProps) {
           bookmarks={props.bookmarks}
           bookmarkOverviewUrl={props.bookmarkOverviewUrl}
           bookmarkClickUrlTemplate={props.bookmarkClickUrlTemplate}
-          overdueExercises={props.overdueExercises}
-          exerciseDetailUrlTemplate={props.exerciseDetailUrlTemplate}
+          dailyBookmarks={props.dailyBookmarks}
         />
       </main>
-
-      <Marquee quote={props.quote} />
     </div>
   );
 }

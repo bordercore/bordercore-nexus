@@ -29,6 +29,8 @@ if (container) {
   const bookmarkOverviewUrl = container.getAttribute("data-bookmark-overview-url") || "";
   const getCalendarEventsUrl = container.getAttribute("data-get-calendar-events-url") || "";
 
+  const userName = container.getAttribute("data-user-name") || "";
+
   const exerciseDetailUrlTemplate =
     container.getAttribute("data-exercise-detail-url-template") || "";
   const bookmarkClickUrlTemplate =
@@ -89,6 +91,7 @@ if (container) {
       quote={quote}
       randomImageInfo={randomImageInfo}
       defaultCollection={defaultCollection}
+      userName={userName}
       exerciseDetailUrlTemplate={exerciseDetailUrlTemplate}
       bookmarkClickUrlTemplate={bookmarkClickUrlTemplate}
       artistDetailUrlTemplate={artistDetailUrlTemplate}

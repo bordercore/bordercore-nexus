@@ -7,6 +7,13 @@ interface HeroProps {
   defaultCollection: DefaultCollection | null;
   blobDetailUrlTemplate: string;
   collectionDetailUrlTemplate: string;
+  userName: string;
+}
+
+function greetingForHour(hour: number): string {
+  if (hour < 12) return "Good Morning,";
+  if (hour < 18) return "Good Afternoon,";
+  return "Good Evening,";
 }
 
 export function Hero({
@@ -14,6 +21,7 @@ export function Hero({
   defaultCollection,
   blobDetailUrlTemplate,
   collectionDetailUrlTemplate,
+  userName,
 }: HeroProps) {
   const [issue, setIssue] = useState(() => formatIssueDate());
 
@@ -25,6 +33,8 @@ export function Hero({
   const handleShuffle = () => {
     window.location.reload();
   };
+
+  const greeting = greetingForHour(parseInt(issue.time.split(":")[0] ?? "9", 10));
 
   return (
     <div className="mag-hero">
@@ -41,9 +51,9 @@ export function Hero({
               vol. {issue.issueNumber} · {issue.iso}
             </div>
             <div className="mag-masthead">
-              The Daily
+              {greeting}
               <br />
-              <span className="mag-masthead-accent">Bordercore</span>
+              <span className="mag-masthead-accent">{userName}</span>
             </div>
           </div>
           <div className="mag-hero-edition mag-mono">

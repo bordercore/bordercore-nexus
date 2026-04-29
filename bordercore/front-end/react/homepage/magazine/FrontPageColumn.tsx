@@ -1,20 +1,21 @@
 import React from "react";
+import { MagSection } from "./MagSection";
 import { TasksList } from "./TasksList";
-import { DailyBookmarksList } from "./DailyBookmarksList";
-import type { Bookmark, Task } from "../types";
+import { ExerciseSeverityList } from "./ExerciseSeverityList";
+import type { OverdueExercise, Task } from "../types";
 
 interface FrontPageColumnProps {
   tasks: Task[];
   todoListUrl: string;
-  dailyBookmarks: Bookmark[];
-  bookmarkClickUrlTemplate: string;
+  overdueExercises: OverdueExercise[];
+  exerciseDetailUrlTemplate: string;
 }
 
 export function FrontPageColumn({
   tasks,
   todoListUrl,
-  dailyBookmarks,
-  bookmarkClickUrlTemplate,
+  overdueExercises,
+  exerciseDetailUrlTemplate,
 }: FrontPageColumnProps) {
   const headline =
     tasks.length === 0
@@ -24,25 +25,20 @@ export function FrontPageColumn({
         } attention`;
 
   return (
-    <section className="mag-section">
-      <div className="mag-ucase is-pink">front page</div>
-      <h2 className="mag-lede">
-        <a href={todoListUrl}>{headline}</a>
-      </h2>
-
-      <div className="mag-tasks-list">
+    <div className="mag-column">
+      <MagSection accent="pink" kicker="front page">
+        <h2 className="mag-lede">
+          <a href={todoListUrl}>{headline}</a>
+        </h2>
         <TasksList tasks={tasks} todoListUrl={todoListUrl} />
-      </div>
+      </MagSection>
 
-      <div className="mag-block">
-        <div className="mag-ucase">today's reading list</div>
-        <div className="mag-tasks-list">
-          <DailyBookmarksList
-            bookmarks={dailyBookmarks}
-            bookmarkClickUrlTemplate={bookmarkClickUrlTemplate}
-          />
-        </div>
-      </div>
-    </section>
+      <MagSection accent="danger" kicker="health watch · overdue">
+        <ExerciseSeverityList
+          exercises={overdueExercises}
+          exerciseDetailUrlTemplate={exerciseDetailUrlTemplate}
+        />
+      </MagSection>
+    </div>
   );
 }

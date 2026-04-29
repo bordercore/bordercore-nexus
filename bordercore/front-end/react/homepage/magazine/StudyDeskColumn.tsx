@@ -1,41 +1,51 @@
 import React from "react";
+import { MagSection } from "./MagSection";
 import { DrillRing } from "./DrillRing";
-import { CalendarMini } from "./CalendarMini";
-import type { DrillProgress } from "../types";
+import { Bookshelf } from "./Bookshelf";
+import { fillUrlTemplate } from "./utils";
+import type { DefaultCollection, DrillProgress } from "../types";
 
 interface StudyDeskColumnProps {
   drillProgress: DrillProgress;
   drillListUrl: string;
-  getCalendarEventsUrl: string;
+  defaultCollection: DefaultCollection | null;
+  collectionDetailUrlTemplate: string;
 }
 
 export function StudyDeskColumn({
   drillProgress,
   drillListUrl,
-  getCalendarEventsUrl,
+  defaultCollection,
+  collectionDetailUrlTemplate,
 }: StudyDeskColumnProps) {
   return (
-    <section className="mag-section">
-      <div className="mag-ucase is-cyan">study desk</div>
-
-      <div className="mag-study">
-        <DrillRing percent={drillProgress.percentage} />
-        <div>
-          <div className="mag-study-summary">
-            <a href={drillListUrl}>{drillProgress.count} questions tracked</a>
+    <div className="mag-column">
+      <MagSection accent="cyan" kicker="study desk">
+        <div className="mag-block">
+          <div className="mag-study">
+            <DrillRing percent={drillProgress.percentage} />
+            <div>
+              <div className="mag-study-summary">
+                <a href={drillListUrl}>{drillProgress.count} questions tracked</a>
+              </div>
+              <p className="mag-study-detail">
+                mastered across all tags · {Math.round(drillProgress.percentage)}% complete
+              </p>
+            </div>
           </div>
-          <p className="mag-study-detail">
-            mastered across all tags · {Math.round(drillProgress.percentage)}% complete
-          </p>
         </div>
-      </div>
 
-      <div className="mag-block">
-        <div className="mag-ucase">on the calendar</div>
-        <div className="mag-tasks-list">
-          <CalendarMini getCalendarEventsUrl={getCalendarEventsUrl} />
-        </div>
-      </div>
-    </section>
+        {defaultCollection && (
+          <div className="mag-block">
+            <div className="mag-ucase">
+              <a href={fillUrlTemplate(collectionDetailUrlTemplate, defaultCollection.uuid)}>
+                current bookshelf · {defaultCollection.name.toLowerCase()}
+              </a>
+            </div>
+            <Bookshelf blobs={defaultCollection.blob_list} />
+          </div>
+        )}
+      </MagSection>
+    </div>
   );
 }
