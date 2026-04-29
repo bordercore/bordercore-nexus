@@ -89,11 +89,250 @@
   }
 }
 
-#create-album-container {
-  padding: 1.5rem;
-  border-radius: var(--radius);
-  margin-bottom: 1.5rem;
-  background-color: var(--bg-1);
+// Refined album-upload page
+.refined-album-page {
+  // Hero drop zone shown before a zip is selected
+  .refined-album-dropzone {
+    position: relative;
+    display: flex;
+    min-height: 280px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 32px;
+    border: 1.5px dashed color-mix(in oklch, var(--fg-3), transparent 50%);
+    border-radius: var(--radius-xl);
+    background:
+      radial-gradient(
+        600px 320px at 50% 0%,
+        color-mix(in oklch, var(--accent), transparent 92%),
+        transparent 70%
+      ),
+      var(--bg-1);
+    color: var(--fg-2);
+    cursor: pointer;
+    text-align: center;
+    transition:
+      border-color 160ms,
+      background 160ms,
+      transform 160ms;
+
+    &:hover,
+    &:focus-within {
+      border-color: var(--accent);
+      background:
+        radial-gradient(
+          600px 320px at 50% 0%,
+          color-mix(in oklch, var(--accent), transparent 80%),
+          transparent 70%
+        ),
+        var(--bg-1);
+      color: var(--fg-1);
+    }
+
+    &.is-dragover {
+      border-color: var(--accent);
+      background:
+        radial-gradient(
+          600px 320px at 50% 0%,
+          color-mix(in oklch, var(--accent), transparent 65%),
+          transparent 70%
+        ),
+        var(--bg-1);
+      box-shadow: 0 0 0 4px var(--accent-glow);
+      color: var(--fg-0);
+      transform: scale(1.005);
+    }
+
+    .dropzone-icon {
+      margin-bottom: 18px;
+      color: color-mix(in oklch, var(--accent), var(--fg-1) 30%);
+      font-size: 56px;
+      opacity: 0.85;
+    }
+
+    .dropzone-headline {
+      color: var(--fg-0);
+      font-family: var(--font-ui);
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+
+    .dropzone-sub {
+      margin-top: 8px;
+      color: var(--fg-3);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+  }
+
+  // Keep the dropzone in the focus-ring loop when the hidden file input is focused.
+  .refined-album-dropzone:has(+ .visually-hidden:focus) {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px var(--accent-glow);
+  }
+
+  // Sidebar metadata block: "ARTIST · ALBUM · YEAR · TRACKS"
+  .refined-album-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+
+    dt {
+      margin: 0 0 2px;
+      color: var(--fg-3);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    dd {
+      margin: 0;
+      color: var(--fg-0);
+      font-family: var(--font-ui);
+      font-size: 14px;
+      font-weight: 500;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  // Track listing inside the main panel
+  /* stylelint-disable no-descending-specificity */
+  .refined-track-table {
+    width: 100%;
+    margin-top: 12px;
+    border-collapse: collapse;
+
+    thead th {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--line);
+      color: var(--fg-3);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-align: left;
+      text-transform: uppercase;
+    }
+
+    thead th.num,
+    tbody td.num {
+      width: 56px;
+      color: var(--accent);
+      font-family: var(--font-mono);
+      text-align: center;
+    }
+
+    tbody td {
+      padding: 8px 10px;
+      vertical-align: middle;
+    }
+
+    tbody td.artist {
+      color: var(--fg-2);
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+
+    tbody td input[type="text"] {
+      width: 100%;
+      padding: 7px 11px;
+
+      @include refined-input-surface;
+    }
+
+    tbody tr + tr td {
+      border-top: 1px solid color-mix(in oklch, var(--line), transparent 30%);
+    }
+  }
+  /* stylelint-enable no-descending-specificity */
+
+  // Notice bar (e.g. "multiple artists detected — pick one")
+  .refined-album-notice {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 12px 14px;
+    border: 1px solid color-mix(in oklch, #d39828, transparent 50%);
+    border-radius: var(--radius);
+    background: color-mix(in oklch, #d39828, transparent 88%);
+    color: #f0b958;
+    font-family: var(--font-ui);
+    font-size: 13px;
+    gap: 12px;
+
+    .notice-label {
+      color: #f0b958;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .refined-select-wrap {
+      min-width: 200px;
+      flex: 1;
+    }
+  }
+
+  // Progress modal styling for the per-song bar
+  .refined-album-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+
+    .progress-line {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      color: var(--fg-1);
+      font-family: var(--font-ui);
+      font-size: 13px;
+      gap: 12px;
+
+      .count {
+        color: var(--fg-3);
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 0.04em;
+      }
+
+      .title {
+        overflow: hidden;
+        flex: 1;
+        color: var(--fg-0);
+        font-weight: 600;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+
+    .progress-track {
+      overflow: hidden;
+      height: 8px;
+      border-radius: 999px;
+      background: color-mix(in oklch, var(--fg-3), transparent 80%);
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(
+        90deg,
+        color-mix(in oklch, var(--accent), white 10%),
+        var(--accent)
+      );
+      box-shadow: 0 0 12px var(--accent-glow);
+      transition: width 240ms ease;
+    }
+  }
 }
 
 .album-grid {

@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import factory
@@ -9,7 +10,7 @@ from django.db.models import signals
 from django.test import Client
 
 from accounts.tests.factories import TEST_PASSWORD, UserFactory
-from music.models import Album, Playlist, Song
+from music.models import Album, Playlist, Song, SongSource
 from music.tests.factories import AlbumFactory, ArtistFactory
 
 pytestmark = [pytest.mark.django_db]
@@ -489,3 +490,90 @@ def test_song_update_blocked_for_other_user(authenticated_client, other_user_cli
     resp = other_client.get(url)
 
     assert resp.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# add_album_from_zipfile streaming
+# ---------------------------------------------------------------------------
+
+
+def _read_ndjson(streaming_response):
+    body = b"".join(streaming_response.streaming_content).decode("utf-8")
+    return [json.loads(line) for line in body.splitlines() if line]
+
+
+def test_add_album_from_zipfile_streams_progress(
+    s3_resource, s3_bucket, authenticated_client, song_source
+):
+    """Streaming view emits start, per-song progress, and a final done event."""
+    _, client = authenticated_client()
+    source = SongSource.objects.get(name=SongSource.DEFAULT)
+
+    album_zip = Path(__file__).parent / "resources/test-album.zip"
+    with open(album_zip, "rb") as f:
+        zipfile_blob = f.read()
+
+    url = urls.reverse("music:add_album_from_zipfile")
+    resp = client.post(url, {
+        "zipfile": SimpleUploadedFile("test-album.zip", zipfile_blob),
+        "artist": "U2",
+        "source": source.id,
+        "tags": "rock",
+        "songListChanges": "{}",
+    })
+
+    assert resp.status_code == 200
+    assert resp["Content-Type"] == "application/x-ndjson"
+
+    events = _read_ndjson(resp)
+    assert events[0] == {"type": "start", "total": 2}
+    progress = [e for e in events if e["type"] == "progress"]
+    assert [e["current"] for e in progress] == [1, 2]
+    assert all(e["total"] == 2 for e in progress)
+    assert events[-1]["type"] == "done"
+    assert events[-1]["url"].startswith("/music/album/")
+
+
+def test_add_album_from_zipfile_streams_error_on_failure(
+    s3_resource, s3_bucket, authenticated_client, song_source, monkeypatch
+):
+    """Mid-stream S3 failure ends the stream with an error event, status 200."""
+    _, client = authenticated_client()
+    source = SongSource.objects.get(name=SongSource.DEFAULT)
+
+    def raise_on_upload(self, song_bytes):
+        raise RuntimeError("S3 boom")
+
+    monkeypatch.setattr(Song, "upload_song_media_to_s3", raise_on_upload)
+
+    album_zip = Path(__file__).parent / "resources/test-album.zip"
+    with open(album_zip, "rb") as f:
+        zipfile_blob = f.read()
+
+    url = urls.reverse("music:add_album_from_zipfile")
+    resp = client.post(url, {
+        "zipfile": SimpleUploadedFile("test-album.zip", zipfile_blob),
+        "artist": "U2",
+        "source": source.id,
+        "songListChanges": "{}",
+    })
+
+    assert resp.status_code == 200
+    events = _read_ndjson(resp)
+    assert events[0]["type"] == "start"
+    assert events[-1] == {"type": "error", "detail": "S3 boom"}
+    assert Album.objects.count() == 0
+
+
+def test_add_album_from_zipfile_missing_zip_returns_400(
+    authenticated_client, song_source
+):
+    """Pre-stream validation: missing zipfile returns a 400 JSON response."""
+    _, client = authenticated_client()
+    source = SongSource.objects.get(name=SongSource.DEFAULT)
+
+    url = urls.reverse("music:add_album_from_zipfile")
+    resp = client.post(url, {"artist": "U2", "source": source.id})
+
+    assert resp.status_code == 400
+    assert "detail" in resp.json()

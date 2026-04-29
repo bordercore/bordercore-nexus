@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from music.models import Album, Listen, SongSource
+from music.models import Album, Artist, Listen, Song, SongSource
 from music.services import (create_album_from_zipfile, get_id3_info,
                             scan_zipfile)
 from music.tests.factories import AlbumFactory, SongFactory
@@ -103,14 +103,21 @@ def test_create_album_from_zipfile(s3_resource, s3_bucket, authenticated_client,
     artist_name = "U2"
     tags = "rock"
 
-    album_uuid = create_album_from_zipfile(
+    events = list(create_album_from_zipfile(
         zipfile_obj,
         artist_name,
         song_source,
         tags=tags,
         user=user,
         changes={}
-    )
+    ))
+
+    assert events[0] == {"type": "start", "total": 2}
+    progress = [e for e in events if e["type"] == "progress"]
+    assert [e["current"] for e in progress] == [1, 2]
+    assert all(e["total"] == 2 for e in progress)
+    assert events[-1]["type"] == "done"
+    album_uuid = events[-1]["album_uuid"]
 
     album = Album.objects.get(uuid=album_uuid)
     assert album.compilation is False
@@ -149,7 +156,7 @@ def test_create_album_from_zipfile_with_changes(s3_resource, s3_bucket, authenti
     artist_name = "U2"
     tags = "rock"
 
-    album_uuid = create_album_from_zipfile(
+    events = list(create_album_from_zipfile(
         zipfile_obj,
         artist_name,
         song_source,
@@ -159,9 +166,10 @@ def test_create_album_from_zipfile_with_changes(s3_resource, s3_bucket, authenti
             "3": {"note": "Live version"},
             "5": {"title": "Running to Stand Still (feat ...)", "note": "Cover"},
         }
-    )
+    ))
 
-    album = Album.objects.get(uuid=album_uuid)
+    assert events[-1]["type"] == "done"
+    album = Album.objects.get(uuid=events[-1]["album_uuid"])
     assert album.compilation is False
     assert album.artist.name == "U2"
     assert album.title == "The Joshua Tree"
@@ -187,3 +195,47 @@ def test_create_album_from_zipfile_with_changes(s3_resource, s3_bucket, authenti
     assert song_2.source == song_source
     assert song_2.length == 3
     assert song_2.note == "Live version"
+
+
+def test_create_album_from_zipfile_rolls_back_on_failure(
+    s3_resource, s3_bucket, authenticated_client, song_source, monkeypatch
+):
+    """Mid-loop S3 failure rolls back the entire album."""
+    user, _ = authenticated_client()
+
+    album_zip = Path(__file__).parent / "resources/test-album.zip"
+    with open(album_zip, "rb") as f:
+        zipfile_obj = f.read()
+
+    song_source = SongSource.objects.get(name=SongSource.DEFAULT)
+
+    # Fail on the second song's S3 upload.
+    call_count = {"n": 0}
+    original_upload = Song.upload_song_media_to_s3
+
+    def flaky_upload(self, song_bytes):
+        call_count["n"] += 1
+        if call_count["n"] >= 2:
+            raise RuntimeError("S3 boom")
+        return original_upload(self, song_bytes)
+
+    monkeypatch.setattr(Song, "upload_song_media_to_s3", flaky_upload)
+
+    gen = create_album_from_zipfile(
+        zipfile_obj, "U2", song_source, tags=None, user=user, changes={}
+    )
+
+    with pytest.raises(RuntimeError, match="S3 boom"):
+        events = []
+        for event in gen:
+            events.append(event)
+
+    # First event was the start; one progress event made it out before failure.
+    assert events[0]["type"] == "start"
+    progress_events = [e for e in events if e["type"] == "progress"]
+    assert len(progress_events) == 1
+
+    # Atomic block rolled back: no album, no songs, no artist for this user.
+    assert Album.objects.filter(artist__user=user).count() == 0
+    assert Song.objects.filter(user=user).count() == 0
+    assert Artist.objects.filter(user=user, name="U2").count() == 0

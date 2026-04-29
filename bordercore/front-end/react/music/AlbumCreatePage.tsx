@@ -1,5 +1,7 @@
-import React, { useRef, useState, useMemo } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCompactDisc, faFileImport, faMusic } from "@fortawesome/free-solid-svg-icons";
 import { TagsInput, TagsInputHandle } from "../common/TagsInput";
 
 interface SourceOption {
@@ -11,8 +13,15 @@ interface SongInfo {
   track: number;
   artist: string;
   title: string;
-  note: string;
+  note?: string;
+  year?: string;
 }
+
+type UploadProgress =
+  | { phase: "idle" }
+  | { phase: "uploading" }
+  | { phase: "processing"; current: number; total: number; title: string }
+  | { phase: "done" };
 
 interface AlbumCreatePageProps {
   scanUrl: string;
@@ -37,46 +46,49 @@ export function AlbumCreatePage({
   const [songSource, setSongSource] = useState<number | null>(defaultSourceId);
   const [fileData, setFileData] = useState<File | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<UploadProgress>({ phase: "idle" });
   const [error, setError] = useState<string | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const tagsInputRef = useRef<TagsInputHandle>(null);
 
-  // Compute unique artists from song list
-  const artistsUnique = useMemo(() => {
-    return new Set(songList.map(song => song.artist));
+  const artistsUnique = useMemo(() => new Set(songList.map(song => song.artist)), [songList]);
+
+  const albumYear = useMemo(() => {
+    const first = songList.find(s => s.year);
+    return first?.year ?? "";
   }, [songList]);
 
-  // Collect song list changes for submission
+  // ESC key dismisses the error banner so the user can retry quickly
+  useEffect(() => {
+    if (!error) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setError(null);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [error]);
+
   const collectSongListChanges = () => {
     const changes: Record<number, { title: string; note: string }> = {};
     for (const song of songList) {
-      changes[song.track] = {
-        title: song.title,
-        note: song.note,
-      };
+      changes[song.track] = { title: song.title, note: song.note ?? "" };
     }
     return JSON.stringify(changes);
   };
 
-  // Handle song title change
   const handleSongTitleChange = (index: number, newTitle: string) => {
     setSongList(prev => prev.map((song, i) => (i === index ? { ...song, title: newTitle } : song)));
   };
 
-  // Handle song note change
   const handleSongNoteChange = (index: number, newNote: string) => {
     setSongList(prev => prev.map((song, i) => (i === index ? { ...song, note: newNote } : song)));
   };
 
-  // Handle zipfile upload to scan
-  const handleAlbumUpload = async (evt: React.ChangeEvent<HTMLInputElement>) => {
-    const file = evt.target.files?.[0];
-    if (!file) {
-      return;
-    }
-
+  const scanFile = async (file: File) => {
     setFileData(file);
     setProcessing(true);
+    setUploadProgress({ phase: "idle" });
     setError(null);
 
     const formData = new FormData();
@@ -90,11 +102,7 @@ export function AlbumCreatePage({
         },
       });
 
-      // Small delay before hiding modal for smoother UX
-      setTimeout(() => {
-        setProcessing(false);
-      }, 500);
-
+      setTimeout(() => setProcessing(false), 300);
       setAlbum(response.data.album);
       setArtist(response.data.artist[0]);
       setSongList(response.data.song_info);
@@ -105,7 +113,25 @@ export function AlbumCreatePage({
     }
   };
 
-  // Handle album creation
+  const handleFileInputChange = (evt: React.ChangeEvent<HTMLInputElement>) => {
+    const file = evt.target.files?.[0];
+    if (file) scanFile(file);
+  };
+
+  const handleDrop = (evt: React.DragEvent<HTMLElement>) => {
+    evt.preventDefault();
+    setIsDragOver(false);
+    const file = evt.dataTransfer.files?.[0];
+    if (file) scanFile(file);
+  };
+
+  const handleDragOver = (evt: React.DragEvent<HTMLElement>) => {
+    evt.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = () => setIsDragOver(false);
+
   const handleAlbumAdd = async () => {
     if (!fileData) {
       setError("No file selected");
@@ -113,6 +139,7 @@ export function AlbumCreatePage({
     }
 
     setProcessing(true);
+    setUploadProgress({ phase: "uploading" });
     setError(null);
 
     const formData = new FormData();
@@ -123,76 +150,186 @@ export function AlbumCreatePage({
     formData.append("songListChanges", collectSongListChanges());
 
     try {
-      const response = await axios.post(addUrl, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          "X-CSRFToken": csrfToken,
-        },
+      const response = await fetch(addUrl, {
+        method: "POST",
+        body: formData,
+        headers: { "X-CSRFToken": csrfToken },
       });
 
-      // Redirect to new album
-      window.location.href = response.data.url;
-    } catch (err: any) {
+      if (!response.ok) {
+        let detail = "Error creating album. Please try again.";
+        try {
+          const body = await response.json();
+          if (body?.detail) detail = body.detail;
+        } catch {
+          // Non-JSON error body — keep the default message.
+        }
+        setProcessing(false);
+        setUploadProgress({ phase: "idle" });
+        setError(detail);
+        return;
+      }
+
+      const reader = response.body!.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        let nl = buffer.indexOf("\n");
+        while (nl !== -1) {
+          const line = buffer.slice(0, nl);
+          buffer = buffer.slice(nl + 1);
+          nl = buffer.indexOf("\n");
+          if (!line) continue;
+          const event = JSON.parse(line);
+          if (event.type === "start") {
+            setUploadProgress({
+              phase: "processing",
+              current: 0,
+              total: event.total,
+              title: "",
+            });
+          } else if (event.type === "progress") {
+            setUploadProgress({
+              phase: "processing",
+              current: event.current,
+              total: event.total,
+              title: event.title,
+            });
+          } else if (event.type === "done") {
+            window.location.href = event.url;
+            return;
+          } else if (event.type === "error") {
+            setProcessing(false);
+            setUploadProgress({ phase: "idle" });
+            setError(event.detail);
+            return;
+          }
+        }
+      }
+    } catch (err) {
       setProcessing(false);
+      setUploadProgress({ phase: "idle" });
       console.error("Error creating album:", err);
-      setError(err.response?.data?.detail || "Error creating album. Please try again.");
+      setError("Error creating album. Please try again.");
     }
   };
 
-  return (
-    <div>
-      <h1 className="text-center">Upload Album</h1>
+  const hasScan = songList.length > 0;
+  const dropzoneClasses = ["refined-album-dropzone"];
+  if (isDragOver) dropzoneClasses.push("is-dragover");
 
-      {/* Error message */}
+  return (
+    <div className="refined-page-shell refined-album-page">
+      <div className="refined-page-header">
+        <h1 className="refined-breadcrumb-h1">
+          <span className="dim">music</span>
+          <span className="sep">/</span>
+          <span className="dim">albums</span>
+          <span className="sep">/</span>
+          <span className={hasScan ? "current" : "current neutral"}>
+            {hasScan ? album || "untitled album" : "new"}
+          </span>
+        </h1>
+        {hasScan && (
+          <div className="refined-meta-strip">
+            <span className="meta-item">
+              <span className="meta-label">artist</span>
+              <span className="meta-value">{artist || "—"}</span>
+            </span>
+            {albumYear && (
+              <span className="meta-item">
+                <span className="meta-label">year</span>
+                <span className="meta-value">{albumYear}</span>
+              </span>
+            )}
+            <span className="meta-item">
+              <span className="meta-label">tracks</span>
+              <span className="meta-value">{songList.length}</span>
+            </span>
+            {fileData && (
+              <span className="meta-item">
+                <span className="meta-label">size</span>
+                <span className="meta-value">{(fileData.size / (1024 * 1024)).toFixed(1)} MB</span>
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
       {error && (
-        <div className="alert alert-danger text-center" role="alert">
+        <div className="alert alert-danger" role="alert">
           {error}
         </div>
       )}
 
-      <div id="create-album-container">
-        {/* File upload */}
-        <div>
-          <label htmlFor="id_file" className="form-label">
-            Upload album zipfile
+      {!hasScan && (
+        <section className="refined-section">
+          <label
+            htmlFor="id_file"
+            className={dropzoneClasses.join(" ")}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+          >
+            <FontAwesomeIcon icon={faFileImport} className="dropzone-icon" />
+            <div className="dropzone-headline">Drop a ZIP file here, or click to browse</div>
+            <div className="dropzone-sub">
+              <FontAwesomeIcon icon={faCompactDisc} className="me-2" />
+              expects an album archive of mp3 files with id3 tags
+            </div>
           </label>
           <input
-            className="form-control form-control-lg"
             id="id_file"
             type="file"
             accept=".zip"
-            onChange={handleAlbumUpload}
+            onChange={handleFileInputChange}
             disabled={processing}
+            className="visually-hidden"
           />
-        </div>
+        </section>
+      )}
 
-        {/* Album details - shown after scan */}
-        {songList.length > 0 && (
-          <div className="slide-fade-enter-active">
-            {/* Album/Artist/Song count display */}
-            <div className="d-flex justify-content-evenly mt-2">
-              <div>
-                <div className="text4 fw-bold text-center me-3">ARTIST</div>
-                <div className="text-center me-3">{artist}</div>
-              </div>
-              <div>
-                <div className="text4 fw-bold text-center me-3">ALBUM</div>
-                <div className="text-center me-3">{album}</div>
-              </div>
-              <div>
-                <div className="text4 fw-bold text-center me-3">SONG COUNT</div>
-                <div className="text-center me-3">{songList.length}</div>
-              </div>
-            </div>
+      {hasScan && (
+        <div className="refined-page-grid">
+          <aside className="refined-page-sidebar">
+            <section className="refined-section">
+              <h3 className="refined-section-title">
+                <FontAwesomeIcon icon={faCompactDisc} className="me-2" />
+                album
+              </h3>
+              <dl className="refined-album-summary">
+                <div>
+                  <dt>artist</dt>
+                  <dd>{artist || "—"}</dd>
+                </div>
+                <div>
+                  <dt>album</dt>
+                  <dd>{album || "—"}</dd>
+                </div>
+                {albumYear && (
+                  <div>
+                    <dt>year</dt>
+                    <dd>{albumYear}</dd>
+                  </div>
+                )}
+                <div>
+                  <dt>tracks</dt>
+                  <dd>{songList.length}</dd>
+                </div>
+              </dl>
+            </section>
 
-            {/* Song source and tags */}
-            <div className="mt-2">
-              <hr className="divider" />
-              <div className="d-flex justify-content-evenly">
-                <div className="d-flex">
-                  <div className="text-nowrap me-3">Song Source</div>
+            <section className="refined-section">
+              <h3 className="refined-section-title">source</h3>
+              <div className="refined-field">
+                <label htmlFor="id_source">song source</label>
+                <div className="refined-select-wrap">
                   <select
-                    className="form-control form-select"
+                    className="refined-select"
                     id="id_source"
                     value={songSource || ""}
                     onChange={e => setSongSource(parseInt(e.target.value, 10))}
@@ -204,109 +341,154 @@ export function AlbumCreatePage({
                     ))}
                   </select>
                 </div>
-                <div className="d-flex">
-                  <div className="text-nowrap me-3">Tags</div>
-                  <TagsInput
-                    ref={tagsInputRef}
-                    id="id_tags"
-                    searchUrl={`${tagSearchUrl}?query=`}
-                    initialTags={[]}
-                  />
-                </div>
               </div>
-            </div>
 
-            {/* Multiple artists warning and song table */}
-            {artistsUnique.size > 1 && (
-              <div className="d-flex flex-column justify-content-center mt-3">
-                <hr className="divider" />
-                <div className="d-flex justify-content-center">
-                  <div className="me-3">
-                    <strong className="me-2">NOTE</strong>Multiple artists detected. Please choose
-                    one:
-                  </div>
-                  <div>
+              <div className="refined-field">
+                <label htmlFor="id_tags">
+                  tags <span className="optional">· optional</span>
+                </label>
+                <TagsInput
+                  ref={tagsInputRef}
+                  id="id_tags"
+                  searchUrl={`${tagSearchUrl}?query=`}
+                  initialTags={[]}
+                />
+              </div>
+            </section>
+          </aside>
+
+          <main className="refined-page-main">
+            <section className="refined-section">
+              <h3 className="refined-section-title">
+                <FontAwesomeIcon icon={faMusic} className="me-2" />
+                tracks
+              </h3>
+
+              {artistsUnique.size > 1 && (
+                <div className="refined-album-notice">
+                  <span className="notice-label">multiple artists · choose primary</span>
+                  <div className="refined-select-wrap">
                     <select
-                      className="form-control form-select"
+                      className="refined-select"
                       value={artist}
                       onChange={e => setArtist(e.target.value)}
+                      aria-label="primary artist"
                     >
-                      {Array.from(artistsUnique).map(artistOption => (
-                        <option key={artistOption} value={artistOption}>
-                          {artistOption}
+                      {Array.from(artistsUnique).map(option => (
+                        <option key={option} value={option}>
+                          {option}
                         </option>
                       ))}
                     </select>
                   </div>
                 </div>
-                <table className="table mt-3">
-                  <thead>
-                    <tr>
-                      <th className="text-center">Track #</th>
-                      <th>Artist</th>
-                      <th>Title</th>
-                      <th>Note</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {songList.map((song, index) => (
-                      <tr key={song.track}>
-                        <td className="text-center">{song.track}</td>
-                        <td>{song.artist}</td>
-                        <td>
-                          <input
-                            className="form-control"
-                            type="text"
-                            size={20}
-                            value={song.title}
-                            onChange={e => handleSongTitleChange(index, e.target.value)}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            className="form-control"
-                            type="text"
-                            size={20}
-                            value={song.note}
-                            onChange={e => handleSongNoteChange(index, e.target.value)}
-                          />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+              )}
 
-            {/* Add button */}
-            <div className="d-flex justify-content-center mt-2">
+              <table className="refined-track-table">
+                <thead>
+                  <tr>
+                    <th className="num">#</th>
+                    {artistsUnique.size > 1 && <th>artist</th>}
+                    <th>title</th>
+                    <th>note</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {songList.map((song, index) => (
+                    <tr key={song.track}>
+                      <td className="num">{song.track}</td>
+                      {artistsUnique.size > 1 && <td className="artist">{song.artist}</td>}
+                      <td>
+                        <input
+                          type="text"
+                          value={song.title}
+                          onChange={e => handleSongTitleChange(index, e.target.value)}
+                          aria-label={`title for track ${song.track}`}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          value={song.note ?? ""}
+                          onChange={e => handleSongNoteChange(index, e.target.value)}
+                          aria-label={`note for track ${song.track}`}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </section>
+
+            <div className="refined-page-actions">
               <button
                 type="button"
-                className="btn btn-primary btn-lg"
+                className="refined-btn ghost"
+                onClick={() => {
+                  setFileData(null);
+                  setSongList([]);
+                  setAlbum("");
+                  setArtist("");
+                  setError(null);
+                }}
+                disabled={processing}
+              >
+                cancel
+              </button>
+              <button
+                type="button"
+                className="refined-btn primary"
                 onClick={handleAlbumAdd}
                 disabled={processing}
               >
-                Add
+                add album
               </button>
             </div>
-          </div>
-        )}
-      </div>
+          </main>
+        </div>
+      )}
 
-      {/* Processing Modal */}
       {processing && (
-        <div className="modal show d-block music-modal-overlay" tabIndex={-1}>
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-body text-center py-4">
-                <div className="spinner-border text-primary mb-3" role="status">
+        <>
+          <div className="refined-modal-scrim" />
+          <div className="refined-modal" role="dialog" aria-modal="true">
+            <div className="refined-modal-eyebrow">uploading · music / albums / new</div>
+            <h2 className="refined-modal-title">
+              {uploadProgress.phase === "processing"
+                ? "Uploading album"
+                : uploadProgress.phase === "uploading"
+                  ? "Uploading…"
+                  : "Processing…"}
+            </h2>
+            {uploadProgress.phase === "processing" ? (
+              <div className="refined-album-progress">
+                <div className="progress-line">
+                  <span className="title">
+                    {uploadProgress.current === 0 ? "Preparing…" : uploadProgress.title || "—"}
+                  </span>
+                  <span className="count">
+                    {uploadProgress.current} / {uploadProgress.total}
+                  </span>
+                </div>
+                <div className="progress-track">
+                  <div
+                    className="progress-fill"
+                    // must remain inline
+                    style={{
+                      width: `${(uploadProgress.current / uploadProgress.total) * 100}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-2">
+                <div className="spinner-border text-primary" role="status">
                   <span className="visually-hidden">Processing...</span>
                 </div>
-                <p className="mb-0">Processing...</p>
               </div>
-            </div>
+            )}
           </div>
-        </div>
+        </>
       )}
     </div>
   );

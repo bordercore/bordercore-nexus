@@ -8,9 +8,8 @@ from __future__ import annotations
 import string
 import zipfile
 from io import BytesIO
-from typing import Any, Iterable, TypedDict, cast
+from typing import Any, Iterable, Iterator, TypedDict, cast
 from urllib.parse import unquote
-from uuid import UUID
 
 import humanize
 from elasticsearch import Elasticsearch
@@ -400,8 +399,8 @@ def create_album_from_zipfile(
     tags: str | None,
     user: User,
     changes: dict[str, dict[str, Any]]
-) -> UUID:
-    """Create an album from a ZIP file containing MP3 files.
+) -> Iterator[dict[str, Any]]:
+    """Create an album from a ZIP file, streaming progress per track.
 
     Args:
         zipfile_obj: ZIP file content as bytes.
@@ -411,13 +410,23 @@ def create_album_from_zipfile(
         user: The user creating the album.
         changes: Dictionary of changes to apply to specific tracks.
 
-    Returns:
-        UUID of the created album.
+    Yields:
+        ``{"type": "start", "total": N}`` once after the zip has been
+        scanned and validated, then ``{"type": "progress", "current": i,
+        "total": N, "title": str}`` after each song is saved and uploaded
+        to S3, and finally ``{"type": "done", "album_uuid": str}``.
+
+    Raises:
+        ValueError: If the zip contains no MP3 files. Raised before the
+            first yield, so callers can convert this to a pre-stream 400.
     """
     info = scan_zipfile(zipfile_obj, include_song_data=True)
 
     if not info["song_info"]:
         raise ValueError("ZIP file contains no MP3 files")
+
+    total = len(info["song_info"])
+    yield {"type": "start", "total": total}
 
     with transaction.atomic():
         artist, _ = Artist.objects.get_or_create(name=artist_name, user=user)
@@ -432,7 +441,7 @@ def create_album_from_zipfile(
             }
         )
 
-        for song_info in info["song_info"]:
+        for index, song_info in enumerate(info["song_info"], start=1):
             song = Song(
                 artist=artist,
                 album=album,
@@ -463,9 +472,16 @@ def create_album_from_zipfile(
             # Upload the song and its artwork to S3
             song.upload_song_media_to_s3(song_info["data"])
 
-    if album is not None:
-        return album.uuid
-    raise ValueError("Album creation failed unexpectedly")
+            yield {
+                "type": "progress",
+                "current": index,
+                "total": total,
+                "title": song.title,
+            }
+
+    if album is None:
+        raise ValueError("Album creation failed unexpectedly")
+    yield {"type": "done", "album_uuid": str(album.uuid)}
 
 
 def get_id3_info(song: bytes) -> dict[str, Any]:

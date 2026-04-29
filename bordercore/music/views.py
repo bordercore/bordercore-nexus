@@ -10,7 +10,7 @@ import re
 import string
 import uuid
 from datetime import timedelta
-from typing import Any, cast
+from typing import Any, Iterator, cast
 
 import humanize
 from rest_framework import status
@@ -30,7 +30,8 @@ from django.db import transaction
 from django.db.models import F, Q
 from django.db.models.query import QuerySet as QuerySetType
 from django.forms.models import model_to_dict
-from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
+from django.http import (HttpRequest, HttpResponse, HttpResponseRedirect,
+                         StreamingHttpResponse)
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.views.generic.base import TemplateView
@@ -1139,48 +1140,70 @@ def scan_album_from_zipfile(request: HttpRequest) -> Response:
 
 @api_view(["POST"])
 @validate_post_data("artist", "source")
-def add_album_from_zipfile(request: HttpRequest) -> Response:
-    """Create an album from a ZIP file containing audio tracks.
+def add_album_from_zipfile(request: HttpRequest) -> Response | StreamingHttpResponse:
+    """Create an album from a ZIP file, streaming per-track progress as NDJSON.
+
+    Pre-stream validation errors (missing zip, bad source, empty zip)
+    return a normal HTTP 400. Once the per-song loop starts, progress
+    is streamed line-by-line as ``application/x-ndjson``; mid-stream
+    failures end the stream with an ``error`` event and HTTP status
+    remains 200 because headers were already sent.
 
     Args:
         request: The HTTP request object containing the ZIP file and metadata.
 
     Returns:
-        JSON response with creation status and album URL or error message.
+        Either a 400 ``Response`` or a streaming NDJSON response.
     """
     artist = request.POST.get("artist", "").strip()
     source_id = request.POST.get("source", "").strip()
 
     if "zipfile" not in request.FILES:
-        return Response({
-            "detail": "No ZIP file provided"
-        }, status=400)
+        return Response({"detail": "No ZIP file provided"}, status=400)
+
+    try:
+        source = SongSource.objects.get(id=source_id)
+    except SongSource.DoesNotExist:
+        return Response({"detail": "Invalid song source"}, status=400)
 
     zipfile_upload = cast(UploadedFile, request.FILES["zipfile"])
     zipfile_obj = zipfile_upload.read()
+    user = cast(User, request.user)
 
+    service_gen = create_album_from_zipfile(
+        zipfile_obj,
+        artist,
+        source,
+        request.POST.get("tags", None),
+        user,
+        json.loads(request.POST.get("songListChanges", "{}")),
+    )
+
+    # Drive the generator to its first yield so empty-zip / scan errors
+    # surface as a pre-stream 400 instead of mid-stream error events.
     try:
-        user = cast(User, request.user)
-        source = SongSource.objects.get(id=source_id)
-        album_uuid = create_album_from_zipfile(
-            zipfile_obj,
-            artist,
-            source,
-            request.POST.get("tags", None),
-            user,
-            json.loads(request.POST.get("songListChanges", "{}"))
-        )
-    except Exception as e:
-        return Response({"detail": str(e)}, status=400)
+        first_event = next(service_gen)
+    except (ValueError, StopIteration) as e:
+        return Response({"detail": str(e) or "Album creation failed"}, status=400)
 
-    # Save the song source in the session
-    request.session["song_source"] = SongSource.objects.get(id=request.POST["source"]).name
+    source_name = source.name
 
-    response = {
-        "url": reverse("music:album_detail", kwargs={"uuid": album_uuid}),
-    }
+    def stream() -> Iterator[bytes]:
+        yield (json.dumps(first_event) + "\n").encode("utf-8")
+        try:
+            for event in service_gen:
+                if event.get("type") == "done":
+                    album_uuid = event["album_uuid"]
+                    request.session["song_source"] = source_name
+                    event = {
+                        "type": "done",
+                        "url": reverse("music:album_detail", kwargs={"uuid": album_uuid}),
+                    }
+                yield (json.dumps(event) + "\n").encode("utf-8")
+        except Exception as e:
+            yield (json.dumps({"type": "error", "detail": str(e)}) + "\n").encode("utf-8")
 
-    return Response(response, status=status.HTTP_201_CREATED)
+    return StreamingHttpResponse(stream(), content_type="application/x-ndjson")
 
 
 @api_view(["GET"])
