@@ -1,66 +1,912 @@
-.homepage {
-  // Add gap between cards in each column
-  > .row > .d-flex.flex-column {
-    gap: var(--column-gutter);
+// Magazine-style homepage layout.
+// Shared scaffolding lives on .homepage-magazine and uses the existing refined
+// design tokens. Magazine-specific colors that don't map cleanly to a refined
+// token (the brand purple, masthead pink, cyan meta accent) live as scoped
+// custom properties below.
+
+// stylelint-disable no-descending-specificity
+
+.homepage-magazine {
+  // Magazine-scoped brand tokens.
+  --mag-purple: #b36bff;
+  --mag-purple-2: #7c7fff;
+  --mag-pink: #ff3dbd;
+  --mag-cyan: #4cc2ff;
+  --mag-hairline: #1e212d;
+  --mag-priority-high: #f57;
+  --mag-glow-pink: 0 0 8px rgb(255 61 189 / 60%);
+  --mag-glow-purple-soft: 0 0 6px rgb(179 107 255 / 50%);
+
+  min-height: 100vh;
+  padding-bottom: 32px;
+  background: var(--bg-0);
+  color: var(--fg-1);
+  font-family: var(--font-ui);
+
+  // ---- Generic helpers ----
+  .mag-mono { font-family: var(--font-mono); }
+
+  .mag-ucase {
+    color: var(--fg-3);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .mag-ucase.is-pink   { color: var(--mag-pink); }
+  .mag-ucase.is-cyan   { color: var(--mag-cyan); }
+  .mag-ucase.is-purple { color: var(--mag-purple); }
+  .mag-ucase.is-danger { color: var(--danger); }
+
+  .mag-meta {
+    color: var(--fg-3);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.02em;
   }
 
-  .card-body {
-    flex-grow: 0;
-    padding: 1.25rem;
-    border-radius: 0.4rem;
+  // ---- Hero ----
+  .mag-hero {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    height: 420px;
+    isolation: isolate;
+  }
+
+  .mag-hero-img {
+    position: absolute;
+    z-index: 0;
+    width: 100%;
+    height: 100%;
+    inset: 0;
+    object-fit: cover;
+  }
+
+  .mag-hero-fallback {
+    position: absolute;
+    z-index: 0;
+    background: linear-gradient(180deg, #0a0a18 0%, #1a0a2e 35%, #2d0e3a 60%, #0a0612 100%);
+    inset: 0;
+  }
+
+  .mag-hero-overlay {
+    position: absolute;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 32px 56px;
+    background: linear-gradient(
+      180deg,
+      rgb(7 7 12 / 40%) 0%,
+      transparent 30%,
+      rgb(7 7 12 / 85%) 100%
+    );
+    inset: 0;
+  }
+
+  .mag-hero-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+
+  .mag-hero-bottom {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+  }
+
+  .mag-issue-line {
+    color: var(--mag-pink);
+    text-shadow: var(--mag-glow-pink);
+  }
+
+  .mag-masthead {
+    margin-top: 12px;
+    color: #fff;
+    font-family: "Space Grotesk", var(--font-ui);
+    font-size: 64px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    text-shadow: 0 2px 24px rgb(0 0 0 / 60%);
+  }
+  .mag-masthead-accent { color: var(--mag-pink); }
+
+  .mag-hero-edition {
+    color: rgb(255 255 255 / 85%);
+    text-align: right;
+  }
+  .mag-hero-edition-time { color: var(--mag-cyan); }
+
+  .mag-hero-image-name {
+    color: #fff;
+    font-family: "Space Grotesk", var(--font-ui);
+    font-size: 22px;
+    font-weight: 600;
+  }
+
+  .mag-hero-image-meta {
+    margin-top: 4px;
+    color: rgb(255 255 255 / 60%);
+    font-family: var(--font-mono);
+    font-size: 11px;
+  }
+
+  .mag-hero-image-meta a {
+    color: var(--mag-purple);
+    text-decoration: none;
+
+    &:hover { color: var(--mag-pink); }
+  }
+
+  .mag-hero-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .mag-hero-link {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--mag-cyan);
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.02em;
+    text-decoration: none;
+    transition: color 120ms var(--bc-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+  }
+
+  .mag-hero-link:hover {
+    color: #fff;
+  }
+
+  // ---- Buttons ----
+  .mag-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--bg-3);
+    color: var(--fg-2);
+    cursor: pointer;
+    font-family: var(--font-ui);
+    font-size: 12px;
+    gap: 6px;
+    text-decoration: none;
+    transition: all 120ms var(--bc-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+  }
+
+  .mag-btn:hover {
+    border-color: var(--fg-3);
+    background: var(--bg-3);
+    color: var(--fg-1);
+  }
+
+  .mag-btn.is-primary {
+    border-color: rgb(255 255 255 / 12%);
+    background: linear-gradient(180deg, var(--mag-purple), #9355ef);
+    box-shadow: 0 0 16px -2px rgb(179 107 255 / 45%);
+    color: #fff;
+  }
+
+  // ---- Editorial body ----
+  .mag-body {
+    width: 100%;
+    padding: 40px 0 24px;
     margin: 0;
-    background-color: var(--bg-1);
   }
 
-  // Backdrop filter support for glass effect (matches _music.scss)
-  @supports (backdrop-filter: blur(1.56rem) brightness(170%)) {
-    .card-body.backdrop-filter {
-      backdrop-filter: var(--eye-candy);
+  .mag-pull-quote {
+    max-width: 880px;
+    padding: 24px 0 32px;
+    border-bottom: 1px solid var(--mag-hairline);
+    margin-bottom: 32px;
+    color: var(--fg-1);
+    font-family: "Space Grotesk", var(--font-ui);
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    line-height: 1.4;
+    text-wrap: pretty;
+  }
+
+  .mag-pull-quote-attr {
+    margin-top: 12px;
+    color: var(--mag-purple);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .mag-columns {
+    display: grid;
+    gap: 20px;
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  // Each column stacks its chambers with a fixed inter-chamber gap.
+  .mag-column {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  // ---- Chamber (card-style section) ----
+  // Bordered card with a colored kicker strip at the top. Accent comes from
+  // a modifier class that sets --mag-accent.
+  .mag-section {
+    --mag-accent: var(--fg-2);
+
+    display: flex;
+    overflow: hidden;
+    flex-direction: column;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--bg-1);
+  }
+  .mag-section.is-pink    { --mag-accent: var(--mag-pink); }
+  .mag-section.is-cyan    { --mag-accent: var(--mag-cyan); }
+  .mag-section.is-purple  { --mag-accent: var(--mag-purple); }
+  .mag-section.is-danger  { --mag-accent: var(--danger); }
+  .mag-section.is-neutral { --mag-accent: var(--fg-2); }
+
+  .mag-section-kicker {
+    display: flex;
+    align-items: center;
+    padding: 10px 18px;
+    border-bottom: 1px solid color-mix(in srgb, var(--mag-accent) 25%, transparent);
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--mag-accent) 15%, transparent),
+      transparent
+    );
+    gap: 10px;
+  }
+
+  .mag-section-kicker-dot {
+    width: 6px;
+    height: 6px;
+    flex: none;
+    border-radius: 999px;
+    background: var(--mag-accent);
+    box-shadow: 0 0 8px var(--mag-accent);
+  }
+
+  .mag-section-kicker-label {
+    color: var(--mag-accent);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .mag-section-kicker-label a {
+    color: inherit;
+    text-decoration: none;
+    transition: opacity 120ms var(--bc-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+  }
+
+  .mag-section-kicker-label a:hover {
+    opacity: 0.7;
+  }
+
+  .mag-section-body {
+    display: flex;
+    flex-direction: column;
+    padding: 18px;
+    gap: 16px;
+  }
+
+  // Sub-block spacing inside a chamber body when it has multiple parts
+  // (e.g., drill ring + bookshelf in the Study Desk). Dashed top border
+  // separates the second block from the first.
+  .mag-block { margin: 0; }
+
+  .mag-block + .mag-block {
+    padding-top: 16px;
+    border-top: 1px dashed var(--mag-hairline);
+  }
+
+  .mag-lede {
+    color: var(--fg-0);
+    font-family: "Space Grotesk", var(--font-ui);
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+  }
+
+  .mag-lede a {
+    color: inherit;
+    text-decoration: none;
+
+    &:hover { color: var(--mag-pink); }
+  }
+
+  // ---- Tasks ----
+  .mag-tasks {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    margin: 0;
+    gap: 2px;
+    list-style: none;
+  }
+
+  .mag-task {
+    display: flex;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--mag-hairline);
+    gap: 10px;
+  }
+
+  .mag-task-name {
+    min-width: 0;
+    flex: 1;
+    color: var(--fg-1);
+    font-size: 13px;
+  }
+
+  .mag-task-name a {
+    color: inherit;
+    text-decoration: none;
+
+    &:hover { color: var(--mag-purple); }
+  }
+
+  .mag-pdot {
+    width: 8px;
+    height: 8px;
+    flex: none;
+    border-radius: 50%;
+    background: var(--mag-priority-high);
+    box-shadow: 0 0 8px var(--mag-priority-high);
+  }
+
+  .mag-tag {
+    --tag-h: var(--tag-hue, 200);
+
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border: 1px solid oklch(72% 0.15 var(--tag-h) / 30%);
+    border-radius: 999px;
+    background: oklch(72% 0.15 var(--tag-h) / 12%);
+    color: oklch(80% 0.13 var(--tag-h));
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .mag-empty {
+    padding: 8px 0;
+    color: var(--fg-3);
+    font-size: 13px;
+  }
+
+  .mag-dot-empty {
+    width: 8px;
+    height: 8px;
+    flex: none;
+    border: 1px solid var(--fg-3);
+    border-radius: 50%;
+  }
+
+  .mag-dot-full {
+    width: 8px;
+    height: 8px;
+    flex: none;
+    border-radius: 50%;
+    background: var(--ok);
+    box-shadow: 0 0 8px rgb(63 210 156 / 60%);
+  }
+
+  // ---- Drill ring ----
+  .mag-study {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-top: 12px;
+    gap: 14px;
+  }
+
+  .mag-ring {
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+  }
+
+  .mag-ring svg {
+    display: block;
+    transform: rotate(-90deg);
+  }
+
+  .mag-ring-track {
+    fill: none;
+    stroke: var(--bg-3);
+  }
+
+  .mag-ring-fill {
+    fill: none;
+    filter: drop-shadow(var(--mag-glow-purple-soft));
+    stroke: url("#magRingGrad");
+    stroke-linecap: round;
+    transition: stroke-dashoffset 600ms var(--bc-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+  }
+
+  .mag-ring-center {
+    position: absolute;
+    display: grid;
+    inset: 0;
+    place-items: center;
+    text-align: center;
+  }
+
+  .mag-ring-pct {
+    color: var(--fg-1);
+    font-family: "Space Grotesk", var(--font-ui);
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .mag-ring-pct .unit {
+    color: var(--fg-3);
+  }
+
+  .mag-ring-label {
+    margin-top: 6px;
+    color: var(--fg-3);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .mag-study-summary {
+    font-family: "Space Grotesk", var(--font-ui);
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .mag-study-summary a {
+    color: inherit;
+    text-decoration: none;
+
+    &:hover { color: var(--mag-purple); }
+  }
+
+  .mag-study-detail {
+    margin-top: 4px;
+    color: var(--fg-3);
+    font-size: 13px;
+  }
+  .mag-study-detail .due { color: var(--mag-pink); }
+
+  // ---- Calendar mini ----
+  .mag-cal {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .mag-cal-row {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+
+  .mag-cal-weekday {
+    width: 38px;
+    color: var(--mag-cyan);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .mag-cal-time {
+    width: 70px;
+    color: var(--fg-3);
+    font-family: var(--font-mono);
+    font-size: 11px;
+  }
+
+  .mag-cal-title {
+    min-width: 0;
+    flex: 1;
+    color: var(--fg-1);
+    font-size: 13px;
+  }
+
+  // ---- Habits ----
+  .mag-habits {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .mag-habit-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .mag-habit-name {
+    overflow: hidden;
+    min-width: 0;
+    flex: 1;
+    color: var(--fg-1);
+    font-size: 13px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mag-habit-streak {
+    flex: none;
+    color: var(--fg-3);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .mag-habit-streak.is-active { color: var(--mag-cyan); }
+
+  // ---- Reminders ----
+  .mag-reminders {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .mag-reminder-row {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+
+  .mag-reminder-when {
+    display: flex;
+    width: 64px;
+    flex: none;
+    flex-direction: column;
+    line-height: 1.2;
+  }
+
+  .mag-reminder-rel {
+    color: var(--mag-cyan);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .mag-reminder-time {
+    color: var(--fg-3);
+    font-family: var(--font-mono);
+    font-size: 11px;
+  }
+
+  .mag-reminder-name {
+    min-width: 0;
+    flex: 1;
+    color: var(--fg-1);
+    font-size: 13px;
+  }
+
+  // ---- Music setlist ----
+  .mag-setlist {
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+
+  .mag-setlist-row {
+    display: flex;
+    padding: 5px 0;
+    color: var(--fg-2);
+    gap: 12px;
+  }
+
+  .mag-setlist-num {
+    width: 18px;
+    color: var(--fg-3);
+  }
+
+  .mag-setlist-title {
+    overflow: hidden;
+    min-width: 0;
+    flex: 1;
+    color: var(--fg-1);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mag-setlist-artist {
+    overflow: hidden;
+    max-width: 50%;
+    margin-left: auto;
+    color: var(--fg-3);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mag-setlist-artist a {
+    color: inherit;
+    text-decoration: none;
+
+    &:hover { color: var(--mag-purple); }
+  }
+
+  // ---- Bookshelf ----
+  .mag-bookshelf {
+    display: grid;
+    margin-top: 12px;
+    gap: 8px;
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .mag-book {
+    display: block;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    aspect-ratio: 3 / 4;
+    background: var(--bg-2);
+  }
+
+  .mag-book img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .mag-book.is-empty {
+    display: grid;
+    padding: 6px;
+    color: var(--fg-3);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    place-items: center;
+    text-align: center;
+  }
+
+  // ---- Footer rail ----
+  // Per spec: full-width chambers stacked (Classifieds, then Today's Reading List).
+  .mag-footer-rail {
+    display: flex;
+    flex-direction: column;
+    margin-top: 16px;
+    gap: 16px;
+  }
+
+  .mag-classifieds {
+    column-count: 3;
+    column-gap: 28px;
+  }
+
+  // ---- Reading list (pill row) ----
+  .mag-reading {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .mag-reading-meta {
+    color: var(--fg-3);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.02em;
+  }
+
+  .mag-reading-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .mag-reading-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border: 1px solid color-mix(in srgb, var(--mag-cyan) 25%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--mag-cyan) 8%, transparent);
+    color: var(--fg-1);
+    cursor: pointer;
+    font-family: var(--font-ui);
+    font-size: 12px;
+    gap: 6px;
+    text-decoration: none;
+    transition: all 120ms var(--bc-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+  }
+
+  .mag-reading-pill:hover {
+    border-color: var(--mag-cyan);
+    background: color-mix(in srgb, var(--mag-cyan) 14%, transparent);
+  }
+
+  .mag-reading-pill.is-read {
+    border-style: dashed;
+    border-color: var(--line);
+    background: transparent;
+    color: var(--fg-3);
+    text-decoration: line-through;
+  }
+
+  .mag-reading-pill .mag-dot-full,
+  .mag-reading-pill .mag-dot-empty {
+    width: 6px;
+    height: 6px;
+  }
+
+  // ---- Recent bookmarks rows ----
+  .mag-bm-row {
+    display: flex;
+    align-items: center;
+    padding: 7px 0;
+    break-inside: avoid;
+    color: var(--fg-2);
+    font-size: 13px;
+    gap: 10px;
+    transition: color 120ms;
+  }
+
+  .mag-bm-row a {
+    overflow: hidden;
+    min-width: 0;
+    flex: 1;
+    color: inherit;
+    text-decoration: none;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .mag-bm-row:hover { color: var(--fg-1); }
+
+  .mag-bm-row .url {
+    flex: none;
+    margin-left: auto;
+    color: var(--fg-3);
+    font-family: var(--font-mono);
+    font-size: 11px;
+  }
+
+  .mag-fav {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    flex: none;
+    border-radius: 2px;
+    object-fit: cover;
+  }
+
+  .mag-fav-fallback {
+    width: 10px;
+    height: 10px;
+    background: linear-gradient(135deg, var(--mag-purple), var(--mag-cyan));
+  }
+
+  // ---- Exercise severity ----
+  .mag-sev {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .mag-sev-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .mag-sev-head {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  .mag-sev-name {
+    min-width: 0;
+    flex: 1;
+    color: var(--fg-1);
+    font-size: 13px;
+  }
+
+  .mag-sev-name a {
+    color: inherit;
+    text-decoration: none;
+
+    &:hover { color: var(--mag-purple); }
+  }
+
+  .mag-sev-days {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .mag-sev-bar {
+    overflow: hidden;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--bg-3);
+  }
+
+  .mag-sev-fill {
+    height: 100%;
+    border-radius: 2px;
+  }
+
+  .is-sev-danger .mag-sev-days,
+  .is-sev-danger .mag-sev-fill { color: var(--danger); }
+
+  .is-sev-danger .mag-sev-fill {
+    background: var(--danger);
+    box-shadow: 0 0 8px var(--danger);
+  }
+
+  .is-sev-warn .mag-sev-days,
+  .is-sev-warn .mag-sev-fill { color: var(--warn); }
+
+  .is-sev-warn .mag-sev-fill {
+    background: var(--warn);
+    box-shadow: 0 0 8px var(--warn);
+  }
+
+  .is-sev-ok .mag-sev-days,
+  .is-sev-ok .mag-sev-fill { color: var(--mag-cyan); }
+
+  .is-sev-ok .mag-sev-fill {
+    background: var(--mag-cyan);
+    box-shadow: 0 0 8px var(--mag-cyan);
+  }
+
+  // ---- Calendar loading state ----
+  .mag-cal-state {
+    color: var(--fg-3);
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+
+  // ---- Graceful degradation ----
+  // README spec: collapse multi-column layouts to single column below 1024px.
+  // This is a graceful-degradation pass (option B), not a designed mobile layout.
+  @media (width <= 1024px) {
+    .mag-body { padding: 32px 24px 24px; }
+
+    .mag-columns {
+      gap: 16px;
+      grid-template-columns: 1fr;
+    }
+
+    .mag-classifieds {
+      column-count: 2;
+    }
+
+    .mag-hero-overlay { padding: 24px 32px; }
+
+    .mag-masthead { font-size: 44px; }
+  }
+
+  @media (width <= 900px) {
+    .mag-classifieds {
+      column-count: 1;
     }
   }
 
-  #important-tasks {
-    // Remove border from last list item (matches album song list removing last row border)
-    .list-group-item:last-child {
-      border-bottom: none;
-    }
+  @media (width <= 768px) {
+    .mag-hero { height: 320px; }
+    .mag-masthead { font-size: 36px; }
+    .mag-hero-overlay { padding: 20px; }
+    .mag-pull-quote { font-size: 22px; }
+    .mag-lede { font-size: 22px; }
   }
-
-  .card-title {
-    color: var(--accent);
-    font-size: 1.2rem;
-
-    a {
-      color: var(--accent);
-    }
-  }
-
-  li.list-group-item-secondary {
-    background-color: var(--bg-1);
-  }
-
-
-  .progress-circle {
-    circle.circle-partial {
-      stroke: var(--drill-progress-circle-partial);
-    }
-
-    circle.circle-full {
-      stroke: var(--drill-progress-circle-full);
-    }
-
-    text {
-      fill: var(--accent);
-    }
-  }
-}
-
-// Homepage favicon
-.homepage-favicon {
-  margin-top: 0.5rem;
-}
-
-// Homepage modal overlay
-.homepage-modal-overlay {
-  background-color: rgb(0 0 0 / 50%);
 }

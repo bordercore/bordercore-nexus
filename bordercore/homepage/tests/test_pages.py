@@ -13,9 +13,8 @@ pytestmark = [pytest.mark.functional]
 
 @pytest.mark.parametrize("login", [reverse("homepage:homepage")], indirect=True)
 def test_homepage(bookmark, question, todo, login, live_server, browser, settings):
-    """
-    Test the homepage for a user with all fixtures
-    """
+    """Magazine homepage with fixtures: tasks render in the front-page column,
+    recent bookmarks render in the classifieds rail."""
 
     settings.DEBUG = True
 
@@ -23,21 +22,17 @@ def test_homepage(bookmark, question, todo, login, live_server, browser, setting
 
     assert page.title_value() == "Bordercore"
 
-    # There should be two important todo tasks
+    # Two high-priority tasks from fixtures
     assert page.todo_count() == 2
 
-    # There should be two recent untagged bookmarks
+    # Two recent untagged bookmarks from fixtures
     assert page.bookmarks_count() == 2
-
-    # There should be one pinned bookmark
-    assert page.pinned_bookmarks_count() == 1
 
 
 @pytest.mark.parametrize("login", [reverse("homepage:homepage")], indirect=True)
 def test_homepage_no_fixtures(login, live_server, browser, settings):
-    """
-    Test the homepage for a user with no fixtures
-    """
+    """Magazine homepage with no fixtures: empty states render in place of the
+    tasks list and the classifieds rail."""
 
     settings.DEBUG = True
 
@@ -45,14 +40,9 @@ def test_homepage_no_fixtures(login, live_server, browser, settings):
 
     assert page.title_value() == "Bordercore"
 
-    # There should be no important todo tasks, just an "All done!" message
-    assert page.todo_count() == 1
+    # No tasks: zero task rows, "all clear" empty state visible.
+    assert page.todo_count() == 0
+    assert page.todo_empty_text() == "All clear — no high-priority tasks."
 
-    # The lone todo item should say "All done!"
-    assert page.todo_item(0) == "All done!"
-
-    # There should be no recent untagged bookmarks
+    # No recent bookmarks
     assert page.bookmarks_count() == 0
-
-    # There should be no pinned bookmarks
-    assert page.pinned_bookmarks_count() == 0

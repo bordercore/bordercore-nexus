@@ -31,46 +31,26 @@ class LoginPage:
 
 
 class HomePage:
+    """Page object for the Magazine-style homepage."""
 
-    RECENT_BOOKMARKS = (By.CSS_SELECTOR, "ul#recent-bookmarks li")
-    PINNED_BOOKMARKS = (By.CSS_SELECTOR, "li[id='pinned-bookmarks']")
     TITLE = (By.TAG_NAME, "title")
-    TODO = (By.CSS_SELECTOR, "ul#important-tasks li")
+    TASKS = (By.CSS_SELECTOR, ".mag-tasks .mag-task")
+    TASKS_EMPTY = (By.CSS_SELECTOR, ".mag-section .mag-empty")
+    RECENT_BOOKMARKS = (By.CSS_SELECTOR, ".mag-classifieds .mag-bm-row")
 
     def __init__(self, browser):
         self.browser = browser
 
     def title_value(self):
-        """
-        Find the value of the title element
-        """
-        search_input = self.browser.find_element(*self.TITLE)
-        return search_input.get_attribute("innerHTML")
+        return self.browser.find_element(*self.TITLE).get_attribute("innerHTML")
 
     def todo_count(self):
-        """
-        Find all important todo tasks
-        """
-        todo_elements = self.browser.find_elements(*self.TODO)
-        return len(todo_elements)
+        return len(self.browser.find_elements(*self.TASKS))
 
-    def todo_item(self, item_position):
-        """
-        Get the todo item at the specified position
-        """
-        todo_elements = self.browser.find_elements(*self.TODO)
-        return todo_elements[item_position].get_attribute("innerHTML")
+    def todo_empty_text(self):
+        """Return the text of the tasks empty-state element, or None if not present."""
+        elements = self.browser.find_elements(*self.TASKS_EMPTY)
+        return elements[0].text if elements else None
 
     def bookmarks_count(self):
-        """
-        Find all recent bookmarks
-        """
-        bookmarks_elements = self.browser.find_elements(*self.RECENT_BOOKMARKS)
-        return len(bookmarks_elements)
-
-    def pinned_bookmarks_count(self):
-        """
-        Find all pinned bookmarks
-        """
-        pinned_bookmarks_elements = self.browser.find_elements(*self.PINNED_BOOKMARKS)
-        return len(pinned_bookmarks_elements)
+        return len(self.browser.find_elements(*self.RECENT_BOOKMARKS))
