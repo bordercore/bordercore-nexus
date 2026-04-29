@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowUpRightFromSquare, faTags } from "@fortawesome/free-solid-svg-icons";
 import { TagsInput, TagsInputHandle } from "../common/TagsInput";
 import { ToggleSwitch } from "../common/ToggleSwitch";
-import { doGet } from "../utils/reactUtils";
+import { doGet, getCsrfToken } from "../utils/reactUtils";
 import { tagStyle } from "../utils/tagColors";
 import { BookmarkMetaStrip } from "./BookmarkMetaStrip";
 import type { BackReference, RelatedNode } from "./types";
@@ -20,7 +20,6 @@ interface FormField {
 interface BookmarkEditPageProps {
   uuid: string;
   formAction: string;
-  csrfToken: string;
   thumbnailUrl?: string;
   faviconImgUrl?: string;
   bookmarkName: string;
@@ -55,7 +54,6 @@ function getField(fields: FormField[], name: string): FormField | undefined {
 export function BookmarkEditPage({
   uuid,
   formAction,
-  csrfToken,
   thumbnailUrl,
   faviconImgUrl,
   bookmarkName,
@@ -245,8 +243,14 @@ export function BookmarkEditPage({
               action={formAction}
               method="post"
               aria-label="edit bookmark"
+              onSubmit={e => {
+                const tokenInput = e.currentTarget.querySelector<HTMLInputElement>(
+                  'input[name="csrfmiddlewaretoken"]'
+                );
+                if (tokenInput) tokenInput.value = getCsrfToken();
+              }}
             >
-              <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken} />
+              <input type="hidden" name="csrfmiddlewaretoken" defaultValue={getCsrfToken()} />
 
               <div className="refined-field">
                 <label htmlFor="id_url">url</label>

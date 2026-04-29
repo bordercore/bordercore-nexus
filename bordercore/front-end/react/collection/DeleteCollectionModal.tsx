@@ -1,5 +1,6 @@
 import React, { useRef, useImperativeHandle, forwardRef } from "react";
 import { Modal } from "bootstrap";
+import { getCsrfToken } from "../utils/reactUtils";
 
 export interface DeleteCollectionModalHandle {
   openModal: () => void;
@@ -7,13 +8,12 @@ export interface DeleteCollectionModalHandle {
 
 interface DeleteCollectionModalProps {
   deleteUrl: string;
-  csrfToken: string;
 }
 
 export const DeleteCollectionModal = forwardRef<
   DeleteCollectionModalHandle,
   DeleteCollectionModalProps
->(function DeleteCollectionModal({ deleteUrl, csrfToken }, ref) {
+>(function DeleteCollectionModal({ deleteUrl }, ref) {
   const modalRef = useRef<HTMLDivElement>(null);
   const modalInstanceRef = useRef<Modal | null>(null);
 
@@ -37,8 +37,17 @@ export const DeleteCollectionModal = forwardRef<
     >
       <div className="modal-dialog" role="document">
         <div className="modal-content">
-          <form action={deleteUrl} method="post">
-            <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken} />
+          <form
+            action={deleteUrl}
+            method="post"
+            onSubmit={e => {
+              const tokenInput = e.currentTarget.querySelector<HTMLInputElement>(
+                'input[name="csrfmiddlewaretoken"]'
+              );
+              if (tokenInput) tokenInput.value = getCsrfToken();
+            }}
+          >
+            <input type="hidden" name="csrfmiddlewaretoken" defaultValue={getCsrfToken()} />
             <div className="modal-header">
               <h4 className="modal-title" id="deleteModalLabel">
                 Delete Collection

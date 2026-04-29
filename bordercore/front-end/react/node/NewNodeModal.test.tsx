@@ -9,7 +9,6 @@ function baseProps(overrides: Partial<React.ComponentProps<typeof NewNodeModal>>
     open: true,
     onClose: vi.fn(),
     createUrl: "/node/create/",
-    csrfToken: "csrf-token-123",
     ...overrides,
   };
 }
@@ -21,10 +20,12 @@ let submitSpy: ReturnType<typeof vi.spyOn>;
 
 beforeEach(() => {
   submitSpy = vi.spyOn(HTMLFormElement.prototype, "submit").mockImplementation(() => {});
+  document.cookie = "csrftoken=csrf-token-123";
 });
 
 afterEach(() => {
   submitSpy.mockRestore();
+  document.cookie = "csrftoken=; expires=Thu, 01 Jan 1970 00:00:00 GMT";
 });
 
 describe("NewNodeModal", () => {

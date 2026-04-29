@@ -30,7 +30,6 @@ if (container) {
     | "Create"
     | "Update";
   const formAction = container.getAttribute("data-form-action") || "";
-  const csrfToken = container.getAttribute("data-csrf-token") || "";
   const thumbnailUrl = container.getAttribute("data-thumbnail-url") || undefined;
   const bookmarkName = container.getAttribute("data-bookmark-name") || undefined;
 
@@ -103,7 +102,6 @@ if (container) {
       uuid={uuid}
       action={action}
       formAction={formAction}
-      csrfToken={csrfToken}
       thumbnailUrl={thumbnailUrl}
       faviconHtml={faviconHtml}
       bookmarkName={bookmarkName}

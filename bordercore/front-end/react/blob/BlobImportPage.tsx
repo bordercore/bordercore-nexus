@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
+import { getCsrfToken } from "../utils/reactUtils";
 
 interface Message {
   body: string;
@@ -11,7 +12,6 @@ interface Message {
 interface BlobImportPageProps {
   staticUrl: string;
   importUrl: string;
-  csrfToken: string;
   messages: Message[];
   initialUrl?: string;
 }
@@ -19,7 +19,6 @@ interface BlobImportPageProps {
 export function BlobImportPage({
   staticUrl,
   importUrl,
-  csrfToken,
   messages,
   initialUrl = "",
 }: BlobImportPageProps) {
@@ -30,12 +29,17 @@ export function BlobImportPage({
     urlInputRef.current?.focus();
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     const url = urlInputRef.current?.value || "";
     if (url === "") {
       e.preventDefault();
       return;
     }
+    // Refresh CSRF token from cookie at submit time so it matches the live cookie
+    const tokenInput = e.currentTarget.querySelector<HTMLInputElement>(
+      'input[name="csrfmiddlewaretoken"]'
+    );
+    if (tokenInput) tokenInput.value = getCsrfToken();
     setIsProcessing(true);
     // Form submits naturally - no preventDefault
   };
@@ -120,7 +124,7 @@ export function BlobImportPage({
 
             <div className="w-100">
               <form id="import-blob-form" method="post" action={importUrl} onSubmit={handleSubmit}>
-                <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken} />
+                <input type="hidden" name="csrfmiddlewaretoken" defaultValue={getCsrfToken()} />
 
                 <div className="row">
                   <h3 className="col-lg-12 mb-4">

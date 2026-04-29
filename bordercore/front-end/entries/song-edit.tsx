@@ -24,11 +24,7 @@ if (container) {
     }
   }
 
-  // Get CSRF token from BASE_TEMPLATE_DATA
-  const data = (window as any).BASE_TEMPLATE_DATA || {};
-  const csrfToken = data.csrfToken || "";
-
-  if (submitUrl && cancelUrl && csrfToken) {
+  if (submitUrl && cancelUrl) {
     const root = createRoot(container);
     root.render(
       <SongEditPage
@@ -36,7 +32,6 @@ if (container) {
         submitUrl={submitUrl}
         cancelUrl={cancelUrl}
         returnUrl={returnUrl}
-        csrfToken={csrfToken}
         tagSearchUrl={tagSearchUrl}
         artistSearchUrl={artistSearchUrl}
         dupeCheckUrl={dupeCheckUrl}
@@ -45,13 +40,11 @@ if (container) {
     );
   } else {
     console.error(
-      "SongEditPage: Missing required URLs or CSRF token.",
+      "SongEditPage: Missing required URLs.",
       "submitUrl:",
       submitUrl,
       "cancelUrl:",
-      cancelUrl,
-      "csrfToken:",
-      csrfToken ? "present" : "missing"
+      cancelUrl
     );
   }
 }

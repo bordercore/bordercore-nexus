@@ -100,7 +100,6 @@ if (container) {
   const fileSize = container.dataset.fileSize || undefined;
   const durationLabel = container.dataset.duration || undefined;
   const isBook = container.dataset.isBook === "true";
-  const csrfToken = container.dataset.csrfToken || "";
 
   const urls = {
     submit: container.dataset.submitUrl || "",
@@ -154,7 +153,6 @@ if (container) {
       linkedCollection={linkedCollection}
       collectionInfo={collectionInfo}
       urls={urls}
-      csrfToken={csrfToken}
     />
   );
 }

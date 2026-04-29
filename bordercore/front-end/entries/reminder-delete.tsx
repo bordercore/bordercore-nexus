@@ -10,18 +10,13 @@ if (container) {
   const deleteUrl = container.getAttribute("data-delete-url") || "";
   const cancelUrl = container.getAttribute("data-cancel-url") || "";
 
-  // Fallback to BASE_TEMPLATE_DATA if available
-  const data = (window as any).BASE_TEMPLATE_DATA || {};
-  const finalCsrfToken = data.csrfToken || "";
-
-  if (reminderName && deleteUrl && cancelUrl && finalCsrfToken) {
+  if (reminderName && deleteUrl && cancelUrl) {
     const root = createRoot(container);
     root.render(
       <ReminderDeletePage
         reminderName={reminderName}
         deleteUrl={deleteUrl}
         cancelUrl={cancelUrl}
-        csrfToken={finalCsrfToken}
       />
     );
   } else {
@@ -32,9 +27,7 @@ if (container) {
       "deleteUrl:",
       deleteUrl ? "present" : "missing",
       "cancelUrl:",
-      cancelUrl ? "present" : "missing",
-      "csrfToken:",
-      finalCsrfToken ? "present" : "missing"
+      cancelUrl ? "present" : "missing"
     );
   }
 }

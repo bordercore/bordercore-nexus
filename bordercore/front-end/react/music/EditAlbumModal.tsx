@@ -9,7 +9,6 @@ interface EditAlbumModalProps {
   updateAlbumUrl: string;
   searchArtistsUrl: string;
   searchTagsUrl: string;
-  csrfToken: string;
   onAlbumUpdated?: () => void;
 }
 
@@ -24,15 +23,7 @@ interface ArtistSearchResult {
 
 export const EditAlbumModal = React.forwardRef<EditAlbumModalHandle, EditAlbumModalProps>(
   function EditAlbumModal(
-    {
-      album,
-      initialTags,
-      updateAlbumUrl,
-      searchArtistsUrl,
-      searchTagsUrl,
-      csrfToken,
-      onAlbumUpdated,
-    },
+    { album, initialTags, updateAlbumUrl, searchArtistsUrl, searchTagsUrl, onAlbumUpdated },
     ref
   ) {
     const [title, setTitle] = React.useState(album.title);
@@ -122,9 +113,6 @@ export const EditAlbumModal = React.forwardRef<EditAlbumModalHandle, EditAlbumMo
         }
 
         await axios.post(updateAlbumUrl, formData, {
-          headers: {
-            "X-CSRFToken": csrfToken,
-          },
           withCredentials: true,
         });
 

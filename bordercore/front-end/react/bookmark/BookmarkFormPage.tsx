@@ -4,7 +4,7 @@ import TagsInput, { TagsInputHandle } from "../common/TagsInput";
 import RelatedTags, { RelatedTagsHandle } from "../common/RelatedTags";
 import BackReferences from "../common/BackReferences";
 import ToggleSwitch from "../common/ToggleSwitch";
-import { doGet } from "../utils/reactUtils";
+import { doGet, getCsrfToken } from "../utils/reactUtils";
 import type { BackReference, RelatedNode } from "./types";
 
 interface FormField {
@@ -20,7 +20,6 @@ interface BookmarkFormPageProps {
   uuid?: string;
   action: "Create" | "Update";
   formAction: string;
-  csrfToken: string;
   thumbnailUrl?: string;
   faviconHtml?: string;
   bookmarkName?: string;
@@ -44,7 +43,6 @@ export function BookmarkFormPage({
   uuid,
   action,
   formAction,
-  csrfToken,
   thumbnailUrl,
   faviconHtml,
   bookmarkName,
@@ -240,8 +238,18 @@ export function BookmarkFormPage({
             {bookmarkName || "New Bookmark"}
           </p>
 
-          <form id="bookmark-form" action={formAction} method="post">
-            <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken} />
+          <form
+            id="bookmark-form"
+            action={formAction}
+            method="post"
+            onSubmit={e => {
+              const tokenInput = e.currentTarget.querySelector<HTMLInputElement>(
+                'input[name="csrfmiddlewaretoken"]'
+              );
+              if (tokenInput) tokenInput.value = getCsrfToken();
+            }}
+          >
+            <input type="hidden" name="csrfmiddlewaretoken" defaultValue={getCsrfToken()} />
 
             {fields.map(field => (
               <React.Fragment key={field.name}>

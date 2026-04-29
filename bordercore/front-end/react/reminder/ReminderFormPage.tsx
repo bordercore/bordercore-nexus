@@ -42,7 +42,6 @@ interface ReminderFormPageProps {
   submitUrl: string;
   cancelUrl: string;
   isEdit: boolean;
-  csrfToken: string;
 }
 
 const SCHEDULE_TYPE_CHOICES = [
@@ -66,7 +65,6 @@ export function ReminderFormPage({
   submitUrl,
   cancelUrl,
   isEdit,
-  csrfToken,
 }: ReminderFormPageProps) {
   const [formData, setFormData] = React.useState<ReminderFormData>({
     name: "",
@@ -181,8 +179,8 @@ export function ReminderFormPage({
     setErrors({});
 
     try {
+      // axios automatically injects X-CSRFToken from the csrftoken cookie.
       const formDataToSend = new URLSearchParams();
-      formDataToSend.append("csrfmiddlewaretoken", csrfToken);
       formDataToSend.append("name", formData.name);
       formDataToSend.append("note", formData.note || "");
       formDataToSend.append("is_active", formData.is_active ? "true" : "false");
@@ -207,7 +205,6 @@ export function ReminderFormPage({
 
       const response = await axios.post(submitUrl, formDataToSend, {
         headers: {
-          "X-CSRFToken": csrfToken,
           "Content-Type": "application/x-www-form-urlencoded",
         },
         withCredentials: true,

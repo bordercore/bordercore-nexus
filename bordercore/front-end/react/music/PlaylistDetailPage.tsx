@@ -24,7 +24,6 @@ interface PlaylistDetailPageProps {
   playlist: PlaylistDetail;
   urls: PlaylistDetailUrls;
   staticUrl: string;
-  csrfToken: string;
 }
 
 // Helper to pluralize "song"
@@ -32,12 +31,7 @@ function pluralize(word: string, count: number): string {
   return count === 1 ? word : `${word}s`;
 }
 
-export function PlaylistDetailPage({
-  playlist,
-  urls,
-  staticUrl,
-  csrfToken,
-}: PlaylistDetailPageProps) {
+export function PlaylistDetailPage({ playlist, urls, staticUrl }: PlaylistDetailPageProps) {
   const [songs, setSongs] = useState<PlaylistSong[]>([]);
   const [totalTime, setTotalTime] = useState<string>("");
   const [currentSongUuid, setCurrentSongUuid] = useState<string | null>(null);
@@ -138,7 +132,6 @@ export function PlaylistDetailPage({
       trackList: songs,
       songUrl: urls.songMedia,
       markListenedToUrl: urls.markListenedTo,
-      csrfToken: csrfToken,
     });
     setCurrentSongUuid(song.uuid);
   };
@@ -150,9 +143,6 @@ export function PlaylistDetailPage({
         playlistItemUuid
       );
       await axios.delete(deleteUrl, {
-        headers: {
-          "X-CSRFToken": csrfToken,
-        },
         withCredentials: true,
       });
 
@@ -179,7 +169,6 @@ export function PlaylistDetailPage({
 
       await axios.post(urls.sortPlaylist, formData, {
         headers: {
-          "X-CSRFToken": csrfToken,
           "Content-Type": "application/x-www-form-urlencoded",
         },
         withCredentials: true,
@@ -202,7 +191,6 @@ export function PlaylistDetailPage({
 
       await axios.post(urls.deletePlaylist, formData, {
         headers: {
-          "X-CSRFToken": csrfToken,
           "Content-Type": "application/x-www-form-urlencoded",
         },
         withCredentials: true,
@@ -374,7 +362,6 @@ export function PlaylistDetailPage({
           playlist={playlist}
           updatePlaylistUrl={urls.updatePlaylist}
           tagSearchUrl={urls.tagSearch}
-          csrfToken={csrfToken}
         />
       </div>
       <DragOverlay>

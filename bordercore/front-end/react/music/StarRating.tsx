@@ -7,7 +7,6 @@ interface StarRatingProps {
   songUuid: string;
   rating: number | null;
   setSongRatingUrl: string;
-  csrfToken: string;
   onRatingChange: (songUuid: string, newRating: number | null) => void;
 }
 
@@ -15,7 +14,6 @@ export function StarRating({
   songUuid,
   rating,
   setSongRatingUrl,
-  csrfToken,
   onRatingChange,
 }: StarRatingProps) {
   const [hoverRating, setHoverRating] = useState<number | null>(null);
@@ -50,7 +48,6 @@ export function StarRating({
 
       await axios.post(setSongRatingUrl, params, {
         headers: {
-          "X-CSRFToken": csrfToken,
           "Content-Type": "application/x-www-form-urlencoded",
         },
         withCredentials: true,

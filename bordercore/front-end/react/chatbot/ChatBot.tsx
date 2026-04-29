@@ -13,13 +13,13 @@ import { MessageList } from "./MessageList";
 import { ChatInput } from "./ChatInput";
 import { loadUiState, saveUiState } from "./storage";
 import type { ChatMessage, ChatMode } from "./types";
+import { getCsrfToken } from "../utils/reactUtils";
 
 interface ChatBotProps {
   blobUuid?: string;
   chatUrl: string;
   followupsUrl: string;
   saveAsNoteUrl: string;
-  csrfToken: string;
 }
 
 export interface ChatBotHandle {
@@ -33,7 +33,7 @@ const SYSTEM_MESSAGE: ChatMessage = {
 };
 
 export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
-  { blobUuid = "", chatUrl, followupsUrl, saveAsNoteUrl, csrfToken },
+  { blobUuid = "", chatUrl, followupsUrl, saveAsNoteUrl },
   ref
 ) {
   const initialUi = loadUiState();
@@ -121,7 +121,7 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
       try {
         const resp = await fetch(chatUrl, {
           method: "POST",
-          headers: { "X-Csrftoken": csrfToken },
+          headers: { "X-Csrftoken": getCsrfToken() },
           body: formData,
           signal: controller.signal,
         });
@@ -150,7 +150,7 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "X-Csrftoken": csrfToken,
+              "X-Csrftoken": getCsrfToken(),
             },
             body: JSON.stringify({ assistant_reply: assembledReply, mode: nextMode }),
           })
@@ -167,7 +167,7 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
         abortRef.current = null;
       }
     },
-    [history, mode, blobUuid, chatUrl, followupsUrl, csrfToken]
+    [history, mode, blobUuid, chatUrl, followupsUrl]
   );
 
   // Listen to EventBus for Alt-C and external triggers.
@@ -230,7 +230,7 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "X-Csrftoken": csrfToken,
+            "X-Csrftoken": getCsrfToken(),
           },
           body: JSON.stringify({
             title: data.title,
@@ -249,7 +249,7 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
         setSaveFormOpenForId(null);
       }
     },
-    [history, saveFormOpenForId, saveAsNoteUrl, csrfToken]
+    [history, saveFormOpenForId, saveAsNoteUrl]
   );
 
   if (!show) return null;

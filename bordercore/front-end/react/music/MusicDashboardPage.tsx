@@ -17,7 +17,6 @@ export function MusicDashboardPage({
   initialPaginator,
   urls,
   imagesUrl,
-  csrfToken,
 }: MusicDashboardProps) {
   const [recentAlbums, setRecentAlbums] = React.useState<RecentAlbum[]>(initialRecentAlbums);
   const [paginator, setPaginator] = React.useState<PaginatorInfo>(initialPaginator);
@@ -99,7 +98,6 @@ export function MusicDashboardPage({
         ref={createPlaylistModalRef}
         createPlaylistUrl={urls.createPlaylist}
         tagSearchUrl={urls.tagSearch}
-        csrfToken={csrfToken}
       />
     </div>
   );

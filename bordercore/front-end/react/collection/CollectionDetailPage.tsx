@@ -35,7 +35,6 @@ interface CollectionDetailPageProps {
   objectTags: ObjectTag[];
   initialTags: string[];
   urls: CollectionDetailUrls;
-  csrfToken: string;
   tagSearchUrl: string;
   selectedTag: string | null;
 }
@@ -45,7 +44,6 @@ export function CollectionDetailPage({
   objectTags,
   initialTags,
   urls,
-  csrfToken,
   tagSearchUrl,
   selectedTag: initialSelectedTag,
 }: CollectionDetailPageProps) {
@@ -113,11 +111,7 @@ export function CollectionDetailPage({
       formData.append("collection_uuid", collection.uuid);
       formData.append("object_uuid", uuid);
 
-      await axios.post(urls.removeObject, formData, {
-        headers: {
-          "X-CSRFToken": csrfToken,
-        },
-      });
+      await axios.post(urls.removeObject, formData);
       fetchObjectList();
     } catch (error) {
       console.error("Error removing object:", error);
@@ -132,11 +126,7 @@ export function CollectionDetailPage({
       formData.append("object_uuid", objectUuid);
       formData.append("new_position", String(newPosition));
 
-      await axios.post(urls.sortObjects, formData, {
-        headers: {
-          "X-CSRFToken": csrfToken,
-        },
-      });
+      await axios.post(urls.sortObjects, formData);
       fetchObjectList();
     } catch (error) {
       console.error("Error reordering:", error);
@@ -160,7 +150,6 @@ export function CollectionDetailPage({
       const response = await axios.post(urls.createBlob, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
-          "X-CSRFToken": csrfToken,
         },
       });
 
@@ -570,15 +559,10 @@ export function CollectionDetailPage({
         initialTags={initialTags}
         updateUrl={urls.updateCollection}
         tagSearchUrl={tagSearchUrl}
-        csrfToken={csrfToken}
       />
 
       {/* Delete Modal */}
-      <DeleteCollectionModal
-        ref={deleteModalRef}
-        deleteUrl={urls.deleteCollection}
-        csrfToken={csrfToken}
-      />
+      <DeleteCollectionModal ref={deleteModalRef} deleteUrl={urls.deleteCollection} />
 
       {/* Slideshow Modal */}
       <SlideShowModal

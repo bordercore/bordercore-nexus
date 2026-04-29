@@ -45,7 +45,6 @@ if (container) {
   };
 
   const imagesUrl = container.dataset.imagesUrl || "";
-  const csrfToken = container.dataset.csrfToken || "";
 
   // Validate required data
   if (collectionIsNotEmpty) {
@@ -60,7 +59,6 @@ if (container) {
         collectionIsNotEmpty={collectionIsNotEmpty}
         urls={urls}
         imagesUrl={imagesUrl}
-        csrfToken={csrfToken}
       />
     );
   }

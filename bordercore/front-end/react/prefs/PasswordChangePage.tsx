@@ -9,7 +9,6 @@ import Toggle from "./components/Toggle";
 
 export interface PasswordChangePageProps {
   formAction: string;
-  csrfToken: string;
   prefsUrl: string;
   passwordUrl: string;
   username: string;
@@ -44,7 +43,6 @@ function formatRelative(iso: string): string {
 
 export function PasswordChangePage({
   formAction,
-  csrfToken,
   prefsUrl,
   passwordUrl,
   username,
@@ -95,7 +93,7 @@ export function PasswordChangePage({
       try {
         const url = sessionsRevokeUrlTemplate.replace("00000000-0000-0000-0000-000000000000", uuid);
         await axios.post(url, null, {
-          headers: { "X-CSRFToken": csrfToken, "X-Requested-With": "XMLHttpRequest" },
+          headers: { "X-Requested-With": "XMLHttpRequest" },
           withCredentials: true,
         });
         setSessions(prev => prev.filter(s => s.uuid !== uuid));
@@ -105,7 +103,7 @@ export function PasswordChangePage({
         setRevoking(null);
       }
     },
-    [csrfToken, sessionsRevokeUrlTemplate]
+    [sessionsRevokeUrlTemplate]
   );
 
   const submit = useCallback(async () => {
@@ -114,15 +112,15 @@ export function PasswordChangePage({
     setErrors({});
     setSuccess(false);
 
+    // axios automatically injects X-CSRFToken from the csrftoken cookie.
     const form = new FormData();
-    form.append("csrfmiddlewaretoken", csrfToken);
     form.append("old_password", current);
     form.append("new_password1", next);
     form.append("new_password2", confirm);
 
     try {
       const resp = await axios.post(formAction, form, {
-        headers: { "X-CSRFToken": csrfToken, "X-Requested-With": "XMLHttpRequest" },
+        headers: { "X-Requested-With": "XMLHttpRequest" },
         withCredentials: true,
         maxRedirects: 0,
         validateStatus: s => s < 500,
@@ -150,7 +148,7 @@ export function PasswordChangePage({
     } finally {
       setSaving(false);
     }
-  }, [canSubmit, confirm, csrfToken, current, formAction, next]);
+  }, [canSubmit, confirm, current, formAction, next]);
 
   return (
     <div className="prefs-app">

@@ -54,7 +54,6 @@ document.addEventListener("DOMContentLoaded", () => {
       editRelatedObjectNote: rootElement.dataset.editRelatedObjectNoteUrl || "",
       searchNames: rootElement.dataset.searchNamesUrl || "",
     },
-    csrfToken: rootElement.dataset.csrfToken || "",
     returnUrl: rootElement.dataset.returnUrl || "",
   };
 

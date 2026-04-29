@@ -45,7 +45,6 @@
      data-music-list-url="{% url 'music:list' %}"
      data-artist-detail-url="{% url 'music:artist_detail' object.artist.uuid %}"
      data-static-url="{{ STATIC_URL }}"
-     data-csrf-token="{{ csrf_token }}"
      data-default-playlist="{{ request.session.music_playlist|default:'' }}">
 </div>
 {% endblock %}

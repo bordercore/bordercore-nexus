@@ -28,7 +28,6 @@ if (container) {
 
   const imagesUrl = container.dataset.imagesUrl || "";
   const staticUrl = container.dataset.staticUrl || "";
-  const csrfToken = container.dataset.csrfToken || "";
   const defaultPlaylist = container.dataset.defaultPlaylist || "";
   const hasArtistImage = container.dataset.hasArtistImage === "true";
 
@@ -45,7 +44,6 @@ if (container) {
         urls={urls}
         imagesUrl={imagesUrl}
         staticUrl={staticUrl}
-        csrfToken={csrfToken}
         defaultPlaylist={defaultPlaylist}
         hasArtistImage={hasArtistImage}
       />

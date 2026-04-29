@@ -7,7 +7,7 @@ import { ToggleSwitch } from "../common/ToggleSwitch";
 import { MarkdownEditor, MarkdownEditorHandle } from "../blob/MarkdownEditor";
 import RelatedObjects, { RelatedObjectsHandle } from "../common/RelatedObjects";
 import ObjectSelectModal, { ObjectSelectModalHandle } from "../common/ObjectSelectModal";
-import { doPost } from "../utils/reactUtils";
+import { doPost, getCsrfToken } from "../utils/reactUtils";
 
 interface RecentTag {
   name: string;
@@ -44,7 +44,6 @@ interface DrillQuestionEditPageProps {
     editRelatedObjectNote: string;
     searchNames: string;
   };
-  csrfToken: string;
   returnUrl: string;
 }
 
@@ -58,7 +57,6 @@ export function DrillQuestionEditPage({
   recentTags,
   errors,
   urls,
-  csrfToken,
   returnUrl,
 }: DrillQuestionEditPageProps) {
   const [isReversible, setIsReversible] = useState(initialIsReversible);
@@ -139,6 +137,10 @@ export function DrillQuestionEditPage({
     if (answerInput) answerInput.value = answerValue;
     if (tagsInput) tagsInput.value = tagsValue;
 
+    // Refresh CSRF token from cookie at submit time so it matches the live cookie
+    const tokenInput = form.querySelector('input[name="csrfmiddlewaretoken"]') as HTMLInputElement;
+    if (tokenInput) tokenInput.value = getCsrfToken();
+
     // Submit the form
     form.submit();
   }, []);
@@ -147,6 +149,10 @@ export function DrillQuestionEditPage({
   const handleDelete = useCallback(() => {
     const form = formRef.current;
     if (!form || !urls.delete) return;
+
+    // Refresh CSRF token from cookie at submit time so it matches the live cookie
+    const tokenInput = form.querySelector('input[name="csrfmiddlewaretoken"]') as HTMLInputElement;
+    if (tokenInput) tokenInput.value = getCsrfToken();
 
     form.action = urls.delete;
     form.submit();
@@ -206,7 +212,7 @@ export function DrillQuestionEditPage({
             method="post"
             className="d-flex flex-column h-100"
           >
-            <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken} />
+            <input type="hidden" name="csrfmiddlewaretoken" defaultValue={getCsrfToken()} />
             <input type="hidden" name="question" />
             <input type="hidden" name="answer" />
             <input type="hidden" name="tags" />

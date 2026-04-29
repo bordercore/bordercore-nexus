@@ -15,7 +15,6 @@
             data-initial-username="{% firstof request.POST.username request.COOKIES.bordercore_username '' %}"
             data-login-url="{% url 'accounts:login' %}"
             data-next-url="{% firstof next '/' %}"
-            data-csrf-token="{{ csrf_token }}"
         ></div>
         {% vite_asset "dist/js/login" %}
     </body>

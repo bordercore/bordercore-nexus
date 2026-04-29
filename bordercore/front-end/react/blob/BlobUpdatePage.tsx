@@ -104,7 +104,6 @@ interface BlobUpdatePageProps {
     delete?: string;
     download?: string;
   };
-  csrfToken: string;
 }
 
 export function BlobUpdatePage({
@@ -136,7 +135,6 @@ export function BlobUpdatePage({
   linkedCollection,
   collectionInfo,
   urls,
-  csrfToken,
 }: BlobUpdatePageProps) {
   const mode: "edit" | "create" = blobUuid ? "edit" : "create";
 
@@ -180,8 +178,8 @@ export function BlobUpdatePage({
       modal.show();
     }
 
+    // axios automatically injects X-CSRFToken from the csrftoken cookie.
     const formData = new FormData();
-    formData.append("csrfmiddlewaretoken", csrfToken);
     formData.append("name", name);
     formData.append("date", date);
     formData.append("content", mdEditorRef.current?.getValue() || "");
@@ -231,7 +229,6 @@ export function BlobUpdatePage({
         });
       });
   }, [
-    csrfToken,
     name,
     date,
     note,

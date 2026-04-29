@@ -21,7 +21,6 @@ if (container) {
     <BlobImportPage
       staticUrl={container.dataset.staticUrl || ""}
       importUrl={container.dataset.importUrl || ""}
-      csrfToken={container.dataset.csrfToken || ""}
       messages={messages}
       initialUrl={container.dataset.initialUrl || ""}
     />

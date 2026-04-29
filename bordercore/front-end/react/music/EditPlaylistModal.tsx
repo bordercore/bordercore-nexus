@@ -10,7 +10,6 @@ interface EditPlaylistModalProps {
   playlist: PlaylistDetail;
   updatePlaylistUrl: string;
   tagSearchUrl: string;
-  csrfToken: string;
   onPlaylistUpdated?: () => void;
 }
 
@@ -40,7 +39,7 @@ const SIZE_OPTIONS = [
 
 export const EditPlaylistModal = forwardRef<EditPlaylistModalHandle, EditPlaylistModalProps>(
   function EditPlaylistModal(
-    { playlist, updatePlaylistUrl, tagSearchUrl, csrfToken, onPlaylistUpdated },
+    { playlist, updatePlaylistUrl, tagSearchUrl, onPlaylistUpdated },
     ref
   ) {
     const [isOpen, setIsOpen] = useState(false);
@@ -150,7 +149,6 @@ export const EditPlaylistModal = forwardRef<EditPlaylistModalHandle, EditPlaylis
 
         await axios.post(updatePlaylistUrl, formData, {
           headers: {
-            "X-CSRFToken": csrfToken,
             "Content-Type": "application/x-www-form-urlencoded",
           },
           withCredentials: true,

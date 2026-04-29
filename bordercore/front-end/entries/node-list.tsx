@@ -16,15 +16,12 @@ if (container) {
     console.error("Error parsing node list:", e);
   }
 
-  const csrfToken = window.BASE_TEMPLATE_DATA?.csrfToken || "";
-
   const root = createRoot(container);
   root.render(
     <NodeListPage
       nodes={nodeList}
       createUrl={createUrl}
       detailUrl={detailUrl}
-      csrfToken={csrfToken}
     />
   );
 }

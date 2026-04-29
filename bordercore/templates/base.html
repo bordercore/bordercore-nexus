@@ -108,7 +108,6 @@
                 // Pass data to React components via window object
                 window.BASE_TEMPLATE_DATA = {
                     staticUrl: "{{ STATIC_URL }}",
-                    csrfToken: "{{ csrf_token }}",
                     initialSidebarCollapsed: {% if request.session.show_sidebar == "false" %}true{% else %}false{% endif %},
                     initialSidebarOrder: {{ user.userprofile.sidebar_order_json|safe }},
                     failedTestCount: {{ failed_test_count }},
@@ -165,7 +164,6 @@
                         chatUrl: "{% url 'blob:chat' %}",
                         followupsUrl: "{% url 'blob:chat_followups' %}",
                         saveAsNoteUrl: "{% url 'blob:chat_save_as_note' %}",
-                        csrfToken: "{{ csrf_token }}",
                     },
                     overdueTasksConfig: {
                         rescheduleTaskUrl: "{% url 'todo:snooze_task' %}",

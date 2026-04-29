@@ -30,7 +30,6 @@ if (container) {
   };
 
   const staticUrl = container.dataset.staticUrl || "";
-  const csrfToken = container.dataset.csrfToken || "";
   const defaultPlaylist = container.dataset.defaultPlaylist || "";
 
   // Validate required data
@@ -44,7 +43,6 @@ if (container) {
         playlists={playlists}
         urls={urls}
         staticUrl={staticUrl}
-        csrfToken={csrfToken}
         defaultPlaylist={defaultPlaylist}
       />
     );

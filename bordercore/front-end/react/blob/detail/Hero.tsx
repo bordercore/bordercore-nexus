@@ -67,7 +67,6 @@ export function Hero({ blob, urls, isPinnedNote, onPinToggle, onTitleSaved }: He
       trackList: [track],
       songUrl: "",
       markListenedToUrl: "",
-      csrfToken: (window as any).BASE_TEMPLATE_DATA?.csrfToken || "",
     });
   }, [blob.uuid, blob.name, blob.fileUrl]);
 

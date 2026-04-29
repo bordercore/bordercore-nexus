@@ -21,7 +21,6 @@
         data-duration="{{ duration_label|default:'' }}"
         data-date-format="{{ date_format|default:'standard' }}"
         data-is-book="{{ is_book|yesno:'true,false'|default:'false' }}"
-        data-csrf-token="{{ csrf_token }}"
         data-submit-url="{{ request.path }}"
         data-tag-search-url="{% url 'tag:search' %}?query="
         data-metadata-name-search-url="{% url 'blob:metadata_name_search' %}?query="

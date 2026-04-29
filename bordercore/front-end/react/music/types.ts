@@ -65,7 +65,6 @@ export interface AlbumDetailProps {
   playlists: Playlist[];
   urls: AlbumDetailUrls;
   staticUrl: string;
-  csrfToken: string;
   defaultPlaylist: string;
 }
 
@@ -111,7 +110,6 @@ export interface ArtistDetailProps {
   urls: ArtistDetailUrls;
   imagesUrl: string;
   staticUrl: string;
-  csrfToken: string;
   defaultPlaylist: string;
   hasArtistImage: boolean;
 }
@@ -191,7 +189,6 @@ export interface MusicDashboardProps {
   collectionIsNotEmpty: boolean;
   urls: MusicDashboardUrls;
   imagesUrl: string;
-  csrfToken: string;
 }
 
 // Playlist Detail Page Types
@@ -242,7 +239,6 @@ export interface PlaylistDetailProps {
   playlist: PlaylistDetail;
   urls: PlaylistDetailUrls;
   staticUrl: string;
-  csrfToken: string;
 }
 
 // Tag Search Page Types

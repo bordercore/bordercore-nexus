@@ -29,7 +29,6 @@ interface SongTableProps {
   setSongRatingUrl: string;
   editSongUrlTemplate: string;
   addToPlaylistUrl: string;
-  csrfToken: string;
   playlists: Playlist[];
   onSongClick: (song: Song) => void;
   onRatingChange: (songUuid: string, newRating: number | null) => void;
@@ -44,7 +43,6 @@ export function SongTable({
   setSongRatingUrl,
   editSongUrlTemplate,
   addToPlaylistUrl,
-  csrfToken,
   playlists,
   onSongClick,
   onRatingChange,
@@ -73,7 +71,6 @@ export function SongTable({
 
       const response = await axios.post(addToPlaylistUrl, params, {
         headers: {
-          "X-CSRFToken": csrfToken,
           "Content-Type": "application/x-www-form-urlencoded",
         },
         withCredentials: true,
@@ -162,7 +159,6 @@ export function SongTable({
                     songUuid={song.uuid}
                     rating={song.rating}
                     setSongRatingUrl={setSongRatingUrl}
-                    csrfToken={csrfToken}
                     onRatingChange={onRatingChange}
                   />
                 </div>

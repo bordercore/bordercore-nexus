@@ -17,14 +17,11 @@ if (container) {
     tagSearch: container.dataset.tagSearchUrl || "",
   };
 
-  const csrfToken = container.dataset.csrfToken || "";
-
   const root = createRoot(container);
   root.render(
     <CollectionListPage
       collections={collections}
       urls={urls}
-      csrfToken={csrfToken}
     />
   );
 }

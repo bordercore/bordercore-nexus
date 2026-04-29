@@ -9,10 +9,9 @@ import DropDownMenu from "../common/DropDownMenu";
 interface CollectionListPageProps {
   collections: Collection[];
   urls: CollectionListUrls;
-  csrfToken: string;
 }
 
-export function CollectionListPage({ collections, urls, csrfToken }: CollectionListPageProps) {
+export function CollectionListPage({ collections, urls }: CollectionListPageProps) {
   const [filter, setFilter] = useState<string>("");
   const [showFilterInput, setShowFilterInput] = useState(false);
   const [filterInputValue, setFilterInputValue] = useState("");
@@ -163,7 +162,6 @@ export function CollectionListPage({ collections, urls, csrfToken }: CollectionL
         ref={createModalRef}
         createUrl={urls.createCollection}
         tagSearchUrl={urls.tagSearch}
-        csrfToken={csrfToken}
       />
     </>
   );

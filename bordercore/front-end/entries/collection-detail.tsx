@@ -35,7 +35,6 @@ if (container) {
     blobDetail: container.dataset.blobDetailUrl || "",
   };
 
-  const csrfToken = container.dataset.csrfToken || "";
   const tagSearchUrl = container.dataset.tagSearchUrl || "";
 
   const root = createRoot(container);
@@ -45,7 +44,6 @@ if (container) {
       objectTags={objectTags}
       initialTags={initialTags}
       urls={urls}
-      csrfToken={csrfToken}
       tagSearchUrl={tagSearchUrl}
       selectedTag={selectedTag}
     />

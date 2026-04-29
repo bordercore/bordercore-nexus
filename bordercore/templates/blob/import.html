@@ -9,7 +9,6 @@
         id="react-root"
         data-static-url="{{ STATIC_URL }}"
         data-import-url="{% url 'blob:import' %}"
-        data-csrf-token="{{ csrf_token }}"
         data-initial-url="{{ request.POST.url }}"
     ></div>
 

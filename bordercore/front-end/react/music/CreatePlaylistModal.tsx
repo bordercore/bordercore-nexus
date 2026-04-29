@@ -3,6 +3,7 @@ import { Modal } from "bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faStar } from "@fortawesome/free-solid-svg-icons";
 import { ToggleSwitch } from "../common/ToggleSwitch";
+import { getCsrfToken } from "../utils/reactUtils";
 
 export interface CreatePlaylistModalHandle {
   openModal: () => void;
@@ -11,7 +12,6 @@ export interface CreatePlaylistModalHandle {
 interface CreatePlaylistModalProps {
   createPlaylistUrl: string;
   tagSearchUrl: string;
-  csrfToken: string;
 }
 
 const sizeOptions = [
@@ -36,7 +36,7 @@ const excludeRecentOptions = [
 export const CreatePlaylistModal = React.forwardRef<
   CreatePlaylistModalHandle,
   CreatePlaylistModalProps
->(function CreatePlaylistModal({ createPlaylistUrl, tagSearchUrl, csrfToken }, ref) {
+>(function CreatePlaylistModal({ createPlaylistUrl, tagSearchUrl }, ref) {
   const [name, setName] = React.useState("");
   const [note, setNote] = React.useState("");
   const [playlistType, setPlaylistType] = React.useState<"manual" | "smart">("manual");
@@ -95,8 +95,17 @@ export const CreatePlaylistModal = React.forwardRef<
     >
       <div className="modal-dialog" role="document">
         <div className="modal-content">
-          <form action={createPlaylistUrl} method="post">
-            <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken} />
+          <form
+            action={createPlaylistUrl}
+            method="post"
+            onSubmit={e => {
+              const tokenInput = e.currentTarget.querySelector<HTMLInputElement>(
+                'input[name="csrfmiddlewaretoken"]'
+              );
+              if (tokenInput) tokenInput.value = getCsrfToken();
+            }}
+          >
+            <input type="hidden" name="csrfmiddlewaretoken" defaultValue={getCsrfToken()} />
             <div className="modal-header">
               <h4 id="myModalLabel" className="modal-title">
                 Create Playlist

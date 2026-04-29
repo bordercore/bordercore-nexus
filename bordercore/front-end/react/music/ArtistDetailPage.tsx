@@ -25,7 +25,6 @@ interface ArtistDetailPageProps {
   urls: ArtistDetailUrls;
   imagesUrl: string;
   staticUrl: string;
-  csrfToken: string;
   defaultPlaylist: string;
   hasArtistImage: boolean;
 }
@@ -39,7 +38,6 @@ export function ArtistDetailPage({
   urls,
   imagesUrl,
   staticUrl,
-  csrfToken,
   defaultPlaylist,
   hasArtistImage,
 }: ArtistDetailPageProps) {
@@ -101,7 +99,6 @@ export function ArtistDetailPage({
       trackList: songs,
       songUrl: urls.songMedia,
       markListenedToUrl: urls.markListenedTo,
-      csrfToken: csrfToken,
     });
     setCurrentSongUuid(song.uuid);
   };
@@ -152,7 +149,6 @@ export function ArtistDetailPage({
 
       await axios.post(urls.updateArtistImage, formData, {
         headers: {
-          "X-CSRFToken": csrfToken,
           "Content-Type": "multipart/form-data",
         },
         withCredentials: true,
@@ -280,7 +276,6 @@ export function ArtistDetailPage({
                   setSongRatingUrl={urls.setSongRating}
                   editSongUrlTemplate={urls.editSong}
                   addToPlaylistUrl={urls.addToPlaylist}
-                  csrfToken={csrfToken}
                   playlists={playlists}
                   onSongClick={handleSongClick}
                   onRatingChange={handleRatingChange}
@@ -297,7 +292,6 @@ export function ArtistDetailPage({
         ref={editImageRef}
         artistUuid={artist.uuid}
         updateArtistImageUrl={urls.updateArtistImage}
-        csrfToken={csrfToken}
         onImageUpdated={handleImageUpdated}
       />
 

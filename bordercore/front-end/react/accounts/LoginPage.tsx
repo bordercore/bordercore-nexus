@@ -3,13 +3,13 @@ import "./login-tokens.css";
 import { MirrorCube } from "./MirrorCube";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUser, faLock } from "@fortawesome/free-solid-svg-icons";
+import { getCsrfToken } from "../utils/reactUtils";
 
 interface LoginPageProps {
   message?: string;
   initialUsername: string;
   loginUrl: string;
   nextUrl: string;
-  csrfToken: string;
 }
 
 const MARK_GRAD_ID = "bc-mark-grad-login";
@@ -288,10 +288,9 @@ interface LoginCardProps {
   initialUsername: string;
   loginUrl: string;
   nextUrl: string;
-  csrfToken: string;
 }
 
-function LoginCard({ message, initialUsername, loginUrl, nextUrl, csrfToken }: LoginCardProps) {
+function LoginCard({ message, initialUsername, loginUrl, nextUrl }: LoginCardProps) {
   const [username, setUsername] = useState(initialUsername);
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -305,6 +304,11 @@ function LoginCard({ message, initialUsername, loginUrl, nextUrl, csrfToken }: L
       setClientError("enter both username and password");
       return;
     }
+    // Refresh CSRF token from cookie at submit time so it matches the live cookie
+    const tokenInput = e.currentTarget.querySelector<HTMLInputElement>(
+      'input[name="csrfmiddlewaretoken"]'
+    );
+    if (tokenInput) tokenInput.value = getCsrfToken();
     setClientError(null);
     setLoading(true);
     // Do NOT call e.preventDefault(); let the browser submit the form natively.
@@ -387,7 +391,7 @@ function LoginCard({ message, initialUsername, loginUrl, nextUrl, csrfToken }: L
           // must remain inline — form layout
           style={{ display: "flex", flexDirection: "column", gap: 14 }}
         >
-          <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken} />
+          <input type="hidden" name="csrfmiddlewaretoken" defaultValue={getCsrfToken()} />
           <input type="hidden" name="next" value={nextUrl} />
           <Field
             label="username"

@@ -14,7 +14,6 @@ interface NodeListPageProps {
   nodes: NodeListItem[];
   createUrl: string;
   detailUrl: string;
-  csrfToken: string;
 }
 
 interface YearGroup {
@@ -26,7 +25,6 @@ export default function NodeListPage({
   nodes: initialNodes,
   createUrl,
   detailUrl,
-  csrfToken,
 }: NodeListPageProps) {
   const [nodes] = useState<NodeListItem[]>(initialNodes);
   const [q, setQ] = useState("");
@@ -242,12 +240,7 @@ export default function NodeListPage({
         </main>
       </div>
 
-      <NewNodeModal
-        open={newOpen}
-        onClose={() => setNewOpen(false)}
-        createUrl={createUrl}
-        csrfToken={csrfToken}
-      />
+      <NewNodeModal open={newOpen} onClose={() => setNewOpen(false)} createUrl={createUrl} />
     </>
   );
 }

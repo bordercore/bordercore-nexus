@@ -11,7 +11,6 @@ document.addEventListener("DOMContentLoaded", () => {
     initialUsername: rootElement.dataset.initialUsername || "",
     loginUrl: rootElement.dataset.loginUrl || "",
     nextUrl: rootElement.dataset.nextUrl || "/",
-    csrfToken: rootElement.dataset.csrfToken || "",
   };
 
   const root = createRoot(rootElement);

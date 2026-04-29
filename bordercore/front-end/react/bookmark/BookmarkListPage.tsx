@@ -13,7 +13,7 @@ import hotkeys from "hotkeys-js";
 import { SelectValue, SelectValueHandle } from "../common/SelectValue";
 import { tagStyle } from "../utils/tagColors";
 import { DropDownMenu } from "../common/DropDownMenu";
-import { doGet, doDelete, doPost } from "../utils/reactUtils";
+import { doGet, doDelete, doPost, getCsrfToken } from "../utils/reactUtils";
 import { EventBus } from "../utils/reactUtils";
 import BookmarkPinnedTags from "./BookmarkPinnedTags";
 import BookmarkPinnedBookmarks from "./BookmarkPinnedBookmarks";
@@ -441,9 +441,7 @@ export function BookmarkListPage({
     const csrfInput = document.createElement("input");
     csrfInput.type = "hidden";
     csrfInput.name = "csrfmiddlewaretoken";
-    const csrfToken =
-      document.querySelector<HTMLInputElement>('input[name="csrfmiddlewaretoken"]')?.value || "";
-    csrfInput.value = csrfToken;
+    csrfInput.value = getCsrfToken();
     form.appendChild(csrfInput);
 
     // Add tag name
@@ -542,11 +540,6 @@ export function BookmarkListPage({
                     method="get"
                     onSubmit={e => e.preventDefault()}
                   >
-                    <input
-                      type="hidden"
-                      name="csrfmiddlewaretoken"
-                      value={(window as any).BASE_TEMPLATE_DATA?.csrfToken || ""}
-                    />
                     <input value={selectedTagName || ""} type="hidden" name="tag" />
                     <SelectValue
                       ref={selectValueRef}

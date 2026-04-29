@@ -16,9 +16,8 @@ if (container) {
   const finalFormAjaxUrl = formAjaxUrl || data.reminderFormAjaxUrl || "";
   const finalSubmitUrl = submitUrl || data.reminderSubmitUrl || "";
   const finalCancelUrl = cancelUrl || data.reminderCancelUrl || "";
-  const finalCsrfToken = data.csrfToken || "";
 
-  if (finalSubmitUrl && finalCancelUrl && finalCsrfToken) {
+  if (finalSubmitUrl && finalCancelUrl) {
     const root = createRoot(container);
     root.render(
       <ReminderFormPage
@@ -26,18 +25,15 @@ if (container) {
         submitUrl={finalSubmitUrl}
         cancelUrl={finalCancelUrl}
         isEdit={isEdit}
-        csrfToken={finalCsrfToken}
       />
     );
   } else {
     console.error(
-      "ReminderFormPage: Missing required URLs or CSRF token.",
+      "ReminderFormPage: Missing required URLs.",
       "submitUrl:",
       finalSubmitUrl,
       "cancelUrl:",
-      finalCancelUrl,
-      "csrfToken:",
-      finalCsrfToken ? "present" : "missing"
+      finalCancelUrl
     );
   }
 }

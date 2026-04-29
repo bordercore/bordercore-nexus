@@ -9,7 +9,6 @@ interface TagSearchPageProps {
   albums: TagSearchAlbum[];
   urls: TagSearchUrls;
   staticUrl: string;
-  csrfToken: string;
 }
 
 type SortField = "title" | "artist" | "year" | "length";
@@ -21,7 +20,6 @@ export function TagSearchPage({
   albums,
   urls,
   staticUrl,
-  csrfToken,
 }: TagSearchPageProps) {
   const [songs, setSongs] = React.useState<TagSearchSong[]>(initialSongs);
   const [currentSongUuid, setCurrentSongUuid] = React.useState<string | null>(null);
@@ -71,7 +69,6 @@ export function TagSearchPage({
       trackList: sortedSongs,
       songUrl: urls.songMedia,
       markListenedToUrl: urls.markListenedTo,
-      csrfToken: csrfToken,
     });
     setCurrentSongUuid(song.uuid);
   };

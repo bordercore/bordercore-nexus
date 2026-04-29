@@ -25,7 +25,6 @@ interface FormField {
 
 export interface PreferencesPageProps {
   formAction: string;
-  csrfToken: string;
   tagSearchUrl: string;
   passwordUrl: string;
   prefsUrl: string;
@@ -105,7 +104,6 @@ function basename(url: string): string {
 export function PreferencesPage(props: PreferencesPageProps) {
   const {
     formAction,
-    csrfToken,
     tagSearchUrl,
     passwordUrl,
     prefsUrl,
@@ -221,8 +219,8 @@ export function PreferencesPage(props: PreferencesPageProps) {
   const save = useCallback(async () => {
     if (!dirty || saving) return;
 
+    // axios automatically injects X-CSRFToken from the csrftoken cookie.
     const form = new FormData();
-    form.append("csrfmiddlewaretoken", csrfToken);
 
     form.append("theme", state.theme);
     form.append("eye_candy", state.eyeCandy ? "true" : "false");
@@ -272,7 +270,7 @@ export function PreferencesPage(props: PreferencesPageProps) {
     setSaving(true);
     try {
       await axios.post(formAction, form, {
-        headers: { "X-CSRFToken": csrfToken, "X-Requested-With": "XMLHttpRequest" },
+        headers: { "X-Requested-With": "XMLHttpRequest" },
         withCredentials: true,
       });
       setInitial(state);
@@ -289,16 +287,7 @@ export function PreferencesPage(props: PreferencesPageProps) {
     } finally {
       setSaving(false);
     }
-  }, [
-    csrfToken,
-    dirty,
-    formAction,
-    initial,
-    saving,
-    state,
-    defaultCollectionField,
-    imageCollectionField,
-  ]);
+  }, [dirty, formAction, initial, saving, state, defaultCollectionField, imageCollectionField]);
 
   const discard = useCallback(() => {
     setState(initial);

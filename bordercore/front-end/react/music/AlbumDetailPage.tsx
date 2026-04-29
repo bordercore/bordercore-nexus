@@ -26,7 +26,6 @@ interface AlbumDetailPageProps {
   playlists: Playlist[];
   urls: AlbumDetailUrls;
   staticUrl: string;
-  csrfToken: string;
   defaultPlaylist: string;
 }
 
@@ -37,7 +36,6 @@ export function AlbumDetailPage({
   playlists,
   urls,
   staticUrl,
-  csrfToken,
   defaultPlaylist,
 }: AlbumDetailPageProps) {
   const [songs, setSongs] = React.useState<Song[]>(initialSongs);
@@ -88,7 +86,6 @@ export function AlbumDetailPage({
       trackList: songs,
       songUrl: urls.songMedia,
       markListenedToUrl: urls.markListenedTo,
-      csrfToken: csrfToken,
     });
     setCurrentSongUuid(song.uuid);
   };
@@ -245,7 +242,6 @@ export function AlbumDetailPage({
                 setSongRatingUrl={urls.setSongRating}
                 editSongUrlTemplate={urls.editSong}
                 addToPlaylistUrl={urls.addToPlaylist}
-                csrfToken={csrfToken}
                 playlists={playlists}
                 onSongClick={handleSongClick}
                 onRatingChange={handleRatingChange}
@@ -264,7 +260,6 @@ export function AlbumDetailPage({
         updateAlbumUrl={urls.updateAlbum}
         searchArtistsUrl={urls.searchArtists}
         searchTagsUrl={urls.searchTags}
-        csrfToken={csrfToken}
       />
     </div>
   );

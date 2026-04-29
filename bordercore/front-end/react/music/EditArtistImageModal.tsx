@@ -5,7 +5,6 @@ import { Modal } from "bootstrap";
 interface EditArtistImageModalProps {
   artistUuid: string;
   updateArtistImageUrl: string;
-  csrfToken: string;
   onImageUpdated?: () => void;
 }
 
@@ -16,10 +15,7 @@ export interface EditArtistImageModalHandle {
 export const EditArtistImageModal = React.forwardRef<
   EditArtistImageModalHandle,
   EditArtistImageModalProps
->(function EditArtistImageModal(
-  { artistUuid, updateArtistImageUrl, csrfToken, onImageUpdated },
-  ref
-) {
+>(function EditArtistImageModal({ artistUuid, updateArtistImageUrl, onImageUpdated }, ref) {
   const [imageFilename, setImageFilename] = React.useState("");
   const [imageFile, setImageFile] = React.useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -62,7 +58,6 @@ export const EditArtistImageModal = React.forwardRef<
 
       await axios.post(updateArtistImageUrl, formData, {
         headers: {
-          "X-CSRFToken": csrfToken,
           "Content-Type": "multipart/form-data",
         },
         withCredentials: true,

@@ -9,7 +9,6 @@ interface AddToPlaylistModalProps {
   getPlaylistsUrl: string;
   addToPlaylistUrl: string;
   defaultPlaylist: string;
-  csrfToken: string;
 }
 
 export interface AddToPlaylistModalHandle {
@@ -27,10 +26,7 @@ interface PlaylistResponse {
 export const AddToPlaylistModal = React.forwardRef<
   AddToPlaylistModalHandle,
   AddToPlaylistModalProps
->(function AddToPlaylistModal(
-  { getPlaylistsUrl, addToPlaylistUrl, defaultPlaylist, csrfToken },
-  ref
-) {
+>(function AddToPlaylistModal({ getPlaylistsUrl, addToPlaylistUrl, defaultPlaylist }, ref) {
   const [playlists, setPlaylists] = React.useState<Playlist[]>([]);
   const [selectedPlaylist, setSelectedPlaylist] = React.useState(defaultPlaylist || "");
   const [songUuid, setSongUuid] = React.useState("");
@@ -89,7 +85,6 @@ export const AddToPlaylistModal = React.forwardRef<
 
       await axios.post(addToPlaylistUrl, params, {
         headers: {
-          "X-CSRFToken": csrfToken,
           "Content-Type": "application/x-www-form-urlencoded",
         },
         withCredentials: true,

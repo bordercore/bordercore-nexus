@@ -21,7 +21,6 @@ if (container) {
 
   const uuid = container.getAttribute("data-uuid") || "";
   const formAction = container.getAttribute("data-form-action") || "";
-  const csrfToken = container.getAttribute("data-csrf-token") || "";
   const thumbnailUrl = container.getAttribute("data-thumbnail-url") || undefined;
   const faviconImgUrl = container.getAttribute("data-favicon-img-url") || undefined;
   const bookmarkName = container.getAttribute("data-bookmark-name") || "";
@@ -85,7 +84,6 @@ if (container) {
     <BookmarkEditPage
       uuid={uuid}
       formAction={formAction}
-      csrfToken={csrfToken}
       thumbnailUrl={thumbnailUrl}
       faviconImgUrl={faviconImgUrl}
       bookmarkName={bookmarkName}

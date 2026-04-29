@@ -50,7 +50,6 @@ export interface CollectionListUrls {
 export interface CollectionListProps {
   collections: Collection[];
   urls: CollectionListUrls;
-  csrfToken: string;
 }
 
 // Collection Detail Page Types
@@ -72,7 +71,6 @@ export interface CollectionDetailProps {
   objectTags: ObjectTag[];
   initialTags: string[];
   urls: CollectionDetailUrls;
-  csrfToken: string;
   tagSearchUrl: string;
   selectedTag: string | null;
 }

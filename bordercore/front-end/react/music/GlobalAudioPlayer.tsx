@@ -3,7 +3,7 @@ import ReactJinkeMusicPlayer from "react-jinke-music-player";
 import "react-jinke-music-player/assets/index.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faForwardStep } from "@fortawesome/free-solid-svg-icons";
-import { EventBus } from "../utils/reactUtils";
+import { EventBus, getCsrfToken } from "../utils/reactUtils";
 import type { BaseTrack } from "./types";
 
 // Timeout before marking a song as listened to (10 seconds)
@@ -14,7 +14,6 @@ interface PlayTrackEvent {
   trackList: BaseTrack[];
   songUrl: string;
   markListenedToUrl: string;
-  csrfToken: string;
 }
 
 export const GlobalAudioPlayer: React.FC = () => {
@@ -23,7 +22,6 @@ export const GlobalAudioPlayer: React.FC = () => {
   const [autoPlayNext, setAutoPlayNext] = React.useState(false);
   const [config, setConfig] = React.useState<{
     markListenedToUrl: string;
-    csrfToken: string;
     songUrl: string;
   } | null>(null);
 
@@ -42,7 +40,7 @@ export const GlobalAudioPlayer: React.FC = () => {
         await fetch(url, {
           method: "POST",
           headers: {
-            "X-CSRFToken": config.csrfToken,
+            "X-CSRFToken": getCsrfToken(),
           },
           credentials: "include",
         });
@@ -86,7 +84,6 @@ export const GlobalAudioPlayer: React.FC = () => {
 
       setConfig({
         markListenedToUrl: data.markListenedToUrl,
-        csrfToken: data.csrfToken,
         songUrl: data.songUrl,
       });
 

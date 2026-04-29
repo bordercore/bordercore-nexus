@@ -6,6 +6,7 @@ import { SelectValue, SelectValueHandle } from "../common/SelectValue";
 import { ToggleSwitch } from "../common/ToggleSwitch";
 import { TagsInput, TagsInputHandle } from "../common/TagsInput";
 import Card from "../common/Card";
+import { getCsrfToken } from "../utils/reactUtils";
 
 interface SourceOption {
   id: number;
@@ -70,7 +71,6 @@ interface TagSuggestion {
 interface SongCreatePageProps {
   submitUrl: string;
   cancelUrl: string;
-  csrfToken: string;
   tagSearchUrl: string;
   artistSearchUrl: string;
   dupeCheckUrl: string;
@@ -83,7 +83,6 @@ interface SongCreatePageProps {
 export function SongCreatePage({
   submitUrl,
   cancelUrl,
-  csrfToken,
   tagSearchUrl,
   artistSearchUrl,
   dupeCheckUrl,
@@ -205,7 +204,6 @@ export function SongCreatePage({
       const response = await axios.post(id3InfoUrl, uploadData, {
         headers: {
           "Content-Type": "multipart/form-data",
-          "X-CSRFToken": csrfToken,
         },
       });
 
@@ -291,6 +289,11 @@ export function SongCreatePage({
       setErrors({ song: ["Please select a song file to upload."] });
       return;
     }
+    // Refresh CSRF token from cookie at submit time so it matches the live cookie
+    const tokenInput = e.currentTarget.querySelector<HTMLInputElement>(
+      'input[name="csrfmiddlewaretoken"]'
+    );
+    if (tokenInput) tokenInput.value = getCsrfToken();
     // Let the form submit naturally (don't call e.preventDefault())
     // Browser will POST form data and follow the redirect
   };
@@ -398,7 +401,7 @@ export function SongCreatePage({
           encType="multipart/form-data"
           noValidate
         >
-          <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken} />
+          <input type="hidden" name="csrfmiddlewaretoken" defaultValue={getCsrfToken()} />
           {errors.non_field_errors && (
             <div className="row">
               <div className="col-lg-9 offset-lg-3">

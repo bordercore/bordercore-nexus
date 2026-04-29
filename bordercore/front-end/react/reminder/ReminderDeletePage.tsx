@@ -7,14 +7,12 @@ interface ReminderDeletePageProps {
   reminderName: string;
   deleteUrl: string;
   cancelUrl: string;
-  csrfToken: string;
 }
 
 export function ReminderDeletePage({
   reminderName,
   deleteUrl,
   cancelUrl,
-  csrfToken,
 }: ReminderDeletePageProps) {
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -25,13 +23,9 @@ export function ReminderDeletePage({
     setError(null);
 
     try {
-      const formData = new URLSearchParams();
-      // Django DeleteView expects POST with empty body (or just CSRF token)
-      formData.append("csrfmiddlewaretoken", csrfToken);
-
-      await axios.post(deleteUrl, formData, {
+      // Django DeleteView expects POST. axios injects X-CSRFToken from the cookie.
+      await axios.post(deleteUrl, new URLSearchParams(), {
         headers: {
-          "X-CSRFToken": csrfToken,
           "Content-Type": "application/x-www-form-urlencoded",
         },
         withCredentials: true,

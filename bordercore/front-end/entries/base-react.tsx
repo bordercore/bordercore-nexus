@@ -46,7 +46,6 @@ function ChatBotContent() {
       chatUrl={data.chatBotConfig?.chatUrl || ""}
       followupsUrl={data.chatBotConfig?.followupsUrl || ""}
       saveAsNoteUrl={data.chatBotConfig?.saveAsNoteUrl || ""}
-      csrfToken={data.chatBotConfig?.csrfToken || ""}
     />
   );
 }

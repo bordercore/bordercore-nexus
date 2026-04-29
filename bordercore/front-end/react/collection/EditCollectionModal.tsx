@@ -5,6 +5,7 @@ import { faTimes } from "@fortawesome/free-solid-svg-icons";
 import TagsInput, { TagsInputHandle } from "../common/TagsInput";
 import { ToggleSwitch } from "../common/ToggleSwitch";
 import type { CollectionDetail } from "./types";
+import { getCsrfToken } from "../utils/reactUtils";
 
 export interface EditCollectionModalHandle {
   openModal: () => void;
@@ -15,14 +16,10 @@ interface EditCollectionModalProps {
   initialTags: string[];
   updateUrl: string;
   tagSearchUrl: string;
-  csrfToken: string;
 }
 
 export const EditCollectionModal = forwardRef<EditCollectionModalHandle, EditCollectionModalProps>(
-  function EditCollectionModal(
-    { collection, initialTags, updateUrl, tagSearchUrl, csrfToken },
-    ref
-  ) {
+  function EditCollectionModal({ collection, initialTags, updateUrl, tagSearchUrl }, ref) {
     const [open, setOpen] = useState(false);
     const [name, setName] = useState(collection.name);
     const [description, setDescription] = useState(collection.description || "");
@@ -75,8 +72,14 @@ export const EditCollectionModal = forwardRef<EditCollectionModalHandle, EditCol
           method="post"
           role="dialog"
           aria-label="edit collection"
+          onSubmit={e => {
+            const tokenInput = e.currentTarget.querySelector<HTMLInputElement>(
+              'input[name="csrfmiddlewaretoken"]'
+            );
+            if (tokenInput) tokenInput.value = getCsrfToken();
+          }}
         >
-          <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken} />
+          <input type="hidden" name="csrfmiddlewaretoken" defaultValue={getCsrfToken()} />
 
           <button type="button" className="refined-modal-close" onClick={close} aria-label="close">
             <FontAwesomeIcon icon={faTimes} />

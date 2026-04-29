@@ -5,7 +5,6 @@ import PasswordChangePage from "../react/prefs/PasswordChangePage";
 const container = document.getElementById("react-root");
 if (container) {
   const formAction = container.getAttribute("data-form-action") || "";
-  const csrfToken = container.getAttribute("data-csrf-token") || "";
   const prefsUrl = container.getAttribute("data-prefs-url") || "";
   const passwordUrl = container.getAttribute("data-password-url") || formAction;
   const username = container.getAttribute("data-username") || "";
@@ -17,7 +16,6 @@ if (container) {
   root.render(
     <PasswordChangePage
       formAction={formAction}
-      csrfToken={csrfToken}
       prefsUrl={prefsUrl}
       passwordUrl={passwordUrl}
       username={username}

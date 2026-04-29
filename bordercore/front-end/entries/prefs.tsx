@@ -16,7 +16,6 @@ interface FormField {
 const container = document.getElementById("react-root");
 if (container) {
   const formAction = container.getAttribute("data-form-action") || "";
-  const csrfToken = container.getAttribute("data-csrf-token") || "";
   const tagSearchUrl = container.getAttribute("data-tag-search-url") || "";
   const passwordUrl = container.getAttribute("data-password-url") || "";
   const prefsUrl = container.getAttribute("data-prefs-url") || formAction;
@@ -55,7 +54,6 @@ if (container) {
   root.render(
     <PreferencesPage
       formAction={formAction}
-      csrfToken={csrfToken}
       tagSearchUrl={tagSearchUrl}
       passwordUrl={passwordUrl}
       prefsUrl={prefsUrl}

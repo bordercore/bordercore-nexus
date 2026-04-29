@@ -36,8 +36,7 @@
      data-get-blob-url="{% url 'collection:get_blob' collection.uuid %}"
      data-collection-list-url="{% url 'collection:list' %}"
      data-blob-detail-url="{% url 'blob:detail' '00000000-0000-0000-0000-000000000000' %}"
-     data-tag-search-url="{% url 'tag:search' %}"
-     data-csrf-token="{{ csrf_token }}">
+     data-tag-search-url="{% url 'tag:search' %}">
 </div>
 {% endblock %}
 

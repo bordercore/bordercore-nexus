@@ -12,6 +12,7 @@ import { SelectValue, SelectValueHandle } from "../common/SelectValue";
 import { TagsInput, TagsInputHandle } from "../common/TagsInput";
 import { ToggleSwitch } from "../common/ToggleSwitch";
 import Card from "../common/Card";
+import { getCsrfToken } from "../utils/reactUtils";
 
 interface SourceOption {
   id: number;
@@ -70,7 +71,6 @@ interface SongEditPageProps {
   submitUrl: string;
   cancelUrl: string;
   returnUrl?: string;
-  csrfToken: string;
   tagSearchUrl: string;
   artistSearchUrl: string;
   dupeCheckUrl: string;
@@ -82,7 +82,6 @@ export function SongEditPage({
   submitUrl,
   cancelUrl,
   returnUrl,
-  csrfToken,
   tagSearchUrl,
   artistSearchUrl,
   dupeCheckUrl,
@@ -255,6 +254,11 @@ export function SongEditPage({
   const displayRating = hoverRating ?? formData.rating ?? 0;
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    // Refresh CSRF token from cookie at submit time so it matches the live cookie
+    const tokenInput = e.currentTarget.querySelector<HTMLInputElement>(
+      'input[name="csrfmiddlewaretoken"]'
+    );
+    if (tokenInput) tokenInput.value = getCsrfToken();
     // Let the form submit naturally (don't call e.preventDefault())
     // Browser will POST form data and follow the redirect
   };
@@ -374,7 +378,7 @@ export function SongEditPage({
         <p className="lead offset-lg-3 fw-bold ps-2">Edit Song</p>
 
         <form id="song-form" action={submitUrl} method="POST" onSubmit={handleSubmit} noValidate>
-          <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken} />
+          <input type="hidden" name="csrfmiddlewaretoken" defaultValue={getCsrfToken()} />
           <input type="hidden" name="return_url" value={returnUrl || ""} />
           <input type="hidden" name="length" value={formData.length || ""} />
           {errors.non_field_errors && (

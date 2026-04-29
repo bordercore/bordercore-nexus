@@ -2,15 +2,15 @@ import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTimes, faPlus } from "@fortawesome/free-solid-svg-icons";
+import { getCsrfToken } from "../utils/reactUtils";
 
 interface NewNodeModalProps {
   open: boolean;
   onClose: () => void;
   createUrl: string;
-  csrfToken: string;
 }
 
-export function NewNodeModal({ open, onClose, createUrl, csrfToken }: NewNodeModalProps) {
+export function NewNodeModal({ open, onClose, createUrl }: NewNodeModalProps) {
   const [name, setName] = useState("");
   const [note, setNote] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -55,8 +55,14 @@ export function NewNodeModal({ open, onClose, createUrl, csrfToken }: NewNodeMod
         className="refined-modal"
         role="dialog"
         aria-label="create new node"
+        onSubmit={e => {
+          const tokenInput = e.currentTarget.querySelector<HTMLInputElement>(
+            'input[name="csrfmiddlewaretoken"]'
+          );
+          if (tokenInput) tokenInput.value = getCsrfToken();
+        }}
       >
-        <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken} />
+        <input type="hidden" name="csrfmiddlewaretoken" defaultValue={getCsrfToken()} />
 
         <button type="button" className="refined-modal-close" onClick={onClose} aria-label="close">
           <FontAwesomeIcon icon={faTimes} />

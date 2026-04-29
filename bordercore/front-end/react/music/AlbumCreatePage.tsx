@@ -3,6 +3,7 @@ import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCompactDisc, faFileImport, faMusic } from "@fortawesome/free-solid-svg-icons";
 import { TagsInput, TagsInputHandle } from "../common/TagsInput";
+import { getCsrfToken } from "../utils/reactUtils";
 
 interface SourceOption {
   id: number;
@@ -29,7 +30,6 @@ interface AlbumCreatePageProps {
   tagSearchUrl: string;
   songSources: SourceOption[];
   defaultSourceId: number | null;
-  csrfToken: string;
 }
 
 export function AlbumCreatePage({
@@ -38,7 +38,6 @@ export function AlbumCreatePage({
   tagSearchUrl,
   songSources,
   defaultSourceId,
-  csrfToken,
 }: AlbumCreatePageProps) {
   const [album, setAlbum] = useState("");
   const [artist, setArtist] = useState("");
@@ -98,7 +97,6 @@ export function AlbumCreatePage({
       const response = await axios.post(scanUrl, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
-          "X-CSRFToken": csrfToken,
         },
       });
 
@@ -153,7 +151,7 @@ export function AlbumCreatePage({
       const response = await fetch(addUrl, {
         method: "POST",
         body: formData,
-        headers: { "X-CSRFToken": csrfToken },
+        headers: { "X-CSRFToken": getCsrfToken() },
       });
 
       if (!response.ok) {

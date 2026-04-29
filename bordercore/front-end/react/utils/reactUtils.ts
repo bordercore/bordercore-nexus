@@ -18,7 +18,7 @@ axios.defaults.xsrfHeaderName = "X-CSRFToken";
 
 // Helper function to get CSRF token from cookie
 // Django validates the header token against the cookie token, so we must use the cookie value
-function getCsrfToken(): string {
+export function getCsrfToken(): string {
   const name = "csrftoken";
   if (typeof document !== "undefined" && document.cookie) {
     const value = `; ${document.cookie}`;

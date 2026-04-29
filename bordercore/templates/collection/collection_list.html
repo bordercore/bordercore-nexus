@@ -12,8 +12,7 @@
 {% block content %}
 <div id="react-root"
      data-create-collection-url="{% url 'collection:create' %}"
-     data-tag-search-url="{% url 'tag:search' %}"
-     data-csrf-token="{{ csrf_token }}">
+     data-tag-search-url="{% url 'tag:search' %}">
 </div>
 {% endblock %}
 

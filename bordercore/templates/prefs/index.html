@@ -9,7 +9,6 @@
         data-form-action="{{ request.path }}"
         data-prefs-url="{% url 'accounts:prefs' %}"
         data-password-url="{% url 'accounts:password' %}"
-        data-csrf-token="{{ csrf_token }}"
         data-tag-search-url="{% url 'tag:search' %}?doctype=drill&query="
         data-auth-token="{{ user.auth_token|default:'' }}"
         data-username="{{ user.get_username }}"

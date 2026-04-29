@@ -45,7 +45,6 @@ function baseProps(overrides: Partial<React.ComponentProps<typeof BookmarkEditPa
   return {
     uuid: "11111111-1111-1111-1111-111111111111",
     formAction: "/bookmark/edit/11111111-1111-1111-1111-111111111111/",
-    csrfToken: "test-csrf",
     bookmarkName: "Example",
     fields: fields(),
     initialTags: ["alpha"],

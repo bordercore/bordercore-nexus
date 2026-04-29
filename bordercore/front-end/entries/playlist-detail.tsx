@@ -25,7 +25,6 @@ if (container) {
   };
 
   const staticUrl = container.dataset.staticUrl || "";
-  const csrfToken = container.dataset.csrfToken || "";
 
   // Validate required data
   if (playlist.uuid && urls.getPlaylist) {
@@ -35,7 +34,6 @@ if (container) {
         playlist={playlist}
         urls={urls}
         staticUrl={staticUrl}
-        csrfToken={csrfToken}
       />
     );
   } else {
