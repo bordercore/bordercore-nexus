@@ -21,13 +21,22 @@ vite_build: check-env
 	npm run vite:build
 
 vite_ec2: vite_build check-env
+	set -e
 	cd $(BORDERCORE_HOME)
+	test -f static/vite/.vite/manifest.json || { echo "ERROR: static/vite/.vite/manifest.json missing; refusing to rsync --delete"; exit 1; }
 	rsync -azv --no-times --no-group --delete --exclude=/rest_framework static/vite/ $(EC2_HOST):$(EC2_PATH)vite/
 	ssh $(EC2_HOST) "sudo chown -R www-data:www-data $(EC2_PATH)vite/"
 	ssh $(EC2_HOST) "mkdir -p $(EC2_PATH)../bordercore/bordercore/static/vite/.vite && sudo chown -R www-data:www-data $(EC2_PATH)../bordercore/bordercore/static/vite"
 	scp ./static/vite/.vite/manifest.json $(EC2_HOST):$(EC2_PATH)../bordercore/bordercore/static/vite/.vite/manifest.json
 	# Also copy to fallback location for compatibility
 	scp ./static/vite/.vite/manifest.json $(EC2_HOST):$(EC2_PATH)../bordercore/bordercore/static/vite/manifest.json
+
+admin_ec2:
+	set -e
+	ADMIN_SRC=$$($(PYTHON) -c "import django.contrib.admin, os; print(os.path.join(os.path.dirname(django.contrib.admin.__file__), 'static', 'admin'))")
+	test -f "$$ADMIN_SRC/css/base.css" || { echo "ERROR: $$ADMIN_SRC does not contain expected Django admin assets; refusing to rsync --delete"; exit 1; }
+	rsync -azv --no-times --no-group --delete "$$ADMIN_SRC/" $(EC2_HOST):$(EC2_PATH)admin/
+	ssh $(EC2_HOST) "sudo chown -R www-data:www-data $(EC2_PATH)admin/"
 
 check-env:
 ifndef BORDERCORE_HOME
