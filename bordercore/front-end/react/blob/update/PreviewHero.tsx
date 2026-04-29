@@ -23,6 +23,8 @@ interface PreviewHeroProps {
   onExtractCover?: () => void;
   // create-mode drop zone
   onFileSelected?: (file: File) => void;
+  // local object URL for an image the user just picked in create mode
+  selectedFileUrl?: string | null;
 }
 
 export function PreviewHero({
@@ -36,6 +38,7 @@ export function PreviewHero({
   onPageNumberChange,
   onExtractCover,
   onFileSelected,
+  selectedFileUrl,
 }: PreviewHeroProps) {
   const [dragOver, setDragOver] = useState(false);
   const [videoPlaying, setVideoPlaying] = useState(false);
@@ -56,7 +59,9 @@ export function PreviewHero({
   if (mode === "create") {
     return (
       <div
-        className={`be-preview-drop ${dragOver ? "drag-over" : ""}`}
+        className={`be-preview-drop ${dragOver ? "drag-over" : ""} ${
+          selectedFileUrl ? "has-preview" : ""
+        }`}
         onDragOver={e => {
           e.preventDefault();
           setDragOver(true);
@@ -72,21 +77,38 @@ export function PreviewHero({
           if (file && onFileSelected) onFileSelected(file);
         }}
       >
-        <div>
-          <FontAwesomeIcon icon={faCloudArrowUp} />
-          <div>drag a file here</div>
-          <label>
-            choose file
-            <input
-              type="file"
-              hidden
-              onChange={e => {
-                const file = e.target.files?.[0];
-                if (file && onFileSelected) onFileSelected(file);
-              }}
-            />
-          </label>
-        </div>
+        {selectedFileUrl ? (
+          <>
+            <img className="be-preview-drop-image" src={selectedFileUrl} alt="selected" />
+            <label className="be-preview-drop-replace">
+              replace
+              <input
+                type="file"
+                hidden
+                onChange={e => {
+                  const file = e.target.files?.[0];
+                  if (file && onFileSelected) onFileSelected(file);
+                }}
+              />
+            </label>
+          </>
+        ) : (
+          <div>
+            <FontAwesomeIcon icon={faCloudArrowUp} />
+            <div>drag a file here</div>
+            <label>
+              choose file
+              <input
+                type="file"
+                hidden
+                onChange={e => {
+                  const file = e.target.files?.[0];
+                  if (file && onFileSelected) onFileSelected(file);
+                }}
+              />
+            </label>
+          </div>
+        )}
       </div>
     );
   }

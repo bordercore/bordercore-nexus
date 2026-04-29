@@ -32,6 +32,27 @@ import { MetadataCard, MetadataItem } from "./update/MetadataCard";
 
 type DocType = "video" | "book" | "image" | "note" | "audio" | "blob" | undefined;
 
+function formatFileSize(bytes?: number): string | undefined {
+  if (!bytes && bytes !== 0) return undefined;
+  const units = ["B", "KB", "MB", "GB"];
+  let value = bytes;
+  let i = 0;
+  while (value >= 1024 && i < units.length - 1) {
+    value /= 1024;
+    i++;
+  }
+  return `${value.toFixed(value >= 10 || i === 0 ? 0 : 1)} ${units[i]}`;
+}
+
+function doctypeFromMime(mime?: string): DocType {
+  if (!mime) return undefined;
+  if (mime === "application/pdf") return "book";
+  if (mime.startsWith("image/")) return "image";
+  if (mime.startsWith("video/")) return "video";
+  if (mime.startsWith("audio/")) return "audio";
+  return undefined;
+}
+
 interface BlobUpdatePageProps {
   initialName: string;
   initialDate: string;
@@ -129,6 +150,7 @@ export function BlobUpdatePage({
   const [fileObject, setFileObject] = useState<File | null>(null);
   const [pageNumber, setPageNumber] = useState(pdfPageNumber);
   const [currentCoverUrl, setCurrentCoverUrl] = useState(coverUrl || "");
+  const [previewObjectUrl, setPreviewObjectUrl] = useState<string | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState("-1");
 
   const [contentExpanded, setContentExpanded] = useState(false);
@@ -336,7 +358,18 @@ export function BlobUpdatePage({
   const handleFileReplace = useCallback((file: File) => {
     setFileObject(file);
     setFileName(file.name);
+    setPreviewObjectUrl(prev => {
+      if (prev) URL.revokeObjectURL(prev);
+      return file.type.startsWith("image/") ? URL.createObjectURL(file) : null;
+    });
   }, []);
+
+  // Revoke the preview object URL when it changes or on unmount to avoid leaks.
+  useEffect(() => {
+    return () => {
+      if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+    };
+  }, [previewObjectUrl]);
 
   const handleTemplateChange = useCallback(
     (uuid: string) => {
@@ -411,7 +444,8 @@ export function BlobUpdatePage({
         <aside className="be-col-left">
           <PreviewHero
             mode={previewMode}
-            coverUrl={currentCoverUrl}
+            coverUrl={previewObjectUrl || currentCoverUrl}
+            selectedFileUrl={previewObjectUrl}
             durationLabel={durationLabel}
             noteContentPreview={noteContentPreview}
             videoUrl={urls.download}
@@ -421,13 +455,13 @@ export function BlobUpdatePage({
             onExtractCover={handleExtractCover}
             onFileSelected={handleFileReplace}
           />
-          {mode === "edit" && (
+          {(mode === "edit" || fileObject) && (
             <FilePane
               filename={fileName}
-              fileSize={fileSize}
-              doctype={doctype}
+              fileSize={mode === "edit" ? fileSize : formatFileSize(fileObject?.size)}
+              doctype={mode === "edit" ? doctype : doctypeFromMime(fileObject?.type)}
               isNote={flags.is_note}
-              downloadUrl={urls.download}
+              downloadUrl={mode === "edit" ? urls.download : undefined}
               onFilenameChange={setFileName}
               onFileReplace={handleFileReplace}
             />
