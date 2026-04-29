@@ -2,13 +2,17 @@ import React from "react";
 import { MagSection } from "./MagSection";
 import { TasksList } from "./TasksList";
 import { ExerciseSeverityList } from "./ExerciseSeverityList";
-import type { OverdueExercise, Task } from "../types";
+import { HabitsList } from "./HabitsList";
+import type { Habit, OverdueExercise, Task } from "../types";
 
 interface FrontPageColumnProps {
   tasks: Task[];
   todoListUrl: string;
   overdueExercises: OverdueExercise[];
   exerciseDetailUrlTemplate: string;
+  fitnessSummaryUrl: string;
+  habits: Habit[];
+  habitListUrl: string;
 }
 
 export function FrontPageColumn({
@@ -16,6 +20,9 @@ export function FrontPageColumn({
   todoListUrl,
   overdueExercises,
   exerciseDetailUrlTemplate,
+  fitnessSummaryUrl,
+  habits,
+  habitListUrl,
 }: FrontPageColumnProps) {
   const headline =
     tasks.length === 0
@@ -26,18 +33,22 @@ export function FrontPageColumn({
 
   return (
     <div className="mag-column">
-      <MagSection accent="pink" kicker="front page">
+      <MagSection accent="pink" kicker={<a href={todoListUrl}>front page</a>}>
         <h2 className="mag-lede">
           <a href={todoListUrl}>{headline}</a>
         </h2>
         <TasksList tasks={tasks} todoListUrl={todoListUrl} />
       </MagSection>
 
-      <MagSection accent="danger" kicker="health watch · overdue">
+      <MagSection accent="danger" kicker={<a href={fitnessSummaryUrl}>health watch · overdue</a>}>
         <ExerciseSeverityList
           exercises={overdueExercises}
           exerciseDetailUrlTemplate={exerciseDetailUrlTemplate}
         />
+      </MagSection>
+
+      <MagSection accent="cyan" kicker={<a href={habitListUrl}>habits</a>}>
+        <HabitsList habits={habits} />
       </MagSection>
     </div>
   );

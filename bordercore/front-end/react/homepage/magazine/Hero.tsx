@@ -86,12 +86,12 @@ export function Hero({
             )}
           </div>
           <div className="mag-hero-actions">
-            <button type="button" className="mag-btn" onClick={handleShuffle}>
+            <button type="button" className="mag-hero-link" onClick={handleShuffle}>
               shuffle
             </button>
             {defaultCollection && (
               <a
-                className="mag-btn is-primary"
+                className="mag-hero-link"
                 href={fillUrlTemplate(collectionDetailUrlTemplate, defaultCollection.uuid)}
               >
                 view collection →

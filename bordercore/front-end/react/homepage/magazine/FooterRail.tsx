@@ -19,14 +19,7 @@ export function FooterRail({
 }: FooterRailProps) {
   return (
     <div className="mag-footer-rail">
-      <MagSection
-        accent="neutral"
-        kicker={
-          <>
-            <a href={bookmarkOverviewUrl}>classifieds</a> · recent bookmarks
-          </>
-        }
-      >
+      <MagSection accent="neutral" kicker={<a href={bookmarkOverviewUrl}>Recent Bookmarks</a>}>
         <div className="mag-classifieds">
           <RecentBookmarksList
             bookmarks={bookmarks}

@@ -7,6 +7,7 @@ and robots.txt.
 """
 
 import json
+from datetime import date
 from uuid import UUID
 from typing import cast
 
@@ -32,7 +33,9 @@ from fitness.services import get_overdue_exercises
 from lib.calendar_events import Calendar
 from lib.util import get_elasticsearch_connection
 from music.models import Song
+from habit.models import Habit
 from quote.models import Quote
+from reminder.models import Reminder
 from todo.models import Todo
 
 
@@ -171,6 +174,39 @@ def homepage(request: HttpRequest) -> HttpResponse:
         for exercise in overdue_exercises_sorted
     ])
 
+    # Reminders — next 5 upcoming, active only. Compute next_trigger_at live
+    # so the list stays accurate even when the trigger_reminders command is
+    # behind (the stored value can be null or in the past).
+    active_reminders = Reminder.objects.filter(user=user, is_active=True)
+    reminders_with_next = []
+    for reminder in active_reminders:
+        next_at = reminder.calculate_next_trigger_at()
+        if next_at is not None:
+            reminders_with_next.append((next_at, reminder))
+    reminders_with_next.sort(key=lambda pair: pair[0])
+
+    reminders_json = json_for_html_attr([
+        {
+            "uuid": str(r.uuid),
+            "name": r.name,
+            "next_trigger_at": next_at.isoformat(),
+            "schedule": r.get_schedule_description(),
+        }
+        for next_at, r in reminders_with_next[:5]
+    ])
+
+    # Habits — active habits with the number of days since the habit started.
+    today = date.today()
+    active_habits = Habit.objects.active(user).order_by("?")[:6]
+    habits_json = json_for_html_attr([
+        {
+            "uuid": str(habit.uuid),
+            "name": habit.name,
+            "streak": max(0, (today - habit.start_date).days),
+        }
+        for habit in active_habits
+    ])
+
     # Drill progress
     drill_total_progress = Question.objects.total_tag_progress(user)
     drill_progress_json = json_for_html_attr({
@@ -188,6 +224,8 @@ def homepage(request: HttpRequest) -> HttpResponse:
         "quote_json": quote_json,
         "random_image_info_json": random_image_info_json,
         "default_collection_json": default_collection_json,
+        "reminders_json": reminders_json,
+        "habits_json": habits_json,
         "title": "Bordercore",
     })
 

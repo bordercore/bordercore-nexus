@@ -1,5 +1,5 @@
 import React from "react";
-import { extractHost, faviconUrl, fillUrlTemplate } from "./utils";
+import { faviconUrl, fillUrlTemplate } from "./utils";
 import type { Bookmark } from "../types";
 
 interface RecentBookmarksListProps {
@@ -31,7 +31,6 @@ export function RecentBookmarksList({
               <span className="mag-fav mag-fav-fallback" aria-hidden="true" />
             )}
             <a href={fillUrlTemplate(bookmarkClickUrlTemplate, bookmark.uuid)}>{bookmark.name}</a>
-            <span className="url">{extractHost(bookmark.url)}</span>
           </div>
         );
       })}

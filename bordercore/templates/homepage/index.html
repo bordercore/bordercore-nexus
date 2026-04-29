@@ -17,6 +17,10 @@
         data-artist-detail-url-template="{% url 'music:artist_detail' '00000000-0000-0000-0000-000000000000' %}"
         data-blob-detail-url-template="{% url 'blob:detail' '00000000-0000-0000-0000-000000000000' %}"
         data-collection-detail-url-template="{% url 'collection:detail' '00000000-0000-0000-0000-000000000000' %}"
+        data-reminder-app-url="{% url 'reminder:app' %}"
+        data-habit-list-url="{% url 'habit:list' %}"
+        data-fitness-summary-url="{% url 'fitness:summary' %}"
+        data-music-list-url="{% url 'music:list' %}"
         data-tasks="{{ tasks_json }}"
         data-drill-progress="{{ drill_progress_json }}"
         data-overdue-exercises="{{ overdue_exercises_json }}"
@@ -26,6 +30,8 @@
         data-quote="{{ quote_json }}"
         data-random-image-info="{{ random_image_info_json }}"
         data-default-collection="{{ default_collection_json }}"
+        data-reminders="{{ reminders_json }}"
+        data-habits="{{ habits_json }}"
     ></div>
 
 {% endblock %}

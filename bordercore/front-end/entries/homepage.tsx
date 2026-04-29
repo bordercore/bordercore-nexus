@@ -5,9 +5,11 @@ import type {
   Bookmark,
   DefaultCollection,
   DrillProgress,
+  Habit,
   OverdueExercise,
   Quote,
   RandomImageInfo,
+  Reminder,
   Song,
   Task,
 } from "../react/homepage/types";
@@ -40,6 +42,10 @@ if (container) {
   const blobDetailUrlTemplate = container.getAttribute("data-blob-detail-url-template") || "";
   const collectionDetailUrlTemplate =
     container.getAttribute("data-collection-detail-url-template") || "";
+  const reminderAppUrl = container.getAttribute("data-reminder-app-url") || "";
+  const habitListUrl = container.getAttribute("data-habit-list-url") || "";
+  const fitnessSummaryUrl = container.getAttribute("data-fitness-summary-url") || "";
+  const musicListUrl = container.getAttribute("data-music-list-url") || "";
 
   const tasks = parseJson<Task[]>(container.getAttribute("data-tasks"), [], "tasks");
   const drillProgress = parseJson<DrillProgress>(
@@ -74,6 +80,16 @@ if (container) {
     null,
     "default collection",
   );
+  const reminders = parseJson<Reminder[]>(
+    container.getAttribute("data-reminders"),
+    [],
+    "reminders",
+  );
+  const habits = parseJson<Habit[]>(
+    container.getAttribute("data-habits"),
+    [],
+    "habits",
+  );
 
   const root = createRoot(container);
   root.render(
@@ -91,6 +107,12 @@ if (container) {
       quote={quote}
       randomImageInfo={randomImageInfo}
       defaultCollection={defaultCollection}
+      reminders={reminders}
+      reminderAppUrl={reminderAppUrl}
+      habits={habits}
+      habitListUrl={habitListUrl}
+      fitnessSummaryUrl={fitnessSummaryUrl}
+      musicListUrl={musicListUrl}
       userName={userName}
       exerciseDetailUrlTemplate={exerciseDetailUrlTemplate}
       bookmarkClickUrlTemplate={bookmarkClickUrlTemplate}

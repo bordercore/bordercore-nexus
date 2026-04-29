@@ -64,6 +64,19 @@ export interface CalendarEvent {
   summary: string;
 }
 
+export interface Reminder {
+  uuid: string;
+  name: string;
+  next_trigger_at: string | null;
+  schedule: string;
+}
+
+export interface Habit {
+  uuid: string;
+  name: string;
+  streak: number;
+}
+
 // Gallery types
 
 export interface CodeSample {

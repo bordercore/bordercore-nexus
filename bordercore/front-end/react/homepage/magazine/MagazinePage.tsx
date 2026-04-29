@@ -9,9 +9,11 @@ import type {
   Bookmark,
   DefaultCollection,
   DrillProgress,
+  Habit,
   OverdueExercise,
   Quote,
   RandomImageInfo,
+  Reminder,
   Song,
   Task,
 } from "../types";
@@ -31,6 +33,12 @@ export interface MagazinePageProps {
   quote: Quote | null;
   randomImageInfo: RandomImageInfo | null;
   defaultCollection: DefaultCollection | null;
+  reminders: Reminder[];
+  reminderAppUrl: string;
+  habits: Habit[];
+  habitListUrl: string;
+  fitnessSummaryUrl: string;
+  musicListUrl: string;
   userName: string;
 
   exerciseDetailUrlTemplate: string;
@@ -60,6 +68,9 @@ export function MagazinePage(props: MagazinePageProps) {
             todoListUrl={props.todoListUrl}
             overdueExercises={props.overdueExercises}
             exerciseDetailUrlTemplate={props.exerciseDetailUrlTemplate}
+            fitnessSummaryUrl={props.fitnessSummaryUrl}
+            habits={props.habits}
+            habitListUrl={props.habitListUrl}
           />
 
           <StudyDeskColumn
@@ -72,7 +83,10 @@ export function MagazinePage(props: MagazinePageProps) {
           <AmbientColumn
             music={props.music}
             artistDetailUrlTemplate={props.artistDetailUrlTemplate}
+            musicListUrl={props.musicListUrl}
             getCalendarEventsUrl={props.getCalendarEventsUrl}
+            reminders={props.reminders}
+            reminderAppUrl={props.reminderAppUrl}
           />
         </div>
 

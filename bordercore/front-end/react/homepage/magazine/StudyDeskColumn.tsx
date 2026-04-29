@@ -20,7 +20,7 @@ export function StudyDeskColumn({
 }: StudyDeskColumnProps) {
   return (
     <div className="mag-column">
-      <MagSection accent="cyan" kicker="study desk">
+      <MagSection accent="cyan" kicker={<a href={drillListUrl}>study desk</a>}>
         <div className="mag-block">
           <div className="mag-study">
             <DrillRing percent={drillProgress.percentage} />
