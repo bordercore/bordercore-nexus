@@ -24,19 +24,9 @@ export function FrontPageColumn({
   habits,
   habitListUrl,
 }: FrontPageColumnProps) {
-  const headline =
-    tasks.length === 0
-      ? "Inbox zero — focus on what matters today"
-      : `${tasks.length} high-priority task${tasks.length === 1 ? "" : "s"} await${
-          tasks.length === 1 ? "s" : ""
-        } attention`;
-
   return (
     <div className="mag-column">
-      <MagSection accent="pink" kicker={<a href={todoListUrl}>front page</a>}>
-        <h2 className="mag-lede">
-          <a href={todoListUrl}>{headline}</a>
-        </h2>
+      <MagSection accent="pink" kicker={<a href={todoListUrl}>the slate</a>}>
         <TasksList tasks={tasks} todoListUrl={todoListUrl} />
       </MagSection>
 
