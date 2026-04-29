@@ -18,7 +18,7 @@
   --mag-glow-purple-soft: 0 0 6px rgb(179 107 255 / 50%);
 
   min-height: 100vh;
-  padding-bottom: 36px; // marquee height
+  padding-bottom: 32px;
   background: var(--bg-0);
   color: var(--fg-1);
   font-family: var(--font-ui);
@@ -211,25 +211,98 @@
 
   .mag-columns {
     display: grid;
-    gap: 40px;
+    gap: 20px;
     grid-template-columns: 1.3fr 1fr 1fr;
   }
 
-  // Vertical spacing between sub-sections within a column.
-  // Not used between columns themselves (they are grid siblings).
-  .mag-block { margin-top: 32px; }
+  // Each column stacks its chambers with a fixed inter-chamber gap.
+  .mag-column {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  // ---- Chamber (card-style section) ----
+  // Bordered card with a colored kicker strip at the top. Accent comes from
+  // a modifier class that sets --mag-accent.
+  .mag-section {
+    --mag-accent: var(--fg-2);
+
+    display: flex;
+    overflow: hidden;
+    flex-direction: column;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--bg-1);
+  }
+  .mag-section.is-pink    { --mag-accent: var(--mag-pink); }
+  .mag-section.is-cyan    { --mag-accent: var(--mag-cyan); }
+  .mag-section.is-purple  { --mag-accent: var(--mag-purple); }
+  .mag-section.is-danger  { --mag-accent: var(--danger); }
+  .mag-section.is-neutral { --mag-accent: var(--fg-2); }
+
+  .mag-section-kicker {
+    display: flex;
+    align-items: center;
+    padding: 10px 18px;
+    border-bottom: 1px solid color-mix(in srgb, var(--mag-accent) 25%, transparent);
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--mag-accent) 15%, transparent),
+      transparent
+    );
+    gap: 10px;
+  }
+
+  .mag-section-kicker-dot {
+    width: 6px;
+    height: 6px;
+    flex: none;
+    border-radius: 999px;
+    background: var(--mag-accent);
+    box-shadow: 0 0 8px var(--mag-accent);
+  }
+
+  .mag-section-kicker-label {
+    color: var(--mag-accent);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .mag-section-body {
+    display: flex;
+    flex-direction: column;
+    padding: 18px;
+    gap: 16px;
+  }
+
+  // Sub-block spacing inside a chamber body when it has multiple parts
+  // (e.g., drill ring + bookshelf in the Study Desk). Dashed top border
+  // separates the second block from the first.
+  .mag-block { margin: 0; }
+
+  .mag-block + .mag-block {
+    padding-top: 16px;
+    border-top: 1px dashed var(--mag-hairline);
+  }
 
   .mag-lede {
-    margin-top: 8px;
     color: var(--fg-0);
     font-family: "Space Grotesk", var(--font-ui);
-    font-size: 28px;
+    font-size: 24px;
     font-weight: 600;
     letter-spacing: -0.01em;
     line-height: 1.2;
   }
 
-  .mag-tasks-list { margin-top: 18px; }
+  .mag-lede a {
+    color: inherit;
+    text-decoration: none;
+
+    &:hover { color: var(--mag-pink); }
+  }
 
   // ---- Tasks ----
   .mag-tasks {
@@ -290,52 +363,6 @@
     padding: 8px 0;
     color: var(--fg-3);
     font-size: 13px;
-  }
-
-  // ---- Daily bookmarks ----
-  .mag-daily-head {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 10px;
-  }
-
-  .mag-daily {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .mag-daily-row {
-    display: flex;
-    align-items: center;
-    padding: 6px 0;
-    gap: 10px;
-  }
-  .mag-daily-row.is-viewed { opacity: 0.45; }
-
-  .mag-daily-name {
-    overflow: hidden;
-    min-width: 0;
-    flex: 1;
-    color: var(--fg-1);
-    font-size: 13px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .mag-daily-name a {
-    color: inherit;
-    text-decoration: none;
-
-    &:hover { color: var(--mag-purple); }
-  }
-  .mag-daily-row.is-viewed .mag-daily-name { text-decoration: line-through; }
-
-  .mag-daily-url {
-    margin-left: auto;
-    color: var(--fg-3);
-    font-family: var(--font-mono);
-    font-size: 11px;
   }
 
   .mag-dot-empty {
@@ -550,19 +577,72 @@
   }
 
   // ---- Footer rail ----
+  // Per spec: full-width chambers stacked (Classifieds, then Today's Reading List).
   .mag-footer-rail {
-    display: grid;
-    padding-top: 32px;
-    border-top: 1px solid var(--mag-hairline);
-    margin-top: 48px;
-    gap: 40px;
-    grid-template-columns: 1.4fr 1fr;
+    display: flex;
+    flex-direction: column;
+    margin-top: 32px;
+    gap: 16px;
   }
 
   .mag-classifieds {
-    margin-top: 12px;
-    column-count: 2;
-    column-gap: 24px;
+    column-count: 3;
+    column-gap: 28px;
+  }
+
+  // ---- Reading list (pill row) ----
+  .mag-reading {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .mag-reading-meta {
+    color: var(--fg-3);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.02em;
+  }
+
+  .mag-reading-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .mag-reading-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border: 1px solid color-mix(in srgb, var(--mag-cyan) 25%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--mag-cyan) 8%, transparent);
+    color: var(--fg-1);
+    cursor: pointer;
+    font-family: var(--font-ui);
+    font-size: 12px;
+    gap: 6px;
+    text-decoration: none;
+    transition: all 120ms var(--bc-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+  }
+
+  .mag-reading-pill:hover {
+    border-color: var(--mag-cyan);
+    background: color-mix(in srgb, var(--mag-cyan) 14%, transparent);
+  }
+
+  .mag-reading-pill.is-read {
+    border-style: dashed;
+    border-color: var(--line);
+    background: transparent;
+    color: var(--fg-3);
+    text-decoration: line-through;
+  }
+
+  .mag-reading-pill .mag-dot-full,
+  .mag-reading-pill .mag-dot-empty {
+    width: 6px;
+    height: 6px;
   }
 
   // ---- Recent bookmarks rows ----
@@ -686,42 +766,6 @@
     box-shadow: 0 0 8px var(--mag-cyan);
   }
 
-  // ---- Marquee ----
-  .mag-marquee {
-    position: fixed;
-    z-index: 10;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    display: flex;
-    overflow: hidden;
-    height: 36px;
-    align-items: center;
-    border-top: 1px solid var(--mag-hairline);
-    background:
-      linear-gradient(180deg, transparent 0%, rgb(179 107 255 / 4%) 100%),
-      var(--bg-0);
-  }
-
-  .mag-marquee-track {
-    display: inline-flex;
-    animation: mag-marq 40s linear infinite;
-    color: var(--fg-3);
-    font-family: var(--font-mono);
-    font-size: 12px;
-    gap: 60px;
-    white-space: nowrap;
-    will-change: transform;
-  }
-  .mag-marquee:hover .mag-marquee-track { animation-play-state: paused; }
-  .mag-marquee-q { color: var(--fg-2); }
-  .mag-marquee-a { color: var(--mag-purple); }
-
-  @keyframes mag-marq {
-    from { transform: translateX(0); }
-    to   { transform: translateX(-50%); }
-  }
-
   // ---- Calendar loading state ----
   .mag-cal-state {
     color: var(--fg-3);
@@ -735,19 +779,24 @@
   @media (width <= 1024px) {
     .mag-body { padding: 32px 24px 24px; }
 
-    .mag-columns,
-    .mag-footer-rail {
-      gap: 32px;
+    .mag-columns {
+      gap: 16px;
       grid-template-columns: 1fr;
     }
 
     .mag-classifieds {
-      column-count: 1;
+      column-count: 2;
     }
 
     .mag-hero-overlay { padding: 24px 32px; }
 
     .mag-masthead { font-size: 44px; }
+  }
+
+  @media (width <= 900px) {
+    .mag-classifieds {
+      column-count: 1;
+    }
   }
 
   @media (width <= 768px) {
