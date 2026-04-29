@@ -75,6 +75,16 @@ urlpatterns = [
         name="sort_pinned_tags"
     ),
     path(
+        route="pin/<uuid:uuid>/",
+        view=views.pin_bookmark,
+        name="pin"
+    ),
+    path(
+        route="unpin/<uuid:uuid>/",
+        view=views.unpin_bookmark,
+        name="unpin"
+    ),
+    path(
         route="tag/search/",
         view=views.get_tags_used_by_bookmarks,
         name="get_tags_used_by_bookmarks"

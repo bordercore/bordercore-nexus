@@ -34,15 +34,39 @@ from django.urls import reverse_lazy
 from django.views.generic import CreateView, DeleteView, UpdateView
 from django.views.generic.edit import ModelFormMixin
 
+from django.contrib.staticfiles import finders
+
 from accounts.models import UserTag
 from blob.models import Blob
 from bookmark.forms import BookmarkForm
-from bookmark.models import Bookmark
+from bookmark.models import Bookmark, FAVICON_URL_RE
 from lib.decorators import validate_post_data
 from lib.exceptions import BookmarkSearchDeleteError
 from lib.mixins import FormRequestMixin, UserScopedQuerysetMixin, get_user_object_or_404
 from lib.util import favicon_img_url, get_pagination_range, parse_title_from_url
 from tag.models import Tag, TagBookmark
+
+
+def _favicon_url_if_exists(url: str) -> str | None:
+    """Return the favicon URL only if the local favicon file exists.
+
+    Bookmarks pointing at domains we don't have a stored favicon for would
+    otherwise hit the bordercore.com fallback chain icon, which is misleading
+    in prominent UI like the pinned-bookmarks rail. Returning None lets the
+    frontend render a generic globe icon instead.
+    """
+    if not url:
+        return None
+    m = FAVICON_URL_RE.match(url)
+    if not m:
+        return None
+    domain = m.group(1)
+    parts = domain.split(".")
+    if len(parts) == 3:
+        domain = ".".join(parts[1:])
+    if finders.find(f"img/favicons/{domain}.ico") is None:
+        return None
+    return f"https://www.bordercore.com/favicons/{domain}.ico"
 
 BOOKMARKS_PER_PAGE = 50
 
@@ -380,10 +404,21 @@ def overview(request: HttpRequest) -> HttpResponse:
         "usertag__sort_order"
     ).values()
 
+    pinned_bookmarks = [
+        {
+            "uuid": str(b.uuid),
+            "name": b.name,
+            "url": b.url,
+            "favicon_url": _favicon_url_if_exists(b.url),
+        }
+        for b in Bookmark.objects.filter(user=user, is_pinned=True).order_by("-modified")
+    ]
+
     return render(request, "bookmark/index.html",
                   {
                       "untagged_count": bare_count,
                       "pinned_tags": list(pinned_tags),
+                      "pinned_bookmarks": pinned_bookmarks,
                       "stats": stats,
                       "tag": request.GET.get("tag", None),
                       "title": "Bookmarks"
@@ -429,7 +464,7 @@ class BookmarkListView(APIView):
             )
 
         query = query.prefetch_related("tags")
-        query = query.only("created", "data", "last_response_code", "name", "note", "url", "uuid")
+        query = query.only("created", "data", "is_pinned", "last_response_code", "name", "note", "url", "uuid")
         query = query.order_by("-created")
 
         page_number = self.kwargs.get("page_number", 1)
@@ -491,6 +526,7 @@ class BookmarkListView(APIView):
                     "last_response_code": x.last_response_code,
                     "note": x.note,
                     "favicon_url": x.get_favicon_img_tag(size=16),
+                    "is_pinned": x.is_pinned,
                     "tags": [tag.name for tag in x.tags.all()],
                     "thumbnail_url": x.thumbnail_url,
                     "video_duration": x.video_duration
@@ -547,6 +583,7 @@ class BookmarkListTagView(BookmarkListView):
                     "last_response_code": x.bookmark.last_response_code,
                     "note": x.note,
                     "favicon_url": x.bookmark.get_favicon_img_tag(size=16),
+                    "is_pinned": x.bookmark.is_pinned,
                     "tags": getattr(x, "tags", []),  # tags is an annotated field from ArrayAgg
                     "thumbnail_url": x.bookmark.thumbnail_url,
                     "video_duration": x.bookmark.video_duration
@@ -577,6 +614,50 @@ class BookmarkListTagView(BookmarkListView):
         ).annotate(tags=ArrayAgg("bookmark__tags__name")) \
                                   .select_related("bookmark") \
                                   .order_by("sort_order")
+
+
+@api_view(["POST"])
+def pin_bookmark(request: HttpRequest, uuid: str) -> Response:
+    """Mark a bookmark as pinned.
+
+    Args:
+        request: The HTTP request.
+        uuid: The UUID of the bookmark to pin.
+
+    Returns:
+        JSON response with the pinned bookmark's display data:
+            - uuid, name, url, favicon_url
+    """
+    user = cast(User, request.user)
+    bookmark = get_user_object_or_404(user, Bookmark, uuid=uuid)
+    if not bookmark.is_pinned:
+        bookmark.is_pinned = True
+        bookmark.save()
+    return Response({
+        "uuid": str(bookmark.uuid),
+        "name": bookmark.name,
+        "url": bookmark.url,
+        "favicon_url": _favicon_url_if_exists(bookmark.url),
+    })
+
+
+@api_view(["POST"])
+def unpin_bookmark(request: HttpRequest, uuid: str) -> Response:
+    """Mark a bookmark as not pinned.
+
+    Args:
+        request: The HTTP request.
+        uuid: The UUID of the bookmark to unpin.
+
+    Returns:
+        Empty 204 response on success.
+    """
+    user = cast(User, request.user)
+    bookmark = get_user_object_or_404(user, Bookmark, uuid=uuid)
+    if bookmark.is_pinned:
+        bookmark.is_pinned = False
+        bookmark.save()
+    return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @api_view(["POST"])

@@ -25,11 +25,14 @@
         data-sort-pinned-tags-url="{% url 'bookmark:sort_pinned_tags' %}"
         data-pin-tag-url="{% url 'tag:pin' %}"
         data-unpin-tag-url="{% url 'tag:unpin' %}"
+        data-pin-bookmark-url="{% url 'bookmark:pin' '00000000-0000-0000-0000-000000000000' %}"
+        data-unpin-bookmark-url="{% url 'bookmark:unpin' '00000000-0000-0000-0000-000000000000' %}"
         data-store-in-session-url="{% url 'accounts:store_in_session' %}"
     >
     </div>
 
     {{ pinned_tags|json_script:"pinnedTags" }}
+    {{ pinned_bookmarks|json_script:"pinnedBookmarks" }}
     {{ stats|json_script:"bookmarkStats" }}
 
 {% endblock %}

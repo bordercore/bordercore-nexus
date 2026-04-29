@@ -16,15 +16,24 @@ import { DropDownMenu } from "../common/DropDownMenu";
 import { doGet, doDelete, doPost } from "../utils/reactUtils";
 import { EventBus } from "../utils/reactUtils";
 import BookmarkPinnedTags from "./BookmarkPinnedTags";
+import BookmarkPinnedBookmarks from "./BookmarkPinnedBookmarks";
 import BookmarkStatsCards from "./BookmarkStatsCards";
 import BookmarkList from "./BookmarkList";
 import BookmarkPagination from "./BookmarkPagination";
 import NewBookmarkModal from "./NewBookmarkModal";
-import type { Bookmark, BookmarkStats, PinnedTag, Pagination, ViewType } from "./types";
+import type {
+  Bookmark,
+  BookmarkStats,
+  PinnedBookmark,
+  PinnedTag,
+  Pagination,
+  ViewType,
+} from "./types";
 
 interface BookmarkListPageProps {
   initialTag: string | null;
   initialPinnedTags: PinnedTag[];
+  initialPinnedBookmarks: PinnedBookmark[];
   untaggedCount: number;
   initialViewType: ViewType;
   stats: BookmarkStats;
@@ -45,6 +54,8 @@ interface BookmarkListPageProps {
     sortPinnedTags: string;
     pinTag: string;
     unpinTag: string;
+    pinBookmark: string;
+    unpinBookmark: string;
     storeInSession: string;
   };
 }
@@ -52,6 +63,7 @@ interface BookmarkListPageProps {
 export function BookmarkListPage({
   initialTag,
   initialPinnedTags,
+  initialPinnedBookmarks,
   untaggedCount,
   initialViewType,
   stats,
@@ -76,6 +88,7 @@ export function BookmarkListPage({
     // Add "Untagged" as the first item
     return [{ id: -1, name: "Untagged", bookmark_count: untaggedCount }, ...initialPinnedTags];
   });
+  const [pinnedBookmarks, setPinnedBookmarks] = useState<PinnedBookmark[]>(initialPinnedBookmarks);
 
   const selectValueRef = useRef<SelectValueHandle>(null);
   const intervalIdRef = useRef<number | null>(null);
@@ -370,6 +383,48 @@ export function BookmarkListPage({
     setDrawerOpen(prev => !prev);
   }, []);
 
+  const handlePinBookmark = useCallback(
+    (uuid: string) => {
+      const url = urls.pinBookmark.replace("00000000-0000-0000-0000-000000000000", uuid);
+      doPost(
+        url,
+        {},
+        response => {
+          setBookmarkList(prev => prev.map(b => (b.uuid === uuid ? { ...b, is_pinned: true } : b)));
+          const pinned: PinnedBookmark = response.data;
+          setPinnedBookmarks(prev => {
+            if (prev.some(p => p.uuid === uuid)) return prev;
+            return [pinned, ...prev];
+          });
+          EventBus.$emit("toast", { body: "Bookmark pinned" });
+        },
+        "",
+        "Error pinning bookmark"
+      );
+    },
+    [urls]
+  );
+
+  const handleUnpinBookmark = useCallback(
+    (uuid: string) => {
+      const url = urls.unpinBookmark.replace("00000000-0000-0000-0000-000000000000", uuid);
+      doPost(
+        url,
+        {},
+        () => {
+          setBookmarkList(prev =>
+            prev.map(b => (b.uuid === uuid ? { ...b, is_pinned: false } : b))
+          );
+          setPinnedBookmarks(prev => prev.filter(p => p.uuid !== uuid));
+          EventBus.$emit("toast", { body: "Bookmark unpinned" });
+        },
+        "",
+        "Error unpinning bookmark"
+      );
+    },
+    [urls]
+  );
+
   const tagIsSelected = selectedTagName !== null && selectedTagName !== "Untagged";
 
   const isPinned = pinnedTags.some(t => t.name === selectedTagName);
@@ -424,6 +479,7 @@ export function BookmarkListPage({
           onSearchTag={searchTag}
           onGetPage={getPage}
         />
+        <BookmarkPinnedBookmarks bookmarks={pinnedBookmarks} onUnpin={handleUnpinBookmark} />
       </div>
 
       <div className="col-lg-9 ps-gutter">
@@ -576,6 +632,8 @@ export function BookmarkListPage({
             onEditBookmark={handleEditBookmark}
             onDeleteBookmark={handleDeleteBookmark}
             onClickTag={searchTag}
+            onPinBookmark={handlePinBookmark}
+            onUnpinBookmark={handleUnpinBookmark}
           />
 
           <BookmarkPagination pagination={pagination} onGetPage={getPage} />

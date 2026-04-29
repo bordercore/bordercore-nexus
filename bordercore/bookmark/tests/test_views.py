@@ -149,8 +149,106 @@ def test_bookmark_overview(authenticated_client, bookmark):
 
     assert resp.status_code == 200
     assert "pinned_tags" in resp.context
+    assert "pinned_bookmarks" in resp.context
     assert "stats" in resp.context
     assert "untagged_count" in resp.context
+
+
+def test_bookmark_overview_pinned_bookmarks_present(authenticated_client, bookmark):
+    """Pinned bookmarks appear in the overview context with expected fields."""
+    _, client = authenticated_client()
+
+    # bookmark[2] is created with is_pinned=True by the fixture.
+    pinned_uuid = str(bookmark[2].uuid)
+
+    url = urls.reverse("bookmark:overview")
+    resp = client.get(url)
+
+    assert resp.status_code == 200
+    pinned = resp.context["pinned_bookmarks"]
+    by_uuid = {p["uuid"]: p for p in pinned}
+    assert pinned_uuid in by_uuid
+    assert by_uuid[pinned_uuid]["name"] == bookmark[2].name
+    assert by_uuid[pinned_uuid]["url"] == bookmark[2].url
+    assert "favicon_url" in by_uuid[pinned_uuid]
+
+
+def test_bookmark_pin(authenticated_client, bookmark):
+    """Pin endpoint marks the bookmark pinned and returns its display data."""
+    _, client = authenticated_client()
+
+    assert bookmark[0].is_pinned is False
+
+    url = urls.reverse("bookmark:pin", kwargs={"uuid": bookmark[0].uuid})
+    resp = client.post(url)
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["uuid"] == str(bookmark[0].uuid)
+    assert body["name"] == bookmark[0].name
+    assert body["url"] == bookmark[0].url
+    assert "favicon_url" in body
+
+    bookmark[0].refresh_from_db()
+    assert bookmark[0].is_pinned is True
+
+
+def test_bookmark_pin_idempotent(authenticated_client, bookmark):
+    """Pinning an already-pinned bookmark is a no-op and still succeeds."""
+    _, client = authenticated_client()
+
+    bookmark[0].is_pinned = True
+    bookmark[0].save()
+
+    url = urls.reverse("bookmark:pin", kwargs={"uuid": bookmark[0].uuid})
+    resp = client.post(url)
+
+    assert resp.status_code == 200
+    bookmark[0].refresh_from_db()
+    assert bookmark[0].is_pinned is True
+
+
+def test_bookmark_unpin(authenticated_client, bookmark):
+    """Unpin endpoint clears the pinned flag."""
+    _, client = authenticated_client()
+
+    bookmark[0].is_pinned = True
+    bookmark[0].save()
+
+    url = urls.reverse("bookmark:unpin", kwargs={"uuid": bookmark[0].uuid})
+    resp = client.post(url)
+
+    assert resp.status_code == 204
+
+    bookmark[0].refresh_from_db()
+    assert bookmark[0].is_pinned is False
+
+
+def test_bookmark_unpin_idempotent(authenticated_client, bookmark):
+    """Unpinning a non-pinned bookmark is a no-op and still succeeds."""
+    _, client = authenticated_client()
+
+    assert bookmark[0].is_pinned is False
+
+    url = urls.reverse("bookmark:unpin", kwargs={"uuid": bookmark[0].uuid})
+    resp = client.post(url)
+
+    assert resp.status_code == 204
+    bookmark[0].refresh_from_db()
+    assert bookmark[0].is_pinned is False
+
+
+def test_bookmark_pin_unknown_uuid(authenticated_client):
+    """Pinning a bookmark UUID that doesn't exist returns 404."""
+    _, client = authenticated_client()
+
+    url = urls.reverse(
+        "bookmark:pin",
+        kwargs={"uuid": "00000000-0000-0000-0000-000000000000"},
+    )
+    resp = client.post(url)
+
+    assert resp.status_code == 404
 
 
 def test_bookmark_get_bookmarks_by_tag(authenticated_client, bookmark):

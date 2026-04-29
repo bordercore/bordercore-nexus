@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useLayoutEffect, useCallback } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBars, faPencilAlt, faTrashAlt } from "@fortawesome/free-solid-svg-icons";
+import { faBars, faPencilAlt, faThumbTack, faTrashAlt } from "@fortawesome/free-solid-svg-icons";
 import {
   DndContext,
   DragOverlay,
@@ -53,6 +53,8 @@ interface SortableBookmarkRowProps {
   onEditBookmark: (uuid: string) => void;
   onDeleteBookmark: (uuid: string) => void;
   onClickTag: (tagName: string) => void;
+  onPinBookmark: (uuid: string) => void;
+  onUnpinBookmark: (uuid: string) => void;
   dragDisabled: boolean;
 }
 
@@ -65,6 +67,8 @@ function SortableBookmarkRow({
   onEditBookmark,
   onDeleteBookmark,
   onClickTag,
+  onPinBookmark,
+  onUnpinBookmark,
   dragDisabled,
 }: SortableBookmarkRowProps) {
   const [showYtDuration, setShowYtDuration] = useState(false);
@@ -235,6 +239,25 @@ function SortableBookmarkRow({
                   onClick={e => {
                     e.preventDefault();
                     e.stopPropagation();
+                    if (bookmark.is_pinned) {
+                      onUnpinBookmark(bookmark.uuid);
+                    } else {
+                      onPinBookmark(bookmark.uuid);
+                    }
+                  }}
+                >
+                  <span className="dropdown-menu-icon">
+                    <FontAwesomeIcon icon={faThumbTack} />
+                  </span>
+                  <span className="dropdown-menu-text">{bookmark.is_pinned ? "Unpin" : "Pin"}</span>
+                </button>
+              </li>
+              <li>
+                <button
+                  className="dropdown-menu-item"
+                  onClick={e => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     onDeleteBookmark(bookmark.uuid);
                   }}
                 >
@@ -264,6 +287,8 @@ interface BookmarkListProps {
   onEditBookmark: (uuid: string) => void;
   onDeleteBookmark: (uuid: string) => void;
   onClickTag: (tagName: string) => void;
+  onPinBookmark: (uuid: string) => void;
+  onUnpinBookmark: (uuid: string) => void;
 }
 
 export function BookmarkList({
@@ -278,6 +303,8 @@ export function BookmarkList({
   onEditBookmark,
   onDeleteBookmark,
   onClickTag,
+  onPinBookmark,
+  onUnpinBookmark,
 }: BookmarkListProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
 
@@ -378,6 +405,8 @@ export function BookmarkList({
                   onEditBookmark={onEditBookmark}
                   onDeleteBookmark={onDeleteBookmark}
                   onClickTag={onClickTag}
+                  onPinBookmark={onPinBookmark}
+                  onUnpinBookmark={onUnpinBookmark}
                   dragDisabled={dragDisabled}
                 />
               ))}

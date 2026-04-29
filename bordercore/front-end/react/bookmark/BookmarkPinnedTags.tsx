@@ -219,7 +219,7 @@ export function BookmarkPinnedTags({
   );
 
   return (
-    <div className="card-body backdrop-filter h-100 bookmark-pinned-tags">
+    <div className="card-body backdrop-filter bookmark-pinned-tags">
       {tagCoveragePct !== undefined && (
         <div className="tag-coverage-bar">
           <div className="tag-coverage-label">

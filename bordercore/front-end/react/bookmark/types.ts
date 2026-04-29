@@ -7,6 +7,7 @@ export interface Bookmark {
   favicon_url?: string;
   note?: string;
   video_duration?: string;
+  is_pinned?: boolean;
   tags: string[];
   linkId?: string; // Computed from uuid for element ID
 }
@@ -16,6 +17,13 @@ export interface PinnedTag {
   uuid?: string;
   name: string;
   bookmark_count?: number;
+}
+
+export interface PinnedBookmark {
+  uuid: string;
+  name: string;
+  url: string;
+  favicon_url: string | null;
 }
 
 export interface Pagination {

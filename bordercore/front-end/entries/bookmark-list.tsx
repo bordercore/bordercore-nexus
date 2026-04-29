@@ -1,7 +1,12 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import BookmarkListPage from "../react/bookmark/BookmarkListPage";
-import type { BookmarkStats, PinnedTag, ViewType } from "../react/bookmark/types";
+import type {
+  BookmarkStats,
+  PinnedBookmark,
+  PinnedTag,
+  ViewType,
+} from "../react/bookmark/types";
 
 const container = document.getElementById("react-root");
 if (container) {
@@ -33,6 +38,10 @@ if (container) {
     container.getAttribute("data-sort-pinned-tags-url") || "";
   const pinTagUrl = container.getAttribute("data-pin-tag-url") || "";
   const unpinTagUrl = container.getAttribute("data-unpin-tag-url") || "";
+  const pinBookmarkUrl =
+    container.getAttribute("data-pin-bookmark-url") || "";
+  const unpinBookmarkUrl =
+    container.getAttribute("data-unpin-bookmark-url") || "";
   const storeInSessionUrl =
     container.getAttribute("data-store-in-session-url") || "";
 
@@ -53,6 +62,19 @@ if (container) {
       initialPinnedTags = JSON.parse(pinnedTagsScript.textContent || "[]");
     } catch (e) {
       console.error("Error parsing pinned tags:", e);
+    }
+  }
+
+  // Parse pinned bookmarks from JSON script tag
+  let initialPinnedBookmarks: PinnedBookmark[] = [];
+  const pinnedBookmarksScript = document.getElementById("pinnedBookmarks");
+  if (pinnedBookmarksScript) {
+    try {
+      initialPinnedBookmarks = JSON.parse(
+        pinnedBookmarksScript.textContent || "[]"
+      );
+    } catch (e) {
+      console.error("Error parsing pinned bookmarks:", e);
     }
   }
 
@@ -78,6 +100,7 @@ if (container) {
     <BookmarkListPage
       initialTag={initialTag}
       initialPinnedTags={initialPinnedTags}
+      initialPinnedBookmarks={initialPinnedBookmarks}
       untaggedCount={untaggedCount}
       initialViewType={initialViewType}
       stats={stats}
@@ -98,6 +121,8 @@ if (container) {
         sortPinnedTags: sortPinnedTagsUrl,
         pinTag: pinTagUrl,
         unpinTag: unpinTagUrl,
+        pinBookmark: pinBookmarkUrl,
+        unpinBookmark: unpinBookmarkUrl,
         storeInSession: storeInSessionUrl,
       }}
     />
