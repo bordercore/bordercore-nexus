@@ -597,3 +597,69 @@ def list_artist_image_keys(prefix: str = "artist_images/") -> set[str]:
         Set of S3 object key strings.
     """
     return set(s3_list_objects(settings.AWS_BUCKET_NAME_MUSIC, prefix))
+
+
+def get_dashboard_stats(user: User) -> dict[str, Any]:
+    """Aggregate dashboard stats: weekly plays, top tag, monthly adds, streak.
+
+    Returns a dict with keys: plays_this_week, top_tag_7d, added_this_month,
+    longest_streak, plays_today.
+    """
+    from datetime import timedelta
+
+    from django.db.models import Count
+    from django.db.models.functions import TruncDate
+    from django.utils import timezone
+
+    from .models import Listen
+
+    now = timezone.now()
+    today = now.date()
+    week_ago = now - timedelta(days=7)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    listens = Listen.objects.filter(user=user)
+
+    plays_this_week = listens.filter(created__gte=week_ago).count()
+    plays_today = listens.filter(created__date=today).count()
+    added_this_month = Album.objects.filter(
+        user=user, created__gte=month_start
+    ).count()
+
+    top_tag_qs = (
+        Tag.objects.filter(song__listen__in=listens.filter(created__gte=week_ago))
+        .annotate(count=Count("song__listen"))
+        .order_by("-count")
+        .values("name", "count")
+        .first()
+    )
+    top_tag_7d = (
+        {"name": top_tag_qs["name"], "count": top_tag_qs["count"]}
+        if top_tag_qs
+        else None
+    )
+
+    listen_dates = sorted(
+        {
+            row["d"]
+            for row in listens.annotate(d=TruncDate("created")).values("d").distinct()
+        }
+    )
+    longest_streak = 0
+    if listen_dates:
+        run = 1
+        longest_streak = 1
+        for prev, curr in zip(listen_dates, listen_dates[1:]):
+            if (curr - prev).days == 1:
+                run += 1
+                longest_streak = max(longest_streak, run)
+            else:
+                run = 1
+
+    return {
+        "plays_this_week": plays_this_week,
+        "top_tag_7d": top_tag_7d,
+        "added_this_month": added_this_month,
+        "longest_streak": longest_streak,
+        "plays_today": plays_today,
+    }
