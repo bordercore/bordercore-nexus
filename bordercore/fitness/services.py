@@ -18,8 +18,15 @@ from fitness.models import Exercise, ExerciseUser
 
 OVERDUE_THRESHOLD_DAYS = 6
 
-def get_fitness_summary(user: User, count_only: bool = False) -> tuple[list[Exercise], list[Exercise]]:
-    """Return active and inactive exercises for a user, annotated with status."""
+def get_fitness_summary(
+    user: User, count_only: bool = False, prefetch_muscles: bool = True,
+) -> tuple[list[Exercise], list[Exercise]]:
+    """Return active and inactive exercises for a user, annotated with status.
+
+    ``prefetch_muscles`` controls whether ``muscle`` / ``muscle__muscle_group``
+    are eagerly loaded. Callers that don't need muscle data (e.g. the homepage
+    overdue list) should pass ``False`` to avoid an unnecessary eager load.
+    """
 
     newest = ExerciseUser.objects.filter(
         exercise=OuterRef("pk"), user=user
@@ -35,7 +42,7 @@ def get_fitness_summary(user: User, count_only: bool = False) -> tuple[list[Exer
         frequency=Subquery(newest.values("frequency")[:1]),
     ).order_by(F("last_active"))
 
-    if not count_only:
+    if not count_only and prefetch_muscles:
         exercises = exercises.prefetch_related("muscle", "muscle__muscle_group")
 
     active_exercises = []
@@ -85,7 +92,9 @@ def get_fitness_summary(user: User, count_only: bool = False) -> tuple[list[Exer
     return cast(tuple[list[Exercise], list[Exercise]], (active_exercises, inactive_exercises))
 
 
-def get_overdue_exercises(user: User, count_only: bool = False) -> int | list[Exercise]:
+def get_overdue_exercises(
+    user: User, count_only: bool = False, prefetch_muscles: bool = True,
+) -> int | list[Exercise]:
     """Return overdue (or due today) exercises for a user, or just the count.
 
     An exercise is considered:
@@ -99,6 +108,8 @@ def get_overdue_exercises(user: User, count_only: bool = False) -> int | list[Ex
         user: The Django user whose overdue items to compute.
         count_only: If ``True``, return only the integer count; otherwise
             return the list of overdue/due-today :class:`Exercise` objects.
+        prefetch_muscles: If ``False``, skip eager-loading muscle data. Use
+            this when the caller only needs basic exercise fields.
 
     Returns:
         int | list[Exercise]: Either a count (when ``count_only`` is ``True``)
@@ -106,7 +117,7 @@ def get_overdue_exercises(user: User, count_only: bool = False) -> int | list[Ex
     """
     overdue_exercises = [
         x
-        for x in get_fitness_summary(user, count_only)[0]
+        for x in get_fitness_summary(user, count_only, prefetch_muscles)[0]
         if x.overdue in (1, 2)  # type: ignore[attr-defined]
     ]
 
