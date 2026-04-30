@@ -604,3 +604,14 @@ def test_recent_songs_includes_album_rating_plays(authenticated_client):
     s_b = songs_by_uuid[str(song_with_listens.uuid)]
     assert s_b["plays"] == 2
     assert s_b["rating"] == 3
+
+
+def test_music_list_passes_dashboard_stats(authenticated_client):
+    from django.urls import reverse
+    from music.tests.factories import SongFactory
+
+    user, client = authenticated_client()
+    SongFactory.create(user=user)
+    response = client.get(reverse("music:list"))
+    assert response.status_code == 200
+    assert b"data-dashboard-stats" in response.content

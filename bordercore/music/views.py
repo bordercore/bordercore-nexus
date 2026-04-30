@@ -51,8 +51,8 @@ from music.services import search as search_service
 
 from .forms import AlbumForm, PlaylistForm, SongForm
 from .models import Album, Artist, Playlist, PlaylistItem, Song, SongSource
-from .services import (get_artist_counts, get_playlist_counts,
-                       get_playlist_songs)
+from .services import (get_artist_counts, get_dashboard_stats,
+                       get_playlist_counts, get_playlist_songs)
 from .services import get_recent_albums as get_recent_albums_service
 from .services import get_unique_artist_letters
 
@@ -139,6 +139,8 @@ def music_list(request: HttpRequest) -> HttpResponse:
         for album in recent_albums_list
     ]
 
+    dashboard_stats = get_dashboard_stats(user)
+
     return render(request, "music/index.html",
                   {
                       "cols": ["Date", "artist", "title", "id"],
@@ -154,6 +156,7 @@ def music_list(request: HttpRequest) -> HttpResponse:
                       "playlists_json": json.dumps(playlists_data),
                       "recent_played_songs_json": json.dumps(recent_played_songs_data),
                       "recent_albums_json": json.dumps(recent_albums_data),
+                      "dashboard_stats_json": json.dumps(dashboard_stats),
                   })
 
 
