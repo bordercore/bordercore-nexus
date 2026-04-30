@@ -140,4 +140,508 @@
   }
 
   // Sidebar / page-head / body / cards — full visual styling completed in Task 17.
+
+  .mlo-section-head {
+    display: flex;
+    align-items: baseline;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--mlo-hairline);
+    margin-bottom: 12px;
+    color: var(--fg-1);
+    font: 600 15px "Space Grotesk", var(--font-ui);
+    gap: 10px;
+  }
+
+  .mlo-sidebar {
+    padding: 16px 10px 90px;
+    border-right: 1px solid var(--mlo-line-soft);
+    background: color-mix(in oklch, var(--bg-1), transparent 60%);
+    grid-row: 2;
+
+    .mlo-section-head {
+      padding: 0 8px 6px;
+      color: var(--mlo-fg-4);
+      font: 500 10px var(--font-mono);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .mlo-nav-item {
+      display: flex;
+      align-items: center;
+      padding: 8px 10px;
+      border-radius: 6px;
+      color: var(--fg-2);
+      font: 500 13px var(--font-ui);
+      gap: 10px;
+      text-decoration: none;
+
+      &:hover {
+        background: var(--mlo-bg-3);
+      }
+
+      &.mlo-nav-item-active {
+        border: 1px solid rgb(179 107 255 / 30%);
+        background: rgb(179 107 255 / 8%);
+        box-shadow: 0 0 14px -4px rgb(179 107 255 / 45%);
+        color: var(--mlo-accent);
+      }
+
+      .mlo-nav-count {
+        margin-left: auto;
+        color: var(--mlo-fg-4);
+        font: 500 10px var(--font-mono);
+      }
+    }
+
+    .mlo-playlists {
+      padding: 0;
+      margin: 4px 0 0;
+      list-style: none;
+    }
+
+    .mlo-playlist-row {
+      display: grid;
+      width: 100%;
+      align-items: center;
+      padding: 6px 10px;
+      border: 0;
+      background: transparent;
+      color: var(--fg-2);
+      cursor: pointer;
+      font: 500 13px var(--font-ui);
+      gap: 8px;
+      grid-template-columns: 7px 1fr auto;
+      text-align: left;
+
+      &:hover {
+        background: var(--mlo-bg-3);
+      }
+
+      &.mlo-playlist-row-active {
+        background: rgb(179 107 255 / 8%);
+        box-shadow: inset 2px 0 0 var(--mlo-accent);
+      }
+    }
+
+    .mlo-playlist-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--mlo-dot-color, var(--mlo-accent));
+      box-shadow: 0 0 6px var(--mlo-dot-color, var(--mlo-accent));
+    }
+
+    .mlo-playlist-count {
+      color: var(--mlo-fg-4);
+      font: 500 10px var(--font-mono);
+    }
+
+    .mlo-playlist-query {
+      padding: 0 10px 6px 25px;
+      color: var(--mlo-accent-2);
+      font: 500 10px var(--font-mono);
+    }
+  }
+
+  .mlo-main {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    padding: 20px 24px 40px;
+    gap: 16px;
+    grid-row: 2;
+  }
+
+  .mlo-pagehead {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .mlo-pagehead-title {
+    margin: 0;
+    color: var(--fg-1);
+    font: 600 22px/1.1 "Space Grotesk", var(--font-ui);
+    letter-spacing: -0.01em;
+  }
+
+  .mlo-pagehead-title-dim {
+    color: var(--mlo-fg-3);
+    font-weight: 500;
+  }
+
+  .mlo-pagehead-meta {
+    margin: 4px 0 0;
+    color: var(--mlo-fg-3);
+    font: 500 12px var(--font-mono);
+  }
+
+  .mlo-pagehead-actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  .mlo-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border: 1px solid var(--mlo-line-soft);
+    border-radius: 6px;
+    background: var(--mlo-bg-3);
+    color: var(--fg-1);
+    cursor: pointer;
+    font: 500 12px var(--font-ui);
+    gap: 6px;
+  }
+
+  .mlo-btn-primary {
+    border: 0;
+    background: linear-gradient(180deg, #b36bff, #9355ef);
+    box-shadow: 0 0 0 1px rgb(179 107 255 / 30%), 0 0 16px -2px rgb(179 107 255 / 50%);
+    color: #fff;
+  }
+
+  .mlo-btn-icon {
+    padding: 6px 10px;
+  }
+
+  .mlo-body {
+    display: flex;
+    min-width: 0;
+    gap: 16px;
+  }
+
+  .mlo-body-left {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .mlo-body-right {
+    width: 280px;
+    flex-shrink: 0;
+  }
+
+  .mlo-section {
+    padding: 16px 18px;
+    border: 1px solid var(--mlo-line-soft);
+    border-radius: 10px;
+    margin-bottom: 16px;
+    background: var(--mlo-bg-2);
+  }
+
+  .mlo-section-head-hint {
+    color: var(--mlo-fg-4);
+    font: 500 10px var(--font-mono);
+  }
+
+  .mlo-album-grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .mlo-album-card {
+    .mlo-album-card-pill {
+      position: absolute;
+      z-index: 2;
+      right: 6px;
+      bottom: 6px;
+      padding: 2px 7px;
+      border: 1px solid var(--mlo-line-soft);
+      border-radius: 3px;
+      background: rgb(7 7 12 / 80%);
+      color: var(--mlo-fg-3);
+      font: 500 10px var(--font-mono);
+    }
+
+    .mlo-album-card-play {
+      position: absolute;
+      z-index: 2;
+      right: 8px;
+      bottom: 32px;
+      width: 38px;
+      height: 38px;
+      border: 0;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #b36bff, #9355ef);
+      box-shadow: 0 0 14px -2px rgb(179 107 255 / 60%);
+      color: #fff;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.12s;
+    }
+
+    .mlo-album-card-cover {
+      position: relative;
+      overflow: hidden;
+      border-radius: 4px;
+      aspect-ratio: 1;
+
+      img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      &::after {
+        position: absolute;
+        background: linear-gradient(180deg, transparent 50%, rgb(0 0 0 / 60%));
+        content: "";
+        inset: 0;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.12s ease-out;
+      }
+
+      &:hover::after {
+        opacity: 1;
+      }
+
+      &:hover .mlo-album-card-play {
+        opacity: 1;
+      }
+    }
+
+    .mlo-album-card-title {
+      display: block;
+      overflow: hidden;
+      max-width: 100%;
+      margin-top: 8px;
+      color: var(--fg-1);
+      font: 600 13px var(--font-ui);
+      text-decoration: none;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .mlo-album-card-artist {
+      display: block;
+      margin-top: 2px;
+      color: var(--mlo-accent-2);
+      font: 500 12px var(--font-ui);
+      text-decoration: none;
+    }
+
+    .mlo-album-card-meta {
+      display: flex;
+      margin-top: 4px;
+      color: var(--mlo-fg-3);
+      font: 500 11px var(--font-mono);
+      gap: 6px;
+    }
+
+    .mlo-album-card-plays {
+      color: var(--mlo-accent-2);
+    }
+
+    .mlo-album-card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      margin-top: 6px;
+      gap: 4px;
+    }
+  }
+
+  .mlo-tag-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 6px;
+    border: 1px solid rgb(124 127 255 / 25%);
+    border-radius: 3px;
+    background: rgb(124 127 255 / 10%);
+    color: var(--mlo-accent-2);
+    font: 500 10px var(--font-mono);
+  }
+
+  .mlo-song-table {
+    .mlo-song-row-title {
+      color: var(--fg-1);
+      font-weight: 500;
+    }
+
+    .mlo-song-row-play-icon {
+      display: none;
+      color: var(--mlo-accent);
+    }
+
+    .mlo-song-row {
+      display: grid;
+      width: 100%;
+      align-items: center;
+      padding: 8px 6px;
+      border: 0;
+      border-bottom: 1px solid var(--mlo-hairline);
+      background: transparent;
+      color: var(--fg-2);
+      cursor: pointer;
+      font: 500 12px var(--font-ui);
+      gap: 12px;
+      grid-template-columns: 32px 1.6fr 1.4fr 1.4fr 80px 50px 50px 60px;
+      text-align: left;
+
+      &:hover {
+        background: rgb(179 107 255 / 4%);
+
+        .mlo-song-row-num-text {
+          display: none;
+        }
+
+        .mlo-song-row-play-icon {
+          display: inline;
+        }
+      }
+    }
+
+    .mlo-song-row-head {
+      color: var(--mlo-fg-4);
+      cursor: default;
+      font: 500 10px var(--font-mono);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+
+      &:hover {
+        background: transparent;
+      }
+    }
+
+    .mlo-song-row-playing {
+      background: rgb(179 107 255 / 10%);
+      box-shadow: inset 2px 0 0 var(--mlo-accent);
+
+      .mlo-song-row-title {
+        color: var(--mlo-accent);
+      }
+    }
+
+    .mlo-song-row-num {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--mlo-fg-4);
+      font: 500 10px var(--font-mono);
+    }
+
+    .mlo-song-row-artist,
+    .mlo-song-row-album {
+      overflow: hidden;
+      color: var(--mlo-accent-2);
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .mlo-song-row-plays {
+      color: var(--mlo-accent-2);
+      font: 500 12px var(--font-mono);
+      text-align: right;
+    }
+
+    .mlo-song-row-year,
+    .mlo-song-row-length {
+      color: var(--mlo-fg-3);
+      font: 500 11px var(--font-mono);
+      text-align: right;
+    }
+
+    .mlo-song-row-stars {
+      display: inline-flex;
+      gap: 1px;
+    }
+  }
+
+  .mlo-star {
+    border: 0;
+    background: transparent;
+    color: var(--fg-disabled, #3a3e4b);
+    cursor: pointer;
+    font-size: 11px;
+    line-height: 1;
+  }
+
+  .mlo-star-filled {
+    color: var(--mlo-warn);
+  }
+
+  .mlo-featured {
+    padding: 16px 18px;
+    border: 1px solid var(--mlo-line-soft);
+    border-radius: 10px;
+    margin-bottom: 16px;
+    background: var(--mlo-bg-2);
+  }
+
+  .mlo-featured-cover {
+    width: 100%;
+    max-width: 224px;
+    border-radius: 6px;
+    aspect-ratio: 1;
+    object-fit: cover;
+  }
+
+  .mlo-featured-title {
+    display: block;
+    margin-top: 12px;
+    color: var(--fg-1);
+    font: 600 16px "Space Grotesk", var(--font-ui);
+    text-decoration: none;
+  }
+
+  .mlo-featured-artist {
+    display: block;
+    margin-top: 2px;
+    color: var(--mlo-accent-2);
+    font: 500 13px var(--font-ui);
+    text-decoration: none;
+  }
+
+  .mlo-featured-actions {
+    display: flex;
+    margin-top: 12px;
+    gap: 8px;
+
+    .mlo-btn-primary {
+      flex: 1;
+      justify-content: center;
+    }
+  }
+
+  .mlo-recent-plays {
+    padding: 16px 18px;
+    border: 1px solid var(--mlo-line-soft);
+    border-radius: 10px;
+    background: var(--mlo-bg-2);
+  }
+
+  .mlo-recent-plays-list {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    margin: 0;
+    gap: 6px;
+    list-style: none;
+  }
+
+  .mlo-recent-plays-row {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: 24px 1fr;
+  }
+
+  .mlo-recent-plays-idx {
+    color: var(--mlo-fg-4);
+    font: 500 10px var(--font-mono);
+  }
+
+  .mlo-recent-plays-title {
+    color: var(--fg-1);
+    font: 500 13px var(--font-ui);
+  }
+
+  .mlo-recent-plays-artist {
+    color: var(--mlo-accent-2);
+    font: 500 12px var(--font-ui);
+    text-decoration: none;
+  }
 }
