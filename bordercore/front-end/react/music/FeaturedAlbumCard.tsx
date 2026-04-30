@@ -1,27 +1,44 @@
 import React from "react";
-import Card from "../common/Card";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPlay, faShuffle } from "@fortawesome/free-solid-svg-icons";
 import type { FeaturedAlbum } from "./types";
 
-interface FeaturedAlbumCardProps {
+interface Props {
   album: FeaturedAlbum;
-  className?: string;
+  onPlay: () => void;
+  onShuffle: () => void;
 }
 
-export function FeaturedAlbumCard({ album, className }: FeaturedAlbumCardProps) {
+const FeaturedAlbumCard: React.FC<Props> = ({ album, onPlay, onShuffle }) => {
   return (
-    <Card title="Featured Album" className={className}>
-      <hr className="divider" />
-      <div className="zoomable">
-        <a href={album.album_url}>
-          <img src={album.artwork_url} height={150} width={150} alt={album.title} />
-        </a>
+    <section className="mlo-featured">
+      <div className="mlo-section-head">
+        Featured <span className="mlo-section-head-hint">// album of the week</span>
       </div>
-      <div className="mt-1 fw-bold">{album.title}</div>
-      <div className="text-light">
-        <a href={album.artist_url}>{album.artist_name}</a>
+      <a href={album.album_url} className="mlo-featured-cover-link">
+        <img src={album.artwork_url} alt={album.title} className="mlo-featured-cover" />
+      </a>
+      <a href={album.album_url} className="mlo-featured-title">
+        {album.title}
+      </a>
+      <a href={album.artist_url} className="mlo-featured-artist">
+        {album.artist_name}
+      </a>
+      <div className="mlo-featured-actions">
+        <button type="button" className="mlo-btn mlo-btn-primary" onClick={onPlay}>
+          <FontAwesomeIcon icon={faPlay} /> play
+        </button>
+        <button
+          type="button"
+          className="mlo-btn mlo-btn-icon"
+          aria-label="shuffle"
+          onClick={onShuffle}
+        >
+          <FontAwesomeIcon icon={faShuffle} />
+        </button>
       </div>
-    </Card>
+    </section>
   );
-}
+};
 
 export default FeaturedAlbumCard;
