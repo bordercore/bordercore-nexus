@@ -107,3 +107,22 @@ def test_get_recent_albums_includes_extended_fields(authenticated_client):
     assert a["year"] == album.year
     assert a["rating"] == 3  # rounded average of (4, 2)
     assert a["plays"] == 0
+
+
+def test_get_recent_albums_aggregates_correctly_with_listens(authenticated_client):
+    """Verify aggregate fields aren't inflated by the song→listen cross-join."""
+    user, _ = authenticated_client()
+    album = AlbumFactory.create(user=user)
+    song_a = SongFactory.create(user=user, album=album, length=120, rating=4)
+    song_b = SongFactory.create(user=user, album=album, length=240, rating=2)
+    for _ in range(3):
+        Listen.objects.create(user=user, song=song_a)
+    for _ in range(2):
+        Listen.objects.create(user=user, song=song_b)
+
+    albums, _ = get_recent_albums(user, 1)
+    a = albums[0]
+    assert a["track_count"] == 2, "track_count must not include listen fan-out"
+    assert a["playtime"] == "6:00", "playtime must be 360s, not inflated by listens"
+    assert a["rating"] == 3, "rating must be true mean (3), not play-weighted (3.2)"
+    assert a["plays"] == 5

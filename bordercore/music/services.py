@@ -21,7 +21,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.core.paginator import Page, Paginator
-from django.db.models import Avg, Count, QuerySet, Sum
+from django.db.models import Avg, Count, FloatField, IntegerField, OuterRef, QuerySet, Subquery, Sum
 from django.db.models.functions import Coalesce, TruncDate
 from django.urls import reverse
 from django.utils import timezone
@@ -123,19 +123,46 @@ def get_playlist_songs(playlist: Playlist) -> dict[str, list[dict[str, Any]] | i
     }
 
 
-def get_recent_albums(user: User, page_number: int = 1) -> tuple[list[dict[str, Any]], dict[str, int | bool | int | None]]:
-    """Get paginated recent albums with extended fields for the dashboard."""
+def get_recent_albums(user: User, page_number: int = 1) -> tuple[list[dict[str, Any]], dict[str, int | bool | None]]:
+    """Get paginated recent albums with extended fields for the dashboard.
+
+    Each album dict contains:
+        uuid, title, artist_uuid, artist_name, created (formatted "B Y"),
+        album_url, artwork_url, artist_url,
+        year, original_release_year,
+        track_count: int (distinct songs),
+        playtime: str (humanized total seconds),
+        tags: list[str] (first 2),
+        rating: int | None (rounded average song rating, None if no rated songs),
+        plays: int (total Listen rows across the album's songs).
+    """
     albums_per_page: int = 12
+
+    song_aggregates = (
+        Song.objects.filter(album=OuterRef("pk"))
+        .values("album")
+        .annotate(
+            playtime=Coalesce(Sum("length"), 0),
+            avg_rating=Avg("rating"),
+            track_count=Count("id"),
+        )
+    )
+    listen_count = (
+        Listen.objects.filter(song__album=OuterRef("pk"))
+        .values("song__album")
+        .annotate(c=Count("id"))
+        .values("c")
+    )
 
     query: QuerySet[Album] = (
         Album.objects.filter(user=user)
         .select_related("artist")
         .prefetch_related("tags")
         .annotate(
-            _track_count=Count("song", distinct=True),
-            _playtime_seconds=Sum("song__length"),
-            _avg_rating=Avg("song__rating"),
-            _plays=Count("song__listen"),
+            _track_count=Subquery(song_aggregates.values("track_count"), output_field=IntegerField()),
+            _playtime_seconds=Subquery(song_aggregates.values("playtime"), output_field=IntegerField()),
+            _avg_rating=Subquery(song_aggregates.values("avg_rating"), output_field=FloatField()),
+            _plays=Coalesce(Subquery(listen_count, output_field=IntegerField()), 0),
         )
         .order_by("-created")
     )
@@ -143,7 +170,7 @@ def get_recent_albums(user: User, page_number: int = 1) -> tuple[list[dict[str, 
     paginator: Paginator = Paginator(query, albums_per_page)
     page: Page = paginator.get_page(page_number)
 
-    paginator_info: dict[str, int | bool | int | None] = {
+    paginator_info: dict[str, int | bool | None] = {
         "page_number": page_number,
         "has_next": page.has_next(),
         "has_previous": page.has_previous(),
@@ -164,7 +191,7 @@ def get_recent_albums(user: User, page_number: int = 1) -> tuple[list[dict[str, 
             "artist_url": reverse("music:artist_detail", kwargs={"uuid": x.artist.uuid}),
             "year": x.year,
             "original_release_year": x.original_release_year,
-            "track_count": x._track_count,
+            "track_count": x._track_count or 0,
             "playtime": convert_seconds(x._playtime_seconds or 0),
             "tags": [t.name for t in x.tags.all()][:2],
             "rating": round(x._avg_rating) if x._avg_rating is not None else None,
