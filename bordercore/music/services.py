@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import string
 import zipfile
+from datetime import timedelta
 from io import BytesIO
 from typing import Any, Iterable, Iterator, TypedDict, cast
 from urllib.parse import unquote
@@ -21,15 +22,16 @@ from django.contrib.auth.models import User
 from django.db import transaction
 from django.core.paginator import Page, Paginator
 from django.db.models import Count, QuerySet, Sum
-from django.db.models.functions import Coalesce
+from django.db.models.functions import Coalesce, TruncDate
 from django.urls import reverse
+from django.utils import timezone
 
 from lib.aws import s3_delete_object, s3_list_objects, s3_upload_fileobj
 from lib.time_utils import convert_seconds
 from lib.util import get_elasticsearch_connection
 from tag.models import Tag
 
-from .models import Album, Artist, Playlist, PlaylistItem, Song, SongSource
+from .models import Album, Artist, Listen, Playlist, PlaylistItem, Song, SongSource
 
 SEARCH_LIMIT: int = 1000
 
@@ -605,18 +607,10 @@ def get_dashboard_stats(user: User) -> dict[str, Any]:
     Returns a dict with keys: plays_this_week, top_tag_7d, added_this_month,
     longest_streak, plays_today.
     """
-    from datetime import timedelta
-
-    from django.db.models import Count
-    from django.db.models.functions import TruncDate
-    from django.utils import timezone
-
-    from .models import Listen
-
-    now = timezone.now()
-    today = now.date()
-    week_ago = now - timedelta(days=7)
-    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    today = timezone.localdate()
+    week_ago = timezone.now() - timedelta(days=7)
+    local_now = timezone.localtime()
+    month_start = local_now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
     listens = Listen.objects.filter(user=user)
 
