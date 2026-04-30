@@ -86,7 +86,11 @@ def test_get_metadata(blob_image_factory):
     """Test metadata retrieval including URL extraction."""
 
     metadata, urls = blob_image_factory[0].get_metadata()
-    assert blob_image_factory[0].metadata.first().value in [value for key, value in metadata.items()]
+
+    # "Author" is guaranteed unique by the fixture, unlike the randomly
+    # named MetaData entries whose 5-char names occasionally collide.
+    author = blob_image_factory[0].metadata.filter(name="Author").first()
+    assert metadata["Author"] == author.value
 
     url = blob_image_factory[0].metadata.filter(name="Url").first()
     assert urls[0]["url"] == url.value
