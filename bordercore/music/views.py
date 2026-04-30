@@ -27,7 +27,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
-from django.db.models import F, Q
+from django.db.models import Count, F, Q
 from django.db.models.query import QuerySet as QuerySetType
 from django.forms.models import model_to_dict
 from django.http import (HttpRequest, HttpResponse, HttpResponseRedirect,
@@ -789,7 +789,9 @@ class RecentSongsListView(APIView):
         Returns:
             Response with song list and status.
         """
-        queryset = self.get_queryset(request)
+        queryset = self.get_queryset(request).select_related("album").annotate(
+            _plays=Count("listen"),
+        )
 
         song_list = []
 
@@ -801,7 +803,12 @@ class RecentSongsListView(APIView):
                     "artist": song.artist.name,
                     "year": song.year,
                     "length": convert_seconds(song.length),
-                    "artist_url": reverse("music:artist_detail", kwargs={"uuid": song.artist.uuid})
+                    "artist_url": reverse(
+                        "music:artist_detail", kwargs={"uuid": song.artist.uuid}
+                    ),
+                    "album_title": song.album.title if song.album else None,
+                    "rating": song.rating,
+                    "plays": song._plays,
                 }
             )
 
