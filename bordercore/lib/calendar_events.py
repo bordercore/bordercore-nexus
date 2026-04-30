@@ -77,9 +77,9 @@ class Calendar():
                 cal_info["token_expiry"],
                 cal_info["token_uri"],
                 cal_info["user_agent"],
-                cal_info["revoke_uri"],
-                cal_info["id_token"],
-                cal_info["token_response"],
+                revoke_uri=cal_info["revoke_uri"],
+                id_token=cal_info["id_token"],
+                token_response=cal_info["token_response"],
             )
 
     def has_credentials(self) -> bool:
