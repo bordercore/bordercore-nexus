@@ -1,0 +1,143 @@
+// =============================================================================
+// PAGE: MUSIC — Library OS dashboard
+// =============================================================================
+// Scoped under .music-library-os to avoid bleed.
+
+.music-library-os {
+  --mlo-line-soft: var(--line-soft, #2a2e3d);
+  --mlo-hairline: #1e212d;
+  --mlo-bg-2: var(--bg-2, #12141c);
+  --mlo-bg-3: var(--bg-3, #1a1d28);
+  --mlo-fg-3: var(--fg-3, #8a8fa0);
+  --mlo-fg-4: var(--fg-4, #5a5f72);
+  --mlo-accent: var(--accent);
+  --mlo-accent-2: #7c7fff;
+  --mlo-warn: #f0b840;
+  --mlo-ok: #3fd29c;
+
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 240px 1fr;
+
+  // Slim breadcrumb/search bar
+  .mlo-pagebar {
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    border: 1px solid var(--mlo-line-soft);
+    border-radius: 10px;
+    background: var(--mlo-bg-2);
+    gap: 14px;
+    grid-column: 1 / -1;
+
+    .mlo-breadcrumb {
+      color: var(--mlo-fg-4);
+      font-family: var(--font-mono);
+      font-size: 11px;
+
+      .mlo-breadcrumb-active { color: var(--mlo-accent); }
+
+      .mlo-breadcrumb-playlist { color: var(--mlo-warn); }
+    }
+
+    .mlo-search {
+      display: flex;
+      max-width: 460px;
+      height: 28px;
+      flex: 1;
+      align-items: center;
+      padding: 0 10px;
+      border: 1px solid var(--mlo-line-soft);
+      border-radius: 8px;
+      background: var(--mlo-bg-2);
+      gap: 8px;
+
+      input {
+        flex: 1;
+        border: 0;
+        background: transparent;
+        color: var(--fg-1);
+        font: 500 12px var(--font-ui);
+        outline: none;
+      }
+
+      kbd {
+        padding: 1px 5px;
+        border: 1px solid var(--mlo-line-soft);
+        border-radius: 3px;
+        background: var(--mlo-bg-3);
+        color: var(--mlo-fg-3);
+        font: 500 10px var(--font-mono);
+      }
+    }
+  }
+
+  // Stat strip
+  .mlo-stat-strip {
+    display: grid;
+    padding: 14px 18px;
+    border: 1px solid var(--mlo-line-soft);
+    border-radius: 10px;
+    background: var(--mlo-bg-2);
+    grid-template-columns: repeat(5, 1fr);
+
+    .mlo-stat {
+      padding: 0 16px;
+      border-left: 1px solid var(--mlo-hairline);
+
+      &:first-child {
+        padding-left: 0;
+        border-left: 0;
+      }
+
+      .mlo-stat-label {
+        color: var(--mlo-fg-4);
+        font: 500 10px/1.2 var(--font-mono);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .mlo-stat-value {
+        margin-top: 4px;
+        color: var(--fg-1);
+        font: 600 18px/1.1 "Space Grotesk", var(--font-ui);
+      }
+
+      .mlo-stat-hint {
+        margin-top: 2px;
+        color: var(--mlo-fg-3);
+        font: 500 11px var(--font-mono);
+      }
+    }
+
+    .mlo-pulse {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      margin-right: 8px;
+      background: var(--mlo-fg-4);
+
+      &.mlo-pulse-playing {
+        animation: mlo-pulse 1.4s ease-in-out infinite;
+        background: var(--mlo-ok);
+        box-shadow: 0 0 8px var(--mlo-ok);
+      }
+    }
+  }
+
+  @keyframes mlo-pulse {
+    0%,
+    100% {
+      opacity: 0.85;
+      transform: scale(1);
+    }
+
+    50% {
+      opacity: 1;
+      transform: scale(1.25);
+    }
+  }
+
+  // Sidebar / page-head / body / cards — full visual styling completed in Task 17.
+}
