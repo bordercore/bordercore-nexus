@@ -6,7 +6,7 @@ from faker import Factory as FakerFactory
 from django.utils import timezone
 
 from music.models import Listen
-from music.services import get_dashboard_stats, get_unique_artist_letters
+from music.services import get_dashboard_stats, get_recent_albums, get_unique_artist_letters
 from music.tests.factories import AlbumFactory, ArtistFactory, SongFactory
 from tag.tests.factories import TagFactory
 
@@ -88,3 +88,22 @@ def test_get_dashboard_stats_longest_streak(authenticated_client):
 
     stats = get_dashboard_stats(user)
     assert stats["longest_streak"] == 3
+
+
+def test_get_recent_albums_includes_extended_fields(authenticated_client):
+    user, _ = authenticated_client()
+    album = AlbumFactory.create(user=user)
+    tag = TagFactory.create(name="ambient", user=user)
+    album.tags.add(tag)
+    SongFactory.create(user=user, album=album, length=120, rating=4)
+    SongFactory.create(user=user, album=album, length=240, rating=2)
+
+    albums, _paginator = get_recent_albums(user, 1)
+    assert len(albums) == 1
+    a = albums[0]
+    assert a["track_count"] == 2
+    assert a["playtime"] == "6:00"
+    assert a["tags"] == ["ambient"]
+    assert a["year"] == album.year
+    assert a["rating"] == 3  # rounded average of (4, 2)
+    assert a["plays"] == 0

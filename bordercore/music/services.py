@@ -21,7 +21,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.core.paginator import Page, Paginator
-from django.db.models import Count, QuerySet, Sum
+from django.db.models import Avg, Count, QuerySet, Sum
 from django.db.models.functions import Coalesce, TruncDate
 from django.urls import reverse
 from django.utils import timezone
@@ -124,42 +124,20 @@ def get_playlist_songs(playlist: Playlist) -> dict[str, list[dict[str, Any]] | i
 
 
 def get_recent_albums(user: User, page_number: int = 1) -> tuple[list[dict[str, Any]], dict[str, int | bool | int | None]]:
-    """Get paginated recent albums for a user.
-
-    Retrieves the most recently created albums for a user with pagination
-    support. Albums are ordered by creation date (newest first).
-
-    Args:
-        user: The user to get albums for.
-        page_number: The page number to retrieve (1-indexed). Defaults to 1.
-
-    Returns:
-        A tuple containing:
-            - List of album dictionaries with metadata including:
-                - uuid: Album UUID
-                - title: Album title
-                - artist_uuid: Artist UUID
-                - artist_name: Artist name
-                - created: Formatted creation date (e.g., "January 2024")
-                - album_url: URL to album detail page
-                - artwork_url: URL to album artwork image
-                - artist_url: URL to artist detail page
-            - Pagination info dictionary with:
-                - page_number: Current page number
-                - has_next: Whether there's a next page
-                - has_previous: Whether there's a previous page
-                - next_page_number: Next page number or None
-                - previous_page_number: Previous page number or None
-                - count: Total number of albums
-    """
+    """Get paginated recent albums with extended fields for the dashboard."""
     albums_per_page: int = 12
 
-    query: QuerySet[Album] = Album.objects.filter(
-        user=user
-    ).select_related(
-        "artist"
-    ).order_by(
-        "-created"
+    query: QuerySet[Album] = (
+        Album.objects.filter(user=user)
+        .select_related("artist")
+        .prefetch_related("tags")
+        .annotate(
+            _track_count=Count("song", distinct=True),
+            _playtime_seconds=Sum("song__length"),
+            _avg_rating=Avg("song__rating"),
+            _plays=Count("song__listen"),
+        )
+        .order_by("-created")
     )
 
     paginator: Paginator = Paginator(query, albums_per_page)
@@ -171,7 +149,7 @@ def get_recent_albums(user: User, page_number: int = 1) -> tuple[list[dict[str, 
         "has_previous": page.has_previous(),
         "next_page_number": page.next_page_number() if page.has_next() else None,
         "previous_page_number": page.previous_page_number() if page.has_previous() else None,
-        "count": paginator.count
+        "count": paginator.count,
     }
 
     recent_albums: list[dict[str, Any]] = [
@@ -184,7 +162,15 @@ def get_recent_albums(user: User, page_number: int = 1) -> tuple[list[dict[str, 
             "album_url": reverse("music:album_detail", kwargs={"uuid": x.uuid}),
             "artwork_url": f"{settings.IMAGES_URL}album_artwork/{x.uuid}",
             "artist_url": reverse("music:artist_detail", kwargs={"uuid": x.artist.uuid}),
-        } for x in page.object_list
+            "year": x.year,
+            "original_release_year": x.original_release_year,
+            "track_count": x._track_count,
+            "playtime": convert_seconds(x._playtime_seconds or 0),
+            "tags": [t.name for t in x.tags.all()][:2],
+            "rating": round(x._avg_rating) if x._avg_rating is not None else None,
+            "plays": x._plays,
+        }
+        for x in page.object_list
     ]
 
     return recent_albums, paginator_info
