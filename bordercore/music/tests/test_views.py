@@ -615,3 +615,26 @@ def test_music_list_passes_dashboard_stats(authenticated_client):
     response = client.get(reverse("music:list"))
     assert response.status_code == 200
     assert b"data-dashboard-stats" in response.content
+
+
+def test_music_list_playlists_have_type_and_parameters(authenticated_client):
+    import json
+    from django.urls import reverse
+    from music.tests.factories import PlaylistFactory, SongFactory
+
+    user, client = authenticated_client()
+    SongFactory.create(user=user)
+    p = PlaylistFactory.create(user=user, type="smart", parameters={"tag": "ambient"})
+
+    response = client.get(reverse("music:list"))
+    assert response.status_code == 200
+    body = response.content.decode()
+    needle = 'data-playlists="'
+    start = body.index(needle) + len(needle)
+    end = body.index('"', start)
+    raw = body[start:end].replace("&quot;", '"')
+    playlists = json.loads(raw)
+    smart = next((pl for pl in playlists if pl["uuid"] == str(p.uuid)), None)
+    assert smart is not None
+    assert smart["type"] == "smart"
+    assert smart["parameters"] == {"tag": "ambient"}

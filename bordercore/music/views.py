@@ -115,6 +115,8 @@ def music_list(request: HttpRequest) -> HttpResponse:
             "name": p.name,
             "num_songs": getattr(p, "num_songs"),
             "url": reverse("music:playlist_detail", args=[p.uuid]),
+            "type": p.type,
+            "parameters": p.parameters or {},
         }
         for p in playlists
     ]
