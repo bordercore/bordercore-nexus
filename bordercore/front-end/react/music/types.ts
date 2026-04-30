@@ -188,6 +188,10 @@ export interface MusicDashboardUrls {
   createSong: string;
   createAlbum: string;
   albumList: string;
+  setSongRating: string;
+  songMedia: string;
+  markListened: string;
+  getPlaylist: string;
 }
 
 export interface DashboardStats {
@@ -205,7 +209,7 @@ export interface PlaylistSidebarItem extends PlaylistItem {
 
 export interface MusicDashboardProps {
   randomAlbum: FeaturedAlbum | null;
-  playlists: PlaylistItem[];
+  playlists: PlaylistSidebarItem[];
   recentPlayedSongs: RecentPlayedSong[];
   initialRecentAlbums: RecentAlbum[];
   initialPaginator: PaginatorInfo;

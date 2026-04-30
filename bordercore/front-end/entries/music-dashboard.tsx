@@ -1,9 +1,10 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import MusicDashboardPage from "../react/music/MusicDashboardPage";
+import GlobalAudioPlayer from "../react/music/GlobalAudioPlayer";
 import type {
   FeaturedAlbum,
-  PlaylistItem,
+  PlaylistSidebarItem,
   RecentPlayedSong,
   RecentAlbum,
   PaginatorInfo,
@@ -11,30 +12,24 @@ import type {
   DashboardStats,
 } from "../react/music/types";
 
-// Get data from data attributes on #react-root
 const container = document.getElementById("react-root");
 
 if (container) {
-  // Parse JSON data from data attributes
-  const randomAlbum: FeaturedAlbum | null = JSON.parse(
-    container.dataset.randomAlbum || "null"
-  );
-  const playlists: PlaylistItem[] = JSON.parse(
-    container.dataset.playlists || "[]"
-  );
-  const recentPlayedSongs: RecentPlayedSong[] = JSON.parse(
-    container.dataset.recentPlayedSongs || "[]"
-  );
-  const initialRecentAlbums: RecentAlbum[] = JSON.parse(
-    container.dataset.initialRecentAlbums || "[]"
-  );
-  const initialPaginator: PaginatorInfo = JSON.parse(
-    container.dataset.initialPaginator || "{}"
-  );
-  const collectionIsNotEmpty: boolean =
-    container.dataset.collectionIsNotEmpty === "true";
+  const randomAlbum: FeaturedAlbum | null = JSON.parse(container.dataset.randomAlbum || "null");
+  const playlists: PlaylistSidebarItem[] = JSON.parse(container.dataset.playlists || "[]");
+  const recentPlayedSongs: RecentPlayedSong[] = JSON.parse(container.dataset.recentPlayedSongs || "[]");
+  const initialRecentAlbums: RecentAlbum[] = JSON.parse(container.dataset.initialRecentAlbums || "[]");
+  const initialPaginator: PaginatorInfo = JSON.parse(container.dataset.initialPaginator || "{}");
+  const collectionIsNotEmpty: boolean = container.dataset.collectionIsNotEmpty === "true";
 
-  // Build URLs object from data attributes
+  const dashboardStats: DashboardStats = JSON.parse(container.dataset.dashboardStats || "null") ?? {
+    plays_this_week: 0,
+    top_tag_7d: null,
+    added_this_month: 0,
+    longest_streak: 0,
+    plays_today: 0,
+  };
+
   const urls: MusicDashboardUrls = {
     recentAlbums: container.dataset.recentAlbumsUrl || "",
     recentSongs: container.dataset.recentSongsUrl || "",
@@ -43,34 +38,30 @@ if (container) {
     createSong: container.dataset.createSongUrl || "",
     createAlbum: container.dataset.createAlbumUrl || "",
     albumList: container.dataset.albumListUrl || "",
+    setSongRating: container.dataset.setSongRatingUrl || "",
+    songMedia: container.dataset.songMediaUrl || "",
+    markListened: container.dataset.markListenedUrl || "",
+    getPlaylist: container.dataset.getPlaylistUrl || "",
   };
-
   const imagesUrl = container.dataset.imagesUrl || "";
-  const dashboardStats: DashboardStats = JSON.parse(
-    container.dataset.dashboardStats || "null"
-  ) ?? {
-    plays_this_week: 0,
-    top_tag_7d: null,
-    added_this_month: 0,
-    longest_streak: 0,
-    plays_today: 0,
-  };
 
-  // Validate required data
   if (collectionIsNotEmpty) {
     const root = createRoot(container);
     root.render(
-      <MusicDashboardPage
-        randomAlbum={randomAlbum}
-        playlists={playlists}
-        recentPlayedSongs={recentPlayedSongs}
-        initialRecentAlbums={initialRecentAlbums}
-        initialPaginator={initialPaginator}
-        collectionIsNotEmpty={collectionIsNotEmpty}
-        urls={urls}
-        imagesUrl={imagesUrl}
-        dashboardStats={dashboardStats}
-      />
+      <>
+        <MusicDashboardPage
+          randomAlbum={randomAlbum}
+          playlists={playlists}
+          recentPlayedSongs={recentPlayedSongs}
+          initialRecentAlbums={initialRecentAlbums}
+          initialPaginator={initialPaginator}
+          collectionIsNotEmpty={collectionIsNotEmpty}
+          urls={urls}
+          imagesUrl={imagesUrl}
+          dashboardStats={dashboardStats}
+        />
+        <GlobalAudioPlayer />
+      </>
     );
   }
 }

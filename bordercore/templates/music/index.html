@@ -40,7 +40,11 @@
              data-create-album-url="{% url 'music:create_album' %}"
              data-album-list-url="{% url 'music:album_list' %}"
              data-images-url="{{ IMAGES_URL }}"
-             data-dashboard-stats="{{ dashboard_stats_json }}">
+             data-dashboard-stats="{{ dashboard_stats_json }}"
+             data-set-song-rating-url="{% url 'music:set_song_rating' %}"
+             data-song-media-url="{{ MEDIA_URL_MUSIC }}songs/"
+             data-mark-listened-url="{% url 'music:mark_song_as_listened_to' '00000000-0000-0000-0000-000000000000' %}"
+             data-get-playlist-url="{% url 'music:get_playlist' '00000000-0000-0000-0000-000000000000' %}">
         </div>
 
     {% endif %}
