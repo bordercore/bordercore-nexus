@@ -25,6 +25,7 @@ from django.http import (HttpRequest, HttpResponse, HttpResponseRedirect,
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.utils.http import url_has_allowed_host_and_scheme
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 from django.views.generic.edit import UpdateView
 
@@ -419,6 +420,7 @@ def store_in_session(request: HttpRequest) -> Response:
     return Response()
 
 
+@ensure_csrf_cookie
 @require_http_methods(["GET", "POST"])
 def bordercore_login(request: HttpRequest) -> HttpResponse:
     """Handle user login.
