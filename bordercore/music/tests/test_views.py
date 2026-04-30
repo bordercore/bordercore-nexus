@@ -582,17 +582,25 @@ def test_add_album_from_zipfile_missing_zip_returns_400(
 def test_recent_songs_includes_album_rating_plays(authenticated_client):
     from django.urls import reverse
 
+    from music.models import Listen
     from music.tests.factories import SongFactory
 
     user, client = authenticated_client()
-    SongFactory.create(user=user, album=None, rating=5)
+    song_no_album = SongFactory.create(user=user, album=None, rating=5)
+    song_with_listens = SongFactory.create(user=user, album=None, rating=3)
+    Listen.objects.create(user=user, song=song_with_listens)
+    Listen.objects.create(user=user, song=song_with_listens)
+
     response = client.get(reverse("music:recent_songs"))
     assert response.status_code == 200
-    songs = response.json()["song_list"]
-    assert songs
-    s = songs[0]
-    assert "album_title" in s
-    assert "rating" in s
-    assert "plays" in s
-    assert s["rating"] == 5
-    assert s["plays"] == 0
+    songs_by_uuid = {str(s["uuid"]): s for s in response.json()["song_list"]}
+
+    s_a = songs_by_uuid[str(song_no_album.uuid)]
+    assert "album_title" in s_a
+    assert s_a["album_title"] is None
+    assert s_a["rating"] == 5
+    assert s_a["plays"] == 0
+
+    s_b = songs_by_uuid[str(song_with_listens.uuid)]
+    assert s_b["plays"] == 2
+    assert s_b["rating"] == 3
