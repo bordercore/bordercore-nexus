@@ -4,7 +4,7 @@ import { faPencilAlt, faInfo, faTimes } from "@fortawesome/free-solid-svg-icons"
 import axios from "axios";
 import MarkdownIt from "markdown-it";
 import type { Song, Album, AlbumDetailUrls, Playlist } from "./types";
-import SongTable from "./SongTable";
+import SongTable from "./AlbumSongTable";
 import EditAlbumModal, { type EditAlbumModalHandle } from "./EditAlbumModal";
 import DropDownMenu from "../common/DropDownMenu";
 import { doDelete, EventBus } from "../utils/reactUtils";

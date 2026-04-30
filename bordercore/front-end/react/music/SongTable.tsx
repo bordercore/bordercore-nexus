@@ -1,232 +1,121 @@
 import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faStickyNote,
-  faPencilAlt,
-  faPlus,
-  faChevronRight,
-  faCheck,
-} from "@fortawesome/free-solid-svg-icons";
-import axios from "axios";
-import MarkdownIt from "markdown-it";
-import type { Song, Playlist } from "./types";
-import StarRating from "./StarRating";
-import DropDownMenu from "../common/DropDownMenu";
+import { faPlay, faVolumeHigh } from "@fortawesome/free-solid-svg-icons";
+import { EventBus, doPost } from "../utils/reactUtils";
+import type { RecentAddedSong } from "./types";
 
-// markdown-it sanitizes HTML by default, providing XSS protection
-// The note content is from the database and entered by authenticated users
-const markdown = new MarkdownIt({
-  html: true,
-  linkify: true,
-  typographer: true,
-});
-
-interface SongTableProps {
-  songs: Song[];
-  currentSongUuid: string | null;
-  isPlaying: boolean;
-  staticUrl: string;
-  setSongRatingUrl: string;
-  editSongUrlTemplate: string;
-  addToPlaylistUrl: string;
-  playlists: Playlist[];
-  onSongClick: (song: Song) => void;
-  onRatingChange: (songUuid: string, newRating: number | null) => void;
-  onPlaylistToggle: (songUuid: string, playlistUuid: string, action: "added" | "removed") => void;
+interface Props {
+  songs: RecentAddedSong[];
+  currentUuid: string | null;
+  setRatingUrl: string;
+  songMediaUrl: string;
+  markListenedUrl: string;
 }
 
-export function SongTable({
+function pad2(n: number): string {
+  return n.toString().padStart(2, "0");
+}
+
+const SongTable: React.FC<Props> = ({
   songs,
-  currentSongUuid,
-  isPlaying,
-  staticUrl,
-  setSongRatingUrl,
-  editSongUrlTemplate,
-  addToPlaylistUrl,
-  playlists,
-  onSongClick,
-  onRatingChange,
-  onPlaylistToggle,
-}: SongTableProps) {
-  const handleRowClick = (song: Song, columnField: string) => {
-    // Don't play the song if we've clicked on the actions, rating, or note columns
-    if (columnField !== "actions" && columnField !== "rating" && columnField !== "note") {
-      onSongClick(song);
-    }
+  currentUuid,
+  setRatingUrl,
+  songMediaUrl,
+  markListenedUrl,
+}) => {
+  const [ratings, setRatings] = React.useState<Record<string, number | null>>(() =>
+    Object.fromEntries(songs.map(s => [s.uuid, s.rating]))
+  );
+
+  React.useEffect(() => {
+    setRatings(Object.fromEntries(songs.map(s => [s.uuid, s.rating])));
+  }, [songs]);
+
+  const handlePlay = (song: RecentAddedSong) => {
+    EventBus.$emit("play-track", {
+      track: { uuid: song.uuid, title: song.title },
+      trackList: songs,
+      songUrl: songMediaUrl,
+      markListenedToUrl: markListenedUrl,
+    });
   };
 
-  const getEditUrl = (songUuid: string) => {
-    return (
-      editSongUrlTemplate.replace(/00000000-0000-0000-0000-000000000000/, songUuid) +
-      "?return_url=" +
-      encodeURIComponent(window.location.pathname)
+  const handleRate = (song: RecentAddedSong, star: number) => {
+    const current = ratings[song.uuid];
+    const newRating = current === star ? null : star;
+    setRatings(r => ({ ...r, [song.uuid]: newRating }));
+    doPost(
+      setRatingUrl,
+      { uuid: song.uuid, rating: newRating == null ? "" : String(newRating) },
+      () => undefined,
+      "Error setting song rating"
     );
   };
 
-  const handlePlaylistToggle = async (songUuid: string, playlistUuid: string) => {
-    try {
-      const params = new URLSearchParams();
-      params.append("playlist_uuid", playlistUuid);
-      params.append("song_uuid", songUuid);
-
-      const response = await axios.post(addToPlaylistUrl, params, {
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        withCredentials: true,
-      });
-      const action = response.data.action as "added" | "removed";
-      onPlaylistToggle(songUuid, playlistUuid, action);
-
-      // Show toast notification
-      const playlist = playlists.find(p => p.uuid === playlistUuid);
-      const playlistName = playlist?.name || "playlist";
-      if (window.EventBus) {
-        window.EventBus.$emit("toast", {
-          body: action === "added" ? `Added to ${playlistName}` : `Removed from ${playlistName}`,
-          variant: "success",
-        });
-      }
-    } catch (error) {
-      console.error("Error toggling playlist:", error);
-      if (window.EventBus) {
-        window.EventBus.$emit("toast", {
-          body: "Failed to update playlist",
-          variant: "danger",
-        });
-      }
-    }
-  };
-
-  const renderNote = (note: string) => {
-    // markdown-it provides sanitization for the rendered HTML
-    return { __html: markdown.render(note) };
-  };
-
-  // Get the appropriate equalizer image based on playing state
-  const equalizerImage = isPlaying
-    ? `${staticUrl}img/equaliser-animated-green.gif`
-    : `${staticUrl}img/equaliser-animated-green-frozen.gif`;
-
   return (
-    <div className="song-table-container data-table-container">
-      <table className="song-table data-table">
-        <thead>
-          <tr>
-            <th className="text-center table-col-number">#</th>
-            <th>Title</th>
-            <th className="table-col-action"></th>
-            <th className="text-end">Rating</th>
-            <th>Length</th>
-            <th className="text-center table-col-action"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {songs.map(song => (
-            <tr key={song.uuid} className="song hover-target cursor-pointer">
-              <td
-                className="text-center align-middle"
-                onClick={() => handleRowClick(song, "track")}
-              >
-                {currentSongUuid === song.uuid ? (
-                  <img id="isPlaying" src={equalizerImage} width={20} height={20} alt="Playing" />
-                ) : (
-                  song.track
-                )}
-              </td>
-              <td className="align-middle" onClick={() => handleRowClick(song, "title")}>
-                {song.title}
-              </td>
-              <td className="align-middle" onClick={() => handleRowClick(song, "note")}>
-                {song.note && (
-                  <span
-                    className="note-icon"
-                    title={song.note}
-                    data-bs-toggle="tooltip"
-                    data-bs-html="true"
-                  >
-                    <div
-                      className="note-tooltip-content d-none"
-                      dangerouslySetInnerHTML={renderNote(song.note)}
-                    />
-                    <FontAwesomeIcon icon={faStickyNote} className="glow text-primary" />
-                  </span>
-                )}
-              </td>
-              <td className="align-middle">
-                <div className="d-flex justify-content-end" onClick={e => e.stopPropagation()}>
-                  <StarRating
-                    songUuid={song.uuid}
-                    rating={song.rating}
-                    setSongRatingUrl={setSongRatingUrl}
-                    onRatingChange={onRatingChange}
-                  />
-                </div>
-              </td>
-              <td className="align-middle" onClick={() => handleRowClick(song, "length")}>
-                {song.length}
-              </td>
-              <td
-                className="col-action text-center align-middle"
-                onClick={e => e.stopPropagation()}
-              >
-                <DropDownMenu
-                  dropdownSlot={
-                    <ul className="dropdown-menu-list">
-                      <li>
-                        <a className="dropdown-menu-item" href={getEditUrl(song.uuid)}>
-                          <span className="dropdown-menu-icon">
-                            <FontAwesomeIcon icon={faPencilAlt} />
-                          </span>
-                          <span className="dropdown-menu-text">Edit</span>
-                        </a>
-                      </li>
-                      <li>
-                        <DropDownMenu
-                          showTarget={false}
-                          direction="dropend"
-                          iconSlot={
-                            <span className="dropdown-menu-item">
-                              <span className="dropdown-menu-icon">
-                                <FontAwesomeIcon icon={faPlus} />
-                              </span>
-                              <span className="dropdown-menu-text">Add to playlist</span>
-                              <span className="dropdown-menu-arrow">
-                                <FontAwesomeIcon icon={faChevronRight} />
-                              </span>
-                            </span>
-                          }
-                          dropdownSlot={
-                            <ul className="dropdown-menu-list">
-                              {playlists.map(playlist => (
-                                <li key={playlist.uuid}>
-                                  <button
-                                    className="dropdown-menu-item"
-                                    onClick={() => handlePlaylistToggle(song.uuid, playlist.uuid)}
-                                  >
-                                    <span className="dropdown-menu-text">{playlist.name}</span>
-                                    {song.playlists.includes(playlist.uuid) && (
-                                      <span className="dropdown-menu-check">
-                                        <FontAwesomeIcon icon={faCheck} className="text-success" />
-                                      </span>
-                                    )}
-                                  </button>
-                                </li>
-                              ))}
-                            </ul>
-                          }
-                        />
-                      </li>
-                    </ul>
-                  }
-                />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="mlo-song-table">
+      <div className="mlo-song-row mlo-song-row-head">
+        <span>#</span>
+        <span>title</span>
+        <span>artist</span>
+        <span>album</span>
+        <span>&#9733;</span>
+        <span>&#9834;</span>
+        <span>year</span>
+        <span>length</span>
+      </div>
+      {songs.map((song, idx) => {
+        const isPlaying = currentUuid === song.uuid;
+        const rating = ratings[song.uuid];
+        return (
+          <div
+            role="button"
+            tabIndex={0}
+            key={song.uuid}
+            onClick={() => handlePlay(song)}
+            onKeyDown={e => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                handlePlay(song);
+              }
+            }}
+            className={`mlo-song-row${isPlaying ? " mlo-song-row-playing" : ""}`}
+          >
+            <span className="mlo-song-row-num">
+              {isPlaying ? (
+                <FontAwesomeIcon icon={faVolumeHigh} />
+              ) : (
+                <span className="mlo-song-row-num-text">{pad2(idx + 1)}</span>
+              )}
+              <FontAwesomeIcon icon={faPlay} className="mlo-song-row-play-icon" />
+            </span>
+            <span className="mlo-song-row-title">{song.title}</span>
+            <span className="mlo-song-row-artist">{song.artist}</span>
+            <span className="mlo-song-row-album">{song.album_title || "—"}</span>
+            <span className="mlo-song-row-stars" onClick={e => e.stopPropagation()}>
+              {[1, 2, 3, 4, 5].map(star => (
+                <button
+                  key={star}
+                  type="button"
+                  className={`mlo-star${rating != null && star <= rating ? " mlo-star-filled" : ""}`}
+                  aria-label={`set rating ${star}`}
+                  onClick={e => {
+                    e.stopPropagation();
+                    handleRate(song, star);
+                  }}
+                >
+                  &#9733;
+                </button>
+              ))}
+            </span>
+            <span className="mlo-song-row-plays">{song.plays}</span>
+            <span className="mlo-song-row-year">{song.year ?? ""}</span>
+            <span className="mlo-song-row-length">{song.length}</span>
+          </div>
+        );
+      })}
     </div>
   );
-}
+};
 
 export default SongTable;
