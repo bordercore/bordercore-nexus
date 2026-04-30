@@ -8,6 +8,7 @@ import type {
   RecentAlbum,
   PaginatorInfo,
   MusicDashboardUrls,
+  DashboardStats,
 } from "../react/music/types";
 
 // Get data from data attributes on #react-root
@@ -45,6 +46,15 @@ if (container) {
   };
 
   const imagesUrl = container.dataset.imagesUrl || "";
+  const dashboardStats: DashboardStats = JSON.parse(
+    container.dataset.dashboardStats || "null"
+  ) ?? {
+    plays_this_week: 0,
+    top_tag_7d: null,
+    added_this_month: 0,
+    longest_streak: 0,
+    plays_today: 0,
+  };
 
   // Validate required data
   if (collectionIsNotEmpty) {
@@ -59,6 +69,7 @@ if (container) {
         collectionIsNotEmpty={collectionIsNotEmpty}
         urls={urls}
         imagesUrl={imagesUrl}
+        dashboardStats={dashboardStats}
       />
     );
   }

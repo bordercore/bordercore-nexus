@@ -125,6 +125,13 @@ export interface RecentAlbum {
   album_url: string;
   artwork_url: string;
   artist_url: string;
+  year: number | null;
+  original_release_year: number | null;
+  track_count: number;
+  playtime: string;
+  tags: string[];
+  rating: number | null;
+  plays: number;
 }
 
 export interface FeaturedAlbum {
@@ -159,6 +166,9 @@ export interface RecentAddedSong {
   length: string;
   note?: string;
   artist_url: string;
+  album_title: string | null;
+  rating: number | null;
+  plays: number;
 }
 
 export interface PaginatorInfo {
@@ -180,6 +190,19 @@ export interface MusicDashboardUrls {
   albumList: string;
 }
 
+export interface DashboardStats {
+  plays_this_week: number;
+  top_tag_7d: { name: string; count: number } | null;
+  added_this_month: number;
+  longest_streak: number;
+  plays_today: number;
+}
+
+export interface PlaylistSidebarItem extends PlaylistItem {
+  type: "manual" | "smart";
+  parameters?: PlaylistParameters;
+}
+
 export interface MusicDashboardProps {
   randomAlbum: FeaturedAlbum | null;
   playlists: PlaylistItem[];
@@ -189,6 +212,7 @@ export interface MusicDashboardProps {
   collectionIsNotEmpty: boolean;
   urls: MusicDashboardUrls;
   imagesUrl: string;
+  dashboardStats: DashboardStats;
 }
 
 // Playlist Detail Page Types
