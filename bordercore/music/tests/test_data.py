@@ -212,6 +212,15 @@ def test_song_in_s3_exist_on_filesystem():
         song_title = sanitize_filename(song.title)
         return f"/home/media/music/{first_letter_dir}/{artist_name}/{song_title}.mp3"
 
+    def song_file_exists(path):
+        """Check filesystem for the song, tolerating `?` → `-` substitutions
+        that some rips apply (since `?` is reserved on Windows/FAT)."""
+        if Path(path).is_file():
+            return True
+        if "?" in path:
+            return Path(path.replace("?", "-")).is_file()
+        return False
+
     # Get all songs from database with related data
     songs = Song.objects.all().select_related("artist", "album")
     song_cache = {str(song.uuid): song for song in songs}
@@ -227,7 +236,7 @@ def test_song_in_s3_exist_on_filesystem():
         if uuid in song_cache:
             song = song_cache[uuid]
             path = get_song_path(song)
-            if not Path(path).is_file():
+            if not song_file_exists(path):
                 missing_from_filesystem.append(f"{song} - UUID: {uuid} - Path: {path}")
 
     assert not missing_from_filesystem, f"Songs found in S3 but not on filesystem: {missing_from_filesystem}"
