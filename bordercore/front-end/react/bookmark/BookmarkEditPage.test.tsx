@@ -8,6 +8,7 @@ const doPost = vi.fn();
 vi.mock("../utils/reactUtils", () => ({
   doGet: (...args: unknown[]) => doGet(...args),
   doPost: (...args: unknown[]) => doPost(...args),
+  getCsrfToken: () => "test-csrf-token",
   EventBus: { $emit: vi.fn() },
 }));
 
@@ -140,8 +141,8 @@ describe("BookmarkEditPage", () => {
     expect(doGet).toHaveBeenCalledTimes(1);
     const [calledUrl] = doGet.mock.calls[0];
     expect(calledUrl).toContain("/tag/get_related_tags/");
-    expect(calledUrl).toContain("tag=alpha");
-    expect(calledUrl).toContain("doctype=bookmark");
+    expect(calledUrl).toContain("tag_name=alpha");
+    expect(calledUrl).toContain("doc_type=bookmark");
   });
 
   it("renders the back-references panel only when non-empty", () => {

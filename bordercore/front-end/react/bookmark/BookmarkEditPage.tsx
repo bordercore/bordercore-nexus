@@ -86,21 +86,30 @@ export function BookmarkEditPage({
 
   const fetchRelatedTags = useCallback(
     (currentTags: string[]) => {
-      if (currentTags.length === 0) {
-        setRelatedTagInfo([]);
-        return;
+      setRelatedTagInfo([]);
+      if (currentTags.length === 0) return;
+      const currentSet = new Set(currentTags);
+      for (const tag of currentTags) {
+        const params = new URLSearchParams({
+          tag_name: tag,
+          doc_type: "bookmark",
+        });
+        doGet(
+          `${urls.relatedTags}?${params.toString()}`,
+          response => {
+            const info: RelatedTagInfo[] = response.data?.info ?? [];
+            setRelatedTagInfo(prev => {
+              const byName = new Map(prev.map(r => [r.tag_name, r.count]));
+              for (const item of info) {
+                if (currentSet.has(item.tag_name)) continue;
+                byName.set(item.tag_name, (byName.get(item.tag_name) ?? 0) + item.count);
+              }
+              return Array.from(byName, ([tag_name, count]) => ({ tag_name, count }));
+            });
+          },
+          "Error fetching related tags"
+        );
       }
-      const params = new URLSearchParams({
-        tag: currentTags.join(","),
-        doctype: "bookmark",
-      });
-      doGet(
-        `${urls.relatedTags}?${params.toString()}`,
-        response => {
-          setRelatedTagInfo(response.data ?? []);
-        },
-        "Error fetching related tags"
-      );
     },
     [urls.relatedTags]
   );
