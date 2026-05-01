@@ -20,9 +20,6 @@ const AlbumGridCard: React.FC<Props> = ({ album, onPlay }) => {
         <a href={album.album_url} className="mlo-album-card-cover-link">
           <img src={album.artwork_url} alt={album.title} loading="lazy" />
         </a>
-        <div className="mlo-album-card-pill">
-          {album.track_count}t · {album.playtime}
-        </div>
         <button
           type="button"
           className="mlo-album-card-play"

@@ -3,18 +3,12 @@ import type { RecentPlayedSong } from "./types";
 
 interface Props {
   songs: RecentPlayedSong[];
-  playsToday: number;
 }
 
-const RecentPlaysCard: React.FC<Props> = ({ songs, playsToday }) => {
+const RecentPlaysCard: React.FC<Props> = ({ songs }) => {
   return (
     <section className="mlo-recent-plays">
-      <div className="mlo-section-head">
-        Recent Plays{" "}
-        <span className="mlo-section-head-hint">
-          // {songs.length} of {playsToday}
-        </span>
-      </div>
+      <div className="mlo-section-head">Recent Plays</div>
       <ul className="mlo-recent-plays-list">
         {songs.map((song, idx) => (
           <li key={song.uuid} className="mlo-recent-plays-row">

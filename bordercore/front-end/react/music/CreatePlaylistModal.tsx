@@ -1,15 +1,14 @@
 import React from "react";
-import { Modal } from "bootstrap";
+import { createPortal } from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faStar } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faStar, faTimes } from "@fortawesome/free-solid-svg-icons";
+import { TagsInput } from "../common/TagsInput";
 import { ToggleSwitch } from "../common/ToggleSwitch";
 import { getCsrfToken } from "../utils/reactUtils";
 
-export interface CreatePlaylistModalHandle {
-  openModal: () => void;
-}
-
 interface CreatePlaylistModalProps {
+  open: boolean;
+  onClose: () => void;
   createPlaylistUrl: string;
   tagSearchUrl: string;
 }
@@ -33,14 +32,16 @@ const excludeRecentOptions = [
   { value: "90", display: "Past 3 Months" },
 ];
 
-export const CreatePlaylistModal = React.forwardRef<
-  CreatePlaylistModalHandle,
-  CreatePlaylistModalProps
->(function CreatePlaylistModal({ createPlaylistUrl, tagSearchUrl }, ref) {
+export function CreatePlaylistModal({
+  open,
+  onClose,
+  createPlaylistUrl,
+  tagSearchUrl,
+}: CreatePlaylistModalProps) {
   const [name, setName] = React.useState("");
   const [note, setNote] = React.useState("");
   const [playlistType, setPlaylistType] = React.useState<"manual" | "smart">("manual");
-  const [tag, setTag] = React.useState("");
+  const [tag, setTag] = React.useState<string[]>([]);
   const [startYear, setStartYear] = React.useState("");
   const [endYear, setEndYear] = React.useState("");
   const [rating, setRating] = React.useState<number | null>(null);
@@ -50,21 +51,34 @@ export const CreatePlaylistModal = React.forwardRef<
   const [sortBy, setSortBy] = React.useState("recent");
   const [size, setSize] = React.useState("20");
 
-  const modalRef = React.useRef<HTMLDivElement>(null);
-  const modalInstanceRef = React.useRef<any>(null);
-  const nameInputRef = React.useRef<HTMLInputElement>(null);
+  const nameRef = React.useRef<HTMLInputElement>(null);
 
-  React.useImperativeHandle(ref, () => ({
-    openModal: () => {
-      if (modalRef.current) {
-        modalInstanceRef.current = new Modal(modalRef.current);
-        modalInstanceRef.current.show();
-        setTimeout(() => {
-          nameInputRef.current?.focus();
-        }, 500);
-      }
-    },
-  }));
+  React.useEffect(() => {
+    if (!open) return;
+    setName("");
+    setNote("");
+    setPlaylistType("manual");
+    setTag([]);
+    setStartYear("");
+    setEndYear("");
+    setRating(null);
+    setHoverRating(null);
+    setExcludeRecent("");
+    setExcludeAlbums(false);
+    setSortBy("recent");
+    setSize("20");
+    const t = window.setTimeout(() => nameRef.current?.focus(), 40);
+    return () => window.clearTimeout(t);
+  }, [open]);
+
+  React.useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [open, onClose]);
 
   const disabledCreateButton = React.useMemo(() => {
     if (!name.trim()) return true;
@@ -75,284 +89,240 @@ export const CreatePlaylistModal = React.forwardRef<
 
   const handleRatingClick = (starIndex: number) => {
     const clickedRating = starIndex + 1;
-    if (clickedRating === rating) {
-      setRating(null);
-    } else {
-      setRating(clickedRating);
-    }
+    setRating(prev => (clickedRating === prev ? null : clickedRating));
   };
 
   const displayRating = hoverRating ?? rating ?? 0;
 
-  return (
-    <div
-      ref={modalRef}
-      id="modalEditor"
-      className="modal fade"
-      tabIndex={-1}
-      role="dialog"
-      aria-labelledby="myModalLabel"
-    >
-      <div className="modal-dialog" role="document">
-        <div className="modal-content">
-          <form
-            action={createPlaylistUrl}
-            method="post"
-            onSubmit={e => {
-              const tokenInput = e.currentTarget.querySelector<HTMLInputElement>(
-                'input[name="csrfmiddlewaretoken"]'
-              );
-              if (tokenInput) tokenInput.value = getCsrfToken();
-            }}
-          >
-            <input type="hidden" name="csrfmiddlewaretoken" defaultValue={getCsrfToken()} />
-            <div className="modal-header">
-              <h4 id="myModalLabel" className="modal-title">
-                Create Playlist
-              </h4>
-              <button
-                type="button"
-                className="btn-close"
-                data-bs-dismiss="modal"
-                aria-label="Close"
-              />
-            </div>
-            <div className="modal-body">
-              <div className="row mb-3">
-                <label className="col-lg-4 col-form-label" htmlFor="id_name">
-                  Name
-                </label>
-                <div className="col-lg-8">
-                  <input
-                    ref={nameInputRef}
-                    id="id_name"
-                    type="text"
-                    name="name"
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                    autoComplete="off"
-                    maxLength={200}
-                    required
-                    className="form-control"
-                  />
-                </div>
-              </div>
-              <div className="row">
-                <label className="col-lg-4 col-form-label" htmlFor="id_note">
-                  Note
-                </label>
-                <div className="col-lg-8">
-                  <textarea
-                    id="id_note"
-                    name="note"
-                    value={note}
-                    onChange={e => setNote(e.target.value)}
-                    cols={40}
-                    rows={3}
-                    className="form-control"
-                  />
-                </div>
-              </div>
-              <div className="row mt-3">
-                <label className="col-lg-4 col-form-label pt-0" htmlFor="id_type">
-                  Type
-                </label>
-                <div className="col-lg-8">
-                  <div className="d-flex">
-                    <div className="form-check">
-                      <input
-                        id="id_type_manual"
-                        className="form-check-input mt-2"
-                        type="radio"
-                        name="type"
-                        value="manual"
-                        checked={playlistType === "manual"}
-                        onChange={() => setPlaylistType("manual")}
-                      />
-                      <label className="form-check-label d-flex" htmlFor="id_type_manual">
-                        Manual
-                      </label>
-                    </div>
-                    <div className="form-check ms-5">
-                      <input
-                        id="id_type_smart"
-                        className="form-check-input mt-2"
-                        type="radio"
-                        name="type"
-                        value="smart"
-                        checked={playlistType === "smart"}
-                        onChange={() => setPlaylistType("smart")}
-                      />
-                      <label className="form-check-label d-flex" htmlFor="id_type_smart">
-                        Smart
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              </div>
+  if (!open) return null;
 
-              {playlistType === "smart" && (
-                <div className="smart-playlist-options">
-                  <hr className="mb-1" />
-                  <div className="form-section">Options</div>
-                  <div className="row mt-3">
-                    <label className="col-lg-4 form-check-label" htmlFor="id_tag">
-                      Tag
-                    </label>
-                    <div className="col-lg-8">
-                      <input
-                        type="text"
-                        id="id_tag"
-                        name="tag"
-                        value={tag}
-                        onChange={e => setTag(e.target.value)}
-                        placeholder="Tag name"
-                        className="form-control"
-                        autoComplete="off"
-                      />
-                    </div>
-                  </div>
-                  <div className="row mt-3">
-                    <label
-                      className="col-lg-4 from-check-label text-nowrap"
-                      htmlFor="id_start_year"
-                    >
-                      Time Period
-                    </label>
-                    <div className="col-lg-8 d-flex">
-                      <input
-                        type="number"
-                        id="id_start_year"
-                        name="start_year"
-                        value={startYear}
-                        onChange={e => setStartYear(e.target.value)}
-                        className="form-control me-1"
-                        size={4}
-                        placeholder="Start Year"
-                        autoComplete="off"
-                      />
-                      <input
-                        type="number"
-                        id="id_end_year"
-                        name="end_year"
-                        value={endYear}
-                        onChange={e => setEndYear(e.target.value)}
-                        className="form-control ms-1"
-                        size={4}
-                        placeholder="End Year"
-                        autoComplete="off"
-                      />
-                    </div>
-                  </div>
-                  <div className="row mt-3">
-                    <label className="col-lg-4 from-check-label">Rating</label>
-                    <div className="col-lg-8">
-                      <div
-                        className="rating-container d-flex"
-                        onMouseLeave={() => setHoverRating(null)}
-                      >
-                        {[0, 1, 2, 3, 4].map(starIndex => (
-                          <span
-                            key={starIndex}
-                            className={`rating me-1 cursor-pointer ${displayRating > starIndex ? "rating-star-selected" : ""}`}
-                            onClick={() => handleRatingClick(starIndex)}
-                            onMouseOver={() => setHoverRating(starIndex + 1)}
-                          >
-                            <FontAwesomeIcon icon={faStar} />
-                          </span>
-                        ))}
-                      </div>
-                      <input type="hidden" name="rating" value={rating ?? ""} />
-                    </div>
-                  </div>
-                  <div className="row mt-3">
-                    <label className="col-lg-4 col-form-label" htmlFor="id_exclude_recent">
-                      Exclude Recent Listens
-                    </label>
-                    <div className="col-lg-8">
-                      <select
-                        id="id_exclude_recent"
-                        name="exclude_recent"
-                        value={excludeRecent}
-                        onChange={e => setExcludeRecent(e.target.value)}
-                        className="form-control form-select"
-                      >
-                        {excludeRecentOptions.map(option => (
-                          <option key={option.value} value={option.value}>
-                            {option.display}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  <div className="row mt-3">
-                    <label className="col-lg-4 col-form-label" htmlFor="id_exclude_albums">
-                      Exclude Albums
-                    </label>
-                    <div className="col-lg-8 d-flex align-items-center">
-                      <ToggleSwitch
-                        id="id_exclude_albums"
-                        name="exclude_albums"
-                        checked={excludeAlbums}
-                        onChange={setExcludeAlbums}
-                      />
-                    </div>
-                  </div>
-                  <div className="row mt-3">
-                    <label className="col-lg-4 col-form-label" htmlFor="id_sort_by">
-                      Sort By
-                    </label>
-                    <div className="col-lg-8">
-                      <select
-                        id="id_sort_by"
-                        name="sort_by"
-                        value={sortBy}
-                        onChange={e => setSortBy(e.target.value)}
-                        className="form-control form-select"
-                      >
-                        <option value="recent">Recently Added</option>
-                        <option value="random">Random</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="row mt-3">
-                    <label className="col-lg-4 col-form-label" htmlFor="id_size">
-                      Size
-                    </label>
-                    <div className="col-lg-8">
-                      <select
-                        id="id_size"
-                        name="size"
-                        value={size}
-                        onChange={e => setSize(e.target.value)}
-                        className="form-control form-select"
-                      >
-                        {sizeOptions.map(option => (
-                          <option key={option.value} value={option.value}>
-                            {option.display}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="modal-footer justify-content-end">
+  return createPortal(
+    <>
+      <div className="refined-modal-scrim" onClick={onClose} />
+      <form
+        className="refined-modal"
+        action={createPlaylistUrl}
+        method="post"
+        role="dialog"
+        aria-label="create playlist"
+        onSubmit={e => {
+          const tokenInput = e.currentTarget.querySelector<HTMLInputElement>(
+            'input[name="csrfmiddlewaretoken"]'
+          );
+          if (tokenInput) tokenInput.value = getCsrfToken();
+        }}
+      >
+        <input type="hidden" name="csrfmiddlewaretoken" defaultValue={getCsrfToken()} />
+        <button type="button" className="refined-modal-close" onClick={onClose} aria-label="close">
+          <FontAwesomeIcon icon={faTimes} />
+        </button>
+
+        <div className="refined-modal-eyebrow">
+          <span>new playlist</span>
+          <span className="dot">·</span>
+          <span className="mono">bordercore / music / playlist</span>
+        </div>
+
+        <h2 className="refined-modal-title">Create a playlist</h2>
+
+        <div className="refined-field">
+          <label htmlFor="playlist-new-name">name</label>
+          <input
+            ref={nameRef}
+            id="playlist-new-name"
+            type="text"
+            name="name"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            autoComplete="off"
+            maxLength={200}
+            required
+          />
+        </div>
+
+        <div className="refined-field">
+          <label htmlFor="playlist-new-note">
+            note <span className="optional">· optional</span>
+          </label>
+          <textarea
+            id="playlist-new-note"
+            name="note"
+            value={note}
+            onChange={e => setNote(e.target.value)}
+            rows={3}
+          />
+        </div>
+
+        <div className="refined-field">
+          <label>type</label>
+          <div className="study-method-grid">
+            <label className={`study-method-card ${playlistType === "manual" ? "active" : ""}`}>
               <input
-                id="btn-action"
-                className="btn btn-primary"
-                type="submit"
-                name="Go"
-                value="Save"
-                disabled={disabledCreateButton}
+                type="radio"
+                name="type"
+                value="manual"
+                checked={playlistType === "manual"}
+                onChange={() => setPlaylistType("manual")}
+              />
+              <span className="title">Manual</span>
+              <span className="hint">Add songs by hand.</span>
+            </label>
+            <label className={`study-method-card ${playlistType === "smart" ? "active" : ""}`}>
+              <input
+                type="radio"
+                name="type"
+                value="smart"
+                checked={playlistType === "smart"}
+                onChange={() => setPlaylistType("smart")}
+              />
+              <span className="title">Smart</span>
+              <span className="hint">Auto-fill by tag, year, or rating.</span>
+            </label>
+          </div>
+        </div>
+
+        {playlistType === "smart" && (
+          <>
+            <div className="refined-field">
+              <label htmlFor="playlist-new-tag">
+                tag <span className="optional">· optional</span>
+              </label>
+              <TagsInput
+                id="playlist-new-tag"
+                name="tag"
+                searchUrl={`${tagSearchUrl}&query=`}
+                initialTags={tag}
+                onTagsChanged={setTag}
+                maxTags={1}
+                placeholder="Tag name"
               />
             </div>
-          </form>
+
+            <div className="refined-row-2">
+              <div className="refined-field">
+                <label htmlFor="playlist-new-start-year">start year</label>
+                <input
+                  id="playlist-new-start-year"
+                  type="number"
+                  name="start_year"
+                  value={startYear}
+                  onChange={e => setStartYear(e.target.value)}
+                  placeholder="e.g. 1980"
+                  autoComplete="off"
+                />
+              </div>
+              <div className="refined-field">
+                <label htmlFor="playlist-new-end-year">end year</label>
+                <input
+                  id="playlist-new-end-year"
+                  type="number"
+                  name="end_year"
+                  value={endYear}
+                  onChange={e => setEndYear(e.target.value)}
+                  placeholder="e.g. 1989"
+                  autoComplete="off"
+                />
+              </div>
+            </div>
+
+            <div className="refined-field">
+              <label>rating</label>
+              <div className="playlist-rating-row" onMouseLeave={() => setHoverRating(null)}>
+                {[0, 1, 2, 3, 4].map(starIndex => (
+                  <span
+                    key={starIndex}
+                    className={`rating ${displayRating > starIndex ? "rating-star-selected" : ""}`}
+                    onClick={() => handleRatingClick(starIndex)}
+                    onMouseOver={() => setHoverRating(starIndex + 1)}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`set rating ${starIndex + 1}`}
+                    onKeyDown={e => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleRatingClick(starIndex);
+                      }
+                    }}
+                  >
+                    <FontAwesomeIcon icon={faStar} />
+                  </span>
+                ))}
+              </div>
+              <input type="hidden" name="rating" value={rating ?? ""} />
+            </div>
+
+            <div className="refined-row-2">
+              <div className="refined-field">
+                <label htmlFor="playlist-new-exclude-recent">exclude recent</label>
+                <select
+                  id="playlist-new-exclude-recent"
+                  name="exclude_recent"
+                  value={excludeRecent}
+                  onChange={e => setExcludeRecent(e.target.value)}
+                >
+                  {excludeRecentOptions.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.display}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="refined-field">
+                <label htmlFor="playlist-new-sort-by">sort by</label>
+                <select
+                  id="playlist-new-sort-by"
+                  name="sort_by"
+                  value={sortBy}
+                  onChange={e => setSortBy(e.target.value)}
+                >
+                  <option value="recent">Recently Added</option>
+                  <option value="random">Random</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="refined-row-2">
+              <div className="refined-field">
+                <label htmlFor="playlist-new-size">size</label>
+                <select
+                  id="playlist-new-size"
+                  name="size"
+                  value={size}
+                  onChange={e => setSize(e.target.value)}
+                >
+                  {sizeOptions.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.display}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="refined-field playlist-toggle-field">
+                <label htmlFor="playlist-new-exclude-albums">exclude albums</label>
+                <ToggleSwitch
+                  id="playlist-new-exclude-albums"
+                  name="exclude_albums"
+                  checked={excludeAlbums}
+                  onChange={setExcludeAlbums}
+                />
+              </div>
+            </div>
+          </>
+        )}
+
+        <div className="refined-modal-actions compact">
+          <button type="button" className="refined-btn ghost" onClick={onClose}>
+            cancel
+          </button>
+          <button type="submit" className="refined-btn primary" disabled={disabledCreateButton}>
+            <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" />
+            create playlist
+          </button>
         </div>
-      </div>
-    </div>
+      </form>
+    </>,
+    document.body
   );
-});
+}
 
 export default CreatePlaylistModal;

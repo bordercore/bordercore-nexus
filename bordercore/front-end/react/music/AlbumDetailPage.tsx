@@ -81,9 +81,10 @@ export function AlbumDetailPage({
   }, []);
 
   const handleSongClick = (song: Song) => {
+    const enriched = songs.map(s => ({ ...s, artist: album.artist_name }));
     EventBus.$emit("play-track", {
-      track: song,
-      trackList: songs,
+      track: { ...song, artist: album.artist_name },
+      trackList: enriched,
       songUrl: urls.songMedia,
       markListenedToUrl: urls.markListenedTo,
     });

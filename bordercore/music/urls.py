@@ -55,6 +55,16 @@ urlpatterns = [
         name="recent_songs"
     ),
     path(
+        route="shuffle_songs",
+        view=views.shuffle_songs,
+        name="shuffle_songs"
+    ),
+    path(
+        route="search",
+        view=views.music_search,
+        name="search"
+    ),
+    path(
         route="mark_song_as_listened_to/<uuid:uuid>",
         view=views.mark_song_as_listened_to,
         name="mark_song_as_listened_to"

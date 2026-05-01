@@ -8,7 +8,7 @@ import {
   faTag,
 } from "@fortawesome/free-solid-svg-icons";
 import { describeSmartPlaylist } from "./describeSmartPlaylist";
-import type { PlaylistSidebarItem } from "./types";
+import type { LibraryCounts, PlaylistSidebarItem } from "./types";
 
 interface NavUrls {
   albums: string;
@@ -23,7 +23,7 @@ interface Props {
   onSelectPlaylist: (uuid: string) => void;
   onPlayPlaylist: (uuid: string) => void;
   navUrls: NavUrls;
-  totalSongs: number;
+  counts: LibraryCounts;
 }
 
 function colorForUuid(uuid: string): string {
@@ -42,7 +42,7 @@ const LibrarySidebar: React.FC<Props> = ({
   onSelectPlaylist,
   onPlayPlaylist,
   navUrls,
-  totalSongs,
+  counts,
 }) => {
   return (
     <aside className="mlo-sidebar">
@@ -53,20 +53,23 @@ const LibrarySidebar: React.FC<Props> = ({
         </a>
         <a className="mlo-nav-item" href={navUrls.albums}>
           <FontAwesomeIcon icon={faRecordVinyl} /> <span>albums</span>
+          <span className="mlo-nav-count">{counts.albums}</span>
         </a>
         <a className="mlo-nav-item" href={navUrls.songs}>
           <FontAwesomeIcon icon={faMusic} /> <span>songs</span>
-          <span className="mlo-nav-count">{totalSongs}</span>
+          <span className="mlo-nav-count">{counts.songs}</span>
         </a>
         <a className="mlo-nav-item" href={navUrls.artists}>
           <FontAwesomeIcon icon={faMicrophone} /> <span>artists</span>
+          <span className="mlo-nav-count">{counts.artists}</span>
         </a>
         <a className="mlo-nav-item" href={navUrls.tags}>
           <FontAwesomeIcon icon={faTag} /> <span>tags</span>
+          <span className="mlo-nav-count">{counts.tags}</span>
         </a>
       </nav>
 
-      <div className="mlo-section-head">playlists · {playlists.length}</div>
+      <div className="mlo-section-head">playlists</div>
       <ul className="mlo-playlists">
         {playlists.map(p => {
           const isActive = activePlaylistId === p.uuid;

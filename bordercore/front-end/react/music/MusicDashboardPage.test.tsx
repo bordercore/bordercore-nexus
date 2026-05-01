@@ -44,6 +44,8 @@ function makeProps(): MusicDashboardProps {
     urls: {
       recentAlbums: "/recent_albums/666/",
       recentSongs: "/recent_songs",
+      shuffleSongs: "/shuffle_songs",
+      search: "/search",
       createPlaylist: "/playlist_create",
       tagSearch: "/tag/search",
       createSong: "/create",
@@ -55,6 +57,7 @@ function makeProps(): MusicDashboardProps {
       getPlaylist: "/get_playlist/00000000-0000-0000-0000-000000000000",
     },
     imagesUrl: "/img/",
+    libraryCounts: { albums: 0, songs: 0, artists: 0, tags: 0 },
   };
 }
 
@@ -80,5 +83,54 @@ describe("MusicDashboardPage", () => {
     const search = screen.getByPlaceholderText(/search/i) as HTMLInputElement;
     fireEvent.change(search, { target: { value: "abba" } });
     expect(search.value).toBe("abba");
+  });
+
+  it("disables album pager arrows when there is a single page", () => {
+    render(<MusicDashboardPage {...makeProps()} />);
+    const prev = screen.getByLabelText("Previous page") as HTMLButtonElement;
+    const next = screen.getByLabelText("Next page") as HTMLButtonElement;
+    expect(prev.disabled).toBe(true);
+    expect(next.disabled).toBe(true);
+    expect(screen.getByText(/page 1 of 1/i)).toBeInTheDocument();
+  });
+
+  it("fetches the next album page when the next arrow is clicked", () => {
+    const props = makeProps();
+    props.initialPaginator = {
+      page_number: 1,
+      has_next: true,
+      has_previous: false,
+      next_page_number: 2,
+      previous_page_number: null,
+      count: 14,
+    };
+    render(<MusicDashboardPage {...props} />);
+
+    mocks.doGet.mockReset();
+    mocks.doGet.mockImplementation((url: string, cb: (r: unknown) => void) => {
+      if (url.includes("recent_albums")) {
+        cb({
+          data: {
+            album_list: [],
+            paginator: {
+              page_number: 2,
+              has_next: false,
+              has_previous: true,
+              next_page_number: null,
+              previous_page_number: 1,
+              count: 14,
+            },
+          },
+        });
+      }
+    });
+
+    fireEvent.click(screen.getByLabelText("Next page"));
+    expect(mocks.doGet).toHaveBeenCalledWith(
+      "/recent_albums/2/",
+      expect.any(Function),
+      expect.any(String)
+    );
+    expect(screen.getByText(/page 2 of 2/i)).toBeInTheDocument();
   });
 });

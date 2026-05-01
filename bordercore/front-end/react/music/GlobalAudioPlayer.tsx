@@ -70,12 +70,21 @@ export const GlobalAudioPlayer: React.FC = () => {
   React.useEffect(() => {
     const handlePlayTrack = (data: PlayTrackEvent) => {
       isManualPlayRef.current = true;
-      const newList = data.trackList.map(track => ({
-        name: track.title,
-        musicSrc: track.musicSrc || data.songUrl + track.uuid,
-        uuid: track.uuid,
-        cover: "/static/img/bordercore-logo.jpg",
-      }));
+      const newList = data.trackList.map(track => {
+        const t = track as unknown as Record<string, unknown>;
+        const artist =
+          (typeof t.artist === "string" && t.artist) ||
+          (typeof t.artist_name === "string" && t.artist_name) ||
+          (typeof t.artist__name === "string" && t.artist__name) ||
+          "";
+        return {
+          name: track.title,
+          singer: artist,
+          musicSrc: track.musicSrc || data.songUrl + track.uuid,
+          uuid: track.uuid,
+          cover: "/static/img/bordercore-logo.jpg",
+        };
+      });
 
       const index = data.trackList.findIndex(t => t.uuid === data.track.uuid);
 
@@ -149,6 +158,20 @@ export const GlobalAudioPlayer: React.FC = () => {
         onAudioPlay={onAudioPlay}
         onAudioPause={onAudioPause}
         onAudioEnded={onAudioEnded}
+        renderAudioTitle={(audioInfo: { name?: string; singer?: string }, isMobile: boolean) => {
+          if (isMobile) return <span className="audio-name">{audioInfo.name}</span>;
+          return (
+            <>
+              <span className="audio-name">{audioInfo.name}</span>
+              {audioInfo.singer ? (
+                <>
+                  <span className="audio-sep"> — </span>
+                  <span className="audio-singer">{audioInfo.singer}</span>
+                </>
+              ) : null}
+            </>
+          );
+        }}
         getAudioInstance={(instance: HTMLAudioElement) => {
           audioInstanceRef.current = instance;
         }}

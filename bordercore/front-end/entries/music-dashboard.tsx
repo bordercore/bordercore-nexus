@@ -10,6 +10,7 @@ import type {
   PaginatorInfo,
   MusicDashboardUrls,
   DashboardStats,
+  LibraryCounts,
 } from "../react/music/types";
 
 const container = document.getElementById("react-root");
@@ -30,9 +31,18 @@ if (container) {
     plays_today: 0,
   };
 
+  const libraryCounts: LibraryCounts = JSON.parse(container.dataset.libraryCounts || "null") ?? {
+    albums: 0,
+    songs: 0,
+    artists: 0,
+    tags: 0,
+  };
+
   const urls: MusicDashboardUrls = {
     recentAlbums: container.dataset.recentAlbumsUrl || "",
     recentSongs: container.dataset.recentSongsUrl || "",
+    shuffleSongs: container.dataset.shuffleSongsUrl || "",
+    search: container.dataset.searchUrl || "",
     createPlaylist: container.dataset.createPlaylistUrl || "",
     tagSearch: container.dataset.tagSearchUrl || "",
     createSong: container.dataset.createSongUrl || "",
@@ -59,6 +69,7 @@ if (container) {
           urls={urls}
           imagesUrl={imagesUrl}
           dashboardStats={dashboardStats}
+          libraryCounts={libraryCounts}
         />
         <GlobalAudioPlayer />
       </>

@@ -183,6 +183,8 @@ export interface PaginatorInfo {
 export interface MusicDashboardUrls {
   recentAlbums: string;
   recentSongs: string;
+  shuffleSongs: string;
+  search: string;
   createPlaylist: string;
   tagSearch: string;
   createSong: string;
@@ -202,6 +204,40 @@ export interface DashboardStats {
   plays_today: number;
 }
 
+export interface LibraryCounts {
+  albums: number;
+  songs: number;
+  artists: number;
+  tags: number;
+}
+
+export interface SearchSong {
+  uuid: string;
+  title: string;
+  artist: string;
+  artist_url: string;
+  year: number | null;
+  length: string;
+  album_title: string | null;
+  album_uuid: string | null;
+}
+
+export interface SearchAlbum {
+  uuid: string;
+  title: string;
+  artist_name: string;
+  artist_uuid: string;
+  year: number | null;
+  artwork_url: string;
+  album_url: string;
+}
+
+export interface SearchResults {
+  songs: SearchSong[];
+  albums: SearchAlbum[];
+  totals: { songs: number; albums: number };
+}
+
 export interface PlaylistSidebarItem extends PlaylistItem {
   type: "manual" | "smart";
   parameters?: PlaylistParameters;
@@ -217,6 +253,7 @@ export interface MusicDashboardProps {
   urls: MusicDashboardUrls;
   imagesUrl: string;
   dashboardStats: DashboardStats;
+  libraryCounts: LibraryCounts;
 }
 
 // Playlist Detail Page Types

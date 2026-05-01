@@ -9,14 +9,14 @@ describe("PageHead", () => {
         searchValue=""
         onSearchChange={vi.fn()}
         onShuffleAll={vi.fn()}
-        onAddSong={vi.fn()}
-        meta="312 albums · 1,847 songs"
+        createSongUrl="/music/songs/new"
+        createAlbumUrl="/music/albums/new"
+        onCreatePlaylist={vi.fn()}
         activePlaylistName="80s"
       />
     );
     expect(screen.getByRole("heading", { name: /Library/i })).toBeInTheDocument();
     expect(screen.getByText("80s")).toBeInTheDocument();
-    expect(screen.getByText(/312 albums/)).toBeInTheDocument();
   });
 
   it("calls onSearchChange when typing", () => {
@@ -26,8 +26,9 @@ describe("PageHead", () => {
         searchValue=""
         onSearchChange={onChange}
         onShuffleAll={vi.fn()}
-        onAddSong={vi.fn()}
-        meta=""
+        createSongUrl="/music/songs/new"
+        createAlbumUrl="/music/albums/new"
+        onCreatePlaylist={vi.fn()}
         activePlaylistName={null}
       />
     );
@@ -42,8 +43,9 @@ describe("PageHead", () => {
         searchValue=""
         onSearchChange={vi.fn()}
         onShuffleAll={vi.fn()}
-        onAddSong={vi.fn()}
-        meta=""
+        createSongUrl="/music/songs/new"
+        createAlbumUrl="/music/albums/new"
+        onCreatePlaylist={vi.fn()}
         activePlaylistName={null}
       />
     );

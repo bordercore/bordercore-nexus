@@ -171,6 +171,21 @@
   margin-top: 0 !important;
 }
 
+.react-jinke-music-player-main .music-player-panel .audio-title {
+  .audio-name {
+    color: var(--fg-0);
+    font-weight: 600;
+  }
+
+  .audio-sep {
+    color: var(--fg-3, #8a8fa0);
+  }
+
+  .audio-singer {
+    color: var(--accent);
+  }
+}
+
 // Auto play next icon toggle in player controls
 .auto-play-next-btn {
   display: inline-flex;

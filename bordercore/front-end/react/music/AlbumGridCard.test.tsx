@@ -22,13 +22,12 @@ const album: RecentAlbum = {
 };
 
 describe("AlbumGridCard", () => {
-  it("renders title, artist, year, plays, tags, and the playtime/track pill", () => {
+  it("renders title, artist, year, plays, and tags", () => {
     render(<AlbumGridCard album={album} onPlay={vi.fn()} />);
     expect(screen.getByText("The Album")).toBeInTheDocument();
     expect(screen.getByText("Artist Name")).toBeInTheDocument();
     expect(screen.getByText("1985")).toBeInTheDocument();
     expect(screen.getByText("♪22")).toBeInTheDocument();
-    expect(screen.getByText("12t · 47:00")).toBeInTheDocument();
     expect(screen.getByText("#synthwave")).toBeInTheDocument();
     expect(screen.getByText("#ambient")).toBeInTheDocument();
   });

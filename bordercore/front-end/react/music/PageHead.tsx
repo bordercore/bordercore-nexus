@@ -1,25 +1,46 @@
 import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSearch, faShuffle, faPlus, faXmark } from "@fortawesome/free-solid-svg-icons";
+import {
+  faSearch,
+  faShuffle,
+  faPlus,
+  faMusic,
+  faRecordVinyl,
+  faList,
+} from "@fortawesome/free-solid-svg-icons";
+import DropDownMenu from "../common/DropDownMenu";
 
 interface Props {
   searchValue: string;
   onSearchChange: (value: string) => void;
   onShuffleAll: () => void;
-  onAddSong: () => void;
-  meta: string;
+  createSongUrl: string;
+  createAlbumUrl: string;
+  onCreatePlaylist: () => void;
   activePlaylistName: string | null;
+  paletteSlot?: React.ReactNode;
 }
 
 const PageHead: React.FC<Props> = ({
   searchValue,
   onSearchChange,
   onShuffleAll,
-  onAddSong,
-  meta,
+  createSongUrl,
+  createAlbumUrl,
+  onCreatePlaylist,
   activePlaylistName,
+  paletteSlot,
 }) => {
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const isMac = React.useMemo(() => {
+    if (typeof navigator === "undefined") return false;
+    const platform =
+      (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData
+        ?.platform ||
+      navigator.platform ||
+      navigator.userAgent;
+    return /Mac|iPhone|iPod|iPad/i.test(platform);
+  }, []);
 
   React.useEffect(() => {
     const handler = (event: KeyboardEvent) => {
@@ -31,6 +52,28 @@ const PageHead: React.FC<Props> = ({
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, []);
+
+  const addLinks = [
+    {
+      id: "new-song",
+      title: "New Song",
+      url: createSongUrl,
+      icon: faMusic,
+    },
+    {
+      id: "new-album",
+      title: "New Album",
+      url: createAlbumUrl,
+      icon: faRecordVinyl,
+    },
+    {
+      id: "new-playlist",
+      title: "New Playlist",
+      url: "#",
+      icon: faList,
+      clickHandler: onCreatePlaylist,
+    },
+  ];
 
   return (
     <>
@@ -54,21 +97,13 @@ const PageHead: React.FC<Props> = ({
             onChange={e => onSearchChange(e.target.value)}
             placeholder="search artists, albums, songs…"
           />
-          {searchValue ? (
-            <button
-              type="button"
-              className="mlo-search-clear"
-              onClick={() => onSearchChange("")}
-              aria-label="clear search"
-            >
-              <FontAwesomeIcon icon={faXmark} />
-            </button>
-          ) : (
+          {!searchValue && (
             <span className="mlo-search-hint">
-              <kbd>⌘</kbd>
+              <kbd>{isMac ? "⌘" : "Ctrl"}</kbd>
               <kbd>K</kbd>
             </span>
           )}
+          {paletteSlot}
         </div>
       </div>
 
@@ -77,15 +112,20 @@ const PageHead: React.FC<Props> = ({
           <h1 className="mlo-pagehead-title">
             Library <span className="mlo-pagehead-title-dim">— overview</span>
           </h1>
-          <p className="mlo-pagehead-meta">{meta}</p>
         </div>
         <div className="mlo-pagehead-actions">
           <button type="button" className="mlo-btn mlo-btn-secondary" onClick={onShuffleAll}>
             <FontAwesomeIcon icon={faShuffle} /> shuffle all
           </button>
-          <button type="button" className="mlo-btn mlo-btn-primary" onClick={onAddSong}>
-            <FontAwesomeIcon icon={faPlus} /> add
-          </button>
+          <DropDownMenu
+            links={addLinks}
+            showTarget={false}
+            iconSlot={
+              <span className="mlo-btn mlo-btn-primary">
+                <FontAwesomeIcon icon={faPlus} /> add
+              </span>
+            }
+          />
         </div>
       </div>
     </>

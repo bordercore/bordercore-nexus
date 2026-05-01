@@ -21,7 +21,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.core.paginator import Page, Paginator
-from django.db.models import Avg, Count, FloatField, IntegerField, OuterRef, QuerySet, Subquery, Sum
+from django.db.models import Avg, Count, FloatField, IntegerField, OuterRef, Q, QuerySet, Subquery, Sum
 from django.db.models.functions import Coalesce, TruncDate
 from django.urls import reverse
 from django.utils import timezone
@@ -136,7 +136,7 @@ def get_recent_albums(user: User, page_number: int = 1) -> tuple[list[dict[str, 
         rating: int | None (rounded average song rating, None if no rated songs),
         plays: int (total Listen rows across the album's songs).
     """
-    albums_per_page: int = 12
+    albums_per_page: int = 9
 
     song_aggregates = (
         Song.objects.filter(album=OuterRef("pk"))
@@ -669,4 +669,152 @@ def get_dashboard_stats(user: User) -> dict[str, Any]:
         "added_this_month": added_this_month,
         "longest_streak": longest_streak,
         "plays_today": plays_today,
+    }
+
+
+def _build_music_search_query(
+    user_id: int, q: str, doctype: str, *, size: int, offset: int = 0
+) -> dict[str, Any]:
+    """Construct an ES query for songs or albums matching ``q``."""
+    from search.services import build_base_query
+
+    search_object = build_base_query(
+        user_id,
+        size=size,
+        offset=offset,
+        source_fields=["uuid", "doctype"],
+        additional_must=[
+            {"term": {"doctype": doctype}},
+            {
+                "multi_match": {
+                    "query": q,
+                    "type": "bool_prefix",
+                    "fields": ["title^3", "artist^2", "album", "tags"],
+                }
+            },
+        ],
+    )
+    search_object["sort"] = [{"_score": {"order": "desc"}}]
+    return search_object
+
+
+def search_library(
+    user: User,
+    q: str,
+    *,
+    song_limit: int = 8,
+    album_limit: int = 8,
+    song_offset: int = 0,
+) -> dict[str, Any]:
+    """Search the user's songs and albums in Elasticsearch, hydrate from DB.
+
+    Returns a dict with keys ``songs``, ``albums`` (lists of result dicts),
+    and ``totals`` (per-kind match counts).
+    """
+    from search.services import execute_search
+
+    q = (q or "").strip()
+    if not q:
+        return {
+            "songs": [],
+            "albums": [],
+            "totals": {"songs": 0, "albums": 0},
+        }
+
+    user_id = cast(int, user.id)
+
+    # --- songs ---
+    song_query = _build_music_search_query(
+        user_id, q, "song", size=song_limit, offset=song_offset
+    )
+    song_response = execute_search(song_query)
+    song_hits = song_response["hits"]["hits"]
+    song_total = song_response["hits"]["total"]["value"]
+    song_uuids = [h["_source"]["uuid"] for h in song_hits]
+
+    song_map = {
+        str(s.uuid): s
+        for s in Song.objects.filter(user=user, uuid__in=song_uuids).select_related(
+            "artist", "album"
+        )
+    }
+    songs: list[dict[str, Any]] = []
+    for uuid in song_uuids:
+        s = song_map.get(uuid)
+        if s is None:
+            continue
+        songs.append(
+            {
+                "uuid": str(s.uuid),
+                "title": s.title,
+                "artist": s.artist.name,
+                "artist_url": reverse(
+                    "music:artist_detail", kwargs={"uuid": s.artist.uuid}
+                ),
+                "year": s.year,
+                "length": convert_seconds(s.length),
+                "album_title": s.album.title if s.album else None,
+                "album_uuid": str(s.album.uuid) if s.album else None,
+            }
+        )
+
+    # --- albums ---
+    album_query = _build_music_search_query(
+        user_id, q, "album", size=album_limit
+    )
+    album_response = execute_search(album_query)
+    album_hits = album_response["hits"]["hits"]
+    album_total = album_response["hits"]["total"]["value"]
+    album_uuids = [h["_source"]["uuid"] for h in album_hits]
+
+    album_map = {
+        str(a.uuid): a
+        for a in Album.objects.filter(user=user, uuid__in=album_uuids).select_related(
+            "artist"
+        )
+    }
+    albums: list[dict[str, Any]] = []
+    for uuid in album_uuids:
+        a = album_map.get(uuid)
+        if a is None:
+            continue
+        albums.append(
+            {
+                "uuid": str(a.uuid),
+                "title": a.title,
+                "artist_name": a.artist.name,
+                "artist_uuid": str(a.artist.uuid),
+                "year": a.year,
+                "artwork_url": f"{settings.IMAGES_URL}album_artwork/{a.uuid}",
+                "album_url": reverse("music:album_detail", kwargs={"uuid": a.uuid}),
+            }
+        )
+
+    return {
+        "songs": songs,
+        "albums": albums,
+        "totals": {"songs": song_total, "albums": album_total},
+    }
+
+
+def get_library_counts(user: User) -> dict[str, int]:
+    """Total counts for the user's music library: albums, songs, artists, tags.
+
+    The tag count is the number of distinct user-owned tags attached to at
+    least one of the user's songs or albums.
+    """
+    albums = Album.objects.filter(user=user).count()
+    songs = Song.objects.filter(user=user).count()
+    artists = Artist.objects.filter(user=user).count()
+    tags = (
+        Tag.objects.filter(user=user)
+        .filter(Q(song__user=user) | Q(album__user=user))
+        .distinct()
+        .count()
+    )
+    return {
+        "albums": albums,
+        "songs": songs,
+        "artists": artists,
+        "tags": tags,
     }

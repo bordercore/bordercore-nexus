@@ -1,13 +1,12 @@
 import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlay, faVolumeHigh } from "@fortawesome/free-solid-svg-icons";
-import { EventBus, doPost } from "../utils/reactUtils";
+import { EventBus } from "../utils/reactUtils";
 import type { RecentAddedSong } from "./types";
 
 interface Props {
   songs: RecentAddedSong[];
   currentUuid: string | null;
-  setRatingUrl: string;
   songMediaUrl: string;
   markListenedUrl: string;
 }
@@ -16,21 +15,7 @@ function pad2(n: number): string {
   return n.toString().padStart(2, "0");
 }
 
-const SongTable: React.FC<Props> = ({
-  songs,
-  currentUuid,
-  setRatingUrl,
-  songMediaUrl,
-  markListenedUrl,
-}) => {
-  const [ratings, setRatings] = React.useState<Record<string, number | null>>(() =>
-    Object.fromEntries(songs.map(s => [s.uuid, s.rating]))
-  );
-
-  React.useEffect(() => {
-    setRatings(Object.fromEntries(songs.map(s => [s.uuid, s.rating])));
-  }, [songs]);
-
+const SongTable: React.FC<Props> = ({ songs, currentUuid, songMediaUrl, markListenedUrl }) => {
   const handlePlay = (song: RecentAddedSong) => {
     EventBus.$emit("play-track", {
       track: { uuid: song.uuid, title: song.title },
@@ -40,33 +25,17 @@ const SongTable: React.FC<Props> = ({
     });
   };
 
-  const handleRate = (song: RecentAddedSong, star: number) => {
-    const current = ratings[song.uuid];
-    const newRating = current === star ? null : star;
-    setRatings(r => ({ ...r, [song.uuid]: newRating }));
-    doPost(
-      setRatingUrl,
-      { uuid: song.uuid, rating: newRating == null ? "" : String(newRating) },
-      () => undefined,
-      "Error setting song rating"
-    );
-  };
-
   return (
     <div className="mlo-song-table">
       <div className="mlo-song-row mlo-song-row-head">
         <span>#</span>
         <span>title</span>
         <span>artist</span>
-        <span>album</span>
-        <span>&#9733;</span>
-        <span>&#9834;</span>
         <span>year</span>
         <span>length</span>
       </div>
       {songs.map((song, idx) => {
         const isPlaying = currentUuid === song.uuid;
-        const rating = ratings[song.uuid];
         return (
           <div
             role="button"
@@ -91,24 +60,6 @@ const SongTable: React.FC<Props> = ({
             </span>
             <span className="mlo-song-row-title">{song.title}</span>
             <span className="mlo-song-row-artist">{song.artist}</span>
-            <span className="mlo-song-row-album">{song.album_title || "—"}</span>
-            <span className="mlo-song-row-stars" onClick={e => e.stopPropagation()}>
-              {[1, 2, 3, 4, 5].map(star => (
-                <button
-                  key={star}
-                  type="button"
-                  className={`mlo-star${rating != null && star <= rating ? " mlo-star-filled" : ""}`}
-                  aria-label={`set rating ${star}`}
-                  onClick={e => {
-                    e.stopPropagation();
-                    handleRate(song, star);
-                  }}
-                >
-                  &#9733;
-                </button>
-              ))}
-            </span>
-            <span className="mlo-song-row-plays">{song.plays}</span>
             <span className="mlo-song-row-year">{song.year ?? ""}</span>
             <span className="mlo-song-row-length">{song.length}</span>
           </div>

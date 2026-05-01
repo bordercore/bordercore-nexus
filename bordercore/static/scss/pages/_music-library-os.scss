@@ -5,32 +5,35 @@
 
 .music-library-os {
   --mlo-line-soft: var(--line-soft, #2a2e3d);
-  --mlo-hairline: #1e212d;
+  --mlo-hairline: color-mix(in oklch, var(--line-soft, #1e212d), transparent 40%);
   --mlo-bg-2: var(--bg-2, #12141c);
   --mlo-bg-3: var(--bg-3, #1a1d28);
   --mlo-fg-3: var(--fg-3, #8a8fa0);
   --mlo-fg-4: var(--fg-4, #5a5f72);
   --mlo-accent: var(--accent);
-  --mlo-accent-2: #7c7fff;
-  --mlo-warn: #f0b840;
-  --mlo-ok: #3fd29c;
+  --mlo-accent-2: color-mix(in oklch, var(--accent), white 15%);
+  --mlo-warn: var(--warn, #f0b840);
+  --mlo-ok: var(--ok, #3fd29c);
 
   display: grid;
   gap: 16px;
   grid-template-columns: 240px 1fr;
 
-  // Slim breadcrumb/search bar
+  // Slim breadcrumb/search bar — column tracks mirror the parent grid so the
+  // search input lines up with the main column's content edge.
   .mlo-pagebar {
-    display: flex;
+    display: grid;
     align-items: center;
-    padding: 8px 16px;
+    padding: 8px 0;
     border: 1px solid var(--mlo-line-soft);
     border-radius: 10px;
     background: var(--mlo-bg-2);
-    gap: 14px;
+    gap: 16px;
     grid-column: 1 / -1;
+    grid-template-columns: 240px 1fr;
 
     .mlo-breadcrumb {
+      padding-left: 16px;
       color: var(--mlo-fg-4);
       font-family: var(--font-mono);
       font-size: 11px;
@@ -41,14 +44,16 @@
     }
 
     .mlo-search {
+      position: relative;
       display: flex;
       max-width: 460px;
       height: 28px;
-      flex: 1;
       align-items: center;
       padding: 0 10px;
       border: 1px solid var(--mlo-line-soft);
       border-radius: 8px;
+      margin-right: 16px;
+      margin-left: 24px;
       background: var(--mlo-bg-2);
       gap: 8px;
 
@@ -79,7 +84,7 @@
     border: 1px solid var(--mlo-line-soft);
     border-radius: 10px;
     background: var(--mlo-bg-2);
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(4, 1fr);
 
     .mlo-stat {
       padding: 0 16px;
@@ -109,34 +114,6 @@
         font: 500 11px var(--font-mono);
       }
     }
-
-    .mlo-pulse {
-      display: inline-block;
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      margin-right: 8px;
-      background: var(--mlo-fg-4);
-
-      &.mlo-pulse-playing {
-        animation: mlo-pulse 1.4s ease-in-out infinite;
-        background: var(--mlo-ok);
-        box-shadow: 0 0 8px var(--mlo-ok);
-      }
-    }
-  }
-
-  @keyframes mlo-pulse {
-    0%,
-    100% {
-      opacity: 0.85;
-      transform: scale(1);
-    }
-
-    50% {
-      opacity: 1;
-      transform: scale(1.25);
-    }
   }
 
   // Sidebar / page-head / body / cards — full visual styling completed in Task 17.
@@ -156,7 +133,8 @@
     padding: 16px 10px 90px;
     border-right: 1px solid var(--mlo-line-soft);
     background: color-mix(in oklch, var(--bg-1), transparent 60%);
-    grid-row: 2;
+    grid-column: 1;
+    grid-row: 2 / span 2;
 
     .mlo-section-head {
       padding: 0 8px 6px;
@@ -164,6 +142,10 @@
       font: 500 10px var(--font-mono);
       letter-spacing: 0.12em;
       text-transform: uppercase;
+    }
+
+    .mlo-nav + .mlo-section-head {
+      margin-top: 24px;
     }
 
     .mlo-nav-item {
@@ -181,9 +163,9 @@
       }
 
       &.mlo-nav-item-active {
-        border: 1px solid rgb(179 107 255 / 30%);
-        background: rgb(179 107 255 / 8%);
-        box-shadow: 0 0 14px -4px rgb(179 107 255 / 45%);
+        border: 1px solid color-mix(in oklch, var(--mlo-accent), transparent 70%);
+        background: color-mix(in oklch, var(--mlo-accent), transparent 92%);
+        box-shadow: 0 0 14px -4px color-mix(in oklch, var(--mlo-accent), transparent 55%);
         color: var(--mlo-accent);
       }
 
@@ -219,7 +201,7 @@
       }
 
       &.mlo-playlist-row-active {
-        background: rgb(179 107 255 / 8%);
+        background: color-mix(in oklch, var(--mlo-accent), transparent 92%);
         box-shadow: inset 2px 0 0 var(--mlo-accent);
       }
     }
@@ -250,14 +232,18 @@
     flex-direction: column;
     padding: 20px 24px 40px;
     gap: 16px;
-    grid-row: 2;
+    grid-column: 2;
+    grid-row: 3;
   }
 
   .mlo-pagehead {
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
+    padding: 0 24px;
     gap: 16px;
+    grid-column: 2;
+    grid-row: 2;
   }
 
   .mlo-pagehead-title {
@@ -298,9 +284,15 @@
 
   .mlo-btn-primary {
     border: 0;
-    background: linear-gradient(180deg, #b36bff, #9355ef);
-    box-shadow: 0 0 0 1px rgb(179 107 255 / 30%), 0 0 16px -2px rgb(179 107 255 / 50%);
-    color: #fff;
+    background: linear-gradient(
+      180deg,
+      color-mix(in oklch, var(--accent), white 5%),
+      var(--accent)
+    );
+    box-shadow:
+      0 0 0 1px color-mix(in oklch, var(--accent), transparent 70%),
+      0 0 16px -2px color-mix(in oklch, var(--accent), transparent 50%);
+    color: var(--accent-fg, #fff);
   }
 
   .mlo-btn-icon {
@@ -336,25 +328,213 @@
     font: 500 10px var(--font-mono);
   }
 
+  // Pager controls placed at the right edge of an .mlo-section-head row.
+  .mlo-recent-pager-info {
+    margin-left: auto;
+  }
+
+  .mlo-recent-pager {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    .mlo-recent-pager-btn {
+      display: inline-flex;
+      width: 26px;
+      height: 26px;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--mlo-line-soft);
+      border-radius: 6px;
+      background: var(--mlo-bg-3);
+      color: var(--fg-1);
+      cursor: pointer;
+      font-size: 11px;
+      transition: background 0.12s, color 0.12s, border-color 0.12s;
+
+      &:disabled {
+        color: var(--mlo-fg-4);
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
+
+      // stylelint-disable-next-line no-descending-specificity
+      &:hover:not(:disabled) {
+        border-color: color-mix(in oklch, var(--mlo-accent), transparent 50%);
+        background: color-mix(in oklch, var(--mlo-accent), transparent 88%);
+        color: var(--mlo-accent);
+      }
+    }
+  }
+
+  .mlo-playlist-stats {
+    margin: -6px 0 12px;
+    color: var(--mlo-fg-3);
+    font: 500 11px var(--font-mono);
+  }
+
+  .mlo-playlist-link {
+    color: inherit;
+    text-decoration: none;
+
+    &:hover {
+      color: var(--mlo-accent);
+    }
+  }
+
+  // ── Search palette ──
+  .mlo-palette {
+    position: absolute;
+    z-index: 50;
+    top: calc(100% + 6px);
+    right: 0;
+    left: 0;
+    overflow: hidden;
+    max-height: 60vh;
+    border: 1px solid var(--mlo-line-soft);
+    border-radius: 10px;
+    background: var(--mlo-bg-2);
+    box-shadow: 0 12px 40px -12px rgb(0 0 0 / 60%);
+    overflow-y: auto;
+  }
+
+  .mlo-palette-status {
+    padding: 16px;
+    color: var(--mlo-fg-3);
+    font: 500 12px var(--font-mono);
+    text-align: center;
+  }
+
+  .mlo-palette-group {
+    padding: 6px 0;
+
+    & + .mlo-palette-group {
+      border-top: 1px solid var(--mlo-hairline);
+    }
+  }
+
+  .mlo-palette-group-head {
+    display: flex;
+    align-items: center;
+    padding: 6px 12px;
+    color: var(--mlo-fg-4);
+    font: 500 10px var(--font-mono);
+    gap: 8px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .mlo-palette-group-count {
+    margin-left: auto;
+    color: var(--mlo-fg-4);
+  }
+
+  .mlo-palette-item {
+    display: grid;
+    width: 100%;
+    align-items: baseline;
+    padding: 8px 12px;
+    border: 0;
+    background: transparent;
+    color: var(--fg-1);
+    cursor: pointer;
+    font: 500 12px var(--font-ui);
+    gap: 10px;
+    grid-template-columns: 1.4fr 1fr auto;
+    text-align: left;
+  }
+
+  .mlo-palette-album {
+    align-items: center;
+    grid-template-columns: 32px 1.4fr 1fr auto;
+  }
+
+  .mlo-palette-album-cover {
+    width: 32px;
+    height: 32px;
+    border-radius: 3px;
+    object-fit: cover;
+  }
+
+  .mlo-palette-item-active {
+    background: color-mix(in oklch, var(--mlo-accent), transparent 90%);
+    box-shadow: inset 2px 0 0 var(--mlo-accent);
+  }
+
+  .mlo-palette-song-title {
+    overflow: hidden;
+    color: var(--fg-1);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mlo-palette-song-artist {
+    overflow: hidden;
+    color: var(--mlo-accent-2);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mlo-palette-song-meta {
+    color: var(--mlo-fg-3);
+    font: 500 10px var(--font-mono);
+    white-space: nowrap;
+  }
+
+  .mlo-palette-see-all {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border: 0;
+    border-top: 1px dashed var(--mlo-hairline);
+    background: transparent;
+    color: var(--mlo-accent);
+    cursor: pointer;
+    font: 500 11px var(--font-mono);
+    gap: 8px;
+    text-align: left;
+  }
+
+  // ── Search results inline takeover ──
+  .mlo-search-back {
+    border: 0;
+    margin-right: 8px;
+    background: transparent;
+    color: var(--mlo-fg-3);
+    cursor: pointer;
+    font: 500 11px var(--font-mono);
+
+    &:hover {
+      color: var(--fg-1);
+    }
+  }
+
+  .mlo-search-pager {
+    display: flex;
+    align-items: center;
+    margin-top: 12px;
+    gap: 12px;
+  }
+
+  .mlo-search-pager-info {
+    color: var(--mlo-fg-3);
+    font: 500 11px var(--font-mono);
+  }
+
   .mlo-album-grid {
     display: grid;
     gap: 16px;
-    grid-template-columns: repeat(4, 1fr);
+
+    // minmax(0, 1fr) — prevents the track from expanding to the image's
+    // intrinsic min-content size (which would overflow the central column
+    // when artwork is large).
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .mlo-album-card {
-    .mlo-album-card-pill {
-      position: absolute;
-      z-index: 2;
-      right: 6px;
-      bottom: 6px;
-      padding: 2px 7px;
-      border: 1px solid var(--mlo-line-soft);
-      border-radius: 3px;
-      background: rgb(7 7 12 / 80%);
-      color: var(--mlo-fg-3);
-      font: 500 10px var(--font-mono);
-    }
+    min-width: 0;
 
     .mlo-album-card-play {
       position: absolute;
@@ -365,9 +545,13 @@
       height: 38px;
       border: 0;
       border-radius: 999px;
-      background: linear-gradient(180deg, #b36bff, #9355ef);
-      box-shadow: 0 0 14px -2px rgb(179 107 255 / 60%);
-      color: #fff;
+      background: linear-gradient(
+        180deg,
+        color-mix(in oklch, var(--mlo-accent), white 5%),
+        var(--mlo-accent)
+      );
+      box-shadow: 0 0 14px -2px color-mix(in oklch, var(--mlo-accent), transparent 40%);
+      color: var(--accent-fg, #fff);
       cursor: pointer;
       opacity: 0;
       transition: opacity 0.12s;
@@ -376,28 +560,30 @@
     .mlo-album-card-cover {
       position: relative;
       overflow: hidden;
+      width: 100%;
       border-radius: 4px;
       aspect-ratio: 1;
+
+      .mlo-album-card-cover-link {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
 
       img {
         display: block;
         width: 100%;
         height: 100%;
+        border-radius: 4px;
         object-fit: cover;
+        transition: transform 1s;
       }
 
-      &::after {
-        position: absolute;
-        background: linear-gradient(180deg, transparent 50%, rgb(0 0 0 / 60%));
-        content: "";
-        inset: 0;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.12s ease-out;
-      }
-
-      &:hover::after {
-        opacity: 1;
+      &:hover img {
+        filter:
+          drop-shadow(0.12rem 0.12rem 0.62rem color-mix(in oklch, var(--accent), transparent 75%))
+          drop-shadow(-0.12rem -0.12rem 0.62rem color-mix(in oklch, var(--accent), transparent 75%));
+        transform: scale(1.1);
       }
 
       &:hover .mlo-album-card-play {
@@ -449,9 +635,9 @@
     display: inline-flex;
     align-items: center;
     padding: 1px 6px;
-    border: 1px solid rgb(124 127 255 / 25%);
+    border: 1px solid color-mix(in oklch, var(--mlo-accent-2), transparent 75%);
     border-radius: 3px;
-    background: rgb(124 127 255 / 10%);
+    background: color-mix(in oklch, var(--mlo-accent-2), transparent 90%);
     color: var(--mlo-accent-2);
     font: 500 10px var(--font-mono);
   }
@@ -479,11 +665,11 @@
       cursor: pointer;
       font: 500 12px var(--font-ui);
       gap: 12px;
-      grid-template-columns: 32px 1.6fr 1.4fr 1.4fr 80px 50px 50px 60px;
+      grid-template-columns: 32px 1.6fr 1.4fr 50px 60px;
       text-align: left;
 
       &:hover {
-        background: rgb(179 107 255 / 4%);
+        background: color-mix(in oklch, var(--mlo-accent), transparent 96%);
 
         .mlo-song-row-num-text {
           display: none;
@@ -508,7 +694,7 @@
     }
 
     .mlo-song-row-playing {
-      background: rgb(179 107 255 / 10%);
+      background: color-mix(in oklch, var(--mlo-accent), transparent 90%);
       box-shadow: inset 2px 0 0 var(--mlo-accent);
 
       .mlo-song-row-title {
@@ -519,49 +705,25 @@
     .mlo-song-row-num {
       display: flex;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       color: var(--mlo-fg-4);
       font: 500 10px var(--font-mono);
     }
 
-    .mlo-song-row-artist,
-    .mlo-song-row-album {
+    .mlo-song-row-artist {
       overflow: hidden;
       color: var(--mlo-accent-2);
       text-overflow: ellipsis;
       white-space: nowrap;
     }
 
-    .mlo-song-row-plays {
-      color: var(--mlo-accent-2);
-      font: 500 12px var(--font-mono);
-      text-align: right;
-    }
-
     .mlo-song-row-year,
     .mlo-song-row-length {
       color: var(--mlo-fg-3);
       font: 500 11px var(--font-mono);
-      text-align: right;
+      text-align: left;
     }
 
-    .mlo-song-row-stars {
-      display: inline-flex;
-      gap: 1px;
-    }
-  }
-
-  .mlo-star {
-    border: 0;
-    background: transparent;
-    color: var(--fg-disabled, #3a3e4b);
-    cursor: pointer;
-    font-size: 11px;
-    line-height: 1;
-  }
-
-  .mlo-star-filled {
-    color: var(--mlo-warn);
   }
 
   .mlo-featured {
@@ -594,17 +756,6 @@
     color: var(--mlo-accent-2);
     font: 500 13px var(--font-ui);
     text-decoration: none;
-  }
-
-  .mlo-featured-actions {
-    display: flex;
-    margin-top: 12px;
-    gap: 8px;
-
-    .mlo-btn-primary {
-      flex: 1;
-      justify-content: center;
-    }
   }
 
   .mlo-recent-plays {
@@ -643,5 +794,25 @@
     color: var(--mlo-accent-2);
     font: 500 12px var(--font-ui);
     text-decoration: none;
+  }
+
+}
+
+// Refined create-playlist modal — rendered to document.body via portal, so
+// these selectors live at root scope (NOT nested under .music-library-os).
+.refined-modal {
+  .playlist-rating-row {
+    display: flex;
+    gap: 6px;
+
+    .rating {
+      cursor: pointer;
+      font-size: 18px;
+    }
+  }
+
+  .playlist-toggle-field {
+    align-self: end;
+    padding-bottom: 4px;
   }
 }

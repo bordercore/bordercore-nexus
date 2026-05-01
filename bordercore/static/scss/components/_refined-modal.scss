@@ -118,7 +118,7 @@
     }
   }
 
-  input,
+  input:not([type="checkbox"], [type="radio"]),
   select,
   textarea {
     width: 100%;
@@ -148,6 +148,19 @@
     resize: vertical;
   }
 
+  // Native <select> chevron sits flush against the right edge by default.
+  // Replace with an SVG chevron and reserve right-side padding so it mirrors
+  // the spacing of the react-select dropdown control.
+  // stylelint-disable-next-line no-descending-specificity
+  select {
+    padding-right: 36px;
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none' stroke='%238a8fa0' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><polyline points='1 1.5 6 6.5 11 1.5'/></svg>");
+    background-position: right 14px center;
+    background-repeat: no-repeat;
+    background-size: 12px 8px;
+  }
+
   // Native date picker indicator renders dark by default; invert + brighten so
   // it's visible on the refined-modal's dark surface.
   input[type="date"]::-webkit-calendar-picker-indicator {
@@ -157,6 +170,17 @@
 
     &:hover {
       opacity: 1;
+    }
+  }
+
+  // react-select (TagsInput) sits inside refined-field but uses the global
+  // canonical input surface (--bg-2). Inside the modal, plain inputs use
+  // --bg-0; reassert that here so the tag dropdown matches its siblings.
+  .react-select-container .react-select__control {
+    background: var(--bg-0);
+
+    &--is-focused {
+      background: var(--bg-0);
     }
   }
 }

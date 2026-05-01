@@ -52,7 +52,8 @@ from music.services import search as search_service
 from .forms import AlbumForm, PlaylistForm, SongForm
 from .models import Album, Artist, Playlist, PlaylistItem, Song, SongSource
 from .services import (get_artist_counts, get_dashboard_stats,
-                       get_playlist_counts, get_playlist_songs)
+                       get_library_counts, get_playlist_counts,
+                       get_playlist_songs, search_library)
 from .services import get_recent_albums as get_recent_albums_service
 from .services import get_unique_artist_letters
 
@@ -142,6 +143,7 @@ def music_list(request: HttpRequest) -> HttpResponse:
     ]
 
     dashboard_stats = get_dashboard_stats(user)
+    library_counts = get_library_counts(user)
 
     return render(request, "music/index.html",
                   {
@@ -159,6 +161,7 @@ def music_list(request: HttpRequest) -> HttpResponse:
                       "recent_played_songs_json": json.dumps(recent_played_songs_data),
                       "recent_albums_json": json.dumps(recent_albums_data),
                       "dashboard_stats_json": json.dumps(dashboard_stats),
+                      "library_counts_json": json.dumps(library_counts),
                   })
 
 
@@ -822,6 +825,60 @@ class RecentSongsListView(APIView):
         }
 
         return Response(response)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def music_search(request: Request) -> Response:
+    """Search the user's music library (songs + albums) via Elasticsearch."""
+    user = cast(User, request.user)
+    q = request.GET.get("q", "")
+
+    def _int(name: str, default: int) -> int:
+        try:
+            return max(0, int(request.GET.get(name, default)))
+        except (TypeError, ValueError):
+            return default
+
+    song_limit = min(_int("song_limit", 8), 100)
+    album_limit = min(_int("album_limit", 8), 100)
+    song_offset = _int("song_offset", 0)
+
+    results = search_library(
+        user,
+        q,
+        song_limit=song_limit,
+        album_limit=album_limit,
+        song_offset=song_offset,
+    )
+    return Response(results)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def shuffle_songs(request: Request) -> Response:
+    """Return all of the user's songs in random order, for shuffle-all playback."""
+    user = cast(User, request.user)
+    songs = (
+        Song.objects.filter(user=user)
+        .select_related("artist")
+        .order_by("?")
+    )
+
+    song_list = [
+        {
+            "uuid": str(song.uuid),
+            "title": song.title,
+            "artist": song.artist.name,
+            "length": convert_seconds(song.length),
+            "artist_url": reverse(
+                "music:artist_detail", kwargs={"uuid": song.artist.uuid}
+            ),
+        }
+        for song in songs
+    ]
+
+    return Response({"song_list": song_list})
 
 
 @api_view(["POST"])

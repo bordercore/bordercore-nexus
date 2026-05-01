@@ -349,16 +349,16 @@ def test_music_recent_albums(authenticated_client):
 
     assert resp.status_code == 200
     album_list = resp.json()["album_list"]
-    assert len(album_list) == 12
+    assert len(album_list) == 9
     assert str(albums[-1].uuid) in [x["uuid"] for x in album_list]
     assert str(albums[0].uuid) not in [x["uuid"] for x in album_list]
 
-    url = urls.reverse("music:recent_albums", kwargs={"page_number": 2})
+    url = urls.reverse("music:recent_albums", kwargs={"page_number": 3})
     resp = client.get(url)
 
     assert resp.status_code == 200
     album_list = resp.json()["album_list"]
-    assert len(album_list) == 8
+    assert len(album_list) == 2
     assert str(albums[-1].uuid) not in [x["uuid"] for x in album_list]
     assert str(albums[0].uuid) in [x["uuid"] for x in album_list]
 

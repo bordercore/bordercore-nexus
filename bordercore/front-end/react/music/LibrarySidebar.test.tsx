@@ -28,6 +28,8 @@ const navUrls = {
   tags: "/music/tag/",
 };
 
+const counts = { albums: 9, songs: 42, artists: 5, tags: 3 };
+
 describe("LibrarySidebar", () => {
   it("renders the library nav and playlists", () => {
     render(
@@ -37,7 +39,7 @@ describe("LibrarySidebar", () => {
         onSelectPlaylist={vi.fn()}
         onPlayPlaylist={vi.fn()}
         navUrls={navUrls}
-        totalSongs={42}
+        counts={counts}
       />
     );
 
@@ -56,7 +58,7 @@ describe("LibrarySidebar", () => {
         onSelectPlaylist={onSelect}
         onPlayPlaylist={vi.fn()}
         navUrls={navUrls}
-        totalSongs={0}
+        counts={counts}
       />
     );
 
@@ -73,7 +75,7 @@ describe("LibrarySidebar", () => {
         onSelectPlaylist={vi.fn()}
         onPlayPlaylist={onPlay}
         navUrls={navUrls}
-        totalSongs={0}
+        counts={counts}
       />
     );
 
@@ -89,7 +91,7 @@ describe("LibrarySidebar", () => {
         onSelectPlaylist={vi.fn()}
         onPlayPlaylist={vi.fn()}
         navUrls={navUrls}
-        totalSongs={0}
+        counts={counts}
       />
     );
     const row = screen.getByRole("button", { name: /80s/i });

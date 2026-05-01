@@ -10,10 +10,10 @@ const songs: RecentPlayedSong[] = [
 
 describe("RecentPlaysCard", () => {
   it("renders rows with numeric prefixes", () => {
-    render(<RecentPlaysCard songs={songs} playsToday={5} />);
+    render(<RecentPlaysCard songs={songs} />);
     expect(screen.getByText("Just Now")).toBeInTheDocument();
     expect(screen.getByText("01")).toBeInTheDocument();
     expect(screen.getByText("02")).toBeInTheDocument();
-    expect(screen.getByText(/2 of 5/)).toBeInTheDocument();
+    expect(screen.getByText("Recent Plays")).toBeInTheDocument();
   });
 });

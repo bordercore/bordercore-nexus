@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
+import { render, screen } from "@testing-library/react";
 import FeaturedAlbumCard from "./FeaturedAlbumCard";
 import type { FeaturedAlbum } from "./types";
 
@@ -14,21 +14,10 @@ const album: FeaturedAlbum = {
 };
 
 describe("FeaturedAlbumCard", () => {
-  it("renders the album with play and shuffle buttons", () => {
-    render(<FeaturedAlbumCard album={album} onPlay={vi.fn()} onShuffle={vi.fn()} />);
+  it("renders the album with title, artist, and section heading", () => {
+    render(<FeaturedAlbumCard album={album} />);
+    expect(screen.getByText("Featured Album")).toBeInTheDocument();
     expect(screen.getByText("Featured Title")).toBeInTheDocument();
     expect(screen.getByText("Featured Artist")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /play/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /shuffle/i })).toBeInTheDocument();
-  });
-
-  it("calls handlers", () => {
-    const play = vi.fn();
-    const shuffle = vi.fn();
-    render(<FeaturedAlbumCard album={album} onPlay={play} onShuffle={shuffle} />);
-    fireEvent.click(screen.getByRole("button", { name: /play/i }));
-    fireEvent.click(screen.getByRole("button", { name: /shuffle/i }));
-    expect(play).toHaveBeenCalled();
-    expect(shuffle).toHaveBeenCalled();
   });
 });
