@@ -646,12 +646,23 @@ class SongFormAjaxView(APIView):
             "uuid": str(song.uuid),
             "title": song.title,
             "artist": str(song.artist) if song.artist else "",
+            "artist_uuid": str(song.artist.uuid) if song.artist else None,
+            "artist_url": reverse(
+                "music:artist_detail", kwargs={"uuid": song.artist.uuid}
+            ) if song.artist else None,
             "track": song.track or "",
             "year": song.year or "",
             "original_year": song.original_year or "",
             "rating": song.rating,
             "note": song.note or "",
             "album_name": song.album.title if song.album else "",
+            "album_uuid": str(song.album.uuid) if song.album else None,
+            "album_url": reverse(
+                "music:album_detail", kwargs={"uuid": song.album.uuid}
+            ) if song.album else None,
+            "artwork_url": f"{settings.IMAGES_URL}album_artwork/{song.album.uuid}"
+            if song.album
+            else None,
             "compilation": song.album.compilation if song.album else False,
             "tags": [t.name for t in song.tags.all()],
             "length": song.length,
