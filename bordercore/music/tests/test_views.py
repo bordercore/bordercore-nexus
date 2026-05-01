@@ -81,6 +81,16 @@ def test_music_artist_list(authenticated_client, song):
     assert resp.status_code == 200
 
 
+def test_music_album_list(authenticated_client, song):
+    """Test the album list page renders successfully."""
+    _, client = authenticated_client()
+
+    url = urls.reverse("music:album_list")
+    resp = client.get(url)
+
+    assert resp.status_code == 200
+
+
 def test_music_album_detail(authenticated_client, song):
     """Test the album detail page renders successfully."""
     _, client = authenticated_client()

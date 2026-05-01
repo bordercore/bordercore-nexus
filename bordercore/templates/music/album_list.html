@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load vite_tags %}
+
+{% block title %}Albums{% endblock %}
+
+{% block javascript_bundles %}
+    {{ block.super }}
+    {% vite_asset "dist/js/album-list" %}
+{% endblock %}
+
+{% block content %}
+<div id="react-root"
+     data-albums="{{ albums_json }}"
+     data-nav="{{ nav_json }}"
+     data-selected-letter="{{ selected_letter }}"
+     data-unique-album-letters="{{ unique_album_letters_json }}"
+     data-album-list-base-url="{% url 'music:album_list' %}"
+     data-music-home-url="{% url 'music:list' %}">
+</div>
+{% endblock %}

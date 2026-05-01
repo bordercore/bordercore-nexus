@@ -51,9 +51,10 @@ from music.services import search as search_service
 
 from .forms import AlbumForm, PlaylistForm, SongForm
 from .models import Album, Artist, Playlist, PlaylistItem, Song, SongSource
-from .services import (get_artist_counts, get_dashboard_stats,
-                       get_library_counts, get_playlist_counts,
-                       get_playlist_songs, search_library)
+from .services import (get_albums_by_letter, get_artist_counts,
+                       get_dashboard_stats, get_library_counts,
+                       get_playlist_counts, get_playlist_songs,
+                       get_unique_album_letters, search_library)
 from .services import get_recent_albums as get_recent_albums_service
 from .services import get_unique_artist_letters
 
@@ -356,6 +357,30 @@ class ArtistListView(LoginRequiredMixin, ListView):
             "artists_json": json.dumps(artists_data),
             "nav_json": json.dumps(nav),
             "unique_artist_letters_json": json.dumps(list(unique_artist_letters)),
+        }
+
+
+class AlbumListView(LoginRequiredMixin, TemplateView):
+    """Display a letter-filtered grid of all albums."""
+
+    template_name = "music/album_list.html"
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        user = cast(User, self.request.user)
+        selected_letter = self.request.GET.get("letter", "a")
+
+        albums = get_albums_by_letter(user, selected_letter)
+        unique_letters = get_unique_album_letters(user)
+        nav = list(string.ascii_lowercase) + ["other"]
+
+        return {
+            **context,
+            "title": "Album List",
+            "selected_letter": selected_letter,
+            "albums_json": json.dumps(albums),
+            "nav_json": json.dumps(nav),
+            "unique_album_letters_json": json.dumps(list(unique_letters)),
         }
 
 

@@ -51,6 +51,7 @@ function makeProps(): MusicDashboardProps {
       createSong: "/create",
       createAlbum: "/create_album",
       artistList: "/artist_list",
+      albumList: "/album_list",
       setSongRating: "/set_song_rating",
       songMedia: "/media/song/",
       markListened: "/mark_listened/00000000-0000-0000-0000-000000000000",

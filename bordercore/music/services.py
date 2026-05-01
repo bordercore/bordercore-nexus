@@ -374,6 +374,85 @@ def get_artist_counts(user: User, letter: str) -> dict[str, dict[str, int]]:
     }
 
 
+def get_unique_album_letters(user: User) -> set[str]:
+    """Get unique first letters of all album titles for a user.
+
+    Non-alphabetic first characters are grouped under 'other'.
+
+    Args:
+        user: The user whose albums to inspect.
+
+    Returns:
+        A set of lowercase letters and 'other'.
+    """
+    ascii_letters = set(string.ascii_lowercase)
+    unique_letters: set[str] = set()
+    queryset: QuerySet[Album] = Album.objects.filter(user=user)
+
+    for album in queryset.only("title"):
+        if not album.title:
+            continue
+        first_letter = album.title.lower()[0]
+        if first_letter not in ascii_letters:
+            unique_letters.add("other")
+        else:
+            unique_letters.add(first_letter)
+
+    return unique_letters
+
+
+def get_albums_by_letter(user: User, letter: str) -> list[dict[str, Any]]:
+    """Get all albums whose title starts with the given letter.
+
+    Args:
+        user: The user whose albums to fetch.
+        letter: A lowercase letter ('a'-'z') or 'other' for non-alphabetic titles.
+
+    Returns:
+        A list of album dicts with uuid, title, artist_name, artist_uuid,
+        album_url, artist_url, artwork_url, year, track_count.
+    """
+    track_count = (
+        Song.objects.filter(album=OuterRef("pk"))
+        .values("album")
+        .annotate(c=Count("id"))
+        .values("c")
+    )
+
+    queryset: QuerySet[Album] = (
+        Album.objects.filter(user=user)
+        .select_related("artist")
+        .annotate(_track_count=Coalesce(Subquery(track_count, output_field=IntegerField()), 0))
+    )
+
+    if letter == "other":
+        queryset = queryset.exclude(
+            Q(*[
+                ("title__istartswith", l)
+                for l in string.ascii_lowercase
+            ], _connector=Q.OR)
+        )
+    else:
+        queryset = queryset.filter(title__istartswith=letter)
+
+    queryset = queryset.order_by("title")
+
+    return [
+        {
+            "uuid": str(album.uuid),
+            "title": album.title,
+            "artist_name": album.artist.name,
+            "artist_uuid": str(album.artist.uuid),
+            "album_url": reverse("music:album_detail", kwargs={"uuid": album.uuid}),
+            "artist_url": reverse("music:artist_detail", kwargs={"uuid": album.artist.uuid}),
+            "artwork_url": f"{settings.IMAGES_URL}album_artwork/{album.uuid}",
+            "year": album.year,
+            "track_count": album._track_count or 0,  # type: ignore[attr-defined]
+        }
+        for album in queryset
+    ]
+
+
 def scan_zipfile(zipfile_obj: bytes, include_song_data: bool = False) -> dict[str, Any]:
     """Scan a ZIP file containing MP3 files and extract metadata.
 
