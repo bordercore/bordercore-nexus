@@ -30,9 +30,9 @@ urlpatterns = [
         name="song_form_ajax"
     ),
     path(
-        route="album_list",
-        view=views.AlbumListView.as_view(),
-        name="album_list"
+        route="artist_list",
+        view=views.ArtistListView.as_view(),
+        name="artist_list"
     ),
     path(
         route="album/<uuid:uuid>/",

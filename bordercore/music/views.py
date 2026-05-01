@@ -280,10 +280,10 @@ class ArtistDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView):
         }
 
 
-class AlbumListView(LoginRequiredMixin, ListView):
-    """Display a paginated list of albums organized by artist."""
+class ArtistListView(LoginRequiredMixin, ListView):
+    """Display a paginated list of artists, optionally filtered by letter."""
 
-    template_name = "music/album_list.html"
+    template_name = "music/artist_list.html"
 
     def get_queryset(self) -> QuerySetType[Artist]:
         """Get the queryset of artists filtered by selected letter.

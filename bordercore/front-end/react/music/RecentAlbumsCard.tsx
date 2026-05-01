@@ -41,11 +41,11 @@ export function RecentAlbumsCard({
                     </a>
                   </li>
                   <li>
-                    <a className="dropdown-menu-item" href={urls.albumList}>
+                    <a className="dropdown-menu-item" href={urls.artistList}>
                       <span className="dropdown-menu-icon">
                         <FontAwesomeIcon icon={faPlus} className="text-primary" />
                       </span>
-                      <span className="dropdown-menu-text">Album List</span>
+                      <span className="dropdown-menu-text">Artist List</span>
                     </a>
                   </li>
                   <li>

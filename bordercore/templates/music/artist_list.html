@@ -5,7 +5,7 @@
 
 {% block javascript_bundles %}
     {{ block.super }}
-    {% vite_asset "dist/js/album-list" %}
+    {% vite_asset "dist/js/artist-list" %}
 {% endblock %}
 
 {% block content %}
@@ -14,8 +14,9 @@
      data-nav="{{ nav_json }}"
      data-selected-letter="{{ selected_letter }}"
      data-unique-artist-letters="{{ unique_artist_letters_json }}"
-     data-album-list-base-url="{% url 'music:album_list' %}"
+     data-artist-list-base-url="{% url 'music:artist_list' %}"
      data-artist-detail-url-template="{% url 'music:artist_detail' '00000000-0000-0000-0000-000000000000' %}"
+     data-music-home-url="{% url 'music:list' %}"
      data-images-url="{{ IMAGES_URL }}">
 </div>
 {% endblock %}

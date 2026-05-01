@@ -796,6 +796,193 @@
     text-decoration: none;
   }
 
+  // Standalone letter-filtered list page — used by Albums and Artists. Opts
+  // out of the dashboard 240/1fr grid and lays out its own breadcrumb, head,
+  // letter nav, and card grid.
+  &.mlo-list-page {
+    display: block;
+    padding: 16px 24px 40px;
+
+    .mlo-list-bar {
+      display: flex;
+      align-items: center;
+      padding: 8px 16px;
+      border: 1px solid var(--mlo-line-soft);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      background: var(--mlo-bg-2);
+
+      .mlo-breadcrumb {
+        color: var(--mlo-fg-4);
+        font: 500 11px var(--font-mono);
+
+        a {
+          color: inherit;
+          text-decoration: none;
+          transition: color 0.12s;
+        }
+
+        a:hover {
+          color: var(--mlo-fg-3);
+        }
+
+        .mlo-breadcrumb-active {
+          color: var(--mlo-accent);
+        }
+
+        .mlo-breadcrumb-letter {
+          color: var(--fg-1);
+          text-transform: uppercase;
+        }
+      }
+    }
+
+    .mlo-list-head {
+      padding: 0 4px;
+      margin-bottom: 18px;
+
+      .mlo-pagehead-meta-letter {
+        color: var(--mlo-accent);
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+    }
+
+    .mlo-letter-nav {
+      display: flex;
+      flex-wrap: wrap;
+      padding: 12px 14px;
+      border: 1px solid var(--mlo-line-soft);
+      border-radius: 10px;
+      margin-bottom: 24px;
+      background: var(--mlo-bg-2);
+      gap: 6px;
+
+      // stylelint-disable-next-line no-descending-specificity
+      a,
+      .is-current,
+      .is-disabled {
+        display: inline-flex;
+        min-width: 28px;
+        height: 28px;
+        align-items: center;
+        justify-content: center;
+        padding: 0 8px;
+        border-radius: 6px;
+        font: 600 12px var(--font-mono);
+        text-decoration: none;
+        text-transform: uppercase;
+      }
+
+      // stylelint-disable-next-line no-descending-specificity
+      a {
+        color: var(--mlo-fg-3);
+        transition: background 0.12s, color 0.12s;
+
+        // stylelint-disable-next-line no-descending-specificity
+        &:hover {
+          background: var(--mlo-bg-3);
+          color: var(--fg-1);
+        }
+      }
+
+      .is-current {
+        background: var(--mlo-accent);
+        box-shadow: 0 0 14px -2px color-mix(in oklch, var(--mlo-accent), transparent 40%);
+        color: var(--accent-fg, #fff);
+      }
+
+      .is-disabled {
+        color: var(--mlo-fg-4);
+        opacity: 0.55;
+        pointer-events: none;
+      }
+    }
+
+    .mlo-list-grid {
+      display: grid;
+      gap: 22px;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    }
+
+    .mlo-list-empty {
+      padding: 32px;
+      border: 1px dashed var(--mlo-line-soft);
+      border-radius: 10px;
+      background: var(--mlo-bg-2);
+      color: var(--mlo-fg-3);
+      font: 500 13px var(--font-ui);
+      text-align: center;
+
+      strong {
+        color: var(--fg-1);
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+    }
+  }
+
+  // Artist card — circular portrait + name + album/song counts. Used inside
+  // .mlo-list-grid on the artist list page.
+  .mlo-artist-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+
+    .mlo-artist-card-cover {
+      position: relative;
+      display: block;
+      overflow: hidden;
+      width: 100%;
+      border-radius: 999px;
+      aspect-ratio: 1;
+      background: var(--mlo-bg-3);
+
+      // stylelint-disable-next-line no-descending-specificity
+      img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.6s, filter 0.2s;
+      }
+
+      &:hover img {
+        filter:
+          drop-shadow(0.12rem 0.12rem 0.62rem color-mix(in oklch, var(--accent), transparent 75%))
+          drop-shadow(-0.12rem -0.12rem 0.62rem color-mix(in oklch, var(--accent), transparent 75%));
+        transform: scale(1.06);
+      }
+    }
+
+    .mlo-artist-card-name {
+      display: block;
+      overflow: hidden;
+      max-width: 100%;
+      margin-top: 12px;
+      color: var(--fg-1);
+      font: 600 14px var(--font-ui);
+      text-decoration: none;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .mlo-artist-card-meta {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 4px;
+      color: var(--mlo-fg-3);
+      font: 500 11px var(--font-mono);
+      gap: 6px;
+
+      strong {
+        color: var(--mlo-accent-2);
+        font-weight: 600;
+      }
+    }
+  }
 }
 
 // Refined create-playlist modal — rendered to document.body via portal, so

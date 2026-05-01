@@ -189,7 +189,7 @@ export interface MusicDashboardUrls {
   tagSearch: string;
   createSong: string;
   createAlbum: string;
-  albumList: string;
+  artistList: string;
   setSongRating: string;
   songMedia: string;
   markListened: string;
@@ -341,25 +341,26 @@ export interface TagSearchProps {
   staticUrl: string;
 }
 
-// Album List Page Types
+// Artist List Page Types
 
-export interface AlbumListArtist {
+export interface ArtistListArtist {
   uuid: string;
   name: string;
   album_count: number;
   song_count: number;
 }
 
-export interface AlbumListUrls {
-  albumListBase: string;
+export interface ArtistListUrls {
+  artistListBase: string;
   artistDetail: string;
+  musicHome: string;
 }
 
-export interface AlbumListProps {
-  artists: AlbumListArtist[];
+export interface ArtistListProps {
+  artists: ArtistListArtist[];
   nav: string[];
   selectedLetter: string;
   uniqueArtistLetters: string[];
-  urls: AlbumListUrls;
+  urls: ArtistListUrls;
   imagesUrl: string;
 }

@@ -244,9 +244,9 @@ export function MusicDashboardPage({
         onSelectPlaylist={handleSelectPlaylist}
         onPlayPlaylist={handlePlayPlaylist}
         navUrls={{
-          albums: urls.albumList,
+          albums: urls.artistList,
           songs: "/music/",
-          artists: urls.albumList,
+          artists: urls.artistList,
           tags: urls.tagSearch,
         }}
         counts={libraryCounts}

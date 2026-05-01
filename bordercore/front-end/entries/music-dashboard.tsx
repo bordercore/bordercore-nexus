@@ -47,7 +47,7 @@ if (container) {
     tagSearch: container.dataset.tagSearchUrl || "",
     createSong: container.dataset.createSongUrl || "",
     createAlbum: container.dataset.createAlbumUrl || "",
-    albumList: container.dataset.albumListUrl || "",
+    artistList: container.dataset.artistListUrl || "",
     setSongRating: container.dataset.setSongRatingUrl || "",
     songMedia: container.dataset.songMediaUrl || "",
     markListened: container.dataset.markListenedUrl || "",

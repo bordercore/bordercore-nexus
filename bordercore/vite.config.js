@@ -72,7 +72,7 @@ module.exports = defineConfig({
         "dist/js/song-create": path.resolve(__dirname, "front-end", "entries", "song-create.tsx"),
         "dist/js/playlist-detail": path.resolve(__dirname, "front-end", "entries", "playlist-detail.tsx"),
         "dist/js/tag-search": path.resolve(__dirname, "front-end", "entries", "tag-search.tsx"),
-        "dist/js/album-list": path.resolve(__dirname, "front-end", "entries", "album-list.tsx"),
+        "dist/js/artist-list": path.resolve(__dirname, "front-end", "entries", "artist-list.tsx"),
         "dist/js/album-create": path.resolve(__dirname, "front-end", "entries", "album-create.tsx"),
         "dist/js/collection-list": path.resolve(__dirname, "front-end", "entries", "collection-list.tsx"),
         "dist/js/collection-detail": path.resolve(__dirname, "front-end", "entries", "collection-detail.tsx"),

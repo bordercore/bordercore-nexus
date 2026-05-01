@@ -50,7 +50,7 @@ function makeProps(): MusicDashboardProps {
       tagSearch: "/tag/search",
       createSong: "/create",
       createAlbum: "/create_album",
-      albumList: "/album_list",
+      artistList: "/artist_list",
       setSongRating: "/set_song_rating",
       songMedia: "/media/song/",
       markListened: "/mark_listened/00000000-0000-0000-0000-000000000000",

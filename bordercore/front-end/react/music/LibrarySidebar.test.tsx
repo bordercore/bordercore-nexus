@@ -22,7 +22,7 @@ const playlists: PlaylistSidebarItem[] = [
 ];
 
 const navUrls = {
-  albums: "/music/album_list",
+  albums: "/music/artist_list",
   songs: "/music/",
   artists: "/music/artist/",
   tags: "/music/tag/",
