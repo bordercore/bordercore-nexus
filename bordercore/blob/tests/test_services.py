@@ -13,9 +13,9 @@ pytestmark = [pytest.mark.django_db]
 
 from blob.models import Blob
 from blob.services import (chatbot_followups, get_authors, get_blob_naturalsize,
-                           get_recent_blobs, get_recent_media, import_artstation,
-                           import_instagram, import_newyorktimes, parse_date,
-                           parse_shortcode)
+                           get_dashboard_blobs, get_recent_blobs, get_recent_media,
+                           import_artstation, import_instagram, import_newyorktimes,
+                           parse_date, parse_shortcode)
 from blob.tests.factories import BlobFactory
 
 faker = FakerFactory.create()
@@ -55,6 +55,32 @@ def test_get_recent_blobs(mock_get_blob_sizes, authenticated_client, blob_image_
         for x in
         blob_list
     ]
+
+
+@patch("blob.services.get_blob_sizes")
+def test_get_dashboard_blobs(mock_get_blob_sizes, authenticated_client, blob_image_factory, blob_text_factory):
+    """The dashboard payload exposes blobs plus rail aggregates."""
+
+    user, _ = authenticated_client()
+    mock_get_blob_sizes.return_value = {}
+
+    payload = get_dashboard_blobs(user)
+
+    assert payload["total_count"] == 4
+    assert payload["doctype_counts"]["all"] == 4
+    assert payload["doctype_counts"]["image"] == 1
+    assert payload["doctype_counts"]["document"] == 3
+    assert set(payload["date_bucket_counts"].keys()) == {
+        "today", "this-week", "last-week", "this-month", "older",
+    }
+    names = {b["name"] for b in payload["blobs"]}
+    assert blob_image_factory[0].name in names
+    assert blob_text_factory[0].name in names
+    # Each blob carries the fields the cards consume.
+    sample = payload["blobs"][0]
+    for key in ("uuid", "name", "url", "doctype", "tags", "bucket",
+                "is_starred", "is_pinned", "back_refs"):
+        assert key in sample
 
 
 def test_get_recent_media(authenticated_client, blob_image_factory, blob_text_factory):

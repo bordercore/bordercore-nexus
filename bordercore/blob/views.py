@@ -198,9 +198,10 @@ class FormValidMixin(ModelFormMixin):
 
 
 class BlobListView(LoginRequiredMixin, ListView):
-    """View for displaying the blob list page.
+    """View for the Recent Blobs filter-dashboard page.
 
-    Shows a list of recent blobs for the logged-in user.
+    Builds the dashboard payload (recent blobs plus rail counts) and exposes
+    it to the React entry as a json_script tag. All filtering is client-side.
     """
 
     model = Blob
@@ -214,12 +215,16 @@ class BlobListView(LoginRequiredMixin, ListView):
         Returns:
             Context dictionary containing:
                 - title: Page title "Recent Blobs"
+                - dashboard_data: Payload for the React dashboard.
         """
+        from blob.services import get_dashboard_blobs
+
         context = super().get_context_data(**kwargs)
 
         return {
             **context,
-            "title": "Recent Blobs"
+            "title": "Recent Blobs",
+            "dashboard_data": get_dashboard_blobs(cast(User, self.request.user)),
         }
 
 

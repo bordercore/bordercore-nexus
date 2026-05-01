@@ -21,42 +21,6 @@ export interface BookshelfPageProps {
   clearUrl: string;
 }
 
-export interface Blob {
-  name: string;
-  url: string;
-  doctype: string;
-  cover_url: string | null;
-  content: string;
-  delta_days: number;
-  content_size: string;
-}
-
-export interface DocTypes {
-  all: number;
-  note: number;
-  image: number;
-  document: number;
-  blob: number;
-}
-
-export interface BlobListData {
-  blobList: Blob[];
-  docTypes: DocTypes;
-}
-
-export type NavItem = "All" | "Notes" | "Images" | "Documents" | "Blobs";
-
-export interface BlobListUrls {
-  createBlob: string;
-  importBlob: string;
-  bookshelf: string;
-}
-
-export interface BlobListPageProps {
-  blobListData: BlobListData;
-  urls: BlobListUrls;
-}
-
 // Types for Blob Detail page
 
 export interface BlobDetail {

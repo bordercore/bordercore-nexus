@@ -1,0 +1,793 @@
+// =============================================================================
+// Recent Blobs filter dashboard (`/blobs/`)
+// =============================================================================
+// Two-pane layout: 240px filter rail + dense card grid. Page chrome and accent
+// emphasis pull from the theme tokens (--bg-0/--fg-1/--accent/etc.) so the
+// page adapts to whichever color-mode the user has set. Doctype dots stay
+// locked to fixed semantic colors (note=purple, book=violet, image=pink,
+// video=cyan, document=amber) — those encode meaning across themes.
+// =============================================================================
+
+// stylelint-disable no-descending-specificity, selector-class-pattern
+
+.rb-app {
+  position: relative;
+  min-height: calc(100vh - 64px);
+  padding: 0;
+  margin: -1rem -1.5rem 0;
+  background: var(--bg-0);
+  color: var(--fg-1);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  letter-spacing: -0.005em;
+  line-height: 1.5;
+
+  * { box-sizing: border-box; }
+
+  button { font: inherit; }
+}
+
+.rb-shell {
+  display: grid;
+  min-height: calc(100vh - 64px);
+  grid-template-columns: 240px 1fr;
+}
+
+// ============================================================================
+// Filter rail
+// ============================================================================
+.rb-rail {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  padding: 22px 16px;
+  border-right: 1px solid var(--line);
+  background: var(--bg-1);
+  gap: 22px;
+  overflow-y: auto;
+  scrollbar-color: var(--fg-3) transparent;
+  scrollbar-width: thin;
+}
+
+.rb-rail-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rb-rail-heading {
+  display: flex;
+  align-items: baseline;
+  margin: 0 0 4px;
+  color: var(--fg-3);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 600;
+  gap: 6px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.rb-rail-heading-count {
+  color: var(--fg-3);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.rb-rail-list {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  margin: 0;
+  gap: 1px;
+  list-style: none;
+}
+
+.rb-rail-row {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  padding: 6px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--bc-radius-sm);
+  background: transparent;
+  color: var(--fg-2);
+  cursor: pointer;
+  font-size: 12.5px;
+  gap: 10px;
+  text-align: left;
+  transition: background var(--bc-t-fast) var(--bc-ease-out),
+              border-color var(--bc-t-fast) var(--bc-ease-out),
+              color var(--bc-t-fast) var(--bc-ease-out);
+
+  &:hover {
+    background: var(--bg-2);
+    color: var(--fg-1);
+  }
+
+  &:focus-visible {
+    box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent), transparent 65%);
+    outline: none;
+  }
+
+  &.is-active {
+    border-color: color-mix(in oklch, var(--accent), transparent 70%);
+    background: color-mix(in oklch, var(--accent), transparent 90%);
+    color: var(--fg-1);
+  }
+
+  &.is-active .rb-rail-row-count {
+    color: var(--accent);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+  }
+}
+
+.rb-rail-row-label {
+  overflow: hidden;
+  min-width: 0;
+  flex: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rb-rail-row-count {
+  color: var(--fg-3);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+// Date histogram
+.rb-rail-histogram { gap: 4px; }
+
+.rb-histogram-row {
+  display: grid;
+  width: 100%;
+  align-items: center;
+  padding: 4px 10px;
+  border: 0;
+  border-radius: var(--bc-radius-sm);
+  background: transparent;
+  color: var(--fg-2);
+  cursor: pointer;
+  gap: 8px;
+  grid-template-columns: 70px 1fr 28px;
+  text-align: left;
+  transition: background var(--bc-t-fast) var(--bc-ease-out);
+
+  &:hover .rb-histogram-fill {
+    filter: brightness(1.2);
+  }
+
+  &:focus-visible {
+    box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent), transparent 65%);
+    outline: none;
+  }
+
+  &.is-active {
+    background: color-mix(in oklch, var(--accent), transparent 90%);
+  }
+
+  &.is-active .rb-histogram-count {
+    color: var(--accent);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.35;
+  }
+}
+
+.rb-histogram-label {
+  color: var(--fg-3);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.rb-histogram-track {
+  display: block;
+  overflow: hidden;
+  height: 5px;
+  border-radius: var(--bc-radius-pill);
+  background: var(--bg-3);
+}
+
+.rb-histogram-fill {
+  display: block;
+  width: var(--fill, 0%);
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    var(--accent),
+    color-mix(in oklch, var(--accent), white 22%)
+  );
+  transition: filter var(--bc-t-fast) var(--bc-ease-out);
+}
+
+.rb-histogram-count {
+  color: var(--fg-3);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+// Tag rail
+.rb-rail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+// ============================================================================
+// Doctype dots (fixed semantic colors — same in every theme so a "video" is
+// always cyan, a "book" is always violet, etc.)
+// ============================================================================
+.rb-dt-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  flex: 0 0 6px;
+  border-radius: 50%;
+  background: var(--fg-3);
+}
+
+// Star icon used in the importance rail row — sized into the same 6px column
+// the doctype dots occupy so the row labels line up.
+.rb-imp-star {
+  display: inline-flex;
+  width: 6px;
+  height: 6px;
+  flex: 0 0 6px;
+  align-items: center;
+  justify-content: center;
+  color: var(--warn);
+  font-size: 9px;
+  line-height: 1;
+}
+
+.rb-dt-note {
+  background: var(--bc-accent);
+  box-shadow: 0 0 8px var(--bc-accent);
+}
+
+.rb-dt-book {
+  background: var(--bc-accent-2);
+  box-shadow: 0 0 8px var(--bc-accent-2);
+}
+
+.rb-dt-image {
+  background: var(--bc-accent-3);
+  box-shadow: 0 0 8px var(--bc-accent-3);
+}
+
+.rb-dt-video {
+  background: var(--bc-accent-4);
+  box-shadow: 0 0 8px var(--bc-accent-4);
+}
+
+.rb-dt-document {
+  background: #f0b840;
+  box-shadow: 0 0 8px #f0b840;
+}
+
+.rb-dt-blob {
+  background: var(--fg-3);
+}
+
+.rb-dt-empty {
+  background: transparent;
+  box-shadow: none;
+}
+
+// ============================================================================
+// Tag chip (cards + active filters strip)
+// ============================================================================
+.rb-tag-chip {
+  display: inline-flex;
+  align-items: baseline;
+  padding: 2px 7px;
+  border: 1px solid color-mix(in oklab, var(--tag-color, var(--fg-3)) 35%, transparent);
+  border-radius: var(--bc-radius-pill);
+  background: color-mix(in oklab, var(--tag-color, var(--fg-3)) 8%, var(--bg-2));
+  color: color-mix(in oklab, var(--tag-color, var(--fg-3)) 80%, var(--fg-0));
+  cursor: default;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  gap: 4px;
+  white-space: nowrap;
+
+  &::before {
+    margin-right: 2px;
+    content: "#";
+    opacity: 0.6;
+  }
+}
+
+.rb-tag-chip-rail {
+  border-radius: var(--bc-radius-pill);
+  cursor: pointer;
+  transition: filter var(--bc-t-fast) var(--bc-ease-out),
+              transform var(--bc-t-fast) var(--bc-ease-out);
+
+  &:hover { filter: brightness(1.15); }
+
+  &:focus-visible {
+    box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent), transparent 65%);
+    outline: none;
+  }
+
+  &.is-active {
+    border-color: var(--tag-color);
+    background: var(--tag-color);
+    color: var(--accent-fg);
+  }
+}
+
+.rb-tag-chip-count {
+  color: inherit;
+  font-size: 9.5px;
+  opacity: 0.65;
+}
+
+.rb-tag-chip-overflow {
+  --tag-color: var(--fg-3);
+}
+
+// ============================================================================
+// Doctype badge
+// ============================================================================
+.rb-dt-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px 2px 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--bc-radius-pill);
+  background: var(--bg-3);
+  color: var(--fg-2);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 600;
+  gap: 5px;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+// ============================================================================
+// Main pane
+// ============================================================================
+.rb-main {
+  display: flex;
+  overflow: hidden auto;
+  flex-direction: column;
+  padding: 28px 32px 60px;
+  scrollbar-color: var(--fg-3) transparent;
+  scrollbar-width: thin;
+}
+
+.rb-page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.rb-page-head-text { min-width: 0; }
+
+.rb-page-title {
+  display: flex;
+  align-items: baseline;
+  margin: 0 0 4px;
+  color: var(--fg-1);
+  font-family: var(--bc-font-display);
+  font-size: 26px;
+  font-weight: 600;
+  gap: 12px;
+  letter-spacing: -0.015em;
+}
+
+.rb-page-sub {
+  margin: 0 0 18px;
+  color: var(--fg-3);
+  font-size: 12px;
+}
+
+.rb-page-actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+// ============================================================================
+// Active filters strip
+// ============================================================================
+.rb-active-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px dashed color-mix(in oklch, var(--accent), transparent 75%);
+  border-radius: 8px;
+  margin: 14px 0 18px;
+  background: color-mix(in oklch, var(--accent), transparent 95%);
+  gap: 8px;
+}
+
+.rb-active-filters-label {
+  color: var(--fg-3);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.rb-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 4px 3px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--bc-radius-pill);
+  background: var(--bg-2);
+  color: var(--fg-1);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  gap: 4px;
+}
+
+.rb-chip-doctype {
+  border-color: rgb(76 194 255 / 25%);
+  background: rgb(76 194 255 / 12%);
+}
+
+.rb-chip-tag {
+  border-color: color-mix(in oklab, var(--tag-color, var(--fg-3)) 35%, transparent);
+  background: color-mix(in oklab, var(--tag-color, var(--fg-3)) 12%, var(--bg-2));
+  color: color-mix(in oklab, var(--tag-color, var(--fg-3)) 85%, var(--fg-0));
+}
+
+.rb-chip-imp {
+  border-color: color-mix(in oklch, var(--warn), transparent 75%);
+  background: color-mix(in oklch, var(--warn), transparent 88%);
+}
+
+.rb-chip-remove {
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  opacity: 0.6;
+  transition: all var(--bc-t-fast) var(--bc-ease-out);
+
+  &:hover {
+    background: color-mix(in oklch, var(--fg-1), transparent 92%);
+    opacity: 1;
+  }
+}
+
+.rb-clear-all {
+  border: 0;
+  margin-left: auto;
+  background: transparent;
+  color: var(--fg-3);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  transition: color var(--bc-t-fast) var(--bc-ease-out);
+
+  &:hover { color: var(--accent); }
+}
+
+// ============================================================================
+// Card grid + cards
+// ============================================================================
+.rb-card-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+
+.rb-card {
+  position: relative;
+  display: flex;
+  overflow: hidden;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--bg-2);
+  box-shadow: var(--shadow-sm);
+  color: var(--fg-1);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all var(--bc-t-fast) var(--bc-ease-out);
+
+  &:hover {
+    border-color: var(--fg-3);
+    background: var(--bg-3);
+    box-shadow: var(--shadow-md), 0 0 24px -8px var(--accent-soft);
+    transform: translateY(-1px);
+  }
+
+  &:focus-visible {
+    box-shadow:
+      var(--shadow-sm),
+      0 0 0 2px color-mix(in oklch, var(--accent), transparent 65%);
+    outline: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+    &:hover { transform: none; }
+  }
+}
+
+.rb-card-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 12px 14px 14px;
+  gap: 6px;
+}
+
+.rb-card-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.rb-card-title {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  color: var(--fg-1);
+  font-family: var(--font-ui);
+  font-size: 13.5px;
+  font-weight: 600;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  line-height: 1.3;
+}
+
+.rb-card-title-1l {
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rb-card-ctype {
+  color: var(--fg-3);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+.rb-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.rb-card-meta {
+  display: flex;
+  align-items: center;
+  margin-top: auto;
+  color: var(--fg-3);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  gap: 6px;
+}
+
+.rb-card-meta-sep { opacity: 0.7; }
+
+// ============================================================================
+// Card thumbs
+// ============================================================================
+.rb-card-thumb {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  background: var(--bg-1);
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.rb-card-thumb-book {
+  aspect-ratio: 3 / 4;
+}
+
+.rb-card-thumb-image {
+  aspect-ratio: 4 / 3;
+}
+
+.rb-card-thumb-video {
+  aspect-ratio: 16 / 10;
+}
+
+.rb-card-thumb-document {
+  padding: 12px;
+  background: transparent;
+}
+
+.rb-card-placeholder {
+  width: 100%;
+  height: 100%;
+  background: var(--bg-3);
+}
+
+.rb-card-placeholder-stripes {
+  background: repeating-linear-gradient(45deg,
+    var(--bg-2) 0 8px,
+    var(--bg-3) 8px 16px);
+}
+
+.rb-filetype-pill {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 2px 6px;
+  border-radius: var(--bc-radius-sm);
+  backdrop-filter: blur(6px);
+  background: rgb(0 0 0 / 60%);
+  color: white;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+}
+
+.rb-duration-pill {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  padding: 2px 6px;
+  border-radius: var(--bc-radius-sm);
+  background: rgb(0 0 0 / 70%);
+  color: white;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+// ============================================================================
+// Note card — wash + prefix stay locked to the note doctype's purple so the
+// note identity reads the same in every theme.
+// ============================================================================
+.rb-card-note {
+  background:
+    linear-gradient(180deg, rgb(179 107 255 / 4%) 0, transparent 60%),
+    var(--bg-2);
+}
+
+.rb-note-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 16px;
+  gap: 8px;
+}
+
+.rb-card-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rb-note-prefix {
+  color: var(--bc-accent);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+}
+
+.rb-imp-flag {
+  margin-left: auto;
+  color: var(--warn);
+  font-size: 11px;
+}
+
+.rb-note-text {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  color: var(--fg-2);
+  font-size: 12.5px;
+  -webkit-line-clamp: 5;
+  line-clamp: 5;
+  line-height: 1.45;
+}
+
+.rb-pin-flag {
+  position: absolute;
+  z-index: 1;
+  top: 10px;
+  right: 10px;
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgb(255 61 189 / 15%);
+  color: var(--bc-accent-3);
+  font-size: 12px;
+}
+
+// ============================================================================
+// Document card placeholder (ruled paper texture)
+// ============================================================================
+.rb-doc-placeholder {
+  display: flex;
+  width: 100%;
+  height: 140px;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--bc-radius-sm);
+  background:
+    linear-gradient(180deg, transparent 0, transparent 70%, rgb(0 0 0 / 25%) 100%),
+    repeating-linear-gradient(0deg, transparent 0 22px, var(--line-soft) 22px 23px),
+    var(--bg-1);
+  gap: 4px;
+}
+
+.rb-doc-url {
+  overflow: hidden;
+  color: var(--bc-accent-4);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rb-doc-pages {
+  color: var(--fg-3);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+}
+
+// ============================================================================
+// Empty state
+// ============================================================================
+.rb-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 60px 20px;
+  color: var(--fg-3);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  gap: 14px;
+  text-align: center;
+}
+
+// ============================================================================
+// Narrow viewports — collapse rail to a strip
+// ============================================================================
+@media (width <= 760px) {
+  .rb-shell { grid-template-columns: 1fr; }
+
+  .rb-rail {
+    height: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .rb-main { padding: 20px; }
+}

@@ -19,7 +19,7 @@ import urllib.request
 from collections import defaultdict
 from pathlib import Path
 
-from typing import Any, Generator, cast
+from typing import Any, Generator, Iterable, cast
 from urllib.parse import ParseResult, urlparse
 
 import humanize
@@ -45,7 +45,9 @@ from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.core.files import File
 from django.core.files.temp import NamedTemporaryFile
-from django.db.models import Q, QuerySet
+from django.db.models import (Count, IntegerField, OuterRef, Q, Subquery,
+                              Value)
+from django.db.models.functions import Coalesce
 from django.http import HttpRequest
 from django.urls import reverse
 from django.utils import timezone
@@ -150,6 +152,192 @@ def get_recent_blobs(user: User, limit: int = 10, skip_content: bool = False) ->
     cache.set(cache_key, (returned_blob_list, doctypes))
 
     return returned_blob_list, doctypes
+
+
+DASHBOARD_BLOB_LIMIT = 50
+DASHBOARD_TAG_LIMIT = 18
+
+DASHBOARD_DOCTYPES = ("note", "book", "image", "video", "document", "blob")
+DASHBOARD_DATE_BUCKETS = ("today", "this-week", "last-week", "this-month", "older")
+
+
+def _date_bucket(created_at: datetime.datetime, now: datetime.datetime) -> str:
+    """Bucket a blob's creation time into a coarse recency label."""
+    delta_days = (now - created_at).days
+    if delta_days < 1:
+        return "today"
+    if delta_days <= 7:
+        return "this-week"
+    if delta_days <= 14:
+        return "last-week"
+    if delta_days <= 30:
+        return "this-month"
+    return "older"
+
+
+def get_dashboard_blobs(
+    user: User,
+    limit: int = DASHBOARD_BLOB_LIMIT,
+) -> dict[str, Any]:
+    """Build the payload for the Recent Blobs filter-dashboard page.
+
+    Returns the user's most recently created blobs along with the rail's
+    aggregated counts (per doctype, per tag, per recency bucket, plus
+    starred and pinned-note totals). All filtering on the page is
+    client-side, so this single payload feeds every interaction.
+
+    Args:
+        user: Authenticated user whose blobs to load.
+        limit: Maximum blobs to return. Defaults to 50.
+
+    Returns:
+        Dictionary with keys:
+            - blobs: List of blob dicts (see fields below).
+            - total_count: Number of blobs returned.
+            - doctype_counts: Counts keyed by doctype, plus "all".
+            - tag_counts: Top tags as [{"name", "count"}, ...] sorted desc.
+            - tag_total: Number of distinct tags across the loaded blobs.
+            - date_bucket_counts: Counts keyed by recency bucket.
+            - starred_count: Blobs with importance >= 10.
+            - pinned_count: Notes pinned by the user.
+
+        Each blob dict contains: uuid, name, url, doctype, tags (list of
+        names), bucket, created_rel, importance, is_starred, is_pinned,
+        cover_url, content (notes only, truncated), back_refs, size,
+        num_pages, duration, content_type.
+    """
+    # Late imports to avoid circulars at module load time.
+    from blob.models import BlobToObject  # noqa: WPS433
+
+    blob_qs = (
+        Blob.objects
+        .filter(user=user)
+        .prefetch_related("tags", "metadata")
+        .annotate(
+            back_refs_count=Coalesce(
+                Subquery(
+                    BlobToObject.objects
+                    .filter(blob_id=OuterRef("pk"))
+                    .values("blob_id")
+                    .annotate(c=Count("*"))
+                    .values("c"),
+                    output_field=IntegerField(),
+                ),
+                Value(0),
+            )
+        )
+        .order_by("-created")[:limit]
+    )
+
+    blob_list = list(blob_qs)
+    es_fields = get_blob_sizes(blob_list) if blob_list else {}
+
+    pinned_uuids = set(
+        user.userprofile.pinned_notes.values_list("uuid", flat=True)
+    )
+
+    now = timezone.now()
+    blobs_payload: list[dict[str, Any]] = []
+    doctype_counts: dict[str, int] = defaultdict(int)
+    tag_counter: defaultdict[str, int] = defaultdict(int)
+    bucket_counts: dict[str, int] = defaultdict(int)
+    starred_count = 0
+    pinned_count = 0
+
+    for blob in blob_list:
+        doctype = blob.doctype
+        bucket = _date_bucket(blob.created, now)
+        es_data = es_fields.get(str(blob.uuid), {})
+        tags = sorted(tag.name for tag in blob.tags.all())
+
+        is_starred = blob.importance >= 10
+        is_pinned = blob.uuid in pinned_uuids
+
+        cover_url = ""
+        if doctype in ("image", "video", "book", "document"):
+            cover_size = "large" if doctype in ("image", "video") else "small"
+            try:
+                cover_url = blob.get_cover_url(size=cover_size)
+            except (ValueError, AttributeError):
+                cover_url = ""
+
+        size_value = es_data.get("size")
+        size_human = humanize.naturalsize(size_value) if size_value else ""
+
+        duration_value = es_data.get("duration")
+        duration_human = ""
+        if duration_value:
+            secs = int(duration_value)
+            if secs >= 3600:
+                duration_human = f"{secs // 3600}:{(secs % 3600) // 60:02d}:{secs % 60:02d}"
+            else:
+                duration_human = f"{secs // 60}:{secs % 60:02d}"
+
+        content_preview = ""
+        if doctype in ("note", "document") and blob.content:
+            content_preview = blob.content[:600]
+
+        url_value = ""
+        for meta in blob.metadata.all():
+            if meta.name == "url" and meta.value:
+                url_value = meta.value
+                break
+
+        blobs_payload.append({
+            "uuid": str(blob.uuid),
+            "name": blob.name or "",
+            "url": reverse("blob:detail", kwargs={"uuid": blob.uuid}),
+            "external_url": url_value,
+            "doctype": doctype,
+            "tags": tags,
+            "bucket": bucket,
+            "created_rel": humanize.naturaltime(now - blob.created),
+            "importance": blob.importance,
+            "is_starred": is_starred,
+            "is_pinned": is_pinned,
+            "cover_url": cover_url,
+            "content": content_preview,
+            "back_refs": getattr(blob, "back_refs_count", 0) or 0,
+            "size": size_human,
+            "num_pages": es_data.get("num_pages") or 0,
+            "duration": duration_human,
+            "content_type": es_data.get("content_type") or "",
+        })
+
+        doctype_counts[doctype] += 1
+        bucket_counts[bucket] += 1
+        for tag_name in tags:
+            tag_counter[tag_name] += 1
+        if is_starred:
+            starred_count += 1
+        if is_pinned:
+            pinned_count += 1
+
+    # Top N tags, descending by count then alphabetical for stability.
+    sorted_tags = sorted(
+        tag_counter.items(),
+        key=lambda item: (-item[1], item[0]),
+    )
+    tag_counts = [
+        {"name": name, "count": count}
+        for name, count in sorted_tags[:DASHBOARD_TAG_LIMIT]
+    ]
+
+    return {
+        "blobs": blobs_payload,
+        "total_count": len(blobs_payload),
+        "doctype_counts": {
+            "all": len(blobs_payload),
+            **{dt: doctype_counts.get(dt, 0) for dt in DASHBOARD_DOCTYPES},
+        },
+        "tag_counts": tag_counts,
+        "tag_total": len(tag_counter),
+        "date_bucket_counts": {
+            bucket: bucket_counts.get(bucket, 0) for bucket in DASHBOARD_DATE_BUCKETS
+        },
+        "starred_count": starred_count,
+        "pinned_count": pinned_count,
+    }
 
 
 def get_recent_media(user: User, limit: int = 10) -> list[dict[str, Any]]:
@@ -385,20 +573,24 @@ def get_books(user: User, tag: str | None = None, search: str | None = None) -> 
     return es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)
 
 
-def get_blob_sizes(blob_list: QuerySet[Blob]) -> dict[str, dict[str, Any]]:
-    """Query Elasticsearch for the sizes of a list of blobs.
+def get_blob_sizes(blob_list: Iterable[Blob]) -> dict[str, dict[str, Any]]:
+    """Query Elasticsearch for size and rich metadata of a list of blobs.
 
-    Retrieves file size information from Elasticsearch for the specified
-    blobs. Uses a short timeout to avoid blocking on slow Elasticsearch
-    connections.
+    Retrieves size, content type, page count, and duration from Elasticsearch
+    for the specified blobs. Uses a short timeout to avoid blocking on slow
+    Elasticsearch connections.
 
     Args:
-        blob_list: QuerySet of Blob objects to get sizes for.
+        blob_list: QuerySet of Blob objects to get fields for.
 
     Returns:
-        Dictionary mapping blob UUID strings to dictionaries containing:
+        Dictionary mapping blob UUID strings to dictionaries containing
+        whichever of these fields are present on the indexed document:
             - size: File size in bytes
             - uuid: Blob UUID
+            - content_type: MIME type (e.g. "application/pdf")
+            - num_pages: Page count for PDFs
+            - duration: Duration in seconds for videos
 
     Note:
         Only blobs found in Elasticsearch will be included in the result.
@@ -411,7 +603,7 @@ def get_blob_sizes(blob_list: QuerySet[Blob]) -> dict[str, dict[str, Any]]:
                 "_id": [str(x.uuid) for x in blob_list]
             }
         },
-        "_source": ["size", "uuid"]
+        "_source": ["size", "uuid", "content_type", "num_pages", "duration"]
     }
 
     es = get_elasticsearch_connection(host=settings.ELASTICSEARCH_ENDPOINT, timeout=5)

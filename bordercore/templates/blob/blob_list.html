@@ -5,7 +5,7 @@
 
 {% block javascript_bundles %}
     {{ block.super }}
-    {{ recent_blobs|json_script:"blob-list-data" }}
+    {{ dashboard_data|json_script:"blob-dashboard-data" }}
     {% vite_asset "dist/js/blob-list" %}
 {% endblock %}
 
@@ -19,8 +19,8 @@
 
 {% block help %}
     <div class="d-none" id="help-text">
-*Filter:* Use the tabs to filter blobs by type.
+*Filter:* Use the rail to filter blobs by doctype, tag, recency, or importance.
 
-*Create:* Click the menu icon to create a new blob or import one.
+*Create:* Click "+ new blob" to create one, or use the bookshelf to find a book.
     </div>
 {% endblock %}
