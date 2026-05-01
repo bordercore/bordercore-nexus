@@ -234,6 +234,24 @@
   }
 }
 
+// File picker row — readonly filename input on the left, "Choose…" button on
+// the right. Lives inside .refined-field, so the input inherits the field's
+// surface and the button uses .refined-btn.ghost.
+.refined-file {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+
+  input[type="text"] {
+    flex: 1;
+  }
+
+  .refined-file-pick {
+    flex: 0 0 auto;
+    cursor: pointer;
+  }
+}
+
 .refined-modal-actions {
   display: flex;
   flex-wrap: wrap;

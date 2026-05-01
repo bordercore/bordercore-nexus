@@ -1,7 +1,11 @@
-import React from "react";
+import React, { useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import axios from "axios";
-import { Modal } from "bootstrap";
-import type { Album, Artist } from "./types";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faTimes } from "@fortawesome/free-solid-svg-icons";
+import type { Album } from "./types";
+import { SelectValue, SelectValueHandle } from "../common/SelectValue";
+import { TagsInput, TagsInputHandle } from "../common/TagsInput";
 
 interface EditAlbumModalProps {
   album: Album;
@@ -16,75 +20,58 @@ export interface EditAlbumModalHandle {
   openModal: () => void;
 }
 
-interface ArtistSearchResult {
-  name: string;
-  uuid: string;
-}
-
 export const EditAlbumModal = React.forwardRef<EditAlbumModalHandle, EditAlbumModalProps>(
   function EditAlbumModal(
     { album, initialTags, updateAlbumUrl, searchArtistsUrl, searchTagsUrl, onAlbumUpdated },
     ref
   ) {
-    const [title, setTitle] = React.useState(album.title);
-    const [artistName, setArtistName] = React.useState(album.artist_name);
-    const [year, setYear] = React.useState(album.year?.toString() || "");
-    const [note, setNote] = React.useState(album.note);
-    const [tags, setTags] = React.useState(initialTags.join(", "));
-    const [coverImageFilename, setCoverImageFilename] = React.useState("");
-    const [coverImageFile, setCoverImageFile] = React.useState<File | null>(null);
-    const [isSubmitting, setIsSubmitting] = React.useState(false);
-    const [artistSuggestions, setArtistSuggestions] = React.useState<ArtistSearchResult[]>([]);
-    const [showArtistSuggestions, setShowArtistSuggestions] = React.useState(false);
-    const modalRef = React.useRef<HTMLDivElement>(null);
-    const fileInputRef = React.useRef<HTMLInputElement>(null);
-    const artistInputRef = React.useRef<HTMLInputElement>(null);
+    const [open, setOpen] = useState(false);
+    const [title, setTitle] = useState(album.title);
+    const [artistName, setArtistName] = useState(album.artist_name);
+    const [year, setYear] = useState(album.year?.toString() || "");
+    const [note, setNote] = useState(album.note);
+    const [tags, setTags] = useState<string[]>(initialTags);
+    const [coverImageFilename, setCoverImageFilename] = useState("");
+    const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const openModal = React.useCallback(() => {
-      // Reset form to current album values
+    const titleRef = useRef<HTMLInputElement>(null);
+    const tagsRef = useRef<TagsInputHandle>(null);
+    const artistRef = useRef<SelectValueHandle>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const openModal = useCallback(() => {
       setTitle(album.title);
       setArtistName(album.artist_name);
       setYear(album.year?.toString() || "");
       setNote(album.note);
-      setTags(initialTags.join(", "));
+      setTags(initialTags);
       setCoverImageFilename("");
       setCoverImageFile(null);
-
-      if (modalRef.current) {
-        const modal = new Modal(modalRef.current);
-        modal.show();
-      }
+      setOpen(true);
     }, [album, initialTags]);
 
-    // Expose openModal to parent via ref
-    React.useImperativeHandle(ref, () => ({
-      openModal,
-    }));
+    useImperativeHandle(ref, () => ({ openModal }), [openModal]);
 
-    // Search artists as user types
-    const handleArtistChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = e.target.value;
-      setArtistName(value);
+    const close = useCallback(() => setOpen(false), []);
 
-      if (value.length >= 2) {
-        try {
-          const response = await axios.get<ArtistSearchResult[]>(
-            `${searchArtistsUrl}?term=${encodeURIComponent(value)}`
-          );
-          setArtistSuggestions(response.data);
-          setShowArtistSuggestions(true);
-        } catch (error) {
-          console.error("Error searching artists:", error);
-        }
-      } else {
-        setArtistSuggestions([]);
-        setShowArtistSuggestions(false);
-      }
-    };
+    useEffect(() => {
+      if (!open) return;
+      const t = window.setTimeout(() => titleRef.current?.focus(), 40);
+      return () => window.clearTimeout(t);
+    }, [open]);
 
-    const selectArtist = (artist: ArtistSearchResult) => {
-      setArtistName(artist.name);
-      setShowArtistSuggestions(false);
+    useEffect(() => {
+      if (!open) return;
+      const handler = (e: KeyboardEvent) => {
+        if (e.key === "Escape") close();
+      };
+      window.addEventListener("keydown", handler);
+      return () => window.removeEventListener("keydown", handler);
+    }, [open, close]);
+
+    const handleArtistSelect = (option: { label?: string; artist?: string }) => {
+      setArtistName(option.artist || option.label || "");
     };
 
     const handleCoverImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -95,10 +82,8 @@ export const EditAlbumModal = React.forwardRef<EditAlbumModalHandle, EditAlbumMo
       }
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-      e.preventDefault();
+    const submit = async () => {
       if (isSubmitting) return;
-
       setIsSubmitting(true);
       try {
         const formData = new FormData();
@@ -106,21 +91,14 @@ export const EditAlbumModal = React.forwardRef<EditAlbumModalHandle, EditAlbumMo
         formData.append("artist", artistName);
         formData.append("year", year);
         formData.append("note", note || "");
-        formData.append("tags", tags);
-
+        formData.append("tags", tags.join(","));
         if (coverImageFile) {
           formData.append("cover_image", coverImageFile);
         }
-
-        await axios.post(updateAlbumUrl, formData, {
-          withCredentials: true,
-        });
-
-        // Reload page to show updated data
+        await axios.post(updateAlbumUrl, formData, { withCredentials: true });
         if (onAlbumUpdated) {
           onAlbumUpdated();
         } else {
-          // Add cache buster to force image reload
           window.location.href = window.location.pathname + "?cache_buster=" + Date.now();
         }
       } catch (error) {
@@ -130,199 +108,139 @@ export const EditAlbumModal = React.forwardRef<EditAlbumModalHandle, EditAlbumMo
       }
     };
 
-    // Close suggestions when clicking outside
-    React.useEffect(() => {
-      const handleClickOutside = (e: MouseEvent) => {
-        if (artistInputRef.current && !artistInputRef.current.contains(e.target as Node)) {
-          setShowArtistSuggestions(false);
-        }
-      };
+    const canSubmit = title.trim().length > 0 && artistName.trim().length > 0;
 
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
+    if (!open) return null;
 
-    return (
-      <div
-        ref={modalRef}
-        id="modalEditAlbum"
-        className="modal fade"
-        tabIndex={-1}
-        role="dialog"
-        aria-labelledby="editAlbumModalLabel"
-      >
-        <div className="modal-dialog" role="document">
-          <div className="modal-content">
-            <form onSubmit={handleSubmit} encType="multipart/form-data">
-              <div className="modal-header">
-                <h4 id="editAlbumModalLabel" className="modal-title">
-                  Edit Album
-                </h4>
-                <button
-                  type="button"
-                  className="btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
-                />
-              </div>
-              <div className="modal-body">
-                {/* Title */}
-                <div className="row mb-3">
-                  <label className="col-lg-4 col-form-label fw-bold text-end" htmlFor="id_title">
-                    Title
-                  </label>
-                  <div className="col-lg-8">
-                    <input
-                      type="text"
-                      id="id_title"
-                      name="title"
-                      className="form-control"
-                      value={title}
-                      onChange={e => setTitle(e.target.value)}
-                      autoComplete="off"
-                    />
-                  </div>
-                </div>
+    return createPortal(
+      <>
+        <div className="refined-modal-scrim" onClick={close} />
+        <form
+          className="refined-modal"
+          role="dialog"
+          aria-label="edit album"
+          onSubmit={e => {
+            e.preventDefault();
+            submit();
+          }}
+          encType="multipart/form-data"
+        >
+          <button type="button" className="refined-modal-close" onClick={close} aria-label="close">
+            <FontAwesomeIcon icon={faTimes} />
+          </button>
 
-                {/* Artist */}
-                <div className="row mb-3">
-                  <label className="col-lg-4 col-form-label fw-bold text-end" htmlFor="id_artist">
-                    Artist
-                  </label>
-                  <div className="col-lg-8 position-relative" ref={artistInputRef}>
-                    <input
-                      type="text"
-                      id="id_artist"
-                      name="artist"
-                      className="form-control"
-                      value={artistName}
-                      onChange={handleArtistChange}
-                      onFocus={() => artistSuggestions.length > 0 && setShowArtistSuggestions(true)}
-                      autoComplete="off"
-                    />
-                    {showArtistSuggestions && artistSuggestions.length > 0 && (
-                      <ul className="list-group position-absolute w-100 edit-album-dropdown">
-                        {artistSuggestions.map(artist => (
-                          <li
-                            key={artist.uuid}
-                            className="list-group-item list-group-item-action cursor-pointer"
-                            onClick={() => selectArtist(artist)}
-                          >
-                            {artist.name}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                </div>
-
-                {/* Year */}
-                <div className="row mb-3">
-                  <label className="col-lg-4 col-form-label fw-bold text-end" htmlFor="id_year">
-                    Year
-                  </label>
-                  <div className="col-lg-8">
-                    <input
-                      type="number"
-                      id="id_year"
-                      name="year"
-                      className="form-control"
-                      value={year}
-                      onChange={e => setYear(e.target.value)}
-                      autoComplete="off"
-                    />
-                  </div>
-                </div>
-
-                {/* Tags */}
-                <div className="row mb-3">
-                  <label className="col-lg-4 col-form-label fw-bold text-end" htmlFor="id_tags">
-                    Tags
-                  </label>
-                  <div className="col-lg-8">
-                    <input
-                      type="text"
-                      id="id_tags"
-                      name="tags"
-                      className="form-control"
-                      value={tags}
-                      onChange={e => setTags(e.target.value)}
-                      placeholder="Comma-separated tags"
-                      autoComplete="off"
-                    />
-                  </div>
-                </div>
-
-                {/* Note */}
-                <div className="row mb-3">
-                  <label className="col-lg-4 col-form-label fw-bold text-end" htmlFor="id_note">
-                    Note
-                  </label>
-                  <div className="col-lg-8">
-                    <input
-                      type="text"
-                      id="id_note"
-                      name="note"
-                      className="form-control"
-                      value={note}
-                      onChange={e => setNote(e.target.value)}
-                      autoComplete="off"
-                    />
-                  </div>
-                </div>
-
-                {/* Cover Image */}
-                <div className="row mb-3">
-                  <label
-                    className="col-lg-4 col-form-label fw-bold text-end"
-                    htmlFor="coverImageFilename"
-                  >
-                    Cover Image
-                  </label>
-                  <div className="col-lg-8">
-                    <div className="input-group">
-                      <input
-                        type="text"
-                        id="coverImageFilename"
-                        name="coverImageFilename"
-                        className="form-control"
-                        value={coverImageFilename}
-                        readOnly
-                        autoComplete="off"
-                      />
-                      <label className="btn btn-primary">
-                        Choose image
-                        <input
-                          type="file"
-                          ref={fileInputRef}
-                          name="cover_image"
-                          hidden
-                          accept="image/*"
-                          onChange={handleCoverImageSelect}
-                        />
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Submit */}
-                <div className="row">
-                  <div className="col-lg-12 offset-lg-4">
-                    <button
-                      id="btn-action"
-                      className="btn btn-primary"
-                      type="submit"
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? "Saving..." : "Save"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </form>
+          <div className="refined-modal-eyebrow">
+            <span>edit album</span>
+            <span className="dot">·</span>
+            <span className="mono">bordercore / music / edit</span>
           </div>
-        </div>
-      </div>
+
+          <h2 className="refined-modal-title">Edit album</h2>
+
+          <div className="refined-field">
+            <label htmlFor="album-edit-title">title</label>
+            <input
+              ref={titleRef}
+              id="album-edit-title"
+              type="text"
+              autoComplete="off"
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="refined-field">
+            <label htmlFor="album-edit-artist">artist</label>
+            <SelectValue
+              ref={artistRef}
+              id="album-edit-artist"
+              label="artist"
+              searchUrl={`${searchArtistsUrl}?term=`}
+              placeHolder=""
+              initialValue={{ label: artistName, artist: artistName }}
+              onSelect={handleArtistSelect}
+            />
+          </div>
+
+          <div className="refined-row-2">
+            <div className="refined-field">
+              <label htmlFor="album-edit-year">year</label>
+              <input
+                id="album-edit-year"
+                type="number"
+                autoComplete="off"
+                value={year}
+                onChange={e => setYear(e.target.value)}
+              />
+            </div>
+            <div className="refined-field">
+              <label htmlFor="album-edit-note">
+                note <span className="optional">· optional</span>
+              </label>
+              <input
+                id="album-edit-note"
+                type="text"
+                autoComplete="off"
+                value={note}
+                onChange={e => setNote(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="refined-field">
+            <label htmlFor="album-edit-tags">
+              tags <span className="optional">· optional</span>
+            </label>
+            <TagsInput
+              ref={tagsRef}
+              id="album-edit-tags"
+              searchUrl={`${searchTagsUrl}?query=`}
+              initialTags={tags}
+              onTagsChanged={setTags}
+            />
+          </div>
+
+          <div className="refined-field">
+            <label htmlFor="album-edit-cover">
+              cover image <span className="optional">· optional</span>
+            </label>
+            <div className="refined-file">
+              <input
+                id="album-edit-cover"
+                type="text"
+                value={coverImageFilename}
+                placeholder="no file selected"
+                readOnly
+              />
+              <label className="refined-btn ghost refined-file-pick">
+                Choose image
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  hidden
+                  accept="image/*"
+                  onChange={handleCoverImageSelect}
+                />
+              </label>
+            </div>
+          </div>
+
+          <div className="refined-modal-actions compact">
+            <button type="button" className="refined-btn ghost" onClick={close}>
+              cancel
+            </button>
+            <button
+              type="submit"
+              className="refined-btn primary"
+              disabled={!canSubmit || isSubmitting}
+            >
+              {isSubmitting ? "saving…" : "save"}
+            </button>
+          </div>
+        </form>
+      </>,
+      document.body
     );
   }
 );
