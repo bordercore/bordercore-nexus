@@ -24,7 +24,6 @@ interface TopSearchProps {
   initialSearchFilter?: string;
   initialSearchUrl?: string;
   querySearchUrl?: string;
-  noteQuerySearchUrl?: string;
   drillQuerySearchUrl?: string;
   storeInSessionUrl?: string;
   recentSearches?: RecentSearch[];
@@ -40,7 +39,6 @@ export const TopSearch = forwardRef<TopSearchHandle, TopSearchProps>(function To
     initialSearchFilter = "",
     initialSearchUrl = "",
     querySearchUrl = "",
-    noteQuerySearchUrl = "",
     drillQuerySearchUrl = "",
     storeInSessionUrl = "",
     recentSearches = [],
@@ -120,11 +118,11 @@ export const TopSearch = forwardRef<TopSearchHandle, TopSearchProps>(function To
       searchInput.value = selectValueRef.current.search || "";
     }
 
-    if (searchFilter === "note") {
-      form.action = noteQuerySearchUrl;
-    } else if (searchFilter === "drill") {
+    if (searchFilter === "drill") {
       form.action = drillQuerySearchUrl;
     } else {
+      // Generic search route for everything else; the hidden `doctype` field
+      // carries the per-filter scope (note, book, bookmark, etc.).
       form.action = querySearchUrl;
       for (let i = 0; i < form.elements.length; i++) {
         const element = form.elements[i] as HTMLInputElement;

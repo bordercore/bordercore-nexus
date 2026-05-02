@@ -28,7 +28,7 @@ const ROUTES: Array<{ prefix: string; section: Section }> = [
   { prefix: "/feed/", section: { icon: faNewspaper, defaultTitle: "Feeds" } },
   { prefix: "/todo/", section: { icon: faListCheck, defaultTitle: "Todo" } },
   { prefix: "/drill/", section: { icon: faBolt, defaultTitle: "Drill" } },
-  { prefix: "/search/notes", section: { icon: faNoteSticky, defaultTitle: "Notes" } },
+  { prefix: "/blob/notes", section: { icon: faNoteSticky, defaultTitle: "Notes" } },
   { prefix: "/note/", section: { icon: faNoteSticky, defaultTitle: "Notes" } },
   { prefix: "/tag/", section: { icon: faTag, defaultTitle: "Tags" } },
   { prefix: "/blob/", section: { icon: faCopy, defaultTitle: "Blobs" } },

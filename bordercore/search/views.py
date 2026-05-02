@@ -16,10 +16,8 @@ from urllib.parse import urlparse
 
 import markdown
 import nh3
-from elasticsearch import RequestError
 
 from django.conf import settings
-from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.urls import reverse
@@ -34,7 +32,6 @@ from .api import (search_music, search_names, search_names_es,
                   search_tags_and_names, search_tags_es)
 from .helpers import (get_creators, get_doctype, get_doctypes_from_request,
                       get_link, get_name, is_cached, sort_results)
-from .models import RecentSearch
 from .services import build_base_query, execute_search, get_cover_url, perform_search
 
 # Re-export helpers and API functions so existing imports keep working.
@@ -223,163 +220,6 @@ class SearchListView(LoginRequiredMixin, ListView):
             context["paginator"] = json.dumps(search_data["paginator"])
             context["count"] = search_data["count"]
             context["results"] = search_data["results"]
-
-        return context
-
-
-class NoteListView(SearchListView):
-    """View for displaying note search results.
-
-    A specialized search view that filters results to only show notes
-    and supports tag-based filtering.
-    """
-
-    template_name = "blob/note_list.html"
-    RESULT_COUNT_PER_PAGE = 10
-    is_notes_search = True
-
-    def get_queryset(self) -> Any:
-        """Build and execute an ES query scoped to notes.
-
-        Unlike the parent class, this builds the query directly rather
-        than delegating to ``perform_search()``, because it needs
-        note-specific adjustments (``contents`` source field, doctype
-        filter, optional tag-search).
-
-        Returns:
-            Raw Elasticsearch response dict, or an empty list on error.
-        """
-        self.request.session["search_sort_by"] = self.request.GET.get("sort", None)
-
-        search_term = (
-            self.request.GET.get("term_search")
-            or self.request.GET.get("search")
-        )
-        sort_field = self.request.GET.get("sort", "date_unixtime")
-        boolean_type = self.request.GET.get("boolean_search_type", "AND")
-        doctype = self.request.GET.get("doctype", None)
-
-        if search_term:
-            user = cast(User, self.request.user)
-            RecentSearch.add(user, search_term)
-
-        page = int(self.request.GET.get("page", 1))
-        offset = (page - 1) * self.RESULT_COUNT_PER_PAGE
-
-        source_fields = [
-            "album_uuid", "artist", "artist_uuid", "author", "bordercore_id",
-            "date", "date_unixtime", "description", "doctype", "filename",
-            "importance", "last_modified", "metadata.*", "name", "question",
-            "sha1sum", "tags", "title", "url", "uuid", "contents",
-        ]
-
-        search_object = build_base_query(
-            cast(int, self.request.user.id),
-            size=self.RESULT_COUNT_PER_PAGE,
-            offset=offset,
-            source_fields=source_fields,
-        )
-        search_object["aggs"] = {
-            "Doctype Filter": {"terms": {"field": "doctype", "size": 10}}
-        }
-        search_object["highlight"] = {
-            "fields": {"attachment.content": {}, "contents": {}},
-            "number_of_fragments": 1,
-            "fragment_size": 200,
-            "order": "score",
-        }
-        search_object["sort"] = {sort_field: {"order": "desc"}}
-
-        # Note-specific: reset offset from page, add note doctype filter
-        search_object["from_"] = (page - 1) * self.RESULT_COUNT_PER_PAGE
-
-        search_object["query"]["function_score"]["query"]["bool"]["must"].append(
-            {"term": {"doctype": "note"}}
-        )
-
-        tagsearch = self.request.GET.get("tagsearch", None)
-        if tagsearch:
-            search_object["query"]["function_score"]["query"]["bool"]["must"].append(
-                {"term": {"tags.keyword": tagsearch}}
-            )
-
-        if doctype:
-            search_object["post_filter"] = {"term": {"doctype": doctype}}
-
-        filter_tags = self.request.GET.getlist("tags")
-        if filter_tags:
-            for tag in filter_tags:
-                search_object["query"]["function_score"]["query"]["bool"]["must"].append(
-                    {"term": {"tags.keyword": tag}}
-                )
-
-        if search_term:
-            search_object["query"]["function_score"]["query"]["bool"]["must"].append(
-                {
-                    "multi_match": {
-                        "type": "phrase" if self.request.GET.get("exact_match") == "Yes" else "best_fields",
-                        "query": search_term,
-                        "fields": [
-                            "answer", "metadata.*", "attachment.content", "contents",
-                            "description", "name", "question", "sha1sum", "title", "uuid",
-                        ],
-                        "operator": boolean_type,
-                    }
-                }
-            )
-
-        try:
-            results = execute_search(search_object, timeout=40)
-        except RequestError as e:
-            error_info = cast(dict[str, Any], e.info)
-            messages.add_message(self.request, messages.ERROR, f"Request Error: {e.status_code} {error_info.get('error')}")
-            return []
-
-        self.filter_results(results["hits"]["hits"], search_term)
-
-        return results
-
-    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        """Get context data for the note list template.
-
-        Bypasses ``SearchListView.get_context_data`` (which expects the
-        ``perform_search`` dict shape) and reads directly from the raw
-        ES response returned by this class's ``get_queryset``.
-
-        Returns:
-            Template context dict with note-specific data including
-            pinned notes, paginator, and aggregations.
-        """
-        context = super(SearchListView, self).get_context_data(**kwargs)
-        context["doctype_filter"] = self.request.GET.get("doctype", "").split(",")
-        context["active_tags"] = self.request.GET.getlist("tags")
-        context["title"] = "Notes"
-
-        if context["object_list"] and isinstance(context["object_list"], dict):
-            object_list_dict = cast(dict[str, Any], context["object_list"])
-            context["aggregations"] = self.get_aggregations(object_list_dict, "Doctype Filter")
-            context["count"] = object_list_dict["hits"]["total"]["value"]
-            context["results"] = object_list_dict["hits"]["hits"]
-
-            page = int(self.request.GET.get("page", 1))
-            context["paginator"] = json.dumps(
-                self.build_pagination_dict(page, context["count"])
-            )
-
-        if "search" not in self.request.GET:
-            user = cast(User, self.request.user)
-            pinned_notes = user.userprofile.pinned_notes.all().only("file", "name", "uuid").order_by("usernote__sort_order")
-            context["pinned_notes"] = pinned_notes
-            context["pinned_notes_json"] = [
-                {
-                    "uuid": str(note.uuid),
-                    "name": note.name,
-                    "url": reverse("blob:detail", kwargs={"uuid": note.uuid}),
-                }
-                for note in pinned_notes
-            ]
-        else:
-            context["pinned_notes_json"] = []
 
         return context
 

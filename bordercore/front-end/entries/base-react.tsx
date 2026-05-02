@@ -142,7 +142,7 @@ function SidebarContent() {
         icon: { element: "font-awesome-icon", attributes: { icon: "newspaper" }, class: "" },
       },
       {
-        href: "/search/notes",
+        href: "/blob/notes/",
         title: "Notes",
         color: "#eab308",
         icon: { element: "font-awesome-icon", attributes: { icon: "sticky-note" }, class: "" },

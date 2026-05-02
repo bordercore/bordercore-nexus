@@ -27,7 +27,6 @@ interface BaseTemplateData {
     initialSearchFilter?: string;
     initialSearchUrl?: string;
     querySearchUrl?: string;
-    noteQuerySearchUrl?: string;
     drillQuerySearchUrl?: string;
     storeInSessionUrl?: string;
   };
@@ -267,7 +266,6 @@ export default function RefinedTopBar() {
             initialSearchFilter={data.topSearchConfig?.initialSearchFilter || ""}
             initialSearchUrl={data.topSearchConfig?.initialSearchUrl || ""}
             querySearchUrl={data.topSearchConfig?.querySearchUrl || ""}
-            noteQuerySearchUrl={data.topSearchConfig?.noteQuerySearchUrl || ""}
             drillQuerySearchUrl={data.topSearchConfig?.drillQuerySearchUrl || ""}
             storeInSessionUrl={data.topSearchConfig?.storeInSessionUrl || ""}
             recentSearches={getRecentSearches()}

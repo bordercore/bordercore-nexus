@@ -64,7 +64,7 @@ def get_tag_link(tag: str, doc_types: list[str] | None = None) -> str:
     doc_types = doc_types or []
 
     if "note" in doc_types:
-        return reverse("search:notes") + f"?tagsearch={tag}"
+        return reverse("search:search") + f"?doctype=note&term_search={tag}"
     if "bookmark" in doc_types:
         return reverse("bookmark:overview") + f"?tag={tag}"
     if "drill" in doc_types:

@@ -40,11 +40,6 @@ urlpatterns = [
         name="semantic"
     ),
     path(
-        route="notes",
-        view=views.NoteListView.as_view(),
-        name="notes"
-    ),
-    path(
         route="names",
         view=api.search_names,
         name="search_names"

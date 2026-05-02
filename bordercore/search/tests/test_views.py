@@ -1,6 +1,6 @@
 import json
 import uuid
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -11,51 +11,6 @@ from search.views import (SearchTagDetailView, get_doctypes_from_request,
                           get_doctype, get_name, is_cached, sort_results)
 
 pytestmark = [pytest.mark.django_db]
-
-
-@patch("search.services.get_elasticsearch_connection")
-def test_notes_list(mock_get_es, authenticated_client):
-
-    _, client = authenticated_client()
-
-    mock_es = MagicMock()
-    mock_es.search.return_value = {
-        "hits": {
-            "total": {"value": 2},
-            "hits": [
-                {
-                    "_score": 1.0,
-                    "_source": {
-                        "uuid": str(uuid.uuid4()),
-                        "size": 1234,
-                        "doctype": "note",
-                        "last_modified": "2025-08-01T17:04:23.788834-04:00"
-                    },
-                    "_id": str(uuid.uuid4()),
-                },
-                {
-                    "_score": 0.8,
-                    "_source": {
-                        "uuid": str(uuid.uuid4()),
-                        "size": 5678,
-                        "doctype": "note",
-                        "last_modified": "2025-08-01T17:04:23.788834-04:00"
-                    },
-                    "_id": str(uuid.uuid4()),
-                }
-            ]
-        },
-        "aggregations": {"Doctype Filter": {"buckets": []}}
-    }
-    mock_get_es.return_value = mock_es
-
-    url = urls.reverse("search:notes")
-    resp = client.get(url)
-
-    assert resp.status_code == 200
-    context = resp.context
-    assert context["count"] == 2
-    assert isinstance(context["paginator"], str)
 
 
 def test_get_doc_types_from_request():

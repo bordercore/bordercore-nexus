@@ -15,7 +15,8 @@ class TestGetTagLink:
 
     def test_note_doctype(self):
         link = get_tag_link("python", ["note"])
-        assert "tagsearch=python" in link
+        assert "doctype=note" in link
+        assert "term_search=python" in link
 
     def test_bookmark_doctype(self):
         link = get_tag_link("python", ["bookmark"])
