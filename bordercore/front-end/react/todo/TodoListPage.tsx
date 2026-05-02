@@ -2,14 +2,12 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import axios from "axios";
 import {
   DndContext,
-  DragOverlay,
   closestCenter,
   KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
   DragEndEvent,
-  DragStartEvent,
 } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -33,7 +31,6 @@ import TodoFilterSidebar, { FilterValue } from "./TodoFilterSidebar";
 import TodoBreadcrumb, { ActiveFilter } from "./TodoBreadcrumb";
 import TodoToolbar, { SortField } from "./TodoToolbar";
 import TodoRow from "./TodoRow";
-import PriorityBadge from "./PriorityBadge";
 
 const VIEW_STORAGE_KEY = "todo_view_density";
 const SORT_STORAGE_KEY = "todo_sort_field";
@@ -152,7 +149,6 @@ export function TodoListPage({
   const [activeSearch, setActiveSearch] = useState(initialSearch);
   const [priorityOptions, setPriorityOptions] = useState<PriorityOption[]>([]);
   const [timeOptions, setTimeOptions] = useState<TimeOption[]>([]);
-  const [dragId, setDragId] = useState<string | null>(null);
   const [view, setView] = useState<ViewType>(readStoredView(initialViewType));
   const [sortField, setSortField] = useState<SortField>(
     readStoredSort(defaultSort.field as SortField)
@@ -298,13 +294,8 @@ export function TodoListPage({
     [storeInSessionUrl]
   );
 
-  const handleDragStart = useCallback((event: DragStartEvent) => {
-    setDragId(event.active.id as string);
-  }, []);
-
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
-      setDragId(null);
       const { active: dragged, over } = event;
       if (!over || dragged.id === over.id) return;
       if (active.type !== "tag") return;
@@ -398,7 +389,6 @@ export function TodoListPage({
     return copy;
   }, [items, sortField, canDrag]);
 
-  const activeTodo = dragId ? items.find(i => i.uuid === dragId) : null;
   const totalFiltered = items.length;
   const subheadPhrase = activeSearch
     ? " · matching search"
@@ -447,7 +437,6 @@ export function TodoListPage({
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
-            onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
           >
             <SortableContext
@@ -474,24 +463,6 @@ export function TodoListPage({
                 </div>
               )}
             </SortableContext>
-            <DragOverlay>
-              {activeTodo ? (
-                <div className="todo-row todo-row-drag-overlay">
-                  <div className="todo-row-drag" aria-hidden="true" />
-                  <div className="todo-row-body">
-                    <div className="todo-row-title">
-                      <span>{activeTodo.name}</span>
-                    </div>
-                  </div>
-                  <div className="todo-row-right">
-                    <PriorityBadge
-                      priority={activeTodo.priority}
-                      label={activeTodo.priority_name}
-                    />
-                  </div>
-                </div>
-              ) : null}
-            </DragOverlay>
           </DndContext>
         </main>
       </div>

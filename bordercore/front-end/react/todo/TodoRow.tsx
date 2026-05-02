@@ -1,4 +1,4 @@
-import React, { useCallback, useLayoutEffect, useRef } from "react";
+import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faGripVertical,
@@ -95,29 +95,24 @@ export function TodoRow({
     id: todo.uuid,
     disabled: !canDrag,
   });
-  const elRef = useRef<HTMLDivElement | null>(null);
 
-  const refCallback = useCallback(
-    (el: HTMLDivElement | null) => {
-      setNodeRef(el);
-      elRef.current = el;
-    },
-    [setNodeRef]
-  );
-
-  useLayoutEffect(() => {
-    const el = elRef.current;
-    if (el) {
-      el.style.setProperty("--sortable-transform", CSS.Transform.toString(transform) ?? "none");
-      el.style.setProperty("--sortable-transition", transition ?? "none");
-    }
-  }, [transform, transition]);
+  // Apply dnd-kit's transform/transition inline so the dragged row follows
+  // the cursor and non-dragged rows shift smoothly to make room. Use
+  // `Translate` (not `Transform`) so we omit dnd-kit's scaleX/scaleY — todo
+  // rows have very different heights and the auto-scale makes the dragged
+  // row visibly squish to the target row's size mid-flight.
+  const style: React.CSSProperties = {
+    transform: CSS.Translate.toString(transform) ?? undefined,
+    transition: transition ?? undefined,
+  };
 
   const dueInfo = todo.due_date ? getDueInfo(todo.due_date) : null;
 
   return (
     <div
-      ref={refCallback}
+      ref={setNodeRef}
+      // must remain inline (dnd-kit recomputes transform/transition each render)
+      style={style}
       role="listitem"
       className={`todo-row sortable-row ${isDragging ? "dragging" : ""}`}
       onClick={() => onEdit(todo)}

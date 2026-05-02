@@ -215,11 +215,12 @@
     }
 
     &.dragging {
-      opacity: 0.5;
-    }
-
-    &.todo-row-drag-overlay {
+      z-index: 2;
+      box-shadow:
+        0 12px 32px -10px rgb(0 0 0 / 50%),
+        var(--shadow-md);
       cursor: grabbing;
+      opacity: 0.96;
     }
 
     // Drag handle hidden by default, revealed on hover (only when sortable)
