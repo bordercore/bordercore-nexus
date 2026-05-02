@@ -1358,6 +1358,53 @@
     color: var(--mlo-fg-3);
     font: 500 12px var(--font-mono);
   }
+
+  // ── Song create page ───────────────────────────────────────────
+  // Inherits the .mlo-edit-page grid + hero + sidebar + form shell.
+  // Adds: a refined "Choose / Change" file-picker button and a small
+  // helper paragraph rendered in the left sidebar before a file is
+  // chosen. No artwork / breadcrumb-album info exists yet at create
+  // time, so the hero falls back to the empty cover placeholder and
+  // a generic byline.
+  &.mlo-create-page {
+    .mlo-create-file-btn {
+      display: inline-flex;
+      align-items: center;
+      padding: 0 14px;
+      border: 0;
+      border-radius: 8px;
+      background: linear-gradient(
+        180deg,
+        color-mix(in oklch, var(--mlo-accent), white 5%),
+        var(--mlo-accent)
+      );
+      box-shadow: 0 0 14px -4px color-mix(in oklch, var(--mlo-accent), transparent 50%);
+      color: var(--accent-fg, #fff);
+      font: 600 12px var(--font-ui);
+      letter-spacing: 0.02em;
+      transition: filter 120ms, opacity 120ms;
+
+      &:hover {
+        filter: brightness(1.05);
+      }
+
+      &:has(input:disabled) {
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
+    }
+
+    .mlo-create-hint {
+      margin: 0;
+      color: var(--mlo-fg-3);
+      font: 400 12px/1.5 var(--font-ui);
+
+      strong {
+        color: var(--mlo-accent-2);
+        font-weight: 600;
+      }
+    }
+  }
 }
 
 // Refined create-playlist modal — rendered to document.body via portal, so
