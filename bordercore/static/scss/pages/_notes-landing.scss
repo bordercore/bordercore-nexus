@@ -1,0 +1,640 @@
+// =============================================================================
+// Notes landing dashboard (`/blob/notes/`)
+// =============================================================================
+// Three-zone layout: a sortable Pinned column on the left, a main pane on the
+// right with three sections (featured cards, dense recents, tag cloud), and a
+// page header on top with breadcrumb + search + new-note button. Everything
+// pulls from theme tokens (--bg-*, --fg-*, --accent, --line) so the page
+// adapts to whichever color-mode the user has set. Per-tag color comes from
+// the existing tagSwatchColor() helper (oklch swatches keyed off the tag
+// name) — no separate palette.
+// =============================================================================
+
+// stylelint-disable no-descending-specificity, selector-class-pattern
+
+.nl-app {
+  position: relative;
+  min-height: calc(100vh - 64px);
+  padding: 0;
+  margin: -1rem -1.5rem 0;
+  background: var(--bg-0);
+  color: var(--fg-1);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  letter-spacing: -0.005em;
+  line-height: 1.5;
+
+  * { box-sizing: border-box; }
+
+  button { font: inherit; }
+}
+
+// ============================================================================
+// Page header
+// ============================================================================
+.nl-page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 22px 28px 18px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-1);
+  gap: 24px;
+}
+
+.nl-page-head-text { min-width: 0; }
+
+.nl-breadcrumb {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+  color: var(--fg-4);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  gap: 6px;
+
+  a {
+    color: var(--fg-3);
+    text-decoration: none;
+
+    &:hover { color: var(--fg-1); }
+  }
+}
+
+.nl-breadcrumb-sep { color: var(--fg-4); }
+
+.nl-breadcrumb-active { color: var(--accent); }
+
+.nl-page-title {
+  margin: 0 0 4px;
+  color: var(--fg-1);
+  font-family: var(--font-display, var(--font-ui));
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.1;
+}
+
+.nl-page-sub {
+  margin: 0;
+  color: var(--fg-3);
+  font-size: 12px;
+}
+
+.nl-page-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nl-search {
+  display: flex;
+  width: 240px;
+  height: 32px;
+  align-items: center;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--bc-radius-sm, 6px);
+  background: var(--bg-2);
+  color: var(--fg-2);
+  gap: 8px;
+  transition: border-color var(--bc-t-fast) var(--bc-ease-out);
+
+  &:focus-within {
+    border-color: color-mix(in oklch, var(--accent), transparent 50%);
+    box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent), transparent 75%);
+  }
+
+  svg {
+    color: var(--fg-4);
+    font-size: 11px;
+  }
+
+  input {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    color: var(--fg-1);
+    font-family: var(--font-ui);
+    font-size: 13px;
+
+    &:focus { outline: none; }
+
+    &::placeholder { color: var(--fg-4); }
+  }
+}
+
+.nl-new-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+// ============================================================================
+// Layout shell
+// ============================================================================
+.nl-shell {
+  display: grid;
+  min-height: calc(100vh - 64px - 96px);
+  grid-template-columns: 320px 1fr;
+}
+
+// ============================================================================
+// Pinned column
+// ============================================================================
+.nl-pinned {
+  display: flex;
+  flex-direction: column;
+  padding: 24px 20px;
+  border-right: 1px solid var(--line);
+  background: var(--bg-1);
+  gap: 14px;
+}
+
+.nl-pinned-head {
+  display: flex;
+  align-items: center;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line-soft, var(--line));
+  gap: 8px;
+}
+
+.nl-pinned-icon {
+  color: var(--accent);
+  font-size: 12px;
+  transform: rotate(-20deg);
+}
+
+.nl-pinned-title {
+  margin: 0;
+  color: var(--fg-1);
+  font-family: var(--font-display, var(--font-ui));
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.nl-pinned-empty {
+  margin: 0;
+  color: var(--fg-3);
+  font-size: 12.5px;
+  font-style: italic;
+}
+
+.nl-pinned-list {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  margin: 0;
+  gap: 4px;
+  list-style: none;
+}
+
+.nl-pin-row {
+  display: grid;
+  align-items: center;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--bc-radius-sm, 6px);
+  background: transparent;
+  column-gap: 8px;
+  grid-template-columns: 14px 1fr auto;
+  transition: background var(--bc-t-fast) var(--bc-ease-out),
+              border-color var(--bc-t-fast) var(--bc-ease-out);
+
+  &.is-first {
+    border-color: color-mix(in oklch, var(--accent), transparent 80%);
+    background: color-mix(in oklch, var(--accent), transparent 92%);
+  }
+
+  &:hover {
+    background: var(--bg-2);
+  }
+
+  &.is-dragging {
+    z-index: 2;
+    background: var(--bg-3);
+    box-shadow: 0 6px 20px -10px rgb(0 0 0 / 50%);
+    opacity: 0.96;
+  }
+}
+
+.nl-pin-handle {
+  display: flex;
+  width: 14px;
+  height: 18px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--fg-4);
+  cursor: grab;
+  font-size: 11px;
+  opacity: 0;
+  touch-action: none;
+  transition: opacity var(--bc-t-fast) var(--bc-ease-out);
+
+  &:active { cursor: grabbing; }
+
+  .nl-pin-row:hover &,
+  .nl-pin-row.is-dragging &,
+  &:focus-visible { opacity: 1; }
+}
+
+.nl-pin-link {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  color: var(--fg-1);
+  gap: 4px;
+  text-decoration: none;
+
+  &:hover .nl-pin-title { color: var(--accent); }
+}
+
+.nl-pin-title {
+  overflow: hidden;
+  font-family: var(--font-display, var(--font-ui));
+  font-size: 13.5px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  transition: color var(--bc-t-fast) var(--bc-ease-out);
+  white-space: nowrap;
+}
+
+.nl-pin-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.nl-pin-tag {
+  display: inline-flex;
+  align-items: center;
+  color: var(--fg-3);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  gap: 4px;
+}
+
+// ============================================================================
+// Main pane
+// ============================================================================
+.nl-main {
+  display: flex;
+  flex-direction: column;
+  padding: 26px 28px 40px;
+  gap: 32px;
+}
+
+.nl-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 28px;
+  border: 1px dashed var(--line);
+  border-radius: var(--bc-radius-md, 10px);
+  background: var(--bg-1);
+  color: var(--fg-3);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  gap: 14px;
+}
+
+.nl-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 0 0 14px;
+  gap: 12px;
+}
+
+.nl-section-title {
+  margin: 0;
+  color: var(--fg-1);
+  font-family: var(--font-display, var(--font-ui));
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.nl-section-meta {
+  color: var(--fg-3);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+// ============================================================================
+// Featured cards
+// ============================================================================
+.nl-featured-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.nl-card {
+  display: flex;
+  min-height: 240px;
+  flex-direction: column;
+  padding: 20px 22px;
+  border: 1px solid var(--line);
+  border-radius: var(--bc-radius-lg, 14px);
+  background: var(--bg-2);
+  box-shadow: 0 1px 0 rgb(0 0 0 / 12%);
+  color: inherit;
+  gap: 12px;
+  text-decoration: none;
+  transition: border-color var(--bc-t-fast) var(--bc-ease-out),
+              box-shadow var(--bc-t-fast) var(--bc-ease-out),
+              transform var(--bc-t-fast) var(--bc-ease-out);
+
+  &::before {
+    position: relative;
+    top: -20px;
+    display: block;
+    height: 2px;
+    border-radius: 2px 2px 0 0;
+    margin: 0 -22px;
+    background: var(--accent);
+    content: "";
+    opacity: 0.85;
+  }
+
+  &:hover {
+    border-color: color-mix(in oklch, var(--accent), transparent 60%);
+    box-shadow: 0 10px 30px -16px color-mix(in oklch, var(--accent), transparent 50%);
+  }
+
+  &:focus-visible {
+    box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent), transparent 60%);
+    outline: none;
+  }
+}
+
+.nl-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: -8px;
+  color: var(--fg-3);
+}
+
+.nl-card-time {
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.nl-card-pin {
+  color: var(--accent);
+  font-size: 11px;
+  transform: rotate(-20deg);
+}
+
+.nl-card-title {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 0;
+  -webkit-box-orient: vertical;
+  color: var(--fg-1);
+  font-family: var(--font-display, var(--font-ui));
+  font-size: 18px;
+  font-weight: 600;
+  -webkit-line-clamp: 2;
+}
+
+.nl-card-preview {
+  display: -webkit-box;
+  overflow: hidden;
+  flex: 1;
+  margin: 0;
+  -webkit-box-orient: vertical;
+  color: var(--fg-3);
+  font-size: 13px;
+  -webkit-line-clamp: 4;
+  line-height: 1.55;
+}
+
+.nl-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line-soft, var(--line));
+  gap: 12px;
+}
+
+.nl-card-tags {
+  display: flex;
+  overflow: hidden;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.nl-card-tag {
+  display: inline-flex;
+  align-items: center;
+  color: var(--fg-2);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  gap: 4px;
+}
+
+// ============================================================================
+// Dense list
+// ============================================================================
+.nl-strip-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-top: 18px;
+  border-top: 1px solid var(--line-soft, var(--line));
+  margin: 0 0 8px;
+}
+
+.nl-strip-label {
+  color: var(--fg-4);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.nl-strip-link,
+.nl-strip-meta {
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-decoration: none;
+}
+
+.nl-strip-meta { color: var(--fg-3); }
+
+.nl-strip-link:hover { text-decoration: underline; }
+
+.nl-more-list {
+  display: grid;
+  padding: 0;
+  margin: 0;
+  column-gap: 32px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  list-style: none;
+}
+
+.nl-more-row {
+  display: grid;
+  align-items: center;
+  padding: 11px 12px;
+  border-radius: var(--bc-radius-sm, 6px);
+  border-bottom: 1px solid var(--line-soft, var(--line));
+  column-gap: 14px;
+  grid-template-columns: 1fr auto auto;
+  transition: background var(--bc-t-fast) var(--bc-ease-out);
+
+  &:hover {
+    background: color-mix(in oklch, var(--bg-2), transparent 30%);
+  }
+}
+
+.nl-more-title {
+  display: inline-flex;
+  overflow: hidden;
+  align-items: center;
+  color: var(--fg-1);
+  font-size: 13px;
+  font-weight: 500;
+  gap: 6px;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &:hover { color: var(--accent); }
+}
+
+.nl-more-pin {
+  color: var(--accent);
+  font-size: 9px;
+  transform: rotate(-20deg);
+}
+
+.nl-more-tags {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nl-more-time {
+  min-width: 56px;
+  color: var(--fg-3);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-align: right;
+}
+
+// ============================================================================
+// Tag cloud
+// ============================================================================
+.nl-tag-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.nl-tag-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: calc(4px * var(--nl-tag-scale, 1)) calc(12px * var(--nl-tag-scale, 1));
+  border: 1px solid color-mix(in oklch, var(--nl-tag-color, var(--fg-3)), transparent 80%);
+  border-radius: var(--bc-radius-pill, 999px);
+  background: color-mix(in oklch, var(--nl-tag-color, var(--fg-3)), transparent 95%);
+  color: var(--nl-tag-color, var(--fg-2));
+  font-family: var(--font-ui);
+  font-size: calc(11px + var(--nl-tag-scale, 1) * 4px);
+  gap: 6px;
+  text-decoration: none;
+  transition: filter var(--bc-t-fast) var(--bc-ease-out),
+              transform var(--bc-t-fast) var(--bc-ease-out);
+
+  &.is-med {
+    border-color: color-mix(in oklch, var(--nl-tag-color), transparent 65%);
+    background: color-mix(in oklch, var(--nl-tag-color), transparent 92%);
+  }
+
+  &.is-strong {
+    border-color: color-mix(in oklch, var(--nl-tag-color), transparent 55%);
+    background: color-mix(in oklch, var(--nl-tag-color), transparent 88%);
+    box-shadow: 0 0 12px -4px color-mix(in oklch, var(--nl-tag-color), transparent 60%);
+  }
+
+  &:hover {
+    filter: brightness(1.15);
+    transform: translateY(-1px);
+  }
+}
+
+.nl-tag-name { font-weight: 600; }
+
+.nl-tag-count {
+  color: color-mix(in oklch, var(--nl-tag-color, var(--fg-3)), var(--fg-3) 50%);
+  font-family: var(--font-mono);
+  font-size: calc(9px + var(--nl-tag-scale, 1) * 2px);
+}
+
+// ============================================================================
+// Shared atoms
+// ============================================================================
+.nl-tag-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: 999px;
+}
+
+.nl-imp {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.nl-imp-dot {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--bg-3);
+  transition: background var(--bc-t-fast) var(--bc-ease-out),
+              box-shadow var(--bc-t-fast) var(--bc-ease-out);
+
+  &.is-lit {
+    background: var(--accent);
+    box-shadow: 0 0 6px color-mix(in oklch, var(--accent), transparent 50%);
+  }
+}
+
+// ============================================================================
+// Responsive collapse
+// ============================================================================
+@media (width <= 1100px) {
+  .nl-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .nl-pinned {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .nl-featured-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .nl-more-list {
+    grid-template-columns: 1fr;
+  }
+}

@@ -42,6 +42,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { doPost, doPatch } from "../utils/reactUtils";
+import { formatRelative } from "../utils/formatRelative";
 import { NewTodoModal } from "../todo/NewTodoModal";
 import { EditTodoModal, EditTodoInfo } from "../todo/EditTodoModal";
 import { ObjectSelectModal, ObjectSelectModalHandle } from "../common/ObjectSelectModal";
@@ -145,24 +146,6 @@ function findItemPosition(layout: Layout, id: string): [number, number] | null {
     }
   }
   return null;
-}
-
-function formatRelative(iso: string): string {
-  if (!iso) return "";
-  const then = new Date(iso).getTime();
-  if (Number.isNaN(then)) return "";
-  const diffMs = Date.now() - then;
-  const minutes = Math.round(diffMs / 60_000);
-  if (minutes < 1) return "just now";
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.round(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.round(hours / 24);
-  if (days < 30) return `${days}d ago`;
-  const months = Math.round(days / 30);
-  if (months < 12) return `${months}mo ago`;
-  const years = Math.round(months / 12);
-  return `${years}y ago`;
 }
 
 function formatAbsolute(iso: string): string {

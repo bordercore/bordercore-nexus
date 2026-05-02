@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% load vite_tags %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block javascript_bundles %}
+    {{ block.super }}
+    {{ notes_landing_data|json_script:"notes-landing-data" }}
+    {% vite_asset "dist/js/notes-landing" %}
+{% endblock %}
+
+{% block content %}
+<div id="react-root"
+     data-create-note-url="{% url 'blob:create' %}?is_note=true"
+     data-search-url="{% url 'search:search' %}"
+     data-tag-detail-url="{% url 'search:kb_search_tag_detail' '__TAG__' %}"
+     data-sort-pinned-url="{% url 'accounts:sort_pinned_notes' %}">
+</div>
+{% endblock %}

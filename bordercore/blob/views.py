@@ -228,6 +228,30 @@ class BlobListView(LoginRequiredMixin, ListView):
         }
 
 
+class NotesLandingView(LoginRequiredMixin, ListView):
+    """Notes landing dashboard at `/notes/`.
+
+    Pinned column + featured-recent cards + dense recent list + tag cloud.
+    Renders a JSON payload for the React entry; all interaction is client-side
+    (apart from drag-reordering pinned notes, which posts back to the existing
+    `accounts:sort_pinned_notes` endpoint).
+    """
+
+    model = Blob
+    template_name = "blob/notes_landing.html"
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        from blob.services import get_notes_landing_data
+
+        context = super().get_context_data(**kwargs)
+
+        return {
+            **context,
+            "title": "Notes",
+            "notes_landing_data": get_notes_landing_data(cast(User, self.request.user)),
+        }
+
+
 class BlobCreateView(LoginRequiredMixin, FormRequestMixin, CreateView, FormValidMixin):
     """View for creating a new blob.
 

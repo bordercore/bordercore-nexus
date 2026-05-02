@@ -340,6 +340,126 @@ def get_dashboard_blobs(
     }
 
 
+NOTES_LANDING_RECENT_LIMIT = 14
+NOTES_LANDING_TAG_LIMIT = 30
+NOTES_LANDING_PREVIEW_CHARS = 280
+
+_MARKDOWN_FENCE_RE = re.compile(r"```.*?```", re.DOTALL)
+_MARKDOWN_INLINE_CODE_RE = re.compile(r"`([^`]*)`")
+_MARKDOWN_HEADING_RE = re.compile(r"^\s{0,3}#{1,6}\s+", re.MULTILINE)
+_MARKDOWN_LINK_RE = re.compile(r"\[([^\]]+)\]\([^)]+\)")
+_MARKDOWN_IMAGE_RE = re.compile(r"!\[[^\]]*\]\([^)]+\)")
+_MARKDOWN_BOLD_ITALIC_RE = re.compile(r"(\*{1,3}|_{1,3})(.+?)\1")
+_MARKDOWN_BLOCKQUOTE_RE = re.compile(r"^\s{0,3}>\s?", re.MULTILINE)
+_MARKDOWN_LIST_RE = re.compile(r"^\s{0,3}[-*+]\s+", re.MULTILINE)
+_WHITESPACE_RE = re.compile(r"\s+")
+
+
+def _strip_markdown_for_preview(text: str, limit: int = NOTES_LANDING_PREVIEW_CHARS) -> str:
+    """Reduce a markdown body to a short, plain-text preview.
+
+    The result is suitable for line-clamped card previews — fenced code,
+    images, links, headings, lists and emphasis are stripped so the user
+    sees prose, not syntax.
+    """
+    if not text:
+        return ""
+    out = _MARKDOWN_FENCE_RE.sub(" ", text)
+    out = _MARKDOWN_IMAGE_RE.sub(" ", out)
+    out = _MARKDOWN_LINK_RE.sub(r"\1", out)
+    out = _MARKDOWN_INLINE_CODE_RE.sub(r"\1", out)
+    out = _MARKDOWN_HEADING_RE.sub("", out)
+    out = _MARKDOWN_BLOCKQUOTE_RE.sub("", out)
+    out = _MARKDOWN_LIST_RE.sub("", out)
+    out = _MARKDOWN_BOLD_ITALIC_RE.sub(r"\2", out)
+    out = _WHITESPACE_RE.sub(" ", out).strip()
+    if len(out) > limit:
+        out = out[:limit].rstrip() + "…"
+    return out
+
+
+def get_notes_landing_data(user: User) -> dict[str, Any]:
+    """Build the payload for the notes landing dashboard (`/notes/`).
+
+    Returns three slices used by the page:
+      - pinned: every note the user has pinned, in their drag-curated order.
+      - recents: latest notes by `modified` desc (capped at the recent limit).
+      - tag_counts: tag-frequency aggregate across all of the user's notes.
+
+    Each note dict contains the fields the React page needs for rendering
+    cards, dense rows and pinned items. Importance is left as the raw
+    integer (the frontend maps 1–10 → 0–5 dots).
+    """
+    from accounts.models import UserNote  # noqa: WPS433 (avoid app-load circular)
+
+    note_qs = (
+        Blob.objects
+        .filter(user=user, is_note=True)
+        .prefetch_related("tags")
+    )
+
+    pinned_user_notes = (
+        UserNote.objects
+        .filter(userprofile=user.userprofile)
+        .select_related("blob")
+        .prefetch_related("blob__tags")
+        .order_by("sort_order")
+    )
+    pinned_uuids = {un.blob.uuid for un in pinned_user_notes}
+
+    recents = list(note_qs.order_by("-modified")[:NOTES_LANDING_RECENT_LIMIT])
+
+    def _serialize(blob: Blob, *, is_pinned: bool) -> dict[str, Any]:
+        modified_iso = blob.modified.isoformat() if blob.modified else ""
+        return {
+            "uuid": str(blob.uuid),
+            "name": blob.name or "",
+            "url": reverse("blob:detail", kwargs={"uuid": blob.uuid}),
+            "tags": sorted(tag.name for tag in blob.tags.all()),
+            "importance": blob.importance,
+            "modified_iso": modified_iso,
+            "is_pinned": is_pinned,
+            "preview": _strip_markdown_for_preview(blob.content or ""),
+        }
+
+    pinned_payload = [_serialize(un.blob, is_pinned=True) for un in pinned_user_notes]
+    recents_payload = [
+        _serialize(blob, is_pinned=blob.uuid in pinned_uuids) for blob in recents
+    ]
+
+    tag_rows = (
+        Blob.objects
+        .filter(user=user, is_note=True)
+        .values_list("tags__name", flat=True)
+    )
+    tag_counter: defaultdict[str, int] = defaultdict(int)
+    for tag_name in tag_rows:
+        if tag_name:
+            tag_counter[tag_name] += 1
+
+    sorted_tags = sorted(
+        tag_counter.items(),
+        key=lambda item: (-item[1], item[0]),
+    )
+    tag_counts = [
+        {"name": name, "count": count}
+        for name, count in sorted_tags[:NOTES_LANDING_TAG_LIMIT]
+    ]
+
+    total_notes = note_qs.count()
+
+    return {
+        "pinned": pinned_payload,
+        "recents": recents_payload,
+        "tag_counts": tag_counts,
+        "totals": {
+            "pinned": len(pinned_payload),
+            "recents": total_notes,
+            "tags": len(tag_counter),
+        },
+    }
+
+
 def get_recent_media(user: User, limit: int = 10) -> list[dict[str, Any]]:
     """Get the most recently created images and videos for a user.
 

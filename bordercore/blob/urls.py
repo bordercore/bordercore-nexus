@@ -15,6 +15,11 @@ urlpatterns = [
         name="list"
     ),
     path(
+        route="notes/",
+        view=views.NotesLandingView.as_view(),
+        name="notes_landing"
+    ),
+    path(
         route="<uuid:uuid>/",
         view=views.BlobDetailView.as_view(),
         name="detail"
