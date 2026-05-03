@@ -53,7 +53,11 @@ export function ItemList({
     <section className="tp-items">
       <header className="tp-items-head">
         <div className="tp-items-head-info">
-          <h2 className="tp-items-head-title">{feed.name}</h2>
+          <h2 className="tp-items-head-title">
+            <a href={feed.url} target="_blank" rel="noopener noreferrer">
+              {feed.name}
+            </a>
+          </h2>
           <p className="bc-meta">
             {sortedItems.length} items · {unread} unread
           </p>
