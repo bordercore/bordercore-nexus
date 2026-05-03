@@ -17,7 +17,9 @@ class FeedItemFactory(factory.django.DjangoModelFactory):
         model = FeedItem
 
     title = faker.text()
-    link = factory.LazyAttribute(lambda _: faker.url())
+    # Sequence guarantees uniqueness — faker.url() samples from a small word
+    # pool and can collide, which trips FeedItem's unique (feed, link).
+    link = factory.Sequence(lambda n: f"https://example.com/item-{n}/")
     pub_date = factory.LazyFunction(timezone.now)
 
 
@@ -28,7 +30,8 @@ class FeedFactory(factory.django.DjangoModelFactory):
         model = Feed
 
     name = faker.text()
-    url = factory.LazyAttribute(lambda _: faker.url())
+    # Same reasoning as FeedItemFactory.link — Feed.url is unique=True.
+    url = factory.Sequence(lambda n: f"https://example.com/feed-{n}/")
     homepage = faker.domain_name()
     user = factory.SubFactory(UserFactory)
 
