@@ -7,6 +7,11 @@ EFS_DIR=/mnt/efs
 EFS_ACCESS_POINT=fsap-034583ce1fe88d1b4
 MAGICK_TEMPORARY_PATH=/mnt/efs
 
+# Sync shared library files into the build context (these are gitignored;
+# the canonical copies live at bordercore/lib/). Keep this in step with
+# control.sh so SAM and direct-Docker builds produce identical images.
+cp ../../lib/util.py ./lib/ &&
+
 $SAM build --use-container &&
 
 $SAM package \

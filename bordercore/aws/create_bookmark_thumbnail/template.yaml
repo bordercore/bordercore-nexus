@@ -28,9 +28,17 @@ Resources:
 
     CreateBookmarkThumbnailFunction:
         Type: AWS::Serverless::Function
+        # Tell SAM to build the image from the local Dockerfile instead of
+        # referencing an existing ECR image. With this Metadata block,
+        # `sam build` runs `docker build`, `sam package` pushes to the
+        # repository passed via --image-repository, and `sam deploy`
+        # updates the function with the resulting ImageUri.
+        Metadata:
+            Dockerfile: Dockerfile
+            DockerContext: .
+            DockerTag: latest
         Properties:
             PackageType: Image
-            ImageUri: 192218769908.dkr.ecr.us-east-1.amazonaws.com/create-bookmark-thumbnail-lambda:latest
             FunctionName: CreateBookmarkThumbnail
             MemorySize: 1024
             Role: !GetAtt CreateBookmarkThumbnailLambdaRole.Arn

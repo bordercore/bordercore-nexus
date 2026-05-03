@@ -9,6 +9,12 @@ SECURITY_GROUP=sg-bfa013fe
 SUBNET_1=subnet-2ff16448
 SUBNET_2=subnet-ff3712b5
 
+# Sync shared library files into the build context (these are gitignored;
+# the canonical copies live at bordercore/lib/). Keep this in step with
+# control.sh so SAM and direct-Docker builds produce identical images.
+cp ../../lib/util.py ./lib/ &&
+cp ../../lib/thumbnails.py ./lib/ &&
+
 $SAM build --use-container &&
 
 $SAM package \
