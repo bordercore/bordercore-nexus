@@ -27,9 +27,13 @@ export interface CollectionObject {
   uuid: string;
   name: string;
   url: string;
+  edit_url: string;
   type: "blob" | "bookmark";
   cover_url: string;
   cover_url_large: string;
+  favicon_url?: string;
+  note?: string;
+  tags: string[];
 }
 
 export interface PaginatorInfo {
@@ -38,6 +42,7 @@ export interface PaginatorInfo {
   has_previous: boolean;
   next_page_number: number | null;
   previous_page_number: number | null;
+  count: number;
 }
 
 // Collection List Page Types

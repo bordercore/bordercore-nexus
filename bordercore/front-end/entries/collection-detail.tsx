@@ -1,6 +1,6 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-import CollectionDetailPage from "../react/collection/CollectionDetailPage";
+import CurateCollectionPage from "../react/collection/CurateCollectionPage";
 import type { CollectionDetail, ObjectTag, CollectionDetailUrls } from "../react/collection/types";
 
 const container = document.getElementById("react-root");
@@ -39,7 +39,7 @@ if (container) {
 
   const root = createRoot(container);
   root.render(
-    <CollectionDetailPage
+    <CurateCollectionPage
       collection={collection}
       objectTags={objectTags}
       initialTags={initialTags}

@@ -1,5 +1,7 @@
-import React, { useRef, useImperativeHandle, forwardRef, useState } from "react";
-import { Modal } from "bootstrap";
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faImages, faTimes } from "@fortawesome/free-solid-svg-icons";
 import { ToggleSwitch } from "../common/ToggleSwitch";
 import type { ObjectTag, SlideShowConfig } from "./types";
 
@@ -13,176 +15,155 @@ interface SlideShowModalProps {
 }
 
 const slideShowOptions = [
-  { value: "1", display: "Rotate Every Minute" },
-  { value: "5", display: "Rotate Every 5 Minutes" },
-  { value: "10", display: "Rotate Every 10 Minutes" },
-  { value: "30", display: "Rotate Every 30 Minutes" },
-  { value: "60", display: "Rotate Every Hour" },
-  { value: "1440", display: "Rotate Every Day" },
+  { value: "1", display: "Every minute" },
+  { value: "5", display: "Every 5 minutes" },
+  { value: "10", display: "Every 10 minutes" },
+  { value: "30", display: "Every 30 minutes" },
+  { value: "60", display: "Every hour" },
+  { value: "1440", display: "Every day" },
 ];
 
 export const SlideShowModal = forwardRef<SlideShowModalHandle, SlideShowModalProps>(
   function SlideShowModal({ objectTags, onStart }, ref) {
+    const [open, setOpen] = useState(false);
     const [type, setType] = useState<"manual" | "automatic">("manual");
     const [interval, setInterval] = useState("60");
     const [randomize, setRandomize] = useState(false);
     const [tag, setTag] = useState("");
-
-    const modalRef = useRef<HTMLDivElement>(null);
-    const modalInstanceRef = useRef<Modal | null>(null);
+    const startBtnRef = useRef<HTMLButtonElement>(null);
 
     useImperativeHandle(ref, () => ({
       openModal: () => {
         setTag("");
-        if (modalRef.current) {
-          modalInstanceRef.current = new Modal(modalRef.current);
-          modalInstanceRef.current.show();
-        }
+        setOpen(true);
       },
     }));
 
+    useEffect(() => {
+      if (!open) return;
+      startBtnRef.current?.focus();
+      const onKey = (e: KeyboardEvent) => {
+        if (e.key === "Escape") setOpen(false);
+      };
+      window.addEventListener("keydown", onKey);
+      return () => window.removeEventListener("keydown", onKey);
+    }, [open]);
+
+    if (!open) return null;
+
+    const handleClose = () => setOpen(false);
+
     const handleConfirm = () => {
-      if (modalInstanceRef.current) {
-        modalInstanceRef.current.hide();
-      }
-      onStart({
-        type,
-        interval,
-        randomize,
-        tag,
-      });
+      setOpen(false);
+      onStart({ type, interval, randomize, tag });
     };
 
-    return (
-      <div
-        ref={modalRef}
-        id="modalSlideShow"
-        className="modal fade"
-        tabIndex={-1}
-        role="dialog"
-        aria-labelledby="slideShowModalLabel"
-      >
-        <div className="modal-dialog" role="document">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h4 className="modal-title" id="slideShowModalLabel">
-                Begin Slide Show
-              </h4>
+    const isAutomatic = type === "automatic";
+
+    return createPortal(
+      <>
+        <div className="refined-modal-scrim" onClick={handleClose} />
+        <div className="refined-modal" role="dialog" aria-label="start slide show">
+          <button
+            type="button"
+            className="refined-modal-close"
+            onClick={handleClose}
+            aria-label="close"
+          >
+            <FontAwesomeIcon icon={faTimes} />
+          </button>
+
+          <div className="refined-modal-eyebrow">
+            <span>slide show</span>
+            <span className="dot">·</span>
+            <span className="mono">bordercore / collection / slideshow</span>
+          </div>
+
+          <h2 className="refined-modal-title">Start a slide show</h2>
+
+          <div className="refined-field">
+            <label>mode</label>
+            <div className="cd-segmented" role="group" aria-label="Slide show mode">
               <button
                 type="button"
-                className="btn-close"
-                data-bs-dismiss="modal"
-                aria-label="Close"
-              />
-            </div>
-            <div className="modal-body">
-              <div className="collection-slide-show-section">
-                <div className="form-section mb-0">Type</div>
-
-                <div className="row">
-                  <div className="col-lg-12">
-                    <div className="form-check">
-                      <input
-                        id="id_type_manual"
-                        className="form-check-input"
-                        type="radio"
-                        name="type"
-                        value="manual"
-                        checked={type === "manual"}
-                        onChange={() => setType("manual")}
-                      />
-                      <label className="form-check-label d-flex" htmlFor="id_type_manual">
-                        Manual
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="row">
-                  <div className="col-lg-4">
-                    <div className="form-check">
-                      <input
-                        id="id_type_automatic"
-                        className="form-check-input"
-                        type="radio"
-                        name="type"
-                        value="automatic"
-                        checked={type === "automatic"}
-                        onChange={() => setType("automatic")}
-                      />
-                      <label className="form-check-label d-flex" htmlFor="id_type_automatic">
-                        Automatic
-                      </label>
-                    </div>
-                  </div>
-                  <div className="col-lg-8">
-                    <div>
-                      <select
-                        className="form-control form-select"
-                        value={interval}
-                        onChange={e => setInterval(e.target.value)}
-                        disabled={type === "manual"}
-                      >
-                        {slideShowOptions.map(option => (
-                          <option key={option.value} value={option.value}>
-                            {option.display}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="d-flex ps-1 mt-2">
-                      <ToggleSwitch
-                        id="randomize-switch"
-                        name="randomize"
-                        checked={randomize}
-                        onChange={setRandomize}
-                        disabled={type === "manual"}
-                      />
-                      <label className="form-check-label ms-2" htmlFor="randomize-switch">
-                        Randomize
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <hr className="my-1 my-3" />
-
-              <div className="collection-slide-show-section">
-                <div className="form-section">Options</div>
-
-                <div className="row">
-                  <div className="col-lg-4">Tag</div>
-                  <div className="col-lg-8">
-                    <select
-                      id="slideshow-tag"
-                      className="form-control form-select"
-                      value={tag}
-                      onChange={e => setTag(e.target.value)}
-                    >
-                      <option value="">All Objects</option>
-                      {objectTags.map(t => (
-                        <option key={t.id} value={t.tag}>
-                          {t.tag}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="modal-footer justify-content-end">
-              <input
-                id="btn-slideshow-action"
-                className="btn btn-primary"
+                className={type === "manual" ? "refined-btn primary" : "refined-btn ghost"}
+                onClick={() => setType("manual")}
+              >
+                manual
+              </button>
+              <button
                 type="button"
-                value="Confirm"
-                onClick={handleConfirm}
-              />
+                className={isAutomatic ? "refined-btn primary" : "refined-btn ghost"}
+                onClick={() => setType("automatic")}
+              >
+                automatic
+              </button>
             </div>
           </div>
+
+          <div className="refined-row-2">
+            <div className="refined-field">
+              <label htmlFor="slideshow-interval">
+                interval {!isAutomatic && <span className="optional">· automatic only</span>}
+              </label>
+              <select
+                id="slideshow-interval"
+                value={interval}
+                onChange={e => setInterval(e.target.value)}
+                disabled={!isAutomatic}
+              >
+                {slideShowOptions.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.display}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="refined-field">
+              <label htmlFor="slideshow-tag">
+                tag <span className="optional">· optional</span>
+              </label>
+              <select id="slideshow-tag" value={tag} onChange={e => setTag(e.target.value)}>
+                <option value="">All objects</option>
+                {objectTags.map(t => (
+                  <option key={t.id} value={t.tag}>
+                    {t.tag}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="refined-toggle-row">
+            <label className="refined-toggle">
+              <ToggleSwitch
+                id="slideshow-randomize"
+                name="randomize"
+                checked={randomize}
+                onChange={setRandomize}
+                disabled={!isAutomatic}
+              />
+              <span>randomize</span>
+            </label>
+          </div>
+
+          <div className="refined-modal-actions compact">
+            <button type="button" className="refined-btn ghost" onClick={handleClose}>
+              cancel
+            </button>
+            <button
+              ref={startBtnRef}
+              type="button"
+              className="refined-btn primary"
+              onClick={handleConfirm}
+            >
+              <FontAwesomeIcon icon={faImages} className="refined-btn-icon" />
+              start slide show
+            </button>
+          </div>
         </div>
-      </div>
+      </>,
+      document.body
     );
   }
 );

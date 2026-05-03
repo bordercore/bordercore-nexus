@@ -332,6 +332,8 @@ class Collection(ElasticsearchMixin, TimeStampedModel):
             collection=self
         ).select_related(
             "blob", "bookmark"
+        ).prefetch_related(
+            "blob__tags", "bookmark__tags"
         )
 
         if tag:
@@ -497,9 +499,11 @@ class CollectionObject(SortOrderMixin):
                 "filename": self.blob.file.name,
                 "name": re.sub("[\n\r]", "", self.blob.name) if self.blob.name else "",
                 "url": reverse("blob:detail", kwargs={"uuid": self.blob.uuid}),
+                "edit_url": reverse("blob:update", kwargs={"uuid": self.blob.uuid}),
                 "sha1sum": self.blob.sha1sum,
                 "cover_url": self.blob.cover_url_small,
                 "cover_url_large": self.blob.get_cover_url(),
+                "tags": list(self.blob.tags.values_list("name", flat=True))[:3],
             }
         if self.bookmark is not None:
             return {
@@ -509,7 +513,9 @@ class CollectionObject(SortOrderMixin):
                 "uuid": self.bookmark.uuid,
                 "name": self.bookmark.name,
                 "url": self.bookmark.url,
-                "favicon_url": self.bookmark.get_favicon_img_tag(size=16)
+                "edit_url": reverse("bookmark:update", kwargs={"uuid": self.bookmark.uuid}),
+                "favicon_url": self.bookmark.get_favicon_img_tag(size=16),
+                "tags": list(self.bookmark.tags.values_list("name", flat=True))[:3],
             }
         raise ValueError(f"Unsupported object: {self}")
 

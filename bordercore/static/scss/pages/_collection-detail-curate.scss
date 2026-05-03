@@ -1,0 +1,688 @@
+// =============================================================================
+// PAGES: COLLECTION DETAIL — Direction 04 (Curatorial Grid)
+// =============================================================================
+// All styles scoped under .cd-curate so this redesign coexists with the
+// existing collection list page (which still uses _collections.scss).
+// Tokens map onto the refined design system already defined per-theme
+// (--fg-*/--bg-*/--accent/--line). Bookmark-icon hue uses the new
+// --accent-bookmark var added to each theme.
+
+// stylelint-disable no-descending-specificity, color-function-notation
+
+@import "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&display=swap";
+
+.cd-curate {
+  --cd-cols: 4;
+  --cd-rail-w: 240px;
+  --cd-rail-w-collapsed: 48px;
+  --cd-topbar-h: 56px;
+  --cd-t-fast: 120ms cubic-bezier(0.22, 1, 0.36, 1);
+  --cd-t-base: 180ms cubic-bezier(0.22, 1, 0.36, 1);
+  --cd-font-display: "Space Grotesk", "Inter", -apple-system, system-ui, sans-serif;
+  --cd-line-hover: color-mix(in oklch, var(--line), var(--fg-2) 20%);
+
+  // Tile-chrome tokens are intentionally fixed (not theme-derived). The chrome
+  // is overlaid on top of uncontrolled image content, so it must stay a dark
+  // scrim across every theme — otherwise dark images get washed out in light
+  // themes. The light-on-dark icon colors below mirror the dark-theme fg-*
+  // values so chrome icons read correctly regardless of page theme.
+  --cd-chrome-overlay: rgb(7 7 12 / 85%);
+  --cd-chrome-pill: rgb(7 7 12 / 70%);
+  --cd-chrome-fg: rgb(230 232 240);
+  --cd-chrome-fg-muted: rgb(138 143 160);
+  --cd-chrome-line: rgb(255 255 255 / 12%);
+
+  color: var(--fg-1);
+  font-family: var(--font-ui);
+
+  // ===========================================================================
+  // Shell
+  // ===========================================================================
+  .cd-shell {
+    display: grid;
+    min-height: calc(100vh - var(--cd-topbar-h));
+    grid-template-columns: var(--cd-rail-w) 1fr;
+    transition: grid-template-columns var(--cd-t-base);
+  }
+
+  .cd-shell.collapsed {
+    grid-template-columns: var(--cd-rail-w-collapsed) 1fr;
+
+    .cd-rail-search,
+    .cd-rail-tags,
+    .cd-rail-head .cd-rail-label {
+      display: none;
+    }
+  }
+
+  // ===========================================================================
+  // Left rail
+  // ===========================================================================
+  .cd-rail {
+    position: sticky;
+    top: var(--cd-topbar-h);
+    display: flex;
+    height: calc(100vh - var(--cd-topbar-h));
+    flex-direction: column;
+    padding: 16px 12px;
+    border-right: 1px solid var(--line-soft);
+    background: color-mix(in oklch, var(--bg-1), transparent 60%);
+    gap: 12px;
+    overflow-y: auto;
+  }
+
+  .cd-rail-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 4px;
+  }
+
+  .cd-rail-label {
+    color: var(--fg-3);
+    font-family: var(--font-ui);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .cd-rail-toggle {
+    display: grid;
+    width: 24px;
+    height: 24px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--fg-3);
+    cursor: pointer;
+    font-size: 10px;
+    place-items: center;
+    transition: all var(--cd-t-fast);
+
+    &:hover {
+      border-color: var(--cd-line-hover);
+      color: var(--fg-1);
+    }
+  }
+
+  .cd-rail-search {
+    display: flex;
+    align-items: center;
+    padding: 7px 10px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--bg-1);
+    color: var(--fg-3);
+    gap: 8px;
+
+    i,
+    svg {
+      font-size: 11px;
+    }
+  }
+
+  .cd-rail-search-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: var(--fg-1);
+    font-family: var(--font-ui);
+    font-size: 12px;
+    outline: none;
+
+    &::placeholder {
+      color: var(--fg-4);
+    }
+  }
+
+  .cd-rail-tags {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .cd-tag {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    padding: 6px 8px;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    background: transparent;
+    color: var(--fg-2);
+    cursor: pointer;
+    font-family: var(--font-ui);
+    font-size: 12px;
+    font-weight: 500;
+    gap: 8px;
+    line-height: 1.2;
+    text-align: left;
+    transition: all var(--cd-t-fast);
+
+    &:hover {
+      background: var(--bg-2);
+      color: var(--fg-1);
+    }
+  }
+
+  .cd-tag.active {
+    border-color: color-mix(in oklch, var(--accent), transparent 70%);
+    background: var(--accent-soft);
+    color: var(--fg-0);
+  }
+
+  .cd-tag-dot {
+    width: 6px;
+    height: 6px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--fg-4);
+  }
+
+  .cd-tag-dot.all,
+  .cd-tag.active .cd-tag-dot {
+    background: var(--accent);
+    box-shadow: 0 0 6px var(--accent);
+  }
+
+  .cd-tag-name {
+    flex: 1;
+  }
+
+  .cd-tag-count {
+    color: var(--fg-4);
+    font-family: var(--font-mono);
+    font-size: 10px;
+  }
+
+  // ===========================================================================
+  // Page header — now lives above .cd-shell so the title + toolbar sit at the
+  // top of the page next to the (Django-rendered) breadcrumb in {% block nav %}.
+  // ===========================================================================
+  .cd-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 0 32px 20px;
+    border-bottom: 1px solid var(--line-soft);
+    gap: 24px;
+  }
+
+  .cd-header-left {
+    min-width: 0;
+    flex: 1;
+  }
+
+  // ===========================================================================
+  // Main column — now just holds the grid (no internal header).
+  // ===========================================================================
+  .cd-main {
+    padding: 24px 32px 80px;
+  }
+
+  .cd-title {
+    display: flex;
+    align-items: center;
+    margin: 0 0 4px;
+    color: var(--fg-0);
+    font-family: var(--cd-font-display);
+    font-size: 32px;
+    font-weight: 600;
+    gap: 12px;
+    letter-spacing: -0.015em;
+    line-height: 1.15;
+  }
+
+  .cd-count {
+    margin-top: 4px;
+    color: var(--fg-3);
+    font-size: 13px;
+  }
+
+  .cd-desc {
+    max-width: 580px;
+    color: var(--fg-3);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .cd-tools {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .cd-zoom {
+    display: flex;
+    align-items: center;
+    padding: 6px 12px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--bg-2);
+    color: var(--fg-2);
+    gap: 8px;
+
+    i,
+    svg {
+      font-size: 10px;
+      opacity: 0.6;
+    }
+
+    input[type="range"] {
+      width: 80px;
+      accent-color: var(--accent);
+    }
+  }
+
+  .cd-zoom-readout {
+    color: var(--fg-4);
+    font-family: var(--font-mono);
+    font-size: 11px;
+  }
+
+  .cd-btn {
+    display: inline-flex;
+    height: 32px;
+    align-items: center;
+    padding: 0 12px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--bg-3);
+    color: var(--fg-1);
+    cursor: pointer;
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 500;
+    gap: 6px;
+    transition: all var(--cd-t-fast);
+
+    &:hover {
+      border-color: var(--cd-line-hover);
+      background: color-mix(in oklch, var(--bg-3), var(--fg-2) 8%);
+    }
+
+    i,
+    svg {
+      font-size: 11px;
+    }
+  }
+
+  .cd-btn.ghost {
+    background: transparent;
+
+    &:hover {
+      background: var(--bg-2);
+    }
+  }
+
+  .cd-btn.primary {
+    border-color: color-mix(in oklch, var(--accent), transparent 60%);
+    background: var(--accent-soft);
+    color: var(--accent-fg, var(--fg-0));
+
+    &:hover {
+      border-color: var(--accent);
+      background: color-mix(in oklch, var(--accent-soft), var(--accent) 20%);
+    }
+  }
+
+  .cd-btn.icon-only {
+    width: 32px;
+    justify-content: center;
+    padding: 0;
+  }
+
+  // ===========================================================================
+  // Grid
+  // ===========================================================================
+  .cd-grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(var(--cd-cols, 4), 1fr);
+  }
+
+  .cd-grid.drag-over {
+    border-radius: var(--radius);
+    outline: 2px dashed color-mix(in oklch, var(--accent), transparent 50%);
+    outline-offset: 8px;
+  }
+
+  // ===========================================================================
+  // Tile
+  // ===========================================================================
+  .cd-tile {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--bg-2);
+    transform: var(--sortable-transform, none);
+    transition:
+      var(--sortable-transition, none),
+      border-color var(--cd-t-base),
+      box-shadow var(--cd-t-base);
+
+    &:hover {
+      border-color: var(--cd-line-hover);
+      box-shadow: var(--shadow-md);
+    }
+
+    &:hover .cd-tile-chrome {
+      opacity: 1;
+    }
+  }
+
+  .cd-tile.dragging {
+    border-color: var(--accent);
+    box-shadow:
+      0 0 0 1px var(--accent-soft),
+      0 0 24px -2px var(--accent-glow);
+    opacity: 0.4;
+  }
+
+  .cd-tile-chrome {
+    position: absolute;
+    z-index: 3;
+    top: 0;
+    right: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    background: linear-gradient(180deg, var(--cd-chrome-overlay), transparent);
+    opacity: 0;
+    transition: opacity var(--cd-t-fast);
+  }
+
+  .cd-handle {
+    padding: 4px;
+    border: none;
+    background: transparent;
+    color: var(--cd-chrome-fg);
+    cursor: grab;
+    font-size: 12px;
+
+    &:active {
+      color: var(--accent);
+      cursor: grabbing;
+    }
+  }
+
+  .cd-tile.shuffled .cd-handle {
+    color: var(--cd-chrome-fg-muted);
+    cursor: not-allowed;
+  }
+
+  .cd-tile-actions {
+    display: flex;
+    gap: 4px;
+  }
+
+  .cd-tile-actions a,
+  .cd-tile-actions button {
+    display: grid;
+    width: 22px;
+    height: 22px;
+    border: 1px solid var(--cd-chrome-line);
+    border-radius: 4px;
+    background: var(--cd-chrome-pill);
+    color: var(--cd-chrome-fg-muted);
+    cursor: pointer;
+    font-size: 9px;
+    place-items: center;
+    text-decoration: none;
+    transition: all var(--cd-t-fast);
+
+    &:hover {
+      border-color: rgb(255 255 255 / 24%);
+      color: var(--cd-chrome-fg);
+    }
+  }
+
+  .cd-tile-actions .cd-action-remove:hover {
+    border-color: color-mix(in oklch, var(--danger), transparent 70%);
+    color: var(--danger);
+  }
+
+  .cd-thumb {
+    position: relative;
+    overflow: hidden;
+    border-bottom: 1px solid var(--line-soft);
+    aspect-ratio: 4 / 3;
+    background: var(--bg-1);
+    cursor: pointer;
+
+    img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 1s, filter 1s;
+    }
+  }
+
+  .cd-tile:hover .cd-thumb img {
+    filter:
+      drop-shadow(0.12rem 0.12rem 0.62rem color-mix(in oklch, var(--accent), transparent 75%))
+      drop-shadow(-0.12rem -0.12rem 0.62rem color-mix(in oklch, var(--accent), transparent 75%));
+    transform: scale(1.1);
+  }
+
+  .cd-thumb-bookmark {
+    display: grid;
+    background:
+      radial-gradient(
+        circle at 50% 40%,
+        color-mix(in oklch, var(--accent-bookmark), transparent 70%) 0%,
+        transparent 60%
+      ),
+      var(--bg-1);
+    color: var(--accent-bookmark);
+    font-size: 32px;
+    place-items: center;
+  }
+
+  .cd-meta {
+    display: flex;
+    flex-direction: column;
+    padding: 10px 12px 12px;
+    gap: 6px;
+  }
+
+  .cd-meta-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .cd-name {
+    display: -webkit-box;
+    overflow: hidden;
+    flex: 1;
+    -webkit-box-orient: vertical;
+    color: var(--fg-1);
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 500;
+    -webkit-line-clamp: 2;
+    line-height: 1.35;
+
+    a {
+      color: inherit;
+      text-decoration: none;
+
+      &:hover {
+        color: var(--fg-0);
+        text-decoration: underline;
+      }
+    }
+  }
+
+  .cd-name.empty {
+    color: var(--fg-4);
+    font-style: italic;
+  }
+
+  .cd-type-icon {
+    display: grid;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    border-radius: 3px;
+    color: var(--fg-4);
+    font-size: 9px;
+    place-items: center;
+  }
+
+  .cd-tile[data-type="bookmark"] .cd-type-icon {
+    color: var(--accent-bookmark);
+  }
+
+  .cd-note {
+    padding-left: 8px;
+    border-left: 2px solid color-mix(in oklch, var(--accent), transparent 60%);
+    color: var(--fg-3);
+    font-size: 11px;
+    font-style: italic;
+    line-height: 1.4;
+    white-space: pre-wrap;
+  }
+
+  .cd-mini-tags {
+    display: flex;
+    flex-wrap: wrap;
+    margin-top: 2px;
+    gap: 4px;
+  }
+
+  .cd-mini-tag {
+    border: none;
+    background: transparent;
+    color: var(--fg-3);
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.02em;
+    line-height: 1;
+
+    &::before {
+      content: "#";
+      opacity: 0.5;
+    }
+
+    &:hover {
+      color: var(--fg-1);
+    }
+  }
+
+  // ===========================================================================
+  // Empty / loading states
+  // ===========================================================================
+  .cd-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 80px 20px;
+    color: var(--fg-3);
+    font-size: 14px;
+    gap: 16px;
+    text-align: center;
+
+    a {
+      color: var(--accent-bookmark);
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+
+  .cd-skeleton {
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--bg-2);
+    opacity: 0.6;
+  }
+
+  .cd-skeleton-thumb {
+    aspect-ratio: 4 / 3;
+    background: var(--bg-3);
+  }
+
+  .cd-skeleton-meta {
+    display: flex;
+    flex-direction: column;
+    padding: 10px 12px 12px;
+    gap: 6px;
+  }
+
+  .cd-skeleton-line {
+    height: 10px;
+    border-radius: 3px;
+    background: var(--bg-3);
+
+    &.short {
+      width: 60%;
+    }
+  }
+
+  // Sentinel sits below grid; no visible style needed
+  .cd-sentinel {
+    height: 1px;
+    grid-column: 1 / -1;
+  }
+}
+
+// Refined-style breadcrumb used by the collection detail page. Lives at root
+// scope so the Django template's {% block nav %} can reuse it without sitting
+// inside the React app's .cd-curate root.
+.cd-crumbs {
+  display: flex;
+  align-items: center;
+  color: var(--fg-3);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  gap: 6px;
+
+  a {
+    color: var(--accent-bookmark);
+    text-decoration: none;
+
+    &:hover {
+      color: var(--fg-1);
+    }
+  }
+
+  .sep {
+    color: var(--fg-4);
+  }
+
+  .leaf {
+    color: var(--fg-1);
+  }
+}
+
+// Segmented control used inside refined-modal forms (e.g. SlideShowModal mode
+// switch). Lives outside .cd-curate so the modal — which is portaled to
+// document.body — can use it.
+.cd-segmented {
+  display: inline-flex;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg-1);
+  gap: 4px;
+
+  .refined-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 6px 14px;
+    font-size: 12px;
+  }
+}

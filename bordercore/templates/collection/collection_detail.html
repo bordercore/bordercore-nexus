@@ -4,14 +4,11 @@
 {% block title %}{{ title }}{% endblock %}
 
 {% block nav %}
-<div class="d-flex mb-3">
-    <div class="me-auto align-self-center">
-        <ul class="breadcrumb mb-0 pt-0 pb-0">
-            <li class="breadcrumb-item"><a href="{% url 'collection:list' %}">Collection List</a></li>
-            <li class="breadcrumb-item active">{{ collection.name|default:"Anonymous collection" }}</li>
-        </ul>
-    </div>
-</div>
+<nav class="cd-crumbs mb-3" aria-label="Breadcrumb">
+    <a href="{% url 'collection:list' %}">collections</a>
+    <span class="sep">/</span>
+    <span class="leaf">{{ collection.name|default:"Anonymous collection" }}</span>
+</nav>
 {% endblock %}
 
 {% block javascript_bundles %}
