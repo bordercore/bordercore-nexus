@@ -1,7 +1,7 @@
 """Thumbnail creation utilities.
 
 This module provides functions for creating thumbnails from various file types,
-including images, PDFs, and videos. Thumbnails are created at 128x128 pixels
+including images, PDFs, and videos. Thumbnails are created at 640x640 pixels
 and saved as JPEG or PNG files.
 """
 import logging
@@ -13,7 +13,8 @@ from PIL import Image, ImageDraw, ImageFont
 from .util import is_image, is_pdf, is_text, is_video
 
 # Thumbnail dimensions in pixels (width, height)
-THUMBNAIL_SIZE = (128, 128)
+THUMBNAIL_SIZE = (640, 640)
+JPEG_QUALITY = 85
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -46,8 +47,8 @@ def create_thumbnail(infile: str, output_base: str, page_number: int = 1) -> Non
 def create_thumbnail_from_image(infile: str, output_base: str) -> None:
     """Create a thumbnail from an image file.
 
-    Opens the image, converts it to RGB mode, resizes it to 128x128 pixels,
-    and saves it as a JPEG thumbnail.
+    Opens the image, converts it to RGB mode, resizes it to fit within
+    THUMBNAIL_SIZE (preserving aspect ratio), and saves it as a JPEG thumbnail.
 
     Args:
         infile: Path to the input image file.
@@ -58,7 +59,7 @@ def create_thumbnail_from_image(infile: str, output_base: str) -> None:
         # Convert images to RGB mode to avoid "cannot write mode P as JPEG" errors for PNGs
         im = Image.open(infile).convert("RGB")
         im.thumbnail(THUMBNAIL_SIZE)
-        im.save(f"{output_base}-cover.jpg")
+        im.save(f"{output_base}-cover.jpg", "JPEG", quality=JPEG_QUALITY, optimize=True)
     except IOError as err:
         log.error("Cannot create thumbnail; error=%s", err)
 
@@ -133,8 +134,8 @@ def create_thumbnail_from_video(infile: str, output_base: str) -> None:
 def create_small_cover_image(cover_large: str, output_base: str) -> None:
     """Resize the large cover image to create a small thumbnail.
 
-    Opens the large cover image, resizes it to 128x128 pixels, and saves
-    it as a JPEG thumbnail.
+    Opens the large cover image, resizes it to fit within THUMBNAIL_SIZE
+    (preserving aspect ratio), and saves it as a JPEG thumbnail.
 
     Args:
         cover_large: Path to the large cover image file.
@@ -142,9 +143,9 @@ def create_small_cover_image(cover_large: str, output_base: str) -> None:
             "{output_base}-cover.jpg").
     """
     try:
-        im = Image.open(cover_large)
+        im = Image.open(cover_large).convert("RGB")
         im.thumbnail(THUMBNAIL_SIZE)
-        im.save(f"{output_base}-cover.jpg", "JPEG")
+        im.save(f"{output_base}-cover.jpg", "JPEG", quality=JPEG_QUALITY, optimize=True)
     except IOError as err:
         log.error("Cannot create small thumbnail for %s; error=%s", cover_large, err)
 
@@ -264,8 +265,8 @@ def render_text_thumbnail(title: str, content: str) -> Image.Image:
 def create_bookmark_thumbnail(cover_large: str, out_file: str) -> None:
     """Resize the large cover image to create a small bookmark thumbnail.
 
-    Opens the large cover image, resizes it to 128x128 pixels, and saves
-    it as a PNG thumbnail.
+    Opens the large cover image, resizes it to fit within THUMBNAIL_SIZE
+    (preserving aspect ratio), and saves it as a PNG thumbnail.
 
     Args:
         cover_large: Path to the large cover image file.
@@ -274,6 +275,6 @@ def create_bookmark_thumbnail(cover_large: str, out_file: str) -> None:
     try:
         im = Image.open(cover_large)
         im.thumbnail(THUMBNAIL_SIZE)
-        im.save(out_file, "PNG")
+        im.save(out_file, "PNG", optimize=True)
     except IOError as err:
         log.error("Cannot create thumbnail for %s; error=%s", cover_large, err)
