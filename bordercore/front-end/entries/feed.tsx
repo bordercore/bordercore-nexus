@@ -1,18 +1,15 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-import FeedPage from "../react/feed/FeedPage";
+import TriplePaneFeedPage from "../react/feed/TriplePaneFeedPage";
 import type { Feed } from "../react/feed/types";
 
 const container = document.getElementById("react-root");
 if (container) {
-  // Get URLs from data attributes
-  const feedSortUrl = container.getAttribute("data-feed-sort-url") || "";
   const storeInSessionUrl = container.getAttribute("data-store-in-session-url") || "";
   const editFeedUrl = container.getAttribute("data-edit-feed-url") || "";
   const newFeedUrl = container.getAttribute("data-new-feed-url") || "";
   const feedCheckUrl = container.getAttribute("data-feed-check-url") || "";
 
-  // Parse JSON data attributes
   const feedListJson = container.getAttribute("data-feed-list") || "[]";
   const currentFeedJson = container.getAttribute("data-current-feed") || "null";
 
@@ -31,13 +28,12 @@ if (container) {
     console.error("Error parsing current feed:", e);
   }
 
-  if (feedSortUrl && editFeedUrl && newFeedUrl) {
+  if (editFeedUrl && newFeedUrl) {
     const root = createRoot(container);
     root.render(
-      <FeedPage
+      <TriplePaneFeedPage
         initialFeedList={feedList}
         initialCurrentFeed={currentFeed}
-        feedSortUrl={feedSortUrl}
         storeInSessionUrl={storeInSessionUrl}
         editFeedUrl={editFeedUrl}
         newFeedUrl={newFeedUrl}

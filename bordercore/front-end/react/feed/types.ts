@@ -1,19 +1,26 @@
 export interface FeedItem {
   id: number;
-  link: string;
   title: string;
+  link: string;
+  pubDate: string;
+  readAt: string | null;
+  summary: string;
+  thumbnailUrl: string;
 }
 
 export interface Feed {
   id: number;
   uuid: string;
   name: string;
-  lastCheck: string;
-  lastResponse: string | null;
   homepage: string | null;
   url: string;
+  lastCheck: string | null;
+  lastResponse: string | number | null;
+  lastResponseCode: number | null;
   feedItems: FeedItem[];
 }
+
+export type FeedStatus = "ok" | "warn" | "danger";
 
 export interface FeedEditorData {
   uuid?: string;

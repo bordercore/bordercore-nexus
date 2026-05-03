@@ -2,6 +2,7 @@ import factory
 from faker import Factory as FakerFactory
 
 from django.db.models import signals
+from django.utils import timezone
 
 from accounts.tests.factories import UserFactory
 from feed.models import Feed, FeedItem
@@ -16,7 +17,8 @@ class FeedItemFactory(factory.django.DjangoModelFactory):
         model = FeedItem
 
     title = faker.text()
-    link = faker.url()
+    link = factory.LazyAttribute(lambda _: faker.url())
+    pub_date = factory.LazyFunction(timezone.now)
 
 
 @factory.django.mute_signals(signals.post_save)

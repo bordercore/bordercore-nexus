@@ -20,6 +20,16 @@ urlpatterns = [
         name="check_url"
     ),
     path(
+        route="items/<int:pk>/read/",
+        view=views.mark_item_read,
+        name="mark_item_read"
+    ),
+    path(
+        route="<uuid:feed_uuid>/mark_all_read/",
+        view=views.mark_feed_read,
+        name="mark_feed_read"
+    ),
+    path(
         route="",
         view=views.FeedListView.as_view(),
         name="list"

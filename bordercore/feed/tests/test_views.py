@@ -5,11 +5,12 @@ from urllib.parse import quote
 import pytest
 import requests
 import responses
-from feed.models import Feed
+from feed.models import Feed, UserFeedItemState
 
 from django import urls
 
 from accounts.tests.factories import UserFactory
+from feed.tests.factories import FeedFactory
 
 pytestmark = [pytest.mark.django_db]
 
@@ -132,4 +133,86 @@ def test_update_feed_list(authenticated_client, feed):
     resp = client.post(url)
 
     assert resp.status_code == 200
-    assert resp.json()["updated_count"] == 4
+    # rss.xml has 4 entries but two share a link, so the upsert dedupes
+    # them down to 3 unique items.
+    assert resp.json()["updated_count"] == 3
+
+
+def test_mark_item_read(authenticated_client, feed):
+    """Marking an item as read creates a UserFeedItemState with read_at set."""
+    user, client = authenticated_client()
+    item = feed[0].feeditem_set.first()
+
+    url = urls.reverse("feed:mark_item_read", kwargs={"pk": item.pk})
+    resp = client.post(url)
+
+    assert resp.status_code == 200
+    assert resp.json()["read_at"] is not None
+    state = UserFeedItemState.objects.get(user=user, feed_item=item)
+    assert state.read_at is not None
+
+
+def test_mark_item_read_idempotent(authenticated_client, feed):
+    """Calling mark_item_read twice keeps the original read_at."""
+    user, client = authenticated_client()
+    item = feed[0].feeditem_set.first()
+
+    url = urls.reverse("feed:mark_item_read", kwargs={"pk": item.pk})
+    first = client.post(url).json()["read_at"]
+    second = client.post(url).json()["read_at"]
+
+    assert first == second
+    assert UserFeedItemState.objects.filter(user=user, feed_item=item).count() == 1
+
+
+def test_mark_item_read_other_users_item_404(authenticated_client):
+    """A user cannot mark another user's item as read."""
+    other_user = UserFactory(username="other_user")
+    other_feed = FeedFactory(user=other_user)
+    other_item = other_feed.feeditem_set.first()
+
+    _, client = authenticated_client()
+
+    url = urls.reverse("feed:mark_item_read", kwargs={"pk": other_item.pk})
+    resp = client.post(url)
+
+    assert resp.status_code == 404
+
+
+def test_mark_feed_read(authenticated_client, feed):
+    """mark_all_read marks every item in the feed as read for the user."""
+    user, client = authenticated_client()
+    items = list(feed[0].feeditem_set.all())
+
+    url = urls.reverse("feed:mark_feed_read", kwargs={"feed_uuid": feed[0].uuid})
+    resp = client.post(url)
+
+    assert resp.status_code == 200
+    assert resp.json()["marked"] == len(items)
+    for item in items:
+        assert UserFeedItemState.objects.filter(user=user, feed_item=item, read_at__isnull=False).exists()
+
+
+def test_mark_feed_read_idempotent(authenticated_client, feed):
+    """Calling mark_all_read twice marks 0 the second time."""
+    _, client = authenticated_client()
+
+    url = urls.reverse("feed:mark_feed_read", kwargs={"feed_uuid": feed[0].uuid})
+    first = client.post(url).json()["marked"]
+    second = client.post(url).json()["marked"]
+
+    assert first > 0
+    assert second == 0
+
+
+def test_mark_feed_read_other_users_feed_404(authenticated_client):
+    """A user cannot mark all items in another user's feed."""
+    other_user = UserFactory(username="other_user")
+    other_feed = FeedFactory(user=other_user)
+
+    _, client = authenticated_client()
+
+    url = urls.reverse("feed:mark_feed_read", kwargs={"feed_uuid": other_feed.uuid})
+    resp = client.post(url)
+
+    assert resp.status_code == 404

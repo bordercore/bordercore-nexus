@@ -14,7 +14,7 @@ from urllib.parse import unquote, urlparse
 
 import feedparser
 import requests
-from feed.models import Feed
+from feed.models import Feed, FeedItem, UserFeedItemState
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -23,9 +23,10 @@ from lib.constants import USER_AGENT
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
-from django.db.models import QuerySet
+from django.db.models import Prefetch, QuerySet
 from django.http import HttpRequest
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django.views.generic.list import ListView
 
 from accounts.models import UserFeed
@@ -38,6 +39,10 @@ class FeedItemPayload(TypedDict):
     id: int
     link: str
     title: str
+    pubDate: str
+    readAt: str | None
+    summary: str
+    thumbnailUrl: str
 
 
 class FeedPayload(TypedDict, total=False):
@@ -46,8 +51,9 @@ class FeedPayload(TypedDict, total=False):
     id: int
     uuid: Any
     name: str
-    lastCheck: str
+    lastCheck: str | None
     lastResponse: str | int | None
+    lastResponseCode: int | None
     homepage: str | None
     url: str
     feedItems: list[FeedItemPayload]
@@ -59,29 +65,30 @@ class FeedListView(LoginRequiredMixin, ListView):
     template_name = "feed/index.html"
 
     def get_queryset(self) -> QuerySet[Feed]:
-        """Get the queryset of feeds for the current user.
+        """Get the queryset of feeds for the current user, with per-user read state.
 
         Returns:
-            QuerySet of the user's feeds.
+            QuerySet of the user's feeds, prefetched with their items and the
+            current user's read state for each item (one extra DB round-trip).
         """
         user = cast(User, self.request.user)
+        user_state_qs = UserFeedItemState.objects.filter(user=user)
         return (
             user.userprofile.feeds.all()
             .order_by("userfeed__sort_order")
-            .prefetch_related("feeditem_set")
+            .prefetch_related(
+                "feeditem_set",
+                Prefetch(
+                    "feeditem_set__user_states",
+                    queryset=user_state_qs,
+                    to_attr="prefetched_user_states",
+                ),
+            )
         )
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        """Build template context with serialized feeds and the active feed.
-
-        Args:
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            Dictionary containing context data for the template.
-        """
+        """Build template context with serialized feeds and the active feed."""
         context = super().get_context_data(**kwargs)
-
         context["title"] = "Feed List"
 
         feed_list: list[FeedPayload] = [
@@ -89,14 +96,13 @@ class FeedListView(LoginRequiredMixin, ListView):
                 "id": feed.id,
                 "uuid": feed.uuid,
                 "name": feed.name,
-                "lastCheck": (
-                    feed.last_check.strftime("%b %d, %Y, %I:%M %p") if feed.last_check else "N/A"
-                ),
+                "lastCheck": feed.last_check.isoformat() if feed.last_check else None,
                 "lastResponse": (
                     http.client.responses.get(feed.last_response_code, feed.last_response_code)
                     if feed.last_response_code
                     else None
                 ),
+                "lastResponseCode": feed.last_response_code,
                 "homepage": feed.homepage,
                 "url": feed.url,
                 "feedItems": [
@@ -104,6 +110,10 @@ class FeedListView(LoginRequiredMixin, ListView):
                         "id": item.id,
                         "link": item.link,
                         "title": item.title,
+                        "pubDate": item.pub_date.isoformat(),
+                        "readAt": _read_at(item),
+                        "summary": item.summary,
+                        "thumbnailUrl": item.thumbnail_url,
                     }
                     for item in feed.feeditem_set.all()
                 ],
@@ -120,6 +130,15 @@ class FeedListView(LoginRequiredMixin, ListView):
         context["current_feed"] = json.dumps(current_feed, default=str) if current_feed else "null"
 
         return context
+
+
+def _read_at(item: FeedItem) -> str | None:
+    """Return the current user's read_at ISO timestamp for an item, or None."""
+    states = getattr(item, "prefetched_user_states", [])
+    if not states:
+        return None
+    state = states[0]
+    return state.read_at.isoformat() if state.read_at else None
 
 
 @api_view(["POST"])
@@ -221,3 +240,75 @@ def check_url(request: HttpRequest, url: str) -> Response:
         "status_code": r.status_code,
         "entry_count": len(d.entries),
     })
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def mark_item_read(request: HttpRequest, pk: int) -> Response:
+    """Mark a single feed item as read for the current user.
+
+    Idempotent: calling twice returns the timestamp of the first call.
+
+    Args:
+        request: The HTTP request object.
+        pk: The primary key of the FeedItem to mark.
+
+    Returns:
+        JSON response with the read_at timestamp.
+    """
+    user = cast(User, request.user)
+    item = get_object_or_404(FeedItem, pk=pk, feed__user=user)
+
+    state, created = UserFeedItemState.objects.get_or_create(
+        user=user,
+        feed_item=item,
+        defaults={"read_at": timezone.now()},
+    )
+    if not created and state.read_at is None:
+        state.read_at = timezone.now()
+        state.save(update_fields=["read_at", "modified"])
+
+    return Response({"read_at": state.read_at.isoformat() if state.read_at else None})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def mark_feed_read(request: HttpRequest, feed_uuid: str) -> Response:
+    """Mark every item in a feed as read for the current user.
+
+    Idempotent. Creates UserFeedItemState rows for items that don't have
+    one yet; updates existing rows where ``read_at`` is null.
+
+    Args:
+        request: The HTTP request object.
+        feed_uuid: The UUID of the feed.
+
+    Returns:
+        JSON response with the count of items newly marked.
+    """
+    user = cast(User, request.user)
+    feed = get_object_or_404(Feed, uuid=feed_uuid, user=user)
+
+    now = timezone.now()
+    items = list(feed.feeditem_set.all().only("id"))
+    if not items:
+        return Response({"marked": 0})
+
+    existing = {
+        s.feed_item_id: s
+        for s in UserFeedItemState.objects.filter(user=user, feed_item__in=items)
+    }
+
+    to_create = [
+        UserFeedItemState(user=user, feed_item_id=item.id, read_at=now)
+        for item in items
+        if item.id not in existing
+    ]
+    UserFeedItemState.objects.bulk_create(to_create, batch_size=500)
+
+    to_update = [s for s in existing.values() if s.read_at is None]
+    for s in to_update:
+        s.read_at = now
+    UserFeedItemState.objects.bulk_update(to_update, ["read_at", "modified"], batch_size=500)
+
+    return Response({"marked": len(to_create) + len(to_update)})

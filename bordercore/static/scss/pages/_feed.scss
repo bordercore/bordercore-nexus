@@ -1,37 +1,555 @@
 // =============================================================================
-// PAGES: FEED
+// PAGES: FEED — Triple-pane reader
 // =============================================================================
-// Feed list and feed item styles
+// Recreates design_handoff_feeds_triplepane/mock/directions.css scoped to
+// .tp-feed-page. Tokens come from the refined-topbar :root block; a few
+// theme-mapped aliases are declared on the page container.
 
-.feed-page .card {
-  background: linear-gradient(to right, var(--bg-1), var(--bg-2));
+// stylelint-disable selector-class-pattern -- BEM-style modifiers (.foo--bar)
+// stylelint-disable no-descending-specificity
+
+.tp-feed-page {
+  // Locally alias theme tokens so theme switching cascades naturally.
+  --bc-ok: var(--ok);
+  --bc-warn: var(--warn);
+  --bc-radius-lg: var(--radius-lg);
+
+  display: grid;
+  height: calc(100vh - 80px);
+  background: var(--bc-bg-0);
+  color: var(--bc-fg-1);
+  font-family: var(--bc-font-sans);
+  grid-template-columns: 240px 380px 1fr;
 }
 
-.feed-item {
-  border-radius: var(--radius);
+// ---- shared bits -----------------------------------------------------------
+.bc-label {
+  color: var(--bc-fg-3);
+  font-family: var(--bc-font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
 
-  &.selected {
-    background-color: color-mix(in oklch, var(--accent), transparent 82%);
+.bc-meta {
+  margin: 0;
+  color: var(--bc-fg-4);
+  font-family: var(--bc-font-mono);
+  font-size: 11px;
+}
+
+.btn-icon {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--bc-radius-sm);
+  background: transparent;
+  color: var(--bc-fg-3);
+  cursor: pointer;
+  transition: background var(--bc-t-fast) var(--bc-ease-out),
+              color var(--bc-t-fast) var(--bc-ease-out),
+              border-color var(--bc-t-fast) var(--bc-ease-out);
+
+  &:hover {
+    background: var(--bc-bg-2);
+    color: var(--bc-fg-1);
   }
 
-  a {
+  &:focus-visible {
+    border-color: var(--bc-accent);
+    box-shadow: 0 0 0 2px rgb(179 107 255 / 35%);
+    outline: none;
+  }
+
+  &.btn-icon--ok {
+    color: var(--bc-ok);
+  }
+
+  &.btn-icon--disabled,
+  &:disabled {
+    color: var(--bc-fg-4);
+    cursor: not-allowed;
+  }
+}
+
+// ---- favicon (letter-tile) -------------------------------------------------
+.tp-favicon {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--bc-radius-sm);
+  color: rgb(255 255 255 / 90%);
+  font-family: var(--bc-font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.tp-favicon--xs {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  font-size: 7px;
+}
+
+.tp-favicon--lg {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+// 24 hue buckets — see feed/utils/favicon.ts
+@for $i from 0 through 23 {
+  $hue: $i * 15;
+
+  .tp-favicon--hue-#{$i} {
+    background:
+      linear-gradient(135deg, hsl($hue, 70%, 55%), hsl($hue + 30, 70%, 40%));
+  }
+}
+
+// ---- status dot ------------------------------------------------------------
+.tp-status-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  margin-left: 4px;
+}
+
+.tp-status-dot--ok {
+  background: var(--bc-ok);
+  box-shadow: 0 0 6px rgb(63 210 156 / 60%);
+}
+
+.tp-status-dot--warn {
+  background: var(--bc-warn);
+  box-shadow: 0 0 6px rgb(240 184 64 / 55%);
+}
+
+.tp-status-dot--danger {
+  background: var(--bc-danger);
+  box-shadow: 0 0 6px rgb(255 85 119 / 55%);
+}
+
+// ---- column 1: feeds sidebar ----------------------------------------------
+.tp-folders {
+  display: flex;
+  overflow: hidden auto;
+  flex-direction: column;
+  padding: 12px 8px;
+  border-right: 1px solid var(--bc-border-1);
+  background: rgb(11 13 20 / 50%);
+}
+
+.tp-folders-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 6px 12px;
+}
+
+.tp-feed-list {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  margin: 0;
+  gap: 2px;
+  list-style: none;
+}
+
+.tp-feed {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  padding: 5px 8px;
+  border: 1px solid transparent;
+  border-radius: var(--bc-radius-sm);
+  background: transparent;
+  color: var(--bc-fg-2);
+  cursor: pointer;
+  font-family: var(--bc-font-sans);
+  font-size: 13px;
+  gap: 8px;
+  transition: background var(--bc-t-fast) var(--bc-ease-out),
+              color var(--bc-t-fast) var(--bc-ease-out),
+              border-color var(--bc-t-fast) var(--bc-ease-out);
+
+  &:hover {
+    background: var(--bc-bg-2);
+    color: var(--bc-fg-1);
+  }
+
+  &.tp-feed--active {
+    border-color: rgb(179 107 255 / 30%);
+    background: rgb(179 107 255 / 10%);
+    color: var(--bc-fg-1);
+  }
+
+  &:focus-visible {
+    box-shadow: 0 0 0 2px rgb(179 107 255 / 35%);
+    outline: none;
+  }
+}
+
+.tp-feed-name {
+  overflow: hidden;
+  min-width: 0;
+  flex: 1 1 auto;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tp-feed-unread {
+  flex-shrink: 0;
+  color: var(--bc-fg-4);
+  font-family: var(--bc-font-mono);
+  font-size: 11px;
+}
+
+// ---- column 2: items list -------------------------------------------------
+.tp-items {
+  display: flex;
+  overflow: hidden;
+  flex-direction: column;
+  border-right: 1px solid var(--bc-border-1);
+  background: rgb(7 7 12 / 50%);
+}
+
+.tp-items-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--bc-hairline);
+}
+
+.tp-items-head-info {
+  min-width: 0;
+}
+
+.tp-items-head-title {
+  overflow: hidden;
+  margin: 0 0 4px;
+  font-family: var(--bc-font-display);
+  font-size: 16px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tp-items-head-actions {
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 4px;
+}
+
+.tp-items-empty,
+.tp-empty {
+  padding: 32px 18px;
+  color: var(--bc-fg-4);
+  font-family: var(--bc-font-sans);
+  font-size: 13px;
+  text-align: center;
+}
+
+.tp-item-list {
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  margin: 0;
+  gap: 2px;
+  list-style: none;
+  overflow-y: auto;
+}
+
+.tp-item {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--bc-fg-3);
+  cursor: pointer;
+  font-family: var(--bc-font-sans);
+  gap: 6px;
+  text-align: left;
+  transition: background var(--bc-t-fast) var(--bc-ease-out),
+              color var(--bc-t-fast) var(--bc-ease-out),
+              border-color var(--bc-t-fast) var(--bc-ease-out),
+              box-shadow var(--bc-t-fast) var(--bc-ease-out);
+
+  &:hover {
+    border-color: var(--bc-border-1);
+    background: var(--bc-bg-2);
+  }
+
+  &.tp-item--active {
+    border-color: rgb(179 107 255 / 30%);
+    background: rgb(179 107 255 / 8%);
+    box-shadow: 0 0 14px -4px rgb(179 107 255 / 40%);
+  }
+
+  &.tp-item--unread .tp-item-title {
+    color: var(--bc-fg-1);
+  }
+
+  &:focus-visible {
+    box-shadow: 0 0 0 2px rgb(179 107 255 / 35%);
+    outline: none;
+  }
+}
+
+.tp-item-meta {
+  display: inline-flex;
+  align-items: center;
+  color: var(--bc-fg-4);
+  font-family: var(--bc-font-mono);
+  font-size: 11px;
+  gap: 8px;
+}
+
+.tp-item-source {
+  overflow: hidden;
+  flex: 1 1 auto;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tp-item-time {
+  flex-shrink: 0;
+}
+
+.tp-item-title {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  color: var(--bc-fg-3);
+  font-size: 13px;
+  font-weight: 500;
+  -webkit-line-clamp: 2;
+  line-height: 1.35;
+}
+
+.tp-bullet {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  border: 1px solid var(--bc-fg-4);
+  border-radius: 999px;
+
+  &.tp-bullet--unread {
+    border-color: var(--bc-accent);
+    background: var(--bc-accent);
+    box-shadow: 0 0 8px rgb(179 107 255 / 70%);
+  }
+}
+
+// ---- column 3: reader -----------------------------------------------------
+.tp-reader {
+  padding: 32px 40px 60px;
+  overflow-y: auto;
+}
+
+.tp-reader-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  gap: 16px;
+}
+
+.tp-reader-head-source {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+}
+
+.tp-reader-head-meta {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tp-reader-head-name {
+  color: var(--bc-fg-1);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.tp-reader-head-detail {
+  display: inline-flex;
+  color: var(--bc-fg-4);
+  font-family: var(--bc-font-mono);
+  font-size: 11px;
+  gap: 8px;
+}
+
+.tp-reader-head-actions {
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 4px;
+}
+
+.tp-reader-title {
+  margin: 0 0 12px;
+  color: var(--bc-fg-1);
+  font-family: var(--bc-font-display);
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  text-wrap: pretty;
+}
+
+.tp-reader-link {
+  display: block;
+  color: var(--bc-accent-4);
+  font-family: var(--bc-font-mono);
+  font-size: 12px;
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.tp-reader-thumb {
+  display: block;
+  overflow: hidden;
+  border: 1px solid var(--bc-border-1);
+  border-radius: var(--bc-radius-lg, 14px);
+  margin: 16px 0;
+  background: var(--bc-bg-2);
+  transition: border-color var(--bc-t-fast) var(--bc-ease-out),
+              box-shadow var(--bc-t-fast) var(--bc-ease-out);
+
+  img {
     display: block;
-    overflow: hidden;
-    min-width: 0;
-    flex: 1 1 auto;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    width: 100%;
+    max-height: 420px;
+    object-fit: cover;
+  }
+
+  &:hover {
+    border-color: rgb(179 107 255 / 30%);
+    box-shadow: 0 0 14px -4px rgb(179 107 255 / 35%);
   }
 }
 
-.feed-items-list li {
-  padding-left: 0.5rem;
-  border-radius: var(--radius);
+.tp-reader-summary {
+  margin: 28px 0;
+  color: var(--bc-fg-2);
+  font-family: var(--bc-font-sans);
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
 }
 
-// Inline status row beneath the URL field in the refined feed editor modal.
-// Mirrors the eyebrow's mono-uppercase typography so the verdict reads as
-// metadata about the field above, not a fresh sentence.
+.tp-reader-placeholder {
+  position: relative;
+  display: flex;
+  height: 220px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--bc-border-1);
+  border-radius: var(--bc-radius-lg, 14px);
+  margin: 28px 0;
+  background:
+    linear-gradient(180deg, transparent, rgb(7 7 12 / 70%)),
+    repeating-linear-gradient(45deg, var(--bc-bg-2) 0 8px, var(--bc-bg-3) 8px 16px);
+  gap: 6px;
+}
+
+.tp-reader-placeholder--empty {
+  height: 280px;
+  margin: 0;
+}
+
+.tp-reader-placeholder-icon {
+  margin-bottom: 8px;
+  color: var(--bc-fg-3);
+  font-size: 32px;
+}
+
+.tp-reader-placeholder-title {
+  margin: 0;
+  color: var(--bc-fg-2);
+  font-family: var(--bc-font-sans);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.tp-reader-placeholder-note {
+  margin: 0;
+  color: var(--bc-fg-4);
+  font-family: var(--bc-font-mono);
+  font-size: 11px;
+}
+
+.tp-reader-empty {
+  padding-top: 60px;
+}
+
+.tp-reader-meta {
+  padding-top: 20px;
+  border-top: 1px solid var(--bc-hairline);
+  margin-top: 16px;
+}
+
+.tp-related-list {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  margin: 12px 0 0;
+  gap: 8px;
+  list-style: none;
+}
+
+.tp-related-row {
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  gap: 10px;
+}
+
+.tp-related-title {
+  overflow: hidden;
+  min-width: 0;
+  flex: 1 1 auto;
+  color: var(--bc-fg-2);
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &:hover {
+    color: var(--bc-fg-1);
+  }
+}
+
+.tp-related-time {
+  flex-shrink: 0;
+  color: var(--bc-fg-4);
+  font-family: var(--bc-font-mono);
+  font-size: 11px;
+}
+
+// ---- preserved: feed editor modal status row -------------------------------
+// Used by FeedEditorModal.tsx — kept verbatim from the previous design.
 .feed-status {
   display: flex;
   align-items: center;

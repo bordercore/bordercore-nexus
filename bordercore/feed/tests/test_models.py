@@ -4,7 +4,10 @@ from pathlib import Path
 import pytest
 import responses
 
-from feed.models import Feed, FeedItem
+from django.db import IntegrityError
+
+from feed.models import Feed, FeedItem, UserFeedItemState
+from feed.tests.factories import FeedItemFactory
 
 pytestmark = [pytest.mark.django_db]
 
@@ -45,8 +48,16 @@ def test_get_first_feed(authenticated_client, feed):
 
 @responses.activate
 def test_update(authenticated_client, feed):
-    """Test that update fetches, parses, and stores feed items correctly."""
+    """Test that update fetches, parses, and upserts feed items correctly.
+
+    The fixture rss.xml has 4 entries; entries 3 and 4 share a link, so the
+    upsert collapses them to a single row (the second occurrence wins),
+    leaving 3 unique items. The factory-created seed items are wiped first
+    via filter().delete() since they have unrelated links.
+    """
     user, _ = authenticated_client()
+
+    feed[0].feeditem_set.all().delete()
 
     with open(Path(__file__).parent / "resources/rss.xml") as f:
         xml = f.read()
@@ -59,8 +70,66 @@ def test_update(authenticated_client, feed):
 
     items = FeedItem.objects.filter(feed=feed[0]).order_by("id")
 
-    assert items.count() == 4
-
+    assert items.count() == 3
+    # In-Python dedup in Feed.update() keeps the first occurrence of a
+    # given (feed, link) pair; entry 3's "Bad Title" wins over entry 4.
     assert items[2].title == "Bad Title"
 
-    assert items[3].title == "No Title"
+    # Entry 1 (the awards thread) has rich HTML content; summary is stripped to text.
+    awards_item = items[0]
+    assert "Best of 2020" in awards_item.summary
+    assert "<a" not in awards_item.summary  # HTML tags stripped
+    assert "  " not in awards_item.summary  # whitespace collapsed
+
+    # Entry 2 has a media:thumbnail; entry 1 does not.
+    assert items[1].thumbnail_url.startswith("https://b.thumbs.redditmedia.com/")
+    assert awards_item.thumbnail_url == ""
+
+
+@responses.activate
+def test_update_preserves_existing_items_and_user_state(authenticated_client, feed):
+    """Upsert preserves item identity (and per-user read state) across refreshes."""
+    user, _ = authenticated_client()
+
+    feed[0].feeditem_set.all().delete()
+
+    with open(Path(__file__).parent / "resources/rss.xml") as f:
+        xml = f.read()
+
+    responses.add(responses.GET, feed[0].url, body=xml)
+    responses.add(responses.GET, feed[0].url, body=xml)
+
+    feed[0].update()
+    first_pass_ids = list(FeedItem.objects.filter(feed=feed[0]).order_by("id").values_list("id", flat=True))
+
+    # Mark one item as read for the user.
+    item = FeedItem.objects.get(pk=first_pass_ids[0])
+    UserFeedItemState.objects.create(user=user, feed_item=item)
+
+    # Re-running update should NOT recreate the item; the read state survives.
+    feed[0].update()
+    second_pass_ids = list(FeedItem.objects.filter(feed=feed[0]).order_by("id").values_list("id", flat=True))
+
+    assert first_pass_ids == second_pass_ids
+    assert UserFeedItemState.objects.filter(user=user, feed_item_id=first_pass_ids[0]).exists()
+
+
+def test_feeditem_unique_together(authenticated_client, feed):
+    """A second FeedItem with the same (feed, link) raises IntegrityError."""
+    authenticated_client()
+
+    item = feed[0].feeditem_set.first()
+
+    with pytest.raises(IntegrityError):
+        FeedItemFactory(feed=feed[0], link=item.link)
+
+
+def test_user_feed_item_state_unique(authenticated_client, feed):
+    """A user can only have one state row per feed item."""
+    user, _ = authenticated_client()
+    item = feed[0].feeditem_set.first()
+
+    UserFeedItemState.objects.create(user=user, feed_item=item)
+
+    with pytest.raises(IntegrityError):
+        UserFeedItemState.objects.create(user=user, feed_item=item)
