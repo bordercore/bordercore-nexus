@@ -46,17 +46,8 @@ export function ActionCluster({
 
       <DensitySlider density={density} count={filteredCount} onChange={onDensityChange} />
 
-      <button type="button" className="cl-iconbtn" aria-label="Shuffle order">
-        ⤨
-      </button>
-      <button type="button" className="cl-iconbtn" aria-label="Edit">
-        ✎
-      </button>
       <button type="button" className="cl-iconbtn is-primary" onClick={onCreateClick}>
         + new
-      </button>
-      <button type="button" className="cl-iconbtn" aria-label="More">
-        ⋯
       </button>
     </div>
   );

@@ -56,9 +56,7 @@ export function CollectionListPage({ collections, tagCounts, urls }: CollectionL
                 </span>
                 Favorites
               </h1>
-              <div className="cl-pagehead-meta">
-                {filtered.length} collections · density · {density}
-              </div>
+              <div className="cl-pagehead-meta">{filtered.length} collections</div>
             </div>
 
             <ActionCluster
@@ -78,7 +76,7 @@ export function CollectionListPage({ collections, tagCounts, urls }: CollectionL
               {filtered.map(c => {
                 if (density === "compact") return <CompactRow key={c.uuid} collection={c} />;
                 if (density === "cinema") return <CinemaCard key={c.uuid} collection={c} />;
-                return <GridCard key={c.uuid} collection={c} mosaic={density === "mosaic"} />;
+                return <GridCard key={c.uuid} collection={c} />;
               })}
             </div>
           )}

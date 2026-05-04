@@ -9,8 +9,8 @@ import {
 } from "./density";
 
 describe("density stops", () => {
-  it("has four ordered stops", () => {
-    expect(DENSITY_STOPS).toEqual(["compact", "grid", "mosaic", "cinema"]);
+  it("has three ordered stops", () => {
+    expect(DENSITY_STOPS).toEqual(["compact", "grid", "cinema"]);
   });
 });
 

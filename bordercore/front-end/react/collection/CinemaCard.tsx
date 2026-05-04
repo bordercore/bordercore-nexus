@@ -12,10 +12,10 @@ export function CinemaCard({ collection }: CinemaCardProps) {
     <a href={collection.url} className="cl-card-cinema">
       <div className="cl-cinema-cover">
         <CoverMosaic tiles={collection.cover_tiles} alt={collection.name} />
-      </div>
-      <div className="cl-cinema-overlay">
-        <h3 className="cl-cinema-title">{collection.name}</h3>
-        {collection.description && <p className="cl-cinema-desc">{collection.description}</p>}
+        <div className="cl-cinema-overlay">
+          <h3 className="cl-cinema-title">{collection.name}</h3>
+          {collection.description && <p className="cl-cinema-desc">{collection.description}</p>}
+        </div>
       </div>
       <div className="cl-cinema-foot">
         <div className="cl-cinema-meta">

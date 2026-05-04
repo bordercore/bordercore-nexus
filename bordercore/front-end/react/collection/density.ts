@@ -1,4 +1,4 @@
-export const DENSITY_STOPS = ["compact", "grid", "mosaic", "cinema"] as const;
+export const DENSITY_STOPS = ["compact", "grid", "cinema"] as const;
 
 export type Density = (typeof DENSITY_STOPS)[number];
 
