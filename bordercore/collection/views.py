@@ -325,7 +325,13 @@ def get_images(request: HttpRequest, collection_uuid: str) -> Response:
         uuid and filename fields.
     """
     user = cast(User, request.user)
-    blob_list = get_user_object_or_404(user, Collection, uuid=collection_uuid).get_recent_images()
+    if user.username == "service_user":
+        # Called by the create_collection_thumbnail Lambda, which runs against
+        # collections regardless of owner. Mirrors the BlobViewSet bypass.
+        collection = get_object_or_404(Collection, uuid=collection_uuid)
+    else:
+        collection = get_user_object_or_404(user, Collection, uuid=collection_uuid)
+    blob_list = collection.get_recent_images()
 
     return Response(
         [
