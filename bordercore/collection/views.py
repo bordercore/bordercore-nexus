@@ -6,6 +6,8 @@ and related operations in the collection system.
 from io import BytesIO
 from typing import Any, cast
 
+import humanize
+
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -44,22 +46,13 @@ from tag.models import Tag
 class CollectionListView(LoginRequiredMixin, FormRequestMixin, FormMixin, ListView):
     """View for displaying the collection list page.
 
-    Shows favorite collections for the current user with their blob counts
-    and cover images. Supports filtering by collection name.
+    Shows favorite collections for the current user with their blob counts,
+    tags, recent images, and metadata. Supports filtering by collection name.
     """
 
     form_class = CollectionForm
 
     def get_queryset(self) -> QuerySet[Collection]:
-        """Get the queryset of favorite collections for the current user.
-
-        Filters collections to only show favorites, optionally filters by
-        name if a query parameter is provided, and annotates with blob counts.
-
-        Returns:
-            QuerySet of Collection objects filtered to favorites, ordered by
-            modification date (newest first).
-        """
         user = cast(User, self.request.user)
         query = Collection.objects.filter(
             user=user,
@@ -70,39 +63,53 @@ class CollectionListView(LoginRequiredMixin, FormRequestMixin, FormMixin, ListVi
             query = query.filter(name__icontains=self.request.GET["query"])
 
         query = query.annotate(num_blobs=Count("collectionobject"))
-
+        query = query.prefetch_related("tags", "collectionobject_set__blob")
         query = query.order_by("-modified")
 
         return query
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        """Get context data for the collection list view.
-
-        Args:
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            Context dictionary containing:
-                - collection_list: List of collection dictionaries with uuid,
-                  name, url, num_blobs, and cover_url
-                - cover_url: Base URL for collection cover images
-                - title: Page title
-        """
         context = super().get_context_data(**kwargs)
 
-        context["collection_list"] = [
-            {
+        collection_list = []
+        tag_counts: dict[str, int] = {}
+
+        for c in self.object_list:
+            tag_names = [t.name for t in c.tags.all()]
+            for name in tag_names:
+                tag_counts[name] = tag_counts.get(name, 0) + 1
+
+            collection_list.append({
                 "uuid": str(c.uuid),
                 "name": c.name,
                 "url": reverse("collection:detail", kwargs={"uuid": c.uuid}),
-                "num_blobs": c.num_blobs,
-                "cover_url": c.cover_url,
-            } for c in self.object_list
-        ]
+                "num_objects": c.num_blobs,
+                "description": c.description or "",
+                "tags": tag_names,
+                "modified": humanize.naturaltime(c.modified) if c.modified else "",
+                "is_favorite": c.is_favorite,
+                "cover_tiles": _build_cover_tiles(c),
+            })
+
+        context["collection_list"] = collection_list
+        context["tag_counts"] = tag_counts
         context["cover_url"] = settings.COVER_URL
         context["title"] = "Collection List"
 
         return context
+
+
+def _build_cover_tiles(collection: Collection) -> list[str | None]:
+    """Build a 4-element list of recent-image URLs for a collection.
+
+    Returns up to 4 small-thumbnail blob URLs, right-padded with None.
+    """
+    tiles: list[str | None] = []
+    for image in collection.get_recent_images(limit=4):
+        tiles.append(Blob.get_cover_url_static(image["uuid"], image["file"], size="small"))
+    while len(tiles) < 4:
+        tiles.append(None)
+    return tiles
 
 
 class CollectionDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, FormRequestMixin, FormMixin, DetailView):

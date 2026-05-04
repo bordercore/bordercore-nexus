@@ -23,9 +23,29 @@ def test_collection_list(authenticated_client, collection):
 
     url = urls.reverse("collection:list")
     resp = client.get(url)
-    assert resp.context["title"] == "Collection List"
-    assert len(resp.context_data["collection_list"]) == 2
+
     assert resp.status_code == 200
+    assert resp.context["title"] == "Collection List"
+
+    collection_list = resp.context_data["collection_list"]
+    assert len(collection_list) == 2
+
+    first = collection_list[0]
+    assert "uuid" in first
+    assert "name" in first
+    assert "url" in first
+    assert "num_objects" in first
+    assert "description" in first
+    assert "tags" in first
+    assert "modified" in first
+    assert "is_favorite" in first
+    assert "cover_tiles" in first
+    assert isinstance(first["tags"], list)
+    assert isinstance(first["cover_tiles"], list)
+    assert len(first["cover_tiles"]) == 4
+
+    assert "tag_counts" in resp.context_data
+    assert isinstance(resp.context_data["tag_counts"], dict)
 
 
 def test_collection_detail(authenticated_client, collection):
