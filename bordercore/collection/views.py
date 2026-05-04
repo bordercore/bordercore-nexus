@@ -63,7 +63,7 @@ class CollectionListView(LoginRequiredMixin, FormRequestMixin, FormMixin, ListVi
             query = query.filter(name__icontains=self.request.GET["query"])
 
         query = query.annotate(num_blobs=Count("collectionobject"))
-        query = query.prefetch_related("tags", "collectionobject_set__blob")
+        query = query.prefetch_related("tags")
         query = query.order_by("-modified")
 
         return query
