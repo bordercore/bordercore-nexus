@@ -6,6 +6,7 @@
 {% block javascript_bundles %}
     {{ block.super }}
     {{ collection_list|json_script:"collection-list-data" }}
+    {{ tag_counts|json_script:"tag-counts-data" }}
     {% vite_asset "dist/js/collection-list" %}
 {% endblock %}
 

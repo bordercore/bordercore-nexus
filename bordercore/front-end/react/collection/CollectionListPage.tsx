@@ -1,161 +1,88 @@
-import React, { useState, useRef, useMemo } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faMagnifyingGlass, faTimes, faPlus } from "@fortawesome/free-solid-svg-icons";
-import type { Collection, CollectionListUrls } from "./types";
-import CollectionCard from "./CollectionCard";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import ActionCluster from "./ActionCluster";
+import CinemaCard from "./CinemaCard";
+import CompactRow from "./CompactRow";
 import CreateCollectionModal, { CreateCollectionModalHandle } from "./CreateCollectionModal";
-import DropDownMenu from "../common/DropDownMenu";
+import GridCard from "./GridCard";
+import TagRail from "./TagRail";
+import { filterCollections } from "./filter";
+import { loadDensity, saveDensity, type Density } from "./density";
+import type { Collection, CollectionListUrls, TagCounts } from "./types";
 
 interface CollectionListPageProps {
   collections: Collection[];
+  tagCounts: TagCounts;
   urls: CollectionListUrls;
 }
 
-export function CollectionListPage({ collections, urls }: CollectionListPageProps) {
-  const [filter, setFilter] = useState<string>("");
-  const [showFilterInput, setShowFilterInput] = useState(false);
-  const [filterInputValue, setFilterInputValue] = useState("");
+export function CollectionListPage({ collections, tagCounts, urls }: CollectionListPageProps) {
+  const [density, setDensity] = useState<Density>(() => loadDensity());
+  const [activeTag, setActiveTag] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const createModalRef = useRef<CreateCollectionModalHandle>(null);
 
-  const filteredCollections = useMemo(() => {
-    if (!filter) {
-      return collections;
-    }
-    const regex = new RegExp(`.*${filter}.*`, "i");
-    return collections.filter(c => regex.test(c.name));
-  }, [collections, filter]);
+  useEffect(() => {
+    saveDensity(density);
+  }, [density]);
 
-  const handleCollectionClick = (url: string) => {
-    window.location.href = url;
-  };
+  const filtered = useMemo(
+    () => filterCollections(collections, searchQuery, activeTag),
+    [collections, searchQuery, activeTag]
+  );
 
-  const handleFilterClick = () => {
-    setShowFilterInput(true);
-    setTimeout(() => {
-      const el = document.getElementById("collection-filter-input");
-      el?.focus();
-    }, 100);
-  };
-
-  const handleFilterBlur = () => {
-    setShowFilterInput(false);
-  };
-
-  const handleFilterEnter = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      setShowFilterInput(false);
-      setFilter(filterInputValue);
-    }
-  };
-
-  const handleRemoveFilter = () => {
-    setFilter("");
-    setFilterInputValue("");
-  };
-
-  const handleCreateClick = () => {
-    createModalRef.current?.openModal();
-  };
-
-  const menuLinks = [
-    {
-      id: "new-collection",
-      title: "New Collection",
-      url: "#",
-      icon: "plus" as const,
-      clickHandler: handleCreateClick,
-    },
-  ];
+  const handleCreate = () => createModalRef.current?.openModal();
 
   return (
     <>
-      <div className="row card-grid">
-        <div className="col-lg-12 d-flex align-items-center">
-          <h1 className="ms-3">Favorite Collections</h1>
-          <div className="d-flex align-items-center ms-auto">
-            {showFilterInput && (
-              <div id="collection-filter" className="me-3">
-                <input
-                  id="collection-filter-input"
-                  type="text"
-                  className="form-control"
-                  size={20}
-                  placeholder="Name"
-                  value={filterInputValue}
-                  onChange={e => setFilterInputValue(e.target.value)}
-                  onBlur={handleFilterBlur}
-                  onKeyUp={handleFilterEnter}
-                />
-              </div>
-            )}
+      <div className="cl-shell">
+        <TagRail
+          totalCount={collections.length}
+          tagCounts={tagCounts}
+          activeTag={activeTag}
+          onTagSelect={setActiveTag}
+        />
 
-            {filter && (
-              <div className="tag tag-accent d-flex align-items-center me-3">
-                <div>
-                  Filter: <strong>{filter}</strong>
-                </div>
-                <div>
-                  <a
-                    className="ms-1"
-                    href="#"
-                    onClick={e => {
-                      e.preventDefault();
-                      handleRemoveFilter();
-                    }}
-                  >
-                    <FontAwesomeIcon icon={faTimes} className="text-primary" />
-                  </a>
-                </div>
+        <main className="cl-main">
+          <header className="cl-pagehead">
+            <div>
+              <div className="cl-pagehead-crumbs">
+                <span className="cl-crumb-link">knowledge</span>
+                <span className="cl-crumb-sep">/</span>
+                <span className="cl-crumb-here">collections</span>
               </div>
-            )}
-
-            <div className="ms-2 me-5 cursor-pointer" onClick={handleFilterClick}>
-              <FontAwesomeIcon icon={faMagnifyingGlass} className="glow text-emphasis" />
+              <h1 className="cl-pagehead-title">
+                <span className="cl-fav-star" aria-hidden="true">
+                  ★
+                </span>
+                Favorites
+              </h1>
+              <div className="cl-pagehead-meta">
+                {filtered.length} collections · density · {density}
+              </div>
             </div>
 
-            <DropDownMenu
-              links={menuLinks}
-              dropdownSlot={
-                <ul className="dropdown-menu-list">
-                  <li>
-                    <a
-                      href="#"
-                      className="dropdown-menu-item"
-                      onClick={e => {
-                        e.preventDefault();
-                        handleCreateClick();
-                      }}
-                    >
-                      <span className="dropdown-menu-icon">
-                        <FontAwesomeIcon icon={faPlus} className="text-primary" />
-                      </span>
-                      <span className="dropdown-menu-text">New Collection</span>
-                    </a>
-                  </li>
-                </ul>
-              }
+            <ActionCluster
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              density={density}
+              filteredCount={filtered.length}
+              onDensityChange={setDensity}
+              onCreateClick={handleCreate}
             />
-          </div>
-        </div>
+          </header>
 
-        <div className="col-lg-12">
-          <hr className="collection-list-divider" />
-        </div>
-
-        <div className="card-grid ms-3">
-          <div className="d-flex flex-wrap">
-            {filteredCollections.map(collection => (
-              <CollectionCard
-                key={collection.uuid}
-                collection={collection}
-                onClick={handleCollectionClick}
-              />
-            ))}
-            {collections.length === 0 && (
-              <div className="notice-big px-3">No collections found</div>
-            )}
-          </div>
-        </div>
+          {filtered.length === 0 ? (
+            <div className="cl-empty">No collections match the current filters.</div>
+          ) : (
+            <div className="cl-grid-v2" data-density={density}>
+              {filtered.map(c => {
+                if (density === "compact") return <CompactRow key={c.uuid} collection={c} />;
+                if (density === "cinema") return <CinemaCard key={c.uuid} collection={c} />;
+                return <GridCard key={c.uuid} collection={c} mosaic={density === "mosaic"} />;
+              })}
+            </div>
+          )}
+        </main>
       </div>
 
       <CreateCollectionModal
