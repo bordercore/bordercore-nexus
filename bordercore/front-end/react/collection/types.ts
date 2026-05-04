@@ -58,11 +58,6 @@ export interface CollectionListUrls {
   tagSearch: string;
 }
 
-export interface CollectionListProps {
-  collections: Collection[];
-  urls: CollectionListUrls;
-}
-
 // Collection Detail Page Types
 
 export interface CollectionDetailUrls {

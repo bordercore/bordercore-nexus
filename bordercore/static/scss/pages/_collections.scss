@@ -565,6 +565,10 @@ $tag-colors: (
 
   &.is-mosaic {
     aspect-ratio: auto;
+
+    .cl-card-cover {
+      aspect-ratio: auto;
+    }
   }
 
   &:hover {
