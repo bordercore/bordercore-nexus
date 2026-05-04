@@ -44,7 +44,7 @@ def test_list_ajax_requires_login(client):
 
 
 def test_list_ajax_returns_json_and_only_user_reminders(reminder_client):
-    """GET list-ajax returns 200, JSON with reminders and pagination; only current user's."""
+    """GET list-ajax returns 200, JSON with reminders only for the current user."""
     user, client = reminder_client
     ReminderFactory(user=user, name="Mine")
     other_user = UserFactory(username="other_reminder_user", email="other@example.com")
@@ -54,9 +54,38 @@ def test_list_ajax_returns_json_and_only_user_reminders(reminder_client):
     assert resp.status_code == 200
     data = resp.json()
     assert "reminders" in data
-    assert "pagination" in data
+    assert "pagination" not in data
     assert len(data["reminders"]) == 1
     assert data["reminders"][0]["name"] == "Mine"
+
+
+def test_list_ajax_includes_days_fields(reminder_client):
+    """GET list-ajax returns days_of_week and days_of_month arrays for each reminder."""
+    user, client = reminder_client
+    ReminderFactory(
+        user=user,
+        name="Weekly",
+        schedule_type=Reminder.SCHEDULE_TYPE_WEEKLY,
+        days_of_week=[0, 2, 4],
+    )
+    url = reverse("reminder:list-ajax")
+    resp = client.get(url)
+    assert resp.status_code == 200
+    payload = resp.json()["reminders"][0]
+    assert payload["days_of_week"] == [0, 2, 4]
+    assert payload["days_of_month"] == []
+
+
+def test_list_ajax_returns_all_reminders_unpaginated(reminder_client):
+    """GET list-ajax returns every reminder for the user (no pagination)."""
+    user, client = reminder_client
+    for i in range(25):
+        ReminderFactory(user=user, name=f"Reminder {i}")
+    url = reverse("reminder:list-ajax")
+    resp = client.get(url)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert len(data["reminders"]) == 25
 
 
 def test_detail_requires_login(client):

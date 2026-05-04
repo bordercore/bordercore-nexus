@@ -13,7 +13,6 @@ from rest_framework.views import APIView
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
-from django.core.paginator import Paginator
 from django.forms import BaseModelForm
 from rest_framework.request import Request
 
@@ -334,12 +333,11 @@ class ReminderDeleteView(LoginRequiredMixin, UserScopedQuerysetMixin, DeleteView
 class ReminderListAjaxView(APIView):
     """Serve reminders list as JSON for AJAX requests.
 
-    This view provides reminder data in JSON format, allowing the client
-    to handle rendering. Includes pagination information for client-side
-    pagination controls.
+    This view returns the full set of reminders for the current user. The
+    dashboard renders all groups and the right rail in one shot, so there is
+    no pagination — the response is a flat list ordered by next_trigger_at
+    ascending (then by recency).
     """
-
-    paginate_by = 20
 
     def get(self, request: Request) -> Response:
         """Return reminder data as JSON.
@@ -348,16 +346,12 @@ class ReminderListAjaxView(APIView):
             request: The HTTP request object.
 
         Returns:
-            Response containing reminders list and pagination metadata.
+            Response containing the full reminders list for the user.
         """
         user = cast(User, request.user)
         queryset = Reminder.objects.filter(user=user).order_by(
             "next_trigger_at", "-created"
         )
-
-        paginator = Paginator(queryset, self.paginate_by)
-        page_number = request.query_params.get("page", 1)
-        page_obj = paginator.get_page(page_number)
 
         reminders_data = [
             {
@@ -368,6 +362,8 @@ class ReminderListAjaxView(APIView):
                 # New schedule fields
                 "schedule_type": reminder.schedule_type,
                 "schedule_description": reminder.get_schedule_description(),
+                "days_of_week": reminder.days_of_week or [],
+                "days_of_month": reminder.days_of_month or [],
                 # Legacy fields (for backward compatibility)
                 "interval_value": reminder.interval_value,
                 "interval_unit_display": reminder.get_interval_unit_display().lower(),
@@ -378,19 +374,9 @@ class ReminderListAjaxView(APIView):
                 "detail_url": reverse("reminder:detail", kwargs={"uuid": reminder.uuid}),
                 "update_url": reverse("reminder:update", kwargs={"uuid": reminder.uuid}),
                 "delete_url": reverse("reminder:delete", kwargs={"uuid": reminder.uuid}),
+                "form_ajax_url": reverse("reminder:form-ajax", kwargs={"uuid": reminder.uuid}),
             }
-            for reminder in page_obj
+            for reminder in queryset
         ]
 
-        return Response({
-            "reminders": reminders_data,
-            "pagination": {
-                "current_page": page_obj.number,
-                "total_pages": page_obj.paginator.num_pages,
-                "total_count": page_obj.paginator.count,
-                "has_previous": page_obj.has_previous(),
-                "has_next": page_obj.has_next(),
-                "previous_page_number": page_obj.previous_page_number() if page_obj.has_previous() else None,
-                "next_page_number": page_obj.next_page_number() if page_obj.has_next() else None,
-            },
-        })
+        return Response({"reminders": reminders_data})
