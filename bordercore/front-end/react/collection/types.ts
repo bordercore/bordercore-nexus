@@ -4,9 +4,15 @@ export interface Collection {
   uuid: string;
   name: string;
   url: string;
-  num_blobs: number;
-  cover_url: string;
+  num_objects: number;
+  description: string;
+  tags: string[];
+  modified: string;
+  is_favorite: boolean;
+  cover_tiles: (string | null)[];
 }
+
+export type TagCounts = Record<string, number>;
 
 export interface CollectionDetail {
   uuid: string;
