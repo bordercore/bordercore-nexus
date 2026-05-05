@@ -42,16 +42,3 @@ export interface SortState {
 }
 
 export type ViewType = "normal" | "compact";
-
-export function getPriorityClass(priority: number): string {
-  switch (priority) {
-    case 1:
-      return "high";
-    case 2:
-      return "medium";
-    case 3:
-      return "low";
-    default:
-      return "low";
-  }
-}

@@ -14,13 +14,9 @@
   --bc-accent-4: color-mix(in oklch, var(--accent), var(--ok) 60%);
   --bc-fg-disabled: color-mix(in oklch, var(--fg-3), transparent 45%);
   --bc-hairline: var(--line-soft);
-  --bc-elev-2: 0 1px 0 0 rgb(255 255 255 / 3%) inset,
-               0 8px 24px -8px rgb(0 0 0 / 55%),
-               0 0 0 1px var(--line-soft);
   --bc-glow-accent-sm: 0 0 0 1px color-mix(in oklch, var(--accent), transparent 72%),
                        0 0 10px -2px color-mix(in oklch, var(--accent), transparent 65%);
   --bc-glow-cyan: 0 0 18px -2px color-mix(in oklch, var(--bc-accent-4), transparent 60%);
-  --bc-radius-lg: var(--radius-lg);
   --bc-t-fast: 120ms;
   --bc-t-slow: 280ms;
   --bc-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
@@ -119,13 +115,7 @@
 
   // ==== Task 16: ActionCard ====
   .drill-card {
-    position: relative;
-    overflow: hidden;
-    padding: 20px 22px;
-    border: 1px solid var(--line-soft);
-    border-radius: var(--bc-radius-lg);
-    background: var(--bg-2);
-    box-shadow: var(--bc-elev-2);
+    @include refined-card;
 
     .card-eyebrow {
       display: flex;

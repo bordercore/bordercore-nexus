@@ -331,6 +331,7 @@
 .bookmark-grid-row {
   display: grid;
   align-items: center;
+  gap: 0 16px;
   grid-template-columns: 30px minmax(0, 5fr) minmax(0, 2fr) minmax(120px, auto) 50px;
 }
 
@@ -487,49 +488,24 @@
     }
   }
 
-  // Card rows — hover recipe mirrors .todo-row
+  // Card rows — shared with .todo-row and .rm-row via @mixin refined-row-card.
   .bookmark-row {
     position: relative;
-    border: 1px solid var(--bookmark-row-border);
-    border-radius: var(--radius-lg);
-    background-color: var(--bookmark-row-bg);
-    transition:
-      border-color 0.18s ease,
-      box-shadow 0.18s ease,
-      background-color 0.15s ease,
-      transform 0.12s ease;
 
-    &:hover {
-      border-color: var(--bookmark-row-hover-border);
-      background-color: var(--bookmark-row-bg);
-      box-shadow: var(--bookmark-row-hover-shadow);
-      transform: translateY(-1px);
-    }
+    @include refined-row-card;
 
     &.selected {
       border-color: var(--bookmark-row-hover-border);
-      background-color: var(--bookmark-row-bg);
       box-shadow: var(--bookmark-row-selected-shadow), 0 0 0 1px var(--accent);
     }
 
     [role="cell"] {
       display: flex;
-      padding: 0.6rem 0.75rem;
+      align-items: center;
     }
 
     .drag-handle-cell {
-      align-items: center;
       justify-content: center;
-    }
-
-    .content-cell,
-    .tags-cell, /* stylelint-disable-line no-descending-specificity */
-    .date-cell {
-      align-items: center;
-    }
-
-    .actions-cell {
-      align-items: center;
     }
   }
 

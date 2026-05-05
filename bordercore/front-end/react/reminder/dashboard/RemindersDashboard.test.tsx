@@ -160,12 +160,12 @@ describe("RemindersDashboard", () => {
     expect(screen.queryByText("Disabled One")).toBeNull();
   });
 
-  it("invokes onNew when the New reminder button is clicked", () => {
+  it("invokes onNew when the New button is clicked", () => {
     const onNew = vi.fn();
     render(
       <RemindersDashboard reminders={[]} onNew={onNew} onEdit={() => {}} onDelete={() => {}} />
     );
-    fireEvent.click(screen.getByRole("button", { name: /new reminder/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^new$/i }));
     expect(onNew).toHaveBeenCalledTimes(1);
   });
 

@@ -9,27 +9,12 @@ interface StatusBadgeProps {
 
 export function StatusBadge({ reminder, now }: StatusBadgeProps) {
   if (!reminder.is_active) {
-    return (
-      <span className="rm-status rm-status-inactive">
-        <span className="rm-status-pip" />
-        inactive
-      </span>
-    );
+    return <span className="refined-badge is-muted">inactive</span>;
   }
   if (isImminent(reminder, now)) {
-    return (
-      <span className="rm-status rm-status-imminent">
-        <span className="rm-status-pip" />
-        imminent
-      </span>
-    );
+    return <span className="refined-badge is-warn is-pulse-urgent">imminent</span>;
   }
-  return (
-    <span className="rm-status rm-status-active">
-      <span className="rm-status-pip" />
-      active
-    </span>
-  );
+  return <span className="refined-badge is-cyan is-pulse">active</span>;
 }
 
 export default StatusBadge;

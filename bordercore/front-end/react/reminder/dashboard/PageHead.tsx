@@ -23,9 +23,9 @@ export function PageHead({ total, active, onNew }: PageHeadProps) {
           row to view, edit, or remove.
         </p>
       </div>
-      <button type="button" className="rm-new-btn" onClick={onNew}>
-        <FontAwesomeIcon icon={faPlus} />
-        New reminder
+      <button type="button" className="refined-btn primary" onClick={onNew}>
+        <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" />
+        new
       </button>
     </header>
   );

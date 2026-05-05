@@ -9,6 +9,7 @@ import {
   faTrashAlt,
 } from "@fortawesome/free-solid-svg-icons";
 import type { Reminder } from "../types";
+import { renderInlineMarkdown } from "../markdown";
 import { StatusBadge } from "./StatusBadge";
 import { WeekChips } from "./WeekChips";
 
@@ -52,12 +53,12 @@ export function ReminderRow({ reminder, isImminent, now, onEdit, onDelete }: Rem
   const countdownText = showCountdown ? formatCountdown(reminder, now) : null;
 
   return (
-    <div className={classes.join(" ")}>
+    <div role="listitem" className={classes.join(" ")} onClick={() => onEdit(reminder)}>
       <div className="rm-cell-name">
-        <a href={reminder.detail_url} className="rm-name-link">
-          {reminder.name}
-        </a>
-        {reminder.note && <span className="rm-name-note">{reminder.note}</span>}
+        <span className="rm-name-link">{reminder.name}</span>
+        {reminder.note && (
+          <span className="rm-name-note">{renderInlineMarkdown(reminder.note)}</span>
+        )}
       </div>
 
       <div className="rm-cell-schedule">
@@ -84,7 +85,7 @@ export function ReminderRow({ reminder, isImminent, now, onEdit, onDelete }: Rem
         )}
       </div>
 
-      <div className="rm-cell-actions">
+      <div className="rm-cell-actions" onClick={e => e.stopPropagation()}>
         <button
           type="button"
           className="rm-row-action"

@@ -70,55 +70,6 @@
   }
 }
 
-.rm-new-btn {
-  display: inline-flex;
-  align-items: center;
-  padding: 10px 16px;
-  border: 1px solid color-mix(in oklch, var(--accent), black 8%);
-  border-radius: var(--radius);
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklch, var(--accent), white 5%),
-    var(--accent)
-  );
-  box-shadow:
-    0 0 0 1px color-mix(in oklch, var(--accent), transparent 60%),
-    0 0 24px -4px var(--accent-glow);
-  color: var(--accent-fg);
-  cursor: pointer;
-  font-family: var(--font-ui);
-  font-size: 13px;
-  font-weight: 600;
-  gap: 8px;
-  text-decoration: none;
-  transition:
-    background 0.15s ease,
-    transform 0.08s ease,
-    box-shadow 0.15s ease;
-
-  &:hover {
-    background: linear-gradient(
-      180deg,
-      color-mix(in oklch, var(--accent), white 12%),
-      color-mix(in oklch, var(--accent), white 4%)
-    );
-    color: var(--accent-fg);
-    text-decoration: none;
-    transform: translateY(-1px);
-  }
-
-  &:active {
-    transform: translateY(1px);
-  }
-
-  &:focus-visible {
-    box-shadow:
-      0 0 0 3px var(--accent-glow),
-      0 0 24px -4px var(--accent-glow);
-    outline: none;
-  }
-}
-
 // -----------------------------------------------------------------------------
 // Toolbar (search + filter pills)
 // -----------------------------------------------------------------------------
@@ -187,6 +138,7 @@
   font-size: 12px;
   font-weight: 500;
   gap: 6px;
+  line-height: 1;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
 
   .rm-pill-count {
@@ -229,7 +181,7 @@
 }
 
 .rm-list-head {
-  padding: 0 16px;
+  padding: 0 20px;
   color: var(--fg-3);
   font-family: var(--font-mono);
   font-size: 10.5px;
@@ -274,21 +226,16 @@
   }
 
   &.rm-group-firing-soon .rm-group-label {
-    color: color-mix(in oklch, var(--accent), white 8%);
-    text-shadow: 0 0 12px var(--accent-glow);
+    color: color-mix(in oklch, var(--warn), white 8%);
+    text-shadow: 0 0 12px color-mix(in oklch, var(--warn), transparent 60%);
   }
 }
 
 .rm-row {
   position: relative;
-  padding: 14px 16px;
-  border: 1px solid var(--line-soft);
-  border-radius: var(--radius);
-  background: var(--bg-2);
-  transition:
-    background 0.18s cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 0.18s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+  cursor: pointer;
+
+  @include refined-row-card;
 
   &::before {
     position: absolute;
@@ -301,12 +248,6 @@
     content: "";
     opacity: 0;
     transition: opacity 0.18s ease;
-  }
-
-  &:hover,
-  &:focus-within {
-    border-color: var(--line);
-    background: var(--bg-3);
   }
 
   &:hover::before,
@@ -410,84 +351,6 @@
 }
 
 // -----------------------------------------------------------------------------
-// Status badge
-// -----------------------------------------------------------------------------
-.rm-status {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 10px;
-  border: 1px solid;
-  border-radius: 999px;
-  font-family: var(--font-ui);
-  font-size: 10.5px;
-  font-weight: 600;
-  gap: 6px;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  white-space: nowrap;
-
-  .rm-status-pip {
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: currentcolor;
-    box-shadow: 0 0 6px currentcolor;
-  }
-
-  &.rm-status-active {
-    border-color: var(--rm-cyan-edge);
-    background: var(--rm-cyan-soft);
-    color: color-mix(in oklch, var(--rm-cyan), white 12%);
-  }
-
-  &.rm-status-active .rm-status-pip {
-    animation: rm-pulse-active 2.4s ease-in-out infinite;
-  }
-
-  &.rm-status-imminent {
-    border-color: color-mix(in oklch, var(--accent), transparent 50%);
-    background: var(--accent-soft);
-    color: color-mix(in oklch, var(--accent), white 15%);
-  }
-
-  &.rm-status-imminent .rm-status-pip {
-    animation: rm-pulse-imminent 1.4s ease-in-out infinite;
-  }
-
-  &.rm-status-inactive {
-    border-color: var(--line-soft);
-    background: var(--bg-3);
-    color: var(--fg-3);
-  }
-}
-
-@keyframes rm-pulse-active {
-  0%,
-  100% {
-    box-shadow: 0 0 4px currentcolor;
-    opacity: 0.9;
-  }
-
-  50% {
-    box-shadow: 0 0 10px currentcolor;
-    opacity: 1;
-  }
-}
-
-@keyframes rm-pulse-imminent {
-  0%,
-  100% {
-    box-shadow: 0 0 4px currentcolor;
-    opacity: 0.85;
-  }
-
-  50% {
-    box-shadow: 0 0 12px currentcolor;
-    opacity: 1;
-  }
-}
-
-// -----------------------------------------------------------------------------
 // Cell: next trigger
 // -----------------------------------------------------------------------------
 .rm-cell-next {
@@ -563,18 +426,17 @@
 .rm-rail-card {
   display: flex;
   flex-direction: column;
-  padding: 16px 18px;
-  border: 1px solid var(--line-soft);
-  border-radius: var(--radius-lg);
-  background: var(--bg-2);
-  box-shadow: var(--shadow-sm, 0 1px 2px rgb(0 0 0 / 25%));
   gap: 12px;
+
+  @include refined-card;
 }
 
 .rm-rail-card-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line-soft);
   gap: 8px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -596,8 +458,6 @@
 
 // Next-trigger card (the "hero")
 .rm-nextup-card {
-  position: relative;
-  overflow: hidden;
   border-color: var(--rm-cyan-edge);
   box-shadow:
     0 0 0 1px color-mix(in oklch, var(--rm-cyan), transparent 75%),
@@ -673,7 +533,13 @@
   .rm-nextup-progress-bar {
     display: block;
     height: 100%;
-    background: linear-gradient(90deg, var(--accent), var(--rm-cyan));
+    background: linear-gradient(
+      90deg,
+      oklch(70% 0.24 310deg) 0%,
+      oklch(72% 0.26 350deg) 30%,
+      oklch(80% 0.18 35deg) 60%,
+      oklch(78% 0.15 230deg) 100%
+    );
     box-shadow: 0 0 12px var(--rm-cyan-glow);
     transition: width 0.5s ease;
   }
@@ -729,8 +595,11 @@
 .rm-upnext-row {
   display: grid;
   align-items: center;
-  gap: 10px;
-  grid-template-columns: 12px minmax(0, 1fr) auto;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--bg-3);
+  gap: 12px;
+  grid-template-columns: 6px minmax(0, 1fr) auto;
 
   .rm-upnext-dot {
     width: 6px;
@@ -744,29 +613,30 @@
     overflow: hidden;
     color: var(--fg-0);
     font-family: var(--font-ui);
-    font-size: 12.5px;
-    font-weight: 500;
+    font-size: 13.5px;
+    font-weight: 600;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
   .rm-upnext-sub {
-    color: var(--fg-4);
+    margin-top: 2px;
+    color: var(--fg-3);
     font-family: var(--font-mono);
-    font-size: 10.5px;
+    font-size: 11px;
   }
 
   .rm-upnext-countdown {
     color: var(--rm-cyan);
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 13px;
+    font-weight: 500;
   }
 }
 
 // Stats card (no padding; 3-col grid of stat tiles)
 .rm-stats-card {
   display: grid;
-  overflow: hidden;
   padding: 0;
   background: var(--line-soft);
   gap: 1px;
@@ -776,10 +646,11 @@
 .rm-stat {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   padding: 14px 16px;
   background: var(--bg-2);
   gap: 4px;
+  text-align: center;
 
   .rm-stat-num {
     color: var(--fg-0);
