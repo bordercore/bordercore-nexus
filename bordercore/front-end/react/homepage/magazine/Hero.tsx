@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { fillUrlTemplate, formatIssueDate } from "./utils";
+import { fillUrlTemplate, formatIssueDate, greetingForHour } from "./utils";
 import type { DefaultCollection, RandomImageInfo } from "../types";
 
 interface HeroProps {
@@ -8,12 +8,6 @@ interface HeroProps {
   blobDetailUrlTemplate: string;
   collectionDetailUrlTemplate: string;
   userName: string;
-}
-
-function greetingForHour(hour: number): string {
-  if (hour < 12) return "Good Morning,";
-  if (hour < 18) return "Good Afternoon,";
-  return "Good Evening,";
 }
 
 export function Hero({
@@ -34,7 +28,7 @@ export function Hero({
     window.location.reload();
   };
 
-  const greeting = greetingForHour(parseInt(issue.time.split(":")[0] ?? "9", 10));
+  const greeting = greetingForHour(issue.hour);
 
   return (
     <div className="mag-hero">
