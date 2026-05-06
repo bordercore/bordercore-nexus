@@ -11,6 +11,7 @@ import {
   faThumbtack,
   faPlay,
   faCopy,
+  faExpand,
 } from "@fortawesome/free-solid-svg-icons";
 
 import { doPost, EventBus } from "../../utils/reactUtils";
@@ -23,9 +24,17 @@ interface HeroProps {
   isPinnedNote: boolean;
   onPinToggle: () => void;
   onTitleSaved: (newName: string) => void;
+  onEnterFullscreen: () => void;
 }
 
-export function Hero({ blob, urls, isPinnedNote, onPinToggle, onTitleSaved }: HeroProps) {
+export function Hero({
+  blob,
+  urls,
+  isPinnedNote,
+  onPinToggle,
+  onTitleSaved,
+  onEnterFullscreen,
+}: HeroProps) {
   const [moreOpen, setMoreOpen] = useState(false);
   const titleRef = useRef<HTMLHeadingElement | null>(null);
 
@@ -139,6 +148,11 @@ export function Hero({ blob, urls, isPinnedNote, onPinToggle, onTitleSaved }: He
           <button type="button" className="bd-iconbtn ghost" onClick={handleCopyLink}>
             <FontAwesomeIcon icon={faLink} /> copy link
           </button>
+          {blob.content && (
+            <button type="button" className="bd-iconbtn ghost" onClick={onEnterFullscreen}>
+              <FontAwesomeIcon icon={faExpand} /> fullscreen
+            </button>
+          )}
           <span className="bd-more-wrap">
             <button
               type="button"

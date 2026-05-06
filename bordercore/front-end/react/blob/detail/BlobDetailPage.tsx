@@ -20,6 +20,7 @@ import hotkeys from "hotkeys-js";
 import { doGet, doPost, EventBus } from "../../utils/reactUtils";
 import { Hero } from "./Hero";
 import { Rail } from "./Rail";
+import { FullscreenReader } from "./FullscreenReader";
 import { BackrefsSection } from "./sections/BackrefsSection";
 import type { BlobDetailPageProps, Collection, ElasticsearchInfo, BackReference } from "../types";
 
@@ -83,6 +84,7 @@ export function BlobDetailPage({
   );
   const [isPinnedNote, setIsPinnedNote] = useState(initialIsPinnedNote);
   const [contentRoot, setContentRoot] = useState<HTMLElement | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const markdown = useMemo(() => markdownit(), []);
 
@@ -206,6 +208,7 @@ export function BlobDetailPage({
             isPinnedNote={isPinnedNote}
             onPinToggle={handlePinToggle}
             onTitleSaved={handleTitleSaved}
+            onEnterFullscreen={() => setIsFullscreen(true)}
           />
 
           {blob.note && (
@@ -263,6 +266,14 @@ export function BlobDetailPage({
           )}
         </div>
       </main>
+
+      {isFullscreen && (
+        <FullscreenReader
+          blob={blob}
+          renderedContent={renderedContent}
+          onClose={() => setIsFullscreen(false)}
+        />
+      )}
     </div>
   );
 }

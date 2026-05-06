@@ -1328,3 +1328,139 @@
   }
 }
 
+// =============================================================================
+// Fullscreen reader
+// =============================================================================
+// Portaled into <body>, sibling to the rest of the app. Wraps the reader in
+// `.bd-page` so all the existing tokens, .bd-content typography, and .bd-tag
+// styles apply unchanged; we then override the page-level layout (sidebar
+// padding, negative margin) since the overlay covers the whole viewport.
+
+.bd-fullscreen-overlay {
+  position: fixed;
+  z-index: 1000;
+  animation: bd-fade-in 160ms cubic-bezier(0.22, 1, 0.36, 1);
+  inset: 0;
+  overflow-y: auto;
+}
+
+.bd-page.bd-fullscreen-reader-root {
+  position: relative;
+  min-height: 100vh;
+  padding: 0;
+  margin: 0;
+}
+
+// Cancel the collapsed-sidebar padding override too — the reader fills the
+// viewport regardless of app chrome state.
+.wrapper.collapsed .bd-page.bd-fullscreen-reader-root {
+  padding-left: 0;
+}
+
+.bd-fullscreen-close {
+  position: fixed;
+  top: 18px;
+  right: 22px;
+  display: inline-grid;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--bd-border-1);
+  border-radius: 50%;
+  backdrop-filter: blur(8px);
+  background: rgb(20 22 30 / 70%);
+  color: var(--bd-fg-2);
+  cursor: pointer;
+  font-size: 16px;
+  place-items: center;
+  transition: all var(--bd-t-fast);
+}
+
+.bd-fullscreen-close:hover {
+  border-color: var(--bd-border-2);
+  background: var(--bd-bg-3);
+  color: var(--bd-fg-1);
+}
+
+.bd-fullscreen-reader {
+  width: 100%;
+  max-width: 760px;
+  padding: 80px 32px 96px;
+  margin: 0 auto;
+}
+
+.bd-fullscreen-header {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--bd-hairline);
+  margin-bottom: 28px;
+  gap: 10px;
+}
+
+.bd-fullscreen-title {
+  margin: 0;
+  color: var(--bd-fg-1);
+  font-family: var(--bd-font-display);
+  font-size: 34px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.bd-fullscreen-title .edition {
+  margin-left: 8px;
+  color: var(--bd-fg-3);
+  font-size: 22px;
+  font-weight: 500;
+}
+
+.bd-fullscreen-subtitle {
+  color: var(--bd-fg-2);
+  font-family: var(--bd-font-display);
+  font-size: 18px;
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.bd-fullscreen-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 4px;
+  color: var(--bd-fg-3);
+  font-family: var(--bd-font-mono);
+  font-size: 12px;
+  gap: 14px;
+}
+
+.bd-fullscreen-meta .sep { color: var(--bd-fg-disabled); }
+.bd-fullscreen-meta .author { color: var(--bd-fg-2); }
+
+.bd-fullscreen-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 4px;
+  gap: 6px;
+}
+
+// Bump up the body type a touch for comfortable long-form reading.
+.bd-content.bd-fullscreen-content {
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.bd-fullscreen-empty {
+  padding: 40px 0;
+  color: var(--bd-fg-4);
+  font-family: var(--bd-font-mono);
+  font-size: 13px;
+  text-align: center;
+}
+
+@keyframes bd-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
