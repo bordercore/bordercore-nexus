@@ -113,6 +113,13 @@ class Tag(models.Model):
         sort_order_user_tag = UserTag.objects.get(userprofile=self.user.userprofile, tag=self)
         sort_order_user_tag.delete()
 
+    def is_pinned_for(self, user: User) -> bool:
+        """
+        Return True if this tag is pinned for the given user.
+        """
+        UserTag = apps.get_model("accounts", "UserTag")
+        return UserTag.objects.filter(userprofile=user.userprofile, tag=self).exists()
+
     @staticmethod
     def get_meta_tags(user: User) -> list[str]:
         """

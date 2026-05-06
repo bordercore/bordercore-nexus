@@ -25,9 +25,9 @@ urlpatterns = [
         name="unpin"
     ),
     path(
-        route="list",
-        view=views.TagListView.as_view(),
-        name="list"
+        route="",
+        view=views.tag_list_redirect,
+        name="index"
     ),
     path(
         route="add_alias",
@@ -43,5 +43,20 @@ urlpatterns = [
         route="get_related_tags",
         view=views.get_related_tags,
         name="get_related_tags"
+    ),
+    path(
+        route="set_meta/",
+        view=views.set_meta,
+        name="set_meta"
+    ),
+    path(
+        route="<str:name>/snapshot.json",
+        view=views.snapshot,
+        name="snapshot"
+    ),
+    path(
+        route="<str:name>/",
+        view=views.TagDetailView.as_view(),
+        name="detail"
     ),
 ]

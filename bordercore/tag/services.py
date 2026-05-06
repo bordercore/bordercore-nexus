@@ -201,6 +201,29 @@ def search(
     return matches
 
 
+def get_alias_library(user: User) -> list[dict]:
+    """
+    Return every alias the user owns as a flat list of plain dicts.
+
+    Sorted by tag name then alias name. Used by the tag-detail page to
+    render the global alias forge table.
+    """
+    rows = (
+        TagAlias.objects
+        .filter(user=user)
+        .select_related("tag")
+        .order_by("tag__name", "name")
+    )
+    return [
+        {
+            "uuid": str(row.uuid),
+            "name": row.name,
+            "tag": row.tag.name,
+        }
+        for row in rows
+    ]
+
+
 def find_related_tags(tag_name: str, user: User, doc_type: str | None) -> list[dict[str, str | int]]:
     """
     Find tags that frequently co-occur with the given tag for a specific document type.

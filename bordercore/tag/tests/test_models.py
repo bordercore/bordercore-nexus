@@ -262,3 +262,14 @@ def test_tag_alias_str(authenticated_client):
     alias = TagAlias.objects.create(user=user, tag=tag, name="my alias")
 
     assert str(alias) == "my alias"
+
+
+def test_is_pinned_for_returns_false_when_not_pinned(authenticated_client, tag):
+    user, _ = authenticated_client()
+    assert tag[0].is_pinned_for(user) is False
+
+
+def test_is_pinned_for_returns_true_when_pinned(authenticated_client, tag):
+    user, _ = authenticated_client()
+    tag[0].pin()
+    assert tag[0].is_pinned_for(user) is True

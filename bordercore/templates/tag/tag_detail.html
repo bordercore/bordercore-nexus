@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% load vite_tags %}
+
+{% block title %}{{ title }} · tag · bordercore{% endblock %}
+
+{% block content %}
+
+    <div id="react-root"
+        data-tag-detail-base="/tag/"
+        data-tag-search-url="{% url 'tag:search' %}?query="
+        data-tag-snapshot-url="{% url 'tag:snapshot' name='__NAME__' %}"
+        data-pin-url="{% url 'tag:pin' %}"
+        data-unpin-url="{% url 'tag:unpin' %}"
+        data-set-meta-url="{% url 'tag:set_meta' %}"
+        data-add-alias-url="{% url 'tag:add_alias' %}"
+        data-tag-alias-detail-url="/api/tagaliases/__UUID__/">
+    </div>
+
+{% endblock %}
+
+{% block javascript %}
+
+    {{ block.super }}
+
+    {{ bootstrap|json_script:"tag-curator-bootstrap" }}
+
+{% endblock %}
+
+{% block javascript_bundles %}
+    {% vite_asset "dist/js/base-react" %}
+    {% vite_asset "dist/js/tag-curator" %}
+{% endblock %}

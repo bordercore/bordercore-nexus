@@ -1,7 +1,7 @@
 """
 Views for tag management, searching, and related tag operations.
 
-This module provides Django views for pinning/unpinning tags, searching tags, managing tag aliases, retrieving todo counts, and finding related tags for a user. It also includes a ListView for tag aliases.
+This module provides Django views for pinning/unpinning tags, searching tags, managing tag aliases, retrieving todo counts, and finding related tags for a user.
 """
 
 from typing import cast
@@ -11,19 +11,20 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from django.contrib.auth.decorators import login_required
+from django.core.cache import cache
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.db.models import QuerySet
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest, HttpResponse, HttpResponseNotFound
 from django.shortcuts import redirect
 from django.views.decorators.http import require_POST
-from django.views.generic.list import ListView
+from django.views.generic import DetailView
 
 from lib.decorators import validate_post_data
 from lib.mixins import get_user_object_or_404
 
 from .models import Tag, TagAlias
-from .services import find_related_tags
+from .services import find_related_tags, get_alias_library
 from .services import search as search_service
 
 
@@ -105,21 +106,20 @@ def search(request: HttpRequest) -> Response:
     return Response(matches)
 
 
-class TagListView(LoginRequiredMixin, ListView):
+@login_required
+def tag_list_redirect(request: HttpRequest) -> HttpResponse:
     """
-    View for displaying a list of tag aliases (currently returns none).
+    Entry point for the navbar 'tags' link.
+
+    Picks a random tag belonging to the current user and redirects
+    to its Curator page (tag:detail). If the user has no tags yet,
+    returns 404.
     """
-    model = TagAlias
-    template_name = "tag/tag_list.html"
-
-    def get_queryset(self) -> QuerySet:
-        """
-        Return an empty queryset for tag aliases.
-
-        Returns:
-            QuerySet: An empty queryset.
-        """
-        return TagAlias.objects.none()
+    user = cast(User, request.user)
+    tag = Tag.objects.filter(user=user).order_by("?").first()
+    if tag is None:
+        return HttpResponseNotFound("No tags yet — create one first.")
+    return redirect("tag:detail", name=tag.name)
 
 
 @api_view(["POST"])
@@ -156,7 +156,7 @@ def add_alias(request: HttpRequest) -> Response:
     tag_alias = TagAlias(name=alias_name, tag=tag, user=user)
     tag_alias.save()
 
-    return Response(status=status.HTTP_201_CREATED)
+    return Response({"uuid": str(tag_alias.uuid)}, status=status.HTTP_201_CREATED)
 
 
 @api_view(["GET"])
@@ -214,3 +214,93 @@ def get_related_tags(request: HttpRequest) -> Response:
     info = find_related_tags(tag_name, user, doc_type)
 
     return Response({"info": info})
+
+
+def _tag_snapshot(tag: Tag, user: User) -> dict:
+    counts = tag.get_related_counts().first() or {}
+    aliases = [
+        {"uuid": str(a.uuid), "name": a.name}
+        for a in TagAlias.objects.filter(tag=tag, user=user).order_by("name")
+    ]
+    related = find_related_tags(tag.name, user, None)
+    return {
+        "name": tag.name,
+        "created": tag.created.date().isoformat(),
+        "user": user.username,
+        "pinned": tag.is_pinned_for(user),
+        "meta": tag.is_meta,
+        "counts": {
+            "blob":       {"label": "blobs",       "icon": "fa-cube",          "count": counts.get("blob__count",       0)},
+            "bookmark":   {"label": "bookmarks",   "icon": "fa-bookmark",      "count": counts.get("bookmark__count",   0)},
+            "album":      {"label": "albums",      "icon": "fa-compact-disc",  "count": counts.get("album__count",      0)},
+            "collection": {"label": "collections", "icon": "fa-layer-group",   "count": counts.get("collection__count", 0)},
+            "todo":       {"label": "todos",       "icon": "fa-square-check",  "count": counts.get("todo__count",       0)},
+            "question":   {"label": "drills",      "icon": "fa-brain",         "count": counts.get("question__count",   0)},
+            "song":       {"label": "songs",       "icon": "fa-music",         "count": counts.get("song__count",       0)},
+        },
+        "aliases": aliases,
+        "related": related,
+    }
+
+
+class TagDetailView(LoginRequiredMixin, DetailView):
+    """
+    Render the Tag Curator page for a single tag belonging to the current user.
+
+    Bootstraps everything the React entry needs: the active tag's snapshot
+    (counts, aliases, related), the user's full alias library, and the list
+    of every tag name (for the forge target select).
+    """
+    model = Tag
+    template_name = "tag/tag_detail.html"
+    context_object_name = "tag"
+    slug_field = "name"
+    slug_url_kwarg = "name"
+
+    def get_queryset(self) -> QuerySet:
+        user = cast(User, self.request.user)
+        return Tag.objects.filter(user=user)
+
+    def get_context_data(self, **kwargs: object) -> dict:
+        ctx = super().get_context_data(**kwargs)
+        user = cast(User, self.request.user)
+        tag = ctx["tag"]
+        ctx["bootstrap"] = {
+            "active_name": tag.name,
+            "tag": _tag_snapshot(tag, user),
+            "alias_library": get_alias_library(user),
+            "tag_names": list(
+                Tag.objects.filter(user=user).order_by("name").values_list("name", flat=True)
+            ),
+        }
+        ctx["title"] = f"#{tag.name}"
+        return ctx
+
+
+@login_required
+@require_POST
+@validate_post_data("tag", "value")
+def set_meta(request: HttpRequest) -> HttpResponse:
+    """
+    Set the is_meta flag on a tag owned by the current user.
+    """
+    user = cast(User, request.user)
+    tag_name = request.POST["tag"]
+    value = request.POST["value"].lower() in {"1", "true", "yes", "on"}
+
+    tag = get_user_object_or_404(user, Tag, name=tag_name)
+    tag.is_meta = value
+    tag.save()
+    cache.delete(f"meta_tags_{user.id}")  # invalidate Tag.get_meta_tags cache
+    return HttpResponse(status=200)
+
+
+@api_view(["GET"])
+def snapshot(request: HttpRequest, name: str) -> Response:
+    """
+    Return the JSON snapshot for a tag (the same shape `bootstrap.tag`
+    has on the detail page) for client-side active-tag switches.
+    """
+    user = cast(User, request.user)
+    tag = get_user_object_or_404(user, Tag, name=name)
+    return Response(_tag_snapshot(tag, user))

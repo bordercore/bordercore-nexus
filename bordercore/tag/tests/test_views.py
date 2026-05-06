@@ -2,7 +2,7 @@ import pytest
 
 from django import urls
 
-from tag.models import TagAlias
+from tag.models import Tag, TagAlias
 
 pytestmark = [pytest.mark.django_db]
 
@@ -33,14 +33,18 @@ def test_tag_unpin(authenticated_client, tag):
     assert resp.status_code == 302
 
 
-def test_tag_list(authenticated_client, tag):
-
+def test_tag_index_redirects_to_random_tag(authenticated_client, tag):
     user, client = authenticated_client()
 
-    url = urls.reverse("tag:list")
+    url = urls.reverse("tag:index")
     resp = client.get(url)
 
-    assert resp.status_code == 200
+    # Should redirect (302) to /tag/<some-tag-name>/
+    assert resp.status_code == 302
+    assert resp.url.startswith("/tag/")
+    # The chosen tag must be one the user owns
+    chosen_name = resp.url.rstrip("/").rsplit("/", 1)[-1]
+    assert chosen_name in [t.name for t in tag]
 
 
 def test_tag_add_alias(authenticated_client, tag):
@@ -239,3 +243,67 @@ def test_unpin_missing_tag_field(authenticated_client, tag):
     resp = client.post(url, {})
 
     assert resp.status_code == 400
+
+
+def test_tag_detail_view_returns_200_with_bootstrap(authenticated_client, tag):
+    user, client = authenticated_client()
+    url = urls.reverse("tag:detail", kwargs={"name": tag[0].name})
+
+    resp = client.get(url)
+
+    assert resp.status_code == 200
+    assert resp.context["tag"].name == tag[0].name
+    bootstrap = resp.context["bootstrap"]
+    assert bootstrap["active_name"] == tag[0].name
+    assert "tag" in bootstrap
+    assert bootstrap["tag"]["name"] == tag[0].name
+    assert "counts" in bootstrap["tag"]
+    assert bootstrap["tag"]["pinned"] is False
+    assert bootstrap["tag"]["meta"] == tag[0].is_meta
+    assert "aliases" in bootstrap["tag"]
+    assert isinstance(bootstrap["tag"]["created"], str)
+    assert "alias_library" in bootstrap
+    assert "tag_names" in bootstrap
+
+
+def test_tag_detail_view_404_for_other_users_tag(authenticated_client, django_user_model):
+    other = django_user_model.objects.create(username="someone-else")
+    other_tag = Tag.objects.create(name="otheronly", user=other)
+
+    _, client = authenticated_client()
+    url = urls.reverse("tag:detail", kwargs={"name": other_tag.name})
+
+    resp = client.get(url)
+
+    assert resp.status_code == 404
+
+
+def test_set_meta_flips_value(authenticated_client, tag):
+    user, client = authenticated_client()
+    assert tag[0].is_meta is False
+
+    url = urls.reverse("tag:set_meta")
+    resp = client.post(url, {"tag": tag[0].name, "value": "true"})
+
+    assert resp.status_code == 200
+    tag[0].refresh_from_db()
+    assert tag[0].is_meta is True
+
+    resp = client.post(url, {"tag": tag[0].name, "value": "false"})
+    assert resp.status_code == 200
+    tag[0].refresh_from_db()
+    assert tag[0].is_meta is False
+
+
+def test_tag_snapshot_returns_json(authenticated_client, tag):
+    _, client = authenticated_client()
+    url = urls.reverse("tag:snapshot", kwargs={"name": tag[0].name})
+
+    resp = client.get(url)
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["name"] == tag[0].name
+    assert "counts" in body
+    assert "aliases" in body
+    assert "related" in body

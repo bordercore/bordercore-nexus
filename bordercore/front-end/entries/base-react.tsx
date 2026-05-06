@@ -193,9 +193,9 @@ function SidebarContent() {
         icon: { element: "font-awesome-icon", attributes: { icon: "check-double" }, class: "" },
       },
       {
-        href: "/tag/list",
+        href: "/tag/",
         title: "Tags",
-        alias: "/tag/list",
+        alias: "/tag/*",
         color: "#f472b6",
         icon: { element: "font-awesome-icon", attributes: { icon: "tags" }, class: "" },
       },

@@ -228,3 +228,20 @@ class TestFindRelatedTags:
 
         results = find_related_tags("django", user, None)
         assert results == []
+
+
+def test_get_alias_library_returns_all_aliases_for_user(authenticated_client, tag):
+    from tag.services import get_alias_library
+    from tag.models import TagAlias
+
+    user, _ = authenticated_client()
+    TagAlias.objects.create(name="alias-a", tag=tag[0], user=user)
+    TagAlias.objects.create(name="alias-b", tag=tag[1], user=user)
+
+    library = get_alias_library(user)
+
+    assert len(library) == 2
+    names = {row["name"] for row in library}
+    assert names == {"alias-a", "alias-b"}
+    assert all(isinstance(row["uuid"], str) for row in library)
+    assert all("tag" in row for row in library)
