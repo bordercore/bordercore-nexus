@@ -1,0 +1,1099 @@
+// =============================================================================
+// PAGES: HABIT DASHBOARD
+// =============================================================================
+// Bordercore habits landing + detail.  All `--hb-*` tokens map to the global
+// theme tokens (--bg-*, --fg-*, --accent, --line, --font-*) so the page
+// re-tints across themes the same way the other refined pages do.  Heatmap
+// levels derive from `--accent` via color-mix so any theme accent gradients
+// cleanly into the dark surface.
+
+.hb-page {
+  // -- Surfaces ---------------------------------------------------------------
+  --hb-bg:          var(--bg-0);
+  --hb-card:        var(--bg-1);
+  --hb-card-border: var(--line);
+  --hb-divider:     var(--line-soft);
+  --hb-bg-flat:     var(--bg-0);
+
+  // -- Text -------------------------------------------------------------------
+  --hb-text:        var(--fg-1);
+  --hb-text-strong: var(--fg-0);
+  --hb-text-dim:    var(--fg-3);
+  --hb-text-muted:  var(--fg-4);
+
+  // -- Accents ----------------------------------------------------------------
+  --hb-cyan:        var(--accent);
+  --hb-cyan-ink:    var(--accent-fg);
+  --hb-cyan-soft:   var(--accent-soft);
+  --hb-cyan-glow:   0 0 16px var(--accent-glow);
+  --hb-danger:      var(--danger);
+
+  // -- Heatmap ramp (mixed from accent + bg-0 so it adapts per theme) --------
+  --hb-heat-l0: var(--bg-0);
+  --hb-heat-l1: color-mix(in oklch, var(--accent) 22%, var(--bg-0));
+  --hb-heat-l2: color-mix(in oklch, var(--accent) 48%, var(--bg-0));
+  --hb-heat-l3: color-mix(in oklch, var(--accent) 72%, var(--bg-0));
+  --hb-heat-l4: var(--accent);
+
+  display: block;
+  min-height: calc(100vh - 60px);
+  padding: 40px 48px 80px;
+  background: var(--hb-bg);
+  color: var(--hb-text);
+  font-family: var(--font-ui);
+
+  a {
+    color: var(--hb-cyan);
+    text-decoration: none;
+  }
+
+  @media (width < 1100px) {
+    padding: 24px 16px 60px;
+  }
+}
+
+// Default reset for unstyled buttons inside the dashboard. Site-wide
+// primitives like .refined-btn keep their own borders/background.
+.hb-page button:not(.refined-btn) {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+
+.hb-mono {
+  font-family: var(--font-mono);
+}
+
+.hb-ucase {
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+// =============================================================================
+// LANDING PAGE
+// =============================================================================
+
+.hb-landing {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+// -----------------------------------------------------------------------------
+// Hero (date eyebrow + masthead + completion ring + new-habit button)
+// -----------------------------------------------------------------------------
+.hb-hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  gap: 16px;
+}
+
+.hb-hero-eyebrow {
+  color: var(--hb-text-dim);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.hb-hero-masthead {
+  margin: 6px 0 0;
+  color: var(--hb-text-strong);
+  font-size: 44px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.hb-hero-masthead-dim {
+  color: var(--hb-text-dim);
+  font-weight: 400;
+}
+
+.hb-hero-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.hb-ring {
+  position: relative;
+  display: block;
+  width: 88px;
+  height: 88px;
+}
+
+.hb-ring-pct {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--hb-text-strong);
+  font-size: 22px;
+  font-weight: 600;
+  inset: 0;
+}
+
+.hb-ring-progress {
+  filter: drop-shadow(0 0 6px var(--accent-glow));
+}
+
+// -----------------------------------------------------------------------------
+// Filter chips
+// -----------------------------------------------------------------------------
+.hb-chips {
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+  gap: 8px;
+}
+
+.hb-chip {
+  padding: 6px 12px;
+  border: 1px solid var(--hb-card-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--hb-text-dim);
+  font-size: 12px;
+
+  &.is-active {
+    border-color: transparent;
+    background: var(--hb-cyan);
+    color: var(--hb-cyan-ink);
+    font-weight: 600;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Habit card grid + cards
+// -----------------------------------------------------------------------------
+.hb-card-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1fr 1fr;
+
+  @media (width < 1100px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.hb-habit-card {
+  position: relative;
+  display: flex;
+  overflow: hidden;
+  flex-direction: column;
+  padding: 22px;
+  border: 1px solid var(--hb-card-border);
+  border-radius: 10px;
+  background: var(--hb-card);
+  box-shadow:
+    0 1px 0 0 rgb(255 255 255 / 2%) inset,
+    0 1px 2px rgb(0 0 0 / 35%);
+  gap: 14px;
+
+  // Same radial highlight node-landing uses; clipped by overflow:hidden so it
+  // hugs the card's rounded corners.
+  &::before {
+    position: absolute;
+    background: radial-gradient(
+      circle at 100% 0%,
+      var(--accent-soft),
+      transparent 55%
+    );
+    content: "";
+    inset: 0;
+    opacity: 0.25;
+    pointer-events: none;
+    transition: opacity 180ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  transition:
+    transform 140ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 140ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    background 140ms cubic-bezier(0.22, 1, 0.36, 1);
+
+  &:hover {
+    border-color: var(--bg-3);
+    background: var(--bg-2);
+    box-shadow:
+      0 1px 0 0 rgb(255 255 255 / 3%) inset,
+      0 8px 24px -8px rgb(0 0 0 / 55%),
+      0 0 0 1px color-mix(in oklch, var(--accent), transparent 88%);
+    transform: translateY(-1px);
+
+    &::before { opacity: 0.55; }
+  }
+
+  &:active { transform: translateY(0); }
+}
+
+.hb-habit-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.hb-habit-name {
+  display: inline-block;
+  color: var(--hb-cyan);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+.hb-habit-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 6px;
+  gap: 6px;
+}
+
+.hb-tag-chip {
+  padding: 2px 8px;
+  border: 1px solid var(--hb-card-border);
+  border-radius: 999px;
+  background: var(--bg-2);
+  color: var(--hb-text-dim);
+  font-size: 11px;
+}
+
+.hb-habit-started {
+  color: var(--hb-text-muted);
+  font-size: 11px;
+}
+
+.hb-habit-purpose {
+  margin: 0;
+  color: var(--hb-text-dim);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.hb-toggle-today {
+  display: flex;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 22px;
+  font-weight: 600;
+  transition: filter 0.12s ease;
+
+  &.is-logged {
+    background: var(--hb-cyan);
+    box-shadow: var(--hb-cyan-glow);
+    color: var(--hb-cyan-ink);
+  }
+
+  &.is-pending {
+    border: 1px dashed var(--hb-text-muted);
+    color: var(--hb-text-dim);
+  }
+
+  &:hover { filter: brightness(1.08); }
+}
+
+.hb-habit-card-bottom {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid var(--hb-divider);
+  gap: 14px;
+}
+
+// -----------------------------------------------------------------------------
+// Week dots (last 7 days)
+// -----------------------------------------------------------------------------
+.hb-week-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.hb-week-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.hb-week-day-letter {
+  color: var(--hb-text-muted);
+  font-family: var(--font-mono);
+  font-size: 9px;
+}
+
+.hb-week-square {
+  width: 14px;
+  height: 14px;
+  border: 1px dashed var(--hb-text-muted);
+  border-radius: 3px;
+  background: transparent;
+
+  &.is-filled {
+    border: 1px solid var(--hb-cyan);
+    background: var(--hb-cyan);
+    box-shadow: 0 0 6px var(--accent-glow);
+  }
+
+  &.is-today {
+    outline: 2px solid var(--hb-cyan);
+    outline-offset: 1px;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Stats (Streak / All-time / Dose)
+// -----------------------------------------------------------------------------
+.hb-stats {
+  display: flex;
+  gap: 18px;
+}
+
+.hb-stat-label {
+  color: var(--hb-text-muted);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.hb-stat-value {
+  color: var(--hb-text-strong);
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.hb-stat-unit {
+  margin-left: 2px;
+  color: var(--hb-text-dim);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+// -----------------------------------------------------------------------------
+// Archive bar (collapsed inactive habits)
+// -----------------------------------------------------------------------------
+.hb-archive {
+  padding: 18px;
+  border: 1px solid var(--hb-card-border);
+  border-radius: 10px;
+  margin-top: 28px;
+  background: var(--hb-card);
+}
+
+.hb-archive-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.hb-archive-title {
+  color: var(--hb-text-strong);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.hb-archive-names {
+  overflow: hidden;
+  margin-top: 4px;
+  color: var(--hb-text-dim);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hb-archive-toggle {
+  color: var(--hb-cyan);
+  font-size: 12px;
+}
+
+.hb-archive-table {
+  width: 100%;
+  margin-top: 14px;
+  border-collapse: collapse;
+
+  th, td {
+    padding: 8px 6px;
+    border-bottom: 1px solid var(--hb-divider);
+    color: var(--hb-text-dim);
+    font-size: 12px;
+    text-align: left;
+  }
+
+  th {
+    color: var(--hb-text-muted);
+    cursor: pointer;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+
+    &:hover { color: var(--hb-text); }
+  }
+
+  td a { color: var(--hb-cyan); }
+}
+
+// =============================================================================
+// DETAIL PAGE
+// =============================================================================
+
+.hb-detail {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+// -----------------------------------------------------------------------------
+// Top bar + header
+// -----------------------------------------------------------------------------
+.hb-topbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  gap: 16px;
+
+  // The breadcrumb h1 picks up the canonical .refined-breadcrumb-h1 styling
+  // from _refined-components.scss; we just keep its parent crumb's anchor
+  // tag inheriting the dim color (otherwise <a> would re-tint it via the
+  // .hb-page > a rule).
+  .refined-breadcrumb-h1 a.dim {
+    color: var(--fg-3);
+
+    &:hover { color: var(--fg-1); }
+  }
+}
+
+.hb-detail-header {
+  margin-bottom: 24px;
+}
+
+.hb-detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 8px;
+}
+
+.hb-status-pill {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+
+  &.is-active {
+    background: var(--hb-cyan);
+    color: var(--hb-cyan-ink);
+  }
+
+  &.is-ended {
+    border: 1px solid var(--hb-card-border);
+    color: var(--hb-text-dim);
+  }
+}
+
+.hb-detail-purpose {
+  max-width: 720px;
+  margin: 12px 0 0;
+  color: var(--hb-text-dim);
+  font-size: 15px;
+  line-height: 1.5;
+
+  > :first-child { margin-top: 0; }
+  > :last-child  { margin-bottom: 0; }
+}
+
+// -----------------------------------------------------------------------------
+// Sticky log panel (double-duty: today / editing past day)
+// -----------------------------------------------------------------------------
+.hb-log-panel {
+  display: flex;
+  align-items: center;
+  padding: 20px 24px;
+  border: 1px solid var(--hb-card-border);
+  border-radius: 10px;
+  margin: 24px 0;
+  background: var(--hb-card);
+  gap: 24px;
+
+  @media (width < 1100px) {
+    flex-wrap: wrap;
+  }
+}
+
+.hb-log-checkbox {
+  display: flex;
+  width: 56px;
+  height: 56px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  font-size: 24px;
+  font-weight: 600;
+
+  &.is-checked {
+    background: var(--hb-cyan);
+    box-shadow: var(--hb-cyan-glow);
+    color: var(--hb-cyan-ink);
+  }
+
+  &.is-empty {
+    border: 1px dashed var(--hb-text-muted);
+    color: var(--hb-text-dim);
+  }
+}
+
+.hb-log-text {
+  display: flex;
+  min-width: 200px;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hb-log-eyebrow {
+  color: var(--hb-text-dim);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.hb-log-headline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  color: var(--hb-text-strong);
+  font-size: 18px;
+  font-weight: 600;
+  gap: 12px;
+}
+
+.hb-log-back-today {
+  color: var(--hb-cyan);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.hb-log-divider {
+  width: 1px;
+  height: 44px;
+  flex: none;
+  background: var(--hb-divider);
+}
+
+.hb-log-field {
+  display: flex;
+  min-width: 100px;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hb-log-field-label {
+  color: var(--hb-text-muted);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.hb-log-field-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.hb-log-input-dose {
+  width: 90px;
+  border: 0;
+  border-bottom: 1px solid var(--hb-cyan);
+  background: transparent;
+  color: var(--hb-text-strong);
+  font-size: 24px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  outline: none;
+
+  // Hide native spinners — the design is text-only.
+  &::-webkit-inner-spin-button,
+  &::-webkit-outer-spin-button {
+    margin: 0;
+    appearance: none;
+  }
+}
+
+.hb-log-input-note {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--hb-card-border);
+  background: transparent;
+  color: var(--hb-text);
+  font-size: 14px;
+  outline: none;
+
+  &:focus { border-bottom-color: var(--hb-cyan); }
+}
+
+.hb-log-unit {
+  color: var(--hb-text-dim);
+  font-size: 13px;
+}
+
+.hb-log-note-cell {
+  min-width: 240px;
+  flex: 1;
+}
+
+// -----------------------------------------------------------------------------
+// KPI strip (5 cards)
+// -----------------------------------------------------------------------------
+.hb-kpis {
+  display: grid;
+  margin: 24px 0;
+  gap: 14px;
+  grid-template-columns: repeat(5, 1fr);
+
+  @media (width < 1100px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.hb-kpi-card {
+  padding: 18px;
+  border: 1px solid var(--hb-card-border);
+  border-radius: 8px;
+  background: var(--hb-card);
+}
+
+.hb-kpi-label {
+  color: var(--hb-text-muted);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.hb-kpi-value {
+  margin-top: 4px;
+  color: var(--hb-text-strong);
+  font-size: 26px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+
+  small {
+    margin-left: 4px;
+    color: var(--hb-text-dim);
+    font-size: 13px;
+    font-weight: 400;
+  }
+}
+
+.hb-kpi-sub {
+  margin-top: 2px;
+  color: var(--hb-text-muted);
+  font-size: 11px;
+}
+
+// -----------------------------------------------------------------------------
+// Heatmap card
+// -----------------------------------------------------------------------------
+.hb-heatmap-card {
+  padding: 24px;
+  border: 1px solid var(--hb-card-border);
+  border-radius: 10px;
+  margin-bottom: 24px;
+  background: var(--hb-card);
+}
+
+.hb-heatmap-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  gap: 14px;
+}
+
+.hb-heatmap-title-label {
+  color: var(--hb-text-muted);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.hb-heatmap-count {
+  margin-top: 2px;
+  color: var(--hb-text-strong);
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.hb-heatmap-legend {
+  display: flex;
+  align-items: center;
+  color: var(--hb-text-muted);
+  font-size: 11px;
+  gap: 6px;
+}
+
+.hb-legend-cell {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+.hb-heatmap-grid-wrap {
+  position: relative;
+  overflow-x: auto;
+}
+
+.hb-month-labels {
+  position: relative;
+  height: 14px;
+  margin-bottom: 6px;
+}
+
+.hb-month-label {
+  position: absolute;
+  top: 0;
+  color: var(--hb-text-dim);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+// One rule per column index so we can position labels via [data-col="N"]
+// without inline styles.  Column width = 16px cell + 3px gap = 19px.
+@for $i from 0 through 53 {
+  .hb-month-label[data-col="#{$i}"] {
+    left: #{$i * 19}px;
+  }
+}
+
+.hb-heatmap-grid {
+  display: flex;
+  gap: 3px;
+}
+
+.hb-heatmap-col {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.hb-cell {
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
+  background: transparent;
+  cursor: pointer;
+  transition: filter 0.1s ease;
+
+  &.is-untracked {
+    border: 1px dashed var(--hb-card-border);
+    background: transparent;
+    cursor: pointer;
+  }
+
+  &.is-missed { background: var(--hb-heat-l0); }
+  &.is-l1     { background: var(--hb-heat-l1); }
+  &.is-l2     { background: var(--hb-heat-l2); }
+  &.is-l3     { background: var(--hb-heat-l3); }
+  &.is-l4     { background: var(--hb-heat-l4); }
+
+  &.is-blank {
+    background: transparent;
+    cursor: default;
+    pointer-events: none;
+  }
+
+  &.is-selected {
+    outline: 2px solid var(--hb-text-strong);
+    outline-offset: 1px;
+  }
+
+  &:hover:not(.is-blank) { filter: brightness(1.25); }
+}
+
+// -----------------------------------------------------------------------------
+// Heatmap inspector (selected day)
+// -----------------------------------------------------------------------------
+.hb-inspector {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 16px 18px;
+  border: 1px solid var(--hb-card-border);
+  border-radius: 8px;
+  margin-top: 18px;
+  background: var(--hb-bg-flat);
+  gap: 18px;
+}
+
+.hb-inspector-date {
+  color: var(--hb-text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.hb-inspector-status {
+  font-size: 12px;
+  font-weight: 600;
+
+  &.is-done    { color: var(--hb-cyan); }
+  &.is-missed  { color: var(--hb-danger); }
+  &.is-untracked { color: var(--hb-text-dim); }
+}
+
+.hb-inspector-note {
+  min-width: 200px;
+  flex: 1;
+  color: var(--hb-text-dim);
+  font-size: 13px;
+  font-style: italic;
+}
+
+.hb-inspector-edit {
+  padding: 6px 12px;
+  border: 1px solid var(--hb-cyan);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--hb-cyan);
+  font-size: 12px;
+  font-weight: 600;
+
+  &:hover { background: var(--hb-cyan-soft); }
+}
+
+// -----------------------------------------------------------------------------
+// Detail row (Dose chart + Notebook)
+// -----------------------------------------------------------------------------
+.hb-detail-row {
+  display: grid;
+  margin-bottom: 24px;
+  gap: 14px;
+  grid-template-columns: 1fr 380px;
+
+  @media (width < 1100px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// Dose chart -------------------------------------------------------------------
+.hb-dose-card {
+  padding: 24px;
+  border: 1px solid var(--hb-card-border);
+  border-radius: 10px;
+  background: var(--hb-card);
+}
+
+.hb-dose-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  gap: 12px;
+}
+
+.hb-dose-title {
+  color: var(--hb-text-muted);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.hb-dose-avg {
+  margin-top: 2px;
+  color: var(--hb-text-strong);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.hb-dose-tabs {
+  display: flex;
+  border: 1px solid var(--hb-card-border);
+  border-radius: 999px;
+  background: var(--hb-bg-flat);
+}
+
+.hb-dose-tab {
+  padding: 5px 12px;
+  border-radius: 999px;
+  color: var(--hb-text-dim);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+
+  &.is-active {
+    background: var(--hb-cyan);
+    color: var(--hb-cyan-ink);
+  }
+}
+
+.hb-dose-svg {
+  display: block;
+  width: 100%;
+  height: 180px;
+}
+
+.hb-dose-bar {
+  fill: var(--hb-cyan);
+  fill-opacity: 0.85;
+
+  &.is-missed { fill: var(--hb-text-muted); }
+}
+
+.hb-dose-empty {
+  padding: 36px 0;
+  color: var(--hb-text-dim);
+  font-size: 13px;
+  font-style: italic;
+  text-align: center;
+}
+
+// Notebook --------------------------------------------------------------------
+.hb-notebook-card {
+  padding: 24px;
+  border: 1px solid var(--hb-card-border);
+  border-radius: 10px;
+  background: var(--hb-card);
+}
+
+.hb-notebook-title {
+  color: var(--hb-text-muted);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.hb-notebook-entry {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--hb-divider);
+
+  &:last-child { border-bottom: 0; }
+}
+
+.hb-notebook-date {
+  color: var(--hb-cyan);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.hb-notebook-note {
+  margin-top: 4px;
+  color: var(--hb-text);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.hb-notebook-empty {
+  margin-top: 14px;
+  color: var(--hb-text-dim);
+  font-size: 13px;
+  font-style: italic;
+}
+
+// -----------------------------------------------------------------------------
+// Recent log table
+// -----------------------------------------------------------------------------
+.hb-recent-card {
+  padding: 24px;
+  border: 1px solid var(--hb-card-border);
+  border-radius: 10px;
+  background: var(--hb-card);
+}
+
+.hb-recent-head-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 12px;
+}
+
+.hb-recent-title {
+  color: var(--hb-text-muted);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.hb-recent-meta {
+  color: var(--hb-text-muted);
+  font-size: 11px;
+}
+
+.hb-recent-grid {
+  display: grid;
+  grid-template-columns: 140px 90px 100px 110px 1fr 60px;
+
+  @media (width < 1100px) {
+    grid-template-columns: 1fr 60px 80px 1fr 60px;
+
+    .hb-recent-cell.is-target { display: none; }
+  }
+}
+
+.hb-recent-grid-head,
+.hb-recent-grid-row {
+  display: contents;
+}
+
+.hb-recent-cell {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--hb-divider);
+  font-size: 13px;
+
+  &.is-head {
+    border-bottom: 1px solid var(--hb-card-border);
+    color: var(--hb-text-muted);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  &.is-date { color: var(--hb-text); }
+
+  &.is-dose {
+    color: var(--hb-text-strong);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &.is-target {
+    color: var(--hb-text-dim);
+    font-size: 12px;
+  }
+
+  &.is-note {
+    overflow: hidden;
+    color: var(--hb-text-dim);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &.is-edit {
+    color: var(--hb-cyan);
+    font-size: 11px;
+    text-align: right;
+  }
+}
+
+.hb-status-dot {
+  font-size: 11px;
+  font-weight: 600;
+
+  &.is-done   { color: var(--hb-cyan); }
+  &.is-missed { color: var(--hb-danger); }
+}

@@ -11,7 +11,7 @@ This module provides:
 from __future__ import annotations
 
 import json
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal, InvalidOperation
 from typing import Any, cast
 
@@ -77,7 +77,9 @@ class HabitDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView):
         """
         context = super().get_context_data(**kwargs)
         user = cast(User, self.request.user)
-        detail_data = get_habit_detail(self.object, user)
+        # The dashboard detail page renders a year-long heatmap, so we ship
+        # 365 days of logs in the initial payload.
+        detail_data = get_habit_detail(self.object, user, days=365)
 
         return {
             **context,
@@ -230,6 +232,19 @@ def create_habit_view(request: Request) -> Response:
 
     habit = create_habit(user, name, purpose, start_date)
 
+    # New habits start with no logs.  We synthesize the dashboard's expected
+    # 7-day window so the landing page can render the new card immediately
+    # without a refresh.
+    today = date.today()
+    week_start = today - timedelta(days=6)
+    recent_logs = [
+        {
+            "date": (week_start + timedelta(days=i)).isoformat(),
+            "completed": False,
+        }
+        for i in range(7)
+    ]
+
     return Response({
         "habit": {
             "uuid": str(habit.uuid),
@@ -239,8 +254,12 @@ def create_habit_view(request: Request) -> Response:
             "end_date": None,
             "is_active": True,
             "tags": [],
+            "unit": habit.unit,
             "total_logs": 0,
             "completed_logs": 0,
             "completed_today": False,
+            "current_streak": 0,
+            "last_value": None,
+            "recent_logs": recent_logs,
         },
     }, status=status.HTTP_201_CREATED)

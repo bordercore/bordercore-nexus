@@ -1,27 +1,17 @@
 import React, { useMemo, useRef, useState } from "react";
-import MarkdownIt from "markdown-it";
 import { doPost } from "../utils/reactUtils";
 import { DeactivateHabitModal, DeactivateHabitModalHandle } from "./DeactivateHabitModal";
-import { RefinedDatePicker } from "../common/RefinedDatePicker";
-
-interface HabitLog {
-  uuid: string;
-  date: string;
-  completed: boolean;
-  value: string | null;
-  note: string;
-}
-
-interface HabitDetail {
-  uuid: string;
-  name: string;
-  purpose: string;
-  start_date: string;
-  end_date: string | null;
-  is_active: boolean;
-  tags: string[];
-  logs: HabitLog[];
-}
+import { TopBar } from "./detail/TopBar";
+import { DetailHeader } from "./detail/DetailHeader";
+import { LogPanel } from "./detail/LogPanel";
+import { KpiStrip } from "./detail/KpiStrip";
+import { Heatmap } from "./detail/Heatmap";
+import { HeatmapInspector } from "./detail/HeatmapInspector";
+import { DoseChart, ChartRange } from "./detail/DoseChart";
+import { Notebook } from "./detail/Notebook";
+import { RecentLogTable } from "./detail/RecentLogTable";
+import type { HabitDetail, HabitLogEntry } from "./types";
+import { todayIso } from "./utils/format";
 
 interface HabitDetailPageProps {
   habit: HabitDetail;
@@ -30,21 +20,38 @@ interface HabitDetailPageProps {
   listUrl: string;
 }
 
+/**
+ * Bordercore-style habit detail page.  Holds the canonical log list and
+ * routes mutations through `log_habit` (upsert) so the sticky panel handles
+ * both "log today" and "edit any past day" without separate endpoints.
+ */
 export default function HabitDetailPage({
   habit,
   logUrl,
   setInactiveUrl,
   listUrl,
 }: HabitDetailPageProps) {
-  const markdown = useMemo(() => new MarkdownIt(), []);
-  const [logs, setLogs] = useState<HabitLog[]>(habit.logs);
+  const today = todayIso();
+
+  const [logs, setLogs] = useState<HabitLogEntry[]>(habit.logs);
   const [isActive, setIsActive] = useState(habit.is_active);
   const [endDate, setEndDate] = useState(habit.end_date);
-  const [logDate, setLogDate] = useState(new Date().toISOString().split("T")[0]);
-  const [completed, setCompleted] = useState(true);
-  const [value, setValue] = useState("");
-  const [note, setNote] = useState("");
+  const [currentStreak, setCurrentStreak] = useState(habit.current_streak);
+  const [longestStreak, setLongestStreak] = useState(habit.longest_streak);
+
+  const [selectedDate, setSelectedDate] = useState<string>(today);
+  const [logDate, setLogDate] = useState<string>(today);
+  const [chartRange, setChartRange] = useState<ChartRange>("90d");
+
   const deactivateModalRef = useRef<DeactivateHabitModalHandle>(null);
+
+  const logByDate = useMemo(() => {
+    const m = new Map<string, HabitLogEntry>();
+    for (const log of logs) m.set(log.date, log);
+    return m;
+  }, [logs]);
+
+  const completedCount = useMemo(() => logs.filter(l => l.completed).length, [logs]);
 
   function handleDeactivate() {
     doPost(
@@ -58,12 +65,20 @@ export default function HabitDetailPage({
     );
   }
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-
+  function handleSave({
+    date,
+    completed,
+    value,
+    note,
+  }: {
+    date: string;
+    completed: boolean;
+    value: string;
+    note: string;
+  }) {
     const params: Record<string, string> = {
       habit_uuid: habit.uuid,
-      date: logDate,
+      date,
       completed: completed ? "true" : "false",
     };
     if (value) params.value = value;
@@ -73,148 +88,113 @@ export default function HabitDetailPage({
       logUrl,
       params,
       response => {
-        const newLog: HabitLog = response.data.log;
+        const newLog: HabitLogEntry = response.data.log;
         setLogs(prev => {
           const filtered = prev.filter(l => l.date !== newLog.date);
           return [newLog, ...filtered].sort((a, b) => b.date.localeCompare(a.date));
         });
-        setValue("");
-        setNote("");
+        // Reset the panel to today after a successful save unless the user
+        // explicitly retargets again.
+        setLogDate(today);
+        // Keep the heatmap selection on the day they just edited so they
+        // can verify the change visually.
+        setSelectedDate(date);
+        // Streaks need a server-truth refresh after editing past days; we
+        // approximate locally so the UI feels responsive.
+        if (date === today) {
+          setCurrentStreak(s => (completed ? s + 1 : Math.max(0, s - 1)));
+        }
+        // longestStreak only ever grows from the local edit perspective.
+        setLongestStreak(s => Math.max(s, currentStreak + (completed ? 1 : 0)));
       },
       "Log saved"
     );
   }
 
-  return (
-    <div className="habit-detail-page">
-      <div className="mb-3">
-        <a href={listUrl}>&larr; All Habits</a>
-      </div>
+  const selectedLog = selectedDate ? (logByDate.get(selectedDate) ?? null) : null;
+  const editingLog = logByDate.get(logDate) ?? null;
 
-      <div className="mb-4">
-        {/* User-owned content rendered with markdown-it - safe to render */}
-        {habit.purpose && (
-          <div
-            className="text-muted"
-            dangerouslySetInnerHTML={{ __html: markdown.render(habit.purpose) }}
-          />
-        )}
-        <div className="d-flex gap-3 text-muted small">
-          <span>
-            <span className="text-info">Started:</span> {habit.start_date}
-          </span>
-          {endDate && (
-            <span>
-              <span className="text-info">Ended:</span> {endDate}
-            </span>
-          )}
-          {habit.tags.length > 0 && (
-            <span>
-              Tags:{" "}
-              {habit.tags.map(tag => (
-                <span key={tag} className="badge bg-secondary me-1">
-                  {tag}
-                </span>
-              ))}
-            </span>
-          )}
-        </div>
-      </div>
+  return (
+    <div className="hb-page hb-detail">
+      <TopBar
+        name={habit.name}
+        listUrl={listUrl}
+        isActive={isActive}
+        onEnd={() => deactivateModalRef.current?.openModal()}
+      />
+
+      <DetailHeader
+        purpose={habit.purpose}
+        tags={habit.tags}
+        isActive={isActive}
+        endDate={endDate}
+      />
 
       {isActive && (
-        <div className="card mb-4">
-          <div className="card-body">
-            <div className="d-flex justify-content-between align-items-center mb-2">
-              <h5 className="card-title mb-0">Log Entry</h5>
-              <button
-                type="button"
-                className="btn btn-sm btn-warning"
-                onClick={() => deactivateModalRef.current?.openModal()}
-              >
-                Mark Inactive
-              </button>
-            </div>
-            <form onSubmit={handleSubmit}>
-              <div className="row g-2 align-items-end">
-                <div className="col-auto">
-                  <label className="form-label small">Date</label>
-                  <RefinedDatePicker value={logDate} onChange={setLogDate} />
-                </div>
-                <div className="col-auto">
-                  <label className="form-label small">Completed</label>
-                  <div>
-                    <input
-                      type="checkbox"
-                      className="form-check-input"
-                      checked={completed}
-                      onChange={e => setCompleted(e.target.checked)}
-                    />
-                  </div>
-                </div>
-                <div className="col-auto">
-                  <label className="form-label small">Value</label>
-                  <input
-                    type="number"
-                    step="any"
-                    className="form-control form-control-sm value-input"
-                    value={value}
-                    onChange={e => setValue(e.target.value)}
-                    placeholder="Optional"
-                  />
-                </div>
-                <div className="col">
-                  <label className="form-label small">Note</label>
-                  <input
-                    type="text"
-                    className="form-control form-control-sm"
-                    value={note}
-                    onChange={e => setNote(e.target.value)}
-                    placeholder="Optional"
-                  />
-                </div>
-                <div className="col-auto">
-                  <button type="submit" className="btn btn-sm btn-primary">
-                    Save
-                  </button>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
+        <LogPanel
+          selectedDate={logDate}
+          todayIso={today}
+          existingLog={editingLog}
+          unit={habit.unit}
+          onSave={handleSave}
+          onResetToToday={() => setLogDate(today)}
+        />
       )}
 
-      <h5>Log History</h5>
-      {logs.length === 0 ? (
-        <p className="text-muted">No log entries yet.</p>
-      ) : (
-        <table className="table table-sm">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th className="text-center">Status</th>
-              <th>Value</th>
-              <th>Note</th>
-            </tr>
-          </thead>
-          <tbody>
-            {logs.map(log => (
-              <tr key={log.uuid}>
-                <td>{log.date}</td>
-                <td className="text-center">
-                  {log.completed ? (
-                    <span className="text-success">{"\u2713"}</span>
-                  ) : (
-                    <span className="text-danger">{"\u2717"}</span>
-                  )}
-                </td>
-                <td>{log.value ?? ""}</td>
-                {/* User-owned content rendered with markdown-it - safe to render */}
-                <td dangerouslySetInnerHTML={{ __html: markdown.render(log.note) }} />
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+      <KpiStrip
+        startDate={habit.start_date}
+        currentStreak={currentStreak}
+        longestStreak={longestStreak}
+        logs={logs}
+      />
+
+      <section className="hb-heatmap-card">
+        <div className="hb-heatmap-head">
+          <div>
+            <div className="hb-heatmap-title-label">Last 365 days</div>
+            <div className="hb-heatmap-count">{completedCount} completed</div>
+          </div>
+          <div className="hb-heatmap-legend">
+            <span>Less</span>
+            <span className="hb-legend-cell hb-cell is-missed" />
+            <span className="hb-legend-cell hb-cell is-l1" />
+            <span className="hb-legend-cell hb-cell is-l2" />
+            <span className="hb-legend-cell hb-cell is-l3" />
+            <span className="hb-legend-cell hb-cell is-l4" />
+            <span>More</span>
+          </div>
+        </div>
+        <Heatmap
+          logs={logs}
+          endDateIso={today}
+          selectedDate={selectedDate}
+          onSelect={setSelectedDate}
+        />
+        <HeatmapInspector
+          date={selectedDate}
+          log={selectedLog}
+          unit={habit.unit}
+          onEdit={d => setLogDate(d)}
+        />
+      </section>
+
+      <div className="hb-detail-row">
+        <DoseChart
+          logs={logs}
+          endDateIso={today}
+          unit={habit.unit}
+          range={chartRange}
+          onRangeChange={setChartRange}
+        />
+        <Notebook logs={logs} />
+      </div>
+
+      <RecentLogTable
+        logs={logs}
+        unit={habit.unit}
+        totalCount={logs.length}
+        onEdit={d => setLogDate(d)}
+      />
 
       <DeactivateHabitModal ref={deactivateModalRef} onConfirm={handleDeactivate} />
     </div>

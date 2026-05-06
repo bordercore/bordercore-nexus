@@ -49,6 +49,10 @@ class Habit(TimeStampedModel):
     purpose = models.TextField(blank=True, help_text="Why you are tracking this habit")
     start_date = models.DateField(help_text="Date habit tracking begins")
     end_date = models.DateField(null=True, blank=True, help_text="Date habit tracking ended; blank means still active")
+    unit = models.CharField(
+        max_length=16, blank=True, default="",
+        help_text="Unit shown alongside numeric log values, e.g. 'mg', 'IU', 'caps'",
+    )
     user = models.ForeignKey(User, on_delete=models.PROTECT)
     tags = models.ManyToManyField(Tag, blank=True)
 

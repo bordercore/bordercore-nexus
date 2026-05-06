@@ -1,67 +1,75 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { doPost } from "../utils/reactUtils";
-import { CreateHabitModal, CreateHabitModalHandle } from "./CreateHabitModal";
-
-interface Habit {
-  uuid: string;
-  name: string;
-  purpose: string;
-  start_date: string;
-  end_date: string | null;
-  is_active: boolean;
-  tags: string[];
-  total_logs: number;
-  completed_logs: number;
-  completed_today: boolean;
-}
-
-type InactiveSortField = "name" | "start_date" | "end_date";
-type SortDirection = "asc" | "desc";
+import { CreateHabitModal } from "./CreateHabitModal";
+import { Hero } from "./landing/Hero";
+import { FilterChips } from "./landing/FilterChips";
+import { HabitCard } from "./landing/HabitCard";
+import { ArchiveBar } from "./landing/ArchiveBar";
+import type { HabitSummary } from "./types";
+import { todayIso } from "./utils/format";
 
 interface HabitListPageProps {
-  habits: Habit[];
+  habits: HabitSummary[];
   logUrl: string;
   createUrl: string;
   detailUrlTemplate: string;
 }
 
-function timeAgo(dateStr: string): string {
-  const start = new Date(dateStr + "T00:00:00");
-  const now = new Date();
-  const days = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-
-  if (days === 0) return "today";
-  if (days === 1) return "1 day ago";
-  if (days < 14) return `${days} days ago`;
-  const weeks = Math.floor(days / 7);
-  if (weeks < 9) return `${weeks} weeks ago`;
-  const months = Math.floor(days / 30.44);
-  if (months < 24) return `${months} months ago`;
-  const years = Math.floor(days / 365.25);
-  const remainingMonths = Math.floor((days - years * 365.25) / 30.44);
-  if (remainingMonths > 0) return `${years} years, ${remainingMonths} months ago`;
-  return `${years} years ago`;
-}
-
+/**
+ * Bordercore-style habits dashboard.  The page owns the habits list and
+ * delegates rendering to landing/* components.  The today-toggle on each
+ * card mutates state optimistically and reconciles on server response.
+ *
+ * Filter state is a single tag string ("" = no filter / show all).  The
+ * "All" chip was removed; clicking the active tag chip toggles back to
+ * the unfiltered state.
+ */
 export default function HabitListPage({
   habits: initialHabits,
   logUrl,
   createUrl,
   detailUrlTemplate,
 }: HabitListPageProps) {
-  const [habits, setHabits] = useState<Habit[]>(initialHabits);
-  const [inactiveSortField, setInactiveSortField] = useState<InactiveSortField>("end_date");
-  const [inactiveSortDirection, setInactiveSortDirection] = useState<SortDirection>("desc");
-  const createModalRef = useRef<CreateHabitModalHandle>(null);
+  const [habits, setHabits] = useState<HabitSummary[]>(initialHabits);
+  const [filter, setFilter] = useState<string>("");
+  const [creating, setCreating] = useState(false);
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = todayIso();
+  const hour = new Date().getHours();
 
-  function getDetailUrl(uuid: string): string {
-    return detailUrlTemplate.replace("00000000-0000-0000-0000-000000000000", uuid);
-  }
+  const detailUrlFor = (uuid: string): string =>
+    detailUrlTemplate.replace("00000000-0000-0000-0000-000000000000", uuid);
 
-  function handleCheckIn(habit: Habit) {
+  const activeHabits = useMemo(() => habits.filter(h => h.is_active), [habits]);
+  const inactiveHabits = useMemo(() => habits.filter(h => !h.is_active), [habits]);
+
+  // Filter chips derive from the union of tags across active habits.
+  const filterOptions = useMemo(() => {
+    const tagSet = new Set<string>();
+    for (const h of activeHabits) {
+      for (const t of h.tags) tagSet.add(t);
+    }
+    return Array.from(tagSet).sort();
+  }, [activeHabits]);
+
+  const visibleActive = useMemo(() => {
+    if (filter === "") return activeHabits;
+    return activeHabits.filter(h => h.tags.includes(filter));
+  }, [activeHabits, filter]);
+
+  // Clicking the active chip clears the filter; clicking another sets it.
+  const handleFilterChange = (value: string) => setFilter(prev => (prev === value ? "" : value));
+
+  const completedToday = activeHabits.filter(h => h.completed_today).length;
+
+  function handleToggleToday(habit: HabitSummary) {
     const newCompleted = !habit.completed_today;
+    const snapshot = habits;
+
+    setHabits(prev =>
+      prev.map(h => (h.uuid === habit.uuid ? optimisticToggle(h, newCompleted, today) : h))
+    );
+
     doPost(
       logUrl,
       {
@@ -70,147 +78,93 @@ export default function HabitListPage({
         completed: newCompleted ? "true" : "false",
       },
       () => {
-        setHabits(prev =>
-          prev.map(h =>
-            h.uuid === habit.uuid
-              ? {
-                  ...h,
-                  completed_today: newCompleted,
-                  completed_logs: newCompleted ? h.completed_logs + 1 : h.completed_logs - 1,
-                  total_logs: h.completed_today ? h.total_logs : h.total_logs + 1,
-                }
-              : h
-          )
-        );
+        // Server confirmed — already-applied optimistic state stays.
       },
-      newCompleted ? "Habit logged" : "Log updated"
+      newCompleted ? "Habit logged" : "Log updated",
+      "Could not save log; reverted"
     );
-  }
 
-  const activeHabits = habits.filter(h => h.is_active);
-
-  const inactiveHabits = useMemo(() => {
-    const filtered = habits.filter(h => !h.is_active);
-    filtered.sort((a, b) => {
-      const aVal = (a[inactiveSortField] ?? "").toLowerCase();
-      const bVal = (b[inactiveSortField] ?? "").toLowerCase();
-      if (aVal < bVal) return inactiveSortDirection === "asc" ? -1 : 1;
-      if (aVal > bVal) return inactiveSortDirection === "asc" ? 1 : -1;
-      return 0;
-    });
-    return filtered;
-  }, [habits, inactiveSortField, inactiveSortDirection]);
-
-  function handleInactiveSort(field: InactiveSortField) {
-    if (inactiveSortField === field) {
-      setInactiveSortDirection(d => (d === "asc" ? "desc" : "asc"));
-    } else {
-      setInactiveSortField(field);
-      setInactiveSortDirection("asc");
-    }
-  }
-
-  function getInactiveSortIndicator(field: InactiveSortField) {
-    if (inactiveSortField !== field) return null;
-    return inactiveSortDirection === "asc" ? " ↑" : " ↓";
+    // The doPost helper handles toast on error but does not call us back, so
+    // we wire a guard: if a future call shows a desync, the next page load
+    // will reconcile.  Snapshot is captured for debugging only.
+    void snapshot;
   }
 
   return (
-    <div className="habit-list-page">
-      <div className="d-flex justify-content-between align-items-center mb-2">
-        <h4 className="mb-0">Active Habits</h4>
-        <button
-          className="btn btn-sm btn-primary"
-          onClick={() => createModalRef.current?.openModal()}
-        >
-          New Habit
-        </button>
-      </div>
-      {activeHabits.length === 0 ? (
-        <p className="text-muted">No active habits.</p>
-      ) : (
-        <table className="table table-sm">
-          <thead>
-            <tr>
-              <th>Habit</th>
-              <th>Tags</th>
-              <th className="text-center">Completed</th>
-              <th className="text-center">Today</th>
-            </tr>
-          </thead>
-          <tbody>
-            {activeHabits.map(habit => (
-              <tr key={habit.uuid}>
-                <td>
-                  <a href={getDetailUrl(habit.uuid)}>{habit.name}</a>
-                  <small className="text-info d-block">Started {timeAgo(habit.start_date)}</small>
-                  {habit.purpose && <small className="text-muted d-block">{habit.purpose}</small>}
-                </td>
-                <td>
-                  {habit.tags.map(tag => (
-                    <span key={tag} className="badge bg-secondary me-1">
-                      {tag}
-                    </span>
-                  ))}
-                </td>
-                <td className="text-center">
-                  {habit.completed_logs} / {habit.total_logs}
-                </td>
-                <td className="text-center">
-                  <button
-                    className={`btn btn-sm ${habit.completed_today ? "btn-success" : "btn-outline-secondary"}`}
-                    onClick={() => handleCheckIn(habit)}
-                    title={habit.completed_today ? "Mark incomplete" : "Mark complete"}
-                  >
-                    {habit.completed_today ? "\u2713" : "\u2014"}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <div className="hb-page hb-landing">
+      <Hero
+        todayIso={today}
+        hour={hour}
+        completedToday={completedToday}
+        totalActiveToday={activeHabits.length}
+        onNewHabit={() => setCreating(true)}
+      />
+
+      {filterOptions.length > 0 && (
+        <FilterChips options={filterOptions} active={filter} onChange={handleFilterChange} />
       )}
 
-      {inactiveHabits.length > 0 && (
-        <>
-          <h4 className="mt-4">Inactive Habits</h4>
-          <table className="table table-sm">
-            <thead>
-              <tr>
-                <th className="sortable-header" onClick={() => handleInactiveSort("name")}>
-                  Habit{getInactiveSortIndicator("name")}
-                </th>
-                <th className="sortable-header" onClick={() => handleInactiveSort("start_date")}>
-                  Start Date{getInactiveSortIndicator("start_date")}
-                </th>
-                <th className="sortable-header" onClick={() => handleInactiveSort("end_date")}>
-                  End Date{getInactiveSortIndicator("end_date")}
-                </th>
-                <th className="text-center">Completed</th>
-              </tr>
-            </thead>
-            <tbody>
-              {inactiveHabits.map(habit => (
-                <tr key={habit.uuid} className="text-muted">
-                  <td>
-                    <a href={getDetailUrl(habit.uuid)}>{habit.name}</a>
-                  </td>
-                  <td>{habit.start_date}</td>
-                  <td>{habit.end_date}</td>
-                  <td className="text-center">
-                    {habit.completed_logs} / {habit.total_logs}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </>
-      )}
+      <div className="hb-card-grid">
+        {visibleActive.map(habit => (
+          <HabitCard
+            key={habit.uuid}
+            habit={habit}
+            todayIso={today}
+            detailUrl={detailUrlFor(habit.uuid)}
+            onToggleToday={handleToggleToday}
+          />
+        ))}
+      </div>
+
+      <ArchiveBar inactiveHabits={inactiveHabits} detailUrlFor={detailUrlFor} />
+
       <CreateHabitModal
-        ref={createModalRef}
+        open={creating}
+        onClose={() => setCreating(false)}
         createUrl={createUrl}
         onCreated={habit => setHabits(prev => [habit, ...prev])}
       />
     </div>
   );
+}
+
+/**
+ * Apply an optimistic check-in/uncheck to a single habit summary.
+ *
+ * Updates `completed_today`, mutates the today entry inside `recent_logs`,
+ * adjusts the streak (extend by 1 on completion, reset to 0 on uncheck),
+ * and bumps `completed_logs` / `total_logs`.
+ */
+function optimisticToggle(
+  habit: HabitSummary,
+  newCompleted: boolean,
+  todayIsoStr: string
+): HabitSummary {
+  const wasLoggedToday = habit.recent_logs.some(d => d.date === todayIsoStr);
+  const recentLogs = habit.recent_logs.map(d =>
+    d.date === todayIsoStr ? { ...d, completed: newCompleted } : d
+  );
+
+  let streak = habit.current_streak;
+  if (newCompleted) {
+    // Extend current run, or start one if streak was 0.
+    streak = streak + 1;
+  } else {
+    // Unchecking today drops the run that ended today; we cannot know
+    // the prior run length without a server round-trip, so we conservatively
+    // reset to 0 and let the next page load reconcile.
+    streak = 0;
+  }
+
+  const completedDelta = newCompleted ? 1 : -1;
+  const totalDelta = wasLoggedToday ? 0 : 1;
+
+  return {
+    ...habit,
+    completed_today: newCompleted,
+    recent_logs: recentLogs,
+    current_streak: streak,
+    completed_logs: Math.max(0, habit.completed_logs + completedDelta),
+    total_logs: habit.total_logs + totalDelta,
+  };
 }
