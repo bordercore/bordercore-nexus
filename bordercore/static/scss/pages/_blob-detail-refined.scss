@@ -1224,12 +1224,20 @@
     transition: background 120ms;
   }
 
-  .pop-result:hover {
+  // Hover and keyboard-active states share the same look so arrow-key
+  // navigation and mouse hover can interleave without visual jumps.
+  .pop-result:hover,
+  .pop-result.is-active {
     background: rgb(179 107 255 / 14%);
     color: #f1eaff;
   }
 
-  .pop-result:hover .name { color: #f1eaff; }
+  .pop-result:hover .name,
+  .pop-result.is-active .name { color: #f1eaff; }
+
+  .pop-result.is-active {
+    box-shadow: inset 2px 0 0 #b36bff;
+  }
 
   .pop-cover {
     display: grid;
@@ -1278,33 +1286,112 @@
 
   .pop-foot {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
+    flex-direction: column;
     padding-top: 8px;
     border-top: 1px solid #1e212d;
-    color: #3a3e4b;
-    font-family: "JetBrains Mono", monospace;
-    font-size: 10px;
+    gap: 6px;
   }
 
+  // Primary "create new" CTA. Full-width so a long preview can truncate
+  // gracefully instead of pushing siblings around. Solid (not dashed)
+  // border + soft purple wash reads as an action, not a drop-target.
   .bd-show-more {
-    display: inline-flex;
+    position: relative;
+    display: flex;
+    width: 100%;
     align-items: center;
-    padding: 4px 8px;
-    border: 1px dashed #2a2e3d;
-    border-radius: 4px;
-    background: transparent;
-    color: #5a5f72;
+    padding: 9px 12px;
+    border: 1px solid rgb(179 107 255 / 22%);
+    border-radius: 6px;
+    background:
+      linear-gradient(180deg, rgb(179 107 255 / 7%) 0%, rgb(179 107 255 / 2%) 100%),
+      #0e1019;
+    color: #c8a8ff;
     cursor: pointer;
     font-family: "JetBrains Mono", monospace;
     font-size: 11px;
-    gap: 6px;
-    transition: all 120ms;
+    gap: 10px;
+    text-align: left;
+    transition: border-color 160ms, background 160ms, box-shadow 160ms, transform 160ms;
   }
 
   .bd-show-more:hover {
+    border-color: rgb(179 107 255 / 65%);
+    background:
+      linear-gradient(180deg, rgb(179 107 255 / 14%) 0%, rgb(179 107 255 / 4%) 100%),
+      #0e1019;
+    box-shadow:
+      0 0 0 1px rgb(179 107 255 / 22%),
+      0 6px 18px rgb(179 107 255 / 18%);
+    transform: translateY(-1px);
+  }
+
+  .bd-show-more:active { transform: translateY(0); }
+
+  .bd-show-more:focus-visible {
     border-color: #b36bff;
+    box-shadow: 0 0 0 2px rgb(179 107 255 / 35%);
+    outline: none;
+  }
+
+  // "+ create" label — small caps mono, purple, the loud part of the CTA.
+  .bd-show-more-label {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
     color: #b36bff;
+    font-size: 10px;
+    font-weight: 600;
+    gap: 6px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+
+    svg { font-size: 9px; }
+  }
+
+  // The pipe before the typed-name preview. Drawn as a ::before so it
+  // doesn't add a DOM node and hugs the divider tightly.
+  .bd-show-more-preview {
+    overflow: hidden;
+    min-width: 0;
+    flex: 1;
+    padding-left: 10px;
+    border-left: 1px solid rgb(179 107 255 / 18%);
+    color: #e6e8f0;
+    font-family: Inter, sans-serif;
+    font-size: 12.5px;
+    font-style: italic;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  // ↵ key-cap glyph on the right hints "press enter".
+  .bd-show-more-key {
+    display: inline-flex;
+    width: 22px;
+    height: 18px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 1px solid rgb(179 107 255 / 28%);
+    border-radius: 3px;
+    background: rgb(179 107 255 / 8%);
+    color: #b36bff;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+  }
+
+  // Subordinate "Esc to close" line — tiny, muted, never fights the CTA.
+  .bd-show-more-hint {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    color: #3a3e4b;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 9.5px;
+    gap: 5px;
+    letter-spacing: 0.04em;
   }
 
   kbd {

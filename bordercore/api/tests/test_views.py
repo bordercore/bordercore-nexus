@@ -145,6 +145,39 @@ def test_collection_viewset(authenticated_client, collection):
     assert resp.status_code == 201
 
 
+def test_create_collection_with_blob_uuid(
+    authenticated_client, monkeypatch_collection, blob_image_factory
+):
+    """POSTing collection-list with a blob_uuid seeds the new collection.
+
+    Mirrors the blob detail page's "create new collection" affordance:
+    creating a collection from there must also add the current blob to it
+    (otherwise the collection appears empty and the user has to add the
+    blob in a second step).
+    """
+    blob = blob_image_factory[0]
+    _, client = authenticated_client(blob.user)
+
+    url = urls.reverse("collection-list")
+    resp = client.post(
+        url,
+        {
+            "name": faker.text(max_nb_chars=32),
+            "blob_uuid": str(blob.uuid),
+        },
+    )
+
+    assert resp.status_code == 201
+    new_uuid = resp.json()["uuid"]
+
+    from collection.models import Collection
+    collection = Collection.objects.get(uuid=new_uuid)
+    member_uuids = list(
+        collection.collectionobject_set.values_list("blob__uuid", flat=True)
+    )
+    assert blob.uuid in member_uuids
+
+
 def test_feed_viewset(authenticated_client, feed):
 
     _, client = authenticated_client()

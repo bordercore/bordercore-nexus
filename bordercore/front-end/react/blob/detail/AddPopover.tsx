@@ -1,6 +1,6 @@
 import React, { useEffect, useLayoutEffect, useRef, useState, useCallback } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSearch } from "@fortawesome/free-solid-svg-icons";
+import { faSearch, faPlus } from "@fortawesome/free-solid-svg-icons";
 import {
   useFloating,
   autoUpdate,
@@ -53,9 +53,13 @@ export function AddPopover({
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
+  // -1 means "no row highlighted" (e.g. before any results). Once results
+  // arrive we pre-select index 0 so a bare Enter still picks the top hit.
+  const [activeIndex, setActiveIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const debounceRef = useRef<number | null>(null);
   const cancelRef = useRef<AbortController | null>(null);
+  const itemRefs = useRef<Array<HTMLDivElement | null>>([]);
 
   const { refs, floatingStyles, context } = useFloating({
     open,
@@ -82,6 +86,7 @@ export function AddPopover({
     if (!open) {
       setQuery("");
       setResults([]);
+      setActiveIndex(-1);
       cancelRef.current?.abort();
     } else {
       // Focus on open. preventScroll so a momentarily-misplaced popover
@@ -123,6 +128,21 @@ export function AddPopover({
     };
   }, [query, open, searchUrl, parseResponse]);
 
+  // When a fresh result set arrives, pre-highlight the top row so Enter
+  // does the obvious thing. Also keep itemRefs sized to the result list.
+  useEffect(() => {
+    itemRefs.current.length = results.length;
+    setActiveIndex(results.length > 0 ? 0 : -1);
+  }, [results]);
+
+  // Keep the highlighted row visible inside the (scrollable) result list
+  // as the user arrow-keys past the viewport. block: "nearest" means we
+  // never scroll if the row is already in view.
+  useEffect(() => {
+    if (activeIndex < 0) return;
+    itemRefs.current[activeIndex]?.scrollIntoView({ block: "nearest" });
+  }, [activeIndex]);
+
   const handleSelect = useCallback(
     (item: SearchResult) => {
       onSelect(item);
@@ -159,9 +179,30 @@ export function AddPopover({
               placeholder={placeholder}
               onChange={e => setQuery(e.target.value)}
               onKeyDown={e => {
-                if (e.key === "Enter" && results[0]) {
+                if (e.key === "ArrowDown") {
                   e.preventDefault();
-                  handleSelect(results[0]);
+                  if (results.length === 0) return;
+                  setActiveIndex(i => (i + 1) % results.length);
+                } else if (e.key === "ArrowUp") {
+                  e.preventDefault();
+                  if (results.length === 0) return;
+                  setActiveIndex(i => (i <= 0 ? results.length - 1 : i - 1));
+                } else if (e.key === "Home") {
+                  if (results.length === 0) return;
+                  e.preventDefault();
+                  setActiveIndex(0);
+                } else if (e.key === "End") {
+                  if (results.length === 0) return;
+                  e.preventDefault();
+                  setActiveIndex(results.length - 1);
+                } else if (e.key === "Enter") {
+                  // Pick the highlighted row; fall back to the top hit so
+                  // power users who hit Enter immediately still get it.
+                  const target = activeIndex >= 0 ? results[activeIndex] : results[0];
+                  if (target) {
+                    e.preventDefault();
+                    handleSelect(target);
+                  }
                 } else if (e.key === "Escape") {
                   onOpenChange(false);
                 }
@@ -178,8 +219,18 @@ export function AddPopover({
               <div className="pop-empty">{emptyHint}</div>
             )}
             {!loading &&
-              results.map(item => (
-                <div key={item.uuid} className="pop-result" onClick={() => handleSelect(item)}>
+              results.map((item, idx) => (
+                <div
+                  key={item.uuid}
+                  ref={el => {
+                    itemRefs.current[idx] = el;
+                  }}
+                  className={`pop-result${idx === activeIndex ? " is-active" : ""}`}
+                  role="option"
+                  aria-selected={idx === activeIndex}
+                  onClick={() => handleSelect(item)}
+                  onMouseEnter={() => setActiveIndex(idx)}
+                >
                   {rowGlyph ? rowGlyph(item) : null}
                   <span className="name">{item.name || item.question || item.uuid}</span>
                   {rowSubtext ? <span className="type-pill">{rowSubtext(item)}</span> : null}
@@ -189,10 +240,22 @@ export function AddPopover({
 
           {onCreate && query.trim() !== "" && (
             <div className="pop-foot">
-              <button type="button" className="bd-show-more" onClick={handleCreate}>
-                {createLabel} <kbd>{query.trim()}</kbd>
+              <button
+                type="button"
+                className="bd-show-more"
+                onClick={handleCreate}
+                title={`${createLabel} "${query.trim()}"`}
+              >
+                <span className="bd-show-more-label">
+                  <FontAwesomeIcon icon={faPlus} />
+                  <span>{createLabel}</span>
+                </span>
+                <span className="bd-show-more-preview">{query.trim()}</span>
+                <kbd className="bd-show-more-key" aria-hidden="true">
+                  ↵
+                </kbd>
               </button>
-              <span>
+              <span className="bd-show-more-hint">
                 <kbd>Esc</kbd> to close
               </span>
             </div>

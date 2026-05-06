@@ -21,6 +21,7 @@ from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models import Count
 from django.db.models import QuerySet
+from django.shortcuts import get_object_or_404
 
 log = logging.getLogger(__name__)
 
@@ -265,6 +266,12 @@ class CollectionViewSet(UserScopedQuerysetMixin, viewsets.ModelViewSet):
     def create(self, request: Request, *args: object, **kwargs: object) -> Response:
         """Create a collection and return its id and uuid.
 
+        If ``blob_uuid`` or ``bookmark_uuid`` is supplied, the corresponding
+        object is added to the new collection in the same transaction. This
+        lets callers (for example the blob detail page's "create new
+        collection" affordance) seed the collection with an initial member
+        without a follow-up request.
+
         Args:
             request: The incoming DRF request.
             *args: Additional positional arguments.
@@ -273,9 +280,22 @@ class CollectionViewSet(UserScopedQuerysetMixin, viewsets.ModelViewSet):
         Returns:
             Response with status, id, and uuid of the new collection.
         """
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        instance = serializer.save(user=request.user)
+        blob_uuid = request.data.get("blob_uuid")
+        bookmark_uuid = request.data.get("bookmark_uuid")
+
+        with transaction.atomic():
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            instance = serializer.save(user=request.user)
+
+            user = cast(User, request.user)
+            if blob_uuid:
+                blob = get_object_or_404(Blob, uuid=blob_uuid, user=user)
+                instance.add_object(blob)
+            elif bookmark_uuid:
+                bookmark = get_object_or_404(Bookmark, uuid=bookmark_uuid, user=user)
+                instance.add_object(bookmark)
+
         return Response(
             {"id": instance.id, "uuid": str(instance.uuid)},
             status=status.HTTP_201_CREATED,
