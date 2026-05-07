@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Modal } from "bootstrap";
+import { createPortal } from "react-dom";
 import { arrayMove } from "@dnd-kit/sortable";
 import axios from "axios";
 import type {
@@ -85,6 +85,7 @@ export function CurateCollectionPage({
   const [columns, setColumns] = useState<3 | 4 | 5 | 6>(() => readDensity(collection.uuid));
   const [railOpen, setRailOpen] = useState<boolean>(() => readRailOpen());
   const [shuffled, setShuffled] = useState(false);
+  const [processingOpen, setProcessingOpen] = useState(false);
 
   // Slideshow state
   const [slideShowActive, setSlideShowActive] = useState(false);
@@ -237,8 +238,7 @@ export function CurateCollectionPage({
   const handleFileDrop = useCallback(
     async (files: FileList) => {
       if (files.length === 0) return;
-      const processingModal = new Modal("#modalProcessing");
-      processingModal.show();
+      setProcessingOpen(true);
 
       const file = files[0];
       const formData = new FormData();
@@ -265,7 +265,7 @@ export function CurateCollectionPage({
         } else {
           window.alert(data?.detail || "Error uploading file");
         }
-        processingModal.hide();
+        setProcessingOpen(false);
       }
     },
     [collection.uuid, urls.createBlob, urls.blobDetail]
@@ -356,25 +356,24 @@ export function CurateCollectionPage({
 
   return (
     <>
-      <div
-        className="modal fade"
-        id="modalProcessing"
-        tabIndex={-1}
-        role="dialog"
-        data-bs-backdrop="static"
-        data-bs-keyboard="false"
-      >
-        <div className="modal-dialog modal-dialog-centered" role="document">
-          <div className="modal-content">
-            <div className="modal-body text-center p-5">
+      {processingOpen &&
+        createPortal(
+          <>
+            <div className="refined-modal-scrim" />
+            <div
+              className="refined-modal cd-curate-processing"
+              role="dialog"
+              aria-label="processing"
+              aria-live="polite"
+            >
               <div className="spinner-border text-primary" role="status">
                 <span className="visually-hidden">Processing...</span>
               </div>
-              <div className="mt-3">Processing...</div>
+              <div className="cd-curate-processing-label">Processing…</div>
             </div>
-          </div>
-        </div>
-      </div>
+          </>,
+          document.body
+        )}
 
       <ImageViewModal ref={imageViewRef} />
 

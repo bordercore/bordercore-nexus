@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { createPortal } from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBars, faPencilAlt, faTimes, faEllipsisV } from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
@@ -39,6 +40,26 @@ export function PlaylistDetailPage({ playlist, urls, staticUrl }: PlaylistDetail
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
+
+  const deleteCancelRef = useRef<HTMLButtonElement>(null);
+
+  // Auto-focus the cancel button when the delete confirmation opens. Defaulting
+  // focus to the non-destructive option avoids accidental Enter-key deletions.
+  useEffect(() => {
+    if (!showDeleteModal) return;
+    const t = window.setTimeout(() => deleteCancelRef.current?.focus(), 40);
+    return () => window.clearTimeout(t);
+  }, [showDeleteModal]);
+
+  // Escape closes the delete confirmation modal.
+  useEffect(() => {
+    if (!showDeleteModal) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowDeleteModal(false);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [showDeleteModal]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -317,44 +338,6 @@ export function PlaylistDetailPage({ playlist, urls, staticUrl }: PlaylistDetail
           </div>
         </div>
 
-        {/* Delete confirmation modal */}
-        {showDeleteModal && (
-          <div className="modal fade show d-block" tabIndex={-1} role="dialog">
-            <div className="modal-backdrop fade show" />
-            <div className="modal-dialog" role="document">
-              <div className="modal-content">
-                <div className="modal-header">
-                  <h4 className="modal-title">Delete Playlist</h4>
-                  <button
-                    type="button"
-                    className="btn-close"
-                    onClick={() => setShowDeleteModal(false)}
-                    aria-label="Close"
-                  />
-                </div>
-                <div className="modal-body">
-                  <div>Are you sure you want to delete this playlist?</div>
-                  <div className="mt-3">
-                    <button className="btn btn-primary" onClick={handleDeletePlaylist}>
-                      Confirm
-                    </button>
-                    <a
-                      href="#"
-                      className="ms-3"
-                      onClick={e => {
-                        e.preventDefault();
-                        setShowDeleteModal(false);
-                      }}
-                    >
-                      Cancel
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Edit playlist modal */}
         <EditPlaylistModal
           open={showEditModal}
@@ -364,6 +347,43 @@ export function PlaylistDetailPage({ playlist, urls, staticUrl }: PlaylistDetail
           tagSearchUrl={urls.tagSearch}
         />
       </div>
+
+      {/* Delete confirmation modal */}
+      {showDeleteModal &&
+        createPortal(
+          <>
+            <div className="refined-modal-scrim" onClick={() => setShowDeleteModal(false)} />
+            <div className="refined-modal" role="dialog" aria-label="delete playlist">
+              <button
+                type="button"
+                className="refined-modal-close"
+                onClick={() => setShowDeleteModal(false)}
+                aria-label="close"
+              >
+                <FontAwesomeIcon icon={faTimes} />
+              </button>
+
+              <h2 className="refined-modal-title">Delete playlist</h2>
+
+              <p className="refined-modal-lead">Are you sure you want to delete this playlist?</p>
+
+              <div className="refined-modal-actions">
+                <button
+                  ref={deleteCancelRef}
+                  type="button"
+                  className="refined-btn ghost"
+                  onClick={() => setShowDeleteModal(false)}
+                >
+                  cancel
+                </button>
+                <button type="button" className="refined-btn danger" onClick={handleDeletePlaylist}>
+                  delete
+                </button>
+              </div>
+            </div>
+          </>,
+          document.body
+        )}
       <DragOverlay>
         {activeSong ? (
           <div

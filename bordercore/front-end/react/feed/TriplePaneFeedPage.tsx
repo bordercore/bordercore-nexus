@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Modal } from "bootstrap";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faTimes, faTrashAlt } from "@fortawesome/free-solid-svg-icons";
 import FeedSidebar from "./FeedSidebar";
 import ItemList from "./ItemList";
 import ItemReader from "./ItemReader";
@@ -37,14 +38,22 @@ export function TriplePaneFeedPage({
     homepage: "",
   });
 
-  const deleteModalRef = useRef<HTMLDivElement>(null);
-  const deleteModalInstanceRef = useRef<Modal | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+  const deleteCancelRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    if (deleteModalRef.current && !deleteModalInstanceRef.current) {
-      deleteModalInstanceRef.current = new Modal(deleteModalRef.current);
-    }
-  }, []);
+    if (!deleteModalOpen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setDeleteModalOpen(false);
+    };
+    window.addEventListener("keydown", handler);
+    const t = window.setTimeout(() => deleteCancelRef.current?.focus(), 40);
+    return () => {
+      window.removeEventListener("keydown", handler);
+      window.clearTimeout(t);
+    };
+  }, [deleteModalOpen]);
 
   const activeFeed = useMemo(
     () => feedList.find(f => f.id === activeFeedId) ?? null,
@@ -119,12 +128,18 @@ export function TriplePaneFeedPage({
   }, []);
 
   const handleDeleteFeedClick = useCallback(() => {
-    deleteModalInstanceRef.current?.show();
+    setDeleteModalOpen(true);
   }, []);
 
+  const handleDeleteFeedClose = useCallback(() => {
+    if (deleteSubmitting) return;
+    setDeleteModalOpen(false);
+  }, [deleteSubmitting]);
+
   const handleDeleteFeedConfirm = useCallback(() => {
-    if (!activeFeed) return;
+    if (!activeFeed || deleteSubmitting) return;
     const deleteUrl = editFeedUrl.replace(/00000000-0000-0000-0000-000000000000/, activeFeed.uuid);
+    setDeleteSubmitting(true);
     doDelete(
       deleteUrl,
       () => {
@@ -134,11 +149,12 @@ export function TriplePaneFeedPage({
           setActiveItemId(null);
           return next;
         });
-        deleteModalInstanceRef.current?.hide();
+        setDeleteSubmitting(false);
+        setDeleteModalOpen(false);
       },
       "Feed deleted"
     );
-  }, [activeFeed, editFeedUrl]);
+  }, [activeFeed, editFeedUrl, deleteSubmitting]);
 
   return (
     <div className="tp-feed-page">
@@ -158,47 +174,59 @@ export function TriplePaneFeedPage({
       />
       <ItemReader feed={activeFeed} item={activeItem} onMarkRead={updateItem} />
 
-      {createPortal(
-        <div
-          ref={deleteModalRef}
-          id="modalDeleteFeed"
-          className="modal fade"
-          tabIndex={-1}
-          role="dialog"
-          aria-labelledby="deleteFeedLabel"
-        >
-          <div className="modal-dialog" role="document">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h4 id="deleteFeedLabel" className="modal-title">
-                  Delete Feed
-                </h4>
+      {deleteModalOpen &&
+        createPortal(
+          <>
+            <div className="refined-modal-scrim" onClick={handleDeleteFeedClose} />
+            <div
+              className="refined-modal rm-confirm-modal"
+              role="dialog"
+              aria-label="confirm delete feed"
+            >
+              <button
+                type="button"
+                className="refined-modal-close"
+                onClick={handleDeleteFeedClose}
+                aria-label="close"
+              >
+                <FontAwesomeIcon icon={faTimes} />
+              </button>
+
+              <h2 className="refined-modal-title">Delete this feed?</h2>
+              <p className="refined-modal-lead">
+                {activeFeed ? (
+                  <>
+                    <code className="rm-confirm-name">{activeFeed.name}</code> will be removed. This
+                    cannot be undone.
+                  </>
+                ) : (
+                  <>This feed will be removed. This cannot be undone.</>
+                )}
+              </p>
+
+              <div className="refined-modal-actions">
+                <button
+                  ref={deleteCancelRef}
+                  type="button"
+                  className="refined-btn ghost"
+                  onClick={handleDeleteFeedClose}
+                >
+                  cancel
+                </button>
                 <button
                   type="button"
-                  className="btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
-                />
-              </div>
-              <div className="modal-body">
-                <div>Are you sure you want to delete this feed?</div>
-                <div className="mt-3">
-                  <input
-                    className="btn btn-primary"
-                    type="button"
-                    value="Confirm"
-                    onClick={handleDeleteFeedConfirm}
-                  />
-                  <a href="#" data-bs-dismiss="modal" className="ms-3">
-                    Cancel
-                  </a>
-                </div>
+                  className="refined-btn danger"
+                  onClick={handleDeleteFeedConfirm}
+                  disabled={deleteSubmitting || !activeFeed}
+                >
+                  <FontAwesomeIcon icon={faTrashAlt} className="refined-btn-icon" />
+                  {deleteSubmitting ? "deleting…" : "delete feed"}
+                </button>
               </div>
             </div>
-          </div>
-        </div>,
-        document.body
-      )}
+          </>,
+          document.body
+        )}
 
       <FeedEditorModal
         isOpen={editorModalOpen}

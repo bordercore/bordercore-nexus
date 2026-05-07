@@ -8,8 +8,6 @@
 {% block nav %}{% endblock %}
 
 {% block content %}
-    {% include "common/processing.html" %}
-
     <div
         id="react-root"
         data-blob-uuid="{{ object.uuid|default:'' }}"

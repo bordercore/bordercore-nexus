@@ -658,3 +658,21 @@
     font-size: 12px;
   }
 }
+
+// Processing dialog shown during file-drop blob upload. Portaled to
+// document.body via createPortal so it lives outside .cd-curate.
+.cd-curate-processing {
+  display: flex;
+  width: min(320px, calc(100vw - 40px));
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 36px 28px;
+  gap: 14px;
+  text-align: center;
+
+  .cd-curate-processing-label {
+    color: var(--fg-2);
+    font: 500 14px/1.2 var(--font-ui);
+  }
+}

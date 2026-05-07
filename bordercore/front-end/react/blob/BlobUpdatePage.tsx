@@ -9,7 +9,6 @@ import {
   faTimes,
 } from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
-import { Modal } from "bootstrap";
 
 import { MarkdownEditor, MarkdownEditorHandle } from "./MarkdownEditor";
 import { RefinedDatePicker } from "../common/RefinedDatePicker";
@@ -153,6 +152,7 @@ export function BlobUpdatePage({
 
   const [contentExpanded, setContentExpanded] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const [flags, setFlags] = useState<FlagsState>({
     importance: initialImportance,
@@ -172,11 +172,7 @@ export function BlobUpdatePage({
 
   // ⌘S / Ctrl-S submit
   const handleSubmit = useCallback(() => {
-    const modalEl = document.getElementById("modalProcessing");
-    if (modalEl) {
-      const modal = new Modal(modalEl);
-      modal.show();
-    }
+    setSubmitting(true);
 
     // axios automatically injects X-CSRFToken from the csrftoken cookie.
     const formData = new FormData();
@@ -211,11 +207,7 @@ export function BlobUpdatePage({
         );
       })
       .catch(error => {
-        const modalEl = document.getElementById("modalProcessing");
-        if (modalEl) {
-          const modal = Modal.getInstance(modalEl);
-          setTimeout(() => modal?.hide(), 500);
-        }
+        setTimeout(() => setSubmitting(false), 500);
         const errors: string[] = [];
         if (error.response?.data) {
           for (const key in error.response.data) {
@@ -574,6 +566,27 @@ export function BlobUpdatePage({
           </div>
         </section>
       </div>
+
+      {submitting &&
+        createPortal(
+          <>
+            <div className="refined-modal-scrim" />
+            <div
+              className="refined-modal refined-modal-processing"
+              role="dialog"
+              aria-label="processing"
+              aria-live="polite"
+            >
+              <div className="refined-modal-processing-body">
+                <div className="spinner-border text-secondary" role="status">
+                  <span className="visually-hidden">Loading...</span>
+                </div>
+                <span className="refined-modal-processing-text">Processing…</span>
+              </div>
+            </div>
+          </>,
+          document.body
+        )}
 
       {deleteOpen &&
         createPortal(

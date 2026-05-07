@@ -1,7 +1,7 @@
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCheck, faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
-import { Modal } from "bootstrap";
+import { faCheck, faExclamationTriangle, faTimes } from "@fortawesome/free-solid-svg-icons";
 import Card from "../common/Card";
 
 interface TestResultBase {
@@ -54,17 +54,18 @@ type StandardTestType = "unit" | "functional" | "data" | "wumpus";
 
 export function MetricListPage({ testResults }: MetricListPageProps) {
   const [selectedTest, setSelectedTest] = useState<StandardTestType>("unit");
-  const modalRef = useRef<Modal | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const closeModal = () => setModalOpen(false);
 
   useEffect(() => {
-    const modalElement = document.getElementById("modalTestOutput");
-    if (modalElement) {
-      modalRef.current = new Modal(modalElement);
-    }
-    return () => {
-      modalRef.current?.dispose();
+    if (!modalOpen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeModal();
     };
-  }, []);
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [modalOpen]);
 
   const getStatus = (testType: StandardTestType): StatusInfo => {
     const result = testResults[testType];
@@ -91,7 +92,7 @@ export function MetricListPage({ testResults }: MetricListPageProps) {
 
   const showTestResults = (testType: StandardTestType) => {
     setSelectedTest(testType);
-    modalRef.current?.show();
+    setModalOpen(true);
   };
 
   return (
@@ -283,33 +284,29 @@ export function MetricListPage({ testResults }: MetricListPageProps) {
       </div>
 
       {/* Modal for test output - uses trusted backend test output */}
-      <div
-        id="modalTestOutput"
-        className="modal fade"
-        tabIndex={-1}
-        role="dialog"
-        aria-labelledby="myModalLabel"
-      >
-        <div className="modal-dialog modal-lg" role="document">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h4 id="myModalLabel" className="modal-title">
-                Test Output
-              </h4>
+      {modalOpen &&
+        createPortal(
+          <>
+            <div className="refined-modal-scrim" onClick={closeModal} />
+            <div className="refined-modal" role="dialog" aria-label="test output">
               <button
                 type="button"
-                className="btn-close"
-                data-bs-dismiss="modal"
-                aria-label="Close"
+                className="refined-modal-close"
+                onClick={closeModal}
+                aria-label="close"
+              >
+                <FontAwesomeIcon icon={faTimes} />
+              </button>
+
+              <h2 className="refined-modal-title">Test output</h2>
+
+              <div
+                dangerouslySetInnerHTML={{ __html: testResults[selectedTest].test_output || "" }}
               />
             </div>
-            <div
-              className="modal-body"
-              dangerouslySetInnerHTML={{ __html: testResults[selectedTest].test_output || "" }}
-            />
-          </div>
-        </div>
-      </div>
+          </>,
+          document.body
+        )}
     </div>
   );
 }
