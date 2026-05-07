@@ -185,8 +185,14 @@ def search(
 
     results = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
 
+    buckets = (
+        results.get("aggregations", {})
+        .get("distinct_tags", {})
+        .get("buckets", [])
+    )
+
     matches = []
-    for tag_result in results["aggregations"]["distinct_tags"]["buckets"]:
+    for tag_result in buckets:
         if tag_result["key"].lower().find(tag_name) != -1:
             matches.append(
                 {
@@ -280,8 +286,14 @@ def find_related_tags(tag_name: str, user: User, doc_type: str | None) -> list[d
 
     results = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
 
+    buckets = (
+        results.get("aggregations", {})
+        .get("distinct_tags", {})
+        .get("buckets", [])
+    )
+
     matches = []
-    for tag_result in results["aggregations"]["distinct_tags"]["buckets"]:
+    for tag_result in buckets:
         if tag_result["key"] != tag_name:
             matches.append(
                 {
