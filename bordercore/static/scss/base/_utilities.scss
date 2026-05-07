@@ -396,14 +396,19 @@ hr.divider {
   border: none;
   border-radius: 0.5em;
   background: none;
-  color: #cfacd9;
+  color: color-mix(in oklch, var(--accent), white 25%);
   font-size: 0.8em;
   opacity: 0;
-  text-shadow: 0 0 0.12rem #100c0f, 0 0 0.31rem #dc078e33, 0 0 0.62rem var(--fg-0);
+  text-shadow:
+    0 0 0.12rem var(--bg-0),
+    0 0 0.31rem color-mix(in oklch, var(--accent), transparent 80%),
+    0 0 0.62rem var(--fg-0);
   transition: opacity 0.3s ease-in-out;
 
   &:hover {
-    filter: drop-shadow(0.12rem 0.12rem 0.62rem #f071c1) drop-shadow(-0.12rem -0.12rem 0.62rem #f071c1);
+    filter:
+      drop-shadow(0.12rem 0.12rem 0.62rem color-mix(in oklch, var(--accent), white 15%))
+      drop-shadow(-0.12rem -0.12rem 0.62rem color-mix(in oklch, var(--accent), white 15%));
     opacity: 1;
   }
 
@@ -533,7 +538,7 @@ pre[class*="language-"]:hover > .copy-button {
 }
 
 .python-error {
-  color: #f00;
+  color: var(--danger);
 }
 
 // Link utilities

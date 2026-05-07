@@ -6,7 +6,7 @@
 
 * {
   // Drag handle icon (bars) color - used for table/list drag handles site-wide
-  --drag-handle-icon-color: #666;
+  --drag-handle-icon-color: var(--fg-3);
 
   // Data table - shared styling for tables site-wide (todo, music, tags, fitness, reminders)
   --data-table-cell-padding: 1rem;

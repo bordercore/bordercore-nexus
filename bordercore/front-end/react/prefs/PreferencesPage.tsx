@@ -60,11 +60,18 @@ interface FieldState {
 }
 
 // Palette used to render theme preview cards. Keys match Django theme css_ids.
+// These hex literals are INTENTIONAL: each entry is a thumbnail of what the
+// corresponding theme actually looks like, so the picker can render every
+// theme's swatch simultaneously without applying that theme to the page. They
+// are sampled from the --bg-1 / --bg-2 / --accent / --fg-1 tokens in
+// static/scss/themes/_theme-<id>.scss; if you change a theme's tokens,
+// update its swatch here so the preview stays honest.
 const THEME_PALETTE: Record<string, Omit<ThemeOption, "value" | "label">> = {
   light: { bg: "#f5f2ea", panel: "#eae6da", accent: "#6c4dff", text: "#2a2822" },
   dark: { bg: "#0b0d14", panel: "#12141c", accent: "#7c7fff", text: "#e6e8f0" },
   purple: { bg: "#0e0e12", panel: "#17171d", accent: "#9a8cff", text: "#e6e6ed" },
   cyberpunk: { bg: "#14061c", panel: "#1d0a2a", accent: "#ff3dbd", text: "#f4cce6" },
+  nebula: { bg: "#0b0d14", panel: "#12141c", accent: "#b36bff", text: "#e6e8f0" },
   "cobalt-abyss": { bg: "#0a0f1c", panel: "#101827", accent: "#4cc2ff", text: "#dbe8f5" },
 };
 

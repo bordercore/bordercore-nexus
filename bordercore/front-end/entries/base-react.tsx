@@ -97,7 +97,13 @@ function SidebarContent() {
   }, [sidebarCollapsed]);
 
   React.useEffect(() => {
-    // Build menu structure
+    // Build menu structure. The per-item `color` is an intentional fixed
+    // identity palette (Home = slate, Search = sky, Bookmarks = yellow, etc.)
+    // and does not retint with the active theme — same precedent as the
+    // $tag-colors map in static/scss/pages/_collections.scss. The color is
+    // pushed through SidebarMenu's --row-color CSS var (see
+    // front-end/react/common/SidebarMenu.tsx) so a single literal here
+    // controls the swatch wherever a row is rendered.
     const menuItems = [
       {
         href: "/",

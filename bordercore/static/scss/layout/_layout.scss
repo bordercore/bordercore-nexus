@@ -64,7 +64,7 @@
     left: 0;
     width: 300px;
     height: 100px;
-    background: radial-gradient(circle at center, rgb(103 232 249 / 15%) 0%, transparent 70%);
+    background: radial-gradient(circle at center, color-mix(in oklch, var(--accent), transparent 85%) 0%, transparent 70%);
     content: "";
     filter: blur(20px);
     pointer-events: none;
@@ -78,11 +78,11 @@
     animation: gradient-shift 16s ease-in-out infinite;
     background: linear-gradient(
       90deg,
-      #67e8f9 0%,
-      #9c42f5 25%,
-      #f97316 50%,
-      #9c42f5 75%,
-      #67e8f9 100%
+      var(--accent) 0%,
+      var(--accent-2) 25%,
+      var(--accent-3) 50%,
+      var(--accent-2) 75%,
+      var(--accent) 100%
     );
     background-clip: text;
     background-size: 300% auto;
@@ -144,7 +144,7 @@
   justify-content: center;
 
   &#weather-display {
-    color: #BA55D3;
+    color: var(--accent-3);
   }
 
   &#top-search-bar {
@@ -213,7 +213,7 @@
   font-weight: 700;
 }
 
-// Animated gradient border box (used on login page)
+// Animated gradient border box (used on the gallery effects showcase)
 @property --angle {
   inherits: false;
   initial-value: 0deg;
@@ -221,13 +221,13 @@
 }
 
 .animated-gradient-box {
-  border: 3px solid #0000;
+  border: 3px solid transparent;
   border-radius: 12px;
   animation: 8s rotate linear infinite;
-  background: linear-gradient(#131219, #131219) padding-box, linear-gradient(
+  background: linear-gradient(var(--bg-1), var(--bg-1)) padding-box, linear-gradient(
     var(--angle),
-    #070707,
-    #687aff
+    var(--bg-0),
+    var(--accent-2)
   ) border-box;
 }
 
