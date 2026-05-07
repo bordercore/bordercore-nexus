@@ -54,7 +54,7 @@ export function ItemList({
       <header className="tp-items-head">
         <div className="tp-items-head-info">
           <h2 className="tp-items-head-title">
-            <a href={feed.url} target="_blank" rel="noopener noreferrer">
+            <a href={feed.homepage || feed.url} target="_blank" rel="noopener noreferrer">
               {feed.name}
             </a>
           </h2>
