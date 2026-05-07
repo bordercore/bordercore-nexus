@@ -608,7 +608,7 @@
       width: 20px;
       height: 20px;
       border-radius: 50%;
-      background: linear-gradient(180deg, white, #d5d0e6);
+      background: linear-gradient(180deg, white, color-mix(in oklch, var(--accent), white 80%));
       box-shadow:
         0 1px 3px rgb(0 0 0 / 40%),
         0 1px 0 rgb(255 255 255 / 40%) inset;
