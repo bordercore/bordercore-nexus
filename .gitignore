@@ -62,6 +62,7 @@ bordercore/static/fonts/*zip
 
 # Superpowers brainstorming artifacts
 .superpowers/
+docs/superpowers/specs/
 
 # Git worktrees
 .worktrees/
