@@ -1,7 +1,15 @@
 // =============================================================================
 // PAGES: VISUALIZE (Constellation)
 // =============================================================================
-// Full-viewport blob relationship visualization.
+// Full-viewport blob relationship visualization. The page is intentionally
+// fixed-palette and does NOT consume theme tokens — a constellation reads as
+// a constellation only against a dark cosmic background, and the SCSS layer
+// dots (#7d95d0 / #6b7aa8 / #8a6bc4) mirror DIRECT_EDGE_COLOR / TAG_EDGE_COLOR
+// / COLLECTION_EDGE_COLOR in front-end/react/visualize/ForceGraph.tsx so the
+// SVG rendering and the CSS legend agree. The body text shades (#cfe0ff /
+// #8a97c4 / #fff) and the panel chrome (rgb(15 21 48 / X%) over rgb(255 255
+// 255 / 10%) borders) are calibrated for legibility on that fixed gradient.
+// Same precedent as the $tag-colors map in _collections.scss.
 
 .constellation-page {
   position: fixed;
