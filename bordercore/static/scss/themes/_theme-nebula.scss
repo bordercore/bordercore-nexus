@@ -16,7 +16,7 @@
 
 
   --text-notice: var(--accent);
-  --favorite-color: oklch(66% 0.27 340deg); // magenta for favorites
+  --favorite-color: oklch(69.0% 0.254 345.5deg); // #ff3dbd magenta for favorites
 
 
   // Body background — near-black with a faint violet tint
@@ -96,31 +96,34 @@
   // Violet primary, indigo / magenta / cyan secondary accents on near-black.
   // Translated from the exercise-detail prototype's sRGB literals to oklch.
   // =========================================================================
-  --accent-h: 280;
-  --accent:          oklch(70% 0.21 var(--accent-h));      // #b36bff violet
-  --accent-2:        oklch(67% 0.20 270deg);               // #7c7fff indigo
-  --accent-3:        oklch(66% 0.27 340deg);               // #ff3dbd magenta
-  --accent-4:        oklch(78% 0.14 230deg);               // #4cc2ff cyan
-  --accent-soft:     oklch(70% 0.21 var(--accent-h) / 25%);
-  --accent-glow:     oklch(70% 0.21 var(--accent-h) / 35%);
+  // Values computed from the exact sRGB literals in the original prototype
+  // via a standard sRGB → linear → OKLab → OKLCh pipeline. Comments show the
+  // source hex so they round-trip cleanly.
+  --accent-h: 304;
+  --accent:          oklch(67.3% 0.214 var(--accent-h));   // #b36bff violet
+  --accent-2:        oklch(65.7% 0.186 279.0deg);          // #7c7fff indigo
+  --accent-3:        oklch(69.0% 0.254 345.5deg);          // #ff3dbd magenta
+  --accent-4:        oklch(77.3% 0.136 235.1deg);          // #4cc2ff cyan
+  --accent-soft:     oklch(67.3% 0.214 var(--accent-h) / 25%);
+  --accent-glow:     oklch(67.3% 0.214 var(--accent-h) / 35%);
   --accent-fg:       oklch(99% 0.01 var(--accent-h));
-  --bg-0:            oklch(11% 0.018 270deg);              // #07070c
-  --bg-1:            oklch(14% 0.022 270deg);              // #0b0d14
-  --bg-2:            oklch(17% 0.024 270deg);              // #12141c
-  --bg-3:            oklch(21% 0.026 270deg);              // #1a1d28
-  --bg-4:            oklch(25% 0.028 270deg);              // #242836
-  --line:            oklch(28% 0.030 270deg);              // #3a3f52
-  --line-soft:       oklch(23% 0.026 270deg);              // #2a2e3d
-  --hairline:        oklch(18% 0.022 270deg);              // #1e212d
+  --bg-0:            oklch(13.1% 0.012 284.7deg);          // #07070c
+  --bg-1:            oklch(16.0% 0.015 272.2deg);          // #0b0d14
+  --bg-2:            oklch(19.3% 0.017 273.8deg);          // #12141c
+  --bg-3:            oklch(23.3% 0.022 272.8deg);          // #1a1d28
+  --bg-4:            oklch(27.9% 0.027 272.2deg);          // #242836
+  --line:            oklch(37.1% 0.033 273.2deg);          // #3a3f52
+  --line-soft:       oklch(30.4% 0.028 273.0deg);          // #2a2e3d
+  --hairline:        oklch(25.0% 0.023 273.7deg);          // #1e212d
   --fg-0:            oklch(98% 0.006 280deg);
-  --fg-1:            oklch(91% 0.012 280deg);              // #e6e8f0
-  --fg-2:            oklch(78% 0.012 280deg);              // #b8bcc9
-  --fg-3:            oklch(62% 0.012 280deg);              // #8a8fa0
-  --fg-4:            oklch(45% 0.012 280deg);              // #5a5f72
-  --ok:              oklch(76% 0.16 165deg);               // #3fd29c
+  --fg-1:            oklch(93.2% 0.011 274.9deg);          // #e6e8f0
+  --fg-2:            oklch(79.6% 0.019 272.3deg);          // #b8bcc9
+  --fg-3:            oklch(65.2% 0.026 272.6deg);          // #8a8fa0
+  --fg-4:            oklch(48.8% 0.031 273.6deg);          // #5a5f72
+  --ok:              oklch(77.3% 0.146 164.0deg);          // #3fd29c
   --warn:            oklch(85% 0.16 85deg);
-  --danger:          oklch(70% 0.21 18deg);                // #f57
-  --accent-bookmark: oklch(78% 0.14 230deg);               // matches --accent-4
+  --danger:          oklch(68.9% 0.205 12.6deg);           // #ff5577
+  --accent-bookmark: oklch(77.3% 0.136 235.1deg);          // matches --accent-4
   --font-ui:         "Inter", -apple-system, system-ui, sans-serif;
   --font-mono:       "JetBrains Mono", ui-monospace, sfmono-regular, menlo, consolas, monospace;
   --radius:          10px;
