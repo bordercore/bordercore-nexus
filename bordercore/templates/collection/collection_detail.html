@@ -16,8 +16,6 @@
 {% endblock %}
 
 {% block content %}
-{% include "common/processing.html" %}
-
 <div id="react-root"
      data-selected-tag="{{ request.GET.tag|default:'' }}"
      data-get-object-list-url="{% url 'collection:get_object_list' collection.uuid %}"

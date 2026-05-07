@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faChevronDown,
@@ -8,6 +9,7 @@ import {
   faCircleQuestion,
   faArrowRightFromBracket,
   faClockRotateLeft,
+  faTimes,
   IconDefinition,
 } from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
@@ -172,6 +174,8 @@ export default function RefinedTopBar() {
   const [weather, setWeather] = useState<WeatherInfo | null>(null);
   const [overdueTasks, setOverdueTasks] = useState<any[]>([]);
   const [overdueOpen, setOverdueOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [helpText, setHelpText] = useState("");
   const [recentBlobs, setRecentBlobs] = useState<any>(null);
   const [recentlyViewed, setRecentlyViewed] = useState<any>(null);
   const [failedTestCount] = useState(data.failedTestCount || 0);
@@ -227,14 +231,20 @@ export default function RefinedTopBar() {
 
   const showHelp = () => {
     const helpTextEl = document.getElementById("help-text");
-    const modalBodyEl = document.getElementById("modal-body-help");
-    if (helpTextEl && modalBodyEl) {
-      modalBodyEl.textContent = helpTextEl.textContent || "";
-      const modalEl = document.getElementById("modalHelp");
-      const Modal = (window as any).bootstrap?.Modal;
-      if (modalEl && Modal) new Modal(modalEl).show();
-    }
+    setHelpText(helpTextEl?.textContent?.trim() || "");
+    setHelpOpen(true);
   };
+
+  // Escape closes the help modal when it's open. Mirrors the per-modal Escape
+  // pattern used by the refined modal family.
+  useEffect(() => {
+    if (!helpOpen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setHelpOpen(false);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [helpOpen]);
 
   const userMenuLinks: UserMenuLink[] = (data.userMenuItems || []).map(item => {
     let onClick: (() => void) | undefined;
@@ -347,6 +357,30 @@ export default function RefinedTopBar() {
         rescheduleTaskUrl={data.overdueTasksConfig?.rescheduleTaskUrl || ""}
         deleteTodoUrl={data.overdueTasksConfig?.deleteTodoUrl || ""}
       />
+      {helpOpen &&
+        createPortal(
+          <>
+            <div className="refined-modal-scrim" onClick={() => setHelpOpen(false)} />
+            <div className="refined-modal" role="dialog" aria-label="help">
+              <button
+                type="button"
+                className="refined-modal-close"
+                onClick={() => setHelpOpen(false)}
+                aria-label="close"
+              >
+                <FontAwesomeIcon icon={faTimes} />
+              </button>
+              <h2 className="refined-modal-title">
+                <FontAwesomeIcon icon={faCircleQuestion} className="refined-help-title-icon" />
+                Help
+              </h2>
+              <div className="refined-help-body">
+                {helpText || "No help available for this page."}
+              </div>
+            </div>
+          </>,
+          document.body
+        )}
     </>
   );
 }

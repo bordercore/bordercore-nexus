@@ -75,6 +75,21 @@
   line-height: 1.55;
 }
 
+// Help modal — used by RefinedTopBar's "Help" menu item. The body just
+// surfaces whatever text the page placed in #help-text, so preserve newlines
+// rather than collapsing them into a single line.
+.refined-help-title-icon {
+  margin-right: 10px;
+  color: var(--fg-3);
+}
+
+.refined-help-body {
+  color: var(--fg-2);
+  font: 400 14px/1.55 var(--font-ui);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
 .refined-field {
   display: grid;
   margin-bottom: 16px;
