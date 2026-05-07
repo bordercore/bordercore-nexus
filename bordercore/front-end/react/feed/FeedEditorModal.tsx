@@ -202,6 +202,12 @@ export function FeedEditorModal({
             placeholder={isEdit ? undefined : "e.g. NYT World News"}
             value={name}
             onChange={e => setName(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                submit();
+              }
+            }}
             required
           />
         </div>
@@ -234,7 +240,7 @@ export function FeedEditorModal({
           />
         </div>
 
-        <div className="refined-modal-actions compact">
+        <div className="refined-modal-actions">
           <button type="button" className="refined-btn ghost" onClick={onClose}>
             cancel
           </button>
