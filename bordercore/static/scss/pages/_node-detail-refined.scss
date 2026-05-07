@@ -539,9 +539,6 @@
     &:hover { color: var(--nd-accent); }
   }
 
-  // Breadcrumb on top of page — hide the default (the React page renders its own)
-  .legacy-breadcrumb { display: none; }
-
   // ========================================================================
   // Density variants (tweak: airy | default | dense)
   // ========================================================================

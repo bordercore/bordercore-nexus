@@ -62,30 +62,6 @@
   // --- Hero ------------------------------------------------------------------
   .ex-page-head { margin-bottom: 22px; }
 
-  .ex-breadcrumb {
-    display: flex;
-    align-items: center;
-    margin-bottom: 10px;
-    color: var(--fg-3);
-    font-family: var(--font-mono);
-    font-size: 12px;
-    gap: 4px;
-
-    a {
-      color: var(--fg-3);
-      text-decoration: none;
-      transition: color var(--ex-t-fast);
-    }
-
-    a:hover { color: var(--accent); }
-
-    .sep {
-      margin: 0 2px;
-      color: var(--fg-4);
-    }
-    .leaf { color: var(--accent); }
-  }
-
   .ex-title-row {
     display: flex;
     flex-wrap: wrap;

@@ -69,25 +69,6 @@
   margin: 0 0.5rem;
 }
 
-// Breadcrumbs
-.breadcrumb {
-  padding: 0;
-  margin-bottom: 1rem;
-  background-color: transparent;
-
-  .breadcrumb-item {
-    color: var(--fg-2);
-
-    &.active {
-      color: var(--fg-0);
-    }
-
-    + .breadcrumb-item::before {
-      color: var(--fg-3);
-    }
-  }
-}
-
 // Navigation tabs
 .nav-tabs {
   border-bottom: 1px solid var(--line-soft);
