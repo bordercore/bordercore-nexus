@@ -1,54 +1,35 @@
 // =============================================================================
 // Blob detail — "Refined Dark" redesign
 // =============================================================================
-// Scoped under .bd-page. Tokens copied from the design handoff's
-// colors_and_type.css / page.css verbatim into page-local --bd-* variables so
-// the design's exact hex palette is preserved regardless of theme. Same
-// approach as _node-detail-refined.scss / _drill-detail-refined.scss.
+// Scoped under .bd-page. Consumes the global theme tokens (--accent,
+// --bg-0..4, --fg-1..4, --line, --line-soft, --hairline, --ok, --warn,
+// --danger, --font-ui, --font-mono, --radius, --radius-lg) so the page
+// retints under any theme. The Nebula theme reproduces the original
+// prototype palette pixel-for-pixel; other themes retint while preserving
+// the page's structural personality (Space Grotesk display font, rail glow
+// halo, accent gradients on thumb fallbacks). See:
+//   docs/superpowers/specs/2026-05-07-blob-detail-themed-design.md
+// A small set of page-local tokens stay scoped here because they are this
+// page's identity (Space Grotesk display, rail-glow scaling coefficient,
+// rail layout dimension, an extra disabled-text level, the accent-hover
+// alias used widely, and motion timing).
 // =============================================================================
 
 // stylelint-disable no-descending-specificity, color-function-notation, selector-class-pattern, scss/comment-no-empty
 
 .bd-page {
-  // --- Tokens (handoff bc-* values, renamed --bd-*) ---
-  --bd-accent: #b36bff;
-  --bd-accent-2: #7c7fff;
-  --bd-accent-3: #ff3dbd;
-  --bd-accent-4: #4cc2ff;
-  --bd-accent-hover: #c98bff;
-  --bd-ok: #3fd29c;
-  --bd-warn: #f0b840;
-  --bd-danger: #f57;
-  --bd-bg-0: #07070c;
-  --bd-bg-1: #0b0d14;
-  --bd-bg-2: #12141c;
-  --bd-bg-3: #1a1d28;
-  --bd-bg-4: #242836;
-  --bd-fg-1: #e6e8f0;
-  --bd-fg-2: #b8bcc9;
-  --bd-fg-3: #8a8fa0;
-  --bd-fg-4: #5a5f72;
-  --bd-fg-disabled: #3a3e4b;
-  --bd-border-1: #2a2e3d;
-  --bd-border-2: #3a3f52;
-  --bd-hairline: #1e212d;
+  // --- Page-local tokens (genuine page identity, not theme-controlled) -------
   --bd-radius-xs: 4px;
   --bd-radius-sm: 6px;
-  --bd-radius-md: 10px;
-  --bd-radius-lg: 14px;
-  --bd-elev-2:
-    0 1px 0 0 rgb(255 255 255 / 3%) inset,
-    0 8px 24px -8px rgb(0 0 0 / 55%),
-    0 0 0 1px var(--bd-border-1);
-  --bd-font-sans: "Inter", -apple-system, blinkmacsystemfont, "Segoe UI", roboto, "Helvetica Neue", arial, sans-serif;
+  --bd-glow: 0.35;
+  --bd-rail-w: 300px;
+  --bd-fg-disabled: #3a3e4b;
+  --bd-accent-hover: color-mix(in oklch, var(--accent), white 12%);
   --bd-font-display: "Space Grotesk", "Inter", -apple-system, "Segoe UI", sans-serif;
-  --bd-font-mono: "JetBrains Mono", ui-monospace, sfmono-regular, "SF Mono", menlo, consolas, monospace;
   --bd-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --bd-t-fast: 120ms;
   --bd-t-base: 180ms;
   --bd-t-med: 220ms;
-  --bd-glow: 0.35;
-  --bd-rail-w: 300px;
 
   position: relative;
   min-height: 100vh;
@@ -60,11 +41,11 @@
   padding: 0 0 0 240px;
   margin: -1rem -1.5rem 0;
   background:
-    radial-gradient(1100px 700px at 90% -5%, rgb(179 107 255 / 8%), transparent 55%),
-    radial-gradient(900px 600px at 10% 110%, rgb(179 107 255 / 4%), transparent 60%),
-    var(--bd-bg-0);
-  color: var(--bd-fg-1);
-  font-family: var(--bd-font-sans);
+    radial-gradient(1100px 700px at 90% -5%, color-mix(in oklch, var(--accent) 8%, transparent), transparent 55%),
+    radial-gradient(900px 600px at 10% 110%, color-mix(in oklch, var(--accent) 4%, transparent), transparent 60%),
+    var(--bg-0);
+  color: var(--fg-1);
+  font-family: var(--font-ui);
   font-size: 14px;
   line-height: 1.5;
 
@@ -83,8 +64,8 @@
     display: flex;
     flex-direction: column;
     padding: 28px 18px 60px;
-    border-right: 1px solid var(--bd-border-1);
-    background: rgb(11 13 20 / 40%);
+    border-right: 1px solid var(--line-soft);
+    background: color-mix(in oklch, var(--bg-1) 40%, transparent);
     gap: 22px;
   }
 
@@ -93,12 +74,12 @@
   .bd-rail-left::-webkit-scrollbar-thumb {
     border: 2px solid transparent;
     border-radius: 4px;
-    background: var(--bd-bg-3);
+    background: var(--bg-3);
     background-clip: content-box;
   }
 
   .bd-rail-left::-webkit-scrollbar-thumb:hover {
-    background: var(--bd-bg-4);
+    background: var(--bg-4);
     background-clip: content-box;
   }
 
@@ -111,8 +92,8 @@
       display: flex;
       align-items: center;
       margin: 0 0 10px;
-      color: var(--bd-fg-4);
-      font: 600 11px/1 var(--bd-font-sans);
+      color: var(--fg-4);
+      font: 600 11px/1 var(--font-ui);
       gap: 8px;
       letter-spacing: 0.1em;
       text-transform: uppercase;
@@ -120,8 +101,8 @@
 
     h3 .bd-count {
       margin-left: auto;
-      color: var(--bd-fg-4);
-      font-family: var(--bd-font-mono);
+      color: var(--fg-4);
+      font-family: var(--font-mono);
       font-weight: 500;
     }
   }
@@ -143,10 +124,10 @@
     width: 22px;
     height: 22px;
     padding: 0;
-    border: 1px solid var(--bd-border-1);
+    border: 1px solid var(--line-soft);
     border-radius: 4px;
     background: transparent;
-    color: var(--bd-fg-3);
+    color: var(--fg-3);
     cursor: pointer;
     font-size: 11px;
     place-items: center;
@@ -154,10 +135,10 @@
   }
 
   .bd-section-act:hover {
-    border-color: rgb(179 107 255 / 50%);
-    background: rgb(179 107 255 / 8%);
-    box-shadow: 0 0 8px -2px rgb(179 107 255 / calc(0.6 * var(--bd-glow)));
-    color: var(--bd-accent);
+    border-color: color-mix(in oklch, var(--accent) 50%, transparent);
+    background: color-mix(in oklch, var(--accent) 8%, transparent);
+    box-shadow: 0 0 8px -2px color-mix(in oklch, var(--accent) calc(60% * var(--bd-glow)), transparent);
+    color: var(--accent);
   }
 
   // ---- main column ----
@@ -167,15 +148,16 @@
   }
 
   // ---- hero card ----
+  // Surface chrome (border, radius, background, shadow) comes from the
+  // shared @mixin refined-card so the hero matches .ex-card and the
+  // node-detail .card character-for-character. Padding override keeps the
+  // page's existing 22px 24px breathing room.
   .bd-hero {
-    position: relative;
+    @include refined-card;
+
     display: grid;
     padding: 22px 24px;
-    border: 1px solid var(--bd-border-1);
-    border-radius: var(--bd-radius-lg);
     margin-bottom: 22px;
-    background: var(--bd-bg-2);
-    box-shadow: var(--bd-elev-2);
     gap: 22px;
     grid-template-columns: 1fr;
   }
@@ -186,7 +168,7 @@
     border-radius: inherit;
     background: radial-gradient(
       400px 240px at 100% 0%,
-      rgb(179 107 255 / calc(0.10 * var(--bd-glow))),
+      color-mix(in oklch, var(--accent) calc(10% * var(--bd-glow)), transparent),
       transparent 70%
     );
     content: "";
@@ -201,9 +183,9 @@
     overflow: hidden;
     width: 110px;
     align-self: start;
-    border: 1px solid var(--bd-border-1);
-    border-radius: var(--bd-radius-md);
-    background: var(--bd-bg-3);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    background: var(--bg-3);
 
     &.tall { aspect-ratio: 2 / 3; }
 
@@ -224,10 +206,10 @@
       aspect-ratio: 1 / 1;
       background:
         repeating-linear-gradient(135deg,
-          var(--bd-bg-2) 0 8px,
-          var(--bd-bg-3) 8px 16px);
-      color: var(--bd-fg-4);
-      font-family: var(--bd-font-mono);
+          var(--bg-2) 0 8px,
+          var(--bg-3) 8px 16px);
+      color: var(--fg-4);
+      font-family: var(--font-mono);
       font-size: 14px;
       letter-spacing: 0.1em;
       place-items: center;
@@ -238,7 +220,7 @@
       display: grid;
       width: 96px;
       aspect-ratio: 1 / 1;
-      color: var(--bd-accent);
+      color: var(--accent);
       font-size: 28px;
       place-items: center;
     }
@@ -254,8 +236,8 @@
       position: absolute;
       display: grid;
       background: linear-gradient(180deg, rgb(0 0 0 / 0%) 40%, rgb(0 0 0 / 50%));
-      color: #fff;
-      font-family: var(--bd-font-mono);
+      color: var(--accent-fg);
+      font-family: var(--font-mono);
       font-size: 11px;
       inset: 0;
       place-items: center;
@@ -268,7 +250,7 @@
       border: 1px solid rgb(255 255 255 / 18%);
       border-radius: 50%;
       backdrop-filter: blur(6px);
-      background: rgb(18 20 28 / 70%);
+      background: color-mix(in oklch, var(--bg-2) 70%, transparent);
       place-items: center;
     }
 
@@ -277,8 +259,8 @@
       width: 100%;
       height: 100%;
       padding: 8px;
-      background: linear-gradient(135deg, var(--bd-accent), var(--bd-accent-2));
-      color: #fff;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: var(--accent-fg);
       font-family: var(--bd-font-display);
       font-size: 13px;
       line-height: 1.2;
@@ -297,8 +279,8 @@
   .bd-hero-eyebrow {
     display: flex;
     align-items: center;
-    color: var(--bd-fg-4);
-    font-family: var(--bd-font-mono);
+    color: var(--fg-4);
+    font-family: var(--font-mono);
     font-size: 11px;
     gap: 10px;
   }
@@ -307,11 +289,11 @@
     display: inline-flex;
     align-items: center;
     padding: 2px 8px;
-    border: 1px solid var(--bd-border-1);
+    border: 1px solid var(--line-soft);
     border-radius: 999px;
-    background: var(--bd-bg-3);
-    color: var(--bd-fg-2);
-    font-family: var(--bd-font-mono);
+    background: var(--bg-3);
+    color: var(--fg-2);
+    font-family: var(--font-mono);
     font-size: 11px;
     gap: 6px;
     letter-spacing: 0.04em;
@@ -322,14 +304,14 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: var(--bd-accent);
-    box-shadow: 0 0 8px var(--bd-accent);
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
   }
 
   .bd-hero-eyebrow .es-status {
     display: inline-flex;
     align-items: center;
-    color: var(--bd-fg-3);
+    color: var(--fg-3);
     gap: 6px;
   }
 
@@ -337,8 +319,8 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: var(--bd-ok);
-    box-shadow: 0 0 8px var(--bd-ok);
+    background: var(--ok);
+    box-shadow: 0 0 8px var(--ok);
   }
 
   .bd-hero h1 {
@@ -348,7 +330,7 @@
     border: 1px solid transparent;
     border-radius: 6px;
     margin: 0 -4px;
-    color: var(--bd-fg-1);
+    color: var(--fg-1);
     cursor: text;
     font-family: var(--bd-font-display);
     font-size: 26px;
@@ -361,20 +343,20 @@
 
   .bd-hero h1:hover,
   .bd-hero h1:focus {
-    border-color: var(--bd-border-1);
-    background: var(--bd-bg-3);
+    border-color: var(--line-soft);
+    background: var(--bg-3);
   }
 
   .bd-hero h1 .edition {
     margin-left: 8px;
-    color: var(--bd-fg-3);
+    color: var(--fg-3);
     font-size: 18px;
     font-weight: 500;
   }
 
   .bd-hero-subtitle {
     margin-top: 2px;
-    color: var(--bd-fg-2);
+    color: var(--fg-2);
     font-family: var(--bd-font-display);
     font-size: 16px;
     font-style: italic;
@@ -386,14 +368,14 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    color: var(--bd-fg-3);
-    font-family: var(--bd-font-mono);
+    color: var(--fg-3);
+    font-family: var(--font-mono);
     font-size: 12px;
     gap: 14px;
   }
 
   .bd-hero-meta .sep { color: var(--bd-fg-disabled); }
-  .bd-hero-meta .author { color: var(--bd-fg-2); }
+  .bd-hero-meta .author { color: var(--fg-2); }
 
   .bd-hero-tags {
     display: flex;
@@ -406,32 +388,32 @@
     display: inline-flex;
     align-items: center;
     padding: 3px 9px;
-    border: 1px solid rgb(124 127 255 / 28%);
+    border: 1px solid color-mix(in oklch, var(--accent-2) 28%, transparent);
     border-radius: 999px;
-    background: rgb(124 127 255 / 10%);
-    color: #a5a8ff;
+    background: color-mix(in oklch, var(--accent-2) 10%, transparent);
+    color: color-mix(in oklch, var(--accent-2), white 18%);
     cursor: pointer;
-    font: 500 12px/1 var(--bd-font-sans);
+    font: 500 12px/1 var(--font-ui);
     gap: 5px;
     text-decoration: none;
     transition: all var(--bd-t-fast);
   }
 
   .bd-tag:hover {
-    border-color: rgb(179 107 255 / 40%);
-    background: rgb(179 107 255 / 16%);
-    color: #c98bff;
+    border-color: color-mix(in oklch, var(--accent) 40%, transparent);
+    background: color-mix(in oklch, var(--accent) 16%, transparent);
+    color: var(--bd-accent-hover);
   }
 
   .bd-tag.add {
     border-style: dashed;
     background: transparent;
-    color: var(--bd-fg-4);
+    color: var(--fg-4);
   }
 
   .bd-tag.add:hover {
-    border-color: var(--bd-accent);
-    color: var(--bd-accent);
+    border-color: var(--accent);
+    color: var(--accent);
   }
 
   .bd-hero-actions {
@@ -446,13 +428,13 @@
     display: inline-grid;
     height: 30px;
     padding: 0 10px;
-    border: 1px solid var(--bd-border-1);
+    border: 1px solid var(--line-soft);
     border-radius: var(--bd-radius-sm);
     background: transparent;
-    color: var(--bd-fg-2);
+    color: var(--fg-2);
     column-gap: 8px;
     cursor: pointer;
-    font-family: var(--bd-font-sans);
+    font-family: var(--font-ui);
     font-size: 13px;
     grid-auto-flow: column;
     place-items: center;
@@ -461,24 +443,24 @@
   }
 
   .bd-iconbtn:hover {
-    border-color: var(--bd-border-2);
-    background: var(--bd-bg-3);
-    color: var(--bd-fg-1);
+    border-color: var(--line);
+    background: var(--bg-3);
+    color: var(--fg-1);
   }
 
   .bd-iconbtn.primary {
-    border-color: rgb(179 107 255 / 40%);
-    background: rgb(179 107 255 / 14%);
-    color: var(--bd-accent);
+    border-color: color-mix(in oklch, var(--accent) 40%, transparent);
+    background: color-mix(in oklch, var(--accent) 14%, transparent);
+    color: var(--accent);
   }
 
   .bd-iconbtn.primary:hover {
-    background: rgb(179 107 255 / 22%);
+    background: color-mix(in oklch, var(--accent) 22%, transparent);
     color: var(--bd-accent-hover);
   }
 
   .bd-iconbtn.ghost { border-color: transparent; }
-  .bd-iconbtn.ghost:hover { border-color: var(--bd-border-1); }
+  .bd-iconbtn.ghost:hover { border-color: var(--line-soft); }
 
   // square (no label) variant
   .bd-iconbtn[aria-label]:not(.primary, .ghost) {
@@ -491,12 +473,12 @@
     display: inline-flex;
     align-items: center;
     padding: 3px 10px;
-    border: 1px dashed var(--bd-border-1);
+    border: 1px dashed var(--line-soft);
     border-radius: 999px;
     background: transparent;
-    color: var(--bd-fg-4);
+    color: var(--fg-4);
     cursor: pointer;
-    font-family: var(--bd-font-mono);
+    font-family: var(--font-mono);
     font-size: 11px;
     gap: 6px;
     transition: all var(--bd-t-fast) var(--bd-ease-out);
@@ -504,20 +486,20 @@
 
   .bd-pin-toggle:hover {
     border-style: solid;
-    border-color: rgb(240 184 64 / 40%);
-    background: rgb(240 184 64 / 6%);
-    color: var(--bd-warn);
+    border-color: color-mix(in oklch, var(--warn) 40%, transparent);
+    background: color-mix(in oklch, var(--warn) 6%, transparent);
+    color: var(--warn);
   }
 
   .bd-pin-toggle.active {
-    border: 1px solid rgb(240 184 64 / 30%);
-    background: rgb(240 184 64 / 10%);
-    color: var(--bd-warn);
+    border: 1px solid color-mix(in oklch, var(--warn) 30%, transparent);
+    background: color-mix(in oklch, var(--warn) 10%, transparent);
+    color: var(--warn);
   }
 
   .bd-pin-toggle.active:hover {
-    border-color: rgb(240 184 64 / 45%);
-    background: rgb(240 184 64 / 16%);
+    border-color: color-mix(in oklch, var(--warn) 45%, transparent);
+    background: color-mix(in oklch, var(--warn) 16%, transparent);
   }
 
   .bd-iconbtn.is-end {
@@ -545,9 +527,9 @@
     right: 0;
     min-width: 240px;
     padding: 4px;
-    border: 1px solid var(--bd-border-1);
-    border-radius: var(--bd-radius-md);
-    background: var(--bd-bg-1);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    background: var(--bg-1);
     box-shadow: 0 12px 32px rgb(0 0 0 / 45%);
   }
 
@@ -559,9 +541,9 @@
     border: none;
     border-radius: var(--bd-radius-sm);
     background: transparent;
-    color: var(--bd-fg-2);
+    color: var(--fg-2);
     cursor: pointer;
-    font-family: var(--bd-font-mono);
+    font-family: var(--font-mono);
     font-size: 12px;
     gap: 10px;
     text-align: left;
@@ -570,30 +552,30 @@
   }
 
   .bd-more-item:hover {
-    background: var(--bd-bg-2);
-    color: var(--bd-fg-1);
+    background: var(--bg-2);
+    color: var(--fg-1);
   }
 
-  .bd-more-item.danger { color: var(--bd-fg-3); }
+  .bd-more-item.danger { color: var(--fg-3); }
 
   .bd-more-item.danger:hover {
-    background: rgb(255 90 107 / 10%);
-    color: #ff5a6b;
+    background: color-mix(in oklch, var(--danger) 10%, transparent);
+    color: var(--danger);
   }
 
   .bd-more-sep {
     height: 1px;
     margin: 4px 6px;
-    background: var(--bd-border-1);
+    background: var(--line-soft);
   }
 
   // ---- empty callouts ----
   .bd-empty {
     padding: 14px;
-    border: 1px dashed var(--bd-border-1);
+    border: 1px dashed var(--line-soft);
     border-radius: var(--bd-radius-sm);
-    color: var(--bd-fg-4);
-    font-family: var(--bd-font-mono);
+    color: var(--fg-4);
+    font-family: var(--font-mono);
     font-size: 12px;
     text-align: center;
   }
@@ -613,9 +595,9 @@
     padding: 5px 10px 5px 8px;
     border: 1px solid transparent;
     border-radius: 6px;
-    color: var(--bd-fg-2);
+    color: var(--fg-2);
     cursor: pointer;
-    font-family: var(--bd-font-sans);
+    font-family: var(--font-ui);
     gap: 6px;
     line-height: 1.3;
     text-decoration: none;
@@ -623,27 +605,27 @@
   }
 
   .bd-toc-item:hover {
-    background: var(--bd-bg-2);
-    color: var(--bd-fg-1);
+    background: var(--bg-2);
+    color: var(--fg-1);
   }
 
   .bd-toc-item.active {
-    border-color: rgb(179 107 255 / 30%);
-    background: rgb(179 107 255 / 10%);
-    box-shadow: 0 0 12px -4px rgb(179 107 255 / calc(0.5 * var(--bd-glow)));
-    color: var(--bd-fg-1);
+    border-color: color-mix(in oklch, var(--accent) 30%, transparent);
+    background: color-mix(in oklch, var(--accent) 10%, transparent);
+    box-shadow: 0 0 12px -4px color-mix(in oklch, var(--accent) calc(50% * var(--bd-glow)), transparent);
+    color: var(--fg-1);
   }
 
   .bd-toc-item.lvl-1 { font-weight: 600; }
 
   .bd-toc-item.lvl-2 {
     padding-left: 22px;
-    color: var(--bd-fg-2);
+    color: var(--fg-2);
   }
 
   .bd-toc-item.lvl-3 {
     padding-left: 36px;
-    color: var(--bd-fg-3);
+    color: var(--fg-3);
     font-size: 12px;
   }
 
@@ -657,7 +639,7 @@
   .bd-prop {
     display: grid;
     padding: 8px 0;
-    border-bottom: 1px dashed var(--bd-hairline);
+    border-bottom: 1px dashed var(--hairline);
     font-size: 13px;
     gap: 10px;
     grid-template-columns: 1fr auto;
@@ -666,22 +648,22 @@
   .bd-prop:last-child { border-bottom: none; }
 
   .bd-prop .k {
-    color: var(--bd-fg-4);
-    font-family: var(--bd-font-mono);
+    color: var(--fg-4);
+    font-family: var(--font-mono);
     font-size: 11px;
     letter-spacing: 0.03em;
   }
 
   .bd-prop .v {
-    color: var(--bd-fg-1);
-    font-family: var(--bd-font-mono);
+    color: var(--fg-1);
+    font-family: var(--font-mono);
     font-size: 12px;
     text-align: right;
     word-break: break-all;
   }
 
-  .bd-prop .v.dim { color: var(--bd-fg-3); }
-  .bd-prop .v.ok { color: var(--bd-ok); }
+  .bd-prop .v.dim { color: var(--fg-3); }
+  .bd-prop .v.ok { color: var(--ok); }
 
   .bd-prop .v.copy {
     display: inline-flex;
@@ -691,7 +673,7 @@
     gap: 6px;
   }
 
-  .bd-prop .v.copy:hover { color: var(--bd-accent); }
+  .bd-prop .v.copy:hover { color: var(--accent); }
 
   // ---- url list ----
   .bd-urls {
@@ -704,10 +686,10 @@
     display: grid;
     align-items: center;
     padding: 8px 10px;
-    border: 1px solid var(--bd-border-1);
+    border: 1px solid var(--line-soft);
     border-radius: var(--bd-radius-sm);
-    background: var(--bd-bg-1);
-    color: var(--bd-fg-2);
+    background: var(--bg-1);
+    color: var(--fg-2);
     gap: 10px;
     grid-template-columns: 16px 1fr auto;
     text-decoration: none;
@@ -715,8 +697,8 @@
   }
 
   .bd-url:hover {
-    border-color: var(--bd-border-2);
-    background: var(--bd-bg-2);
+    border-color: var(--line);
+    background: var(--bg-2);
   }
 
   .bd-url .favicon {
@@ -725,25 +707,25 @@
     height: 16px;
     flex-shrink: 0;
     border-radius: 3px;
-    background: linear-gradient(135deg, var(--bd-accent-4), var(--bd-accent));
-    color: #fff;
-    font-family: var(--bd-font-mono);
+    background: linear-gradient(135deg, var(--accent-4), var(--accent));
+    color: var(--accent-fg);
+    font-family: var(--font-mono);
     font-size: 10px;
     place-items: center;
   }
 
   .bd-url .domain {
     overflow: hidden;
-    color: var(--bd-fg-1);
-    font-family: var(--bd-font-mono);
+    color: var(--fg-1);
+    font-family: var(--font-mono);
     font-size: 12px;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
   .bd-url .path {
-    color: var(--bd-fg-4);
-    font-family: var(--bd-font-mono);
+    color: var(--fg-4);
+    font-family: var(--font-mono);
     font-size: 11px;
   }
 
@@ -772,8 +754,8 @@
   }
 
   .bd-related-item:hover {
-    border-color: var(--bd-border-1);
-    background: var(--bd-bg-2);
+    border-color: var(--line-soft);
+    background: var(--bg-2);
   }
 
   .bd-related-item .cover {
@@ -783,11 +765,11 @@
     width: 36px;
     height: 48px;
     flex-shrink: 0;
-    border: 1px solid var(--bd-border-1);
+    border: 1px solid var(--line-soft);
     border-radius: 4px;
-    background: var(--bd-bg-3);
-    color: var(--bd-fg-4);
-    font-family: var(--bd-font-mono);
+    background: var(--bg-3);
+    color: var(--fg-4);
+    font-family: var(--font-mono);
     font-size: 10px;
     place-items: center;
     transform-origin: left center;
@@ -814,15 +796,15 @@
 
   .bd-related-item .name {
     overflow: hidden;
-    color: var(--bd-fg-1);
+    color: var(--fg-1);
     font-size: 13px;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
   .bd-related-item .sub {
-    color: var(--bd-fg-4);
-    font-family: var(--bd-font-mono);
+    color: var(--fg-4);
+    font-family: var(--font-mono);
     font-size: 11px;
   }
 
@@ -855,7 +837,7 @@
     border: 1px solid transparent;
     border-radius: 4px;
     background: transparent;
-    color: var(--bd-fg-4);
+    color: var(--fg-4);
     cursor: pointer;
     font-size: 11px;
     place-items: center;
@@ -864,15 +846,15 @@
   }
 
   .bd-row-act:hover {
-    border-color: rgb(179 107 255 / 50%);
-    background: rgb(179 107 255 / 8%);
-    color: var(--bd-accent);
+    border-color: color-mix(in oklch, var(--accent) 50%, transparent);
+    background: color-mix(in oklch, var(--accent) 8%, transparent);
+    color: var(--accent);
   }
 
   .bd-row-act[aria-label="Remove"]:hover {
-    border-color: rgb(255 90 107 / 50%);
-    background: rgb(255 90 107 / 10%);
-    color: #ff5a6b;
+    border-color: color-mix(in oklch, var(--danger) 50%, transparent);
+    background: color-mix(in oklch, var(--danger) 10%, transparent);
+    color: var(--danger);
   }
 
   // ---- backref cards ----
@@ -886,9 +868,9 @@
     display: flex;
     flex-direction: column;
     padding: 8px 10px;
-    border: 1px solid var(--bd-border-1);
+    border: 1px solid var(--line-soft);
     border-radius: var(--bd-radius-sm);
-    background: var(--bd-bg-1);
+    background: var(--bg-1);
     color: inherit;
     cursor: pointer;
     gap: 4px;
@@ -897,15 +879,15 @@
   }
 
   .bd-backref:hover {
-    border-color: rgb(76 194 255 / 40%);
-    box-shadow: 0 0 12px -4px rgb(76 194 255 / calc(0.45 * var(--bd-glow)));
+    border-color: color-mix(in oklch, var(--accent-4) 40%, transparent);
+    box-shadow: 0 0 12px -4px color-mix(in oklch, var(--accent-4) calc(45% * var(--bd-glow)), transparent);
   }
 
   .bd-backref .type-pill {
     display: inline-flex;
     align-items: center;
-    color: var(--bd-accent-4);
-    font-family: var(--bd-font-mono);
+    color: var(--accent-4);
+    font-family: var(--font-mono);
     font-size: 10px;
     gap: 5px;
     letter-spacing: 0.06em;
@@ -913,7 +895,7 @@
   }
 
   .bd-backref .name {
-    color: var(--bd-fg-1);
+    color: var(--fg-1);
     font-size: 13px;
     line-height: 1.35;
   }
@@ -921,8 +903,8 @@
   .bd-backref .tags {
     display: flex;
     flex-wrap: wrap;
-    color: var(--bd-fg-4);
-    font-family: var(--bd-font-mono);
+    color: var(--fg-4);
+    font-family: var(--font-mono);
     font-size: 11px;
     gap: 4px;
   }
@@ -930,14 +912,14 @@
   // backref footer (under markdown body)
   .bd-backref-footer {
     padding-top: 24px;
-    border-top: 1px solid var(--bd-hairline);
+    border-top: 1px solid var(--hairline);
     margin-top: 60px;
   }
 
   .bd-backref-footer h3 {
     margin-bottom: 12px;
-    color: var(--bd-fg-3);
-    font-family: var(--bd-font-sans);
+    color: var(--fg-3);
+    font-family: var(--font-ui);
     font-size: 12px;
     font-weight: 600;
     letter-spacing: 0.08em;
@@ -946,8 +928,8 @@
 
   .bd-backref-footer h3 .count {
     margin-left: 8px;
-    color: var(--bd-fg-4);
-    font-family: var(--bd-font-mono);
+    color: var(--fg-4);
+    font-family: var(--font-mono);
     letter-spacing: 0;
   }
 
@@ -977,7 +959,7 @@
     transition: all var(--bd-t-fast);
   }
 
-  .bd-collection:hover { background: var(--bd-bg-2); }
+  .bd-collection:hover { background: var(--bg-2); }
 
   .bd-collection .swatch {
     position: relative;
@@ -986,8 +968,8 @@
     width: 32px;
     height: 32px;
     border-radius: var(--bd-radius-xs);
-    background: linear-gradient(135deg, var(--bd-accent), var(--bd-accent-3));
-    color: #fff;
+    background: linear-gradient(135deg, var(--accent), var(--accent-3));
+    color: var(--accent-fg);
     font-size: 13px;
     place-items: center;
     transform-origin: left center;
@@ -1008,15 +990,15 @@
 
   .bd-collection .name {
     overflow: hidden;
-    color: var(--bd-fg-1);
+    color: var(--fg-1);
     font-size: 13px;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
   .bd-collection .count {
-    color: var(--bd-fg-4);
-    font-family: var(--bd-font-mono);
+    color: var(--fg-4);
+    font-family: var(--font-mono);
     font-size: 11px;
   }
 
@@ -1031,34 +1013,34 @@
     display: inline-flex;
     align-items: center;
     padding: 4px 10px;
-    border: 1px solid var(--bd-border-1);
+    border: 1px solid var(--line-soft);
     border-radius: 999px;
-    background: var(--bd-bg-2);
-    color: var(--bd-fg-2);
-    font-family: var(--bd-font-mono);
+    background: var(--bg-2);
+    color: var(--fg-2);
+    font-family: var(--font-mono);
     font-size: 12px;
     text-decoration: none;
     transition: all var(--bd-t-fast);
   }
 
   .bd-node:hover {
-    border-color: rgb(76 194 255 / 40%);
-    background: rgb(76 194 255 / 10%);
-    color: var(--bd-accent-4);
+    border-color: color-mix(in oklch, var(--accent-4) 40%, transparent);
+    background: color-mix(in oklch, var(--accent-4) 10%, transparent);
+    color: var(--accent-4);
   }
 
   // ---- markdown content ----
   .bd-content {
-    color: var(--bd-fg-2);
+    color: var(--fg-2);
     font-size: 15px;
     line-height: 1.6;
   }
 
   .bd-content h2 {
     padding-bottom: 8px;
-    border-bottom: 1px solid var(--bd-hairline);
+    border-bottom: 1px solid var(--hairline);
     margin: 36px 0 12px;
-    color: var(--bd-fg-1);
+    color: var(--fg-1);
     font-family: var(--bd-font-display);
     font-size: 22px;
     font-weight: 600;
@@ -1070,7 +1052,7 @@
 
   .bd-content h3 {
     margin: 22px 0 10px;
-    color: var(--bd-fg-1);
+    color: var(--fg-1);
     font-family: var(--bd-font-display);
     font-size: 16px;
     font-weight: 600;
@@ -1081,7 +1063,7 @@
 
   .bd-content p {
     margin: 10px 0;
-    color: var(--bd-fg-2);
+    color: var(--fg-2);
   }
 
   .bd-content ul,
@@ -1090,27 +1072,27 @@
     margin: 8px 0;
   }
   .bd-content li { margin: 6px 0; }
-  .bd-content li::marker { color: var(--bd-fg-4); }
+  .bd-content li::marker { color: var(--fg-4); }
 
   .bd-content code {
     padding: 1px 6px;
-    border: 1px solid rgb(255 61 189 / 18%);
+    border: 1px solid color-mix(in oklch, var(--accent-3) 18%, transparent);
     border-radius: 4px;
-    background: rgb(255 61 189 / 8%);
-    color: var(--bd-accent-3);
-    font-family: var(--bd-font-mono);
+    background: color-mix(in oklch, var(--accent-3) 8%, transparent);
+    color: var(--accent-3);
+    font-family: var(--font-mono);
     font-size: 0.88em;
   }
 
   .bd-content pre {
     position: relative;
     padding: 14px 18px;
-    border: 1px solid var(--bd-border-1);
-    border-radius: var(--bd-radius-md);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
     margin: 14px 0;
-    background: var(--bd-bg-1);
-    color: var(--bd-fg-1);
-    font-family: var(--bd-font-mono);
+    background: var(--bg-1);
+    color: var(--fg-1);
+    font-family: var(--font-mono);
     font-size: 13px;
     overflow-x: auto;
   }
@@ -1124,20 +1106,20 @@
 
   .bd-content blockquote {
     padding: 8px 16px;
-    border-left: 2px solid var(--bd-accent);
+    border-left: 2px solid var(--accent);
     margin: 14px 0;
-    background: rgb(179 107 255 / 4%);
-    color: var(--bd-fg-3);
+    background: color-mix(in oklch, var(--accent) 4%, transparent);
+    color: var(--fg-3);
   }
 
   // note (under hero, above content)
   .bd-note {
     padding: 12px 16px;
-    border: 1px solid var(--bd-hairline);
-    border-radius: var(--bd-radius-md);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius);
     margin-bottom: 18px;
-    background: var(--bd-bg-1);
-    color: var(--bd-fg-2);
+    background: var(--bg-1);
+    color: var(--fg-2);
     font-size: 14px;
     line-height: 1.55;
   }
@@ -1149,12 +1131,12 @@
   .bd-cover img {
     display: block;
     width: 100%;
-    border-radius: var(--bd-radius-md);
+    border-radius: var(--radius);
   }
 
   .bd-video {
     width: 100%;
-    border-radius: var(--bd-radius-md);
+    border-radius: var(--radius);
     margin-bottom: 18px;
   }
 
@@ -1175,11 +1157,11 @@
   width: 320px;
   flex-direction: column;
   padding: 12px;
-  border: 1px solid rgb(179 107 255 / 30%);
+  border: 1px solid color-mix(in oklch, var(--accent) 30%, transparent);
   border-radius: 10px;
   animation: bd-pop-in 140ms cubic-bezier(0.22, 1, 0.36, 1);
   backdrop-filter: blur(14px);
-  background: rgb(20 22 30 / 98%);
+  background: color-mix(in oklch, var(--bg-2) 98%, transparent);
   box-shadow: 0 18px 50px rgb(0 0 0 / 55%);
   gap: 8px;
 
@@ -1187,9 +1169,9 @@
     display: flex;
     align-items: center;
     padding: 8px 10px;
-    border: 1px solid #2a2e3d;
+    border: 1px solid var(--line-soft);
     border-radius: 6px;
-    background: #0b0d14;
+    background: var(--bg-1);
     gap: 8px;
   }
 
@@ -1197,13 +1179,13 @@
     flex: 1;
     border: none;
     background: transparent;
-    color: #e6e8f0;
+    color: var(--fg-1);
     font-family: Inter, sans-serif;
     font-size: 13px;
     outline: none;
   }
 
-  .pop-search input::placeholder { color: #3a3e4b; }
+  .pop-search input::placeholder { color: var(--bd-fg-disabled); }
 
   .pop-results {
     display: flex;
@@ -1228,15 +1210,15 @@
   // navigation and mouse hover can interleave without visual jumps.
   .pop-result:hover,
   .pop-result.is-active {
-    background: rgb(179 107 255 / 14%);
-    color: #f1eaff;
+    background: color-mix(in oklch, var(--accent) 14%, transparent);
+    color: color-mix(in oklch, var(--accent), white 75%);
   }
 
   .pop-result:hover .name,
-  .pop-result.is-active .name { color: #f1eaff; }
+  .pop-result.is-active .name { color: color-mix(in oklch, var(--accent), white 75%); }
 
   .pop-result.is-active {
-    box-shadow: inset 2px 0 0 #b36bff;
+    box-shadow: inset 2px 0 0 var(--accent);
   }
 
   .pop-cover {
@@ -1245,10 +1227,10 @@
     width: 28px;
     height: 28px;
     flex-shrink: 0;
-    border: 1px solid #2a2e3d;
+    border: 1px solid var(--line-soft);
     border-radius: 4px;
-    background: linear-gradient(135deg, #b36bff, #ff3dbd);
-    color: #fff;
+    background: linear-gradient(135deg, var(--accent), var(--accent-3));
+    color: var(--accent-fg);
     font-family: "JetBrains Mono", monospace;
     font-size: 11px;
     place-items: center;
@@ -1263,14 +1245,14 @@
   .pop-result .name {
     overflow: hidden;
     flex: 1;
-    color: #e6e8f0;
+    color: var(--fg-1);
     font-size: 12px;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
   .pop-result .type-pill {
-    color: #5a5f72;
+    color: var(--fg-4);
     font-family: "JetBrains Mono", monospace;
     font-size: 9px;
     text-transform: uppercase;
@@ -1278,7 +1260,7 @@
 
   .pop-empty {
     padding: 16px 8px;
-    color: #3a3e4b;
+    color: var(--bd-fg-disabled);
     font-family: "JetBrains Mono", monospace;
     font-size: 11px;
     text-align: center;
@@ -1288,7 +1270,7 @@
     display: flex;
     flex-direction: column;
     padding-top: 8px;
-    border-top: 1px solid #1e212d;
+    border-top: 1px solid var(--hairline);
     gap: 6px;
   }
 
@@ -1301,12 +1283,12 @@
     width: 100%;
     align-items: center;
     padding: 9px 12px;
-    border: 1px solid rgb(179 107 255 / 22%);
+    border: 1px solid color-mix(in oklch, var(--accent) 22%, transparent);
     border-radius: 6px;
     background:
-      linear-gradient(180deg, rgb(179 107 255 / 7%) 0%, rgb(179 107 255 / 2%) 100%),
-      #0e1019;
-    color: #c8a8ff;
+      linear-gradient(180deg, color-mix(in oklch, var(--accent) 7%, transparent) 0%, color-mix(in oklch, var(--accent) 2%, transparent) 100%),
+      var(--bg-1);
+    color: color-mix(in oklch, var(--accent), white 18%);
     cursor: pointer;
     font-family: "JetBrains Mono", monospace;
     font-size: 11px;
@@ -1316,21 +1298,21 @@
   }
 
   .bd-show-more:hover {
-    border-color: rgb(179 107 255 / 65%);
+    border-color: color-mix(in oklch, var(--accent) 65%, transparent);
     background:
-      linear-gradient(180deg, rgb(179 107 255 / 14%) 0%, rgb(179 107 255 / 4%) 100%),
-      #0e1019;
+      linear-gradient(180deg, color-mix(in oklch, var(--accent) 14%, transparent) 0%, color-mix(in oklch, var(--accent) 4%, transparent) 100%),
+      var(--bg-1);
     box-shadow:
-      0 0 0 1px rgb(179 107 255 / 22%),
-      0 6px 18px rgb(179 107 255 / 18%);
+      0 0 0 1px color-mix(in oklch, var(--accent) 22%, transparent),
+      0 6px 18px color-mix(in oklch, var(--accent) 18%, transparent);
     transform: translateY(-1px);
   }
 
   .bd-show-more:active { transform: translateY(0); }
 
   .bd-show-more:focus-visible {
-    border-color: #b36bff;
-    box-shadow: 0 0 0 2px rgb(179 107 255 / 35%);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent) 35%, transparent);
     outline: none;
   }
 
@@ -1339,7 +1321,7 @@
     display: inline-flex;
     flex-shrink: 0;
     align-items: center;
-    color: #b36bff;
+    color: var(--accent);
     font-size: 10px;
     font-weight: 600;
     gap: 6px;
@@ -1356,8 +1338,8 @@
     min-width: 0;
     flex: 1;
     padding-left: 10px;
-    border-left: 1px solid rgb(179 107 255 / 18%);
-    color: #e6e8f0;
+    border-left: 1px solid color-mix(in oklch, var(--accent) 18%, transparent);
+    color: var(--fg-1);
     font-family: Inter, sans-serif;
     font-size: 12.5px;
     font-style: italic;
@@ -1374,10 +1356,10 @@
     align-items: center;
     justify-content: center;
     padding: 0;
-    border: 1px solid rgb(179 107 255 / 28%);
+    border: 1px solid color-mix(in oklch, var(--accent) 28%, transparent);
     border-radius: 3px;
-    background: rgb(179 107 255 / 8%);
-    color: #b36bff;
+    background: color-mix(in oklch, var(--accent) 8%, transparent);
+    color: var(--accent);
     font-family: "JetBrains Mono", monospace;
     font-size: 11px;
   }
@@ -1387,7 +1369,7 @@
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    color: #3a3e4b;
+    color: var(--bd-fg-disabled);
     font-family: "JetBrains Mono", monospace;
     font-size: 9.5px;
     gap: 5px;
@@ -1396,10 +1378,10 @@
 
   kbd {
     padding: 1px 5px;
-    border: 1px solid #2a2e3d;
+    border: 1px solid var(--line-soft);
     border-radius: 3px;
-    background: #12141c;
-    color: #8a8fa0;
+    background: var(--bg-2);
+    color: var(--fg-3);
   }
 }
 
@@ -1451,11 +1433,11 @@
   display: inline-grid;
   width: 36px;
   height: 36px;
-  border: 1px solid var(--bd-border-1);
+  border: 1px solid var(--line-soft);
   border-radius: 50%;
   backdrop-filter: blur(8px);
-  background: rgb(20 22 30 / 70%);
-  color: var(--bd-fg-2);
+  background: color-mix(in oklch, var(--bg-2) 70%, transparent);
+  color: var(--fg-2);
   cursor: pointer;
   font-size: 16px;
   place-items: center;
@@ -1463,9 +1445,9 @@
 }
 
 .bd-fullscreen-close:hover {
-  border-color: var(--bd-border-2);
-  background: var(--bd-bg-3);
-  color: var(--bd-fg-1);
+  border-color: var(--line);
+  background: var(--bg-3);
+  color: var(--fg-1);
 }
 
 .bd-fullscreen-reader {
@@ -1479,14 +1461,14 @@
   display: flex;
   flex-direction: column;
   padding-bottom: 24px;
-  border-bottom: 1px solid var(--bd-hairline);
+  border-bottom: 1px solid var(--hairline);
   margin-bottom: 28px;
   gap: 10px;
 }
 
 .bd-fullscreen-title {
   margin: 0;
-  color: var(--bd-fg-1);
+  color: var(--fg-1);
   font-family: var(--bd-font-display);
   font-size: 34px;
   font-weight: 600;
@@ -1496,13 +1478,13 @@
 
 .bd-fullscreen-title .edition {
   margin-left: 8px;
-  color: var(--bd-fg-3);
+  color: var(--fg-3);
   font-size: 22px;
   font-weight: 500;
 }
 
 .bd-fullscreen-subtitle {
-  color: var(--bd-fg-2);
+  color: var(--fg-2);
   font-family: var(--bd-font-display);
   font-size: 18px;
   font-style: italic;
@@ -1515,14 +1497,14 @@
   flex-wrap: wrap;
   align-items: center;
   margin-top: 4px;
-  color: var(--bd-fg-3);
-  font-family: var(--bd-font-mono);
+  color: var(--fg-3);
+  font-family: var(--font-mono);
   font-size: 12px;
   gap: 14px;
 }
 
 .bd-fullscreen-meta .sep { color: var(--bd-fg-disabled); }
-.bd-fullscreen-meta .author { color: var(--bd-fg-2); }
+.bd-fullscreen-meta .author { color: var(--fg-2); }
 
 .bd-fullscreen-tags {
   display: flex;
@@ -1540,8 +1522,8 @@
 
 .bd-fullscreen-empty {
   padding: 40px 0;
-  color: var(--bd-fg-4);
-  font-family: var(--bd-font-mono);
+  color: var(--fg-4);
+  font-family: var(--font-mono);
   font-size: 13px;
   text-align: center;
 }
