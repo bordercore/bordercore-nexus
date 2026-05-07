@@ -1,59 +1,45 @@
 // =============================================================================
-// Node list — "Refined Dark" redesign (high-fidelity palette)
+// Node list — "Refined Dark" redesign
 // =============================================================================
 // Scoped under .node-app so the redesigned list page can coexist with the
 // legacy .node-list / .node-column selectors in _node.scss (which the detail
-// page still uses). The palette here is locked to the design-spec hex values
-// via local CSS variables — not the theme's oklch tokens — so the card
-// hover tones, rail glows, and age-tier accents render pixel-faithful to
-// the screenshots regardless of the active theme.
+// page still uses). Consumes the global theme tokens (--accent, --bg-0..4,
+// --fg-1..4, --line, --line-soft, --hairline, --ok, --warn, --danger,
+// --font-ui, --font-mono, --radius, --radius-lg) so the page retints under
+// any theme. The Nebula theme reproduces the original prototype palette
+// pixel-for-pixel; other themes retint while preserving the page's
+// structural personality (aurora halo, age-tier rails, sidebar swatches).
+// See:
+//   docs/superpowers/specs/2026-05-07-shared-refined-card-and-node-list-themed-design.md
+// A small set of page-local tokens (--nl-radius-sm, --nl-elev-1/2/3,
+// --nl-overlay, --nl-ease-out, --nl-t-fast/-base/-slow) stay scoped here
+// because they are the page's identity (stacked-chrome elevation ramp,
+// scrim recipe, motion timing), not theme-controlled.
 // =============================================================================
 
 // stylelint-disable no-descending-specificity, color-function-notation
 
 .node-app {
-  // --- Page-scoped token bridge (prototype bc-* values, renamed to --nl-*) ---
-  --nl-accent: #b36bff;
-  --nl-accent-2: #7c7fff;
-  --nl-accent-4: #4cc2ff;
-  --nl-accent-soft: rgb(179, 107, 255, 25%);
-  --nl-warn: #f0b840;
-  --nl-danger: #f57;
-  --nl-bg-0: #07070c;
-  --nl-bg-1: #0b0d14;
-  --nl-bg-2: #12141c;
-  --nl-bg-3: #1a1d28;
-  --nl-bg-4: #242836;
-  --nl-fg-1: #e6e8f0;
-  --nl-fg-2: #b8bcc9;
-  --nl-fg-3: #8a8fa0;
-  --nl-fg-4: #5a5f72;
-  --nl-border-1: #2a2e3d;
-  --nl-border-2: #3a3f52;
-  --nl-hairline: #1e212d;
-  --nl-overlay: rgb(5, 6, 12, 64%);
-  --nl-glass-border: rgb(179, 107, 255, 18%);
+  // --- Page-local tokens (genuine page identity, not theme-controlled) -------
+  // The page's accents, surfaces, foregrounds, lines, fonts, and radii now
+  // come from the global theme tokens (--accent, --bg-0..4, --fg-1..4, etc.).
+  // What remains here is the page's own three-step elevation ramp for stacked
+  // chrome (menus, popovers, sticky elements), the scrim recipe, and motion
+  // timing.
   --nl-radius-sm: 6px;
-  --nl-radius-md: 10px;
-  --nl-radius-lg: 14px;
+  --nl-overlay: color-mix(in oklch, var(--bg-0), black 30%);
   --nl-elev-1:
     0 1px 0 0 rgb(255, 255, 255, 2%) inset,
     0 1px 2px rgb(0, 0, 0, 35%),
-    0 0 0 1px var(--nl-border-1);
+    0 0 0 1px var(--line-soft);
   --nl-elev-2:
     0 1px 0 0 rgb(255, 255, 255, 3%) inset,
     0 8px 24px -8px rgb(0, 0, 0, 55%),
-    0 0 0 1px var(--nl-border-1);
+    0 0 0 1px var(--line-soft);
   --nl-elev-3:
     0 1px 0 0 rgb(255, 255, 255, 4%) inset,
     0 20px 60px -12px rgb(0, 0, 0, 70%),
-    0 0 0 1px var(--nl-border-1);
-
-  // Fonts — Space Grotesk isn't loaded in this app, so display falls back to
-  // Inter. Mono keeps JetBrains Mono from the theme.
-  --nl-font-sans: "Inter", -apple-system, blinkmacsystemfont, "Segoe UI", roboto, "Helvetica Neue", arial, sans-serif;
-  --nl-font-display: "Inter", -apple-system, blinkmacsystemfont, "Segoe UI", sans-serif;
-  --nl-font-mono: "JetBrains Mono", ui-monospace, sfmono-regular, "SF Mono", menlo, consolas, monospace;
+    0 0 0 1px var(--line-soft);
   --nl-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --nl-t-fast: 120ms;
   --nl-t-base: 180ms;
@@ -65,9 +51,9 @@
   min-height: 100vh;
   padding: 0;
   margin: -1rem -1.5rem 0;
-  background: var(--nl-bg-0);
-  color: var(--nl-fg-1);
-  font-family: var(--nl-font-sans);
+  background: var(--bg-0);
+  color: var(--fg-1);
+  font-family: var(--font-ui);
   font-size: 14px;
   line-height: 1.5;
 
@@ -78,16 +64,16 @@
     position: absolute;
     z-index: 0;
     background:
-      radial-gradient(1200px 800px at 10% -10%, rgb(179, 107, 255, 12%), transparent 60%),
-      radial-gradient(900px 700px at 110% 20%, rgb(76, 194, 255, 8%), transparent 55%);
+      radial-gradient(1200px 800px at 10% -10%, color-mix(in oklch, var(--accent) 12%, transparent), transparent 60%),
+      radial-gradient(900px 700px at 110% 20%, color-mix(in oklch, var(--accent-4) 8%, transparent), transparent 55%);
     content: "";
     inset: 0;
     pointer-events: none;
   }
 
   ::selection {
-    background: rgb(179, 107, 255, 35%);
-    color: var(--nl-fg-1);
+    background: color-mix(in oklch, var(--accent) 35%, transparent);
+    color: var(--fg-1);
   }
 
   // ==== Shell: 260px sidebar + main ====
@@ -104,14 +90,14 @@
     display: flex;
     flex-direction: column;
     padding: 24px 14px;
-    border-right: 1px solid var(--nl-border-1);
-    background: rgb(11, 13, 20, 40%);
+    border-right: 1px solid var(--line-soft);
+    background: color-mix(in oklch, var(--bg-1) 40%, transparent);
     gap: 18px;
 
     h3 {
       margin: 0 8px 6px;
-      color: var(--nl-fg-4);
-      font-family: var(--nl-font-sans);
+      color: var(--fg-4);
+      font-family: var(--font-ui);
       font-size: 11px;
       font-weight: 600;
       letter-spacing: 0.1em;
@@ -133,24 +119,24 @@
     border: 1px solid transparent;
     border-radius: 8px;
     background: transparent;
-    color: var(--nl-fg-2);
+    color: var(--fg-2);
     cursor: pointer;
-    font: 500 13px/1.2 var(--nl-font-sans);
+    font: 500 13px/1.2 var(--font-ui);
     gap: 10px;
     text-align: left;
     transition: all var(--nl-t-fast) var(--nl-ease-out);
 
     &:hover {
-      border-color: var(--nl-border-1);
-      background: var(--nl-bg-2);
-      color: var(--nl-fg-1);
+      border-color: var(--line-soft);
+      background: var(--bg-2);
+      color: var(--fg-1);
     }
 
     &.active {
-      border-color: rgb(179, 107, 255, 30%);
-      background: rgb(179, 107, 255, 10%);
-      box-shadow: 0 0 14px -4px rgb(179, 107, 255, 45%);
-      color: var(--nl-fg-1);
+      border-color: color-mix(in oklch, var(--accent) 30%, transparent);
+      background: color-mix(in oklch, var(--accent) 10%, transparent);
+      box-shadow: 0 0 14px -4px color-mix(in oklch, var(--accent) 45%, transparent);
+      color: var(--fg-1);
     }
 
     .swatch {
@@ -158,18 +144,18 @@
       height: 8px;
       flex-shrink: 0;
       border-radius: 2px;
-      background: var(--swatch, var(--nl-fg-4));
+      background: var(--swatch, var(--fg-4));
       box-shadow: 0 0 6px var(--swatch, transparent);
     }
 
     .count {
       margin-left: auto;
-      color: var(--nl-fg-4);
-      font-family: var(--nl-font-mono);
+      color: var(--fg-4);
+      font-family: var(--font-mono);
       font-size: 11px;
     }
 
-    &.active .count { color: var(--nl-accent); }
+    &.active .count { color: var(--accent); }
   }
 
   .nl-totals {
@@ -183,35 +169,35 @@
     display: flex;
     justify-content: space-between;
     padding: 5px 0;
-    border-bottom: 1px dashed var(--nl-hairline);
+    border-bottom: 1px dashed var(--hairline);
 
     &:last-child { border-bottom: none; }
 
     .k {
-      color: var(--nl-fg-2);
-      font-family: var(--nl-font-sans);
+      color: var(--fg-2);
+      font-family: var(--font-ui);
       font-size: 12px;
     }
 
     .v {
-      color: var(--nl-fg-1);
-      font-family: var(--nl-font-mono);
+      color: var(--fg-1);
+      font-family: var(--font-mono);
       font-size: 12px;
       font-weight: 500;
     }
   }
 
-  .nl-total-fresh .v { color: var(--nl-accent); }
+  .nl-total-fresh .v { color: var(--accent); }
 
   .nl-sidebar-footer {
     padding: 10px 8px;
     margin-top: auto;
-    color: var(--nl-fg-4);
-    font-family: var(--nl-font-mono);
+    color: var(--fg-4);
+    font-family: var(--font-mono);
     font-size: 11px;
     line-height: 1.6;
 
-    .fresh { color: var(--nl-accent); }
+    .fresh { color: var(--accent); }
   }
 
   // ==== Main column ====
@@ -231,8 +217,8 @@
 
     h1 {
       margin: 0;
-      color: var(--nl-fg-1);
-      font: 600 28px/1.2 var(--nl-font-display);
+      color: var(--fg-1);
+      font: 600 28px/1.2 var(--font-ui);
       letter-spacing: -0.015em;
       text-transform: none;
     }
@@ -240,7 +226,7 @@
     p {
       max-width: 620px;
       margin: 10px 0 0;
-      color: var(--nl-fg-2);
+      color: var(--fg-2);
       font-size: 14px;
       line-height: 1.55;
     }
@@ -250,7 +236,7 @@
     display: flex;
     align-items: center;
     padding: 10px 4px 10px 14px;
-    border-left: 1px solid var(--nl-hairline);
+    border-left: 1px solid var(--hairline);
     gap: 6px;
   }
 
@@ -262,15 +248,15 @@
     gap: 2px;
 
     .v {
-      color: var(--nl-fg-1);
-      font: 600 28px/1 var(--nl-font-display);
+      color: var(--fg-1);
+      font: 600 28px/1 var(--font-ui);
       letter-spacing: -0.01em;
     }
 
     .k {
       margin-top: 2px;
-      color: var(--nl-fg-4);
-      font-family: var(--nl-font-mono);
+      color: var(--fg-4);
+      font-family: var(--font-mono);
       font-size: 11px;
       text-transform: lowercase;
     }
@@ -283,13 +269,13 @@
     display: inline-flex;
     align-items: center;
     padding: 9px 14px;
-    border: 1px solid var(--nl-border-1);
-    border-radius: var(--nl-radius-md);
-    background: var(--nl-bg-2);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    background: var(--bg-2);
     box-shadow: var(--nl-elev-1);
-    color: var(--nl-fg-1);
+    color: var(--fg-1);
     cursor: pointer;
-    font: 500 13px/1 var(--nl-font-sans);
+    font: 500 13px/1 var(--font-ui);
     gap: 8px;
     text-decoration: none;
     transition:
@@ -298,8 +284,8 @@
       transform 80ms var(--nl-ease-out);
 
     &:hover {
-      border-color: var(--nl-border-2);
-      background: var(--nl-bg-3);
+      border-color: var(--line);
+      background: var(--bg-3);
     }
 
     &:active { transform: translateY(1px); }
@@ -314,32 +300,40 @@
       display: inline-flex;
       align-items: center;
       padding: 1px 6px;
-      border: 1px solid var(--nl-border-1);
+      border: 1px solid var(--line-soft);
       border-radius: 4px;
-      background: var(--nl-bg-3);
-      color: var(--nl-fg-2);
-      font-family: var(--nl-font-mono);
+      background: var(--bg-3);
+      color: var(--fg-2);
+      font-family: var(--font-mono);
       font-size: 11px;
     }
 
     &.primary {
-      border-color: rgb(179, 107, 255, 45%);
-      background: linear-gradient(180deg, #c98bff, var(--nl-accent));
+      border-color: color-mix(in oklch, var(--accent) 45%, transparent);
+      background: linear-gradient(
+        180deg,
+        color-mix(in oklch, var(--accent), white 12%),
+        var(--accent)
+      );
       box-shadow:
         0 1px 0 rgb(255, 255, 255, 20%) inset,
-        0 0 0 1px rgb(179, 107, 255, 50%),
-        0 8px 20px -6px rgb(179, 107, 255, 45%);
-      color: #fff;
+        0 0 0 1px color-mix(in oklch, var(--accent) 50%, transparent),
+        0 8px 20px -6px color-mix(in oklch, var(--accent) 45%, transparent);
+      color: var(--accent-fg);
       font-weight: 600;
 
       &:hover {
-        background: linear-gradient(180deg, #d69fff, #bd7aff);
+        background: linear-gradient(
+          180deg,
+          color-mix(in oklch, var(--accent), white 20%),
+          color-mix(in oklch, var(--accent), white 5%)
+        );
       }
 
       .kbd {
         border-color: rgb(255, 255, 255, 25%);
         background: rgb(255, 255, 255, 12%);
-        color: #fff;
+        color: var(--accent-fg);
       }
     }
 
@@ -347,23 +341,23 @@
       border-color: transparent;
       background: transparent;
       box-shadow: none;
-      color: var(--nl-fg-2);
+      color: var(--fg-2);
 
       &:hover {
-        background: var(--nl-bg-2);
-        color: var(--nl-fg-1);
+        background: var(--bg-2);
+        color: var(--fg-1);
       }
     }
 
     &.danger-ghost {
-      border-color: rgb(255, 85, 119, 30%);
+      border-color: color-mix(in oklch, var(--danger) 30%, transparent);
       background: transparent;
       box-shadow: none;
-      color: var(--nl-danger);
+      color: var(--danger);
 
       &:hover:not(:disabled) {
-        background: rgb(255, 85, 119, 8%);
-        color: var(--nl-danger);
+        background: color-mix(in oklch, var(--danger) 8%, transparent);
+        color: var(--danger);
       }
     }
   }
@@ -381,7 +375,7 @@
     flex-wrap: wrap;
     align-items: center;
     padding: 10px 0 18px;
-    border-bottom: 1px solid var(--nl-hairline);
+    border-bottom: 1px solid var(--hairline);
     margin-bottom: 24px;
     gap: 14px;
   }
@@ -396,7 +390,7 @@
     > svg {
       position: absolute;
       left: 12px;
-      color: var(--nl-fg-4);
+      color: var(--fg-4);
       font-size: 12px;
       pointer-events: none;
     }
@@ -404,19 +398,19 @@
     input {
       width: 100%;
       padding: 9px 34px;
-      border: 1px solid var(--nl-border-1);
+      border: 1px solid var(--line-soft);
       border-radius: 8px;
-      background: var(--nl-bg-1);
-      color: var(--nl-fg-1);
-      font: 400 13px/1.3 var(--nl-font-sans);
+      background: var(--bg-1);
+      color: var(--fg-1);
+      font: 400 13px/1.3 var(--font-ui);
       outline: none;
       transition: border-color var(--nl-t-fast), box-shadow var(--nl-t-fast);
 
-      &::placeholder { color: var(--nl-fg-4); }
+      &::placeholder { color: var(--fg-4); }
 
       &:focus {
-        border-color: var(--nl-accent);
-        box-shadow: 0 0 0 2px rgb(179, 107, 255, 20%);
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent) 20%, transparent);
       }
     }
   }
@@ -430,13 +424,13 @@
     border: none;
     border-radius: 4px;
     background: transparent;
-    color: var(--nl-fg-4);
+    color: var(--fg-4);
     cursor: pointer;
     place-items: center;
 
     &:hover {
-      background: var(--nl-bg-3);
-      color: var(--nl-fg-1);
+      background: var(--bg-3);
+      color: var(--fg-1);
     }
   }
 
@@ -445,16 +439,16 @@
     display: flex;
     align-items: center;
     padding: 3px;
-    border: 1px solid var(--nl-border-1);
+    border: 1px solid var(--line-soft);
     border-radius: 8px;
-    background: var(--nl-bg-1);
+    background: var(--bg-1);
     gap: 2px;
   }
 
   .nl-sort .nl-sort-label {
     padding: 0 8px 0 6px;
-    color: var(--nl-fg-4);
-    font-family: var(--nl-font-mono);
+    color: var(--fg-4);
+    font-family: var(--font-mono);
     font-size: 11px;
     text-transform: lowercase;
   }
@@ -467,49 +461,49 @@
     border: none;
     border-radius: 5px;
     background: transparent;
-    color: var(--nl-fg-2);
+    color: var(--fg-2);
     cursor: pointer;
-    font: 500 12px/1 var(--nl-font-sans);
+    font: 500 12px/1 var(--font-ui);
     gap: 6px;
     transition: all var(--nl-t-fast) var(--nl-ease-out);
 
     &:hover {
-      background: var(--nl-bg-3);
-      color: var(--nl-fg-1);
+      background: var(--bg-3);
+      color: var(--fg-1);
     }
 
     &.active {
-      background: var(--nl-bg-3);
+      background: var(--bg-3);
       box-shadow:
-        0 0 0 1px rgb(179, 107, 255, 35%),
-        0 0 10px -3px rgb(179, 107, 255, 45%);
-      color: var(--nl-fg-1);
+        0 0 0 1px color-mix(in oklch, var(--accent) 35%, transparent),
+        0 0 10px -3px color-mix(in oklch, var(--accent) 45%, transparent);
+      color: var(--fg-1);
     }
   }
 
   .nl-view-btn {
     svg {
-      color: var(--nl-fg-4);
+      color: var(--fg-4);
       font-size: 10px;
     }
 
-    &.active svg { color: var(--nl-accent); }
+    &.active svg { color: var(--accent); }
   }
 
   .nl-count {
     margin-left: auto;
-    color: var(--nl-fg-2);
-    font-family: var(--nl-font-mono);
+    color: var(--fg-2);
+    font-family: var(--font-mono);
     font-size: 12px;
 
     .mono {
-      color: var(--nl-fg-1);
+      color: var(--fg-1);
       font-weight: 500;
     }
 
     .dim {
       margin-left: 4px;
-      color: var(--nl-fg-4);
+      color: var(--fg-4);
     }
   }
 
@@ -526,11 +520,11 @@
   .nl-year-line {
     height: 1px;
     flex: 1;
-    background: linear-gradient(90deg, transparent, var(--nl-hairline), transparent);
+    background: linear-gradient(90deg, transparent, var(--hairline), transparent);
 
     &:first-child {
       flex: 0 0 24px;
-      background: linear-gradient(90deg, transparent, var(--nl-hairline));
+      background: linear-gradient(90deg, transparent, var(--hairline));
     }
   }
 
@@ -538,21 +532,21 @@
     display: inline-flex;
     align-items: baseline;
     padding: 4px 12px;
-    border: 1px solid var(--nl-border-1);
+    border: 1px solid var(--line-soft);
     border-radius: 999px;
-    background: var(--nl-bg-2);
+    background: var(--bg-2);
     gap: 10px;
 
     .y {
-      color: var(--nl-fg-1);
-      font: 600 13px var(--nl-font-display);
+      color: var(--fg-1);
+      font: 600 13px var(--font-ui);
       letter-spacing: -0.005em;
       text-transform: lowercase;
     }
 
     .c {
-      color: var(--nl-fg-4);
-      font-family: var(--nl-font-mono);
+      color: var(--fg-4);
+      font-family: var(--font-mono);
       font-size: 11px;
     }
   }
@@ -575,9 +569,9 @@
     overflow: hidden;
     flex-direction: column;
     padding: 18px 18px 14px 22px;
-    border: 1px solid var(--nl-border-1);
-    border-radius: var(--nl-radius-lg);
-    background: var(--nl-bg-2);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-lg);
+    background: var(--bg-2);
     box-shadow: var(--nl-elev-1);
     cursor: pointer;
     gap: 12px;
@@ -599,24 +593,24 @@
     }
 
     &:hover {
-      border-color: var(--nl-border-2);
-      background: var(--nl-bg-3);
-      box-shadow: var(--nl-elev-2), 0 0 0 1px rgb(179, 107, 255, 12%);
+      border-color: var(--line);
+      background: var(--bg-3);
+      box-shadow: var(--nl-elev-2), 0 0 0 1px color-mix(in oklch, var(--accent) 12%, transparent);
       transform: translateY(-1px);
 
       &::before { opacity: 0.55; }
     }
 
     &:focus-visible {
-      border-color: var(--nl-accent);
-      box-shadow: 0 0 0 2px rgb(179, 107, 255, 35%), var(--nl-elev-2);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent) 35%, transparent), var(--nl-elev-2);
     }
 
     &:active { transform: translateY(0); }
 
     &.empty {
       .nl-rail { opacity: 0.4; }
-      .nl-card-title { color: var(--nl-fg-2); }
+      .nl-card-title { color: var(--fg-2); }
     }
   }
 
@@ -643,8 +637,8 @@
     flex: 1;
     margin: 0;
     -webkit-box-orient: vertical;
-    color: var(--nl-fg-1);
-    font: 600 16px/1.25 var(--nl-font-display);
+    color: var(--fg-1);
+    font: 600 16px/1.25 var(--font-ui);
     letter-spacing: -0.005em;
     -webkit-line-clamp: 2;
     overflow-wrap: anywhere;
@@ -654,9 +648,9 @@
 
   .nl-pin {
     flex-shrink: 0;
-    color: var(--nl-accent);
+    color: var(--accent);
     font-size: 11px;
-    text-shadow: 0 0 8px var(--nl-accent-soft);
+    text-shadow: 0 0 8px var(--accent-soft);
   }
 
   .nl-spark {
@@ -671,7 +665,7 @@
     display: grid;
     align-items: end;
     padding-top: 10px;
-    border-top: 1px dashed var(--nl-hairline);
+    border-top: 1px dashed var(--hairline);
     margin: 0;
     gap: 16px;
     grid-template-columns: auto auto 1fr;
@@ -684,8 +678,8 @@
 
     dt {
       margin: 0;
-      color: var(--nl-fg-4);
-      font-family: var(--nl-font-mono);
+      color: var(--fg-4);
+      font-family: var(--font-mono);
       font-size: 10px;
       letter-spacing: 0.04em;
       text-transform: lowercase;
@@ -698,18 +692,18 @@
   }
 
   .nl-num {
-    color: var(--nl-fg-1);
-    font: 600 20px var(--nl-font-display);
+    color: var(--fg-1);
+    font: 600 20px var(--font-ui);
     letter-spacing: -0.01em;
 
     &.zero {
-      color: var(--nl-fg-4);
+      color: var(--fg-4);
       font-weight: 400;
     }
 
     &.hot {
-      color: var(--nl-warn);
-      text-shadow: 0 0 10px rgb(240, 184, 64, 30%);
+      color: var(--warn);
+      text-shadow: 0 0 10px color-mix(in oklch, var(--warn) 30%, transparent);
     }
   }
 
@@ -725,14 +719,14 @@
   }
 
   .nl-date {
-    color: var(--nl-fg-2);
-    font-family: var(--nl-font-mono);
+    color: var(--fg-2);
+    font-family: var(--font-mono);
     font-size: 11px;
   }
 
   .nl-rel {
-    color: var(--nl-fg-4);
-    font-family: var(--nl-font-mono);
+    color: var(--fg-4);
+    font-family: var(--font-mono);
     font-size: 10px;
   }
 
@@ -745,21 +739,21 @@
   }
 
   .nl-age {
-    color: var(--nl-fg-4);
-    font-family: var(--nl-font-mono);
+    color: var(--fg-4);
+    font-family: var(--font-mono);
     font-size: 10px;
     letter-spacing: 0.02em;
 
-    &[data-tone="fresh"] { color: var(--nl-accent); }
-    &[data-tone="recent"] { color: var(--nl-accent-2); }
-    &[data-tone="current"] { color: var(--nl-accent-4); }
-    &[data-tone="older"] { color: var(--nl-fg-3); }
-    &[data-tone="archive"] { color: var(--nl-fg-4); }
+    &[data-tone="fresh"] { color: var(--accent); }
+    &[data-tone="recent"] { color: var(--accent-2); }
+    &[data-tone="current"] { color: var(--accent-4); }
+    &[data-tone="older"] { color: var(--fg-3); }
+    &[data-tone="archive"] { color: var(--fg-4); }
   }
 
   .nl-open {
-    color: var(--nl-fg-3);
-    font-family: var(--nl-font-mono);
+    color: var(--fg-3);
+    font-family: var(--font-mono);
     font-size: 11px;
     opacity: 0;
     transition: opacity 140ms;
@@ -772,7 +766,7 @@
   }
 
   .nl-card:hover .nl-open {
-    color: var(--nl-accent);
+    color: var(--accent);
     opacity: 1;
 
     .arrow { transform: translateX(3px); }
@@ -783,7 +777,7 @@
   // strip (collections · todos · date, pushed to the right).
   .nl-card.dense {
     padding: 10px 14px 10px 18px;
-    border-radius: var(--nl-radius-md);
+    border-radius: var(--radius);
     gap: 4px;
 
     .nl-card-head { align-items: center; }
@@ -838,51 +832,51 @@
     flex-direction: column;
     align-items: center;
     padding: 60px 20px;
-    border: 1px dashed var(--nl-border-1);
-    border-radius: var(--nl-radius-lg);
-    background: var(--nl-bg-2);
+    border: 1px dashed var(--line-soft);
+    border-radius: var(--radius-lg);
+    background: var(--bg-2);
     gap: 12px;
     text-align: center;
 
     .nl-empty-glyph {
-      color: var(--nl-fg-4);
-      font-family: var(--nl-font-mono);
+      color: var(--fg-4);
+      font-family: var(--font-mono);
       font-size: 48px;
       opacity: 0.6;
     }
 
     h3 {
       margin: 0;
-      color: var(--nl-fg-1);
-      font: 600 18px var(--nl-font-display);
+      color: var(--fg-1);
+      font: 600 18px var(--font-ui);
       letter-spacing: -0.005em;
       text-transform: none;
 
       code {
         padding: 2px 6px;
         border-radius: 4px;
-        background: rgb(179, 107, 255, 10%);
-        color: var(--nl-accent);
+        background: color-mix(in oklch, var(--accent) 10%, transparent);
+        color: var(--accent);
       }
     }
 
     p {
       max-width: 380px;
       margin: 0;
-      color: var(--nl-fg-2);
+      color: var(--fg-2);
     }
   }
 
   // ==== Footer micro-copy ====
   .nl-footer {
     padding-top: 18px;
-    border-top: 1px solid var(--nl-hairline);
+    border-top: 1px solid var(--hairline);
     margin-top: 40px;
     text-align: center;
 
     .meta {
-      color: var(--nl-fg-4);
-      font-family: var(--nl-font-mono);
+      color: var(--fg-4);
+      font-family: var(--font-mono);
       font-size: 11px;
       letter-spacing: 0.02em;
     }
@@ -891,11 +885,11 @@
       display: inline-flex;
       align-items: center;
       padding: 1px 6px;
-      border: 1px solid var(--nl-border-1);
+      border: 1px solid var(--line-soft);
       border-radius: 4px;
-      background: var(--nl-bg-3);
-      color: var(--nl-fg-2);
-      font-family: var(--nl-font-mono);
+      background: var(--bg-3);
+      color: var(--fg-2);
+      font-family: var(--font-mono);
       font-size: 11px;
     }
   }
@@ -908,7 +902,7 @@
 
     .nl-head-meta {
       padding-left: 0;
-      border-top: 1px solid var(--nl-hairline);
+      border-top: 1px solid var(--hairline);
       border-left: none;
     }
   }

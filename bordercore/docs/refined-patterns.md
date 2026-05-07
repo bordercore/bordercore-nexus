@@ -74,6 +74,19 @@ Defined in `static/scss/components/_refined-components.scss`.
 | `.refined-btn-icon` | Apply to a leading FontAwesome icon (sets size). |
 | `.kbd` | Trailing keyboard hint chip (e.g. `<span class="kbd">⏎</span>`). |
 
+### Shared mixins
+
+Defined in `static/scss/components/_refined-components.scss`. Page selectors
+`@include` these to inherit identical chrome — the single source of truth for
+each surface family. **Do not hand-roll equivalent rules**; that's how pages
+drift visually over time.
+
+| Mixin | Use |
+|---|---|
+| `@mixin refined-card` | The standard card surface — padding, `--line-soft` border, `--bg-2` background, `--radius-lg`, three-layer drop shadow. Used by drill detail, reminders dashboard, exercise detail (`.ex-card`), node detail (`.card`). |
+| `@mixin refined-card-hover` | Opt-in companion to `refined-card`. Adds an accent-tinted border, soft accent halo, and a 1px lift on `:hover` / `:focus-within`. Pages with interactive cards include both mixins. |
+| `@mixin refined-row-card` | Card-style list row — gradient surface, accent-glow hover, slight lift. Used by todo rows, reminder rows, bookmark rows. Distinct from `refined-card` (rows are denser and use a gradient background). |
+
 ## Design tokens
 
 Defined in `static/scss/themes/`. Re-tint everything; don't hard-code colors.

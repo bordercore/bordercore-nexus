@@ -72,21 +72,21 @@ export function NodeSidebar({
           <SideItem
             label="pinned"
             count={pinnedCount}
-            swatch="#b36bff"
+            swatch="var(--accent)"
             active={isActive({ type: "pinned" })}
             onClick={() => onFilterChange({ type: "pinned" })}
           />
           <SideItem
             label="with todos"
             count={withTodos}
-            swatch="#f0b840"
+            swatch="var(--warn)"
             active={isActive({ type: "with-todos" })}
             onClick={() => onFilterChange({ type: "with-todos" })}
           />
           <SideItem
             label="empty"
             count={empty}
-            swatch="#5a5f72"
+            swatch="var(--fg-4)"
             active={isActive({ type: "empty" })}
             onClick={() => onFilterChange({ type: "empty" })}
           />

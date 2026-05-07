@@ -177,12 +177,7 @@
 
   // --- Card shell ------------------------------------------------------------
   .ex-card {
-    position: relative;
-    padding: 20px;
-    border: 1px solid var(--line-soft);
-    border-radius: var(--radius-lg);
-    background: var(--bg-2);
-    box-shadow: var(--ex-elev-2);
+    @include refined-card;
 
     h3 {
       display: flex;

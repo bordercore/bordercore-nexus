@@ -38,12 +38,10 @@
   --nd-radius-sm: 6px;
   --nd-radius-md: var(--radius, 10px);
   --nd-radius-lg: var(--radius-lg, 14px);
-  --nd-elev-1:
-    var(--shadow-sm),
-    0 0 0 1px var(--nd-border-1);
-  --nd-elev-2:
-    var(--shadow-md),
-    0 0 0 1px var(--nd-border-1);
+
+  // --nd-elev-1/2 retired — node-detail cards now use the shared
+  // @mixin refined-card / refined-card-hover from _refined-components.scss.
+  // --nd-elev-3 is still used for popovers / sticky chrome below.
   --nd-elev-3:
     var(--shadow-lg),
     0 0 0 1px var(--nd-border-1);
@@ -456,21 +454,15 @@
     &:hover .nd-grip { opacity: 1; }
   }
 
-  // Re-skin the Bootstrap .card surface that each sub-component still renders
+  // Re-skin the Bootstrap .card surface that each sub-component still renders.
+  // Resting chrome and hover state come from the shared refined-card mixins so
+  // node-detail cards stay character-for-character identical to .ex-card and
+  // any future card-bearing refined page that opts in.
   .card {
-    border: 1px solid var(--nd-border-1);
-    border-radius: var(--nd-radius-lg);
-    background: var(--nd-bg-2);
-    box-shadow: var(--nd-elev-1);
-    color: var(--nd-fg-1);
-    transition:
-      border-color var(--nd-t-base) var(--nd-ease-out),
-      box-shadow var(--nd-t-base) var(--nd-ease-out);
+    @include refined-card;
+    @include refined-card-hover;
 
-    &:hover {
-      border-color: var(--nd-border-2);
-      box-shadow: var(--nd-elev-2);
-    }
+    color: var(--nd-fg-1);
 
     // Per-node color overrides that sub-components apply (NodeNote)
     &.node-color-1 { background: var(--nd-bg-2); }
