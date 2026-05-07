@@ -423,17 +423,6 @@ export function BlobUpdatePage({
             <FontAwesomeIcon icon={faArrowLeft} />
           </a>
         )}
-        <div className="be-crumb">
-          <a href={urls.list}>blobs</a>
-          {blobUuid && (
-            <>
-              <span className="sep">/</span>
-              <span className="uuid">{blobUuid.slice(0, 8)}</span>
-            </>
-          )}
-          <span className="sep">/</span>
-          <span className="here">{mode === "edit" ? "edit" : "new"}</span>
-        </div>
       </header>
 
       <div className="be-workspace">
@@ -599,12 +588,6 @@ export function BlobUpdatePage({
               >
                 <FontAwesomeIcon icon={faTimes} />
               </button>
-
-              <div className="refined-modal-eyebrow">
-                <span>delete blob</span>
-                <span className="dot">·</span>
-                <span className="mono">bordercore / blob / delete</span>
-              </div>
 
               <h2 className="refined-modal-title">Delete this blob?</h2>
 

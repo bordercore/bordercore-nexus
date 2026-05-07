@@ -21,6 +21,8 @@ import AuroraBg from "./AuroraBg";
 interface BaseTemplateData {
   failedTestCount?: number;
   title?: string;
+  /** Optional third crumb (e.g. "exercise" on a fitness detail page). Set per-template via {% block crumb_leaf %}. */
+  crumbLeaf?: string;
   username?: string;
   metricsUrl?: string;
   topSearchConfig?: {
@@ -178,6 +180,7 @@ export default function RefinedTopBar() {
 
   const section = resolveSection(window.location.pathname);
   const title = pageTitle || section.defaultTitle;
+  const crumbLeaf = (data.crumbLeaf || "").trim();
 
   useEffect(() => {
     const weatherEl = document.getElementById("weather_info");
@@ -253,12 +256,48 @@ export default function RefinedTopBar() {
     <>
       <div className="refined-tb">
         <AuroraBg />
-        <div className="refined-tb-title">
-          <span className="icon">
-            <FontAwesomeIcon icon={section.icon} />
-          </span>
-          <h1>{title}</h1>
-        </div>
+        {(() => {
+          // Build the crumb chain root → section → leaf, then mark the last as current.
+          // The current crumb is rendered as plain text (no link to itself).
+          const crumbs: Array<{ label: string; href?: string; root?: boolean }> = [
+            { label: "Bordercore", href: "/", root: true },
+          ];
+          if (section.label && section.rootUrl) {
+            crumbs.push({ label: section.label, href: section.rootUrl });
+          }
+          if (crumbLeaf) {
+            crumbs.push({ label: crumbLeaf });
+          }
+          const lastIdx = crumbs.length - 1;
+          return (
+            <nav className="refined-tb-crumb" aria-label="breadcrumb">
+              {crumbs.map((c, i) => {
+                const isCurrent = i === lastIdx;
+                const linkClass = c.root ? "root" : undefined;
+                return (
+                  <React.Fragment key={i}>
+                    {i > 0 && (
+                      <span className="sep" aria-hidden="true">
+                        /
+                      </span>
+                    )}
+                    {isCurrent ? (
+                      <span className="leaf" aria-current="page">
+                        {c.label}
+                      </span>
+                    ) : (
+                      <a className={linkClass} href={c.href}>
+                        {c.label}
+                      </a>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+              {/* Hidden h1 keeps the page title in the DOM for legacy consumers. */}
+              <h1 className="visually-hidden">{title}</h1>
+            </nav>
+          );
+        })()}
         <div className="refined-tb-right">
           <WeatherPill weather={weather} />
           <TopSearch

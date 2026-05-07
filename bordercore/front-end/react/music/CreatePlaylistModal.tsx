@@ -117,12 +117,6 @@ export function CreatePlaylistModal({
           <FontAwesomeIcon icon={faTimes} />
         </button>
 
-        <div className="refined-modal-eyebrow">
-          <span>new playlist</span>
-          <span className="dot">·</span>
-          <span className="mono">bordercore / music / playlist</span>
-        </div>
-
         <h2 className="refined-modal-title">Create a playlist</h2>
 
         <div className="refined-field">

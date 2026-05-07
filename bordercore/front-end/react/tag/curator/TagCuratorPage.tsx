@@ -34,13 +34,6 @@ export function TagCuratorPage({ bootstrap, urls }: Props) {
   return (
     <div className="tg-curator-screen">
       <div className="tg-subheader">
-        <div className="tg-path">
-          <span>kb</span>
-          <span className="tg-path__slash">/</span>
-          <span>tags</span>
-          <span className="tg-path__slash">/</span>
-          <span className="tg-path__leaf">{ws.tag.name}</span>
-        </div>
         <TagSearch activeName={ws.activeName} searchUrl={urls.tagSearchUrl} onPick={navigate} />
       </div>
 

@@ -3,12 +3,13 @@
 
 {% block title %}{{ title }}{% endblock %}
 
+{% block crumb_leaf %}habit{% endblock %}
+
 {% block content %}
     <div id="react-root"
         data-habit="{{ habit_json }}"
         data-log-url="{% url 'habit:log' %}"
         data-set-inactive-url="{% url 'habit:set_inactive' %}"
-        data-list-url="{% url 'habit:list' %}"
     ></div>
 {% endblock %}
 

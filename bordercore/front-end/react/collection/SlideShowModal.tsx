@@ -73,12 +73,6 @@ export const SlideShowModal = forwardRef<SlideShowModalHandle, SlideShowModalPro
             <FontAwesomeIcon icon={faTimes} />
           </button>
 
-          <div className="refined-modal-eyebrow">
-            <span>slide show</span>
-            <span className="dot">·</span>
-            <span className="mono">bordercore / collection / slideshow</span>
-          </div>
-
           <h2 className="refined-modal-title">Start a slide show</h2>
 
           <div className="refined-field">

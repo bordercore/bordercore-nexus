@@ -639,34 +639,6 @@
   }
 }
 
-// Refined-style breadcrumb used by the collection detail page. Lives at root
-// scope so the Django template's {% block nav %} can reuse it without sitting
-// inside the React app's .cd-curate root.
-.cd-crumbs {
-  display: flex;
-  align-items: center;
-  color: var(--fg-3);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  gap: 6px;
-
-  a {
-    color: var(--accent-bookmark);
-    text-decoration: none;
-
-    &:hover {
-      color: var(--fg-1);
-    }
-  }
-
-  .sep {
-    color: var(--fg-4);
-  }
-
-  .leaf {
-    color: var(--fg-1);
-  }
-}
 
 // Segmented control used inside refined-modal forms (e.g. SlideShowModal mode
 // switch). Lives outside .cd-curate so the modal — which is portaled to

@@ -3,6 +3,8 @@
 
 {% block title %}Artist List{% endblock %}
 
+{% block crumb_leaf %}artists{% endblock %}
+
 {% block javascript_bundles %}
     {{ block.super }}
     {% vite_asset "dist/js/artist-list" %}

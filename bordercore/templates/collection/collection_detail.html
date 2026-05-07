@@ -3,13 +3,9 @@
 
 {% block title %}{{ title }}{% endblock %}
 
-{% block nav %}
-<nav class="cd-crumbs mb-3" aria-label="Breadcrumb">
-    <a href="{% url 'collection:list' %}">collections</a>
-    <span class="sep">/</span>
-    <span class="leaf">{{ collection.name|default:"Anonymous collection" }}</span>
-</nav>
-{% endblock %}
+{% block crumb_leaf %}collection{% endblock %}
+
+{% block nav %}{% endblock %}
 
 {% block javascript_bundles %}
     {{ block.super }}

@@ -102,20 +102,6 @@
     color: var(--be-fg-1);
   }
 
-  .be-header .be-crumb {
-    color: var(--be-fg-3);
-    font-family: var(--be-font-mono);
-    font-size: 12px;
-  }
-
-  .be-header .be-crumb .sep {
-    padding: 0 6px;
-    color: var(--be-fg-disabled);
-  }
-
-  .be-header .be-crumb .uuid { color: var(--be-fg-2); }
-  .be-header .be-crumb .here { color: var(--be-fg-1); }
-
   // ---- workspace grid ----
   .be-workspace {
     display: grid;

@@ -146,7 +146,6 @@ export function MusicDashboardPage({
   }, [baseSongs, search]);
 
   const activePlaylist = playlists.find(p => p.uuid === activePlaylistId) ?? null;
-  const activePlaylistName = activePlaylist?.name ?? null;
 
   const handlePlayAlbum = (album: RecentAlbum) => {
     EventBus.$emit("play-track", {
@@ -223,7 +222,6 @@ export function MusicDashboardPage({
         createSongUrl={urls.createSong}
         createAlbumUrl={urls.createAlbum}
         onCreatePlaylist={() => setCreatePlaylistOpen(true)}
-        activePlaylistName={activePlaylistName}
         paletteSlot={
           showPalette ? (
             <SearchPalette

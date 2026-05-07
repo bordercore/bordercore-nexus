@@ -30,16 +30,6 @@ export function NotesLandingPage({ data, urls }: NotesLandingPageProps) {
     <div className="nl-app">
       <header className="nl-page-head">
         <div className="nl-page-head-text">
-          <div className="nl-breadcrumb">
-            <span className="nl-breadcrumb-sep" aria-hidden="true">
-              /
-            </span>
-            <a href="/blob/list">blob</a>
-            <span className="nl-breadcrumb-sep" aria-hidden="true">
-              /
-            </span>
-            <span className="nl-breadcrumb-active">notes</span>
-          </div>
           <h1 className="nl-page-title">Notes</h1>
           <p className="nl-page-sub">
             {data.totals.recents} notes · {data.totals.pinned} pinned · {data.totals.tags} tags

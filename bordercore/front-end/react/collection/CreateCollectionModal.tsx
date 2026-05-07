@@ -76,12 +76,6 @@ export const CreateCollectionModal = forwardRef<
           <FontAwesomeIcon icon={faTimes} />
         </button>
 
-        <div className="refined-modal-eyebrow">
-          <span>new collection</span>
-          <span className="dot">·</span>
-          <span className="mono">bordercore / collections / create</span>
-        </div>
-
         <h2 className="refined-modal-title">Create a collection</h2>
 
         <div className="refined-field">

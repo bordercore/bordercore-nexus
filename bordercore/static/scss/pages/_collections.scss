@@ -188,28 +188,6 @@ $tag-colors: (
   gap: 24px;
 }
 
-.cl-pagehead-crumbs {
-  margin-bottom: 8px;
-  color: var(--fg-4);
-  font-family: var(--font-mono);
-  font-size: 12px;
-
-  .cl-crumb-link {
-    color: var(--accent-bookmark, var(--accent));
-    cursor: pointer;
-    text-decoration: none;
-  }
-
-  .cl-crumb-sep {
-    margin: 0 8px;
-    color: var(--fg-4);
-  }
-
-  .cl-crumb-here {
-    color: var(--fg-1);
-  }
-}
-
 .cl-pagehead-title {
   margin: 0;
   font-family: var(--cl-font-display);

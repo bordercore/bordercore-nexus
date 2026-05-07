@@ -122,12 +122,6 @@ export function NewTodoModal({
           <FontAwesomeIcon icon={faTimes} />
         </button>
 
-        <div className="refined-modal-eyebrow">
-          <span>new todo</span>
-          <span className="dot">·</span>
-          <span className="mono">bordercore / todos / create</span>
-        </div>
-
         <h2 className="refined-modal-title">Create a todo</h2>
 
         <div className="refined-field">

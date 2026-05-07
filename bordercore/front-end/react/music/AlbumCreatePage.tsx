@@ -223,15 +223,6 @@ export function AlbumCreatePage({
   return (
     <div className="refined-page-shell refined-album-page">
       <div className="refined-page-header">
-        <h1 className="refined-breadcrumb-h1">
-          <span className="dim">music</span>
-          <span className="sep">/</span>
-          <span className="dim">albums</span>
-          <span className="sep">/</span>
-          <span className={hasScan ? "current" : "current neutral"}>
-            {hasScan ? album || "untitled album" : "new"}
-          </span>
-        </h1>
         {hasScan && (
           <div className="refined-meta-strip">
             <span className="meta-item">
@@ -450,7 +441,6 @@ export function AlbumCreatePage({
         <>
           <div className="refined-modal-scrim" />
           <div className="refined-modal" role="dialog" aria-modal="true">
-            <div className="refined-modal-eyebrow">uploading · music / albums / new</div>
             <h2 className="refined-modal-title">
               {uploadProgress.phase === "processing"
                 ? "Uploading album"

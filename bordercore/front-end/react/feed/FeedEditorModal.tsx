@@ -171,8 +171,6 @@ export function FeedEditorModal({
   if (!isOpen) return null;
 
   const isEdit = action === "Edit";
-  const eyebrowLabel = isEdit ? "edit feed" : "new feed";
-  const eyebrowPath = isEdit ? "bordercore / feeds / edit" : "bordercore / feeds / create";
   const titleText = isEdit ? "Edit feed" : "Create a feed";
 
   return createPortal(
@@ -190,12 +188,6 @@ export function FeedEditorModal({
         <button type="button" className="refined-modal-close" onClick={onClose} aria-label="close">
           <FontAwesomeIcon icon={faTimes} />
         </button>
-
-        <div className="refined-modal-eyebrow">
-          <span>{eyebrowLabel}</span>
-          <span className="dot">·</span>
-          <span className="mono">{eyebrowPath}</span>
-        </div>
 
         <h2 className="refined-modal-title">{titleText}</h2>
 

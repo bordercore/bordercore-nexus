@@ -60,24 +60,6 @@
   transform: translate(-50%, -50%);
 }
 
-.refined-modal-eyebrow {
-  display: flex;
-  align-items: baseline;
-  margin-bottom: 8px;
-  color: var(--fg-3);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  gap: 8px;
-
-  .dot {
-    color: var(--fg-3);
-  }
-
-  .mono {
-    color: var(--accent);
-  }
-}
-
 .refined-modal-title {
   margin: 0 0 10px;
   color: var(--fg-1);

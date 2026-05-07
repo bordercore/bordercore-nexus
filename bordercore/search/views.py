@@ -61,6 +61,9 @@ class SearchListView(LoginRequiredMixin, ListView):
     template_name = "search/search.html"
     RESULT_COUNT_PER_PAGE = 10
     is_notes_search = False
+    # Top-bar breadcrumb leaf shown once a search has been performed.
+    # Subclasses override (e.g. "semantic") to label their mode.
+    mode_leaf = "term"
 
     def build_pagination_dict(self, page: int, num_results: int) -> dict[str, Any]:
         """Build pagination data dictionary for search results.
@@ -213,6 +216,11 @@ class SearchListView(LoginRequiredMixin, ListView):
         context["doctype_filter"] = self.request.GET.get("doctype", "").split(",")
         context["active_tags"] = self.request.GET.getlist("tags")
         context["title"] = "Search"
+
+        # Show the mode leaf in the top-bar breadcrumb only after a search
+        # has been performed (any GET params present).
+        if self.request.GET:
+            context["crumb_leaf"] = self.mode_leaf
 
         search_data = context["object_list"]
         if search_data and isinstance(search_data, dict):
@@ -400,6 +408,11 @@ class SearchTagDetailView(LoginRequiredMixin, ListView):
         context["tag_list"] = tag_list
         context["title"] = f"Search :: Tag Detail :: {', '.join(tag_list)}"
 
+        # Top-bar breadcrumb leaf — only when a tag-search has actually been
+        # initiated (i.e. the URL carries a taglist).
+        if tag_list and any(t for t in tag_list):
+            context["crumb_leaf"] = "tags"
+
         return context
 
     def get_doc_counts(self, tag_list: list[str], aggregation: dict[str, Any]) -> list[tuple[str, int]]:
@@ -426,6 +439,8 @@ class SearchTagDetailView(LoginRequiredMixin, ListView):
 
 class SemanticSearchListView(SearchListView):
     """View for semantic/vector-based search."""
+
+    mode_leaf = "semantic"
 
     def get_queryset(self) -> Any:
         """Execute a semantic (cosine-similarity) search via perform_search().

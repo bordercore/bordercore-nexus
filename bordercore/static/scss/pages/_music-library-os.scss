@@ -19,29 +19,15 @@
   gap: 16px;
   grid-template-columns: 240px 1fr;
 
-  // Slim breadcrumb/search bar — column tracks mirror the parent grid so the
-  // search input lines up with the main column's content edge.
+  // Slim search bar at the top of the dashboard.
   .mlo-pagebar {
-    display: grid;
+    display: flex;
     align-items: center;
     padding: 8px 0;
     border: 1px solid var(--mlo-line-soft);
     border-radius: 10px;
     background: var(--mlo-bg-2);
-    gap: 16px;
     grid-column: 1 / -1;
-    grid-template-columns: 240px 1fr;
-
-    .mlo-breadcrumb {
-      padding-left: 16px;
-      color: var(--mlo-fg-4);
-      font-family: var(--font-mono);
-      font-size: 11px;
-
-      .mlo-breadcrumb-active { color: var(--mlo-accent); }
-
-      .mlo-breadcrumb-playlist { color: var(--mlo-warn); }
-    }
 
     .mlo-search {
       position: relative;
@@ -803,40 +789,6 @@
     display: block;
     padding: 16px 24px 40px;
 
-    .mlo-list-bar {
-      display: flex;
-      align-items: center;
-      padding: 8px 16px;
-      border: 1px solid var(--mlo-line-soft);
-      border-radius: 10px;
-      margin-bottom: 16px;
-      background: var(--mlo-bg-2);
-
-      .mlo-breadcrumb {
-        color: var(--mlo-fg-4);
-        font: 500 11px var(--font-mono);
-
-        a {
-          color: inherit;
-          text-decoration: none;
-          transition: color 0.12s;
-        }
-
-        a:hover {
-          color: var(--mlo-fg-3);
-        }
-
-        .mlo-breadcrumb-active {
-          color: var(--mlo-accent);
-        }
-
-        .mlo-breadcrumb-letter {
-          color: var(--fg-1);
-          text-transform: uppercase;
-        }
-      }
-    }
-
     .mlo-list-head {
       padding: 0 4px;
       margin-bottom: 18px;
@@ -995,35 +947,8 @@
     column-gap: 16px;
     grid-template-columns: 240px 1fr;
 
-    > .mlo-list-bar,
     > .mlo-edit-hero {
       grid-column: 1 / -1;
-    }
-
-    .mlo-list-bar {
-      display: flex;
-      align-items: center;
-      padding: 8px 16px;
-      border: 1px solid var(--mlo-line-soft);
-      border-radius: 10px;
-      margin-bottom: 16px;
-      background: var(--mlo-bg-2);
-
-      .mlo-breadcrumb {
-        color: var(--mlo-fg-4);
-        font: 500 11px var(--font-mono);
-
-        // stylelint-disable-next-line no-descending-specificity
-        a {
-          color: inherit;
-          text-decoration: none;
-          transition: color 0.12s;
-
-          &:hover { color: var(--mlo-fg-3); }
-        }
-
-        .mlo-breadcrumb-active { color: var(--mlo-accent); }
-      }
     }
   }
 

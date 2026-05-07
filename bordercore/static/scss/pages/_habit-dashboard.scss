@@ -462,16 +462,6 @@
   justify-content: space-between;
   margin-bottom: 18px;
   gap: 16px;
-
-  // The breadcrumb h1 picks up the canonical .refined-breadcrumb-h1 styling
-  // from _refined-components.scss; we just keep its parent crumb's anchor
-  // tag inheriting the dim color (otherwise <a> would re-tint it via the
-  // .hb-page > a rule).
-  .refined-breadcrumb-h1 a.dim {
-    color: var(--fg-3);
-
-    &:hover { color: var(--fg-1); }
-  }
 }
 
 .hb-detail-header {

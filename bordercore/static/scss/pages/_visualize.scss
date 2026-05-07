@@ -9,7 +9,10 @@
   overflow: hidden;
   background: radial-gradient(ellipse at center, #0f1530 0%, #05070f 70%, #000 100%);
   color: #cfe0ff;
-  inset: 0;
+
+  // Sit below the 64px-tall global top bar so the breadcrumb + nav stays
+  // visible/usable.  Without this the page is `inset: 0` and overlays the bar.
+  inset: 64px 0 0;
 }
 
 .constellation-svg {

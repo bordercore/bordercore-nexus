@@ -43,10 +43,9 @@ describe("NewTodoModal", () => {
     expect(container.textContent).toBe("");
   });
 
-  it("renders the eyebrow, title, and all fields when open", () => {
+  it("renders the title and all fields when open", () => {
     render(<NewTodoModal {...baseProps()} />);
     expect(screen.getByRole("dialog")).toHaveAccessibleName("create new todo");
-    expect(screen.getByText(/new todo/i)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /create a todo/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/^name$/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^priority$/i)).toBeInTheDocument();

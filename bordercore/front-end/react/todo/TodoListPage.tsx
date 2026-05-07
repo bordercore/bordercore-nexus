@@ -28,7 +28,7 @@ import { NewTodoModal } from "./NewTodoModal";
 import { EditTodoModal, EditTodoInfo } from "./EditTodoModal";
 import { doPost, doDelete, EventBus } from "../utils/reactUtils";
 import TodoFilterSidebar, { FilterValue } from "./TodoFilterSidebar";
-import TodoBreadcrumb, { ActiveFilter } from "./TodoBreadcrumb";
+import TodoFilterTitle, { ActiveFilter } from "./TodoFilterTitle";
 import TodoToolbar, { SortField } from "./TodoToolbar";
 import TodoRow from "./TodoRow";
 
@@ -416,7 +416,7 @@ export function TodoListPage({
 
         <main className="todo-main">
           <div className="todo-head">
-            <TodoBreadcrumb filter={breadcrumbFilter} />
+            <TodoFilterTitle filter={breadcrumbFilter} />
             <p className="todo-subhead">
               <span className="count">{totalFiltered}</span>{" "}
               {totalFiltered === 1 ? "task" : "tasks"}

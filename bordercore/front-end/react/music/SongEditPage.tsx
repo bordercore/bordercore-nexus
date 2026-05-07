@@ -273,25 +273,6 @@ export function SongEditPage({
 
   return (
     <div className="music-library-os mlo-edit-page">
-      <div className="mlo-list-bar">
-        <div className="mlo-breadcrumb">
-          <a href={cancelUrl}>/bordercore/music/</a>
-          {formData.artist_url ? (
-            <a href={formData.artist_url}>{formData.artist}</a>
-          ) : (
-            <span>{formData.artist}</span>
-          )}
-          {formData.album_url && (
-            <>
-              <span> / </span>
-              <a href={formData.album_url}>{formData.album_name}</a>
-            </>
-          )}
-          <span> / </span>
-          <span className="mlo-breadcrumb-active">edit</span>
-        </div>
-      </div>
-
       <header className="mlo-edit-hero">
         <div className="mlo-edit-hero-cover">
           {formData.artwork_url ? (

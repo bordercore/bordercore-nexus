@@ -98,15 +98,6 @@ export function ArtistListPage({
 
   return (
     <div className="music-library-os mlo-list-page">
-      <div className="mlo-list-bar">
-        <div className="mlo-breadcrumb">
-          <a href={urls.musicHome}>/bordercore/music/</a>
-          <span className="mlo-breadcrumb-active">artists</span>
-          <span> / </span>
-          <span className="mlo-breadcrumb-letter">{headingLetter}</span>
-        </div>
-      </div>
-
       <div className="mlo-list-head">
         <h1 className="mlo-pagehead-title">
           Artists <span className="mlo-pagehead-title-dim">— browse by name</span>

@@ -112,6 +112,7 @@
                     initialSidebarOrder: {{ user.userprofile.sidebar_order_json|safe }},
                     failedTestCount: {{ failed_test_count }},
                     title: "",
+                    crumbLeaf: "{% block crumb_leaf %}{{ crumb_leaf|default:'' }}{% endblock %}",
                     username: "{{ user.get_username }}",
                     metricsUrl: "{% url 'metrics:list' %}",
                     userMenuItems: [

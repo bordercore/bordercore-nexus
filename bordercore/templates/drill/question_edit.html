@@ -65,14 +65,9 @@
 
 {% block title %} Drill {% endblock %}
 
-{% block nav %}
-    <div class="me-auto align-self-center mb-3">
-        <ul class="breadcrumb mb-0 pt-0 pb-0">
-            <li class="breadcrumb-item"> <a href="{% url 'drill:list' %}">Drill</a> </li>
-            <li class="breadcrumb-item active">{{ action }} Question</li>
-        </ul>
-    </div>
-{% endblock %}
+{% block crumb_leaf %}{{ action|lower }} question{% endblock %}
+
+{% block nav %}{% endblock %}
 
 {% block content %}
     <div

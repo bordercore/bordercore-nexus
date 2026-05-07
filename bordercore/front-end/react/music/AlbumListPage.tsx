@@ -84,15 +84,6 @@ export function AlbumListPage({
 
   return (
     <div className="music-library-os mlo-list-page">
-      <div className="mlo-list-bar">
-        <div className="mlo-breadcrumb">
-          <a href={musicHomeUrl}>/bordercore/music/</a>
-          <span className="mlo-breadcrumb-active">albums</span>
-          <span> / </span>
-          <span className="mlo-breadcrumb-letter">{headingLetter}</span>
-        </div>
-      </div>
-
       <div className="mlo-list-head">
         <h1 className="mlo-pagehead-title">
           Albums <span className="mlo-pagehead-title-dim">— browse by title</span>

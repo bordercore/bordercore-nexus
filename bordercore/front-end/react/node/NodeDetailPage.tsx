@@ -826,15 +826,6 @@ export default function NodeDetailPage({
     <div className={`node-detail-app d-${density}`}>
       <main className="nd-page">
         <header className="nd-head" ref={headerRef}>
-          <nav className="nd-crumb" aria-label="breadcrumb">
-            <a href={urls.nodeList}>
-              <FontAwesomeIcon icon={faDiagramProject} className="nd-crumb-icon" />
-              nodes
-            </a>
-            <span className="slash">/</span>
-            <span className="leaf">{nodeName.toLowerCase()}</span>
-          </nav>
-
           <div className="nd-title-row">
             <div className="nd-title-col">
               <h1 className="nd-h1">

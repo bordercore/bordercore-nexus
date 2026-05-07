@@ -91,12 +91,6 @@ export function CreateHabitModal({ open, onClose, createUrl, onCreated }: Create
           <FontAwesomeIcon icon={faTimes} />
         </button>
 
-        <div className="refined-modal-eyebrow">
-          <span>new habit</span>
-          <span className="dot">·</span>
-          <span className="mono">bordercore / habits / create</span>
-        </div>
-
         <h2 className="refined-modal-title">Create a habit</h2>
 
         <div className="refined-field">

@@ -123,7 +123,50 @@
   inset: 0;
 }
 
-// ==== Section title ====
+// ==== Breadcrumb (Bordercore / section / leaf) ====
+.refined-tb-crumb {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  color: var(--bc-fg-3);
+  font-family: var(--bc-font-mono);
+  font-size: 14px;
+  gap: 6px;
+
+  a {
+    color: var(--bc-fg-2);
+    text-decoration: none;
+    transition: color var(--bc-t-fast);
+
+    &:hover {
+      color: var(--bc-fg-1);
+    }
+
+    &.root {
+      color: var(--bc-accent);
+      font-weight: 500;
+
+      &:hover {
+        color: var(--bc-accent-2);
+      }
+    }
+  }
+
+  .sep {
+    margin: 0 2px;
+    color: var(--bc-fg-4);
+  }
+
+  .leaf {
+    overflow: hidden;
+    max-width: 420px;
+    color: var(--bc-accent-3);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+// ==== Section title (legacy — superseded by .refined-tb-crumb) ====
 .refined-tb-title {
   display: flex;
   min-width: 0;

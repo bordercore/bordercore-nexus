@@ -483,6 +483,13 @@ class BlobDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView):
 
         context["name"] = self.object.get_name(remove_edition_string=True)
 
+        # Top-bar breadcrumb leaf: use the blob's doctype so the bar conveys
+        # what kind of blob you're viewing (note/book/image/video/document).
+        # The Blob.doctype property's catch-all value "blob" is remapped to
+        # "file" to avoid the redundant `blobs / blob` reading.
+        doctype = self.object.doctype
+        context["crumb_leaf"] = "file" if doctype == "blob" else doctype
+
         # JSON serialization for React
         context["blob_json"] = {
             "uuid": str(self.object.uuid),

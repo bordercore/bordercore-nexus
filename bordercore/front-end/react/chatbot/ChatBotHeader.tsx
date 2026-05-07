@@ -11,11 +11,6 @@ interface ChatBotHeaderProps {
 export function ChatBotHeader({ pinned, onClose, onTogglePin }: ChatBotHeaderProps) {
   return (
     <div className="chatbot-header">
-      <div className="refined-modal-eyebrow">
-        <span>chat</span>
-        <span className="dot">·</span>
-        <span className="mono">{pinned ? "docked" : "bordercore / assistant"}</span>
-      </div>
       <button
         type="button"
         className={`chatbot-pin-btn${pinned ? " chatbot-pin-btn--active" : ""}`}

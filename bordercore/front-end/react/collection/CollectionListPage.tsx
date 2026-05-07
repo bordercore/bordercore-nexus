@@ -45,11 +45,6 @@ export function CollectionListPage({ collections, tagCounts, urls }: CollectionL
         <main className="cl-main">
           <header className="cl-pagehead">
             <div>
-              <div className="cl-pagehead-crumbs">
-                <span className="cl-crumb-link">knowledge</span>
-                <span className="cl-crumb-sep">/</span>
-                <span className="cl-crumb-here">collections</span>
-              </div>
               <h1 className="cl-pagehead-title">
                 <span className="cl-fav-star" aria-hidden="true">
                   ★

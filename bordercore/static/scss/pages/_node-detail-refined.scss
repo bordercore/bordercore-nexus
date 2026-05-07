@@ -99,32 +99,6 @@
   // ========================================================================
   .nd-head { margin-bottom: 28px; }
 
-  .nd-crumb {
-    display: flex;
-    align-items: center;
-    margin-bottom: 14px;
-    color: var(--nd-fg-3);
-    font-family: var(--nd-font-mono);
-    font-size: 12px;
-    gap: 6px;
-
-    a {
-      color: var(--nd-accent-hover);
-      cursor: pointer;
-      text-decoration: none;
-
-      &:hover { text-decoration: underline; }
-    }
-
-    .slash { color: var(--nd-fg-4); }
-    .leaf { color: var(--nd-fg-1); }
-
-    .nd-crumb-icon {
-      margin-right: 6px;
-      font-size: 10px;
-    }
-  }
-
   .nd-title-row {
     display: flex;
     align-items: flex-start;

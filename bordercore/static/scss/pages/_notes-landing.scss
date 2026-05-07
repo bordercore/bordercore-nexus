@@ -44,27 +44,6 @@
 
 .nl-page-head-text { min-width: 0; }
 
-.nl-breadcrumb {
-  display: flex;
-  align-items: center;
-  margin-bottom: 6px;
-  color: var(--fg-4);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  gap: 6px;
-
-  a {
-    color: var(--fg-3);
-    text-decoration: none;
-
-    &:hover { color: var(--fg-1); }
-  }
-}
-
-.nl-breadcrumb-sep { color: var(--fg-4); }
-
-.nl-breadcrumb-active { color: var(--accent); }
-
 .nl-page-title {
   margin: 0 0 4px;
   color: var(--fg-1);

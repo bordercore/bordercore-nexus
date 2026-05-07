@@ -65,12 +65,6 @@ export default function StudyModal({
           <FontAwesomeIcon icon={faTimes} />
         </button>
 
-        <div className="refined-modal-eyebrow">
-          <span>start study session</span>
-          <span className="dot">·</span>
-          <span className="mono">bordercore / drill</span>
-        </div>
-
         <h2 className="refined-modal-title">Start a session</h2>
         <p className="refined-modal-lead">
           Pick a scope and a filter, then start. The scope can be a tag, a keyword, or one of the

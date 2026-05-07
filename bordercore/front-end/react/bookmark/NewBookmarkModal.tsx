@@ -119,12 +119,6 @@ export function NewBookmarkModal({
           <FontAwesomeIcon icon={faTimes} />
         </button>
 
-        <div className="refined-modal-eyebrow">
-          <span>new bookmark</span>
-          <span className="dot">·</span>
-          <span className="mono">bordercore / bookmarks / create</span>
-        </div>
-
         <h2 className="refined-modal-title">Create a bookmark</h2>
 
         <div className="refined-field">

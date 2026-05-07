@@ -72,13 +72,6 @@ export function ExerciseDetailPage({
   return (
     <div className="exercise-detail-app">
       <div className="ex-page-head">
-        <div className="ex-breadcrumb">
-          <a href={urls.summary}>fitness</a>
-          <span className="sep">/</span>
-          <a href={urls.summary}>exercises</a>
-          <span className="sep">/</span>
-          <span className="leaf">{exerciseName.toLowerCase()}</span>
-        </div>
         <div className="ex-title-row">
           <h1 className="ex-title">{exerciseName}</h1>
           {isActive && (

@@ -301,14 +301,6 @@ export function SongCreatePage({
 
   return (
     <div className="music-library-os mlo-edit-page mlo-create-page">
-      <div className="mlo-list-bar">
-        <div className="mlo-breadcrumb">
-          <a href={cancelUrl}>/bordercore/music/</a>
-          <span> / </span>
-          <span className="mlo-breadcrumb-active">new song</span>
-        </div>
-      </div>
-
       <header className="mlo-edit-hero">
         <div className="mlo-edit-hero-cover">
           <div className="mlo-edit-hero-cover-empty" aria-hidden="true">

@@ -68,12 +68,6 @@ export function NewNodeModal({ open, onClose, createUrl }: NewNodeModalProps) {
           <FontAwesomeIcon icon={faTimes} />
         </button>
 
-        <div className="refined-modal-eyebrow">
-          <span>new node</span>
-          <span className="dot">·</span>
-          <span className="mono">bordercore / nodes / create</span>
-        </div>
-
         <h2 className="refined-modal-title">Create a node</h2>
         <p className="refined-modal-lead">
           a node is a topic container. you can attach collections, notes, todos, and images after

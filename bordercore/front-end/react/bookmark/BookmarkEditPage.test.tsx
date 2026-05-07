@@ -81,7 +81,7 @@ afterEach(() => {
 });
 
 describe("BookmarkEditPage", () => {
-  it("renders the breadcrumb, name, URL field, and metadata strip", () => {
+  it("renders the title, URL field, and metadata strip", () => {
     render(<BookmarkEditPage {...baseProps()} />);
     expect(screen.getByLabelText(/^url$/i)).toHaveValue("https://example.com");
     expect(screen.getByLabelText(/^name$/i)).toHaveValue("Example");

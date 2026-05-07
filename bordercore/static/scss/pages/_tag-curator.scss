@@ -112,14 +112,6 @@
     gap: 16px;
   }
 
-  .tg-path {
-    color: var(--bc-fg-3);
-    font-family: var(--bc-font-mono);
-    font-size: 13px;
-    &__slash { margin: 0 6px; color: var(--bc-fg-4); }
-    &__leaf  { color: var(--bc-accent); }
-  }
-
   // ---- Search ----
   .tg-search {
     position: relative;

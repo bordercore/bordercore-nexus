@@ -3,7 +3,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import PageHead from "./PageHead";
 
 describe("PageHead", () => {
-  it("renders title, breadcrumb, and active playlist", () => {
+  it("renders the title", () => {
     render(
       <PageHead
         searchValue=""
@@ -12,11 +12,9 @@ describe("PageHead", () => {
         createSongUrl="/music/songs/new"
         createAlbumUrl="/music/albums/new"
         onCreatePlaylist={vi.fn()}
-        activePlaylistName="80s"
       />
     );
     expect(screen.getByRole("heading", { name: /Library/i })).toBeInTheDocument();
-    expect(screen.getByText("80s")).toBeInTheDocument();
   });
 
   it("calls onSearchChange when typing", () => {
@@ -29,7 +27,6 @@ describe("PageHead", () => {
         createSongUrl="/music/songs/new"
         createAlbumUrl="/music/albums/new"
         onCreatePlaylist={vi.fn()}
-        activePlaylistName={null}
       />
     );
     const input = screen.getByPlaceholderText(/search/i);
@@ -46,7 +43,6 @@ describe("PageHead", () => {
         createSongUrl="/music/songs/new"
         createAlbumUrl="/music/albums/new"
         onCreatePlaylist={vi.fn()}
-        activePlaylistName={null}
       />
     );
     const input = screen.getByPlaceholderText(/search/i);

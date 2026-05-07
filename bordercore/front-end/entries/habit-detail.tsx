@@ -8,7 +8,6 @@ if (container) {
   const habitJson = container.getAttribute("data-habit") || "{}";
   const logUrl = container.getAttribute("data-log-url") || "";
   const setInactiveUrl = container.getAttribute("data-set-inactive-url") || "";
-  const listUrl = container.getAttribute("data-list-url") || "";
 
   const fallback: HabitDetail = {
     uuid: "",
@@ -37,7 +36,6 @@ if (container) {
       habit={habit}
       logUrl={logUrl}
       setInactiveUrl={setInactiveUrl}
-      listUrl={listUrl}
     />,
   );
 }

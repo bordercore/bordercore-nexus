@@ -17,7 +17,6 @@ interface HabitDetailPageProps {
   habit: HabitDetail;
   logUrl: string;
   setInactiveUrl: string;
-  listUrl: string;
 }
 
 /**
@@ -25,12 +24,7 @@ interface HabitDetailPageProps {
  * routes mutations through `log_habit` (upsert) so the sticky panel handles
  * both "log today" and "edit any past day" without separate endpoints.
  */
-export default function HabitDetailPage({
-  habit,
-  logUrl,
-  setInactiveUrl,
-  listUrl,
-}: HabitDetailPageProps) {
+export default function HabitDetailPage({ habit, logUrl, setInactiveUrl }: HabitDetailPageProps) {
   const today = todayIso();
 
   const [logs, setLogs] = useState<HabitLogEntry[]>(habit.logs);
@@ -118,7 +112,6 @@ export default function HabitDetailPage({
     <div className="hb-page hb-detail">
       <TopBar
         name={habit.name}
-        listUrl={listUrl}
         isActive={isActive}
         onEnd={() => deactivateModalRef.current?.openModal()}
       />

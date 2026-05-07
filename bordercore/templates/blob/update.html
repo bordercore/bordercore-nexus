@@ -3,6 +3,8 @@
 
 {% block title %} {{ title }} {% endblock %}
 
+{% block crumb_leaf %}{% if object %}edit blob{% else %}new blob{% endif %}{% endblock %}
+
 {% block nav %}{% endblock %}
 
 {% block content %}

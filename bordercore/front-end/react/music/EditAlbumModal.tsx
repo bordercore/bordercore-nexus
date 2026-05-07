@@ -129,12 +129,6 @@ export const EditAlbumModal = React.forwardRef<EditAlbumModalHandle, EditAlbumMo
             <FontAwesomeIcon icon={faTimes} />
           </button>
 
-          <div className="refined-modal-eyebrow">
-            <span>edit album</span>
-            <span className="dot">·</span>
-            <span className="mono">bordercore / music / edit</span>
-          </div>
-
           <h2 className="refined-modal-title">Edit album</h2>
 
           <div className="refined-field">

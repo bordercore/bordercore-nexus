@@ -64,12 +64,6 @@ export function DeleteReminderModal({
           <FontAwesomeIcon icon={faTimes} />
         </button>
 
-        <div className="refined-modal-eyebrow">
-          <span>delete reminder</span>
-          <span className="dot">·</span>
-          <span className="mono">irreversible</span>
-        </div>
-
         <h2 className="refined-modal-title">Delete this reminder?</h2>
         <p className="refined-modal-lead">
           <code className="rm-confirm-name">{reminder.name}</code> will be removed. This cannot be

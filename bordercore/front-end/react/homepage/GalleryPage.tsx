@@ -207,18 +207,27 @@ class TagBookmark(SortOrderMixin):
         </p>
       </blockquote>
 
-      <h4 className="mt-5">Breadcrumb Navigation</h4>
+      <h4 className="mt-5">Refined Breadcrumb H1</h4>
 
-      <div className="d-flex mb-3">
-        <div className="me-auto align-self-center">
-          <ul className="breadcrumb mb-0 pt-0 pb-0">
-            <li className="breadcrumb-item">
-              <a href="#">Blob Detail</a>
-            </li>
-            <li className="breadcrumb-item active">Edit Blob</li>
-          </ul>
-        </div>
-      </div>
+      <p className="text-muted">
+        Page-title h1 used on detail/edit pages and on the todo filter title. Site-wide navigation
+        breadcrumbs live in the global top bar — this is a content heading, not a navigation
+        control.
+      </p>
+
+      <p className="mt-3 mb-1 text-muted small">Single-current form (e.g. detail / edit pages):</p>
+      <h1 className="refined-breadcrumb-h1">
+        <span className="current">My favorite albums</span>
+      </h1>
+
+      <p className="mt-4 mb-1 text-muted small">
+        Chain form with dimmed parent (e.g. todo filter title):
+      </p>
+      <h1 className="refined-breadcrumb-h1">
+        <span className="dim">Tag</span>
+        <span className="sep">/</span>
+        <span className="current">work</span>
+      </h1>
 
       <h4 className="mt-5">Alerts</h4>
 

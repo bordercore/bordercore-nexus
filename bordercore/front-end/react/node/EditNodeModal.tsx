@@ -56,12 +56,6 @@ export function EditNodeModal({
           <FontAwesomeIcon icon={faTimes} />
         </button>
 
-        <div className="refined-modal-eyebrow">
-          <span>edit node</span>
-          <span className="dot">·</span>
-          <span className="mono">bordercore / nodes / edit</span>
-        </div>
-
         <h2 className="refined-modal-title">Edit this node</h2>
         <p className="refined-modal-lead">
           rename the node and update its freeform note. components are unaffected.

@@ -127,12 +127,6 @@ export function EditReminderModal({ open, reminder, onClose, onSaved }: EditRemi
           <FontAwesomeIcon icon={faTimes} />
         </button>
 
-        <div className="refined-modal-eyebrow">
-          <span>edit reminder</span>
-          <span className="dot">·</span>
-          <span className="mono">bordercore / reminders / edit</span>
-        </div>
-
         <h2 className="refined-modal-title">Edit reminder</h2>
 
         {loading ? (

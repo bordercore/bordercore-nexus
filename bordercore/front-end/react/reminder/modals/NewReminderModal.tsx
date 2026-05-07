@@ -76,12 +76,6 @@ export function NewReminderModal({ open, onClose, createUrl, onCreated }: NewRem
           <FontAwesomeIcon icon={faTimes} />
         </button>
 
-        <div className="refined-modal-eyebrow">
-          <span>new reminder</span>
-          <span className="dot">·</span>
-          <span className="mono">bordercore / reminders / create</span>
-        </div>
-
         <h2 className="refined-modal-title">Create a reminder</h2>
 
         <ReminderFormBody

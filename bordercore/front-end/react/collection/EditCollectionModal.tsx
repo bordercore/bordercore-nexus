@@ -85,12 +85,6 @@ export const EditCollectionModal = forwardRef<EditCollectionModalHandle, EditCol
             <FontAwesomeIcon icon={faTimes} />
           </button>
 
-          <div className="refined-modal-eyebrow">
-            <span>edit collection</span>
-            <span className="dot">·</span>
-            <span className="mono">bordercore / collections / edit</span>
-          </div>
-
           <h2 className="refined-modal-title">Edit collection</h2>
 
           <div className="refined-field">

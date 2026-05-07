@@ -57,12 +57,6 @@ export const DeleteCollectionModal = forwardRef<
           <FontAwesomeIcon icon={faTimes} />
         </button>
 
-        <div className="refined-modal-eyebrow">
-          <span>delete collection</span>
-          <span className="dot">·</span>
-          <span className="mono">bordercore / collection / delete</span>
-        </div>
-
         <h2 className="refined-modal-title">Delete this collection?</h2>
 
         <p className="refined-modal-lead">

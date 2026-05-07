@@ -17,7 +17,6 @@ interface Props {
   createSongUrl: string;
   createAlbumUrl: string;
   onCreatePlaylist: () => void;
-  activePlaylistName: string | null;
   paletteSlot?: React.ReactNode;
 }
 
@@ -28,7 +27,6 @@ const PageHead: React.FC<Props> = ({
   createSongUrl,
   createAlbumUrl,
   onCreatePlaylist,
-  activePlaylistName,
   paletteSlot,
 }) => {
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -78,16 +76,6 @@ const PageHead: React.FC<Props> = ({
   return (
     <>
       <div className="mlo-pagebar">
-        <div className="mlo-breadcrumb">
-          <span>/bordercore/music/</span>
-          <span className="mlo-breadcrumb-active">library</span>
-          {activePlaylistName && (
-            <>
-              <span> / </span>
-              <span className="mlo-breadcrumb-playlist">{activePlaylistName}</span>
-            </>
-          )}
-        </div>
         <div className="mlo-search">
           <FontAwesomeIcon icon={faSearch} />
           <input

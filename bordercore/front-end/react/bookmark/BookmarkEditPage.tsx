@@ -157,10 +157,6 @@ export function BookmarkEditPage({
     <div className="refined-page-shell" id="bookmark-edit-page">
       <div className="refined-page-header">
         <h1 className="refined-breadcrumb-h1">
-          <span className="dim">bookmarks</span>
-          <span className="sep">/</span>
-          <span className="dim">edit</span>
-          <span className="sep">/</span>
           <span className="current">
             {faviconImgUrl && (
               <img
