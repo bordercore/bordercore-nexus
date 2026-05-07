@@ -48,6 +48,11 @@ THEMES: dict[str, Theme] = {
         display_name="Cyberpunk",
         description="Neon pinks and cyans on dark purple",
     ),
+    "nebula": Theme(
+        css_id="nebula",
+        display_name="Nebula",
+        description="Violet, indigo, magenta, and cyan on near-black",
+    ),
     "cobalt-abyss": Theme(
         css_id="cobalt-abyss",
         display_name="Cobalt Abyss",

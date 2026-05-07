@@ -136,6 +136,17 @@
   --warn: oklch(85% 0.16 85deg);
   --danger: oklch(72% 0.20 25deg);
   --accent-bookmark: oklch(80% 0.18 220deg);
+
+  // Multi-stop accents — cyberpunk leans into them: magenta primary,
+  // electric blue secondary, neon cyan counterpoint.
+  --accent-2: oklch(72% 0.22 285deg);
+  --accent-3: oklch(76% 0.20 5deg);
+  --accent-4: var(--accent-bookmark);
+  // Lighter than --bg-3 (continues the ramp toward content surfaces)
+  --bg-4: oklch(29% 0.058 300deg);
+  // Softer than --line-soft — barely-visible internal separator
+  --hairline: oklch(19% 0.040 305deg);
+
   --font-ui: "Inter", -apple-system, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, sfmono-regular, menlo, consolas, monospace;
   --radius: 10px;

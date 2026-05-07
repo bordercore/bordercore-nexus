@@ -101,6 +101,16 @@
   --warn: oklch(62% 0.18 75deg);
   --danger: oklch(55% 0.22 25deg);
   --accent-bookmark: oklch(55% 0.18 240deg);
+
+  // Multi-stop accents (used by gradient page personalities; default to single-color on flat themes)
+  --accent-2: var(--accent);
+  --accent-3: var(--accent);
+  --accent-4: var(--accent-bookmark);
+  // Lighter than --bg-3 (continues the ramp toward content surfaces)
+  --bg-4: oklch(86% 0.011 280deg);
+  // Softer than --line-soft — barely-visible internal separator
+  --hairline: oklch(94% 0.006 280deg);
+
   --font-ui: "Inter", -apple-system, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, sfmono-regular, menlo, consolas, monospace;
   --radius: 10px;

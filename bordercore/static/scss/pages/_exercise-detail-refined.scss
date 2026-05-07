@@ -1,10 +1,16 @@
 // =============================================================================
-// Exercise detail — "Refined Dark" redesign (page-scoped cyberpunk palette)
+// Exercise detail — "Refined Dark" redesign
 // =============================================================================
-// Scoped under .exercise-detail-app so the redesigned page can coexist with
-// the legacy fitness summary and avoids leaking Space Grotesk / the bespoke
-// neon palette to other themes. Mirrors the prototype's --bc-* tokens as
-// page-local --ex-* tokens, per the precedent set by _node-refined.scss.
+// Consumes the global theme tokens (--accent, --bg-0..4, --fg-1..4, --line,
+// --line-soft, --hairline, --ok, --danger, --font-ui, --font-mono, --radius,
+// --radius-lg) so the page retints under any theme. The Nebula theme
+// reproduces the original prototype palette pixel-for-pixel; other themes
+// retint while preserving the page's structural personality (gradient title,
+// halo, pulse, mono labels). See:
+//   docs/superpowers/specs/2026-05-07-nebula-theme-exercise-detail-themed-design.md
+// A small set of page-local tokens (--ex-font-display, --ex-elev-2,
+// --ex-radius-sm, --ex-t-fast, --ex-t-base, --ex-ease-out) stay scoped here
+// because they are this page's identity, not theme-controlled.
 // =============================================================================
 
 // stylelint-disable no-descending-specificity, color-function-notation
@@ -12,36 +18,13 @@
 @import "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap";
 
 .exercise-detail-app {
-  // --- Token bridge (prototype bc-* values, renamed to --ex-*) ----------------
-  --ex-accent: #b36bff;
-  --ex-accent-2: #7c7fff;
-  --ex-accent-3: #ff3dbd;
-  --ex-accent-4: #4cc2ff;
-  --ex-accent-soft: rgb(179, 107, 255, 25%);
-  --ex-bg-0: #07070c;
-  --ex-bg-1: #0b0d14;
-  --ex-bg-2: #12141c;
-  --ex-bg-3: #1a1d28;
-  --ex-bg-4: #242836;
-  --ex-fg-1: #e6e8f0;
-  --ex-fg-2: #b8bcc9;
-  --ex-fg-3: #8a8fa0;
-  --ex-fg-4: #5a5f72;
-  --ex-ok: #3fd29c;
-  --ex-danger: #f57;
-  --ex-border-1: #2a2e3d;
-  --ex-border-2: #3a3f52;
-  --ex-hairline: #1e212d;
+  // --- Page-local tokens (genuine page identity, not theme-controlled) -------
   --ex-radius-sm: 6px;
-  --ex-radius-md: 10px;
-  --ex-radius-lg: 14px;
   --ex-elev-2:
     0 1px 0 0 rgb(255, 255, 255, 3%) inset,
     0 8px 24px -8px rgb(0, 0, 0, 55%),
-    0 0 0 1px var(--ex-border-1);
-  --ex-font-sans: "Inter", -apple-system, blinkmacsystemfont, "Segoe UI", roboto, "Helvetica Neue", arial, sans-serif;
+    0 0 0 1px var(--line-soft);
   --ex-font-display: "Space Grotesk", "Inter", -apple-system, "Segoe UI", sans-serif;
-  --ex-font-mono: "JetBrains Mono", ui-monospace, sfmono-regular, "SF Mono", menlo, consolas, monospace;
   --ex-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ex-t-fast: 120ms;
   --ex-t-base: 180ms;
@@ -51,9 +34,9 @@
   min-height: calc(100vh - 56px);
   padding: 28px 36px 120px;
   margin: -1rem -1.5rem 0;
-  background: var(--ex-bg-0);
-  color: var(--ex-fg-1);
-  font-family: var(--ex-font-sans);
+  background: var(--bg-0);
+  color: var(--fg-1);
+  font-family: var(--font-ui);
   font-size: 14px;
   line-height: 1.5;
 
@@ -63,9 +46,9 @@
     position: absolute;
     z-index: 0;
     background:
-      radial-gradient(1400px 900px at 15% -10%, rgb(179, 107, 255, 13%), transparent 60%),
-      radial-gradient(900px 700px at 110% 30%, rgb(76, 194, 255, 8%), transparent 55%),
-      radial-gradient(600px 400px at 80% 110%, rgb(255, 61, 189, 6%), transparent 50%);
+      radial-gradient(1400px 900px at 15% -10%, color-mix(in oklch, var(--accent) 13%, transparent), transparent 60%),
+      radial-gradient(900px 700px at 110% 30%, color-mix(in oklch, var(--accent-4) 8%, transparent), transparent 55%),
+      radial-gradient(600px 400px at 80% 110%, color-mix(in oklch, var(--accent-3) 6%, transparent), transparent 50%);
     content: "";
     inset: 0;
     pointer-events: none;
@@ -83,24 +66,24 @@
     display: flex;
     align-items: center;
     margin-bottom: 10px;
-    color: var(--ex-fg-3);
-    font-family: var(--ex-font-mono);
+    color: var(--fg-3);
+    font-family: var(--font-mono);
     font-size: 12px;
     gap: 4px;
 
     a {
-      color: var(--ex-fg-3);
+      color: var(--fg-3);
       text-decoration: none;
       transition: color var(--ex-t-fast);
     }
 
-    a:hover { color: var(--ex-accent); }
+    a:hover { color: var(--accent); }
 
     .sep {
       margin: 0 2px;
-      color: var(--ex-fg-4);
+      color: var(--fg-4);
     }
-    .leaf { color: var(--ex-accent); }
+    .leaf { color: var(--accent); }
   }
 
   .ex-title-row {
@@ -111,7 +94,7 @@
   }
 
   .ex-title {
-    background: linear-gradient(100deg, #c98bff 0%, #7c7fff 50%, #4cc2ff 100%);
+    background: linear-gradient(100deg, var(--accent) 0%, var(--accent-2) 50%, var(--accent-4) 100%);
     // stylelint-disable-next-line property-no-vendor-prefix
     -webkit-background-clip: text;
     background-clip: text;
@@ -121,15 +104,15 @@
     font-weight: 600;
     letter-spacing: -0.02em;
     line-height: 1;
-    text-shadow: 0 0 48px rgb(179, 107, 255, 25%);
+    text-shadow: 0 0 48px color-mix(in oklch, var(--accent) 25%, transparent);
   }
 
   .ex-title-meta {
     display: flex;
     align-items: center;
     margin-left: auto;
-    color: var(--ex-fg-4);
-    font-family: var(--ex-font-mono);
+    color: var(--fg-4);
+    font-family: var(--font-mono);
     font-size: 11px;
     gap: 10px;
 
@@ -137,7 +120,7 @@
       width: 4px;
       height: 4px;
       border-radius: 50%;
-      background: var(--ex-fg-4);
+      background: var(--fg-4);
     }
   }
 
@@ -145,12 +128,12 @@
     display: inline-flex;
     align-items: center;
     padding: 6px 12px 6px 10px;
-    border: 1px solid rgb(63, 210, 156, 30%);
+    border: 1px solid color-mix(in oklch, var(--ok) 30%, transparent);
     border-radius: 999px;
-    background: rgb(63, 210, 156, 8%);
-    box-shadow: 0 0 18px -4px rgb(63, 210, 156, 40%);
-    color: var(--ex-ok);
-    font: 600 11px/1 var(--ex-font-sans);
+    background: color-mix(in oklch, var(--ok) 8%, transparent);
+    box-shadow: 0 0 18px -4px color-mix(in oklch, var(--ok) 40%, transparent);
+    color: var(--ok);
+    font: 600 11px/1 var(--font-ui);
     gap: 8px;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -160,15 +143,15 @@
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: var(--ex-ok);
-      box-shadow: 0 0 10px var(--ex-ok);
+      background: var(--ok);
+      box-shadow: 0 0 10px var(--ok);
     }
 
     .pulse::after {
       position: absolute;
       border-radius: 50%;
       animation: ex-pulse 1.8s ease-out infinite;
-      background: var(--ex-ok);
+      background: var(--ok);
       content: "";
       inset: -3px;
       opacity: 0.3;
@@ -220,9 +203,9 @@
   .ex-card {
     position: relative;
     padding: 20px;
-    border: 1px solid var(--ex-border-1);
-    border-radius: var(--ex-radius-lg);
-    background: var(--ex-bg-2);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-lg);
+    background: var(--bg-2);
     box-shadow: var(--ex-elev-2);
 
     h3 {
@@ -230,8 +213,8 @@
       align-items: center;
       justify-content: space-between;
       margin: 0 0 14px;
-      color: var(--ex-fg-3);
-      font-family: var(--ex-font-sans);
+      color: var(--fg-3);
+      font-family: var(--font-ui);
       font-size: 11px;
       font-weight: 600;
       letter-spacing: 0.12em;
@@ -241,8 +224,8 @@
     // Small right-aligned hint tucked into a card h3 (e.g. "between sets",
     // "Apr 19, 2026 · 4 days ago", "N today").
     h3 .ex-card-hint {
-      color: var(--ex-fg-4);
-      font-family: var(--ex-font-mono);
+      color: var(--fg-4);
+      font-family: var(--font-mono);
       font-size: 10px;
       font-weight: 400;
       letter-spacing: 0;
@@ -251,16 +234,16 @@
   }
 
   .ex-card.accent {
-    border-color: rgb(179, 107, 255, 22%);
+    border-color: color-mix(in oklch, var(--accent) 22%, transparent);
     background:
-      linear-gradient(180deg, rgb(179, 107, 255, 6%), transparent 60%),
-      var(--ex-bg-2);
+      linear-gradient(180deg, color-mix(in oklch, var(--accent) 6%, transparent), transparent 60%),
+      var(--bg-2);
   }
 
   .ex-hair {
     height: 1px;
     margin: 14px -20px;
-    background: var(--ex-hairline);
+    background: var(--hairline);
   }
 
   // --- Activity card ---------------------------------------------------------
@@ -272,24 +255,24 @@
     font-size: 13px;
 
     .k {
-      color: var(--ex-fg-3);
+      color: var(--fg-3);
       font-size: 11px;
       letter-spacing: 0.1em;
       text-transform: uppercase;
     }
 
     .v {
-      color: var(--ex-fg-1);
-      font-family: var(--ex-font-mono);
+      color: var(--fg-1);
+      font-family: var(--font-mono);
       font-size: 12px;
     }
 
-    .v.accent { color: var(--ex-accent); }
+    .v.accent { color: var(--accent); }
   }
 
   .ex-schedule-label {
     margin-bottom: 10px;
-    color: var(--ex-fg-3);
+    color: var(--fg-3);
     font-size: 11px;
     letter-spacing: 0.1em;
     text-transform: uppercase;
@@ -305,12 +288,12 @@
       width: 22px;
       height: 22px;
       padding: 0;
-      border: 1px solid var(--ex-border-1);
+      border: 1px solid var(--line-soft);
       border-radius: 6px;
-      background: var(--ex-bg-1);
-      color: var(--ex-fg-4);
+      background: var(--bg-1);
+      color: var(--fg-4);
       cursor: pointer;
-      font: 600 10px/1 var(--ex-font-mono);
+      font: 600 10px/1 var(--font-mono);
       place-items: center;
       text-transform: uppercase;
       transition:
@@ -321,14 +304,14 @@
     }
 
     .dot:hover:not(:disabled) {
-      border-color: rgb(179, 107, 255, 35%);
-      background: var(--ex-bg-3);
-      color: var(--ex-fg-2);
+      border-color: color-mix(in oklch, var(--accent) 35%, transparent);
+      background: var(--bg-3);
+      color: var(--fg-2);
     }
 
     .dot:focus-visible {
-      border-color: var(--ex-accent);
-      box-shadow: 0 0 0 2px rgb(179, 107, 255, 35%);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent) 35%, transparent);
       outline: none;
     }
 
@@ -338,27 +321,27 @@
     }
 
     .dot.on {
-      border-color: rgb(179, 107, 255, 40%);
-      background: rgb(179, 107, 255, 14%);
-      box-shadow: 0 0 12px -3px rgb(179, 107, 255, 50%);
-      color: var(--ex-accent);
+      border-color: color-mix(in oklch, var(--accent) 40%, transparent);
+      background: color-mix(in oklch, var(--accent) 14%, transparent);
+      box-shadow: 0 0 12px -3px color-mix(in oklch, var(--accent) 50%, transparent);
+      color: var(--accent);
     }
 
     .dot.on:hover:not(:disabled) {
-      border-color: rgb(179, 107, 255, 60%);
-      background: rgb(179, 107, 255, 22%);
-      box-shadow: 0 0 16px -2px rgb(179, 107, 255, 60%);
-      color: var(--ex-accent);
+      border-color: color-mix(in oklch, var(--accent) 60%, transparent);
+      background: color-mix(in oklch, var(--accent) 22%, transparent);
+      box-shadow: 0 0 16px -2px color-mix(in oklch, var(--accent) 60%, transparent);
+      color: var(--accent);
     }
   }
 
   .ex-next-session {
     margin-top: 10px;
-    color: var(--ex-fg-4);
-    font-family: var(--ex-font-mono);
+    color: var(--fg-4);
+    font-family: var(--font-mono);
     font-size: 11px;
 
-    .when { color: var(--ex-accent); }
+    .when { color: var(--accent); }
   }
 
   // --- Last workout ----------------------------------------------------------
@@ -369,14 +352,14 @@
     align-items: baseline;
     justify-content: space-between;
     margin-bottom: 8px;
-    color: var(--ex-fg-3);
+    color: var(--fg-3);
     font-size: 11px;
     letter-spacing: 0.1em;
     text-transform: uppercase;
 
     .sum {
-      color: var(--ex-fg-4);
-      font-family: var(--ex-font-mono);
+      color: var(--fg-4);
+      font-family: var(--font-mono);
       letter-spacing: 0;
       text-transform: none;
     }
@@ -394,20 +377,20 @@
     flex-direction: column;
     align-items: center;
     padding: 10px 8px 8px;
-    border: 1px solid var(--ex-border-1);
-    border-radius: var(--ex-radius-md);
-    background: var(--ex-bg-1);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    background: var(--bg-1);
     gap: 2px;
     transition: all 160ms var(--ex-ease-out);
 
     &:hover {
-      border-color: rgb(179, 107, 255, 30%);
-      background: var(--ex-bg-3);
+      border-color: color-mix(in oklch, var(--accent) 30%, transparent);
+      background: var(--bg-3);
       transform: translateY(-1px);
     }
 
     .num {
-      color: var(--ex-fg-1);
+      color: var(--fg-1);
       font-family: var(--ex-font-display);
       font-size: 20px;
       font-weight: 600;
@@ -416,27 +399,27 @@
 
     .unit {
       margin-top: 2px;
-      color: var(--ex-fg-4);
-      font: 500 9px/1 var(--ex-font-mono);
+      color: var(--fg-4);
+      font: 500 9px/1 var(--font-mono);
       letter-spacing: 0.08em;
       text-transform: uppercase;
     }
 
     .label {
       margin-top: 6px;
-      color: var(--ex-fg-3);
-      font: 500 10px/1 var(--ex-font-sans);
+      color: var(--fg-3);
+      font: 500 10px/1 var(--font-ui);
     }
 
     .delta {
       margin-top: 3px;
-      font: 500 9px/1 var(--ex-font-mono);
+      font: 500 9px/1 var(--font-mono);
       letter-spacing: 0.04em;
     }
 
-    .delta.up { color: var(--ex-ok); }
-    .delta.down { color: var(--ex-danger); }
-    .delta.flat { color: var(--ex-fg-4); }
+    .delta.up { color: var(--ok); }
+    .delta.down { color: var(--danger); }
+    .delta.flat { color: var(--fg-4); }
   }
 
   // --- Small icon-only action buttons (card header) -------------------------
@@ -472,7 +455,7 @@
     border: 1px solid transparent;
     border-radius: 6px;
     background: transparent;
-    color: var(--ex-fg-4);
+    color: var(--fg-4);
     cursor: pointer;
     font-size: 11px;
     place-items: center;
@@ -480,27 +463,27 @@
   }
 
   .ex-icon-btn:hover:not(:disabled) {
-    border-color: var(--ex-border-1);
-    background: var(--ex-bg-3);
-    color: var(--ex-accent);
+    border-color: var(--line-soft);
+    background: var(--bg-3);
+    color: var(--accent);
   }
 
   .ex-icon-btn:focus-visible {
-    border-color: var(--ex-accent);
-    box-shadow: 0 0 0 2px rgb(179, 107, 255, 35%);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent) 35%, transparent);
     outline: none;
   }
 
   .ex-icon-btn.active {
-    border-color: rgb(179, 107, 255, 40%);
-    background: rgb(179, 107, 255, 14%);
-    color: var(--ex-accent);
+    border-color: color-mix(in oklch, var(--accent) 40%, transparent);
+    background: color-mix(in oklch, var(--accent) 14%, transparent);
+    color: var(--accent);
   }
 
   .ex-icon-btn.danger:hover:not(:disabled) {
-    border-color: rgb(255, 85, 119, 30%);
-    background: rgb(255, 85, 119, 12%);
-    color: var(--ex-danger);
+    border-color: color-mix(in oklch, var(--danger) 30%, transparent);
+    background: color-mix(in oklch, var(--danger) 12%, transparent);
+    color: var(--danger);
   }
 
   .ex-icon-btn:disabled {
@@ -511,7 +494,7 @@
   // --- Description card ------------------------------------------------------
   .ex-no-description {
     margin: 0;
-    color: var(--ex-fg-4);
+    color: var(--fg-4);
     font-size: 13px;
     font-style: italic;
   }
@@ -520,14 +503,14 @@
   // no ExerciseUser row. Leaves a little breathing room before the pills.
   .ex-activity-inactive {
     margin: 0 0 14px;
-    color: var(--ex-fg-4);
+    color: var(--fg-4);
     font-size: 13px;
     font-style: italic;
   }
 
   .ex-description {
     margin: 0;
-    color: var(--ex-fg-2);
+    color: var(--fg-2);
     font-size: 13px;
     line-height: 1.55;
   }
@@ -537,13 +520,13 @@
     width: 100%;
     min-height: 88px;
     padding: 12px 14px;
-    border: 1px solid var(--ex-border-1);
-    border-radius: var(--ex-radius-md);
-    border-left: 2px solid var(--ex-accent);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    border-left: 2px solid var(--accent);
     margin-top: 10px;
-    background: var(--ex-bg-1);
-    color: var(--ex-fg-1);
-    font-family: var(--ex-font-mono);
+    background: var(--bg-1);
+    color: var(--fg-1);
+    font-family: var(--font-mono);
     font-size: 13px;
     line-height: 1.55;
     outline: none;
@@ -552,19 +535,19 @@
   }
 
   .ex-note-editor:focus {
-    border-color: var(--ex-accent);
-    box-shadow: 0 0 0 2px rgb(179, 107, 255, 20%);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent) 20%, transparent);
   }
 
   .ex-note {
     position: relative;
     padding: 12px 14px;
-    border: 1px solid var(--ex-border-1);
-    border-radius: var(--ex-radius-md);
-    border-left: 2px solid var(--ex-accent);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    border-left: 2px solid var(--accent);
     margin-top: 10px;
-    background: var(--ex-bg-1);
-    color: var(--ex-fg-2);
+    background: var(--bg-1);
+    color: var(--fg-2);
     font-size: 13px;
     line-height: 1.55;
 
@@ -573,10 +556,10 @@
       top: -8px;
       left: 10px;
       padding: 0 6px;
-      background: var(--ex-bg-2);
-      color: var(--ex-fg-4);
+      background: var(--bg-2);
+      color: var(--fg-4);
       content: "// coach";
-      font-family: var(--ex-font-mono);
+      font-family: var(--font-mono);
       font-size: 10px;
     }
 
@@ -607,7 +590,7 @@
       h5,
       h6 {
         margin: 0 0 6px;
-        color: var(--ex-fg-1);
+        color: var(--fg-1);
         font-family: var(--ex-font-display);
         font-size: 13px;
         font-weight: 600;
@@ -616,46 +599,46 @@
       }
 
       strong {
-        color: var(--ex-accent-3);
+        color: var(--accent-3);
         font-weight: 600;
       }
 
       em {
-        color: var(--ex-fg-1);
+        color: var(--fg-1);
         font-style: italic;
       }
 
       a {
-        color: var(--ex-accent);
+        color: var(--accent);
         text-decoration: underline;
-        text-decoration-color: rgb(179, 107, 255, 35%);
+        text-decoration-color: color-mix(in oklch, var(--accent) 35%, transparent);
         text-underline-offset: 2px;
         transition: color var(--ex-t-fast);
       }
 
-      a:hover { color: var(--ex-accent-hover, #c98bff); }
+      a:hover { color: color-mix(in oklch, var(--accent), white 20%); }
 
       code {
         padding: 1px 6px;
-        border-radius: var(--ex-radius-xs, 4px);
-        background: var(--ex-bg-3);
-        color: var(--ex-accent-2);
-        font-family: var(--ex-font-mono);
+        border-radius: 4px;
+        background: var(--bg-3);
+        color: var(--accent-2);
+        font-family: var(--font-mono);
         font-size: 12px;
       }
 
       pre {
         padding: 10px 12px;
-        border: 1px solid var(--ex-border-1);
+        border: 1px solid var(--line-soft);
         border-radius: var(--ex-radius-sm);
-        background: var(--ex-bg-2);
+        background: var(--bg-2);
         overflow-x: auto;
       }
 
       pre code {
         padding: 0;
         background: transparent;
-        color: var(--ex-fg-1);
+        color: var(--fg-1);
       }
 
       ul,
@@ -664,15 +647,15 @@
 
       blockquote {
         padding: 2px 10px;
-        border-left: 2px solid var(--ex-border-2);
-        color: var(--ex-fg-3);
+        border-left: 2px solid var(--line);
+        color: var(--fg-3);
       }
 
       hr {
         height: 1px;
         border: 0;
         margin: 10px 0;
-        background: var(--ex-hairline);
+        background: var(--hairline);
       }
     }
   }
@@ -694,7 +677,7 @@
 
     .track {
       fill: none;
-      stroke: var(--ex-bg-3);
+      stroke: var(--bg-3);
       stroke-width: 6;
     }
 
@@ -717,7 +700,7 @@
     }
 
     .time {
-      color: var(--ex-fg-1);
+      color: var(--fg-1);
       font-family: var(--ex-font-display);
       font-size: 38px;
       font-variant-numeric: tabular-nums;
@@ -726,25 +709,25 @@
     }
 
     .label {
-      color: var(--ex-fg-4);
-      font: 500 10px/1 var(--ex-font-mono);
+      color: var(--fg-4);
+      font: 500 10px/1 var(--font-mono);
       letter-spacing: 0.15em;
       text-transform: uppercase;
     }
 
     &.running .time {
-      color: var(--ex-accent);
-      text-shadow: 0 0 20px rgb(179, 107, 255, 50%);
+      color: var(--accent);
+      text-shadow: 0 0 20px color-mix(in oklch, var(--accent) 50%, transparent);
     }
 
     &.done .prog {
       animation: ex-timer-done 800ms ease-out;
-      stroke: var(--ex-ok);
+      stroke: var(--ok);
     }
   }
 
   @keyframes ex-timer-done {
-    0% { filter: drop-shadow(0 0 12px var(--ex-ok)); }
+    0% { filter: drop-shadow(0 0 12px var(--ok)); }
     100% { filter: none; }
   }
 
@@ -759,26 +742,26 @@
     display: flex;
     align-items: center;
     padding-top: 12px;
-    border-top: 1px dashed var(--ex-hairline);
+    border-top: 1px dashed var(--hairline);
     margin-top: 12px;
-    color: var(--ex-fg-3);
-    font: 500 11px/1 var(--ex-font-sans);
+    color: var(--fg-3);
+    font: 500 11px/1 var(--font-ui);
     gap: 6px;
 
     input {
       width: 46px;
       padding: 5px 8px;
-      border: 1px solid var(--ex-border-1);
+      border: 1px solid var(--line-soft);
       border-radius: 5px;
-      background: var(--ex-bg-1);
-      color: var(--ex-fg-1);
-      font: 500 12px/1 var(--ex-font-mono);
+      background: var(--bg-1);
+      color: var(--fg-1);
+      font: 500 12px/1 var(--font-mono);
       text-align: center;
     }
 
     input:focus {
-      border-color: var(--ex-accent);
-      box-shadow: 0 0 0 2px rgb(179, 107, 255, 20%);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent) 20%, transparent);
       outline: none;
     }
 
@@ -791,17 +774,17 @@
         display: grid;
         width: 22px;
         height: 22px;
-        border: 1px solid var(--ex-border-1);
+        border: 1px solid var(--line-soft);
         border-radius: 4px;
-        background: var(--ex-bg-1);
-        color: var(--ex-fg-3);
+        background: var(--bg-1);
+        color: var(--fg-3);
         cursor: pointer;
         place-items: center;
       }
 
       button:hover {
-        background: var(--ex-bg-3);
-        color: var(--ex-accent);
+        background: var(--bg-3);
+        color: var(--accent);
       }
     }
   }
@@ -825,15 +808,15 @@
   .ex-chart-title {
     display: flex;
     align-items: center;
-    color: var(--ex-fg-1);
+    color: var(--fg-1);
     font-family: var(--ex-font-display);
     font-size: 16px;
     font-weight: 600;
     gap: 10px;
 
     .spark {
-      color: var(--ex-fg-4);
-      font-family: var(--ex-font-mono);
+      color: var(--fg-4);
+      font-family: var(--font-mono);
       font-size: 11px;
       font-weight: 400;
     }
@@ -842,9 +825,9 @@
   .ex-seg {
     display: inline-flex;
     padding: 3px;
-    border: 1px solid var(--ex-border-1);
+    border: 1px solid var(--line-soft);
     border-radius: 8px;
-    background: var(--ex-bg-1);
+    background: var(--bg-1);
     gap: 2px;
 
     button {
@@ -854,29 +837,29 @@
       border: 0;
       border-radius: 6px;
       background: transparent;
-      color: var(--ex-fg-3);
+      color: var(--fg-3);
       cursor: pointer;
-      font: 500 12px/1 var(--ex-font-sans);
+      font: 500 12px/1 var(--font-ui);
       gap: 6px;
       transition: all var(--ex-t-fast);
     }
 
-    button:hover { color: var(--ex-fg-1); }
+    button:hover { color: var(--fg-1); }
 
     button.active {
-      background: rgb(179, 107, 255, 14%);
-      box-shadow: 0 0 10px -2px rgb(179, 107, 255, 50%);
-      color: var(--ex-accent);
+      background: color-mix(in oklch, var(--accent) 14%, transparent);
+      box-shadow: 0 0 10px -2px color-mix(in oklch, var(--accent) 50%, transparent);
+      color: var(--accent);
     }
 
     button .badge {
-      color: var(--ex-fg-4);
-      font-family: var(--ex-font-mono);
+      color: var(--fg-4);
+      font-family: var(--font-mono);
       font-size: 10px;
     }
 
     button.active .badge {
-      color: var(--ex-accent);
+      color: var(--accent);
       opacity: 0.75;
     }
   }
@@ -892,8 +875,8 @@
   .ex-chart-state {
     display: grid;
     height: 100%;
-    color: var(--ex-fg-4);
-    font-family: var(--ex-font-mono);
+    color: var(--fg-4);
+    font-family: var(--font-mono);
     font-size: 11px;
     place-items: center;
   }
@@ -902,17 +885,17 @@
   // consistent with the card palette.
   .ex-chart-tooltip {
     padding: 8px 10px;
-    border: 1px solid var(--ex-border-2);
+    border: 1px solid var(--line);
     border-radius: 8px;
-    background: var(--ex-bg-3);
+    background: var(--bg-3);
     box-shadow: 0 8px 24px -8px rgb(0, 0, 0, 60%);
-    color: var(--ex-fg-1);
-    font-family: var(--ex-font-mono);
+    color: var(--fg-1);
+    font-family: var(--font-mono);
     font-size: 11px;
 
     .label {
       margin-bottom: 4px;
-      color: var(--ex-fg-3);
+      color: var(--fg-3);
     }
 
     .entry {
@@ -929,7 +912,7 @@
     }
 
     .key {
-      color: var(--ex-fg-3);
+      color: var(--fg-3);
     }
 
     .value {
@@ -939,13 +922,13 @@
 
     .unit {
       margin-left: 2px;
-      color: var(--ex-fg-4);
+      color: var(--fg-4);
     }
 
     .note {
       margin-top: 6px;
-      color: var(--ex-fg-3);
-      font-family: var(--ex-font-sans);
+      color: var(--fg-3);
+      font-family: var(--font-ui);
     }
   }
 
@@ -955,8 +938,8 @@
     align-items: center;
     justify-content: space-between;
     margin-top: 14px;
-    color: var(--ex-fg-4);
-    font-family: var(--ex-font-mono);
+    color: var(--fg-4);
+    font-family: var(--font-mono);
     font-size: 11px;
     gap: 14px;
   }
@@ -964,15 +947,15 @@
   .ex-chart-note {
     display: flex;
     align-items: center;
-    color: var(--ex-fg-3);
-    font-family: var(--ex-font-sans);
+    color: var(--fg-3);
+    font-family: var(--font-ui);
     font-size: 12px;
     gap: 8px;
 
     &::before {
-      color: var(--ex-fg-4);
+      color: var(--fg-4);
       content: "//";
-      font-family: var(--ex-font-mono);
+      font-family: var(--font-mono);
     }
   }
 
@@ -984,12 +967,12 @@
       display: grid;
       width: 26px;
       height: 24px;
-      border: 1px solid var(--ex-border-1);
+      border: 1px solid var(--line-soft);
       border-radius: 5px;
-      background: var(--ex-bg-1);
-      color: var(--ex-fg-3);
+      background: var(--bg-1);
+      color: var(--fg-3);
       cursor: pointer;
-      font-family: var(--ex-font-mono);
+      font-family: var(--font-mono);
       font-size: 11px;
       place-items: center;
       transition: all var(--ex-t-fast);
@@ -1007,8 +990,8 @@
     }
 
     button:hover:not(:disabled) {
-      background: var(--ex-bg-3);
-      color: var(--ex-accent);
+      background: var(--bg-3);
+      color: var(--accent);
     }
 
     button:disabled {
@@ -1021,21 +1004,21 @@
   .ex-stats {
     display: grid;
     overflow: hidden;
-    border: 1px solid var(--ex-border-1);
-    border-radius: var(--ex-radius-md);
-    background: var(--ex-bg-1);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    background: var(--bg-1);
     grid-template-columns: repeat(4, 1fr);
   }
 
   .ex-stat {
     padding: 12px 14px;
-    border-right: 1px solid var(--ex-hairline);
+    border-right: 1px solid var(--hairline);
 
     &:last-child { border-right: 0; }
 
     .k {
-      color: var(--ex-fg-3);
-      font: 500 10px/1 var(--ex-font-sans);
+      color: var(--fg-3);
+      font: 500 10px/1 var(--font-ui);
       letter-spacing: 0.1em;
       text-transform: uppercase;
     }
@@ -1044,15 +1027,15 @@
       display: flex;
       align-items: baseline;
       margin-top: 4px;
-      color: var(--ex-fg-1);
+      color: var(--fg-1);
       font-family: var(--ex-font-display);
       font-size: 20px;
       font-weight: 600;
       gap: 4px;
 
       .u {
-        color: var(--ex-fg-4);
-        font-family: var(--ex-font-mono);
+        color: var(--fg-4);
+        font-family: var(--font-mono);
         font-size: 11px;
         font-weight: 400;
       }
@@ -1060,11 +1043,11 @@
 
     .d {
       margin-top: 4px;
-      font: 500 10px/1 var(--ex-font-mono);
+      font: 500 10px/1 var(--font-mono);
     }
 
-    .d.up { color: var(--ex-ok); }
-    .d.down { color: var(--ex-danger); }
+    .d.up { color: var(--ok); }
+    .d.down { color: var(--danger); }
   }
 
   // --- Log set composer ------------------------------------------------------
@@ -1082,8 +1065,8 @@
     label {
       display: block;
       margin-bottom: 6px;
-      color: var(--ex-fg-3);
-      font: 500 10px/1 var(--ex-font-sans);
+      color: var(--fg-3);
+      font: 500 10px/1 var(--font-ui);
       letter-spacing: 0.1em;
       text-transform: uppercase;
     }
@@ -1092,31 +1075,31 @@
     textarea {
       width: 100%;
       padding: 10px 12px;
-      border: 1px solid var(--ex-border-1);
+      border: 1px solid var(--line-soft);
       border-radius: 8px;
-      background: var(--ex-bg-1);
-      color: var(--ex-fg-1);
-      font: 500 14px/1.2 var(--ex-font-mono);
+      background: var(--bg-1);
+      color: var(--fg-1);
+      font: 500 14px/1.2 var(--font-mono);
       outline: none;
       transition: all var(--ex-t-fast);
     }
 
     textarea {
       min-height: 52px;
-      font-family: var(--ex-font-sans);
+      font-family: var(--font-ui);
       font-size: 13px;
       resize: vertical;
     }
 
     input:focus,
     textarea:focus {
-      border-color: var(--ex-accent);
-      box-shadow: 0 0 0 2px rgb(179, 107, 255, 20%);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent) 20%, transparent);
     }
 
     .hint {
-      color: var(--ex-fg-4);
-      font-family: var(--ex-font-mono);
+      color: var(--fg-4);
+      font-family: var(--font-mono);
       font-size: 11px;
     }
 
@@ -1133,19 +1116,19 @@
   // --- Log table -------------------------------------------------------------
   .ex-log-table {
     overflow: hidden;
-    border: 1px solid var(--ex-border-1);
-    border-radius: var(--ex-radius-md);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
     margin-top: 14px;
-    background: var(--ex-bg-1);
+    background: var(--bg-1);
   }
 
   .ex-log-head {
     display: grid;
     padding: 9px 12px;
-    border-bottom: 1px solid var(--ex-hairline);
-    background: var(--ex-bg-2);
-    color: var(--ex-fg-4);
-    font: 600 10px/1 var(--ex-font-sans);
+    border-bottom: 1px solid var(--hairline);
+    background: var(--bg-2);
+    color: var(--fg-4);
+    font: 600 10px/1 var(--font-ui);
     gap: 10px;
     grid-template-columns: 40px 1fr 1fr 28px;
     letter-spacing: 0.1em;
@@ -1154,8 +1137,8 @@
 
   .ex-log-empty {
     padding: 22px 14px;
-    color: var(--ex-fg-4);
-    font: 400 12px/1.4 var(--ex-font-mono);
+    color: var(--fg-4);
+    font: 400 12px/1.4 var(--font-mono);
     text-align: center;
   }
 
@@ -1175,11 +1158,11 @@
 
     &::-webkit-scrollbar-thumb {
       border-radius: 3px;
-      background: var(--ex-border-1);
+      background: var(--line-soft);
     }
 
     &::-webkit-scrollbar-thumb:hover {
-      background: var(--ex-border-2);
+      background: var(--line);
     }
   }
 
@@ -1187,37 +1170,37 @@
     display: grid;
     align-items: center;
     padding: 9px 12px;
-    border-top: 1px solid var(--ex-hairline);
-    color: var(--ex-fg-2);
-    font-family: var(--ex-font-mono);
+    border-top: 1px solid var(--hairline);
+    color: var(--fg-2);
+    font-family: var(--font-mono);
     font-size: 12px;
     gap: 10px;
     grid-template-columns: 40px 1fr 1fr 28px;
     transition: background var(--ex-t-fast);
 
     &:first-child { border-top: 0; }
-    &:hover { background: var(--ex-bg-2); }
+    &:hover { background: var(--bg-2); }
     &.new { animation: ex-flash 1.2s ease-out; }
 
     .n {
-      color: var(--ex-fg-4);
+      color: var(--fg-4);
       font-size: 11px;
     }
 
     .w {
-      color: var(--ex-accent);
+      color: var(--accent);
       font-weight: 600;
 
       .u {
         margin-left: 2px;
-        color: var(--ex-fg-4);
+        color: var(--fg-4);
         font-size: 10px;
         font-weight: 400;
       }
     }
 
     .r {
-      color: var(--ex-accent-4);
+      color: var(--accent-4);
       font-weight: 600;
     }
   }
@@ -1229,19 +1212,19 @@
     border: 0;
     border-radius: 4px;
     background: transparent;
-    color: var(--ex-fg-4);
+    color: var(--fg-4);
     cursor: pointer;
     font-size: 14px;
     place-items: center;
 
     &:hover {
-      background: rgb(255, 85, 119, 12%);
-      color: var(--ex-danger);
+      background: color-mix(in oklch, var(--danger) 12%, transparent);
+      color: var(--danger);
     }
   }
 
   @keyframes ex-flash {
-    0% { background: rgb(179, 107, 255, 25%); }
+    0% { background: color-mix(in oklch, var(--accent) 25%, transparent); }
     100% { background: transparent; }
   }
 
@@ -1251,12 +1234,12 @@
     align-items: center;
     justify-content: space-between;
     padding: 8px 0;
-    border-bottom: 1px dashed var(--ex-hairline);
+    border-bottom: 1px dashed var(--hairline);
 
     &:last-child { border-bottom: 0; }
 
     .name {
-      color: var(--ex-fg-1);
+      color: var(--fg-1);
       font-size: 13px;
       font-weight: 500;
     }
@@ -1264,21 +1247,21 @@
     .tag {
       padding: 3px 7px;
       border-radius: 4px;
-      font: 700 9px/1 var(--ex-font-mono);
+      font: 700 9px/1 var(--font-mono);
       letter-spacing: 0.1em;
       text-transform: uppercase;
     }
 
     .tag.primary {
-      border: 1px solid rgb(179, 107, 255, 35%);
-      background: rgb(179, 107, 255, 16%);
-      color: var(--ex-accent);
+      border: 1px solid color-mix(in oklch, var(--accent) 35%, transparent);
+      background: color-mix(in oklch, var(--accent) 16%, transparent);
+      color: var(--accent);
     }
 
     .tag.secondary {
-      border: 1px solid var(--ex-border-1);
-      background: var(--ex-bg-3);
-      color: var(--ex-fg-3);
+      border: 1px solid var(--line-soft);
+      background: var(--bg-3);
+      color: var(--fg-3);
     }
   }
 
@@ -1292,19 +1275,19 @@
       display: flex;
       align-items: center;
       padding: 10px 12px;
-      border: 1px solid var(--ex-border-1);
-      border-radius: var(--ex-radius-md);
-      background: var(--ex-bg-1);
-      color: var(--ex-fg-2);
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius);
+      background: var(--bg-1);
+      color: var(--fg-2);
       gap: 12px;
       text-decoration: none;
       transition: all var(--ex-t-fast) var(--ex-ease-out);
     }
 
     a:hover {
-      border-color: rgb(179, 107, 255, 30%);
-      background: var(--ex-bg-3);
-      color: var(--ex-fg-1);
+      border-color: color-mix(in oklch, var(--accent) 30%, transparent);
+      background: var(--bg-3);
+      color: var(--fg-1);
       transform: translateX(2px);
     }
 
@@ -1314,7 +1297,7 @@
       height: 26px;
       flex-shrink: 0;
       border-radius: 5px;
-      background: var(--ex-bg-3);
+      background: var(--bg-3);
       place-items: center;
 
       svg {
@@ -1329,15 +1312,15 @@
     }
 
     .name {
-      color: var(--ex-fg-1);
+      color: var(--fg-1);
       font-size: 13px;
       font-weight: 500;
     }
 
     .when {
       margin-top: 2px;
-      color: var(--ex-fg-4);
-      font-family: var(--ex-font-mono);
+      color: var(--fg-4);
+      font-family: var(--font-mono);
       font-size: 10px;
     }
 
@@ -1363,8 +1346,8 @@
     }
 
     .arrow {
-      color: var(--ex-fg-4);
-      font-family: var(--ex-font-mono);
+      color: var(--fg-4);
+      font-family: var(--font-mono);
     }
   }
 
@@ -1373,34 +1356,34 @@
     display: inline-flex;
     align-items: center;
     padding: 9px 14px;
-    border: 1px solid var(--ex-border-1);
+    border: 1px solid var(--line-soft);
     border-radius: 8px;
-    background: var(--ex-bg-3);
-    color: var(--ex-fg-1);
+    background: var(--bg-3);
+    color: var(--fg-1);
     cursor: pointer;
-    font: 600 12px/1 var(--ex-font-sans);
+    font: 600 12px/1 var(--font-ui);
     gap: 8px;
     letter-spacing: 0.02em;
     transition: all var(--ex-t-fast) var(--ex-ease-out);
 
     &:hover {
-      border-color: var(--ex-border-2);
-      background: var(--ex-bg-4);
+      border-color: var(--line);
+      background: var(--bg-4);
     }
 
     &:focus-visible {
-      border-color: var(--ex-accent);
-      box-shadow: 0 0 0 2px rgb(179, 107, 255, 35%);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent) 35%, transparent);
       outline: none;
     }
 
     &.primary {
       border-color: rgb(255, 255, 255, 15%);
-      background: linear-gradient(180deg, #b36bff, #9355ef);
+      background: linear-gradient(180deg, var(--accent), color-mix(in oklch, var(--accent), black 20%));
       box-shadow:
-        0 0 0 1px rgb(179, 107, 255, 30%),
-        0 0 20px -4px rgb(179, 107, 255, 60%);
-      color: #fff;
+        0 0 0 1px color-mix(in oklch, var(--accent) 30%, transparent),
+        0 0 20px -4px color-mix(in oklch, var(--accent) 60%, transparent);
+      color: var(--accent-fg);
     }
 
     &.primary:hover { filter: brightness(1.08); }
@@ -1410,7 +1393,7 @@
       background: transparent;
     }
 
-    &.ghost:hover { background: var(--ex-bg-2); }
+    &.ghost:hover { background: var(--bg-2); }
 
     &.sm {
       padding: 6px 10px;
@@ -1423,7 +1406,7 @@
     }
 
     .icon {
-      font-family: var(--ex-font-mono);
+      font-family: var(--font-mono);
       font-size: 11px;
       opacity: 0.75;
     }

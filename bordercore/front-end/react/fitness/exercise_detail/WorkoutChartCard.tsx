@@ -12,7 +12,15 @@ import { doGet } from "../../utils/reactUtils";
 import type { PlotInfo, PlotType } from "../types";
 import { StatsStrip } from "./StatsStrip";
 
-const SET_COLORS = ["#b36bff", "#4cc2ff", "#3fd29c", "#f0b840", "#ff3dbd"];
+// Per-set line colors. Routed through theme tokens so the chart retints
+// alongside the rest of the page.
+const SET_COLORS = [
+  "var(--accent)",
+  "var(--accent-4)",
+  "var(--ok)",
+  "var(--warn)",
+  "var(--accent-3)",
+];
 
 const UNIT_LABEL: Record<PlotType, string> = {
   weight: "lb",
@@ -189,23 +197,23 @@ export function WorkoutChartCard({
         ) : (
           <ResponsiveContainer width="100%" height={320}>
             <LineChart data={seriesData.rows} margin={{ top: 14, right: 16, left: -8, bottom: 8 }}>
-              <CartesianGrid vertical={false} stroke="var(--ex-hairline)" strokeDasharray="2 4" />
+              <CartesianGrid vertical={false} stroke="var(--hairline)" strokeDasharray="2 4" />
               <XAxis
                 dataKey="label"
-                stroke="var(--ex-fg-4)"
+                stroke="var(--fg-4)"
                 tick={{
-                  fill: "var(--ex-fg-3)",
-                  fontFamily: "var(--ex-font-mono)",
+                  fill: "var(--fg-3)",
+                  fontFamily: "var(--font-mono)",
                   fontSize: 11,
                 }}
                 tickLine={false}
-                axisLine={{ stroke: "var(--ex-hairline)" }}
+                axisLine={{ stroke: "var(--hairline)" }}
               />
               <YAxis
-                stroke="var(--ex-fg-4)"
+                stroke="var(--fg-4)"
                 tick={{
-                  fill: "var(--ex-fg-4)",
-                  fontFamily: "var(--ex-font-mono)",
+                  fill: "var(--fg-4)",
+                  fontFamily: "var(--font-mono)",
                   fontSize: 11,
                 }}
                 tickLine={false}
@@ -214,7 +222,7 @@ export function WorkoutChartCard({
               />
               <Tooltip
                 content={<ChartTooltip unit={UNIT_LABEL[series]} note={null} />}
-                cursor={{ stroke: "var(--ex-border-2)", strokeDasharray: "3 3" }}
+                cursor={{ stroke: "var(--line)", strokeDasharray: "3 3" }}
               />
               {Array.from({ length: seriesData.maxSets }).map((_, i) => (
                 <Line
@@ -225,7 +233,7 @@ export function WorkoutChartCard({
                   strokeWidth={2}
                   dot={{
                     r: 3,
-                    fill: "var(--ex-bg-1)",
+                    fill: "var(--bg-1)",
                     stroke: SET_COLORS[i % SET_COLORS.length],
                     strokeWidth: 1.5,
                   }}

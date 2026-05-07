@@ -80,10 +80,12 @@ Defined in `static/scss/themes/`. Re-tint everything; don't hard-code colors.
 
 | Token | Use |
 |---|---|
-| `--accent`, `--accent-fg`, `--accent-glow` | Theme accent. |
-| `--bg-0` … `--bg-3` | Background surfaces, dark → light. `--bg-0` for input fields, `--bg-1` for the modal body. |
-| `--fg-0` … `--fg-3` | Text, brightest → dimmest. `--fg-1` for primary text, `--fg-3` for placeholders / dimmed labels. |
-| `--line` | Borders. |
+| `--accent`, `--accent-fg`, `--accent-glow`, `--accent-soft` | Theme accent — primary, on-accent text, halo glow, low-alpha wash. |
+| `--accent-2`, `--accent-3`, `--accent-4` | Secondary / tertiary / cool-counterpoint accents. Used by multi-stop gradients (e.g. the exercise detail title) and accent-coded chart series. Themes that don't differentiate them default `--accent-2`/`-3` to `--accent`. |
+| `--bg-0` … `--bg-4` | Background surfaces, darkest → lightest. `--bg-0` for input fields, `--bg-1` for the modal body. `--bg-4` is the brightest content surface (e.g. button-hover). |
+| `--fg-0` … `--fg-4` | Text, brightest → dimmest. `--fg-1` for primary text, `--fg-3` for placeholders / dimmed labels, `--fg-4` for very faint metadata. |
+| `--line`, `--line-soft`, `--hairline` | Borders, strongest → faintest. `--hairline` is the barely-visible internal separator (chart axes, hr inside cards). |
+| `--ok`, `--warn`, `--danger` | Semantic state colors. |
 | `--font-ui`, `--font-mono` | Typeface stacks. Use mono for breadcrumbs and code-y bits. |
 
 ## Behavior conventions

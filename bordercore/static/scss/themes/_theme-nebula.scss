@@ -1,0 +1,132 @@
+:root[color-mode="nebula"] {
+
+
+  // highlight (violet primary)
+
+  // Per-tag coloring (saturated, dark mode)
+  --tag-saturation: 85%;
+  --tag-text-lightness: 70%;
+  --tag-bg-lightness: 50%;
+  --tag-border-lightness: 55%;
+
+  // secondary (indigo / cyan / magenta accents)
+
+  // "on hover" links
+  --text5: var(--ok);
+
+
+  --text-notice: var(--accent);
+  --favorite-color: oklch(66% 0.27 340deg); // magenta for favorites
+
+
+  // Body background — near-black with a faint violet tint
+  --body-bg: #07070c;
+
+  // Node colors — derived from the four accents
+  --node-color-1: hsl(270 60% 18%);
+  --node-color-1-tinted: hsl(270 60% 23%);
+  --node-color-2: hsl(320 80% 40%);
+  --node-color-2-tinted: hsl(320 80% 45%);
+  --node-color-3: hsl(200 80% 40%);
+  --node-color-3-tinted: hsl(200 80% 45%);
+  --node-color-4: hsl(245 70% 45%);
+  --node-color-4-tinted: hsl(245 70% 50%);
+
+  // Chatbot
+  --chatbot-container-bg: #2a1d4a;
+
+  // Chart colors
+
+  // Background sphere
+
+  --btn-close-filter: invert(1) grayscale(100%) brightness(200%);
+  --drill-progress-circle-full: var(--surface5);
+  --drill-progress-circle-partial: var(--text5);
+  --fitness-overdue-bg: var(--surface7);
+  --fitness-overdue-color: var(--text1);
+  --form-bg: var(--bg-2);
+  --form-bg-focus: var(--bg-2);
+  --form-border-color-hover: var(--fg-3);
+  --border-color: var(--line-soft);
+  --hr-border-color: var(--line-soft);
+  --selected-color: var(--fg-0);
+  --sidebar-active-color: var(--accent);
+  --sidebar-color: var(--fg-1);
+  --sidebar-gradient-start: var(--bg-0);
+  --sidebar-gradient-end: var(--bg-1);
+  --sidebar-hover-color: var(--fg-0);
+
+  // Override Bootstrap CSS properties
+  --bs-body-color: var(--fg-1);
+  --bs-body-bg: var(--bg-0);
+  --bs-list-group-bg: var(--bg-1);
+  --bs-list-group-color: var(--fg-1);
+  --bs-list-group-item-padding-x: 1.25rem;
+  --bs-list-group-item-padding-y: .75rem;
+  --bs-list-group-item-secondary: var(--fg-2);
+  --bs-modal-header-border-color: var(--line-soft);
+  --bs-secondary: var(--fg-2);
+  --card-spacer-y: 1.25;
+  --card-spacer-x: 1.25;
+
+  // Oruga
+
+  // Vue MultiSelect
+
+  // Vue 3 Datepicker
+
+  .list-group {
+    --bs-list-group-border-color: var(--line-soft);
+  }
+
+  // Media Chrome
+
+  // Reminders table container override
+  .reminders-table-container {
+    background-color: var(--surface6);
+  }
+
+  // Code samples
+  :not(pre) > code[class*="language-"], pre[class*="language-"] {
+    background: hsl(270 60% 15%);
+  }
+
+  // =========================================================================
+  // Refined design tokens — Nebula palette
+  // Violet primary, indigo / magenta / cyan secondary accents on near-black.
+  // Translated from the exercise-detail prototype's sRGB literals to oklch.
+  // =========================================================================
+  --accent-h: 280;
+  --accent:          oklch(70% 0.21 var(--accent-h));      // #b36bff violet
+  --accent-2:        oklch(67% 0.20 270deg);               // #7c7fff indigo
+  --accent-3:        oklch(66% 0.27 340deg);               // #ff3dbd magenta
+  --accent-4:        oklch(78% 0.14 230deg);               // #4cc2ff cyan
+  --accent-soft:     oklch(70% 0.21 var(--accent-h) / 25%);
+  --accent-glow:     oklch(70% 0.21 var(--accent-h) / 35%);
+  --accent-fg:       oklch(99% 0.01 var(--accent-h));
+  --bg-0:            oklch(11% 0.018 270deg);              // #07070c
+  --bg-1:            oklch(14% 0.022 270deg);              // #0b0d14
+  --bg-2:            oklch(17% 0.024 270deg);              // #12141c
+  --bg-3:            oklch(21% 0.026 270deg);              // #1a1d28
+  --bg-4:            oklch(25% 0.028 270deg);              // #242836
+  --line:            oklch(28% 0.030 270deg);              // #3a3f52
+  --line-soft:       oklch(23% 0.026 270deg);              // #2a2e3d
+  --hairline:        oklch(18% 0.022 270deg);              // #1e212d
+  --fg-0:            oklch(98% 0.006 280deg);
+  --fg-1:            oklch(91% 0.012 280deg);              // #e6e8f0
+  --fg-2:            oklch(78% 0.012 280deg);              // #b8bcc9
+  --fg-3:            oklch(62% 0.012 280deg);              // #8a8fa0
+  --fg-4:            oklch(45% 0.012 280deg);              // #5a5f72
+  --ok:              oklch(76% 0.16 165deg);               // #3fd29c
+  --warn:            oklch(85% 0.16 85deg);
+  --danger:          oklch(70% 0.21 18deg);                // #f57
+  --accent-bookmark: oklch(78% 0.14 230deg);               // matches --accent-4
+  --font-ui:         "Inter", -apple-system, system-ui, sans-serif;
+  --font-mono:       "JetBrains Mono", ui-monospace, sfmono-regular, menlo, consolas, monospace;
+  --radius:          10px;
+  --radius-lg:       14px;
+  --radius-xl:       18px;
+  --shadow-sm:       0 1px 0 rgb(255 255 255 / 4%) inset, 0 1px 2px rgb(0 0 0 / 35%);
+  --shadow-md:       0 1px 0 rgb(255 255 255 / 5%) inset, 0 8px 20px rgb(0 0 0 / 50%);
+  --shadow-lg:       0 1px 0 rgb(255 255 255 / 5%) inset, 0 20px 50px rgb(0 0 0 / 60%);
+}
