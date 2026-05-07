@@ -15,22 +15,6 @@ vi.mock("axios", () => {
   return { default: mock };
 });
 
-// Also mock bootstrap's Modal since DrillPinnedTags / DrillDisabledTags reference it.
-// vi.fn() with an arrow function can't be used as a constructor (new Modal(...)).
-// Use a plain class so React's useEffect that calls `new Modal(el)` doesn't throw.
-const mockModalShow = vi.fn();
-const mockModalHide = vi.fn();
-vi.mock("bootstrap", () => ({
-  Modal: class {
-    show() {
-      mockModalShow();
-    }
-    hide() {
-      mockModalHide();
-    }
-  },
-}));
-
 const payload: DrillPayload = {
   title: "Drill",
   urls: {
