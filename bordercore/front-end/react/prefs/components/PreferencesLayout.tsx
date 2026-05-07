@@ -31,6 +31,8 @@ export function PreferencesLayout({
   sidebarInfo,
   children,
 }: PreferencesLayoutProps) {
+  // Section nav is rendered by the global RefinedTopBar; this layout only
+  // owns the in-page sidebar + main column.
   const navItems: NavItem[] = [
     {
       key: "main",
@@ -50,19 +52,6 @@ export function PreferencesLayout({
 
   return (
     <div className="prefs-shell">
-      <header className="prefs-topbar">
-        <div className="prefs-brand">
-          <span className="prefs-brand-dot" aria-hidden="true" />
-          <span>bordercore</span>
-          <span className="prefs-brand-path">
-            <span className="slash">/</span>
-            <span>settings</span>
-            <span className="slash">/</span>
-            <span className="leaf">{activeTab === "main" ? "preferences" : "password"}</span>
-          </span>
-        </div>
-      </header>
-
       <aside className="prefs-sidebar">
         <h3>Settings</h3>
         <nav>

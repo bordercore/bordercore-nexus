@@ -106,80 +106,8 @@
     padding: 32px 40px 0;
     margin: 0 auto;
     gap: 0 48px;
-    grid-template-areas:
-      "topbar topbar"
-      "sidebar main";
+    grid-template-areas: "sidebar main";
     grid-template-columns: 260px 1fr;
-  }
-
-  // ==== Top bar ====
-  .prefs-topbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 0 36px;
-    grid-area: topbar;
-  }
-
-  .prefs-brand {
-    display: flex;
-    align-items: center;
-    color: var(--prefs-fg-0);
-    font-size: 14px;
-    font-weight: 600;
-    gap: 10px;
-    letter-spacing: -0.01em;
-  }
-
-  .prefs-brand-dot {
-    display: inline-block;
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    background: radial-gradient(
-      circle at 30% 30%,
-      color-mix(in oklch, var(--accent), white 30%),
-      var(--accent) 60%,
-      color-mix(in oklch, var(--accent), black 40%)
-    );
-    box-shadow:
-      0 0 20px var(--accent-glow),
-      0 1px 0 rgb(255 255 255 / 10%) inset;
-  }
-
-  .prefs-brand-path {
-    color: var(--prefs-fg-3);
-    font-weight: 400;
-
-    .slash {
-      margin: 0 8px;
-      color: var(--prefs-fg-3);
-      opacity: 0.5;
-    }
-
-    .leaf {
-      color: var(--prefs-fg-1);
-      font-weight: 500;
-    }
-  }
-
-  .prefs-topbar-right {
-    display: flex;
-    align-items: center;
-    color: var(--prefs-fg-2);
-    font-size: 13px;
-    gap: 14px;
-
-    .user em {
-      color: var(--prefs-fg-0);
-      font-style: normal;
-      font-weight: 600;
-    }
-
-    .sep {
-      margin: 0 4px;
-      color: var(--prefs-line);
-    }
   }
 
   .prefs-kbd {
