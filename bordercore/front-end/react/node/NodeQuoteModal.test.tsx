@@ -1,16 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-
-const show = vi.fn();
-const hide = vi.fn();
-
-vi.mock("bootstrap", () => ({
-  Modal: class {
-    show = show;
-    hide = hide;
-  },
-}));
 
 import NodeQuoteModal from "./NodeQuoteModal";
 import type { QuoteOptions } from "./types";
@@ -34,18 +24,13 @@ function baseProps(overrides: Partial<React.ComponentProps<typeof NodeQuoteModal
 }
 
 function swatches(): HTMLElement[] {
-  return Array.from(document.querySelectorAll<HTMLElement>(".modal-body .node-color"));
+  return Array.from(document.querySelectorAll<HTMLElement>(".refined-modal .node-color"));
 }
-
-beforeEach(() => {
-  show.mockReset();
-  hide.mockReset();
-});
 
 describe("NodeQuoteModal", () => {
   it("shows the action label in the title", () => {
     render(<NodeQuoteModal {...baseProps({ action: "Edit" })} />);
-    expect(screen.getByText("Edit Quote")).toBeInTheDocument();
+    expect(screen.getByText("Edit quote")).toBeInTheDocument();
   });
 
   it("initializes rotate, format, and favorites_only from the data prop", () => {

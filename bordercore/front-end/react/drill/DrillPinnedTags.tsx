@@ -1,8 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
-import { Modal } from "bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTimesCircle, faEllipsisV, faPencilAlt } from "@fortawesome/free-solid-svg-icons";
+import {
+  faTimesCircle,
+  faEllipsisV,
+  faPencilAlt,
+  faTimes,
+} from "@fortawesome/free-solid-svg-icons";
 import {
   DndContext,
   closestCenter,
@@ -50,6 +54,7 @@ export function DrillPinnedTags({
 }: DrillPinnedTagsProps) {
   const [dataLoading, setDataLoading] = useState(true);
   const [tagList, setTagList] = useState<PinnedTag[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -59,8 +64,6 @@ export function DrillPinnedTags({
   );
 
   const selectValueRef = useRef<SelectValueHandle>(null);
-  const modalRef = useRef<HTMLDivElement>(null);
-  const modalInstanceRef = useRef<Modal | null>(null);
 
   const getTagList = useCallback(() => {
     doGet(
@@ -77,11 +80,28 @@ export function DrillPinnedTags({
     getTagList();
   }, [getTagList]);
 
-  useEffect(() => {
-    if (modalRef.current && !modalInstanceRef.current) {
-      modalInstanceRef.current = new Modal(modalRef.current);
-    }
+  const closeModal = useCallback(() => {
+    setIsModalOpen(false);
   }, []);
+
+  // Auto-focus the SelectValue after the modal opens
+  useEffect(() => {
+    if (!isModalOpen) return;
+    const t = window.setTimeout(() => {
+      selectValueRef.current?.focus();
+    }, 40);
+    return () => window.clearTimeout(t);
+  }, [isModalOpen]);
+
+  // Escape-to-close
+  useEffect(() => {
+    if (!isModalOpen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeModal();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [isModalOpen, closeModal]);
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
@@ -135,12 +155,7 @@ export function DrillPinnedTags({
   );
 
   const openModal = useCallback(() => {
-    if (modalInstanceRef.current) {
-      modalInstanceRef.current.show();
-      setTimeout(() => {
-        selectValueRef.current?.focus();
-      }, 500);
-    }
+    setIsModalOpen(true);
   }, []);
 
   const titleSlot = (
@@ -173,62 +188,62 @@ export function DrillPinnedTags({
 
   return (
     <>
-      {/* Modal for managing pinned tags */}
-      {createPortal(
-        <div ref={modalRef} id="modalNewTag" className="modal fade" tabIndex={-1} role="dialog">
-          <div className="modal-dialog" role="document">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h4 id="myModalLabel" className="modal-title">
-                  Pinned Tags
-                </h4>
-                <button type="button" className="close-button btn-close" data-bs-dismiss="modal" />
-              </div>
-              <div className="modal-body">
-                <div className="form-row align-items-center">
-                  <div className="form-row mx-1 w-100">
-                    <SelectValue
-                      ref={selectValueRef}
-                      searchUrl={`${tagSearchUrl}?doctype=drill&query=`}
-                      placeHolder="New Tag"
-                      onSelect={handleTagSelect}
-                    />
-                  </div>
-                </div>
-                <DndContext
-                  sensors={sensors}
-                  collisionDetection={closestCenter}
-                  onDragEnd={handleDragEnd}
-                >
-                  <SortableContext
-                    items={tagList.map(item => item.name)}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    <ul id="drill-pinned-tags" className="interior-borders p-2 mb-0 wide-list">
-                      {tagList.map((element, index) => (
-                        <SortablePinnedTag
-                          key={element.name}
-                          element={element}
-                          onDelete={handleTagDelete}
-                        />
-                      ))}
-                    </ul>
-                  </SortableContext>
-                </DndContext>
-              </div>
-              <div className="modal-footer justify-content-start">
-                <input
-                  className="btn btn-primary"
-                  type="button"
-                  value="Save"
-                  data-bs-dismiss="modal"
+      {/* Refined modal for managing pinned tags */}
+      {isModalOpen &&
+        createPortal(
+          <>
+            <div className="refined-modal-scrim" onClick={closeModal} />
+            <div className="refined-modal" role="dialog" aria-label="manage pinned tags">
+              <button
+                type="button"
+                className="refined-modal-close"
+                onClick={closeModal}
+                aria-label="close"
+              >
+                <FontAwesomeIcon icon={faTimes} />
+              </button>
+
+              <h2 className="refined-modal-title">Pinned tags</h2>
+
+              <div className="refined-field">
+                <SelectValue
+                  ref={selectValueRef}
+                  searchUrl={`${tagSearchUrl}?doctype=drill&query=`}
+                  placeHolder="New Tag"
+                  onSelect={handleTagSelect}
                 />
               </div>
+
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={tagList.map(item => item.name)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <ul id="drill-pinned-tags" className="interior-borders p-2 mb-0 wide-list">
+                    {tagList.map(element => (
+                      <SortablePinnedTag
+                        key={element.name}
+                        element={element}
+                        onDelete={handleTagDelete}
+                      />
+                    ))}
+                  </ul>
+                </SortableContext>
+              </DndContext>
+
+              <div className="refined-modal-actions">
+                <button type="button" className="refined-btn primary" onClick={closeModal}>
+                  Done
+                </button>
+              </div>
             </div>
-          </div>
-        </div>,
-        document.body
-      )}
+          </>,
+          document.body
+        )}
 
       {/* Card component */}
       <Card

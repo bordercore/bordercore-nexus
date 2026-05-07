@@ -1,18 +1,19 @@
-import React from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import axios from "axios";
-import { Modal } from "bootstrap";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPlus, faTimes } from "@fortawesome/free-solid-svg-icons";
 import type { Playlist } from "./types";
 import { EventBus } from "../utils/reactUtils";
 
 interface AddToPlaylistModalProps {
+  open: boolean;
+  onClose: () => void;
+  songUuid: string;
   getPlaylistsUrl: string;
   addToPlaylistUrl: string;
-  defaultPlaylist: string;
-}
-
-export interface AddToPlaylistModalHandle {
-  openModal: (songUuid: string) => void;
+  defaultPlaylist?: string;
+  onAdd?: () => void;
 }
 
 interface PlaylistResponse {
@@ -23,18 +24,23 @@ interface PlaylistResponse {
   }>;
 }
 
-export const AddToPlaylistModal = React.forwardRef<
-  AddToPlaylistModalHandle,
-  AddToPlaylistModalProps
->(function AddToPlaylistModal({ getPlaylistsUrl, addToPlaylistUrl, defaultPlaylist }, ref) {
-  const [playlists, setPlaylists] = React.useState<Playlist[]>([]);
-  const [selectedPlaylist, setSelectedPlaylist] = React.useState(defaultPlaylist || "");
-  const [songUuid, setSongUuid] = React.useState("");
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const modalRef = React.useRef<HTMLDivElement>(null);
+export function AddToPlaylistModal({
+  open,
+  onClose,
+  songUuid,
+  getPlaylistsUrl,
+  addToPlaylistUrl,
+  defaultPlaylist,
+  onAdd,
+}: AddToPlaylistModalProps) {
+  const [playlists, setPlaylists] = useState<Playlist[]>([]);
+  const [selectedPlaylist, setSelectedPlaylist] = useState<string>(defaultPlaylist || "");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const selectRef = useRef<HTMLSelectElement>(null);
 
   // Fetch playlists on mount
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchPlaylists = async () => {
       try {
         const response = await axios.get<PlaylistResponse>(getPlaylistsUrl);
@@ -61,21 +67,27 @@ export const AddToPlaylistModal = React.forwardRef<
     fetchPlaylists();
   }, [getPlaylistsUrl, defaultPlaylist]);
 
-  const openModal = React.useCallback((songUuidParam: string) => {
-    setSongUuid(songUuidParam);
-    if (modalRef.current) {
-      const modal = new Modal(modalRef.current);
-      modal.show();
-    }
-  }, []);
+  // Auto-focus the playlist select on open.
+  useEffect(() => {
+    if (!open) return;
+    const t = window.setTimeout(() => selectRef.current?.focus(), 40);
+    return () => window.clearTimeout(t);
+  }, [open]);
 
-  // Expose openModal to parent via ref
-  React.useImperativeHandle(ref, () => ({
-    openModal,
-  }));
+  // Escape-to-close.
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [open, onClose]);
 
-  const handleAdd = async () => {
-    if (!selectedPlaylist || !songUuid || isSubmitting) return;
+  const canSubmit = !!selectedPlaylist && !!songUuid && !isSubmitting;
+
+  const submit = useCallback(async () => {
+    if (!canSubmit) return;
 
     setIsSubmitting(true);
     try {
@@ -90,20 +102,14 @@ export const AddToPlaylistModal = React.forwardRef<
         withCredentials: true,
       });
 
-      // Hide modal on success
-      if (modalRef.current) {
-        const modalInstance = Modal.getInstance(modalRef.current);
-        if (modalInstance) {
-          modalInstance.hide();
-        }
-      }
-
-      // Show success toast
       EventBus.$emit("toast", {
         title: "Success",
         body: "Song added to playlist",
         variant: "success",
       });
+
+      onAdd?.();
+      onClose();
     } catch (error) {
       console.error("Error adding to playlist:", error);
       EventBus.$emit("toast", {
@@ -114,62 +120,57 @@ export const AddToPlaylistModal = React.forwardRef<
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [canSubmit, addToPlaylistUrl, selectedPlaylist, songUuid, onAdd, onClose]);
+
+  if (!open) return null;
 
   return createPortal(
-    <div
-      ref={modalRef}
-      id="modalAddToPlaylist"
-      className="modal fade"
-      tabIndex={-1}
-      role="dialog"
-      aria-labelledby="addToPlaylistModalLabel"
-    >
-      <div className="modal-dialog" role="document">
-        <div className="modal-content">
-          <div className="modal-header">
-            <h4 id="addToPlaylistModalLabel" className="modal-title">
-              Add To Playlist
-            </h4>
-            <button
-              type="button"
-              className="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-            />
-          </div>
-          <div className="modal-body">
-            <div className="d-flex align-items-center">
-              <div className="text-nowrap">Choose Playlist:</div>
-              <select
-                className="form-control ms-3"
-                value={selectedPlaylist}
-                onChange={e => setSelectedPlaylist(e.target.value)}
-              >
-                {playlists.map(playlist => (
-                  <option key={playlist.uuid} value={playlist.uuid}>
-                    {playlist.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <div className="modal-footer justify-content-end">
-            <button
-              id="btn-action"
-              className="btn btn-primary"
-              type="button"
-              onClick={handleAdd}
-              disabled={isSubmitting || !selectedPlaylist}
-            >
-              {isSubmitting ? "Adding..." : "Add"}
-            </button>
-          </div>
+    <>
+      <div className="refined-modal-scrim" onClick={onClose} />
+      <form
+        className="refined-modal"
+        role="dialog"
+        aria-label="add to playlist"
+        onSubmit={e => {
+          e.preventDefault();
+          submit();
+        }}
+      >
+        <button type="button" className="refined-modal-close" onClick={onClose} aria-label="close">
+          <FontAwesomeIcon icon={faTimes} />
+        </button>
+
+        <h2 className="refined-modal-title">Add to playlist</h2>
+
+        <div className="refined-field">
+          <label htmlFor="add-to-playlist-select">playlist</label>
+          <select
+            ref={selectRef}
+            id="add-to-playlist-select"
+            value={selectedPlaylist}
+            onChange={e => setSelectedPlaylist(e.target.value)}
+          >
+            {playlists.map(playlist => (
+              <option key={playlist.uuid} value={playlist.uuid}>
+                {playlist.name}
+              </option>
+            ))}
+          </select>
         </div>
-      </div>
-    </div>,
+
+        <div className="refined-modal-actions">
+          <button type="button" className="refined-btn ghost" onClick={onClose}>
+            cancel
+          </button>
+          <button type="submit" className="refined-btn primary" disabled={!canSubmit}>
+            <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" />
+            {isSubmitting ? "adding..." : "add"}
+          </button>
+        </div>
+      </form>
+    </>,
     document.body
   );
-});
+}
 
 export default AddToPlaylistModal;

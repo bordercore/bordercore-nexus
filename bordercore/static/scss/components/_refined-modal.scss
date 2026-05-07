@@ -264,6 +264,150 @@
   }
 }
 
+// =============================================================================
+// Overdue-tasks modal — list of tasks with reschedule + delete row actions.
+// Used only by OverdueTasks.tsx; lives here so all refined-modal styles ship
+// together.
+// =============================================================================
+
+.refined-overdue-list {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 12px;
+  gap: 6px;
+}
+
+.refined-overdue-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: var(--bg-0);
+  gap: 12px;
+  transition: border-color 120ms, background 120ms;
+
+  &:hover {
+    border-color: var(--line);
+    background: var(--bg-1);
+  }
+}
+
+.refined-overdue-name {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  color: var(--fg-1);
+  font: 400 13.5px/1.4 var(--font-ui);
+  gap: 10px;
+}
+
+.refined-overdue-icon {
+  color: var(--fg-3);
+}
+
+.refined-overdue-actions {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.refined-overdue-action {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg-2);
+  cursor: pointer;
+  place-items: center;
+  transition: all 120ms;
+
+  &:hover {
+    background: var(--bg-2);
+    color: var(--fg-1);
+  }
+}
+
+.refined-overdue-status {
+  min-height: 24px;
+  margin-bottom: 16px;
+}
+
+.refined-overdue-empty {
+  display: inline-flex;
+  align-items: center;
+  color: var(--ok);
+  font: 600 14px/1.2 var(--font-ui);
+  gap: 8px;
+}
+
+.refined-overdue-message {
+  color: var(--fg-2);
+  font: 400 13px/1.4 var(--font-ui);
+}
+
+// =============================================================================
+// Disabled-tag list — used inside the DrillDisabledTags modal. Same surface
+// language as .refined-overdue-item: border-soft pill rows on bg-0, hover
+// promotes to a stronger border + bg-1.
+// =============================================================================
+
+.disabled-tag-list {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  margin: 0;
+  gap: 6px;
+  list-style: none;
+}
+
+.disabled-tag-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: var(--bg-0);
+  gap: 12px;
+  transition: border-color 120ms, background 120ms;
+
+  &:hover {
+    border-color: var(--line);
+    background: var(--bg-1);
+  }
+}
+
+.disabled-tag-name {
+  min-width: 0;
+  flex: 1;
+  color: var(--fg-1);
+  font: 400 13.5px/1.4 var(--font-ui);
+}
+
+.disabled-tag-remove {
+  flex: 0 0 auto;
+  color: var(--fg-3);
+  transition: color 120ms;
+
+  &:hover {
+    color: var(--danger);
+  }
+}
+
+.disabled-tag-empty {
+  padding: 12px;
+  border: 1px dashed var(--line-soft);
+  border-radius: 8px;
+  color: var(--fg-3);
+  font: 400 13px/1.4 var(--font-ui);
+  font-style: italic;
+  list-style: none;
+  text-align: center;
+}
+
 .refined-modal-close {
   position: absolute;
   top: 14px;

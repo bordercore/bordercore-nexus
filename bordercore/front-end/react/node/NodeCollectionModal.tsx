@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Modal } from "bootstrap";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faTimes } from "@fortawesome/free-solid-svg-icons";
 import { SelectValue } from "../common/SelectValue";
 import { ROTATE_OPTIONS } from "./types";
 
@@ -51,46 +52,42 @@ export default function NodeCollectionModal({
   const [settings, setSettings] = useState<CollectionSettings>(defaultSettings);
   const [selectedCollectionUuid, setSelectedCollectionUuid] = useState<string | null>(null);
 
-  const modalRef = useRef<HTMLDivElement>(null);
-  const modalInstanceRef = useRef<Modal | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
+  const displaySelectRef = useRef<HTMLSelectElement>(null);
 
+  // Reset state every time the modal opens.
   useEffect(() => {
-    if (modalRef.current && !modalInstanceRef.current) {
-      modalInstanceRef.current = new Modal(modalRef.current);
-
-      modalRef.current.addEventListener("hidden.bs.modal", () => {
-        onClose();
-      });
-    }
-  }, [onClose]);
-
-  useEffect(() => {
-    if (isOpen) {
-      setSettings(data || defaultSettings);
-      setSelectedCollectionUuid(null);
-    }
+    if (!isOpen) return;
+    setSettings(data || defaultSettings);
+    setSelectedCollectionUuid(null);
+    const t = window.setTimeout(() => {
+      // In Edit mode the name input doesn't exist for permanent collections,
+      // so fall back to the always-present display select.
+      if (nameInputRef.current) {
+        nameInputRef.current.focus();
+      } else {
+        displaySelectRef.current?.focus();
+      }
+    }, 40);
+    return () => window.clearTimeout(t);
   }, [isOpen, data]);
 
+  // Escape-to-close.
   useEffect(() => {
-    if (modalInstanceRef.current) {
-      if (isOpen) {
-        modalInstanceRef.current.show();
-        setTimeout(() => {
-          nameInputRef.current?.focus();
-        }, 500);
-      } else {
-        modalInstanceRef.current.hide();
-      }
-    }
-  }, [isOpen]);
+    if (!isOpen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [isOpen, onClose]);
 
   const handleCollectionSelect = (collection: { uuid: string; name: string }) => {
     setSelectedCollectionUuid(collection.uuid);
   };
 
-  const handleSave = () => {
-    const settingsToSave = {
+  const handleSave = useCallback(() => {
+    const settingsToSave: CollectionSettings = {
       ...settings,
       uuid:
         settings.collection_type === "permanent"
@@ -103,242 +100,230 @@ export default function NodeCollectionModal({
     } else {
       onSave(settingsToSave);
     }
-    modalInstanceRef.current?.hide();
-  };
+  }, [action, onAddCollection, onSave, selectedCollectionUuid, settings]);
+
+  if (!isOpen) return null;
+
+  const title = action === "Add" ? "Add a collection" : "Edit collection";
+  const showNameInput = settings.collection_type === "ad-hoc";
 
   return createPortal(
-    <div
-      ref={modalRef}
-      className="modal fade"
-      id="modalEditCollection"
-      tabIndex={-1}
-      role="dialog"
-      aria-labelledby="myModalLabel"
-    >
-      <div className="modal-dialog" role="document">
-        <div className="modal-content">
-          <div className="modal-header">
-            <h4 className="modal-title" id="myModalLabel">
-              {action} Collection
-            </h4>
-            <button
-              type="button"
-              className="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-            />
-          </div>
-          <div className="modal-body">
-            {action === "Add" && (
-              <>
-                <div className="form-section">Type</div>
-                <div className="row mt-3">
-                  <div className="col-lg-4">
-                    <div className="form-check d-flex align-items-center">
-                      <input
-                        id="id_type_new"
-                        className="form-check-input"
-                        type="radio"
-                        name="type"
-                        checked={settings.collection_type === "ad-hoc"}
-                        onChange={() =>
-                          setSettings(prev => ({
-                            ...prev,
-                            collection_type: "ad-hoc",
-                          }))
-                        }
-                      />
-                      <label className="form-check-label ms-2" htmlFor="id_type_new">
-                        New
-                      </label>
-                    </div>
-                  </div>
-                </div>
-                <div className="row mt-3">
-                  <div className="col-lg-4">
-                    <div className="form-check d-flex align-items-center">
-                      <input
-                        id="id_type_existing"
-                        className="form-check-input"
-                        type="radio"
-                        name="type"
-                        checked={settings.collection_type === "permanent"}
-                        onChange={() =>
-                          setSettings(prev => ({
-                            ...prev,
-                            collection_type: "permanent",
-                          }))
-                        }
-                      />
-                      <label className="form-check-label ms-2" htmlFor="id_type_existing">
-                        Existing
-                      </label>
-                    </div>
-                  </div>
-                  <div className="col-lg-8">
-                    {settings.collection_type === "permanent" && (
-                      <SelectValue
-                        label="name"
-                        placeHolder="Search collections"
-                        searchUrl={searchUrl}
-                        onSelect={handleCollectionSelect}
-                        optionSlot={({ option }) => (
-                          <div className="search-suggestion d-flex align-items-center">
-                            <div>
-                              <img
-                                className="me-2 mt-2"
-                                width="50"
-                                height="50"
-                                src={option.cover_url}
-                                alt=""
-                              />
-                            </div>
-                            <div className="d-flex flex-column">
-                              <div>{option.name}</div>
-                              <div className="text-secondary lh-1">
-                                <small>{option.num_objects} objects</small>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      />
-                    )}
-                  </div>
-                </div>
-                <hr className="my-3" />
-              </>
-            )}
+    <>
+      <div className="refined-modal-scrim" onClick={onClose} />
+      <form
+        className="refined-modal"
+        role="dialog"
+        aria-label={title.toLowerCase()}
+        onSubmit={e => {
+          e.preventDefault();
+          handleSave();
+        }}
+      >
+        <button type="button" className="refined-modal-close" onClick={onClose} aria-label="close">
+          <FontAwesomeIcon icon={faTimes} />
+        </button>
 
-            <div className="form-section">Options</div>
+        <h2 className="refined-modal-title">{title}</h2>
 
-            {settings.collection_type === "ad-hoc" && (
-              <div className="row mb-3 mt-3">
-                <label className="col-lg-4 col-form-label" htmlFor="inputName">
-                  Name
-                </label>
-                <div className="col-lg-8">
-                  <input
-                    ref={nameInputRef}
-                    id="inputName"
-                    type="text"
-                    className="form-control"
-                    autoComplete="off"
-                    maxLength={200}
-                    placeholder="Name"
-                    value={settings.name}
-                    onChange={e => setSettings(prev => ({ ...prev, name: e.target.value }))}
-                    onKeyDown={e => {
-                      if (e.key === "Enter") handleSave();
-                    }}
-                  />
-                </div>
-              </div>
-            )}
-
-            <div className="row mt-3">
-              <label className="col-lg-4 col-form-label" htmlFor="inputDisplay">
-                Display
-              </label>
-              <div className="col-lg-8">
-                <select
-                  id="inputDisplay"
-                  className="form-control form-select"
-                  value={settings.display}
-                  onChange={e =>
-                    setSettings(prev => ({
-                      ...prev,
-                      display: e.target.value as "list" | "individual",
-                    }))
-                  }
-                >
-                  {DISPLAY_OPTIONS.map(opt => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.display}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {settings.display === "individual" ? (
-              <div className="row mt-3">
-                <label className="col-lg-4 col-form-label" htmlFor="inputRotate">
-                  Rotate
-                </label>
-                <div className="col-lg-8">
-                  <select
-                    id="inputRotate"
-                    className="form-control form-select"
-                    value={settings.rotate}
-                    onChange={e =>
-                      setSettings(prev => ({
-                        ...prev,
-                        rotate: parseInt(e.target.value, 10),
-                      }))
-                    }
-                  >
-                    {ROTATE_OPTIONS.map(opt => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.display}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            ) : (
-              <div className="row mt-3">
-                <label className="col-lg-4 col-form-label" htmlFor="inputLimit">
-                  Limit
-                </label>
-                <div className="col-lg-8">
-                  <input
-                    id="inputLimit"
-                    type="number"
-                    className="form-control"
-                    autoComplete="off"
-                    min={1}
-                    max={data?.objectCount || undefined}
-                    value={settings.limit ?? ""}
-                    onChange={e =>
-                      setSettings(prev => ({
-                        ...prev,
-                        limit: e.target.value ? parseInt(e.target.value, 10) : null,
-                      }))
-                    }
-                    onKeyDown={e => {
-                      if (e.key === "Enter") handleSave();
-                    }}
-                  />
-                </div>
-              </div>
-            )}
-
-            <div className="row align-items-center mt-2 mb-3">
-              <label className="col-lg-4 col-form-label" htmlFor="inputRandomOrder">
-                Random Order
-              </label>
-              <div className="col-lg-8">
+        {action === "Add" && (
+          <div className="refined-field">
+            <label>type</label>
+            <div className="study-method-grid">
+              <label
+                className={`study-method-card ${
+                  settings.collection_type === "ad-hoc" ? "active" : ""
+                }`}
+              >
                 <input
-                  id="inputRandomOrder"
-                  type="checkbox"
-                  className="form-check-input"
-                  checked={settings.random_order}
-                  onChange={e =>
+                  type="radio"
+                  name="collection_type"
+                  value="ad-hoc"
+                  checked={settings.collection_type === "ad-hoc"}
+                  onChange={() =>
                     setSettings(prev => ({
                       ...prev,
-                      random_order: e.target.checked,
+                      collection_type: "ad-hoc",
                     }))
                   }
                 />
-              </div>
+                <span className="title">New</span>
+                <span className="hint">Build an ad-hoc list of objects.</span>
+              </label>
+              <label
+                className={`study-method-card ${
+                  settings.collection_type === "permanent" ? "active" : ""
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="collection_type"
+                  value="permanent"
+                  checked={settings.collection_type === "permanent"}
+                  onChange={() =>
+                    setSettings(prev => ({
+                      ...prev,
+                      collection_type: "permanent",
+                    }))
+                  }
+                />
+                <span className="title">Existing</span>
+                <span className="hint">Reference a saved collection.</span>
+              </label>
             </div>
           </div>
-          <div className="modal-footer">
-            <input className="btn btn-primary" type="button" value="Save" onClick={handleSave} />
+        )}
+
+        {action === "Add" && settings.collection_type === "permanent" && (
+          <div className="refined-field">
+            <label htmlFor="node-collection-existing">collection</label>
+            <SelectValue
+              id="node-collection-existing"
+              label="name"
+              placeHolder="Search collections"
+              searchUrl={searchUrl}
+              onSelect={handleCollectionSelect}
+              optionSlot={({ option }) => (
+                <div className="search-suggestion d-flex align-items-center">
+                  <div>
+                    <img
+                      className="me-2 mt-2"
+                      width="50"
+                      height="50"
+                      src={option.cover_url}
+                      alt=""
+                    />
+                  </div>
+                  <div className="d-flex flex-column">
+                    <div>{option.name}</div>
+                    <div className="text-secondary lh-1">
+                      <small>{option.num_objects} objects</small>
+                    </div>
+                  </div>
+                </div>
+              )}
+            />
           </div>
+        )}
+
+        {showNameInput && (
+          <div className="refined-field">
+            <label htmlFor="node-collection-name">name</label>
+            <input
+              ref={nameInputRef}
+              id="node-collection-name"
+              type="text"
+              autoComplete="off"
+              maxLength={200}
+              placeholder="Name"
+              value={settings.name}
+              onChange={e => setSettings(prev => ({ ...prev, name: e.target.value }))}
+              onKeyDown={e => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSave();
+                }
+              }}
+            />
+          </div>
+        )}
+
+        <div className="refined-row-2">
+          <div className="refined-field">
+            <label htmlFor="node-collection-display">display</label>
+            <select
+              ref={displaySelectRef}
+              id="node-collection-display"
+              value={settings.display}
+              onChange={e =>
+                setSettings(prev => ({
+                  ...prev,
+                  display: e.target.value as "list" | "individual",
+                }))
+              }
+            >
+              {DISPLAY_OPTIONS.map(opt => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.display}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {settings.display === "individual" ? (
+            <div className="refined-field">
+              <label htmlFor="node-collection-rotate">rotate</label>
+              <select
+                id="node-collection-rotate"
+                value={settings.rotate}
+                onChange={e =>
+                  setSettings(prev => ({
+                    ...prev,
+                    rotate: parseInt(e.target.value, 10),
+                  }))
+                }
+              >
+                {ROTATE_OPTIONS.map(opt => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.display}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div className="refined-field">
+              <label htmlFor="node-collection-limit">
+                limit <span className="optional">· optional</span>
+              </label>
+              <input
+                id="node-collection-limit"
+                type="number"
+                autoComplete="off"
+                min={1}
+                max={data?.objectCount || undefined}
+                value={settings.limit ?? ""}
+                onChange={e =>
+                  setSettings(prev => ({
+                    ...prev,
+                    limit: e.target.value ? parseInt(e.target.value, 10) : null,
+                  }))
+                }
+                onKeyDown={e => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSave();
+                  }
+                }}
+              />
+            </div>
+          )}
         </div>
-      </div>
-    </div>,
+
+        <div className="refined-toggle-row">
+          <label className="refined-toggle">
+            <input
+              type="checkbox"
+              checked={settings.random_order}
+              onChange={e =>
+                setSettings(prev => ({
+                  ...prev,
+                  random_order: e.target.checked,
+                }))
+              }
+            />
+            <span>random order</span>
+          </label>
+        </div>
+
+        <div className="refined-modal-actions compact">
+          <button type="button" className="refined-btn ghost" onClick={onClose}>
+            cancel
+          </button>
+          <button type="submit" className="refined-btn primary">
+            save
+          </button>
+        </div>
+      </form>
+    </>,
     document.body
   );
 }

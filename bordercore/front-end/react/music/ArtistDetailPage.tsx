@@ -12,7 +12,7 @@ import type {
 } from "./types";
 import ArtistSongTable from "./ArtistSongTable";
 import AlbumGrid from "./AlbumGrid";
-import EditArtistImageModal, { type EditArtistImageModalHandle } from "./EditArtistImageModal";
+import EditArtistImageModal from "./EditArtistImageModal";
 import DropDownMenu from "../common/DropDownMenu";
 import { EventBus } from "../utils/reactUtils";
 
@@ -47,8 +47,7 @@ export function ArtistDetailPage({
   const [isDragOver, setIsDragOver] = React.useState(false);
   const [artistImageKey, setArtistImageKey] = React.useState(Date.now());
   const [dropdownContainer, setDropdownContainer] = React.useState<HTMLElement | null>(null);
-
-  const editImageRef = React.useRef<EditArtistImageModalHandle>(null);
+  const [editImageOpen, setEditImageOpen] = React.useState(false);
 
   React.useEffect(() => {
     const container = document.getElementById("artist-detail-dropdown");
@@ -133,7 +132,7 @@ export function ArtistDetailPage({
   };
 
   const handleEditArtistImage = () => {
-    editImageRef.current?.openModal();
+    setEditImageOpen(true);
   };
 
   const handleImageUpdated = () => {
@@ -289,7 +288,8 @@ export function ArtistDetailPage({
 
       {/* Edit Artist Image Modal */}
       <EditArtistImageModal
-        ref={editImageRef}
+        open={editImageOpen}
+        onClose={() => setEditImageOpen(false)}
         artistUuid={artist.uuid}
         updateArtistImageUrl={urls.updateArtistImage}
         onImageUpdated={handleImageUpdated}

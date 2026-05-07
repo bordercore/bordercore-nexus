@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBars, faPencilAlt, faTimes, faEllipsisV } from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
@@ -16,7 +16,7 @@ import {
 import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import type { PlaylistDetail, PlaylistSong, PlaylistDetailUrls } from "./types";
 import PlaylistSongTable from "./PlaylistSongTable";
-import EditPlaylistModal, { type EditPlaylistModalHandle } from "./EditPlaylistModal";
+import EditPlaylistModal from "./EditPlaylistModal";
 import DropDownMenu from "../common/DropDownMenu";
 import { EventBus } from "../utils/reactUtils";
 
@@ -37,9 +37,8 @@ export function PlaylistDetailPage({ playlist, urls, staticUrl }: PlaylistDetail
   const [currentSongUuid, setCurrentSongUuid] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
-
-  const editPlaylistRef = useRef<EditPlaylistModalHandle>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -181,7 +180,7 @@ export function PlaylistDetailPage({ playlist, urls, staticUrl }: PlaylistDetail
   };
 
   const handleEditPlaylist = () => {
-    editPlaylistRef.current?.openModal();
+    setShowEditModal(true);
   };
 
   const handleDeletePlaylist = async () => {
@@ -358,7 +357,8 @@ export function PlaylistDetailPage({ playlist, urls, staticUrl }: PlaylistDetail
 
         {/* Edit playlist modal */}
         <EditPlaylistModal
-          ref={editPlaylistRef}
+          open={showEditModal}
+          onClose={() => setShowEditModal(false)}
           playlist={playlist}
           updatePlaylistUrl={urls.updatePlaylist}
           tagSearchUrl={urls.tagSearch}

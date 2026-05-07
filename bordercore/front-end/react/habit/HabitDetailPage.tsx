@@ -1,6 +1,6 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { doPost } from "../utils/reactUtils";
-import { DeactivateHabitModal, DeactivateHabitModalHandle } from "./DeactivateHabitModal";
+import { DeactivateHabitModal } from "./DeactivateHabitModal";
 import { TopBar } from "./detail/TopBar";
 import { DetailHeader } from "./detail/DetailHeader";
 import { LogPanel } from "./detail/LogPanel";
@@ -37,7 +37,7 @@ export default function HabitDetailPage({ habit, logUrl, setInactiveUrl }: Habit
   const [logDate, setLogDate] = useState<string>(today);
   const [chartRange, setChartRange] = useState<ChartRange>("90d");
 
-  const deactivateModalRef = useRef<DeactivateHabitModalHandle>(null);
+  const [deactivateOpen, setDeactivateOpen] = useState(false);
 
   const logByDate = useMemo(() => {
     const m = new Map<string, HabitLogEntry>();
@@ -110,11 +110,7 @@ export default function HabitDetailPage({ habit, logUrl, setInactiveUrl }: Habit
 
   return (
     <div className="hb-page hb-detail">
-      <TopBar
-        name={habit.name}
-        isActive={isActive}
-        onEnd={() => deactivateModalRef.current?.openModal()}
-      />
+      <TopBar name={habit.name} isActive={isActive} onEnd={() => setDeactivateOpen(true)} />
 
       <DetailHeader
         purpose={habit.purpose}
@@ -189,7 +185,11 @@ export default function HabitDetailPage({ habit, logUrl, setInactiveUrl }: Habit
         onEdit={d => setLogDate(d)}
       />
 
-      <DeactivateHabitModal ref={deactivateModalRef} onConfirm={handleDeactivate} />
+      <DeactivateHabitModal
+        open={deactivateOpen}
+        onClose={() => setDeactivateOpen(false)}
+        onConfirm={handleDeactivate}
+      />
     </div>
   );
 }

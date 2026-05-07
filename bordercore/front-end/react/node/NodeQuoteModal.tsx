@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Modal } from "bootstrap";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faTimes } from "@fortawesome/free-solid-svg-icons";
 import {
   NODE_COLORS,
   ROTATE_OPTIONS,
@@ -37,164 +38,148 @@ export default function NodeQuoteModal({
 }: NodeQuoteModalProps) {
   const [options, setOptions] = useState<QuoteOptions>(defaultOptions);
 
-  const modalRef = useRef<HTMLDivElement>(null);
-  const modalInstanceRef = useRef<Modal | null>(null);
+  const rotateRef = useRef<HTMLSelectElement>(null);
 
+  // Reset state every time the modal opens.
   useEffect(() => {
-    if (modalRef.current && !modalInstanceRef.current) {
-      modalInstanceRef.current = new Modal(modalRef.current);
-
-      modalRef.current.addEventListener("hidden.bs.modal", () => {
-        onClose();
-      });
-    }
-  }, [onClose]);
-
-  useEffect(() => {
-    if (isOpen) {
-      setOptions(data || defaultOptions);
-    }
+    if (!isOpen) return;
+    setOptions(data || defaultOptions);
+    const t = window.setTimeout(() => {
+      rotateRef.current?.focus();
+    }, 40);
+    return () => window.clearTimeout(t);
   }, [isOpen, data]);
 
+  // Escape-to-close.
   useEffect(() => {
-    if (modalInstanceRef.current) {
-      if (isOpen) {
-        modalInstanceRef.current.show();
-      } else {
-        modalInstanceRef.current.hide();
-      }
-    }
-  }, [isOpen]);
+    if (!isOpen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [isOpen, onClose]);
 
-  const handleSave = () => {
+  const submit = useCallback(() => {
     if (action === "Add") {
       onAddQuote(options);
     } else {
       onSave(options);
     }
-    modalInstanceRef.current?.hide();
-  };
+  }, [action, options, onAddQuote, onSave]);
 
   const getColorClass = (c: NodeColor) => {
     const selected = c === options.color ? "selected-color" : "";
     return `node-color node-color-${c} ${selected}`;
   };
 
+  if (!isOpen) return null;
+
+  const title = action === "Add" ? "Add a quote" : "Edit quote";
+
   return createPortal(
-    <div
-      ref={modalRef}
-      className="modal fade"
-      id="modalEditQuote"
-      tabIndex={-1}
-      role="dialog"
-      aria-labelledby="myModalLabel"
-    >
-      <div className="modal-dialog" role="document">
-        <div className="modal-content">
-          <div className="modal-header">
-            <h4 className="modal-title" id="myModalLabel">
-              {action} Quote
-            </h4>
-            <button
-              type="button"
-              className="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-            />
-          </div>
-          <div className="modal-body">
-            <div className="row mb-3">
-              <label className="col-lg-3 col-form-label" htmlFor="inputTitle">
-                Color
-              </label>
-              <div className="col-lg-9">
-                <div className="d-flex">
-                  {NODE_COLORS.map(c => (
-                    <div
-                      key={c}
-                      className={`${getColorClass(c)} flex-grow-1 mx-2 cursor-pointer`}
-                      onClick={() => setOptions(prev => ({ ...prev, color: c }))}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="row mb-3">
-              <label className="col-lg-3 col-form-label" htmlFor="inputRotate">
-                Rotate
-              </label>
-              <div className="col-lg-9">
-                <div className="d-flex flex-column">
-                  <select
-                    id="inputRotate"
-                    className="form-control form-select"
-                    value={options.rotate}
-                    onChange={e =>
-                      setOptions(prev => ({
-                        ...prev,
-                        rotate: parseInt(e.target.value, 10),
-                      }))
-                    }
-                  >
-                    {ROTATE_OPTIONS.map(opt => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.display}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="d-flex align-items-center mt-1">
-                    <input
-                      type="checkbox"
-                      id="favoritesOnly"
-                      className="form-check-input"
-                      checked={options.favorites_only}
-                      onChange={e =>
-                        setOptions(prev => ({
-                          ...prev,
-                          favorites_only: e.target.checked,
-                        }))
-                      }
-                    />
-                    <label className="ms-2" htmlFor="favoritesOnly">
-                      Favorites Only
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="row mb-3">
-              <label className="col-lg-3 col-form-label" htmlFor="inputFormat">
-                Format
-              </label>
-              <div className="col-lg-9">
-                <div className="d-flex flex-column">
-                  <select
-                    id="inputFormat"
-                    className="form-control form-select"
-                    value={options.format}
-                    onChange={e =>
-                      setOptions(prev => ({
-                        ...prev,
-                        format: e.target.value as "standard" | "minimal",
-                      }))
-                    }
-                  >
-                    {FORMAT_OPTIONS.map(opt => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.display}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="modal-footer">
-            <input className="btn btn-primary" type="button" value="Save" onClick={handleSave} />
+    <>
+      <div className="refined-modal-scrim" onClick={onClose} />
+      <form
+        className="refined-modal"
+        role="dialog"
+        aria-label={title.toLowerCase()}
+        onSubmit={e => {
+          e.preventDefault();
+          submit();
+        }}
+      >
+        <button type="button" className="refined-modal-close" onClick={onClose} aria-label="close">
+          <FontAwesomeIcon icon={faTimes} />
+        </button>
+
+        <h2 className="refined-modal-title">{title}</h2>
+
+        <div className="refined-field">
+          <label>color</label>
+          <div className="d-flex">
+            {NODE_COLORS.map(c => (
+              <div
+                key={c}
+                className={`${getColorClass(c)} flex-grow-1 mx-2 cursor-pointer`}
+                onClick={() => setOptions(prev => ({ ...prev, color: c }))}
+              />
+            ))}
           </div>
         </div>
-      </div>
-    </div>,
+
+        <div className="refined-row-2">
+          <div className="refined-field">
+            <label htmlFor="inputRotate">rotate</label>
+            <select
+              ref={rotateRef}
+              id="inputRotate"
+              value={options.rotate}
+              onChange={e =>
+                setOptions(prev => ({
+                  ...prev,
+                  rotate: parseInt(e.target.value, 10),
+                }))
+              }
+            >
+              {ROTATE_OPTIONS.map(opt => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.display}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="refined-field">
+            <label htmlFor="inputFormat">format</label>
+            <select
+              id="inputFormat"
+              value={options.format}
+              onChange={e =>
+                setOptions(prev => ({
+                  ...prev,
+                  format: e.target.value as "standard" | "minimal",
+                }))
+              }
+            >
+              {FORMAT_OPTIONS.map(opt => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.display}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="refined-field">
+          <div className="d-flex align-items-center">
+            <input
+              type="checkbox"
+              id="favoritesOnly"
+              checked={options.favorites_only}
+              onChange={e =>
+                setOptions(prev => ({
+                  ...prev,
+                  favorites_only: e.target.checked,
+                }))
+              }
+            />
+            <label className="ms-2 mb-0" htmlFor="favoritesOnly">
+              Favorites Only
+            </label>
+          </div>
+        </div>
+
+        <div className="refined-modal-actions">
+          <button type="button" className="refined-btn ghost" onClick={onClose}>
+            cancel
+          </button>
+          <button type="submit" className="refined-btn primary">
+            save
+          </button>
+        </div>
+      </form>
+    </>,
     document.body
   );
 }

@@ -6,7 +6,7 @@ import { TagsInput, TagsInputHandle } from "../common/TagsInput";
 import { ToggleSwitch } from "../common/ToggleSwitch";
 import { MarkdownEditor, MarkdownEditorHandle } from "../blob/MarkdownEditor";
 import RelatedObjects, { RelatedObjectsHandle } from "../common/RelatedObjects";
-import ObjectSelectModal, { ObjectSelectModalHandle } from "../common/ObjectSelectModal";
+import ObjectSelectModal from "../common/ObjectSelectModal";
 import { doPost, getCsrfToken } from "../utils/reactUtils";
 
 interface RecentTag {
@@ -66,8 +66,8 @@ export function DrillQuestionEditPage({
   const answerEditorRef = useRef<MarkdownEditorHandle>(null);
   const tagsInputRef = useRef<TagsInputHandle>(null);
   const relatedObjectsRef = useRef<RelatedObjectsHandle>(null);
-  const objectSelectModalRef = useRef<ObjectSelectModalHandle>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const [objectSelectOpen, setObjectSelectOpen] = useState(false);
 
   // Initialize editors with content
   useEffect(() => {
@@ -95,7 +95,7 @@ export function DrillQuestionEditPage({
 
   // Handle opening object select modal
   const handleOpenObjectSelectModal = useCallback(() => {
-    objectSelectModalRef.current?.open();
+    setObjectSelectOpen(true);
   }, []);
 
   // Handle object selection from modal
@@ -303,8 +303,9 @@ export function DrillQuestionEditPage({
       {/* Object Select Modal */}
       {objectUuid && (
         <ObjectSelectModal
-          ref={objectSelectModalRef}
-          title="Select Object"
+          open={objectSelectOpen}
+          onClose={() => setObjectSelectOpen(false)}
+          title="Select object"
           searchObjectUrl={urls.searchNames}
           onSelectObject={handleObjectSelected}
         />

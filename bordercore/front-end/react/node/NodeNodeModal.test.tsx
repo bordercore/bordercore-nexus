@@ -1,16 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-
-const show = vi.fn();
-const hide = vi.fn();
-
-vi.mock("bootstrap", () => ({
-  Modal: class {
-    show = show;
-    hide = hide;
-  },
-}));
 
 // Replace SelectValue with a minimal stand-in so we don't hit its real
 // axios-driven search behavior. The stub exposes a button that fires onSelect
@@ -41,11 +31,6 @@ function baseProps(overrides: Partial<React.ComponentProps<typeof NodeNodeModal>
     ...overrides,
   };
 }
-
-beforeEach(() => {
-  show.mockReset();
-  hide.mockReset();
-});
 
 describe("NodeNodeModal", () => {
   it("shows the SelectValue picker only in Add mode", () => {
@@ -83,10 +68,18 @@ describe("NodeNodeModal", () => {
     expect(onSave).toHaveBeenCalledWith({ rotate: 60 });
   });
 
-  it("opens the Bootstrap modal when isOpen becomes true", () => {
+  it("renders nothing when isOpen is false and renders the dialog when true", () => {
     const { rerender } = render(<NodeNodeModal {...baseProps({ isOpen: false })} />);
-    expect(show).not.toHaveBeenCalled();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     rerender(<NodeNodeModal {...baseProps({ isOpen: true })} />);
-    expect(show).toHaveBeenCalled();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+  });
+
+  it("calls onClose when Escape is pressed", async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    render(<NodeNodeModal {...baseProps({ onClose })} />);
+    await user.keyboard("{Escape}");
+    expect(onClose).toHaveBeenCalled();
   });
 });

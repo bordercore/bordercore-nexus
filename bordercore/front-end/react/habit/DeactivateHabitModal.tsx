@@ -1,71 +1,67 @@
-import React, { useRef, useImperativeHandle, forwardRef } from "react";
-import { Modal } from "bootstrap";
-
-export interface DeactivateHabitModalHandle {
-  openModal: () => void;
-}
+import React, { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faTimes, faPowerOff } from "@fortawesome/free-solid-svg-icons";
 
 interface DeactivateHabitModalProps {
+  open: boolean;
+  onClose: () => void;
   onConfirm: () => void;
 }
 
-export const DeactivateHabitModal = forwardRef<
-  DeactivateHabitModalHandle,
-  DeactivateHabitModalProps
->(function DeactivateHabitModal({ onConfirm }, ref) {
-  const modalRef = useRef<HTMLDivElement>(null);
-  const modalInstanceRef = useRef<Modal | null>(null);
+export function DeactivateHabitModal({ open, onClose, onConfirm }: DeactivateHabitModalProps) {
+  const cancelRef = useRef<HTMLButtonElement>(null);
 
-  useImperativeHandle(ref, () => ({
-    openModal: () => {
-      if (modalRef.current) {
-        modalInstanceRef.current = new Modal(modalRef.current);
-        modalInstanceRef.current.show();
-      }
-    },
-  }));
+  // Auto-focus the safer (cancel) action when the modal opens.
+  useEffect(() => {
+    if (!open) return;
+    const t = window.setTimeout(() => cancelRef.current?.focus(), 40);
+    return () => window.clearTimeout(t);
+  }, [open]);
 
-  function handleConfirm() {
-    modalInstanceRef.current?.hide();
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  const handleConfirm = () => {
     onConfirm();
-  }
+    onClose();
+  };
 
-  return (
-    <div
-      ref={modalRef}
-      className="modal fade"
-      tabIndex={-1}
-      role="dialog"
-      aria-labelledby="deactivateHabitModalLabel"
-    >
-      <div className="modal-dialog" role="document">
-        <div className="modal-content">
-          <div className="modal-header">
-            <h4 className="modal-title" id="deactivateHabitModalLabel">
-              Mark Habit Inactive
-            </h4>
-            <button
-              type="button"
-              className="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-            />
-          </div>
-          <div className="modal-body">
-            <div>Are you sure you want to mark this habit as inactive?</div>
-            <div className="mt-3">
-              <button className="btn btn-primary" onClick={handleConfirm}>
-                Confirm
-              </button>
-              <a href="#" data-bs-dismiss="modal" className="ms-3">
-                Cancel
-              </a>
-            </div>
-          </div>
+  return createPortal(
+    <>
+      <div className="refined-modal-scrim" onClick={onClose} />
+      <div className="refined-modal" role="dialog" aria-label="confirm deactivate habit">
+        <button type="button" className="refined-modal-close" onClick={onClose} aria-label="close">
+          <FontAwesomeIcon icon={faTimes} />
+        </button>
+
+        <h2 className="refined-modal-title">Deactivate habit?</h2>
+        <p className="refined-modal-lead">
+          This habit will be marked inactive and stop appearing in your active list. You can still
+          view its history.
+        </p>
+
+        <div className="refined-modal-actions">
+          <button ref={cancelRef} type="button" className="refined-btn ghost" onClick={onClose}>
+            cancel
+          </button>
+          <button type="button" className="refined-btn danger" onClick={handleConfirm}>
+            <FontAwesomeIcon icon={faPowerOff} className="refined-btn-icon" />
+            deactivate
+          </button>
         </div>
       </div>
-    </div>
+    </>,
+    document.body
   );
-});
+}
 
 export default DeactivateHabitModal;

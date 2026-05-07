@@ -1,23 +1,13 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-
-const show = vi.fn();
-const hide = vi.fn();
-
-vi.mock("bootstrap", () => ({
-  Modal: class {
-    show = show;
-    hide = hide;
-  },
-}));
 
 import NodeNoteModal from "./NodeNoteModal";
 import type { NodeColor } from "./types";
 
 function baseProps(overrides: Partial<React.ComponentProps<typeof NodeNoteModal>> = {}) {
   return {
-    isOpen: true,
+    open: true,
     action: "Add" as const,
     data: { name: "Inbox", color: 2 as NodeColor },
     onSave: vi.fn(),
@@ -28,18 +18,18 @@ function baseProps(overrides: Partial<React.ComponentProps<typeof NodeNoteModal>
 }
 
 function swatches(): HTMLElement[] {
-  return Array.from(document.querySelectorAll<HTMLElement>(".modal-body .node-color"));
+  return Array.from(document.querySelectorAll<HTMLElement>(".refined-modal .node-color"));
 }
-
-beforeEach(() => {
-  show.mockReset();
-  hide.mockReset();
-});
 
 describe("NodeNoteModal", () => {
   it("shows the action label in the title", () => {
     render(<NodeNoteModal {...baseProps({ action: "Edit" })} />);
-    expect(screen.getByText("Edit Note")).toBeInTheDocument();
+    expect(screen.getByText("Edit note")).toBeInTheDocument();
+  });
+
+  it("uses the Add title when action is Add", () => {
+    render(<NodeNoteModal {...baseProps({ action: "Add" })} />);
+    expect(screen.getByText("Add a note")).toBeInTheDocument();
   });
 
   it("initializes the name input and selected color from props", () => {
@@ -63,13 +53,13 @@ describe("NodeNoteModal", () => {
   it("submits onSave with current name and color when Save is clicked", async () => {
     const user = userEvent.setup();
     const onSave = vi.fn();
-    render(<NodeNoteModal {...baseProps({ onSave, data: { name: "", color: 1 } })} />);
+    render(<NodeNoteModal {...baseProps({ onSave, data: { name: "seed", color: 1 } })} />);
     const input = screen.getByLabelText(/name/i);
+    await user.clear(input);
     await user.type(input, "Project X");
     await user.click(swatches().find(el => el.className.includes("node-color-3"))!);
     await user.click(screen.getByRole("button", { name: /save/i }));
     expect(onSave).toHaveBeenCalledWith({ name: "Project X", color: 3 });
-    expect(hide).toHaveBeenCalled();
   });
 
   it("submits on Enter in the name input", async () => {
@@ -81,17 +71,34 @@ describe("NodeNoteModal", () => {
     expect(onSave).toHaveBeenCalledTimes(1);
   });
 
-  it("opens the Bootstrap modal when isOpen toggles true", () => {
-    const { rerender } = render(<NodeNoteModal {...baseProps({ isOpen: false })} />);
-    expect(show).not.toHaveBeenCalled();
-    rerender(<NodeNoteModal {...baseProps({ isOpen: true })} />);
-    expect(show).toHaveBeenCalled();
+  it("renders nothing when open is false", () => {
+    const { container, baseElement } = render(<NodeNoteModal {...baseProps({ open: false })} />);
+    expect(container).toBeEmptyDOMElement();
+    expect(baseElement.querySelector(".refined-modal")).toBeNull();
   });
 
-  it("forwards Bootstrap's hidden.bs.modal event to onClose", () => {
+  it("calls onClose when the cancel button is clicked", async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    render(<NodeNoteModal {...baseProps({ onClose })} />);
+    await user.click(screen.getByRole("button", { name: /cancel/i }));
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("calls onClose when Escape is pressed", async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    render(<NodeNoteModal {...baseProps({ onClose })} />);
+    await user.keyboard("{Escape}");
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("calls onClose when the scrim is clicked", async () => {
+    const user = userEvent.setup();
     const onClose = vi.fn();
     const { baseElement } = render(<NodeNoteModal {...baseProps({ onClose })} />);
-    baseElement.querySelector("#modalEditNote")!.dispatchEvent(new Event("hidden.bs.modal"));
+    const scrim = baseElement.querySelector(".refined-modal-scrim") as HTMLElement;
+    await user.click(scrim);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

@@ -7,6 +7,7 @@ import {
   faCommentDots,
   faCircleQuestion,
   faArrowRightFromBracket,
+  faClockRotateLeft,
   IconDefinition,
 } from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
@@ -170,6 +171,7 @@ export default function RefinedTopBar() {
   const data: BaseTemplateData = (window as any).BASE_TEMPLATE_DATA || {};
   const [weather, setWeather] = useState<WeatherInfo | null>(null);
   const [overdueTasks, setOverdueTasks] = useState<any[]>([]);
+  const [overdueOpen, setOverdueOpen] = useState(false);
   const [recentBlobs, setRecentBlobs] = useState<any>(null);
   const [recentlyViewed, setRecentlyViewed] = useState<any>(null);
   const [failedTestCount] = useState(data.failedTestCount || 0);
@@ -317,6 +319,18 @@ export default function RefinedTopBar() {
             />
           )}
           <AlertPill count={failedTestCount} metricsUrl={metricsUrl} />
+          {overdueTasks.length > 0 && (
+            <button
+              type="button"
+              className="refined-tb-overdue"
+              onClick={() => setOverdueOpen(true)}
+              title={`${overdueTasks.length} overdue tasks`}
+            >
+              <FontAwesomeIcon icon={faClockRotateLeft} />
+              <span className="num">{overdueTasks.length}</span>
+              <span className="word">overdue</span>
+            </button>
+          )}
           <div className="refined-tb-div" />
           <UserMenu
             open={menuOpen}
@@ -326,13 +340,13 @@ export default function RefinedTopBar() {
           />
         </div>
       </div>
-      <div id="overdue-tasks">
-        <OverdueTasks
-          taskListInitial={overdueTasks}
-          rescheduleTaskUrl={data.overdueTasksConfig?.rescheduleTaskUrl || ""}
-          deleteTodoUrl={data.overdueTasksConfig?.deleteTodoUrl || ""}
-        />
-      </div>
+      <OverdueTasks
+        open={overdueOpen}
+        onClose={() => setOverdueOpen(false)}
+        taskListInitial={overdueTasks}
+        rescheduleTaskUrl={data.overdueTasksConfig?.rescheduleTaskUrl || ""}
+        deleteTodoUrl={data.overdueTasksConfig?.deleteTodoUrl || ""}
+      />
     </>
   );
 }

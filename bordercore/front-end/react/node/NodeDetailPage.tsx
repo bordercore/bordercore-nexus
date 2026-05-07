@@ -45,7 +45,7 @@ import { doPost, doPatch } from "../utils/reactUtils";
 import { formatRelative } from "../utils/formatRelative";
 import { NewTodoModal } from "../todo/NewTodoModal";
 import { EditTodoModal, EditTodoInfo } from "../todo/EditTodoModal";
-import { ObjectSelectModal, ObjectSelectModalHandle } from "../common/ObjectSelectModal";
+import { ObjectSelectModal } from "../common/ObjectSelectModal";
 import NodeCollectionCard from "./NodeCollectionCard";
 import NodeCollectionModal, { CollectionSettings } from "./NodeCollectionModal";
 import NodeNote from "./NodeNote";
@@ -253,8 +253,16 @@ export default function NodeDetailPage({
 
   // Refs
   const todoListRefs = useRef<Map<string, NodeTodoListHandle>>(new Map());
-  const objectSelectModalRef = useRef<ObjectSelectModalHandle>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
+
+  // ObjectSelectModal state (declarative refined-modal API)
+  const [objectSelectOpen, setObjectSelectOpen] = useState(false);
+  const objectSelectHandlerRef = useRef<
+    ((object: { uuid: string; doctype?: string }) => void) | null
+  >(null);
+  const handleObjectSelected = useCallback((selectedObject: { uuid: string; doctype?: string }) => {
+    objectSelectHandlerRef.current?.(selectedObject);
+  }, []);
 
   useEffect(() => {
     if (isEditingName && nameInputRef.current) {
@@ -499,7 +507,7 @@ export default function NodeDetailPage({
 
   const handleAddImage = () => {
     setShowAddMenu(false);
-    objectSelectModalRef.current?.open(selectedObject => {
+    objectSelectHandlerRef.current = selectedObject => {
       doPost(
         urls.addImage,
         {
@@ -511,7 +519,8 @@ export default function NodeDetailPage({
         },
         "Image added"
       );
-    });
+    };
+    setObjectSelectOpen(true);
   };
 
   const handleAddQuote = () => {
@@ -597,7 +606,7 @@ export default function NodeDetailPage({
   };
 
   const handleOpenObjectSelectModal = (callback: () => void, data: { collectionUuid: string }) => {
-    objectSelectModalRef.current?.open(selectedObject => {
+    objectSelectHandlerRef.current = selectedObject => {
       const doctype = (selectedObject.doctype || "").toLowerCase();
       const postData: Record<string, string> = {
         collection_uuid: data.collectionUuid,
@@ -615,7 +624,8 @@ export default function NodeDetailPage({
         },
         "Object added"
       );
-    });
+    };
+    setObjectSelectOpen(true);
   };
 
   // Render a single layout item body
@@ -1081,7 +1091,7 @@ export default function NodeDetailPage({
         />
 
         <NodeNoteModal
-          isOpen={noteModalState.isOpen}
+          open={noteModalState.isOpen}
           action={noteModalState.action}
           data={noteModalState.data}
           onSave={data => {
@@ -1167,7 +1177,15 @@ export default function NodeDetailPage({
           onEdit={handleTodoEdit}
         />
 
-        <ObjectSelectModal ref={objectSelectModalRef} searchObjectUrl={urls.searchNames} />
+        <ObjectSelectModal
+          open={objectSelectOpen}
+          onClose={() => {
+            setObjectSelectOpen(false);
+            objectSelectHandlerRef.current = null;
+          }}
+          searchObjectUrl={urls.searchNames}
+          onSelectObject={handleObjectSelected}
+        />
 
         <EditNodeModal
           open={editModalOpen}

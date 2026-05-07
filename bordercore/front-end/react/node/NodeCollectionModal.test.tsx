@@ -1,16 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-
-const show = vi.fn();
-const hide = vi.fn();
-
-vi.mock("bootstrap", () => ({
-  Modal: class {
-    show = show;
-    hide = hide;
-  },
-}));
 
 vi.mock("../common/SelectValue", () => ({
   SelectValue: ({ onSelect }: { onSelect: (v: { uuid: string; name: string }) => void }) => (
@@ -51,28 +41,36 @@ function baseProps(overrides: Partial<React.ComponentProps<typeof NodeCollection
   };
 }
 
-beforeEach(() => {
-  show.mockReset();
-  hide.mockReset();
-});
+// In Add mode, the "New" / "Existing" type radios are rendered as
+// study-method-card labels whose accessible name is "<title> <hint>". The
+// helpers below pick them out without depending on the hint text.
+function getTypeRadio(type: "new" | "existing"): HTMLInputElement {
+  const re = type === "new" ? /^New/ : /^Existing/;
+  return screen.getByRole("radio", { name: re }) as HTMLInputElement;
+}
+
+function queryTypeRadio(type: "new" | "existing"): HTMLInputElement | null {
+  const re = type === "new" ? /^New/ : /^Existing/;
+  return screen.queryByRole("radio", { name: re }) as HTMLInputElement | null;
+}
 
 describe("NodeCollectionModal", () => {
   it("shows the action label", () => {
     render(<NodeCollectionModal {...baseProps({ action: "Edit" })} />);
-    expect(screen.getByText("Edit Collection")).toBeInTheDocument();
+    expect(screen.getByText("Edit collection")).toBeInTheDocument();
   });
 
   it("hides the Type radios when editing", () => {
     render(<NodeCollectionModal {...baseProps({ action: "Edit" })} />);
-    expect(screen.queryByLabelText(/^new$/i)).not.toBeInTheDocument();
-    expect(screen.queryByLabelText(/^existing$/i)).not.toBeInTheDocument();
+    expect(queryTypeRadio("new")).not.toBeInTheDocument();
+    expect(queryTypeRadio("existing")).not.toBeInTheDocument();
   });
 
   it("renders the SelectValue picker only when Existing is chosen in Add mode", async () => {
     const user = userEvent.setup();
     render(<NodeCollectionModal {...baseProps({ action: "Add" })} />);
     expect(screen.queryByTestId("select-value")).not.toBeInTheDocument();
-    await user.click(screen.getByLabelText(/^existing$/i));
+    await user.click(getTypeRadio("existing"));
     expect(screen.getByTestId("select-value")).toBeInTheDocument();
   });
 
@@ -80,7 +78,7 @@ describe("NodeCollectionModal", () => {
     const user = userEvent.setup();
     render(<NodeCollectionModal {...baseProps({ action: "Add" })} />);
     expect(screen.getByLabelText(/^name$/i)).toBeInTheDocument();
-    await user.click(screen.getByLabelText(/^existing$/i));
+    await user.click(getTypeRadio("existing"));
     expect(screen.queryByLabelText(/^name$/i)).not.toBeInTheDocument();
   });
 
@@ -88,12 +86,12 @@ describe("NodeCollectionModal", () => {
     const user = userEvent.setup();
     render(<NodeCollectionModal {...baseProps({ action: "Add" })} />);
     // Default: display=list, so Limit is shown and Rotate is hidden.
-    expect(screen.getByLabelText(/^limit$/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/limit/i)).toBeInTheDocument();
     expect(screen.queryByLabelText(/^rotate$/i)).not.toBeInTheDocument();
 
     await user.selectOptions(screen.getByLabelText(/^display$/i), "individual");
     expect(screen.getByLabelText(/^rotate$/i)).toBeInTheDocument();
-    expect(screen.queryByLabelText(/^limit$/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/limit/i)).not.toBeInTheDocument();
   });
 
   it("calls onAddCollection with the ad-hoc payload (no uuid)", async () => {
@@ -118,7 +116,7 @@ describe("NodeCollectionModal", () => {
     const user = userEvent.setup();
     const onAddCollection = vi.fn();
     render(<NodeCollectionModal {...baseProps({ action: "Add", onAddCollection })} />);
-    await user.click(screen.getByLabelText(/^existing$/i));
+    await user.click(getTypeRadio("existing"));
     await user.click(screen.getByTestId("select-value"));
     await user.click(screen.getByRole("button", { name: /save/i }));
     expect(onAddCollection).toHaveBeenCalledWith(

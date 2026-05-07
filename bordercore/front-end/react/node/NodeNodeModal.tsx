@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Modal } from "bootstrap";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faTimes } from "@fortawesome/free-solid-svg-icons";
 import { SelectValue } from "../common/SelectValue";
 import { ROTATE_OPTIONS, type NodeOptions } from "./types";
 
@@ -35,125 +36,115 @@ export default function NodeNodeModal({
   const [options, setOptions] = useState<NodeOptions>(defaultOptions);
   const [selectedNodeUuid, setSelectedNodeUuid] = useState<string | null>(null);
 
-  const modalRef = useRef<HTMLDivElement>(null);
-  const modalInstanceRef = useRef<Modal | null>(null);
+  const selectWrapperRef = useRef<HTMLDivElement>(null);
+  const rotateRef = useRef<HTMLSelectElement>(null);
 
+  // Reset state every time the modal opens.
   useEffect(() => {
-    if (modalRef.current && !modalInstanceRef.current) {
-      modalInstanceRef.current = new Modal(modalRef.current);
-
-      modalRef.current.addEventListener("hidden.bs.modal", () => {
-        onClose();
-      });
-    }
-  }, [onClose]);
-
-  useEffect(() => {
-    if (isOpen) {
-      setOptions(data || defaultOptions);
-      setSelectedNodeUuid(null);
-    }
-  }, [isOpen, data]);
-
-  useEffect(() => {
-    if (modalInstanceRef.current) {
-      if (isOpen) {
-        modalInstanceRef.current.show();
-        // Focus the search input after modal opens
-        setTimeout(() => {
-          const input = modalRef.current?.querySelector(
-            "#modalSelectNode input"
-          ) as HTMLInputElement;
-          if (input && action === "Add") {
-            input.focus();
-          }
-        }, 500);
+    if (!isOpen) return;
+    setOptions(data || defaultOptions);
+    setSelectedNodeUuid(null);
+    const t = window.setTimeout(() => {
+      if (action === "Add") {
+        const input = selectWrapperRef.current?.querySelector("input") as HTMLInputElement | null;
+        input?.focus();
       } else {
-        modalInstanceRef.current.hide();
+        rotateRef.current?.focus();
       }
-    }
-  }, [isOpen, action]);
+    }, 40);
+    return () => window.clearTimeout(t);
+  }, [isOpen, data, action]);
+
+  // Escape-to-close.
+  useEffect(() => {
+    if (!isOpen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [isOpen, onClose]);
 
   const handleNodeSelect = (node: NodeSearchResult) => {
     setSelectedNodeUuid(node.uuid);
   };
 
-  const handleSave = () => {
-    if (action === "Add" && selectedNodeUuid) {
+  const canSubmit = action === "Edit" || selectedNodeUuid !== null;
+
+  const submit = useCallback(() => {
+    if (action === "Add") {
+      if (!selectedNodeUuid) return;
       onSelectNode(selectedNodeUuid, options);
-    } else if (action === "Edit") {
+    } else {
       onSave(options);
     }
-    modalInstanceRef.current?.hide();
-  };
+  }, [action, selectedNodeUuid, options, onSelectNode, onSave]);
+
+  if (!isOpen) return null;
+
+  const title = action === "Add" ? "Add node link" : "Edit node link";
 
   return createPortal(
-    <div
-      ref={modalRef}
-      className="modal fade"
-      id="modalSelectNode"
-      tabIndex={-1}
-      role="dialog"
-      aria-labelledby="myModalLabel"
-    >
-      <div className="modal-dialog" role="document">
-        <div className="modal-content">
-          <div className="modal-header">
-            <h4 className="modal-title" id="myModalLabel">
-              {action} Node
-            </h4>
-            <button
-              type="button"
-              className="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
+    <>
+      <div className="refined-modal-scrim" onClick={onClose} />
+      <form
+        className="refined-modal"
+        role="dialog"
+        aria-label={title.toLowerCase()}
+        onSubmit={e => {
+          e.preventDefault();
+          submit();
+        }}
+      >
+        <button type="button" className="refined-modal-close" onClick={onClose} aria-label="close">
+          <FontAwesomeIcon icon={faTimes} />
+        </button>
+
+        <h2 className="refined-modal-title">{title}</h2>
+
+        {action === "Add" && (
+          <div className="refined-field" ref={selectWrapperRef}>
+            <label>name</label>
+            <SelectValue
+              label="name"
+              placeHolder="Search nodes"
+              searchUrl={searchUrl}
+              onSelect={handleNodeSelect}
             />
           </div>
-          <div className="modal-body">
-            {action === "Add" && (
-              <div className="mb-3">
-                <SelectValue
-                  label="name"
-                  placeHolder="Search nodes"
-                  searchUrl={searchUrl}
-                  onSelect={handleNodeSelect}
-                />
-              </div>
-            )}
-            <div className="form-section">Options</div>
-            <div className="row mt-3">
-              <label className="col-lg-4 col-form-label" htmlFor="inputRotate">
-                Rotate
-              </label>
-              <div className="col-lg-8">
-                <div className="d-flex flex-column">
-                  <select
-                    id="inputRotate"
-                    className="form-control form-select"
-                    value={options.rotate}
-                    onChange={e =>
-                      setOptions(prev => ({
-                        ...prev,
-                        rotate: parseInt(e.target.value, 10),
-                      }))
-                    }
-                  >
-                    {ROTATE_OPTIONS.map(opt => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.display}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="modal-footer">
-            <input className="btn btn-primary" type="button" value="Save" onClick={handleSave} />
-          </div>
+        )}
+
+        <div className="refined-field">
+          <label htmlFor="inputRotate">rotate</label>
+          <select
+            ref={rotateRef}
+            id="inputRotate"
+            value={options.rotate}
+            onChange={e =>
+              setOptions(prev => ({
+                ...prev,
+                rotate: parseInt(e.target.value, 10),
+              }))
+            }
+          >
+            {ROTATE_OPTIONS.map(opt => (
+              <option key={opt.value} value={opt.value}>
+                {opt.display}
+              </option>
+            ))}
+          </select>
         </div>
-      </div>
-    </div>,
+
+        <div className="refined-modal-actions">
+          <button type="button" className="refined-btn ghost" onClick={onClose}>
+            cancel
+          </button>
+          <button type="submit" className="refined-btn primary" disabled={!canSubmit}>
+            save
+          </button>
+        </div>
+      </form>
+    </>,
     document.body
   );
 }

@@ -21,7 +21,7 @@ const prismLanguagesLoaded = Promise.all([
   import("prismjs/components/prism-markdown"),
 ]);
 
-import ObjectSelectModal, { ObjectSelectModalHandle } from "../common/ObjectSelectModal";
+import ObjectSelectModal from "../common/ObjectSelectModal";
 import { RelatedObjectsHandle } from "../common/RelatedObjects";
 import { doPost, EventBus } from "../utils/reactUtils";
 
@@ -146,8 +146,8 @@ export function DrillQuestionPage({
   const [revealed, setRevealed] = useState(false);
   const [isFavorite, setIsFavorite] = useState(question.isFavorite);
 
-  const objectSelectModalRef = useRef<ObjectSelectModalHandle>(null);
   const relatedObjectsRef = useRef<RelatedObjectsHandle>(null);
+  const [objectSelectOpen, setObjectSelectOpen] = useState(false);
 
   // Markdown of the user's own questions / answers. When a fenced code
   // block has no language tag, fall back to a Prism language inferred
@@ -211,7 +211,7 @@ export function DrillQuestionPage({
   }, [question.uuid]);
 
   const handleOpenObjectSelectModal = useCallback(() => {
-    objectSelectModalRef.current?.open();
+    setObjectSelectOpen(true);
   }, []);
 
   const handleObjectSelected = useCallback(
@@ -377,8 +377,9 @@ export function DrillQuestionPage({
       </div>
 
       <ObjectSelectModal
-        ref={objectSelectModalRef}
-        title="Select Object"
+        open={objectSelectOpen}
+        onClose={() => setObjectSelectOpen(false)}
+        title="Select object"
         searchObjectUrl={urls.searchNames}
         onSelectObject={handleObjectSelected}
       />

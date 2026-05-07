@@ -1,7 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Modal } from "bootstrap";
+import { createPortal } from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTimesCircle, faEllipsisV, faPencilAlt } from "@fortawesome/free-solid-svg-icons";
+import {
+  faTimesCircle,
+  faEllipsisV,
+  faPencilAlt,
+  faTimes,
+} from "@fortawesome/free-solid-svg-icons";
 import Card from "../common/Card";
 import DropDownMenu from "../common/DropDownMenu";
 import SelectValue, { SelectValueHandle } from "../common/SelectValue";
@@ -30,10 +35,9 @@ export function DrillDisabledTags({
 }: DrillDisabledTagsProps) {
   const [dataLoading, setDataLoading] = useState(true);
   const [tagList, setTagList] = useState<DisabledTag[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const selectValueRef = useRef<SelectValueHandle>(null);
-  const modalRef = useRef<HTMLDivElement>(null);
-  const modalInstanceRef = useRef<Modal | null>(null);
 
   const getTagList = useCallback(() => {
     doGet(
@@ -50,11 +54,28 @@ export function DrillDisabledTags({
     getTagList();
   }, [getTagList]);
 
-  useEffect(() => {
-    if (modalRef.current && !modalInstanceRef.current) {
-      modalInstanceRef.current = new Modal(modalRef.current);
-    }
+  const closeModal = useCallback(() => {
+    setIsModalOpen(false);
   }, []);
+
+  // Auto-focus the search input after open
+  useEffect(() => {
+    if (!isModalOpen) return;
+    const t = window.setTimeout(() => {
+      selectValueRef.current?.focus();
+    }, 40);
+    return () => window.clearTimeout(t);
+  }, [isModalOpen]);
+
+  // Escape closes the modal
+  useEffect(() => {
+    if (!isModalOpen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeModal();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [isModalOpen, closeModal]);
 
   const handleTagDisable = useCallback(
     (tag: string) => {
@@ -82,12 +103,7 @@ export function DrillDisabledTags({
   );
 
   const openModal = useCallback(() => {
-    if (modalInstanceRef.current) {
-      modalInstanceRef.current.show();
-      setTimeout(() => {
-        selectValueRef.current?.focus();
-      }, 500);
-    }
+    setIsModalOpen(true);
   }, []);
 
   const titleSlot = (
@@ -120,57 +136,61 @@ export function DrillDisabledTags({
 
   return (
     <div className="d-flex flex-grow-1">
-      {/* Modal for managing disabled tags */}
-      <div ref={modalRef} id="modalDisabledTags" className="modal fade" tabIndex={-1} role="dialog">
-        <div className="modal-dialog" role="document">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h4 id="myModalLabel" className="modal-title">
-                Disabled Tags
-              </h4>
-              <button type="button" className="close-button btn-close" data-bs-dismiss="modal" />
-            </div>
-            <div className="modal-body">
-              <div className="form-row align-items-center">
-                <div className="form-row mx-1 w-100">
-                  <SelectValue
-                    ref={selectValueRef}
-                    searchUrl={`${tagSearchUrl}?doctype=drill&query=`}
-                    placeHolder="Search Tag"
-                    onSelect={handleTagSelect}
-                  />
-                </div>
+      {isModalOpen &&
+        createPortal(
+          <>
+            <div className="refined-modal-scrim" onClick={closeModal} />
+            <div className="refined-modal" role="dialog" aria-label="manage disabled tags">
+              <button
+                type="button"
+                className="refined-modal-close"
+                onClick={closeModal}
+                aria-label="close"
+              >
+                <FontAwesomeIcon icon={faTimes} />
+              </button>
+
+              <h2 className="refined-modal-title">Disabled tags</h2>
+
+              <div className="refined-field">
+                <label htmlFor="drill-disabled-tag-search">add tag</label>
+                <SelectValue
+                  ref={selectValueRef}
+                  searchUrl={`${tagSearchUrl}?doctype=drill&query=`}
+                  placeHolder="Search tag"
+                  onSelect={handleTagSelect}
+                />
               </div>
-              <ul id="drill-pinned-tags" className="interior-borders p-2 mb-0 wide-list">
-                <div className="slicklist-list-item-inner">
+
+              <div className="refined-field">
+                <label>currently disabled</label>
+                <ul className="disabled-tag-list">
+                  {tagList.length === 0 && (
+                    <li className="disabled-tag-empty">No disabled tags.</li>
+                  )}
                   {tagList.map(tag => (
-                    <li key={tag.name} className="list-group-item px-2 py-1">
-                      <div className="d-flex">
-                        <div>{tag.name}</div>
-                        <div className="ms-auto my-auto">
-                          <FontAwesomeIcon
-                            icon={faTimesCircle}
-                            className="list-delete cursor-pointer"
-                            onClick={() => handleTagEnable(tag.name)}
-                          />
-                        </div>
-                      </div>
+                    <li key={tag.name} className="disabled-tag-item">
+                      <span className="disabled-tag-name">{tag.name}</span>
+                      <FontAwesomeIcon
+                        icon={faTimesCircle}
+                        className="disabled-tag-remove cursor-pointer"
+                        onClick={() => handleTagEnable(tag.name)}
+                        aria-label={`Re-enable ${tag.name}`}
+                      />
                     </li>
                   ))}
-                </div>
-              </ul>
+                </ul>
+              </div>
+
+              <div className="refined-modal-actions">
+                <button type="button" className="refined-btn primary" onClick={closeModal}>
+                  Done
+                </button>
+              </div>
             </div>
-            <div className="modal-footer justify-content-start">
-              <input
-                className="btn btn-primary"
-                type="button"
-                value="Save"
-                data-bs-dismiss="modal"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+          </>,
+          document.body
+        )}
 
       {/* Card component */}
       <Card

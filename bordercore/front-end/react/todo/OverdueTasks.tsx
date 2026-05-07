@@ -1,6 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faList, faCalendarAlt, faTrashAlt, faCheck } from "@fortawesome/free-solid-svg-icons";
+import {
+  faList,
+  faCalendarAlt,
+  faTrashAlt,
+  faCheck,
+  faTimes,
+} from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
 import { tagStyle } from "../utils/tagColors";
 
@@ -11,12 +18,16 @@ interface Task {
 }
 
 interface OverdueTasksProps {
+  open: boolean;
+  onClose: () => void;
   taskListInitial: Task[];
   rescheduleTaskUrl: string;
   deleteTodoUrl: string;
 }
 
 export function OverdueTasks({
+  open,
+  onClose,
   taskListInitial,
   rescheduleTaskUrl,
   deleteTodoUrl,
@@ -28,18 +39,24 @@ export function OverdueTasks({
     setTaskList(taskListInitial);
   }, [taskListInitial]);
 
+  // Clear status message every time the modal opens.
   useEffect(() => {
-    const modalElement = document.getElementById("modalOverdueTasks");
-    if (modalElement) {
-      const handleHidden = () => {
-        setMessage("");
-      };
-      modalElement.addEventListener("hidden.bs.modal", handleHidden);
-      return () => {
-        modalElement.removeEventListener("hidden.bs.modal", handleHidden);
-      };
-    }
-  }, []);
+    if (open) setMessage("");
+  }, [open]);
+
+  // Escape-to-close.
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [open, onClose]);
+
+  const removeTaskFromList = (uuid: string) => {
+    setTaskList(prev => prev.filter(task => task.uuid !== uuid));
+  };
 
   const handleTaskDelete = (uuid: string) => {
     axios
@@ -52,10 +69,6 @@ export function OverdueTasks({
         console.log(error);
         setMessage("Error deleting task. Please try again.");
       });
-  };
-
-  const removeTaskFromList = (uuid: string) => {
-    setTaskList(prev => prev.filter(task => task.uuid !== uuid));
   };
 
   const rescheduleTask = (uuid: string) => {
@@ -78,113 +91,79 @@ export function OverdueTasks({
       });
   };
 
-  return (
-    <div
-      id="modalOverdueTasks"
-      className="modal fade"
-      tabIndex={-1}
-      role="dialog"
-      aria-labelledby="myModalLabel"
-    >
-      <div className="modal-dialog" role="document">
-        <div className="modal-content">
-          <div className="modal-header">
-            <h4 id="myModalLabel" className="modal-title">
-              Overdue Tasks
-            </h4>
-            <button
-              type="button"
-              className="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-            />
-          </div>
-          <div className="modal-body">
-            <div>
-              {taskList.map(task => (
-                <div key={task.uuid} className="hoverable row m-2">
-                  <div className="col-lg-9 d-flex my-2">
-                    <div>
-                      <FontAwesomeIcon icon={faList} className="text-secondary me-3" />
-                    </div>
-                    <div>
-                      {task.name}
-                      {task.tags.map(tag => (
-                        <span
-                          key={tag}
-                          className="tag ms-2"
-                          style={tagStyle(tag)} // must remain inline
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="col-lg-3 my-2 d-flex justify-content-center">
-                    <a
-                      className="glow"
-                      href="#"
-                      onClick={e => {
-                        e.preventDefault();
-                        rescheduleTask(task.uuid);
-                      }}
+  if (!open) return null;
+
+  return createPortal(
+    <>
+      <div className="refined-modal-scrim" onClick={onClose} />
+      <div className="refined-modal" role="dialog" aria-label="overdue tasks">
+        <button type="button" className="refined-modal-close" onClick={onClose} aria-label="close">
+          <FontAwesomeIcon icon={faTimes} />
+        </button>
+
+        <h2 className="refined-modal-title">Overdue tasks</h2>
+
+        <div className="refined-overdue-list">
+          {taskList.map(task => (
+            <div key={task.uuid} className="refined-overdue-item">
+              <div className="refined-overdue-name">
+                <FontAwesomeIcon icon={faList} className="refined-overdue-icon" />
+                <span>
+                  {task.name}
+                  {task.tags.map(tag => (
+                    <span
+                      key={tag}
+                      className="tag ms-2"
+                      style={tagStyle(tag)} // must remain inline
                     >
-                      <FontAwesomeIcon
-                        icon={faCalendarAlt}
-                        className="text-secondary me-3"
-                        data-bs-toggle="tooltip"
-                        title="Reschedule Task"
-                      />
-                    </a>
-                    <a
-                      className="glow"
-                      href="#"
-                      onClick={e => {
-                        e.preventDefault();
-                        handleTaskDelete(task.uuid);
-                      }}
-                    >
-                      <FontAwesomeIcon
-                        icon={faTrashAlt}
-                        className="text-secondary ms-3"
-                        data-bs-toggle="tooltip"
-                        title="Delete Task"
-                      />
-                    </a>
-                  </div>
-                </div>
-              ))}
-            </div>
-            {taskList.length !== 0 && (
-              <div className="row">
-                <div className="col-lg-12">
-                  <hr />
-                </div>
+                      {tag}
+                    </span>
+                  ))}
+                </span>
               </div>
-            )}
-            <div className="row m-2">
-              <div className="col-lg-9 d-flex align-items-center text-success">
-                {taskList.length === 0 ? (
-                  <h4>
-                    <FontAwesomeIcon icon={faCheck} className="text-success me-3" />
-                    <span className="ms-3">All tasks done!</span>
-                  </h4>
-                ) : (
-                  <div>{message}</div>
-                )}
-              </div>
-              <div className="col-lg-3">
-                <div className="ms-auto">
-                  <button type="button" className="btn btn-primary" data-bs-dismiss="modal">
-                    Dismiss
-                  </button>
-                </div>
+              <div className="refined-overdue-actions">
+                <button
+                  type="button"
+                  className="refined-overdue-action"
+                  onClick={() => rescheduleTask(task.uuid)}
+                  title="Reschedule task"
+                  aria-label="reschedule task"
+                >
+                  <FontAwesomeIcon icon={faCalendarAlt} />
+                </button>
+                <button
+                  type="button"
+                  className="refined-overdue-action"
+                  onClick={() => handleTaskDelete(task.uuid)}
+                  title="Delete task"
+                  aria-label="delete task"
+                >
+                  <FontAwesomeIcon icon={faTrashAlt} />
+                </button>
               </div>
             </div>
-          </div>
+          ))}
+        </div>
+
+        <div className="refined-overdue-status">
+          {taskList.length === 0 ? (
+            <div className="refined-overdue-empty">
+              <FontAwesomeIcon icon={faCheck} />
+              <span>All tasks done!</span>
+            </div>
+          ) : (
+            <div className="refined-overdue-message">{message}</div>
+          )}
+        </div>
+
+        <div className="refined-modal-actions compact">
+          <button type="button" className="refined-btn primary" onClick={onClose}>
+            dismiss
+          </button>
         </div>
       </div>
-    </div>
+    </>,
+    document.body
   );
 }
 
