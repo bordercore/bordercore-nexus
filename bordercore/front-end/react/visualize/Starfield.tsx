@@ -9,7 +9,9 @@ interface StarfieldProps {
 
 /**
  * Fixed-position background stars. Deterministic per seed so the starfield
- * stays stable across re-renders.
+ * stays stable across re-renders. The fill stays a fixed white because the
+ * constellation viewer is intentionally fixed-palette; see the header doc
+ * in static/scss/pages/_visualize.scss for the rationale.
  */
 export function Starfield({ width, height, count = 150, seed = 42 }: StarfieldProps) {
   const stars = useMemo(() => {

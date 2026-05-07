@@ -35,6 +35,13 @@ interface SimEdge extends SimulationLinkDatum<SimNode> {
   target: string | SimNode;
 }
 
+// The constellation viewer is intentionally fixed-palette and does NOT
+// consume theme tokens — see the header doc in static/scss/pages/_visualize.scss
+// for the rationale (a constellation reads as a constellation only against
+// a dark cosmic background, and the colors here are calibrated for legibility
+// on that fixed gradient). The DIRECT / TAG / COLLECTION edge colors are
+// mirrored by .constellation-layer-dot-* swatches in _visualize.scss so the
+// SVG rendering and the CSS legend agree; if you change one, change the other.
 const NODE_COLOR: Record<GraphNode["type"], string> = {
   blob: "#cfe0ff",
   bookmark: "#ffd58a",
