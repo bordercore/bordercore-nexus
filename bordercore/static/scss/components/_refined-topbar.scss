@@ -2,68 +2,72 @@
 // Refined top bar — V1 "Refined Classic"
 // =============================================================================
 // Recreates design_handoff_top_bar/prototype/topbar.css scoped to .refined-tb.
-// Tokens ported from prototype/colors_and_type.css live at :root so other
-// refined-* surfaces can pick them up later.
+// Hosts the global --bc-* token bridge at :root so any descendant — the
+// topbar itself plus pages that don't ship their own bridge (drill list,
+// feed, notes landing, blobs dashboard) — picks them up.
+// Each --bc-* now ALIASES a global theme token (var(--accent), var(--bg-0),
+// etc.) instead of a hardcoded sRGB hex. That single change makes every
+// downstream consumer of the --bc-* system theme-aware without touching
+// their selectors. Pages that opted out by declaring their own scoped
+// --bc-* values (login-tokens.css under .bc-login-root) are unaffected
+// and will be themed in their own follow-up.
 
 :root {
   // Brand & accent
-  --bc-accent: #b36bff;
-  --bc-accent-2: #7c7fff;
-  --bc-accent-3: #ff3dbd;
-  --bc-accent-4: #4cc2ff;
+  --bc-accent: var(--accent);
+  --bc-accent-2: var(--accent-2);
+  --bc-accent-3: var(--accent-3);
+  --bc-accent-4: var(--accent-4);
 
   // Backgrounds
-  --bc-bg-0: #07070c;
-  --bc-bg-1: #0b0d14;
-  --bc-bg-2: #12141c;
-  --bc-bg-3: #1a1d28;
-  --bc-bg-4: #242836;
+  --bc-bg-0: var(--bg-0);
+  --bc-bg-1: var(--bg-1);
+  --bc-bg-2: var(--bg-2);
+  --bc-bg-3: var(--bg-3);
+  --bc-bg-4: var(--bg-4);
 
   // Foreground
-  --bc-fg-1: #e6e8f0;
-  --bc-fg-2: #b8bcc9;
-  --bc-fg-3: #8a8fa0;
-  --bc-fg-4: #5a5f72;
+  --bc-fg-1: var(--fg-1);
+  --bc-fg-2: var(--fg-2);
+  --bc-fg-3: var(--fg-3);
+  --bc-fg-4: var(--fg-4);
 
   // Semantic
-  --bc-danger: #f57;
-  --bc-priority-high: #f57;
+  --bc-danger: var(--danger);
+  --bc-priority-high: var(--danger);
 
   // Borders
-  --bc-border-1: #2a2e3d;
-  --bc-border-2: #3a3f52;
-  --bc-hairline: #1e212d;
+  --bc-border-1: var(--line-soft);
+  --bc-border-2: var(--line);
+  --bc-hairline: var(--hairline);
 
-  // Glass
-  --bc-glass-bg: rgb(18 20 28 / 72%);
-  --bc-glass-border: rgb(179 107 255 / 18%);
+  // Glass — translucent over a bg surface, accent-tinted border
+  --bc-glass-bg: color-mix(in oklch, var(--bg-2) 72%, transparent);
+  --bc-glass-border: color-mix(in oklch, var(--accent) 18%, transparent);
   --bc-glass-blur: 14px;
 
   // Glows
   --bc-glow-accent-sm:
-    0 0 0 1px rgb(179 107 255 / 28%),
-    0 0 10px -2px rgb(179 107 255 / 35%);
-  --bc-glow-danger: 0 0 16px -2px rgb(255 85 119 / 45%);
+    0 0 0 1px color-mix(in oklch, var(--accent) 28%, transparent),
+    0 0 10px -2px color-mix(in oklch, var(--accent) 35%, transparent);
+  --bc-glow-danger: 0 0 16px -2px color-mix(in oklch, var(--danger) 45%, transparent);
 
   // Elevation
   --bc-elev-3:
     0 1px 0 0 rgb(255 255 255 / 4%) inset,
     0 20px 60px -12px rgb(0 0 0 / 70%),
-    0 0 0 1px var(--bc-border-1);
+    0 0 0 1px var(--line-soft);
 
   // Radii
   --bc-radius-xs: 4px;
   --bc-radius-sm: 6px;
-  --bc-radius-md: 10px;
+  --bc-radius-md: var(--radius);
   --bc-radius-pill: 999px;
 
   // Type
-  --bc-font-sans:
-    "Inter", -apple-system, blinkmacsystemfont, "Segoe UI", roboto, "Helvetica Neue", arial,
-    sans-serif;
-  --bc-font-display: "Space Grotesk", "Inter", -apple-system, "Segoe UI", sans-serif;
-  --bc-font-mono:
-    "JetBrains Mono", ui-monospace, sfmono-regular, "SF Mono", menlo, consolas, monospace;
+  --bc-font-sans: var(--font-ui);
+  --bc-font-display: "Space Grotesk", -apple-system, "Segoe UI", sans-serif;
+  --bc-font-mono: var(--font-mono);
 
   // Motion
   --bc-t-fast: 120ms;
@@ -85,7 +89,7 @@
   border-bottom: 1px solid var(--bc-hairline);
   margin: 0;
   backdrop-filter: blur(14px);
-  background: rgb(11 13 20 / 72%);
+  background: color-mix(in oklch, var(--bg-1) 72%, transparent);
   font-family: var(--bc-font-sans);
   font-size: 14px;
   gap: 12px;
@@ -108,7 +112,7 @@
 
   &::after {
     position: absolute;
-    background: linear-gradient(180deg, rgb(11 13 20 / 35%), rgb(11 13 20 / 55%));
+    background: linear-gradient(180deg, color-mix(in oklch, var(--bg-1) 35%, transparent), color-mix(in oklch, var(--bg-1) 55%, transparent));
     content: "";
     inset: 0;
     pointer-events: none;
@@ -190,7 +194,7 @@
     overflow: hidden;
     max-width: 420px;
     margin: 0;
-    background: linear-gradient(96deg, #ff7e3d 0%, #b36bff 65%, #7c7fff 100%);
+    background: linear-gradient(96deg, var(--warn) 0%, var(--accent) 65%, var(--accent-2) 100%);
     background-clip: text;
     color: transparent;
     font-family: var(--bc-font-display);
@@ -331,9 +335,9 @@
   height: 28px;
   align-items: center;
   padding: 0 10px 0 8px;
-  border: 1px solid rgb(255 85 119 / 32%);
+  border: 1px solid color-mix(in oklch, var(--danger) 32%, transparent);
   border-radius: var(--bc-radius-pill);
-  background: rgb(255 85 119 / 12%);
+  background: color-mix(in oklch, var(--danger) 12%, transparent);
   color: var(--bc-priority-high);
   cursor: pointer;
   font-family: var(--bc-font-sans);
@@ -346,7 +350,7 @@
   transition: all var(--bc-t-fast) var(--bc-ease-out);
 
   &:hover {
-    background: rgb(255 85 119 / 18%);
+    background: color-mix(in oklch, var(--danger) 18%, transparent);
     box-shadow: var(--bc-glow-danger);
     color: var(--bc-priority-high);
   }
@@ -458,7 +462,7 @@
   }
 
   &.open {
-    border-color: rgb(179 107 255 / 30%);
+    border-color: color-mix(in oklch, var(--accent) 30%, transparent);
     background: var(--bc-bg-3);
     box-shadow: var(--bc-glow-accent-sm);
   }
@@ -469,8 +473,8 @@
     height: 26px;
     flex-shrink: 0;
     border-radius: 50%;
-    background: linear-gradient(135deg, #b36bff, #4cc2ff);
-    color: #fff;
+    background: linear-gradient(135deg, var(--accent), var(--accent-4));
+    color: var(--accent-fg);
     font: 700 11px / 1 var(--bc-font-sans);
     place-items: center;
     text-transform: uppercase;
@@ -544,7 +548,7 @@
   transition: background var(--bc-t-fast);
 
   &:hover {
-    background: rgb(179 107 255 / 10%);
+    background: color-mix(in oklch, var(--accent) 10%, transparent);
     color: var(--bc-fg-1);
   }
 
