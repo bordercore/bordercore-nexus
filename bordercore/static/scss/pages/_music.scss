@@ -254,16 +254,16 @@
     flex-wrap: wrap;
     align-items: center;
     padding: 12px 14px;
-    border: 1px solid color-mix(in oklch, #d39828, transparent 50%);
+    border: 1px solid color-mix(in oklch, var(--warn), transparent 50%);
     border-radius: var(--radius);
-    background: color-mix(in oklch, #d39828, transparent 88%);
-    color: #f0b958;
+    background: color-mix(in oklch, var(--warn), transparent 88%);
+    color: var(--warn);
     font-family: var(--font-ui);
     font-size: 13px;
     gap: 12px;
 
     .notice-label {
-      color: #f0b958;
+      color: var(--warn);
       font-family: var(--font-mono);
       font-size: 11px;
       font-weight: 600;

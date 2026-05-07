@@ -31,6 +31,7 @@
   --cd-chrome-fg: rgb(230 232 240);
   --cd-chrome-fg-muted: rgb(138 143 160);
   --cd-chrome-line: rgb(255 255 255 / 12%);
+  --cd-chrome-line-hover: rgb(255 255 255 / 24%);
 
   color: var(--fg-1);
   font-family: var(--font-ui);
@@ -437,7 +438,7 @@
     transition: all var(--cd-t-fast);
 
     &:hover {
-      border-color: rgb(255 255 255 / 24%);
+      border-color: var(--cd-chrome-line-hover);
       color: var(--cd-chrome-fg);
     }
   }
