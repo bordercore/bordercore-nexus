@@ -138,7 +138,7 @@ export function CreateHabitModal({ open, onClose, createUrl, onCreated }: Create
           </button>
           <button type="submit" className="refined-btn primary" disabled={!canSubmit}>
             <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" />
-            create habit <span className="kbd">⏎</span>
+            create habit
           </button>
         </div>
       </form>

@@ -119,7 +119,7 @@ export function NewNodeModal({ open, onClose, createUrl }: NewNodeModalProps) {
             disabled={!canSubmit}
           >
             <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" />
-            create node <span className="kbd">⏎</span>
+            create node
           </button>
         </div>
       </form>

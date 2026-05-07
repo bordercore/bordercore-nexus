@@ -98,7 +98,6 @@ export function NewReminderModal({ open, onClose, createUrl, onCreated }: NewRem
           >
             <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" />
             {submitting ? "creating…" : "create reminder"}
-            <span className="kbd">⏎</span>
           </button>
         </div>
       </form>

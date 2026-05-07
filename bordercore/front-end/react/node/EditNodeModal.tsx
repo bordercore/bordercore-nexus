@@ -105,7 +105,7 @@ export function EditNodeModal({
             disabled={!canSubmit}
           >
             <FontAwesomeIcon icon={faCheck} className="refined-btn-icon" />
-            save changes <span className="kbd">⏎</span>
+            save changes
           </button>
         </div>
       </div>

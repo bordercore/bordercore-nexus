@@ -152,7 +152,6 @@ export function EditReminderModal({ open, reminder, onClose, onSaved }: EditRemi
             disabled={submitting || loading || !state.name.trim()}
           >
             {submitting ? "saving…" : "save"}
-            <span className="kbd">⏎</span>
           </button>
         </div>
       </form>

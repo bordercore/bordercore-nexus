@@ -66,7 +66,7 @@ export function SaveAsNoteForm({ defaultTitle, onSave, onCancel }: SaveAsNoteFor
           className="chatbot-action-btn chatbot-action-btn--primary"
           onClick={submit}
         >
-          save <span className="kbd">⏎</span>
+          save
         </button>
       </div>
     </div>

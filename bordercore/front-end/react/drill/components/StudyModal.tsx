@@ -166,7 +166,7 @@ export default function StudyModal({
           </button>
           <button type="button" className="refined-btn primary" onClick={submit}>
             <FontAwesomeIcon icon={faBolt} className="refined-btn-icon" />
-            start session <span className="kbd">⏎</span>
+            start session
           </button>
         </div>
       </form>

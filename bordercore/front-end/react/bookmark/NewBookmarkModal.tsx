@@ -196,7 +196,7 @@ export function NewBookmarkModal({
           </button>
           <button type="submit" className="refined-btn primary" disabled={!canSubmit}>
             <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" />
-            create bookmark <span className="kbd">⏎</span>
+            create bookmark
           </button>
         </div>
       </form>

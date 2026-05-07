@@ -256,7 +256,7 @@ export function EditTodoModal({
             cancel
           </button>
           <button type="submit" className="refined-btn primary" disabled={!canSubmit}>
-            save <span className="kbd">⏎</span>
+            save
           </button>
         </div>
       </form>
