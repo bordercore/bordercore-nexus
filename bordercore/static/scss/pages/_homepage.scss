@@ -1,21 +1,18 @@
 // Magazine-style homepage layout.
-// Shared scaffolding lives on .homepage-magazine and uses the existing refined
-// design tokens. Magazine-specific colors that don't map cleanly to a refined
-// token (the brand purple, masthead pink, cyan meta accent) live as scoped
-// custom properties below.
+// Scoped under .homepage-magazine. Consumes the global theme tokens (--accent,
+// --accent-2/3/4, --bg-0, --fg-1..3, --hairline, --danger, --warn, --font-ui,
+// --font-mono) so the page retints under any theme. The "magazine brand
+// colors" (purple / indigo / pink / cyan) that originally lived as hardcoded
+// --mag-* tokens are now the standard accent palette and resolve through
+// var(--accent), var(--accent-2), var(--accent-3), var(--accent-4).
+// Two page-local --mag-* glow recipes stay scoped here for hover affordances.
 
 // stylelint-disable no-descending-specificity
 
 .homepage-magazine {
-  // Magazine-scoped brand tokens.
-  --mag-purple: #b36bff;
-  --mag-purple-2: #7c7fff;
-  --mag-pink: #ff3dbd;
-  --mag-cyan: #4cc2ff;
-  --mag-hairline: #1e212d;
-  --mag-priority-high: #f57;
-  --mag-glow-pink: 0 0 8px rgb(255 61 189 / 60%);
-  --mag-glow-purple-soft: 0 0 6px rgb(179 107 255 / 50%);
+  // ---- Page-local glow shadows (page-specific utility recipes) ----
+  --mag-glow-pink: 0 0 8px color-mix(in oklch, var(--accent-3) 60%, transparent);
+  --mag-glow-purple-soft: 0 0 6px color-mix(in oklch, var(--accent) 50%, transparent);
 
   min-height: 100vh;
   padding-bottom: 32px;
@@ -33,9 +30,9 @@
     letter-spacing: 0.1em;
     text-transform: uppercase;
   }
-  .mag-ucase.is-pink   { color: var(--mag-pink); }
-  .mag-ucase.is-cyan   { color: var(--mag-cyan); }
-  .mag-ucase.is-purple { color: var(--mag-purple); }
+  .mag-ucase.is-pink   { color: var(--accent-3); }
+  .mag-ucase.is-cyan   { color: var(--accent-4); }
+  .mag-ucase.is-purple { color: var(--accent); }
   .mag-ucase.is-danger { color: var(--danger); }
 
   .mag-meta {
@@ -66,7 +63,7 @@
   .mag-hero-fallback {
     position: absolute;
     z-index: 0;
-    background: linear-gradient(180deg, #0a0a18 0%, #1a0a2e 35%, #2d0e3a 60%, #0a0612 100%);
+    background: linear-gradient(180deg, var(--bg-0) 0%, color-mix(in oklch, var(--accent), black 75%) 35%, color-mix(in oklch, var(--accent), black 65%) 60%, var(--bg-0) 100%);
     inset: 0;
   }
 
@@ -79,9 +76,9 @@
     padding: 32px 56px;
     background: linear-gradient(
       180deg,
-      rgb(7 7 12 / 40%) 0%,
+      color-mix(in oklch, var(--bg-0) 40%, transparent) 0%,
       transparent 30%,
-      rgb(7 7 12 / 85%) 100%
+      color-mix(in oklch, var(--bg-0) 85%, transparent) 100%
     );
     inset: 0;
   }
@@ -100,13 +97,13 @@
   }
 
   .mag-issue-line {
-    color: var(--mag-pink);
+    color: var(--accent-3);
     text-shadow: var(--mag-glow-pink);
   }
 
   .mag-masthead {
     margin-top: 12px;
-    color: #fff;
+    color: var(--accent-fg);
     font-family: "Space Grotesk", var(--font-ui);
     font-size: 64px;
     font-weight: 700;
@@ -114,16 +111,16 @@
     line-height: 1;
     text-shadow: 0 2px 24px rgb(0 0 0 / 60%);
   }
-  .mag-masthead-accent { color: var(--mag-pink); }
+  .mag-masthead-accent { color: var(--accent-3); }
 
   .mag-hero-edition {
     color: rgb(255 255 255 / 85%);
     text-align: right;
   }
-  .mag-hero-edition-time { color: var(--mag-cyan); }
+  .mag-hero-edition-time { color: var(--accent-4); }
 
   .mag-hero-image-name {
-    color: #fff;
+    color: var(--accent-fg);
     font-family: "Space Grotesk", var(--font-ui);
     font-size: 22px;
     font-weight: 600;
@@ -137,10 +134,10 @@
   }
 
   .mag-hero-image-meta a {
-    color: var(--mag-purple);
+    color: var(--accent);
     text-decoration: none;
 
-    &:hover { color: var(--mag-pink); }
+    &:hover { color: var(--accent-3); }
   }
 
   .mag-hero-actions {
@@ -153,7 +150,7 @@
     padding: 0;
     border: 0;
     background: transparent;
-    color: var(--mag-cyan);
+    color: var(--accent-4);
     cursor: pointer;
     font-family: var(--font-mono);
     font-size: 12px;
@@ -163,7 +160,7 @@
   }
 
   .mag-hero-link:hover {
-    color: #fff;
+    color: var(--accent-fg);
   }
 
   // ---- Buttons ----
@@ -191,9 +188,9 @@
 
   .mag-btn.is-primary {
     border-color: rgb(255 255 255 / 12%);
-    background: linear-gradient(180deg, var(--mag-purple), #9355ef);
-    box-shadow: 0 0 16px -2px rgb(179 107 255 / 45%);
-    color: #fff;
+    background: linear-gradient(180deg, var(--accent), color-mix(in oklch, var(--accent), black 12%));
+    box-shadow: 0 0 16px -2px color-mix(in oklch, var(--accent) 45%, transparent);
+    color: var(--accent-fg);
   }
 
   // ---- Editorial body ----
@@ -206,7 +203,7 @@
   .mag-pull-quote {
     max-width: 880px;
     padding: 24px 0 32px;
-    border-bottom: 1px solid var(--mag-hairline);
+    border-bottom: 1px solid var(--hairline);
     margin-bottom: 32px;
     color: var(--fg-1);
     font-family: "Space Grotesk", var(--font-ui);
@@ -219,7 +216,7 @@
 
   .mag-pull-quote-attr {
     margin-top: 12px;
-    color: var(--mag-purple);
+    color: var(--accent);
     font-family: var(--font-mono);
     font-size: 12px;
     letter-spacing: 0.15em;
@@ -252,9 +249,9 @@
     border-radius: 8px;
     background: var(--bg-1);
   }
-  .mag-section.is-pink    { --mag-accent: var(--mag-pink); }
-  .mag-section.is-cyan    { --mag-accent: var(--mag-cyan); }
-  .mag-section.is-purple  { --mag-accent: var(--mag-purple); }
+  .mag-section.is-pink    { --mag-accent: var(--accent-3); }
+  .mag-section.is-cyan    { --mag-accent: var(--accent-4); }
+  .mag-section.is-purple  { --mag-accent: var(--accent); }
   .mag-section.is-danger  { --mag-accent: var(--danger); }
   .mag-section.is-neutral { --mag-accent: var(--fg-2); }
 
@@ -312,7 +309,7 @@
 
   .mag-block + .mag-block {
     padding-top: 16px;
-    border-top: 1px dashed var(--mag-hairline);
+    border-top: 1px dashed var(--hairline);
   }
 
   .mag-lede {
@@ -328,7 +325,7 @@
     color: inherit;
     text-decoration: none;
 
-    &:hover { color: var(--mag-pink); }
+    &:hover { color: var(--accent-3); }
   }
 
   // ---- Tasks ----
@@ -345,7 +342,7 @@
     display: flex;
     align-items: center;
     padding: 8px 0;
-    border-bottom: 1px dashed var(--mag-hairline);
+    border-bottom: 1px dashed var(--hairline);
     gap: 10px;
   }
 
@@ -360,7 +357,7 @@
     color: inherit;
     text-decoration: none;
 
-    &:hover { color: var(--mag-purple); }
+    &:hover { color: var(--accent); }
   }
 
   .mag-pdot {
@@ -368,8 +365,8 @@
     height: 8px;
     flex: none;
     border-radius: 50%;
-    background: var(--mag-priority-high);
-    box-shadow: 0 0 8px var(--mag-priority-high);
+    background: var(--danger);
+    box-shadow: 0 0 8px var(--danger);
   }
 
   .mag-tag {
@@ -406,7 +403,7 @@
     flex: none;
     border-radius: 50%;
     background: var(--ok);
-    box-shadow: 0 0 8px rgb(63 210 156 / 60%);
+    box-shadow: 0 0 8px color-mix(in oklch, var(--ok) 60%, transparent);
   }
 
   // ---- Drill ring ----
@@ -480,7 +477,7 @@
     color: inherit;
     text-decoration: none;
 
-    &:hover { color: var(--mag-purple); }
+    &:hover { color: var(--accent); }
   }
 
   .mag-study-detail {
@@ -488,7 +485,7 @@
     color: var(--fg-3);
     font-size: 13px;
   }
-  .mag-study-detail .due { color: var(--mag-pink); }
+  .mag-study-detail .due { color: var(--accent-3); }
 
   // ---- Calendar mini ----
   .mag-cal {
@@ -505,7 +502,7 @@
 
   .mag-cal-weekday {
     width: 38px;
-    color: var(--mag-cyan);
+    color: var(--accent-4);
     font-family: var(--font-mono);
     font-size: 11px;
     letter-spacing: 0.05em;
@@ -558,7 +555,7 @@
     text-transform: uppercase;
   }
 
-  .mag-habit-streak.is-active { color: var(--mag-cyan); }
+  .mag-habit-streak.is-active { color: var(--accent-4); }
 
   // ---- Reminders ----
   .mag-reminders {
@@ -582,7 +579,7 @@
   }
 
   .mag-reminder-rel {
-    color: var(--mag-cyan);
+    color: var(--accent-4);
     font-family: var(--font-mono);
     font-size: 11px;
     letter-spacing: 0.05em;
@@ -642,7 +639,7 @@
     color: inherit;
     text-decoration: none;
 
-    &:hover { color: var(--mag-purple); }
+    &:hover { color: var(--accent); }
   }
 
   // ---- Bookshelf ----
@@ -717,9 +714,9 @@
     display: inline-flex;
     align-items: center;
     padding: 4px 10px;
-    border: 1px solid color-mix(in srgb, var(--mag-cyan) 25%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent-4) 25%, transparent);
     border-radius: 999px;
-    background: color-mix(in srgb, var(--mag-cyan) 8%, transparent);
+    background: color-mix(in srgb, var(--accent-4) 8%, transparent);
     color: var(--fg-1);
     cursor: pointer;
     font-family: var(--font-ui);
@@ -730,8 +727,8 @@
   }
 
   .mag-reading-pill:hover {
-    border-color: var(--mag-cyan);
-    background: color-mix(in srgb, var(--mag-cyan) 14%, transparent);
+    border-color: var(--accent-4);
+    background: color-mix(in srgb, var(--accent-4) 14%, transparent);
   }
 
   .mag-reading-pill.is-read {
@@ -791,7 +788,7 @@
   .mag-fav-fallback {
     width: 10px;
     height: 10px;
-    background: linear-gradient(135deg, var(--mag-purple), var(--mag-cyan));
+    background: linear-gradient(135deg, var(--accent), var(--accent-4));
   }
 
   // ---- Exercise severity ----
@@ -824,7 +821,7 @@
     color: inherit;
     text-decoration: none;
 
-    &:hover { color: var(--mag-purple); }
+    &:hover { color: var(--accent); }
   }
 
   .mag-sev-days {
@@ -862,11 +859,11 @@
   }
 
   .is-sev-ok .mag-sev-days,
-  .is-sev-ok .mag-sev-fill { color: var(--mag-cyan); }
+  .is-sev-ok .mag-sev-fill { color: var(--accent-4); }
 
   .is-sev-ok .mag-sev-fill {
-    background: var(--mag-cyan);
-    box-shadow: 0 0 8px var(--mag-cyan);
+    background: var(--accent-4);
+    box-shadow: 0 0 8px var(--accent-4);
   }
 
   // ---- Calendar loading state ----
