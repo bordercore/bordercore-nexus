@@ -8,9 +8,7 @@ interface NeonChipProps {
 
 export function NeonChip({ name, size = "large", showHash = true }: NeonChipProps) {
   const sizeClass =
-    size === "medium" ? "tg-hero-chip--medium"
-    : size === "small" ? "tg-hero-chip--small"
-    : "";
+    size === "medium" ? "tg-hero-chip--medium" : size === "small" ? "tg-hero-chip--small" : "";
 
   return (
     <span className={`tg-hero-chip ${sizeClass}`.trim()}>

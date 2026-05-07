@@ -1,8 +1,13 @@
 import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faCube, faBookmark, faCompactDisc, faLayerGroup,
-  faSquareCheck, faBrain, faMusic,
+  faCube,
+  faBookmark,
+  faCompactDisc,
+  faLayerGroup,
+  faSquareCheck,
+  faBrain,
+  faMusic,
 } from "@fortawesome/free-solid-svg-icons";
 import type { TagSnapshot, CountKey } from "./types";
 
@@ -38,17 +43,23 @@ export function TagControlsCard({ tag, onPinnedToggle, onMetaToggle }: Props) {
           <div className="tg-toggle-row__hint">shows in your sidebar shortcuts</div>
         </div>
         <div className="bc-toggle" data-on={String(tag.pinned)} onClick={onPinnedToggle}>
-          <div className="track"><div className="knob" /></div>
+          <div className="track">
+            <div className="knob" />
+          </div>
         </div>
       </div>
 
       <div className="tg-toggle-row">
         <div>
           <div className="tg-toggle-row__label">meta tag</div>
-          <div className="tg-toggle-row__hint">treat as a top-level category, surface on homepage</div>
+          <div className="tg-toggle-row__hint">
+            treat as a top-level category, surface on homepage
+          </div>
         </div>
         <div className="bc-toggle" data-on={String(tag.meta)} onClick={onMetaToggle}>
-          <div className="track"><div className="knob" /></div>
+          <div className="track">
+            <div className="knob" />
+          </div>
         </div>
       </div>
 

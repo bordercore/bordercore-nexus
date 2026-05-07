@@ -24,13 +24,13 @@ const bootstrap: TagBootstrap = {
     pinned: false,
     meta: false,
     counts: {
-      blob:       { label: "blobs",       icon: "fa-cube",          count: 3 },
-      bookmark:   { label: "bookmarks",   icon: "fa-bookmark",      count: 0 },
-      album:      { label: "albums",      icon: "fa-compact-disc",  count: 0 },
-      collection: { label: "collections", icon: "fa-layer-group",   count: 0 },
-      todo:       { label: "todos",       icon: "fa-square-check",  count: 0 },
-      question:   { label: "drills",      icon: "fa-brain",         count: 0 },
-      song:       { label: "songs",       icon: "fa-music",         count: 0 },
+      blob: { label: "blobs", icon: "fa-cube", count: 3 },
+      bookmark: { label: "bookmarks", icon: "fa-bookmark", count: 0 },
+      album: { label: "albums", icon: "fa-compact-disc", count: 0 },
+      collection: { label: "collections", icon: "fa-layer-group", count: 0 },
+      todo: { label: "todos", icon: "fa-square-check", count: 0 },
+      question: { label: "drills", icon: "fa-brain", count: 0 },
+      song: { label: "songs", icon: "fa-music", count: 0 },
     },
     aliases: [{ uuid: "u1", name: "a-1" }],
     related: [{ tag_name: "beta", count: 2 }],
@@ -80,7 +80,7 @@ describe("useTagWorkspace", () => {
       { tag: "alpha" },
       expect.any(Function),
       "",
-      expect.any(String),
+      expect.any(String)
     );
   });
 
@@ -96,7 +96,7 @@ describe("useTagWorkspace", () => {
       { tag: "alpha" },
       expect.any(Function),
       "",
-      expect.any(String),
+      expect.any(String)
     );
   });
 
@@ -112,14 +112,12 @@ describe("useTagWorkspace", () => {
       { tag: "alpha", value: "true" },
       expect.any(Function),
       "",
-      expect.any(String),
+      expect.any(String)
     );
   });
 
   it("addAlias appends to active tag and library on success", async () => {
-    doPost.mockImplementation((_url, _params, onSuccess) =>
-      onSuccess({ data: { uuid: "uX" } }),
-    );
+    doPost.mockImplementation((_url, _params, onSuccess) => onSuccess({ data: { uuid: "uX" } }));
     const { result } = renderHook(() => useTagWorkspace(bootstrap, urls));
 
     await act(async () => {
@@ -131,9 +129,7 @@ describe("useTagWorkspace", () => {
   });
 
   it("addAlias on a non-active tag updates library only", async () => {
-    doPost.mockImplementation((_url, _params, onSuccess) =>
-      onSuccess({ data: { uuid: "uY" } }),
-    );
+    doPost.mockImplementation((_url, _params, onSuccess) => onSuccess({ data: { uuid: "uY" } }));
     const { result } = renderHook(() => useTagWorkspace(bootstrap, urls));
 
     await act(async () => {
@@ -166,11 +162,7 @@ describe("useTagWorkspace", () => {
 
     expect(result.current.tag.aliases).toHaveLength(0);
     expect(result.current.aliasLibrary.find(a => a.uuid === "u1")).toBeUndefined();
-    expect(doDelete).toHaveBeenCalledWith(
-      "/api/tagaliases/u1/",
-      expect.any(Function),
-      "",
-    );
+    expect(doDelete).toHaveBeenCalledWith("/api/tagaliases/u1/", expect.any(Function), "");
   });
 
   it("setActiveName fetches snapshot and updates state", async () => {
@@ -188,7 +180,7 @@ describe("useTagWorkspace", () => {
     expect(doGet).toHaveBeenCalledWith(
       "/tag/beta/snapshot.json",
       expect.any(Function),
-      expect.any(String),
+      expect.any(String)
     );
   });
 

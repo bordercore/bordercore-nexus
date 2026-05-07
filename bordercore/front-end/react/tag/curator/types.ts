@@ -14,13 +14,11 @@ export interface CountCell {
   count: number;
 }
 
-export type CountKey =
-  | "blob" | "bookmark" | "album" | "collection"
-  | "todo" | "question" | "song";
+export type CountKey = "blob" | "bookmark" | "album" | "collection" | "todo" | "question" | "song";
 
 export interface TagSnapshot {
   name: string;
-  created: string;          // ISO date
+  created: string; // ISO date
   user: string;
   pinned: boolean;
   meta: boolean;
@@ -44,13 +42,13 @@ export interface TagBootstrap {
 
 export interface CuratorUrls {
   // Read
-  tagDetailBase: string;       // "/tag/" — append "<name>/" to switch active tag
-  tagSearchUrl: string;        // /tag/search?query=
-  tagSnapshotUrl: string;      // /tag/<name>/snapshot.json
+  tagDetailBase: string; // "/tag/" — append "<name>/" to switch active tag
+  tagSearchUrl: string; // /tag/search?query=
+  tagSnapshotUrl: string; // /tag/<name>/snapshot.json
   // Write
-  pinUrl: string;              // POST {tag}
-  unpinUrl: string;            // POST {tag}
-  setMetaUrl: string;          // POST {tag, value}
-  addAliasUrl: string;         // POST {tag_name, alias_name}
-  tagAliasDetailUrl: string;   // /api/tagaliases/<uuid>/  (DELETE)
+  pinUrl: string; // POST {tag}
+  unpinUrl: string; // POST {tag}
+  setMetaUrl: string; // POST {tag, value}
+  addAliasUrl: string; // POST {tag_name, alias_name}
+  tagAliasDetailUrl: string; // /api/tagaliases/<uuid>/  (DELETE)
 }

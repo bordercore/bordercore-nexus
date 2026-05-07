@@ -78,7 +78,7 @@ export function TagSearch({ activeName, searchUrl, onPick }: TagSearchProps) {
           setRows(out);
           setHover(0);
         },
-        "Tag search failed",
+        "Tag search failed"
       );
     }, 120);
     return () => clearTimeout(t);

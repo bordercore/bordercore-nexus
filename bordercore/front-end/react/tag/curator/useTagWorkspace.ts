@@ -1,11 +1,6 @@
 import { useCallback, useState } from "react";
 import { doGet, doPost, doDelete, EventBus } from "../../utils/reactUtils";
-import type {
-  TagBootstrap,
-  TagSnapshot,
-  AliasLibraryRow,
-  CuratorUrls,
-} from "./types";
+import type { TagBootstrap, TagSnapshot, AliasLibraryRow, CuratorUrls } from "./types";
 
 export interface TagWorkspace {
   activeName: string;
@@ -21,15 +16,10 @@ export interface TagWorkspace {
 
 const toast = (body: string) => EventBus.$emit("toast", { body });
 
-export function useTagWorkspace(
-  bootstrap: TagBootstrap,
-  urls: CuratorUrls,
-): TagWorkspace {
+export function useTagWorkspace(bootstrap: TagBootstrap, urls: CuratorUrls): TagWorkspace {
   const [activeName, _setActiveName] = useState(bootstrap.active_name);
   const [tag, setTag] = useState<TagSnapshot>(bootstrap.tag);
-  const [aliasLibrary, setAliasLibrary] = useState<AliasLibraryRow[]>(
-    bootstrap.alias_library,
-  );
+  const [aliasLibrary, setAliasLibrary] = useState<AliasLibraryRow[]>(bootstrap.alias_library);
   const [tagNames] = useState<string[]>(bootstrap.tag_names);
 
   const setActiveName = useCallback(
@@ -47,25 +37,19 @@ export function useTagWorkspace(
             _setActiveName(name);
             resolve();
           },
-          "Failed to load tag",
+          "Failed to load tag"
         );
       }),
-    [activeName, urls.tagSnapshotUrl],
+    [activeName, urls.tagSnapshotUrl]
   );
 
   const setPinned = useCallback(
     (value: boolean) => {
       setTag(t => ({ ...t, pinned: value }));
       const url = value ? urls.pinUrl : urls.unpinUrl;
-      doPost(
-        url,
-        { tag: tag.name },
-        () => {},
-        "",
-        "Failed to update pinned state",
-      );
+      doPost(url, { tag: tag.name }, () => {}, "", "Failed to update pinned state");
     },
-    [tag.name, urls.pinUrl, urls.unpinUrl],
+    [tag.name, urls.pinUrl, urls.unpinUrl]
   );
 
   const setMeta = useCallback(
@@ -76,10 +60,10 @@ export function useTagWorkspace(
         { tag: tag.name, value: String(value) },
         () => {},
         "",
-        "Failed to update meta state",
+        "Failed to update meta state"
       );
     },
-    [tag.name, urls.setMetaUrl],
+    [tag.name, urls.setMetaUrl]
   );
 
   const addAlias = useCallback(
@@ -94,19 +78,18 @@ export function useTagWorkspace(
           urls.addAliasUrl,
           { tag_name: tagName, alias_name: trimmed },
           response => {
-            const newUuid: string =
-              (response?.data?.uuid as string) || crypto.randomUUID();
+            const newUuid: string = (response?.data?.uuid as string) || crypto.randomUUID();
             const row: AliasLibraryRow = { uuid: newUuid, name: trimmed, tag: tagName };
             setAliasLibrary(rows =>
               [...rows, row].sort((a, b) =>
-                a.tag === b.tag ? a.name.localeCompare(b.name) : a.tag.localeCompare(b.tag),
-              ),
+                a.tag === b.tag ? a.name.localeCompare(b.name) : a.tag.localeCompare(b.tag)
+              )
             );
             if (tagName === activeName) {
               setTag(t => ({
                 ...t,
                 aliases: [...t.aliases, { uuid: newUuid, name: trimmed }].sort((a, b) =>
-                  a.name.localeCompare(b.name),
+                  a.name.localeCompare(b.name)
                 ),
               }));
             }
@@ -114,10 +97,10 @@ export function useTagWorkspace(
             resolve();
           },
           "",
-          "Failed to add alias",
+          "Failed to add alias"
         );
       }),
-    [activeName, urls.addAliasUrl],
+    [activeName, urls.addAliasUrl]
   );
 
   const removeAlias = useCallback(
@@ -134,10 +117,10 @@ export function useTagWorkspace(
             toast("alias revoked");
             resolve();
           },
-          "",
+          ""
         );
       }),
-    [activeName, urls.tagAliasDetailUrl],
+    [activeName, urls.tagAliasDetailUrl]
   );
 
   return {

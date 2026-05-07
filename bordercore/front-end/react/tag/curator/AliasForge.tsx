@@ -13,7 +13,12 @@ interface Props {
 }
 
 export function AliasForge({
-  activeName, tagNames, aliasLibrary, onAdd, onRemove, onPickTag,
+  activeName,
+  tagNames,
+  aliasLibrary,
+  onAdd,
+  onRemove,
+  onPickTag,
 }: Props) {
   const [forgeAlias, setForgeAlias] = useState("");
   const [forgeTag, setForgeTag] = useState(activeName);
@@ -27,7 +32,7 @@ export function AliasForge({
     const q = filter.trim().toLowerCase();
     if (!q) return aliasLibrary;
     return aliasLibrary.filter(
-      a => a.name.toLowerCase().includes(q) || a.tag.toLowerCase().includes(q),
+      a => a.name.toLowerCase().includes(q) || a.tag.toLowerCase().includes(q)
     );
   }, [aliasLibrary, filter]);
 
@@ -65,14 +70,13 @@ export function AliasForge({
           onChange={e => setForgeTag(e.target.value)}
           className="tg-forge-select"
         >
-          {tagNames.map(n => <option key={n} value={n}>{n}</option>)}
+          {tagNames.map(n => (
+            <option key={n} value={n}>
+              {n}
+            </option>
+          ))}
         </select>
-        <button
-          type="button"
-          className="tg-action"
-          onClick={submit}
-          disabled={!forgeAlias.trim()}
-        >
+        <button type="button" className="tg-action" onClick={submit} disabled={!forgeAlias.trim()}>
           <FontAwesomeIcon icon={faPlus} /> forge
         </button>
       </div>
@@ -99,9 +103,7 @@ export function AliasForge({
           <span className="tg-alias-col tg-alias-col--action" />
         </div>
         <div className="tg-alias-body">
-          {filtered.length === 0 && (
-            <div className="tg-alias-empty">no aliases match.</div>
-          )}
+          {filtered.length === 0 && <div className="tg-alias-empty">no aliases match.</div>}
           {filtered.map((a, i) => (
             <div
               key={a.uuid}
@@ -110,9 +112,7 @@ export function AliasForge({
               <span className="tg-alias-col tg-alias-col--idx">
                 {String(i + 1).padStart(2, "0")}
               </span>
-              <span className="tg-alias-col tg-alias-col--alias tg-alias-name">
-                {a.name}
-              </span>
+              <span className="tg-alias-col tg-alias-col--alias tg-alias-name">{a.name}</span>
               <span className="tg-alias-col tg-alias-col--arrow">→</span>
               <span className="tg-alias-col tg-alias-col--resolved">
                 <button

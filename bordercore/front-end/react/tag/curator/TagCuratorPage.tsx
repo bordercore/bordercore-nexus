@@ -17,21 +17,17 @@ export function TagCuratorPage({ bootstrap, urls }: Props) {
 
   const totalRefs = useMemo(
     () => Object.values(ws.tag.counts).reduce((a, c) => a + c.count, 0),
-    [ws.tag.counts],
+    [ws.tag.counts]
   );
   const liveSurfaces = useMemo(
     () => Object.values(ws.tag.counts).filter(c => c.count > 0).length,
-    [ws.tag.counts],
+    [ws.tag.counts]
   );
 
   const navigate = (name: string) => {
     void ws.setActiveName(name);
     if (window.history && window.history.pushState) {
-      window.history.pushState(
-        {},
-        "",
-        `${urls.tagDetailBase}${encodeURIComponent(name)}/`,
-      );
+      window.history.pushState({}, "", `${urls.tagDetailBase}${encodeURIComponent(name)}/`);
     }
   };
 
@@ -45,11 +41,7 @@ export function TagCuratorPage({ bootstrap, urls }: Props) {
           <span className="tg-path__slash">/</span>
           <span className="tg-path__leaf">{ws.tag.name}</span>
         </div>
-        <TagSearch
-          activeName={ws.activeName}
-          searchUrl={urls.tagSearchUrl}
-          onPick={navigate}
-        />
+        <TagSearch activeName={ws.activeName} searchUrl={urls.tagSearchUrl} onPick={navigate} />
       </div>
 
       <div className="tg-body">
@@ -58,7 +50,9 @@ export function TagCuratorPage({ bootstrap, urls }: Props) {
           <div className="tg-hero__meta">
             <span>created {ws.tag.created}</span>
             <span className="tg-hero__sep">·</span>
-            <span>{totalRefs} refs across {liveSurfaces} surfaces</span>
+            <span>
+              {totalRefs} refs across {liveSurfaces} surfaces
+            </span>
             <span className="tg-hero__sep">·</span>
             <span>{ws.tag.aliases.length} aliases</span>
           </div>
