@@ -247,12 +247,12 @@
 
 .chatbot-message-text .hljs-string,
 .chatbot-message-text .hljs-attr {
-  color: color-mix(in oklch, var(--accent), #88c070 50%);
+  color: color-mix(in oklch, var(--accent), var(--ok) 50%);
 }
 
 .chatbot-message-text .hljs-number,
 .chatbot-message-text .hljs-literal {
-  color: color-mix(in oklch, var(--accent), #d8a853 60%);
+  color: color-mix(in oklch, var(--accent), var(--warn) 60%);
 }
 
 .chatbot-message-text .hljs-comment,
@@ -451,7 +451,7 @@
   padding: 0;
   border: none;
   background: transparent;
-  color: #f87171;
+  color: color-mix(in oklch, var(--danger), white 18%);
   cursor: pointer;
   font-family: var(--font-ui);
   font-size: 10px;

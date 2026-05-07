@@ -151,15 +151,15 @@
   }
 
   &.warn {
-    border-color: color-mix(in oklch, #d39828, transparent 50%);
-    background: color-mix(in oklch, #d39828, transparent 85%);
-    color: #f0b958;
+    border-color: color-mix(in oklch, var(--warn), transparent 50%);
+    background: color-mix(in oklch, var(--warn), transparent 85%);
+    color: color-mix(in oklch, var(--warn), white 12%);
   }
 
   &.broken {
-    border-color: color-mix(in oklch, #c95757, transparent 50%);
-    background: color-mix(in oklch, #c95757, transparent 85%);
-    color: #f08585;
+    border-color: color-mix(in oklch, var(--danger), transparent 50%);
+    background: color-mix(in oklch, var(--danger), transparent 85%);
+    color: color-mix(in oklch, var(--danger), white 14%);
   }
 
   &.never {

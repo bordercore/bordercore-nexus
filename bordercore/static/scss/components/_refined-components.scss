@@ -576,15 +576,15 @@
   }
 
   &.danger {
-    border-color: color-mix(in oklch, #d65a78, transparent 60%);
+    border-color: color-mix(in oklch, var(--danger), transparent 60%);
     background: transparent;
     box-shadow: none;
-    color: #e08099;
+    color: color-mix(in oklch, var(--danger), white 18%);
 
     &:hover {
-      border-color: #d65a78;
-      background: color-mix(in oklch, #d65a78, transparent 88%);
-      color: #ec8aa3;
+      border-color: var(--danger);
+      background: color-mix(in oklch, var(--danger), transparent 88%);
+      color: color-mix(in oklch, var(--danger), white 32%);
     }
   }
 }
@@ -606,5 +606,5 @@
 .refined-btn.primary .kbd {
   border-color: rgb(255 255 255 / 25%);
   background: rgb(255 255 255 / 12%);
-  color: #fff;
+  color: var(--accent-fg);
 }
