@@ -1,3 +1,10 @@
+// The login page is intentionally a fixed Nebula brand showcase and does NOT
+// consume the global theme tokens — see the header doc in ./login-tokens.css
+// for the rationale. All colors below reference the scoped --bc-* token
+// bridge in that file rather than literal sRGB / hex values, so a brand
+// refresh only needs to touch login-tokens.css. The few remaining bare
+// literals (universal black/white shadows and inner highlights) are
+// rendering-effect-fixed and don't belong in the bridge.
 import React, { useState } from "react";
 import "./login-tokens.css";
 import { MirrorCube } from "./MirrorCube";
@@ -37,8 +44,16 @@ function Mark({ size = 20 }: { size?: number }) {
       />
       <defs>
         <linearGradient id={MARK_GRAD_ID} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#b36bff" />
-          <stop offset="100%" stopColor="#4cc2ff" />
+          <stop
+            offset="0%"
+            // must remain inline — SVG stop-color resolves var() reliably via style only
+            style={{ stopColor: "var(--bc-accent)" }}
+          />
+          <stop
+            offset="100%"
+            // must remain inline — SVG stop-color resolves var() reliably via style only
+            style={{ stopColor: "var(--bc-accent-4)" }}
+          />
         </linearGradient>
       </defs>
     </svg>
@@ -55,9 +70,9 @@ function BackdropGrid() {
           position: "absolute",
           inset: 0,
           background:
-            "radial-gradient(800px 600px at 30% 50%, rgba(179,107,255,0.13), transparent 60%)," +
-            "radial-gradient(700px 600px at 70% 50%, rgba(76,194,255,0.09), transparent 60%)," +
-            "linear-gradient(180deg, #07070c 0%, #04030a 100%)",
+            "radial-gradient(800px 600px at 30% 50%, color-mix(in oklch, var(--bc-accent), transparent 87%), transparent 60%)," +
+            "radial-gradient(700px 600px at 70% 50%, color-mix(in oklch, var(--bc-accent-4), transparent 91%), transparent 60%)," +
+            "linear-gradient(180deg, var(--bc-bg-0) 0%, var(--bc-bg-deeper) 100%)",
         }}
       />
       <div
@@ -67,8 +82,8 @@ function BackdropGrid() {
           position: "absolute",
           inset: 0,
           backgroundImage:
-            "linear-gradient(rgba(179,107,255,0.05) 1px, transparent 1px)," +
-            "linear-gradient(90deg, rgba(179,107,255,0.05) 1px, transparent 1px)",
+            "linear-gradient(color-mix(in oklch, var(--bc-accent), transparent 95%) 1px, transparent 1px)," +
+            "linear-gradient(90deg, color-mix(in oklch, var(--bc-accent), transparent 95%) 1px, transparent 1px)",
           backgroundSize: "60px 60px",
           maskImage: "radial-gradient(ellipse at center, black 30%, transparent 75%)",
           WebkitMaskImage: "radial-gradient(ellipse at center, black 30%, transparent 75%)",
@@ -118,9 +133,9 @@ function Field({
       ? "var(--bc-accent)"
       : "var(--bc-border-1)";
   const ringShadow = error
-    ? "0 0 0 3px rgba(255,85,119,0.15)"
+    ? "0 0 0 3px color-mix(in oklch, var(--bc-danger), transparent 85%)"
     : focused
-      ? "0 0 0 3px rgba(179,107,255,0.18)"
+      ? "0 0 0 3px color-mix(in oklch, var(--bc-accent), transparent 82%)"
       : "none";
 
   return (
@@ -255,14 +270,14 @@ function PrimaryButton({ children, loading, type = "submit" }: PrimaryButtonProp
         gap: 10,
         width: "100%",
         padding: "12px 22px",
-        background: "linear-gradient(180deg, #b36bff 0%, #9355ef 100%)",
-        color: "#fff",
+        background: "linear-gradient(180deg, var(--bc-accent) 0%, var(--bc-accent-deep) 100%)",
+        color: "var(--bc-accent-fg)",
         borderRadius: 10,
         fontSize: 14,
         fontWeight: 600,
         boxShadow:
-          "0 0 0 1px rgba(179,107,255,0.35)," +
-          "0 8px 24px -6px rgba(179,107,255,0.55)," +
+          "0 0 0 1px color-mix(in oklch, var(--bc-accent), transparent 65%)," +
+          "0 8px 24px -6px color-mix(in oklch, var(--bc-accent), transparent 45%)," +
           "inset 0 1px 0 rgba(255,255,255,0.15)",
         transition: "all 160ms cubic-bezier(.22, 1, .36, 1)",
         opacity: loading ? 0.7 : 1,
@@ -324,12 +339,13 @@ function LoginCard({ message, initialUsername, loginUrl, nextUrl }: LoginCardPro
         top: "50%",
         transform: "translateY(-50%)",
         width: 380,
-        background: "rgba(18, 20, 28, 0.78)",
+        background: "color-mix(in oklch, var(--bc-bg-2), transparent 22%)",
         backdropFilter: "blur(18px)",
         WebkitBackdropFilter: "blur(18px)",
-        border: "1px solid rgba(179, 107, 255, 0.22)",
+        border: "1px solid color-mix(in oklch, var(--bc-accent), transparent 78%)",
         borderRadius: 16,
-        boxShadow: "0 30px 80px -20px #000, 0 0 0 1px rgba(179,107,255,0.15)",
+        boxShadow:
+          "0 30px 80px -20px #000, 0 0 0 1px color-mix(in oklch, var(--bc-accent), transparent 85%)",
         zIndex: 5,
         display: "flex",
       }}
@@ -340,8 +356,9 @@ function LoginCard({ message, initialUsername, loginUrl, nextUrl }: LoginCardPro
         style={{
           width: 4,
           borderRadius: "16px 0 0 16px",
-          background: "linear-gradient(180deg, #b36bff 0%, #4cc2ff 50%, #ff3dbd 100%)",
-          boxShadow: "0 0 18px rgba(179, 107, 255, 0.5)",
+          background:
+            "linear-gradient(180deg, var(--bc-accent) 0%, var(--bc-accent-4) 50%, var(--bc-accent-3) 100%)",
+          boxShadow: "0 0 18px color-mix(in oklch, var(--bc-accent), transparent 50%)",
         }}
       />
       <div
@@ -564,8 +581,9 @@ function SyncLine() {
         right: "58%",
         top: "50%",
         height: 1,
-        background: "linear-gradient(90deg, transparent, rgba(179,107,255,0.6), transparent)",
-        boxShadow: "0 0 8px rgba(179,107,255,0.4)",
+        background:
+          "linear-gradient(90deg, transparent, color-mix(in oklch, var(--bc-accent), transparent 40%), transparent)",
+        boxShadow: "0 0 8px color-mix(in oklch, var(--bc-accent), transparent 60%)",
         zIndex: 2,
       }}
     />
@@ -618,7 +636,7 @@ function FloatingTags() {
             padding: "3px 9px",
             border: `1px solid hsla(${it.hue}, 70%, 60%, 0.28)`,
             borderRadius: 999,
-            background: "rgba(11, 13, 20, 0.45)",
+            background: "color-mix(in oklch, var(--bc-bg-1), transparent 55%)",
             backdropFilter: "blur(4px)",
             WebkitBackdropFilter: "blur(4px)",
             animation: `fl${i % 3} ${14 + (i % 4) * 3}s ease-in-out infinite`,
