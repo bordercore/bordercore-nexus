@@ -273,8 +273,8 @@
 }
 
 .rb-dt-document {
-  background: #f0b840;
-  box-shadow: 0 0 8px #f0b840;
+  background: var(--warn);
+  box-shadow: 0 0 8px var(--warn);
 }
 
 .rb-dt-blob {
@@ -441,8 +441,8 @@
 }
 
 .rb-chip-doctype {
-  border-color: rgb(76 194 255 / 25%);
-  background: rgb(76 194 255 / 12%);
+  border-color: color-mix(in oklch, var(--accent-4) 25%, transparent);
+  background: color-mix(in oklch, var(--accent-4) 12%, transparent);
 }
 
 .rb-chip-tag {
@@ -672,7 +672,7 @@
 // ============================================================================
 .rb-card-note {
   background:
-    linear-gradient(180deg, rgb(179 107 255 / 4%) 0, transparent 60%),
+    linear-gradient(180deg, color-mix(in oklch, var(--accent) 4%, transparent) 0, transparent 60%),
     var(--bg-2);
 }
 
@@ -724,7 +724,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: rgb(255 61 189 / 15%);
+  background: color-mix(in oklch, var(--accent-3) 15%, transparent);
   color: var(--bc-accent-3);
   font-size: 12px;
 }
