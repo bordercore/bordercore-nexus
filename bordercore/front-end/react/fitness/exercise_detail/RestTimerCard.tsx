@@ -112,9 +112,9 @@ export function RestTimerCard({
         <svg viewBox="0 0 170 170">
           <defs>
             <linearGradient id="ex-timer-grad" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#b36bff" />
-              <stop offset="50%" stopColor="#7c7fff" />
-              <stop offset="100%" stopColor="#4cc2ff" />
+              <stop offset="0%" stopColor="var(--accent)" />
+              <stop offset="50%" stopColor="var(--accent-2)" />
+              <stop offset="100%" stopColor="var(--accent-4)" />
             </linearGradient>
           </defs>
           <circle className="track" cx="85" cy="85" r={RADIUS} />

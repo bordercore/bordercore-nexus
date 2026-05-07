@@ -27,7 +27,7 @@ const GLYPHS = [
   <path
     key="up"
     d="M 4 20 L 12 14 L 20 16 L 28 6 L 34 10"
-    stroke="#4cc2ff"
+    stroke="var(--accent-4)"
     strokeWidth="1.5"
     fill="none"
     strokeLinecap="round"
@@ -36,21 +36,21 @@ const GLYPHS = [
   <path
     key="wave"
     d="M 4 14 Q 10 6 16 14 T 28 14 T 34 10"
-    stroke="#3fd29c"
+    stroke="var(--ok)"
     strokeWidth="1.5"
     fill="none"
     strokeLinecap="round"
   />,
   <g key="bar">
-    <rect x="4" y="14" width="4" height="8" fill="#b36bff" />
-    <rect x="12" y="9" width="4" height="13" fill="#b36bff" opacity="0.7" />
-    <rect x="20" y="6" width="4" height="16" fill="#b36bff" opacity="0.9" />
-    <rect x="28" y="11" width="4" height="11" fill="#b36bff" opacity="0.5" />
+    <rect x="4" y="14" width="4" height="8" fill="var(--accent)" />
+    <rect x="12" y="9" width="4" height="13" fill="var(--accent)" opacity="0.7" />
+    <rect x="20" y="6" width="4" height="16" fill="var(--accent)" opacity="0.9" />
+    <rect x="28" y="11" width="4" height="11" fill="var(--accent)" opacity="0.5" />
   </g>,
   <g key="dots">
-    <circle cx="8" cy="14" r="2.5" fill="#ff3dbd" />
-    <circle cx="18" cy="10" r="2.5" fill="#b36bff" />
-    <circle cx="28" cy="14" r="2.5" fill="#4cc2ff" />
+    <circle cx="8" cy="14" r="2.5" fill="var(--accent-3)" />
+    <circle cx="18" cy="10" r="2.5" fill="var(--accent)" />
+    <circle cx="28" cy="14" r="2.5" fill="var(--accent-4)" />
   </g>,
 ];
 
