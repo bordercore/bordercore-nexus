@@ -1,77 +1,39 @@
-import React, { useRef, useImperativeHandle, forwardRef, useCallback, useEffect } from "react";
-import { Modal } from "bootstrap";
+import React, { useEffect } from "react";
+import { createPortal } from "react-dom";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faTimes } from "@fortawesome/free-solid-svg-icons";
 
-export interface ImageViewModalHandle {
-  openModal: (imageUrl: string) => void;
-  closeModal: () => void;
+interface ImageViewModalProps {
+  open: boolean;
+  onClose: () => void;
+  imageUrl: string | null;
+  alt?: string;
 }
 
-export const ImageViewModal = forwardRef<ImageViewModalHandle>(
-  function ImageViewModal(_props, ref) {
-    const [imageUrl, setImageUrl] = React.useState("");
-    const modalRef = useRef<HTMLDivElement>(null);
-    const modalInstanceRef = useRef<Modal | null>(null);
+export function ImageViewModal({ open, onClose, imageUrl, alt }: ImageViewModalProps) {
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open, onClose]);
 
-    const closeModal = useCallback(() => {
-      if (modalInstanceRef.current) {
-        modalInstanceRef.current.hide();
-      }
-    }, []);
+  if (!open || !imageUrl) return null;
 
-    useImperativeHandle(ref, () => ({
-      openModal: (url: string) => {
-        setImageUrl(url);
-        if (modalRef.current) {
-          modalInstanceRef.current = new Modal(modalRef.current);
-          modalInstanceRef.current.show();
-        }
-      },
-      closeModal,
-    }));
-
-    // Handle escape key to close
-    useEffect(() => {
-      const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === "Escape") {
-          closeModal();
-        }
-      };
-
-      document.addEventListener("keydown", handleKeyDown);
-      return () => document.removeEventListener("keydown", handleKeyDown);
-    }, [closeModal]);
-
-    return (
-      <div
-        ref={modalRef}
-        className="modal fade"
-        tabIndex={-1}
-        role="dialog"
-        aria-labelledby="imageViewModal"
-      >
-        <div className="modal-dialog modal-xl modal-dialog-centered" role="document">
-          <div className="modal-content bg-transparent border-0">
-            <div className="modal-body text-center p-0">
-              <button
-                type="button"
-                className="btn-close btn-close-white position-absolute top-0 end-0 m-3 image-view-modal-close"
-                data-bs-dismiss="modal"
-                aria-label="Close"
-              />
-              {imageUrl && (
-                <img
-                  src={imageUrl}
-                  alt="Collection image"
-                  className="img-fluid image-view-modal-image"
-                  onClick={closeModal}
-                />
-              )}
-            </div>
-          </div>
-        </div>
+  return createPortal(
+    <>
+      <div className="refined-modal-scrim refined-modal-scrim--viewer" onClick={onClose} />
+      <div className="refined-modal refined-modal--viewer" role="dialog" aria-label="image preview">
+        <button type="button" className="refined-modal-close" onClick={onClose} aria-label="close">
+          <FontAwesomeIcon icon={faTimes} />
+        </button>
+        <img src={imageUrl} alt={alt ?? ""} />
       </div>
-    );
-  }
-);
+    </>,
+    document.body
+  );
+}
 
 export default ImageViewModal;

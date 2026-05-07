@@ -1,6 +1,7 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Modal } from "bootstrap";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faTimes } from "@fortawesome/free-solid-svg-icons";
 
 interface NodeImageModalProps {
   isOpen: boolean;
@@ -9,55 +10,27 @@ interface NodeImageModalProps {
 }
 
 export default function NodeImageModal({ isOpen, imageUrl, onClose }: NodeImageModalProps) {
-  const modalRef = useRef<HTMLDivElement>(null);
-  const modalInstanceRef = useRef<Modal | null>(null);
-
   useEffect(() => {
-    if (modalRef.current && !modalInstanceRef.current) {
-      modalInstanceRef.current = new Modal(modalRef.current);
+    if (!isOpen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [isOpen, onClose]);
 
-      // Listen for modal close events
-      modalRef.current.addEventListener("hidden.bs.modal", () => {
-        onClose();
-      });
-    }
-  }, [onClose]);
-
-  useEffect(() => {
-    if (modalInstanceRef.current) {
-      if (isOpen) {
-        modalInstanceRef.current.show();
-      } else {
-        modalInstanceRef.current.hide();
-      }
-    }
-  }, [isOpen]);
+  if (!isOpen) return null;
 
   return createPortal(
-    <div
-      ref={modalRef}
-      className="modal fade"
-      id="node-image-modal"
-      tabIndex={-1}
-      role="dialog"
-      aria-labelledby="nodeImageModalLabel"
-    >
-      <div className="modal-dialog modal-dialog-centered modal-fullscreen" role="document">
-        <div className="modal-content">
-          <div className="modal-body">
-            <button
-              type="button"
-              className="btn-close position-absolute top-0 end-0 m-3"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-            />
-            <div className="d-flex justify-content-center align-items-center h-100">
-              <img src={imageUrl} className="mw-100 mh-100" alt="" />
-            </div>
-          </div>
-        </div>
+    <>
+      <div className="refined-modal-scrim refined-modal-scrim--viewer" onClick={onClose} />
+      <div className="refined-modal refined-modal--viewer" role="dialog" aria-label="image preview">
+        <button type="button" className="refined-modal-close" onClick={onClose} aria-label="close">
+          <FontAwesomeIcon icon={faTimes} />
+        </button>
+        <img src={imageUrl} alt="" />
       </div>
-    </div>,
+    </>,
     document.body
   );
 }

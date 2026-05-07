@@ -1,7 +1,7 @@
 import React from "react";
 import { createPortal } from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPencilAlt, faInfo } from "@fortawesome/free-solid-svg-icons";
+import { faPencilAlt, faInfo, faTimes } from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
 import type {
   ArtistSong,
@@ -48,6 +48,16 @@ export function ArtistDetailPage({
   const [artistImageKey, setArtistImageKey] = React.useState(Date.now());
   const [dropdownContainer, setDropdownContainer] = React.useState<HTMLElement | null>(null);
   const [editImageOpen, setEditImageOpen] = React.useState(false);
+  const [imageOpen, setImageOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!imageOpen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setImageOpen(false);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [imageOpen]);
 
   React.useEffect(() => {
     const container = document.getElementById("artist-detail-dropdown");
@@ -227,8 +237,15 @@ export function ArtistDetailPage({
                     src={`${artistImageUrl}?t=${artistImageKey}`}
                     className="mw-100 h-auto cursor-pointer"
                     alt={artist.name}
-                    data-bs-toggle="modal"
-                    data-bs-target="#artistImageModal"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setImageOpen(true)}
+                    onKeyDown={e => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setImageOpen(true);
+                      }
+                    }}
                   />
                 </div>
               )}
@@ -296,21 +313,32 @@ export function ArtistDetailPage({
       />
 
       {/* Full-size Artist Image Modal */}
-      {hasArtistImage && (
-        <div className="modal fade" id="artistImageModal" tabIndex={-1} role="dialog">
-          <div className="modal-dialog modal-dialog-centered w-75 mw-100" role="document">
-            <div className="modal-content">
-              <div className="modal-body">
-                <img
-                  src={`${artistImageUrl}?t=${artistImageKey}`}
-                  className="w-100"
-                  alt={artist.name}
-                />
-              </div>
+      {hasArtistImage &&
+        imageOpen &&
+        createPortal(
+          <>
+            <div
+              className="refined-modal-scrim refined-modal-scrim--viewer"
+              onClick={() => setImageOpen(false)}
+            />
+            <div
+              className="refined-modal refined-modal--viewer"
+              role="dialog"
+              aria-label={`${artist.name} image`}
+            >
+              <button
+                type="button"
+                className="refined-modal-close"
+                onClick={() => setImageOpen(false)}
+                aria-label="close"
+              >
+                <FontAwesomeIcon icon={faTimes} />
+              </button>
+              <img src={`${artistImageUrl}?t=${artistImageKey}`} alt={artist.name} />
             </div>
-          </div>
-        </div>
-      )}
+          </>,
+          document.body
+        )}
       {dropdownContainer && createPortal(dropdownMenu, dropdownContainer)}
     </div>
   );

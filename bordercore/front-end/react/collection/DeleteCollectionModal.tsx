@@ -1,44 +1,37 @@
-import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTimes, faTrashCan } from "@fortawesome/free-solid-svg-icons";
 import { getCsrfToken } from "../utils/reactUtils";
 
-export interface DeleteCollectionModalHandle {
-  openModal: () => void;
-}
-
 interface DeleteCollectionModalProps {
+  open: boolean;
+  onClose: () => void;
   deleteUrl: string;
   collectionName: string;
 }
 
-export const DeleteCollectionModal = forwardRef<
-  DeleteCollectionModalHandle,
-  DeleteCollectionModalProps
->(function DeleteCollectionModal({ deleteUrl, collectionName }, ref) {
-  const [open, setOpen] = useState(false);
+export function DeleteCollectionModal({
+  open,
+  onClose,
+  deleteUrl,
+  collectionName,
+}: DeleteCollectionModalProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
-
-  useImperativeHandle(ref, () => ({
-    openModal: () => setOpen(true),
-  }));
 
   // Focus the cancel button on open and close on Escape.
   useEffect(() => {
     if (!open) return;
     cancelRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open]);
+  }, [open, onClose]);
 
   if (!open) return null;
-
-  const handleClose = () => setOpen(false);
 
   const handleConfirm = () => {
     formRef.current?.submit();
@@ -46,14 +39,9 @@ export const DeleteCollectionModal = forwardRef<
 
   return createPortal(
     <>
-      <div className="refined-modal-scrim" onClick={handleClose} />
+      <div className="refined-modal-scrim" onClick={onClose} />
       <div className="refined-modal" role="dialog" aria-label="confirm delete collection">
-        <button
-          type="button"
-          className="refined-modal-close"
-          onClick={handleClose}
-          aria-label="close"
-        >
+        <button type="button" className="refined-modal-close" onClick={onClose} aria-label="close">
           <FontAwesomeIcon icon={faTimes} />
         </button>
 
@@ -69,7 +57,7 @@ export const DeleteCollectionModal = forwardRef<
         </form>
 
         <div className="refined-modal-actions compact">
-          <button ref={cancelRef} type="button" className="refined-btn ghost" onClick={handleClose}>
+          <button ref={cancelRef} type="button" className="refined-btn ghost" onClick={onClose}>
             cancel
           </button>
           <button type="button" className="refined-btn danger" onClick={handleConfirm}>
@@ -81,6 +69,6 @@ export const DeleteCollectionModal = forwardRef<
     </>,
     document.body
   );
-});
+}
 
 export default DeleteCollectionModal;

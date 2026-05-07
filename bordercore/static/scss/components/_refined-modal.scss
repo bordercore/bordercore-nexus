@@ -430,6 +430,59 @@
 }
 
 // =============================================================================
+// Viewer variant — fullscreen image / media viewer. No 520px cap, no padded
+// chrome, no glassy panel shadow. The scrim is darker and the close button
+// floats over the media. Used by NodeImageModal, ArtistDetailPage's artist
+// image viewer, and collection/ImageViewModal.
+// =============================================================================
+
+.refined-modal-scrim.refined-modal-scrim--viewer {
+  backdrop-filter: blur(6px);
+  background: rgb(0 0 0 / 88%);
+}
+
+.refined-modal.refined-modal--viewer {
+  width: auto;
+  max-width: min(96vw, 1400px);
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+
+  // The image is the modal — no inner chrome to pad/border.
+  // Use a transparent surface so the scrim shows behind any non-rectangular
+  // media (e.g. transparent PNGs).
+
+  > img,
+  > picture > img,
+  > video {
+    display: block;
+    max-width: 100%;
+    max-height: 90vh;
+    border-radius: 8px;
+    margin: 0 auto;
+    box-shadow: 0 20px 60px -10px rgb(0 0 0 / 60%);
+    object-fit: contain;
+  }
+
+  // Close button floats above the media's top-right corner with a darkened
+  // backdrop so it stays legible over any image.
+  .refined-modal-close {
+    top: -14px;
+    right: -14px;
+    border-color: rgb(255 255 255 / 25%);
+    background: rgb(0 0 0 / 70%);
+    color: rgb(255 255 255 / 90%);
+
+    &:hover {
+      border-color: rgb(255 255 255 / 50%);
+      background: rgb(0 0 0 / 90%);
+      color: rgb(255 255 255 / 100%);
+    }
+  }
+}
+
+// =============================================================================
 // Processing variant — non-dismissable spinner overlay shown during a
 // long-running submit. Narrower than the default refined-modal and uses a
 // horizontal spinner-plus-label layout instead of the title/lead/actions

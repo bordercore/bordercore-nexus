@@ -13,10 +13,10 @@ import type {
 import CurateRail from "./CurateRail";
 import CurateHeader from "./CurateHeader";
 import CurateGrid from "./CurateGrid";
-import ImageViewModal, { ImageViewModalHandle } from "./ImageViewModal";
-import EditCollectionModal, { EditCollectionModalHandle } from "./EditCollectionModal";
-import DeleteCollectionModal, { DeleteCollectionModalHandle } from "./DeleteCollectionModal";
-import SlideShowModal, { SlideShowModalHandle } from "./SlideShowModal";
+import ImageViewModal from "./ImageViewModal";
+import EditCollectionModal from "./EditCollectionModal";
+import DeleteCollectionModal from "./DeleteCollectionModal";
+import SlideShowModal from "./SlideShowModal";
 import SlideShowOverlay from "./SlideShowOverlay";
 
 const RAIL_KEY = "bordercore.collection.rail-open";
@@ -87,6 +87,12 @@ export function CurateCollectionPage({
   const [shuffled, setShuffled] = useState(false);
   const [processingOpen, setProcessingOpen] = useState(false);
 
+  // Modal state
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [slideshowOpen, setSlideshowOpen] = useState(false);
+  const [imageViewUrl, setImageViewUrl] = useState<string | null>(null);
+
   // Slideshow state
   const [slideShowActive, setSlideShowActive] = useState(false);
   const [slideShowImageUrl, setSlideShowImageUrl] = useState("");
@@ -95,12 +101,6 @@ export function CurateCollectionPage({
   const [slideShowConfig, setSlideShowConfig] = useState<SlideShowConfig | null>(null);
   const slideShowIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const fetchSlideShowImageRef = useRef<(direction: "next" | "previous") => Promise<void>>();
-
-  // Modal refs
-  const imageViewRef = useRef<ImageViewModalHandle>(null);
-  const editModalRef = useRef<EditCollectionModalHandle>(null);
-  const deleteModalRef = useRef<DeleteCollectionModalHandle>(null);
-  const slideShowModalRef = useRef<SlideShowModalHandle>(null);
 
   const fetchPage = useCallback(
     async (pageNumber: number, append: boolean) => {
@@ -193,7 +193,7 @@ export function CurateCollectionPage({
 
   const handleThumbClick = useCallback((object: CollectionObject) => {
     if (object.type === "blob") {
-      imageViewRef.current?.openModal(object.cover_url_large);
+      setImageViewUrl(object.cover_url_large);
     } else {
       window.open(object.url, "_blank", "noopener,noreferrer");
     }
@@ -227,9 +227,9 @@ export function CurateCollectionPage({
     setRailOpen(open => !open);
   }, []);
 
-  const handleEdit = useCallback(() => editModalRef.current?.openModal(), []);
-  const handleDelete = useCallback(() => deleteModalRef.current?.openModal(), []);
-  const handleSlideshow = useCallback(() => slideShowModalRef.current?.openModal(), []);
+  const handleEdit = useCallback(() => setEditOpen(true), []);
+  const handleDelete = useCallback(() => setDeleteOpen(true), []);
+  const handleSlideshow = useCallback(() => setSlideshowOpen(true), []);
 
   const handleAdd = useCallback(() => {
     window.location.href = `/blob/create/?collection_uuid=${collection.uuid}`;
@@ -375,7 +375,12 @@ export function CurateCollectionPage({
           document.body
         )}
 
-      <ImageViewModal ref={imageViewRef} />
+      <ImageViewModal
+        open={imageViewUrl !== null}
+        onClose={() => setImageViewUrl(null)}
+        imageUrl={imageViewUrl}
+        alt="Collection image"
+      />
 
       <div className="cd-curate">
         <CurateHeader
@@ -423,7 +428,8 @@ export function CurateCollectionPage({
       </div>
 
       <EditCollectionModal
-        ref={editModalRef}
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
         collection={collection}
         initialTags={initialTags}
         updateUrl={urls.updateCollection}
@@ -431,13 +437,15 @@ export function CurateCollectionPage({
       />
 
       <DeleteCollectionModal
-        ref={deleteModalRef}
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
         deleteUrl={urls.deleteCollection}
         collectionName={collection.name}
       />
 
       <SlideShowModal
-        ref={slideShowModalRef}
+        open={slideshowOpen}
+        onClose={() => setSlideshowOpen(false)}
         objectTags={objectTags}
         onStart={handleStartSlideShow}
       />
