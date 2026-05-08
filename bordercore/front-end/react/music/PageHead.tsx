@@ -98,14 +98,14 @@ const PageHead: React.FC<Props> = ({
           )}
           {paletteSlot}
         </div>
-        <button type="button" className="mlo-btn mlo-btn-secondary" onClick={onShuffleAll}>
+        <button type="button" className="refined-btn" onClick={onShuffleAll}>
           <FontAwesomeIcon icon={faShuffle} /> shuffle all
         </button>
         <DropDownMenu
           links={addLinks}
           showTarget={false}
           iconSlot={
-            <span className="mlo-btn mlo-btn-primary">
+            <span className="refined-btn primary">
               <FontAwesomeIcon icon={faPlus} /> add
             </span>
           }

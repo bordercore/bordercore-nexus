@@ -17,6 +17,11 @@
 
   display: grid;
 
+  // Escape base.html's content padding so the sidebar sits flush with the
+  // viewport edge (left of the breadcrumb), matching .cl-shell and
+  // .todo-app's full-bleed convention.
+  margin: -1rem -1.5rem 0;
+
   // Column gap between sidebar and main only — row spacing below the page
   // head is owned by .mlo-pagehead's own margin-bottom, matching /collection/.
   gap: 0 16px;
@@ -94,18 +99,24 @@
     gap: 10px;
   }
 
+  // Sidebar styling harmonized with /collection/'s .cl-rail: solid --bg-1
+  // background (was translucent), 20px/14px symmetric padding (with extra
+  // bottom room for the now-playing bar), square 7px swatches without glow,
+  // collection-style 11px UI section headers, and matching hover/active
+  // states (lighter --bg-2 hover with --fg-1 text, accent count on active).
   .mlo-sidebar {
-    padding: 16px 10px 90px;
-    border-right: 1px solid var(--mlo-line-soft);
-    background: color-mix(in oklch, var(--bg-1), transparent 60%);
+    padding: 20px 14px 90px;
+    border-right: 1px solid var(--line-soft);
+    background: var(--bg-1);
     grid-column: 1;
     grid-row: 1 / span 2;
 
     .mlo-section-head {
       padding: 0 8px 6px;
-      color: var(--mlo-fg-4);
-      font: 500 10px var(--font-mono);
-      letter-spacing: 0.12em;
+      color: var(--fg-4);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
     }
 
@@ -113,37 +124,53 @@
       margin-top: 24px;
     }
 
+    .mlo-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
     .mlo-nav-item {
       display: flex;
       align-items: center;
-      padding: 8px 10px;
-      border-radius: 6px;
+      padding: 6px 8px;
+      border: 1px solid transparent;
+      border-radius: var(--radius);
       color: var(--fg-2);
       font: 500 13px var(--font-ui);
       gap: 10px;
       text-decoration: none;
 
+      .mlo-nav-count {
+        margin-left: auto;
+        color: var(--fg-4);
+        font-family: var(--font-mono);
+        font-size: 11px;
+      }
+
       &:hover {
-        background: var(--mlo-bg-3);
+        background: var(--bg-2);
+        color: var(--fg-1);
       }
 
       &.mlo-nav-item-active {
-        border: 1px solid color-mix(in oklch, var(--mlo-accent), transparent 70%);
-        background: color-mix(in oklch, var(--mlo-accent), transparent 92%);
-        box-shadow: 0 0 14px -4px color-mix(in oklch, var(--mlo-accent), transparent 55%);
-        color: var(--mlo-accent);
-      }
+        border-color: color-mix(in oklch, var(--accent), transparent 75%);
+        background: color-mix(in oklch, var(--accent), transparent 85%);
+        box-shadow: 0 0 12px -4px color-mix(in oklch, var(--accent), transparent 55%);
+        color: var(--fg-1);
 
-      .mlo-nav-count {
-        margin-left: auto;
-        color: var(--mlo-fg-4);
-        font: 500 10px var(--font-mono);
+        .mlo-nav-count {
+          color: var(--accent);
+        }
       }
     }
 
     .mlo-playlists {
+      display: flex;
+      flex-direction: column;
       padding: 0;
       margin: 4px 0 0;
+      gap: 1px;
       list-style: none;
     }
 
@@ -151,8 +178,9 @@
       display: grid;
       width: 100%;
       align-items: center;
-      padding: 6px 10px;
-      border: 0;
+      padding: 6px 8px;
+      border: 1px solid transparent;
+      border-radius: var(--radius);
       background: transparent;
       color: var(--fg-2);
       cursor: pointer;
@@ -161,27 +189,37 @@
       grid-template-columns: 7px 1fr auto;
       text-align: left;
 
+      .mlo-playlist-count {
+        color: var(--fg-4);
+        font-family: var(--font-mono);
+        font-size: 11px;
+      }
+
       &:hover {
-        background: var(--mlo-bg-3);
+        background: var(--bg-2);
+        color: var(--fg-1);
       }
 
       &.mlo-playlist-row-active {
-        background: color-mix(in oklch, var(--mlo-accent), transparent 92%);
-        box-shadow: inset 2px 0 0 var(--mlo-accent);
+        border-color: color-mix(in oklch, var(--accent), transparent 75%);
+        background: color-mix(in oklch, var(--accent), transparent 85%);
+        box-shadow: 0 0 12px -4px color-mix(in oklch, var(--accent), transparent 55%);
+        color: var(--fg-1);
+
+        .mlo-playlist-count {
+          color: var(--accent);
+        }
       }
     }
 
+    // Square 7px swatch matching /collection/'s .cl-rail-swatch. The dot's
+    // color still comes from the per-playlist --mlo-dot-color custom property
+    // (no shadow/glow — collection's swatches are solid).
     .mlo-playlist-dot {
       width: 7px;
       height: 7px;
-      border-radius: 50%;
-      background: var(--mlo-dot-color, var(--mlo-accent));
-      box-shadow: 0 0 6px var(--mlo-dot-color, var(--mlo-accent));
-    }
-
-    .mlo-playlist-count {
-      color: var(--mlo-fg-4);
-      font: 500 10px var(--font-mono);
+      border-radius: 2px;
+      background: var(--mlo-dot-color, var(--accent));
     }
 
     .mlo-playlist-query {
@@ -214,7 +252,7 @@
     align-items: flex-end;
     justify-content: space-between;
     padding: 0 24px;
-    gap: 16px;
+    gap: 24px; // matches .cl-pagehead
     grid-column: 2;
     grid-row: 1;
 
@@ -222,10 +260,10 @@
   }
 
   .mlo-pagehead-title {
+    // The actual title text is rendered via an inner <span class="bc-page-title">
+    // that pulls the canonical Space Grotesk 44px gradient from %bc-page-title;
+    // the h1 wrapper itself only owns layout. Matches .cl-pagehead-title.
     margin: 0;
-    color: var(--fg-1);
-    font: 600 22px/1.1 "Space Grotesk", var(--font-ui);
-    letter-spacing: -0.01em;
   }
 
   .mlo-pagehead-title-dim {
