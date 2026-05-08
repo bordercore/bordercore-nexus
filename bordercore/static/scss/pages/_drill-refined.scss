@@ -11,7 +11,7 @@
   // ----- drill-only locals (derived from theme tokens) -----
   --bc-accent-2: color-mix(in oklch, var(--accent), white 18%);
   --bc-accent-3: color-mix(in oklch, var(--danger), var(--accent) 50%);
-  --bc-accent-4: color-mix(in oklch, var(--accent), var(--ok) 60%);
+  --bc-accent-4: var(--accent-cyan); // shared formula at :root in themes/_index.scss
   --bc-fg-disabled: color-mix(in oklch, var(--fg-3), transparent 45%);
   --bc-hairline: var(--line-soft);
   --bc-glow-accent-sm: 0 0 0 1px color-mix(in oklch, var(--accent), transparent 72%),
@@ -148,10 +148,8 @@
 
   .drill-hero-action {
     border-color: color-mix(in oklch, var(--accent), transparent 75%);
-    background:
-      radial-gradient(600px 300px at 0% 0%, color-mix(in oklch, var(--accent), transparent 78%), transparent 60%),
-      radial-gradient(500px 260px at 100% 100%, color-mix(in oklch, var(--bc-accent-4), transparent 90%), transparent 55%),
-      var(--bg-2);
+
+    @include refined-card-glow($accent-4-color: var(--bc-accent-4));
 
     .prompt {
       max-width: 340px;

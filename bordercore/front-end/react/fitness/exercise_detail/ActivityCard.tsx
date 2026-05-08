@@ -106,7 +106,7 @@ export function ActivityCard({
   }
 
   return (
-    <div className="ex-card accent">
+    <div className="ex-card accent glow">
       <h3>
         <span>activity</span>
         {isActive && (

@@ -18,7 +18,7 @@
 .drill-detail-app {
   // ----- Page-local tokens (genuine page identity / React contract) -----
   --bc-accent-2: color-mix(in oklch, var(--accent), white 18%);
-  --bc-accent-4: color-mix(in oklch, var(--accent), var(--ok) 60%);
+  --bc-accent-4: var(--accent-cyan); // shared formula at :root in themes/_index.scss
   --bc-radius-xs: 4px;
   --bc-radius-sm: 6px;
   --bc-radius-pill: 999px;

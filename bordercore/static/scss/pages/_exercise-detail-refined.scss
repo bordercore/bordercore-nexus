@@ -203,6 +203,17 @@
       var(--bg-2);
   }
 
+  // Two-radial corner-glow variant matching drill's `.drill-hero-action`.
+  // Used by ActivityCard; opt-in via the `glow` modifier so other
+  // .ex-card.accent surfaces (LogSetCard) keep the linear-wash treatment.
+  // Secondary glow uses --accent-cyan so the hue matches drill's hero card
+  // (vs. the per-theme bookmark hue of the mixin's default --accent-4).
+  .ex-card.accent.glow {
+    border-color: color-mix(in oklch, var(--accent), transparent 75%);
+
+    @include refined-card-glow($accent-4-color: var(--accent-cyan));
+  }
+
   .ex-hair {
     height: 1px;
     margin: 14px -20px;

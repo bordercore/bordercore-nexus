@@ -15,3 +15,18 @@
 @import "theme-cyberpunk";     // Cyberpunk
 @import "theme-nebula";    // Nebula
 @import "theme-cobalt-abyss"; // Cobalt Abyss
+
+// =============================================================================
+// Cross-theme derived tokens
+// =============================================================================
+// Tokens whose value is derived from canonical theme tokens via color-mix and
+// therefore retint automatically per theme without per-theme overrides. Live
+// at :root (no color-mode attribute) so they apply under every theme.
+
+:root {
+  // Cool accent/ok blend used by the drill-page identity (cyan-leaning glow
+  // on dark themes, softer teal on light) and shared with other pages that
+  // want the same secondary-glow hue. Drill's local --bc-accent-4 aliases
+  // this so drill's existing namespace keeps working.
+  --accent-cyan: color-mix(in oklch, var(--accent), var(--ok) 60%);
+}

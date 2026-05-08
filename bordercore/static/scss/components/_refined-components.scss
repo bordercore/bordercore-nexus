@@ -402,6 +402,41 @@
   }
 }
 
+// ==== Optional accent-glow background for refined-card ====
+// Opt-in companion to @mixin refined-card. Layers two soft radial-gradient
+// washes over the card's base surface — by default an --accent glow in the
+// top-left corner and an --accent-4 glow in the bottom-right corner — for a
+// subtle two-tone ambient lift. Defaults match drill's `.drill-hero-action`.
+// Include AFTER refined-card so this mixin's `background` wins. Pass
+// $accent-color / $accent-4-color to point at theme-local aliases (e.g.
+// drill's --bc-accent-4); pass $base if the card sits on a non-default
+// surface. Position and fade params let each call site tune corner placement
+// and intensity without redefining the whole stack.
+@mixin refined-card-glow(
+  $accent-pos: 0% 0%,
+  $accent-4-pos: 100% 100%,
+  $accent-fade: 78%,
+  $accent-4-fade: 90%,
+  $accent-size: 600px 300px,
+  $accent-4-size: 500px 260px,
+  $accent-color: var(--accent),
+  $accent-4-color: var(--accent-4),
+  $base: var(--bg-2)
+) {
+  background:
+    radial-gradient(
+      #{$accent-size} at #{$accent-pos},
+      color-mix(in oklch, #{$accent-color}, transparent #{$accent-fade}),
+      transparent 60%
+    ),
+    radial-gradient(
+      #{$accent-4-size} at #{$accent-4-pos},
+      color-mix(in oklch, #{$accent-4-color}, transparent #{$accent-4-fade}),
+      transparent 55%
+    ),
+    #{$base};
+}
+
 // ==== Card-style list row ====
 // Lifted "card on dark canvas" surface for grouped list rows (todo, reminder
 // dashboard). Sets padding, border, gradient surface, baseline shadow, and an
