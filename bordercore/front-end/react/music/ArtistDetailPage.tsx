@@ -46,7 +46,6 @@ export function ArtistDetailPage({
   const [isPlaying, setIsPlaying] = React.useState(false);
   const [isDragOver, setIsDragOver] = React.useState(false);
   const [artistImageKey, setArtistImageKey] = React.useState(Date.now());
-  const [dropdownContainer, setDropdownContainer] = React.useState<HTMLElement | null>(null);
   const [editImageOpen, setEditImageOpen] = React.useState(false);
   const [imageOpen, setImageOpen] = React.useState(false);
 
@@ -58,11 +57,6 @@ export function ArtistDetailPage({
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [imageOpen]);
-
-  React.useEffect(() => {
-    const container = document.getElementById("artist-detail-dropdown");
-    setDropdownContainer(container);
-  }, []);
 
   const artistImageUrl = `${imagesUrl}artist_images/${artist.uuid}`;
 
@@ -265,6 +259,7 @@ export function ArtistDetailPage({
                   {albumCount} album{albumCount !== 1 ? "s" : ""}
                 </span>
               )}
+              <div className="ms-auto align-self-center">{dropdownMenu}</div>
             </div>
 
             {/* Albums grid */}
@@ -347,7 +342,6 @@ export function ArtistDetailPage({
           </>,
           document.body
         )}
-      {dropdownContainer && createPortal(dropdownMenu, dropdownContainer)}
     </div>
   );
 }

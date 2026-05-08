@@ -5,12 +5,6 @@
 
 {% block crumb_leaf %}artist{% endblock %}
 
-{% block nav %}
-<nav class="d-flex justify-content-end align-items-center">
-    <div id="artist-detail-dropdown" class="me-3"></div>
-</nav>
-{% endblock %}
-
 {% block javascript_bundles %}
     {{ block.super }}
     {% vite_asset "dist/js/artist-detail" %}

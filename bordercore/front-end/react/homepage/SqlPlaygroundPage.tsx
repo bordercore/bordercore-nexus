@@ -225,15 +225,17 @@ export function SqlPlaygroundPage({ sqlDbUrl }: SqlPlaygroundPageProps) {
                   <ul className="dropdown-menu-list">
                     <li>
                       <a
-                        className="dropdown-item"
+                        className="dropdown-menu-item"
                         href="#"
                         onClick={e => {
                           e.preventDefault();
                           handleImportDB();
                         }}
                       >
-                        <FontAwesomeIcon icon={faFileImport} className="text-primary me-3" />
-                        Import DB
+                        <span className="dropdown-menu-icon">
+                          <FontAwesomeIcon icon={faFileImport} />
+                        </span>
+                        <span className="dropdown-menu-text">Import DB</span>
                       </a>
                     </li>
                   </ul>

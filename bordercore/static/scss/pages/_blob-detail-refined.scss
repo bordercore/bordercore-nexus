@@ -529,54 +529,31 @@
   }
 
   // ---- overflow more menu ----
+  // Surface, item, and divider are governed by the shared %refined-menu-*
+  // placeholders so this menu is visually identical to .nd-menu and the
+  // shared DropDownMenu component. Trigger positioning stays here.
   .bd-more-menu {
+    @extend %refined-menu-surface;
+
     position: absolute;
     z-index: 200;
     top: calc(100% + 6px);
     right: 0;
-    min-width: 240px;
-    padding: 4px;
-    border: 1px solid var(--line-soft);
-    border-radius: var(--radius);
-    background: var(--bg-1);
-    box-shadow: 0 12px 32px rgb(0 0 0 / 45%);
   }
 
   .bd-more-item {
-    display: flex;
-    width: 100%;
-    align-items: center;
-    padding: 8px 10px;
-    border: none;
-    border-radius: var(--bd-radius-sm);
-    background: transparent;
-    color: var(--fg-2);
-    cursor: pointer;
-    font-family: var(--font-mono);
-    font-size: 12px;
-    gap: 10px;
-    text-align: left;
-    text-decoration: none;
-    transition: all var(--bd-t-fast) var(--bd-ease-out);
+    @extend %refined-menu-item;
+
+    i, svg { @extend %refined-menu-icon; }
+
+    &.danger {
+      @extend %refined-menu-item-danger;
+
+      i, svg { color: var(--danger); }
+    }
   }
 
-  .bd-more-item:hover {
-    background: var(--bg-2);
-    color: var(--fg-1);
-  }
-
-  .bd-more-item.danger { color: var(--fg-3); }
-
-  .bd-more-item.danger:hover {
-    background: color-mix(in oklch, var(--danger) 10%, transparent);
-    color: var(--danger);
-  }
-
-  .bd-more-sep {
-    height: 1px;
-    margin: 4px 6px;
-    background: var(--line-soft);
-  }
+  .bd-more-sep { @extend %refined-menu-sep; }
 
   // ---- empty callouts ----
   .bd-empty {
@@ -1161,17 +1138,18 @@
 // AddPopover and Drawer mount via FloatingPortal / fixed positioning, so they
 // live outside the .bd-page DOM subtree. Style globally but namespace via the
 // .bd-* class names.
+// Chrome (border, radius, blur, bg, shadow) extends the shared
+// %refined-popover-chrome so this popover sits in the same visual family as
+// the action menus and TopSearch / RecentBlobs popovers. Width, padding, gap,
+// and the entry animation are AddPopover-specific.
 .bd-add-related-pop {
+  @extend %refined-popover-chrome;
+
   display: flex;
   width: 320px;
   flex-direction: column;
   padding: 12px;
-  border: 1px solid color-mix(in oklch, var(--accent) 30%, transparent);
-  border-radius: 10px;
   animation: bd-pop-in 140ms cubic-bezier(0.22, 1, 0.36, 1);
-  backdrop-filter: blur(14px);
-  background: color-mix(in oklch, var(--bg-2) 98%, transparent);
-  box-shadow: 0 18px 50px rgb(0 0 0 / 55%);
   gap: 8px;
 
   .pop-search {

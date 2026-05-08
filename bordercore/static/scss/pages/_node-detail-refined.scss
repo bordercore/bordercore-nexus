@@ -322,71 +322,45 @@
   // ========================================================================
   // Add component menu
   // ========================================================================
+  // The shared %refined-menu-* placeholders own the surface chrome, item
+  // layout, hover, icon, and divider. Trigger positioning and the .nd-menu-
+  // specific .hint column stay here.
   .nd-menu {
+    @extend %refined-menu-surface;
+
     position: absolute;
     z-index: 30;
     top: calc(100% + 8px);
     right: 0;
+
+    // The hint column ("images, bookmarks, or notes" etc.) is unique to this
+    // menu and pushes the surface wider than the 14rem default.
     min-width: 260px;
-    padding: 6px;
-    border: 1px solid var(--nd-border-1);
-    border-radius: var(--nd-radius-md);
     animation: nd-pop-in 140ms var(--nd-ease-out);
-    backdrop-filter: blur(14px);
-    background: color-mix(in oklab, var(--nd-bg-1) 95%, transparent);
-    box-shadow: var(--nd-elev-3);
 
     button {
-      display: flex;
-      width: 100%;
-      align-items: center;
-      padding: 8px 10px;
-      border: none;
-      border-radius: 6px;
-      background: transparent;
-      color: var(--nd-fg-1);
-      cursor: pointer;
-      font-size: 13px;
-      gap: 10px;
-      text-align: left;
+      @extend %refined-menu-item;
 
-      i, svg {
-        width: 14px;
-        color: var(--nd-fg-3);
-      }
+      i, svg { @extend %refined-menu-icon; }
 
       .hint {
         margin-left: auto;
         color: var(--nd-fg-4);
         font-size: 10px;
 
-        // Hints stay on a single line (e.g. the Collection row's
-        // "images, bookmarks, or notes" would otherwise wrap inside the
-        // menu's 260px min-width). The .nd-menu has no max-width, so the
+        // Hints stay on a single line. The .nd-menu has no max-width, so the
         // surface grows to fit the longest hint.
         white-space: nowrap;
       }
 
-      &:hover {
-        background: color-mix(in oklab, var(--nd-accent) 14%, transparent);
-
-        i, svg { color: var(--nd-accent); }
-      }
-
       &.danger {
-        color: var(--nd-danger);
+        @extend %refined-menu-item-danger;
 
-        i, svg { color: var(--nd-danger); }
-
-        &:hover { background: color-mix(in oklab, var(--nd-danger) 12%, transparent); }
+        i, svg { color: var(--danger); }
       }
     }
 
-    .sep {
-      height: 1px;
-      margin: 4px 0;
-      background: var(--nd-hairline);
-    }
+    .sep { @extend %refined-menu-sep; }
   }
 
   @keyframes nd-pop-in {

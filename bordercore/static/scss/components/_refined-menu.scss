@@ -1,0 +1,145 @@
+// =============================================================================
+// COMPONENTS: REFINED MENU (shared dropdown / action-menu recipe)
+// =============================================================================
+// Single source of truth for the site's "refined" dropdown panels.
+
+// === FOR NEW CODE ===
+// Use the public .bc-menu* class set:
+//   <div class="bc-menu">
+//     <button class="bc-menu-item">
+//       <span class="bc-menu-icon"><svg .../></span> Edit
+//     </button>
+//     <hr class="bc-menu-sep" />
+//     <button class="bc-menu-item danger">
+//       <span class="bc-menu-icon"><svg .../></span> Delete
+//     </button>
+//   </div>
+
+// === FOR LEGACY CODE ===
+// Four pre-existing class hierarchies @extend the same placeholders, so they
+// remain visually identical to .bc-menu and to each other:
+//   - .dropdown-popover / .dropdown-menu-* (shared DropDownMenu component, ~20 instances)
+//   - .nd-menu                              (node detail page header)
+//   - .bd-more-menu / .bd-more-*            (blob detail "more" actions)
+//   - .refined-tb-menu / .refined-tb-menu-* (top-bar user menu)
+// New code should prefer .bc-menu*. Migrating an existing call site is a
+// rename — drop the legacy class, add the .bc-menu equivalent.
+
+// === IMPLEMENTATION NOTES ===
+// The placeholders use *global* theme tokens (--accent, --fg-0, --line-soft,
+// --shadow-lg, --radius, --bg-1, --danger), so the recipe works in every
+// scope — the page-local --nd-*, --bc-*, --bd-* aliases aren't required.
+// Trigger positioning (top/right/absolute), entry animations, and any
+// site-specific decoration (e.g. .nd-menu .hint, .refined-tb-menu glow) stay
+// at the call site. Only the shared visual recipe lives here.
+
+// ---- Popover chrome (border, blur, bg, shadow — the panel "feel") ----
+// Shared with the search-style popovers (TopSearch, RecentBlobs, AddPopover)
+// so they sit visually adjacent to the action menus. Item layout, width,
+// padding, and animations stay at the call site.
+%refined-popover-chrome {
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  backdrop-filter: blur(14px);
+  background: color-mix(in oklab, var(--bg-1) 95%, transparent);
+  box-shadow:
+    var(--shadow-lg),
+    0 0 0 1px var(--line-soft);
+}
+
+// ---- Surface (the popover panel for an action menu) ----
+%refined-menu-surface {
+  @extend %refined-popover-chrome;
+
+  min-width: 14rem;
+  padding: 6px;
+}
+
+// ---- Item (button / anchor inside the surface) ----
+%refined-menu-item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg-0);
+  cursor: pointer;
+  font-size: 13px;
+  gap: 10px;
+
+  // Lock the line-height so item height is the same regardless of which
+  // ancestor scope the menu mounts in (page-scoped vs. body-portal'd).
+  line-height: 1.5;
+  text-align: left;
+  text-decoration: none;
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background: color-mix(in oklab, var(--accent) 14%, transparent);
+    color: var(--fg-0);
+    text-decoration: none;
+  }
+}
+
+// Destructive variant — paint label + icon in danger and warm the hover row.
+// Apply alongside %refined-menu-item, e.g.
+//   .my-item.danger { @extend %refined-menu-item-danger; }
+%refined-menu-item-danger {
+  color: var(--danger);
+
+  &:hover {
+    background: color-mix(in oklab, var(--danger) 12%, transparent);
+    color: var(--danger);
+  }
+}
+
+// ---- Icon (leading-edge inline svg or icon-wrapper span) ----
+%refined-menu-icon {
+  display: inline-flex;
+  width: 14px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+}
+
+// ---- Hairline separator between groups ----
+%refined-menu-sep {
+  height: 1px;
+  margin: 4px 0;
+  background: var(--line-soft);
+}
+
+// =============================================================================
+// PUBLIC CLASSES — use these for new code.
+// =============================================================================
+// Each .bc-menu* class is a thin alias over its placeholder. They get merged
+// into the same compiled rules as the legacy selectors (.nd-menu, .dropdown-*,
+// .bd-more-*, .refined-tb-menu*), so adding the public surface costs only the
+// extra selectors in the existing rule groups, not duplicate property bodies.
+
+.bc-menu { @extend %refined-menu-surface; }
+
+.bc-menu-item {
+  @extend %refined-menu-item;
+
+  &.danger {
+    @extend %refined-menu-item-danger;
+
+    // Color the leading icon to match the danger label, whether the icon is
+    // a direct <svg>/<i> child or wrapped in a .bc-menu-icon span.
+    i, svg, .bc-menu-icon { color: var(--danger); }
+  }
+}
+
+.bc-menu-icon { @extend %refined-menu-icon; }
+
+.bc-menu-sep {
+  @extend %refined-menu-sep;
+
+  // Reset <hr>'s default border / inline margins in case the consumer reaches
+  // for an <hr class="bc-menu-sep" />, which is the most semantic choice.
+  border: 0;
+}

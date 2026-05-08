@@ -578,29 +578,35 @@ export function BookmarkListPage({
                         {tagIsSelected && (
                           <li>
                             <a
-                              className="dropdown-item"
+                              className="dropdown-menu-item"
                               href="#"
                               onClick={e => {
                                 e.preventDefault();
                                 handleTogglePinStatus();
                               }}
                             >
-                              <FontAwesomeIcon icon={faThumbTack} className="text-primary me-3" />
-                              {isPinned ? "Unpin" : "Pin"}
+                              <span className="dropdown-menu-icon">
+                                <FontAwesomeIcon icon={faThumbTack} />
+                              </span>
+                              <span className="dropdown-menu-text">
+                                {isPinned ? "Unpin" : "Pin"}
+                              </span>
                             </a>
                           </li>
                         )}
                         <li>
                           <a
-                            className="dropdown-item"
+                            className="dropdown-menu-item"
                             href="#"
                             onClick={e => {
                               e.preventDefault();
                               setNewBookmarkOpen(true);
                             }}
                           >
-                            <FontAwesomeIcon icon={faPlus} className="text-primary me-3" />
-                            New Bookmark
+                            <span className="dropdown-menu-icon">
+                              <FontAwesomeIcon icon={faPlus} />
+                            </span>
+                            <span className="dropdown-menu-text">New Bookmark</span>
                           </a>
                         </li>
                       </ul>

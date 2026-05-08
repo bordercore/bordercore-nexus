@@ -215,15 +215,17 @@ export const RelatedObjects = forwardRef<RelatedObjectsHandle, RelatedObjectsPro
               <ul className="dropdown-menu-list">
                 <li key="new-object">
                   <a
-                    className="dropdown-item"
+                    className="dropdown-menu-item"
                     href="#"
                     onClick={e => {
                       e.preventDefault();
                       openModal();
                     }}
                   >
-                    <FontAwesomeIcon icon={faPlus} className="text-primary me-3" />
-                    New Object
+                    <span className="dropdown-menu-icon">
+                      <FontAwesomeIcon icon={faPlus} />
+                    </span>
+                    <span className="dropdown-menu-text">New Object</span>
                   </a>
                 </li>
               </ul>
@@ -373,37 +375,42 @@ function SortableRelatedObject({
                   <ul className="dropdown-menu-list">
                     <li key="remove">
                       <a
-                        className="dropdown-item"
+                        className="dropdown-menu-item danger"
                         href="#"
                         onClick={e => {
                           e.preventDefault();
                           handleRemoveObject(element);
                         }}
                       >
-                        <FontAwesomeIcon icon={faTrashAlt} className="text-primary me-3" />
-                        Remove
+                        <span className="dropdown-menu-icon">
+                          <FontAwesomeIcon icon={faTrashAlt} />
+                        </span>
+                        <span className="dropdown-menu-text">Remove</span>
                       </a>
                     </li>
                     <li key="edit">
-                      <a className="dropdown-item" href={element.edit_url}>
-                        <FontAwesomeIcon icon={faPencilAlt} className="text-primary me-3" />
-                        Edit {element.type}
+                      <a className="dropdown-menu-item" href={element.edit_url}>
+                        <span className="dropdown-menu-icon">
+                          <FontAwesomeIcon icon={faPencilAlt} />
+                        </span>
+                        <span className="dropdown-menu-text">Edit {element.type}</span>
                       </a>
                     </li>
                     <li key="note">
                       <a
-                        className="dropdown-item"
+                        className="dropdown-menu-item"
                         href="#"
                         onClick={e => {
                           e.preventDefault();
                           toggleNoteEditable(element.uuid, true);
                         }}
                       >
-                        <FontAwesomeIcon
-                          icon={element.note ? faPencilAlt : faPlus}
-                          className="text-primary me-3"
-                        />
-                        {element.note ? "Edit" : "New"} note
+                        <span className="dropdown-menu-icon">
+                          <FontAwesomeIcon icon={element.note ? faPencilAlt : faPlus} />
+                        </span>
+                        <span className="dropdown-menu-text">
+                          {element.note ? "Edit" : "New"} note
+                        </span>
                       </a>
                     </li>
                   </ul>

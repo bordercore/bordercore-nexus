@@ -168,15 +168,17 @@ export function DrillPinnedTags({
             <ul className="dropdown-menu-list">
               <li key="manage">
                 <a
-                  className="dropdown-item"
+                  className="dropdown-menu-item"
                   href="#"
                   onClick={e => {
                     e.preventDefault();
                     openModal();
                   }}
                 >
-                  <FontAwesomeIcon icon={faPencilAlt} className="text-primary me-3" />
-                  Manage
+                  <span className="dropdown-menu-icon">
+                    <FontAwesomeIcon icon={faPencilAlt} />
+                  </span>
+                  <span className="dropdown-menu-text">Manage</span>
                 </a>
               </li>
             </ul>

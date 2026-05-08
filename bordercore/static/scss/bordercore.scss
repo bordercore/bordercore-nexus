@@ -38,7 +38,10 @@ $table-cell-padding-x: .75rem;
 
 // 3. Components - Reusable UI components
 // refined-components defines @mixin refined-input-surface, so it must come
-// before any partial that @includes it.
+// before any partial that @includes it. refined-menu defines the
+// %refined-menu-* placeholders that .nd-menu, .bd-more-menu, .refined-tb-menu,
+// and .dropdown-popover all @extend, so it must come before all of them too.
+@import "components/refined-menu";
 @import "components/refined-components";
 @import "components/refined-modal";
 @import "components/refined-page";

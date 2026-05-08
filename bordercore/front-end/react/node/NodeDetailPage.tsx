@@ -925,7 +925,7 @@ export default function NodeDetailPage({
                       }}
                     >
                       <FontAwesomeIcon icon={faPencilAlt} />
-                      <span>Edit node…</span>
+                      <span>Edit node</span>
                     </button>
                     <button
                       type="button"

@@ -133,7 +133,14 @@ a.tag,
   position: relative;
 }
 
-.select-value-dropdown {
+// SelectValue's dropdown panel rides Bootstrap's .dropdown-menu, so we use the
+// chained selector .dropdown-menu.select-value-dropdown for higher specificity
+// than the generic .dropdown-menu chrome rule in _navigation.scss. The shared
+// %refined-popover-chrome puts this combobox surface in the same visual family
+// as the action menus and the TopSearch / RecentBlobs / AddPopover panels.
+.dropdown-menu.select-value-dropdown {
+  @extend %refined-popover-chrome;
+
   display: block;
   width: 100%;
 }

@@ -505,16 +505,19 @@
 }
 
 // ==== Dropdown menu ====
+// Extends the shared %refined-menu-* recipe so the user menu matches
+// .nd-menu, .bd-more-menu, and the shared DropDownMenu component. The
+// topbar's signature glow + entry animation stay here.
 .refined-tb-menu {
-  min-width: 220px;
-  padding: 6px;
-  border: 1px solid var(--bc-glass-border);
-  border-radius: var(--bc-radius-md);
+  @extend %refined-menu-surface;
+
   animation: refined-tb-menu-in 160ms var(--bc-ease-out);
-  backdrop-filter: blur(var(--bc-glass-blur));
-  background: var(--bc-glass-bg);
+
+  // Layered glow on top of the standard shadow for the topbar's signature
+  // luminous user menu. The base shadow comes from %refined-menu-surface.
   box-shadow:
-    var(--bc-elev-3),
+    var(--shadow-lg),
+    0 0 0 1px var(--line-soft),
     var(--bc-glow-accent-sm);
 }
 
@@ -531,38 +534,9 @@
 }
 
 .refined-tb-menu-item {
-  display: flex;
-  width: 100%;
-  align-items: center;
-  padding: 8px 10px;
-  border: 0;
-  border-radius: var(--bc-radius-sm);
-  background: none;
-  color: var(--bc-fg-1);
-  cursor: pointer;
-  font-family: var(--bc-font-sans);
-  font-size: 13px;
-  gap: 10px;
-  text-align: left;
-  text-decoration: none;
-  transition: background var(--bc-t-fast);
+  @extend %refined-menu-item;
 
-  &:hover {
-    background: color-mix(in oklch, var(--accent) 10%, transparent);
-    color: var(--bc-fg-1);
-  }
-
-  i,
-  svg {
-    width: 16px;
-    color: var(--bc-accent);
-    font-size: 13px;
-    text-align: center;
-  }
+  i, svg { @extend %refined-menu-icon; }
 }
 
-.refined-tb-menu-divider {
-  height: 1px;
-  margin: 4px 8px;
-  background: var(--bc-hairline);
-}
+.refined-tb-menu-divider { @extend %refined-menu-sep; }
