@@ -166,6 +166,12 @@ export function Hero({
               <>
                 <div className="bd-overlay-backdrop" onClick={() => setMoreOpen(false)} />
                 <div className="bd-more-menu">
+                  <a className="bd-more-item" href={urls.edit}>
+                    <FontAwesomeIcon icon={faPencilAlt} /> Edit blob
+                  </a>
+                  <a className="bd-more-item" href={urls.clone}>
+                    <FontAwesomeIcon icon={faClone} /> Clone blob
+                  </a>
                   {blob.isNote && (
                     <button
                       type="button"
@@ -179,12 +185,6 @@ export function Hero({
                       {isPinnedNote ? "Unpin from home" : "Pin to home"}
                     </button>
                   )}
-                  <a className="bd-more-item" href={urls.edit}>
-                    <FontAwesomeIcon icon={faPencilAlt} /> Edit blob
-                  </a>
-                  <a className="bd-more-item" href={urls.clone}>
-                    <FontAwesomeIcon icon={faClone} /> Clone blob
-                  </a>
                   {blob.fileUrl && (
                     <a className="bd-more-item" href={blob.fileUrl}>
                       <FontAwesomeIcon icon={faDownload} /> Download source
