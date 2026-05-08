@@ -1,6 +1,6 @@
 import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faListUl } from "@fortawesome/free-solid-svg-icons";
+import { faListUl } from "@fortawesome/free-solid-svg-icons";
 import type { Tag, PriorityOption, TimeOption } from "./types";
 import SideItem from "../common/SideItem";
 import { tagSwatchColor } from "../utils/tagColors";
@@ -18,7 +18,6 @@ interface TodoFilterSidebarProps {
   active: FilterValue;
   totalCount: number;
   onSelect: (filter: FilterValue) => void;
-  onCreateTodo: () => void;
 }
 
 export function TodoFilterSidebar({
@@ -28,19 +27,9 @@ export function TodoFilterSidebar({
   active,
   totalCount,
   onSelect,
-  onCreateTodo,
 }: TodoFilterSidebarProps) {
   return (
     <aside className="todo-sidebar">
-      <button
-        type="button"
-        className="refined-btn primary todo-new-todo-btn"
-        onClick={onCreateTodo}
-      >
-        <FontAwesomeIcon icon={faPlus} className="plus" />
-        <span>New Todo</span>
-      </button>
-
       <div className="refined-side-group">
         <nav className="refined-side-nav">
           <SideItem

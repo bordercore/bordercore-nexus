@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import {
   DndContext,
   closestCenter,
@@ -411,17 +413,22 @@ export function TodoListPage({
           active={active}
           totalCount={totalCount}
           onSelect={handleSelectFilter}
-          onCreateTodo={handleCreateTodo}
         />
 
         <main className="todo-main">
           <div className="todo-head">
-            <TodoFilterTitle filter={breadcrumbFilter} />
-            <p className="todo-subhead">
-              <span className="count">{totalFiltered}</span>{" "}
-              {totalFiltered === 1 ? "task" : "tasks"}
-              {subheadPhrase}
-            </p>
+            <div className="todo-head-text">
+              <TodoFilterTitle filter={breadcrumbFilter} />
+              <p className="todo-subhead">
+                <span className="count">{totalFiltered}</span>{" "}
+                {totalFiltered === 1 ? "task" : "tasks"}
+                {subheadPhrase}
+              </p>
+            </div>
+            <button type="button" className="refined-btn primary" onClick={handleCreateTodo}>
+              <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" />
+              new
+            </button>
           </div>
 
           <TodoToolbar
