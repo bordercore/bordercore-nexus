@@ -839,15 +839,6 @@ export default function NodeDetailPage({
           <div className="nd-title-row">
             <div className="nd-title-col">
               <h1 className="nd-h1">
-                <button
-                  type="button"
-                  className={`nd-pin ${isPinned ? "on" : ""}`}
-                  onClick={handleTogglePin}
-                  title={isPinned ? "Unpin" : "Pin to home"}
-                  aria-label={isPinned ? "Unpin node" : "Pin node"}
-                >
-                  <FontAwesomeIcon icon={faThumbtack} />
-                </button>
                 {isEditingName ? (
                   <input
                     ref={nameInputRef}

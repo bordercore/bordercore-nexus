@@ -110,7 +110,7 @@
     flex: 1;
   }
 
-  // Layout-only — every child (.nd-pin, .nd-name, .nd-name-input) supplies its
+  // Layout-only — every child (.nd-name, .nd-name-input) supplies its
   // own typography, so font/color/letter-spacing on the h1 itself is dead.
   .nd-h1 {
     display: flex;
@@ -151,33 +151,6 @@
       font: 600 34px/1.2 var(--nd-font-display);
       letter-spacing: -0.015em;
       outline: none;
-    }
-  }
-
-  .nd-pin {
-    display: grid;
-    width: 34px;
-    height: 34px;
-    padding: 0;
-    border: 1px solid var(--nd-border-1);
-    border-radius: 8px;
-    background: var(--nd-bg-2);
-    color: var(--nd-fg-4);
-    cursor: pointer;
-    font-size: 14px;
-    place-items: center;
-    transition: all var(--nd-t-base) var(--nd-ease-out);
-
-    &:hover {
-      border-color: var(--nd-border-2);
-      color: var(--nd-accent);
-    }
-
-    &.on {
-      border-color: color-mix(in oklab, var(--nd-accent) 40%, transparent);
-      background: color-mix(in oklab, var(--nd-accent) 14%, transparent);
-      box-shadow: 0 0 14px -2px color-mix(in oklab, var(--nd-accent) 50%, transparent);
-      color: var(--nd-accent);
     }
   }
 
