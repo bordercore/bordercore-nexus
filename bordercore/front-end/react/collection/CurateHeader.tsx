@@ -60,7 +60,8 @@ export function CurateHeader({
       <div className="cd-header-left">
         <h1 className="cd-title">{collection.name}</h1>
         <div className="cd-count">
-          {filteredCount} {filteredCount === 1 ? "object" : "objects"}
+          <span className="count">{filteredCount}</span>{" "}
+          {filteredCount === 1 ? "object" : "objects"}
         </div>
         {collection.description && <p className="cd-desc">{collection.description}</p>}
       </div>

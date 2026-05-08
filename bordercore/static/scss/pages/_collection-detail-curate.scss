@@ -229,9 +229,10 @@
   }
 
   .cd-count {
-    margin-top: 4px;
-    color: var(--fg-3);
-    font-size: 13px;
+    // .cd-title above owns the 4px title→count gap via its margin-bottom,
+    // and a sibling .cd-desc may follow this element, so suppress the
+    // mixin's default bottom margin and let layout flow naturally.
+    @include refined-page-sub($margin: 0);
   }
 
   .cd-desc {
