@@ -46,12 +46,15 @@
   --nl-t-slow: 280ms;
 
   // --- Root surface (escape base layout padding; match .todo-app pattern) ---
+  // Background harmonized with /collection/ and /music/ (--bg-1) so the
+  // sidebar's solid surface reads as the same page tone instead of a
+  // lighter inset over a darker page.
   position: relative;
   z-index: 0;
   min-height: 100vh;
   padding: 0;
   margin: -1rem -1.5rem 0;
-  background: var(--bg-0);
+  background: var(--bg-1);
   color: var(--fg-1);
   font-family: var(--font-ui);
   font-size: 14px;
@@ -76,22 +79,25 @@
     color: var(--fg-1);
   }
 
-  // ==== Shell: 260px sidebar + main ====
+  // ==== Shell: 240px sidebar + main (matches /collection/ and /music/) ====
   .nl-shell {
     position: relative;
     z-index: 1;
     display: grid;
     min-height: 100vh;
-    grid-template-columns: 260px 1fr;
+    grid-template-columns: 240px 1fr;
   }
 
   // ==== Sidebar ====
+  // Solid --bg-1 surface (was translucent), 20px top padding, and rail rows
+  // dimensioned to match .cl-rail-row and .mlo-nav-item so the three pages
+  // share a consistent left-column aesthetic.
   .nl-sidebar {
     display: flex;
     flex-direction: column;
-    padding: 24px 14px;
+    padding: 20px 14px;
     border-right: 1px solid var(--line-soft);
-    background: color-mix(in oklch, var(--bg-1) 40%, transparent);
+    background: var(--bg-1);
     gap: 18px;
 
     h3 {
@@ -108,21 +114,21 @@
   .nl-nav {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 1px;
   }
 
   .nl-nav-item {
     display: flex;
     width: 100%;
     align-items: center;
-    padding: 7px 10px;
+    padding: 6px 8px;
     border: 1px solid transparent;
-    border-radius: 8px;
+    border-radius: var(--radius);
     background: transparent;
     color: var(--fg-2);
     cursor: pointer;
     font: 500 13px/1.2 var(--font-ui);
-    gap: 10px;
+    gap: 8px;
     text-align: left;
     transition: all var(--nl-t-fast) var(--nl-ease-out);
 
@@ -133,19 +139,18 @@
     }
 
     &.active {
-      border-color: color-mix(in oklch, var(--accent) 30%, transparent);
-      background: color-mix(in oklch, var(--accent) 10%, transparent);
-      box-shadow: 0 0 14px -4px color-mix(in oklch, var(--accent) 45%, transparent);
+      border-color: color-mix(in oklch, var(--accent), transparent 75%);
+      background: color-mix(in oklch, var(--accent), transparent 85%);
+      box-shadow: 0 0 12px -4px color-mix(in oklch, var(--accent), transparent 50%);
       color: var(--fg-1);
     }
 
     .swatch {
-      width: 8px;
-      height: 8px;
+      width: 7px;
+      height: 7px;
       flex-shrink: 0;
       border-radius: 2px;
       background: var(--swatch, var(--fg-4));
-      box-shadow: 0 0 6px var(--swatch, transparent);
     }
 
     .count {
