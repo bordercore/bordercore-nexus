@@ -101,8 +101,6 @@ interface DrillQuestionPageProps {
   studySession: StudySession | null;
   sqlDb: { blob: { uuid: string } } | null;
   urls: {
-    home: string;
-    drillList: string;
     drillAdd: string;
     drillAddWithTag: string;
     drillUpdate: string;
@@ -323,8 +321,6 @@ export function DrillQuestionPage({
         onOpenObjectSelectModal={handleOpenObjectSelectModal}
         addQuestionUrl={addQuestionUrl}
         editUrl={editUrl}
-        homeUrl={urls.home}
-        drillListUrl={urls.drillList}
         studySession={studySession}
         studySessionProgress={studySessionProgress}
       />

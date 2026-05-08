@@ -49,7 +49,7 @@ export function CollectionListPage({ collections, tagCounts, urls }: CollectionL
                 <span className="cl-fav-star" aria-hidden="true">
                   ★
                 </span>
-                Favorites
+                <span className="bc-page-title">Favorites</span>
               </h1>
               <div className="cl-pagehead-meta">{filtered.length} collections</div>
             </div>

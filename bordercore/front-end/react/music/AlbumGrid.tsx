@@ -5,7 +5,9 @@ interface AlbumGridProps {
   albums: ArtistDetailAlbum[];
   imagesUrl: string;
   albumDetailUrlTemplate: string;
-  title: string;
+  // Optional. When omitted, the grid renders without an internal heading — used
+  // when the count is shown elsewhere (e.g. alongside a page title).
+  title?: string;
 }
 
 export function AlbumGrid({ albums, imagesUrl, albumDetailUrlTemplate, title }: AlbumGridProps) {
@@ -24,7 +26,7 @@ export function AlbumGrid({ albums, imagesUrl, albumDetailUrlTemplate, title }: 
   return (
     <div className="card backdrop-filter hover-target me-0 mb-3">
       <div className="card-body">
-        <h4 className="fw-bold">{title}</h4>
+        {title && <h4 className="fw-bold">{title}</h4>}
         <div className="d-flex flex-wrap">
           {albums.map(album => (
             <div key={album.uuid} className="d-flex flex-column w-25 hoverable p-2">

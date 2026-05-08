@@ -14,7 +14,7 @@ class NodeListPage(Page):
     COLLECTION_MENU = (By.CSS_SELECTOR, "div.hover-reveal-target")
     DROPDOWN_MENU_CONTAINER = (By.CSS_SELECTOR, "div[class*='dropdown-menu-container']")
     MENU_ITEM = (By.CSS_SELECTOR, "a[class*='dropdown-menu-item']")
-    SELECT_OBJECT_MODAL = (By.CSS_SELECTOR, "div[id^='modalObjectSelect']")
+    SELECT_OBJECT_MODAL = (By.CSS_SELECTOR, "div.refined-modal[aria-label='Select object']")
     RECENT_ITEMS = (By.CSS_SELECTOR, ".object-select-suggestion, .search-suggestion")
     SEARCH_INPUT = (By.CSS_SELECTOR, "input.form-control")
     SEARCH_SUGGESTION_FIRST = (By.CSS_SELECTOR, ".object-select-suggestion, .search-suggestion")

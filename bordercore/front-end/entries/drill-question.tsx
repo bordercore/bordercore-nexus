@@ -25,8 +25,6 @@ interface StudySession {
 const container = document.getElementById("react-root");
 if (container) {
   // Get URLs from data attributes
-  const homeUrl = container.getAttribute("data-home-url") || "/";
-  const drillListUrl = container.getAttribute("data-drill-list-url") || "";
   const drillAddUrl = container.getAttribute("data-drill-add-url") || "";
   const drillAddWithTagUrl = container.getAttribute("data-drill-add-with-tag-url") || "";
   const drillUpdateUrl = container.getAttribute("data-drill-update-url") || "";
@@ -119,8 +117,6 @@ if (container) {
       studySession={studySession}
       sqlDb={sqlDb}
       urls={{
-        home: homeUrl,
-        drillList: drillListUrl,
         drillAdd: drillAddUrl,
         drillAddWithTag: drillAddWithTagUrl,
         drillUpdate: drillUpdateUrl,

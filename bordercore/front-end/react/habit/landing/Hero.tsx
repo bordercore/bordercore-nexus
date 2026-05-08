@@ -1,4 +1,6 @@
 import React from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import { CompletionRing } from "./CompletionRing";
 import { greetingForHour, mastheadDate } from "../utils/format";
 
@@ -14,7 +16,7 @@ interface HeroProps {
 
 /**
  * Top-of-page header: date eyebrow, large greeting + done-count masthead,
- * the completion ring, and the cyan "+ New Habit" button.
+ * the completion ring, and the cyan "+ new" button.
  */
 export function Hero({ todayIso, hour, completedToday, totalActiveToday, onNewHabit }: HeroProps) {
   const pct = totalActiveToday > 0 ? completedToday / totalActiveToday : 0;
@@ -37,7 +39,8 @@ export function Hero({ todayIso, hour, completedToday, totalActiveToday, onNewHa
           <div className="hb-ring-pct">{pctLabel}</div>
         </div>
         <button type="button" className="refined-btn primary" onClick={onNewHabit}>
-          + New Habit
+          <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" />
+          new
         </button>
       </div>
     </header>

@@ -258,13 +258,21 @@ export function ArtistDetailPage({
       <div className="col-lg-9 h-100 me-0">
         <div className="card-grid h-100 ms-4">
           <div className="d-flex flex-column h-100 me-2">
+            <div className="d-flex align-items-baseline gap-3 mb-3">
+              <h1 className="bc-page-title mb-0">{artist.name}</h1>
+              {albumCount > 0 && (
+                <span className="fs-5 text-muted">
+                  {albumCount} album{albumCount !== 1 ? "s" : ""}
+                </span>
+              )}
+            </div>
+
             {/* Albums grid */}
             {albumCount > 0 && (
               <AlbumGrid
                 albums={albums}
                 imagesUrl={imagesUrl}
                 albumDetailUrlTemplate={urls.albumDetail}
-                title={`${albumCount} album${albumCount !== 1 ? "s" : ""}`}
               />
             )}
 

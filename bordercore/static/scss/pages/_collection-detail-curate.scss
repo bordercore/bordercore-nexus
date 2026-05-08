@@ -223,16 +223,9 @@
   }
 
   .cd-title {
-    display: flex;
-    align-items: center;
+    @extend %bc-page-title;
+
     margin: 0 0 4px;
-    color: var(--fg-0);
-    font-family: var(--cd-font-display);
-    font-size: 32px;
-    font-weight: 600;
-    gap: 12px;
-    letter-spacing: -0.015em;
-    line-height: 1.15;
   }
 
   .cd-count {
@@ -318,14 +311,31 @@
     }
   }
 
+  // Mirrors the canonical .refined-btn.primary treatment (gradient fill,
+  // accent ring, outer halo, weight 600) so the curate "add" button reads
+  // the same as the primary action buttons elsewhere on the site (e.g. the
+  // "new" button on /blob/notes/). The cd-btn 32px height is preserved so
+  // it still aligns with the sibling shuffle/edit/more icon-only buttons.
   .cd-btn.primary {
-    border-color: color-mix(in oklch, var(--accent), transparent 60%);
-    background: var(--accent-soft);
-    color: var(--accent-fg, var(--fg-0));
+    border-color: color-mix(in oklch, var(--accent), black 10%);
+    background: linear-gradient(
+      180deg,
+      color-mix(in oklch, var(--accent), white 5%),
+      var(--accent)
+    );
+    box-shadow:
+      0 1px 0 rgb(255 255 255 / 20%) inset,
+      0 0 0 1px color-mix(in oklch, var(--accent), transparent 50%),
+      0 8px 20px color-mix(in oklch, var(--accent), transparent 70%);
+    color: var(--accent-fg);
+    font-weight: 600;
 
     &:hover {
-      border-color: var(--accent);
-      background: color-mix(in oklch, var(--accent-soft), var(--accent) 20%);
+      background: linear-gradient(
+        180deg,
+        color-mix(in oklch, var(--accent), white 12%),
+        color-mix(in oklch, var(--accent), white 4%)
+      );
     }
   }
 

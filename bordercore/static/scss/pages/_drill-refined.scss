@@ -1060,6 +1060,9 @@
     margin-bottom: 28px;
   }
 
+  // The h1 itself only carries the dim subtitle's typography; the "Drill"
+  // word is wrapped in its own .bc-page-title span (see DrillOverviewPage)
+  // so the page-title gradient is sized to that text alone, not the full row.
   .drill-page-head h1 {
     margin: 0;
     font: 600 24px/1.2 "Space Grotesk", var(--font-ui);

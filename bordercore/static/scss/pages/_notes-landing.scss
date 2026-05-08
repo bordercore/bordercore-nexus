@@ -45,13 +45,9 @@
 .nl-page-head-text { min-width: 0; }
 
 .nl-page-title {
+  @extend %bc-page-title;
+
   margin: 0 0 4px;
-  color: var(--fg-1);
-  font-family: var(--font-display, var(--font-ui));
-  font-size: 26px;
-  font-weight: 600;
-  letter-spacing: -0.015em;
-  line-height: 1.1;
 }
 
 .nl-page-sub {

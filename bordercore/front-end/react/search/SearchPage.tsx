@@ -353,6 +353,10 @@ export function SearchPage({
         onReset={handleReset}
       />
       <div className="search-main-content">
+        <h1>
+          <span className="bc-page-title">Search</span>{" "}
+          <span className="dim">— across your knowledge base</span>
+        </h1>
         <SearchBar
           ref={searchBarRef}
           exactMatchInitial={exactMatch}

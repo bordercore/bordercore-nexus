@@ -98,7 +98,7 @@ const PageHead: React.FC<Props> = ({
       <div className="mlo-pagehead">
         <div>
           <h1 className="mlo-pagehead-title">
-            Library <span className="mlo-pagehead-title-dim">— overview</span>
+            <span className="bc-page-title">Music Library</span>
           </h1>
         </div>
         <div className="mlo-pagehead-actions">

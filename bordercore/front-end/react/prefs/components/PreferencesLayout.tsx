@@ -85,7 +85,8 @@ export function PreferencesLayout({
       <main className="prefs-main">
         <div className="prefs-page-head">
           <h1>
-            {pageTitle} <span className="dim">— {pageSubtitle}</span>
+            <span className="bc-page-title">{pageTitle}</span>{" "}
+            <span className="dim">— {pageSubtitle}</span>
           </h1>
           <p>{pageDescription}</p>
         </div>

@@ -156,6 +156,15 @@
     @include refined-card;
 
     display: grid;
+
+    // The shared @mixin refined-card sets overflow: hidden so card-internal
+    // chrome stays clipped to the rounded surface. The hero hosts the
+    // `.bd-more-menu` overflow dropdown which anchors at calc(100% + 6px)
+    // and must escape the card; restore overflow: visible here. The radial
+    // `::after` halo stays contained by `inset: 0` + `border-radius: inherit`,
+    // and `.bd-hero-thumb` carries its own `overflow: hidden`, so nothing
+    // else relies on the parent to clip.
+    overflow: visible;
     padding: 22px 24px;
     margin-bottom: 22px;
     gap: 22px;

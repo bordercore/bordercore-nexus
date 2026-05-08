@@ -158,7 +158,7 @@ export function FitnessSummaryPage({
   return (
     <div className="card-grid ms-3">
       <div className="me-3">
-        <h1>Active Exercises</h1>
+        <h1 className="bc-page-title">Active Exercises</h1>
 
         <div className="fitness-table-container data-table-container">
           <table className="fitness-table data-table">
@@ -219,7 +219,7 @@ export function FitnessSummaryPage({
           </table>
         </div>
 
-        <h1 className="mt-3">Inactive Exercises</h1>
+        <h1 className="bc-page-title mt-3">Inactive Exercises</h1>
 
         <div className="fitness-table-container data-table-container">
           <table className="fitness-table data-table">

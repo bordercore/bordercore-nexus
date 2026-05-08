@@ -885,11 +885,10 @@ export default function NodeDetailPage({
                   aria-expanded={showAddMenu}
                 >
                   <FontAwesomeIcon icon={faPlus} />
-                  add component
+                  add
                 </button>
                 {showAddMenu && (
                   <div className="nd-menu" role="menu">
-                    <div className="nd-menu-head">// add component</div>
                     {addMenuItems.map(m => (
                       <button key={m.key} type="button" role="menuitem" onClick={m.onClick}>
                         <FontAwesomeIcon icon={m.icon} />

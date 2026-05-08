@@ -86,7 +86,8 @@ export function AlbumListPage({
     <div className="music-library-os mlo-list-page">
       <div className="mlo-list-head">
         <h1 className="mlo-pagehead-title">
-          Albums <span className="mlo-pagehead-title-dim">— browse by title</span>
+          <span className="bc-page-title">Albums</span>{" "}
+          <span className="mlo-pagehead-title-dim">— browse by title</span>
         </h1>
         <p className="mlo-pagehead-meta">
           {albums.length} {albums.length === 1 ? "album" : "albums"} starting with{" "}

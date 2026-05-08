@@ -156,7 +156,17 @@ function SidebarContent() {
       {
         href: "/blob/list",
         title: "Blobs",
-        alias: "/blob/list",
+        // Detail pages and their sub-routes (/update/, /pdf-viewer/, /clone/...)
+        // all contain a UUID, which is the only blob path with 4 hyphens —
+        // sibling sidebar routes (/blob/notes/, etc.) have none. The remaining
+        // operations (create/import/bookshelf) are listed explicitly.
+        alias: [
+          "/blob/list",
+          "/blob/create/",
+          "/blob/import",
+          "/blob/bookshelf",
+          "/blob/*-*-*-*-*",
+        ],
         color: "#94a3b8",
         icon: { element: "font-awesome-icon", attributes: { icon: "copy" }, class: "" },
       },

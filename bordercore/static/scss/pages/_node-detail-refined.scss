@@ -110,17 +110,23 @@
     flex: 1;
   }
 
+  // Layout-only — every child (.nd-pin, .nd-name, .nd-name-input) supplies its
+  // own typography, so font/color/letter-spacing on the h1 itself is dead.
   .nd-h1 {
     display: flex;
     align-items: center;
     margin: 0 0 8px;
-    color: var(--nd-fg-1);
-    font: 600 34px/1.2 var(--nd-font-display);
     gap: 14px;
-    letter-spacing: -0.015em;
-    text-transform: none;
 
     .nd-name {
+      // Picks up the standard gradient hero treatment (font / color / halo /
+      // width: fit-content). The hover-bg used to fill the span with --nd-bg-2,
+      // but a solid fill collides with %bc-page-title's `background-clip: text`
+      // (the shorthand resets clip to border-box, so the gradient text would
+      // disappear under a flat block of color). The border-on-hover is enough
+      // affordance that the name is editable.
+      @extend %bc-page-title;
+
       padding: 2px 8px;
       border: 1px solid transparent;
       border-radius: 6px;
@@ -130,7 +136,6 @@
 
       &:hover {
         border-color: var(--nd-border-1);
-        background: var(--nd-bg-2);
       }
     }
 
@@ -331,15 +336,6 @@
     background: color-mix(in oklab, var(--nd-bg-1) 95%, transparent);
     box-shadow: var(--nd-elev-3);
 
-    .nd-menu-head {
-      padding: 8px 10px 6px;
-      color: var(--nd-fg-4);
-      font-family: var(--nd-font-mono);
-      font-size: 10px;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-    }
-
     button {
       display: flex;
       width: 100%;
@@ -363,6 +359,12 @@
         margin-left: auto;
         color: var(--nd-fg-4);
         font-size: 10px;
+
+        // Hints stay on a single line (e.g. the Collection row's
+        // "images, bookmarks, or notes" would otherwise wrap inside the
+        // menu's 260px min-width). The .nd-menu has no max-width, so the
+        // surface grows to fit the longest hint.
+        white-space: nowrap;
       }
 
       &:hover {
@@ -538,7 +540,6 @@
     .nd-grid { gap: 28px; }
     .nd-col { gap: 28px; }
     .nd-page { padding: 40px 56px 140px; }
-    .nd-h1 { font-size: 40px; }
     .card .card-body { padding: 22px; }
   }
 
@@ -546,7 +547,6 @@
     .nd-grid { gap: 10px; }
     .nd-col { gap: 10px; }
     .nd-page { padding: 20px 28px 80px; }
-    .nd-h1 { font-size: 28px; }
     .card .card-body { padding: 12px 14px; }
 
     .card hr.divider,

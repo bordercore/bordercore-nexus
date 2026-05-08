@@ -1,7 +1,41 @@
 // =============================================================================
-// ABSTRACTS: MIXINS
+// ABSTRACTS: MIXINS & PLACEHOLDERS
 // =============================================================================
-// Reusable SCSS mixins
+// Reusable SCSS mixins and %placeholders. Defined early so every page partial
+// imported afterwards can `@extend` from here.
 
-// Placeholder for future mixins
-// Example: @mixin button-variant($bg-color, $text-color) { ... }
+// -----------------------------------------------------------------------------
+// %bc-page-title — the canonical "page hero title" treatment.
+// -----------------------------------------------------------------------------
+// Establishes the standard page-title look: gradient text rendered through the
+// theme's --accent/--accent-2/--accent-4 stops, Space Grotesk display weight,
+// and an accent-tinted halo. Apply via @extend on a span/heading that wraps
+// JUST the title text (the gradient is sized to its element's width — wrapping
+// extra text would stretch the stops and wash out the transition).
+// The fitness exercise-detail page is the visual reference; new pages should
+// adopt this placeholder rather than copy the declarations.
+%bc-page-title {
+  // Shrink to the title's text so the gradient's 0/50/100% stops span only the
+  // glyphs. Block elements (e.g. an h1) inheriting their parent's width would
+  // otherwise stretch the gradient and wash out the transition. No-op on
+  // inline elements (spans), so the same rule works for any markup.
+  width: fit-content;
+  background: linear-gradient(100deg, var(--accent) 0%, var(--accent-2) 50%, var(--accent-4) 100%);
+  // stylelint-disable-next-line property-no-vendor-prefix
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-family: "Space Grotesk", Inter, -apple-system, "Segoe UI", sans-serif;
+  font-size: 44px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  text-shadow: 0 0 48px color-mix(in oklch, var(--accent) 25%, transparent);
+}
+
+// `.bc-page-title` — the class form, for markup that just wants the standard
+// title look without inventing a page-specific selector. Equivalent to
+// `@extend %bc-page-title`.
+.bc-page-title {
+  @extend %bc-page-title;
+}

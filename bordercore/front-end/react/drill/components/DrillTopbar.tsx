@@ -16,8 +16,6 @@ interface DrillTopbarProps {
   onOpenObjectSelectModal: () => void;
   addQuestionUrl: string;
   editUrl: string;
-  homeUrl: string;
-  drillListUrl: string;
   studySession: { type: string; tag?: string; list: string[] } | null;
   studySessionProgress: number;
 }
@@ -29,8 +27,6 @@ export function DrillTopbar({
   onOpenObjectSelectModal,
   addQuestionUrl,
   editUrl,
-  homeUrl,
-  drillListUrl,
   studySession,
   studySessionProgress,
 }: DrillTopbarProps) {
@@ -43,28 +39,6 @@ export function DrillTopbar({
     <div className="drill-topbar">
       <div className="drill-brand-mark">
         <FontAwesomeIcon icon={faCircleNodes} />
-      </div>
-
-      <div className="drill-path">
-        <a href={homeUrl} className="drill-path-link">
-          bordercore
-        </a>
-        <span className="slash">/</span>
-        <a href={drillListUrl} className="drill-path-link">
-          drill
-        </a>
-        <span className="slash">/</span>
-        {isTagStudy ? (
-          <>
-            <span>tag</span>
-            <span className="slash">/</span>
-            <span className="leaf">{studySession?.tag ?? ""}</span>
-          </>
-        ) : studySession ? (
-          <span className="leaf">review</span>
-        ) : (
-          <span className="leaf">question</span>
-        )}
       </div>
 
       {studySession && (

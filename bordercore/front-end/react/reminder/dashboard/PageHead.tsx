@@ -13,7 +13,7 @@ export function PageHead({ total, active, onNew }: PageHeadProps) {
     <header className="rm-page-head">
       <div className="rm-page-head-text">
         <h1>
-          Reminders{" "}
+          <span className="bc-page-title">Reminders</span>{" "}
           <span className="rm-page-head-meta">
             / {total} total · {active} active
           </span>

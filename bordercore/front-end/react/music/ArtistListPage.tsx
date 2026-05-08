@@ -100,7 +100,8 @@ export function ArtistListPage({
     <div className="music-library-os mlo-list-page">
       <div className="mlo-list-head">
         <h1 className="mlo-pagehead-title">
-          Artists <span className="mlo-pagehead-title-dim">— browse by name</span>
+          <span className="bc-page-title">Artists</span>{" "}
+          <span className="mlo-pagehead-title-dim">— browse by name</span>
         </h1>
         <p className="mlo-pagehead-meta">
           {artists.length} {artists.length === 1 ? "artist" : "artists"} starting with{" "}

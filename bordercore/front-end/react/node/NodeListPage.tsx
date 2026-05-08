@@ -158,7 +158,7 @@ export default function NodeListPage({
                 onClick={() => setNewOpen(true)}
               >
                 <FontAwesomeIcon icon={faPlus} className="nl-btn-icon" />
-                New Node
+                new
               </button>
             </div>
           </div>

@@ -69,18 +69,10 @@
     gap: 18px;
   }
 
+  // Standard page-hero title — defined as %bc-page-title in abstracts/_mixins.scss
+  // and shared with other pages (drill overview, etc.) for visual consistency.
   .ex-title {
-    background: linear-gradient(100deg, var(--accent) 0%, var(--accent-2) 50%, var(--accent-4) 100%);
-    // stylelint-disable-next-line property-no-vendor-prefix
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    font-family: var(--ex-font-display);
-    font-size: 44px;
-    font-weight: 600;
-    letter-spacing: -0.02em;
-    line-height: 1;
-    text-shadow: 0 0 48px color-mix(in oklch, var(--accent) 25%, transparent);
+    @extend %bc-page-title;
   }
 
   .ex-title-meta {

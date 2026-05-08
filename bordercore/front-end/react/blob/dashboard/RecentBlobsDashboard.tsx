@@ -1,4 +1,6 @@
 import React, { useCallback, useState } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import type { DashboardData, DashboardUrls, DateBucket, DoctypeFilter, FilterState } from "./types";
 import { EMPTY_FILTERS } from "./types";
 import FilterRail from "./FilterRail";
@@ -87,7 +89,8 @@ export function RecentBlobsDashboard({ data, urls }: RecentBlobsDashboardProps) 
             </div>
             <div className="rb-page-actions">
               <a href={urls.createBlob} className="refined-btn primary">
-                + new blob
+                <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" />
+                new
               </a>
               <a href={urls.importBlob} className="refined-btn">
                 import

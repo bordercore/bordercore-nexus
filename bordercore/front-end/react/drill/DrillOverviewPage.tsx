@@ -53,7 +53,8 @@ export default function DrillOverviewPage({ payload }: Props) {
       <main className="drill-main">
         <div className="drill-page-head">
           <h1>
-            Drill <span className="dim">— spaced-repetition overview</span>
+            <span className="bc-page-title">Drill</span>{" "}
+            <span className="dim">— spaced-repetition overview</span>
           </h1>
           <p>
             Review your overdue tags, drill on a category, or start a global session. Intervals
