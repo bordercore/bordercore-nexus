@@ -5,16 +5,35 @@
 // imported afterwards can `@extend` from here.
 
 // -----------------------------------------------------------------------------
+// %bc-page-title-typography — the canonical page-title typography.
+// -----------------------------------------------------------------------------
+// Just the type rules (family, size, weight, letter-spacing, line-height) — no
+// gradient, no halo, no width: fit-content. Use this when a page needs the
+// standard hero title SIZE but already manages its own coloring per child
+// element (e.g. todo's segmented breadcrumb title where each segment gets its
+// own color and weight). Pages that want the full canonical look — gradient
+// fill + halo on top of the typography — should extend %bc-page-title below.
+%bc-page-title-typography {
+  font-family: "Space Grotesk", Inter, -apple-system, "Segoe UI", sans-serif;
+  font-size: 44px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+// -----------------------------------------------------------------------------
 // %bc-page-title — the canonical "page hero title" treatment.
 // -----------------------------------------------------------------------------
-// Establishes the standard page-title look: gradient text rendered through the
-// theme's --accent/--accent-2/--accent-4 stops, Space Grotesk display weight,
-// and an accent-tinted halo. Apply via @extend on a span/heading that wraps
-// JUST the title text (the gradient is sized to its element's width — wrapping
-// extra text would stretch the stops and wash out the transition).
-// The fitness exercise-detail page is the visual reference; new pages should
-// adopt this placeholder rather than copy the declarations.
+// Builds on %bc-page-title-typography by adding gradient text rendered through
+// the theme's --accent/--accent-2/--accent-4 stops and an accent-tinted halo.
+// Apply via @extend on a span/heading that wraps JUST the title text (the
+// gradient is sized to its element's width — wrapping extra text would stretch
+// the stops and wash out the transition). The fitness exercise-detail page is
+// the visual reference; new pages should adopt this placeholder rather than
+// copy the declarations.
 %bc-page-title {
+  @extend %bc-page-title-typography;
+
   // Shrink to the title's text so the gradient's 0/50/100% stops span only the
   // glyphs. Block elements (e.g. an h1) inheriting their parent's width would
   // otherwise stretch the gradient and wash out the transition. No-op on
@@ -25,11 +44,6 @@
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  font-family: "Space Grotesk", Inter, -apple-system, "Segoe UI", sans-serif;
-  font-size: 44px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  line-height: 1;
   text-shadow: 0 0 48px color-mix(in oklch, var(--accent) 25%, transparent);
 }
 
