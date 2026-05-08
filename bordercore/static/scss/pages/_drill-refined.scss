@@ -1054,15 +1054,15 @@
   }
 
   // ==== Task 24: DrillOverviewPage layout ====
-  .drill-page-head {
-    margin-bottom: 28px;
-  }
+  // No bottom margin here: the descendant <p>'s refined-page-sub mixin owns
+  // the gap to .drill-hero so spacing comes from a single source, matching
+  // the convention used by .todo-head and the other refined page heads.
 
   // The h1 itself only carries the dim subtitle's typography; the "Drill"
   // word is wrapped in its own .bc-page-title span (see DrillOverviewPage)
   // so the page-title gradient is sized to that text alone, not the full row.
   .drill-page-head h1 {
-    margin: 0;
+    margin: 0 0 4px;
     font: 600 24px/1.2 "Space Grotesk", var(--font-ui);
     letter-spacing: -0.01em;
   }
@@ -1074,8 +1074,8 @@
 
   .drill-page-head p {
     max-width: 620px;
-    margin-top: 6px;
-    color: var(--fg-2);
+
+    @include refined-page-sub;
   }
 
   .drill-body-grid {

@@ -388,9 +388,7 @@
 }
 
 .rb-page-sub {
-  margin: 0 0 18px;
-  color: var(--fg-3);
-  font-size: 12px;
+  @include refined-page-sub;
 }
 
 .rb-page-actions {

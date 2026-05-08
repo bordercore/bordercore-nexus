@@ -74,13 +74,14 @@
 
   // Title block + subhead on the left, primary "new" button pinned to the
   // right. flex-start keeps the button top-aligned with the page title rather
-  // than baselining with the subhead.
+  // than baselining with the subhead. Bottom spacing to .todo-toolbar comes
+  // from .todo-subhead's own margin (refined-page-sub mixin), not this
+  // wrapper, so the gap doesn't stack.
   .todo-head {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-start;
     justify-content: space-between;
-    margin-bottom: 28px;
     gap: 20px;
   }
 
@@ -94,15 +95,7 @@
   }
 
   .todo-subhead {
-    margin: 0 0 24px;
-    color: var(--fg-2);
-    font-size: 14.5px;
-
-    .count {
-      color: var(--fg-0);
-      font-variant-numeric: tabular-nums;
-      font-weight: 600;
-    }
+    @include refined-page-sub;
   }
 
   // ==== Toolbar: search + view toggle + sort ====

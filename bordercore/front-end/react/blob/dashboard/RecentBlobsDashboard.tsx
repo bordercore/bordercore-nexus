@@ -64,9 +64,14 @@ export function RecentBlobsDashboard({ data, urls }: RecentBlobsDashboardProps) 
     setFilters(EMPTY_FILTERS);
   }, []);
 
-  const subCopy = filtersActive
-    ? `filtered · ${filteredBlobs.length} of ${data.total_count}`
-    : "filter by doctype, tag, or date in the rail";
+  const subCopy = filtersActive ? (
+    <>
+      filtered · <span className="count">{filteredBlobs.length}</span> of{" "}
+      <span className="count">{data.total_count}</span>
+    </>
+  ) : (
+    "filter by doctype, tag, or date in the rail"
+  );
 
   return (
     <div className="rb-app">

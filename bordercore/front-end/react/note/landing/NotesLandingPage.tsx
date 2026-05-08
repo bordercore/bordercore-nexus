@@ -32,7 +32,9 @@ export function NotesLandingPage({ data, urls }: NotesLandingPageProps) {
         <div className="nl-page-head-text">
           <h1 className="nl-page-title">Notes</h1>
           <p className="nl-page-sub">
-            {data.totals.recents} notes · {data.totals.pinned} pinned · {data.totals.tags} tags
+            <span className="count">{data.totals.recents}</span> notes ·{" "}
+            <span className="count">{data.totals.pinned}</span> pinned ·{" "}
+            <span className="count">{data.totals.tags}</span> tags
           </p>
         </div>
         <div className="nl-page-actions">

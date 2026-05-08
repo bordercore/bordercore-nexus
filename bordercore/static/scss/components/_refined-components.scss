@@ -437,6 +437,27 @@
     #{$base};
 }
 
+// ==== Secondary text under page title ====
+// Standard treatment for the muted line that sits below a page heading
+// (e.g. "1477 notes · 25 pinned · 985 tags", "74 tasks · filtered by tag").
+// Uses --fg-2 for the body so it reads quieter than the title without
+// disappearing, and provides a `.count` modifier so consumers can wrap
+// numeric tokens in <span class="count">N</span> to get bold, tabular,
+// theme-aligned emphasis. Adopted by .todo-subhead, .nl-page-sub, etc.
+// Pass $margin to suppress or change the default bottom spacing when the
+// page header already owns its own vertical rhythm.
+@mixin refined-page-sub($margin: 0 0 24px) {
+  margin: $margin;
+  color: var(--fg-2);
+  font-size: 14.5px;
+
+  .count {
+    color: var(--fg-0);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+  }
+}
+
 // ==== Card-style list row ====
 // Lifted "card on dark canvas" surface for grouped list rows (todo, reminder
 // dashboard). Sets padding, border, gradient surface, baseline shadow, and an

@@ -51,9 +51,8 @@
 }
 
 .nl-page-sub {
-  margin: 0;
-  color: var(--fg-3);
-  font-size: 12px;
+  // page header owns spacing, so suppress the mixin's default bottom margin
+  @include refined-page-sub($margin: 0);
 }
 
 .nl-page-actions {
