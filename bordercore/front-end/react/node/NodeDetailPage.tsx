@@ -13,7 +13,6 @@ import {
   faEllipsisVertical,
   faGripVertical,
   faTableCellsLarge,
-  faClone,
   faTimes,
   faDiagramProject,
 } from "@fortawesome/free-solid-svg-icons";
@@ -130,9 +129,6 @@ interface NodeDetailPageProps {
 }
 
 const UUID_PLACEHOLDER = "00000000-0000-0000-0000-000000000000";
-const DENSITY_STORAGE_KEY = "bc:node-detail:density";
-
-type Density = "airy" | "default" | "dense";
 
 function getLayoutItemKey(item: LayoutItem): string {
   if (item.type === "todo") return "todo";
@@ -176,19 +172,8 @@ export default function NodeDetailPage({
   const [isEditingName, setIsEditingName] = useState(false);
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [showActionsMenu, setShowActionsMenu] = useState(false);
-  const [showTweaks, setShowTweaks] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
-  const [density, setDensity] = useState<Density>(() => {
-    if (typeof window === "undefined") return "default";
-    const v = window.localStorage.getItem(DENSITY_STORAGE_KEY);
-    return v === "airy" || v === "dense" ? v : "default";
-  });
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(DENSITY_STORAGE_KEY, density);
-  }, [density]);
 
   const flash = useCallback((msg: string) => {
     setToast(msg);
@@ -833,7 +818,7 @@ export default function NodeDetailPage({
   const absCreated = formatAbsolute(createdAt);
 
   return (
-    <div className={`node-detail-app d-${density}`}>
+    <div className="node-detail-app">
       <main className="nd-page">
         <header className="nd-head" ref={headerRef}>
           <div className="nd-title-row">
@@ -941,18 +926,6 @@ export default function NodeDetailPage({
                       <FontAwesomeIcon icon={faThumbtack} />
                       <span>{isPinned ? "Unpin node" : "Pin node"}</span>
                     </button>
-                    <div className="sep" />
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => {
-                        setShowActionsMenu(false);
-                        setShowTweaks(v => !v);
-                      }}
-                    >
-                      <FontAwesomeIcon icon={faClone} />
-                      <span>Tweaks…</span>
-                    </button>
                   </div>
                 )}
               </div>
@@ -1031,47 +1004,6 @@ export default function NodeDetailPage({
             {activeLayoutId ? <LayoutDragOverlay nodeRef={dragOverlayNodeRef} /> : null}
           </DragOverlay>
         </DndContext>
-
-        {showTweaks && (
-          <div className="nd-tweaks-panel">
-            <div className="nd-tweaks-head">
-              <span>// tweaks</span>
-              <button
-                type="button"
-                className="refined-btn ghost icon"
-                onClick={() => setShowTweaks(false)}
-                aria-label="Close tweaks"
-              >
-                <FontAwesomeIcon icon={faTimes} />
-              </button>
-            </div>
-            <div className="nd-tweak-group">
-              <div className="label">density</div>
-              <div className="options">
-                {(["airy", "default", "dense"] as Density[]).map(v => (
-                  <button
-                    key={v}
-                    type="button"
-                    className={density === v ? "on" : ""}
-                    onClick={() => setDensity(v)}
-                  >
-                    {v}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        <button
-          type="button"
-          className={`nd-tweaks-fab ${showTweaks ? "open" : ""}`}
-          onClick={() => setShowTweaks(v => !v)}
-          aria-label="Tweaks"
-          title="Tweaks"
-        >
-          <FontAwesomeIcon icon={showTweaks ? faTimes : faGripVertical} />
-        </button>
 
         {/* Modals */}
         <NodeImageModal
