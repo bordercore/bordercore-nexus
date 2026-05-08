@@ -1,4 +1,6 @@
 import React from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import DensitySlider from "./DensitySlider";
 import type { Density } from "./density";
 
@@ -46,8 +48,9 @@ export function ActionCluster({
 
       <DensitySlider density={density} count={filteredCount} onChange={onDensityChange} />
 
-      <button type="button" className="cl-iconbtn is-primary" onClick={onCreateClick}>
-        + new
+      <button type="button" className="refined-btn primary" onClick={onCreateClick}>
+        <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" />
+        new
       </button>
     </div>
   );

@@ -350,41 +350,6 @@ $tag-colors: (
   }
 }
 
-.cl-iconbtn {
-  display: inline-flex;
-  width: 36px;
-  height: 36px;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--line-soft);
-  border-radius: var(--radius);
-  background: var(--bg-2);
-  color: var(--fg-2);
-  cursor: pointer;
-  font-size: 14px;
-
-  &:hover {
-    border-color: var(--line);
-    background: var(--bg-3);
-    color: var(--fg-1);
-  }
-
-  &.is-primary {
-    width: auto;
-    padding: 0 14px;
-    border-color: transparent;
-    background: linear-gradient(180deg, var(--accent), color-mix(in oklch, var(--accent), black 14%));
-    box-shadow: 0 0 0 1px var(--cl-accent-25), 0 0 14px -2px var(--cl-accent-50);
-    color: var(--accent-fg);
-    font-size: 13px;
-    font-weight: 600;
-
-    &:hover {
-      background: linear-gradient(180deg, color-mix(in oklch, var(--accent), white 8%), var(--accent));
-    }
-  }
-}
-
 // --- Grid wrapper -------------------------------------------------------------
 
 .cl-grid-v2 {

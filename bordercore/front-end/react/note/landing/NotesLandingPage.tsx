@@ -47,8 +47,8 @@ export function NotesLandingPage({ data, urls }: NotesLandingPageProps) {
               aria-label="Search notes"
             />
           </form>
-          <a href={urls.createNote} className="refined-btn primary nl-new-btn">
-            <FontAwesomeIcon icon={faPlus} aria-hidden="true" />
+          <a href={urls.createNote} className="refined-btn primary">
+            <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" aria-hidden="true" />
             <span>new</span>
           </a>
         </div>

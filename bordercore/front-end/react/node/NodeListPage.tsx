@@ -154,10 +154,10 @@ export default function NodeListPage({
               </div>
               <button
                 type="button"
-                className="nl-btn primary nl-new-btn"
+                className="refined-btn primary"
                 onClick={() => setNewOpen(true)}
               >
-                <FontAwesomeIcon icon={faPlus} className="nl-btn-icon" />
+                <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" />
                 new
               </button>
             </div>

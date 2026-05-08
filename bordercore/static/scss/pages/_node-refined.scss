@@ -261,8 +261,6 @@
   }
 
   // ==== Buttons ====
-  .nl-btn-icon { font-size: 10px; }
-
   .nl-btn {
     display: inline-flex;
     align-items: center;
@@ -358,13 +356,6 @@
         color: var(--danger);
       }
     }
-  }
-
-  .nl-new-btn {
-    align-self: center;
-    padding: 10px 16px;
-    margin-left: 8px;
-    font-size: 13px;
   }
 
   // ==== Toolbar ====
