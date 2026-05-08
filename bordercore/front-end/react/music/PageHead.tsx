@@ -74,9 +74,14 @@ const PageHead: React.FC<Props> = ({
   ];
 
   return (
-    <>
-      <div className="mlo-pagebar">
-        <div className="mlo-search">
+    <div className="mlo-pagehead">
+      <div>
+        <h1 className="mlo-pagehead-title">
+          <span className="bc-page-title">Music Library</span>
+        </h1>
+      </div>
+      <div className="mlo-pagehead-actions">
+        <div className="mlo-search" role="search">
           <FontAwesomeIcon icon={faSearch} />
           <input
             ref={inputRef}
@@ -93,30 +98,20 @@ const PageHead: React.FC<Props> = ({
           )}
           {paletteSlot}
         </div>
+        <button type="button" className="mlo-btn mlo-btn-secondary" onClick={onShuffleAll}>
+          <FontAwesomeIcon icon={faShuffle} /> shuffle all
+        </button>
+        <DropDownMenu
+          links={addLinks}
+          showTarget={false}
+          iconSlot={
+            <span className="mlo-btn mlo-btn-primary">
+              <FontAwesomeIcon icon={faPlus} /> add
+            </span>
+          }
+        />
       </div>
-
-      <div className="mlo-pagehead">
-        <div>
-          <h1 className="mlo-pagehead-title">
-            <span className="bc-page-title">Music Library</span>
-          </h1>
-        </div>
-        <div className="mlo-pagehead-actions">
-          <button type="button" className="mlo-btn mlo-btn-secondary" onClick={onShuffleAll}>
-            <FontAwesomeIcon icon={faShuffle} /> shuffle all
-          </button>
-          <DropDownMenu
-            links={addLinks}
-            showTarget={false}
-            iconSlot={
-              <span className="mlo-btn mlo-btn-primary">
-                <FontAwesomeIcon icon={faPlus} /> add
-              </span>
-            }
-          />
-        </div>
-      </div>
-    </>
+    </div>
   );
 };
 
