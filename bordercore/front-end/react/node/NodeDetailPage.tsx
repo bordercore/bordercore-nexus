@@ -867,7 +867,7 @@ export default function NodeDetailPage({
               <div className="nd-add-wrap">
                 <button
                   type="button"
-                  className="nd-btn primary"
+                  className="refined-btn primary"
                   onClick={() => {
                     setShowAddMenu(v => !v);
                     setShowActionsMenu(false);
@@ -894,7 +894,7 @@ export default function NodeDetailPage({
               <div className="nd-add-wrap">
                 <button
                   type="button"
-                  className="nd-btn ghost icon"
+                  className="refined-btn ghost icon"
                   onClick={() => {
                     setShowActionsMenu(v => !v);
                     setShowAddMenu(false);
@@ -1038,7 +1038,7 @@ export default function NodeDetailPage({
               <span>// tweaks</span>
               <button
                 type="button"
-                className="nd-btn ghost icon"
+                className="refined-btn ghost icon"
                 onClick={() => setShowTweaks(false)}
                 aria-label="Close tweaks"
               >

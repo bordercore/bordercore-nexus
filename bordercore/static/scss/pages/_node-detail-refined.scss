@@ -95,11 +95,17 @@
   // ========================================================================
   // Node header
   // ========================================================================
-  .nd-head { margin-bottom: 28px; }
+  // Bordered page head matching .cl-pagehead, .mlo-pagehead, .todo-head,
+  // .rb-page-head, .drill-page-head — the wrapper owns the 18px-then-line-
+  // then-24px rhythm down to the body. The mixin's margin-bottom replaces
+  // the prior 28px so the gap is canonical (24px).
+  .nd-head {
+    @include refined-page-head-bordered;
+  }
 
   .nd-title-row {
     display: flex;
-    align-items: flex-start;
+    align-items: flex-end;
     justify-content: space-between;
     margin-bottom: 18px;
     gap: 24px;
@@ -115,7 +121,7 @@
   .nd-h1 {
     display: flex;
     align-items: center;
-    margin: 0 0 8px;
+    margin: 0 0 4px;
     gap: 14px;
 
     .nd-name {
@@ -164,77 +170,16 @@
   .nd-add-wrap { position: relative; }
 
   // ========================================================================
-  // Buttons
+  // Icon-only modifier for the canonical .refined-btn — squares the button
+  // into a 34px tile so kebab/close glyphs don't sit inside a wide rectangle.
+  // Scoped to .node-detail-app so it doesn't leak to other pages; if a
+  // second page adopts the same need we can promote it to the global
+  // .refined-btn rule in components/_refined-components.scss.
   // ========================================================================
-  .nd-btn {
-    display: inline-flex;
-    align-items: center;
-    padding: 8px 14px;
-    border: 1px solid var(--nd-border-1);
-    border-radius: var(--nd-radius-md);
-    background: var(--nd-bg-3);
-    color: var(--nd-fg-1);
-    cursor: pointer;
-    font: 500 13px/1 var(--nd-font-sans);
-    gap: 8px;
-    text-decoration: none;
-    transition:
-      background var(--nd-t-fast) var(--nd-ease-out),
-      border-color var(--nd-t-fast) var(--nd-ease-out),
-      transform 80ms var(--nd-ease-out);
-
-    &:hover {
-      border-color: var(--nd-border-2);
-      background: var(--nd-bg-4);
-    }
-
-    &:active { transform: translateY(1px); }
-
-    &:disabled,
-    &[aria-disabled="true"] {
-      cursor: not-allowed;
-      opacity: 0.5;
-    }
-
-    &.primary {
-      border-color: color-mix(in oklab, var(--nd-accent) 60%, transparent);
-      background: linear-gradient(
-        180deg,
-        var(--nd-accent),
-        color-mix(in oklab, var(--nd-accent), black 14%)
-      );
-      box-shadow:
-        0 0 0 1px color-mix(in oklab, var(--nd-accent) 30%, transparent),
-        0 0 16px -2px color-mix(in oklab, var(--nd-accent) 50%, transparent);
-      color: var(--accent-fg, #fff);
-
-      &:hover:not(:disabled) { filter: brightness(1.08); }
-
-      &:active { transform: translateY(1px); }
-    }
-
-    &.ghost {
-      background: transparent;
-
-      &:hover:not(:disabled) {
-        background: var(--nd-bg-2);
-        color: var(--nd-fg-1);
-      }
-    }
-
-    &.icon {
-      min-width: 34px;
-      justify-content: center;
-      padding: 8px 10px;
-    }
-
-    &.danger-ghost {
-      border-color: color-mix(in oklab, var(--nd-danger) 30%, transparent);
-      background: transparent;
-      color: var(--nd-danger);
-
-      &:hover:not(:disabled) { background: color-mix(in oklab, var(--nd-danger) 10%, transparent); }
-    }
+  .refined-btn.icon {
+    min-width: 34px;
+    justify-content: center;
+    padding: 8px 10px;
   }
 
   // ========================================================================
@@ -244,8 +189,6 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    padding-top: 16px;
-    border-top: 1px solid var(--nd-hairline);
     gap: 8px;
   }
 
@@ -473,8 +416,9 @@
   // Soften Bootstrap text-muted inside cards
   .text-muted { color: var(--nd-fg-4) !important; }
 
-  // Links in card bodies pick up the accent
-  .card a:not(.nd-btn) {
+  // Links in card bodies pick up the accent. Exclude .refined-btn since the
+  // canonical button class is now used for the page's button affordances.
+  .card a:not(.refined-btn) {
     color: var(--nd-accent-hover);
 
     &:hover { color: var(--nd-accent); }
