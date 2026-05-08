@@ -73,16 +73,18 @@
   }
 
   // Title block + subhead on the left, primary "new" button pinned to the
-  // right. flex-start keeps the button top-aligned with the page title rather
-  // than baselining with the subhead. Bottom spacing to .todo-toolbar comes
-  // from .todo-subhead's own margin (refined-page-sub mixin), not this
-  // wrapper, so the gap doesn't stack.
+  // right. flex-start keeps the button top-aligned with the page title
+  // rather than baselining with the subhead. The bordered mixin owns the
+  // 18px-then-line-then-24px rhythm down to .todo-toolbar; .todo-subhead
+  // below is set to $margin: 0 so the gap doesn't stack.
   .todo-head {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-start;
     justify-content: space-between;
     gap: 20px;
+
+    @include refined-page-head-bordered;
   }
 
   .todo-head-text {
@@ -103,7 +105,9 @@
   }
 
   .todo-subhead {
-    @include refined-page-sub;
+    // The wrapping .todo-head already owns the bottom rhythm via
+    // refined-page-head-bordered, so suppress the mixin's 24px margin.
+    @include refined-page-sub($margin: 0);
   }
 
   // ==== Toolbar: search + view toggle + sort ====

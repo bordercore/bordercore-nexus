@@ -1054,9 +1054,11 @@
   }
 
   // ==== Task 24: DrillOverviewPage layout ====
-  // No bottom margin here: the descendant <p>'s refined-page-sub mixin owns
-  // the gap to .drill-hero so spacing comes from a single source, matching
-  // the convention used by .todo-head and the other refined page heads.
+  // The bordered mixin emits the canonical 18px-then-line-then-24px rhythm
+  // down to .drill-hero, matching the other refined page heads.
+  .drill-page-head {
+    @include refined-page-head-bordered;
+  }
 
   // The h1 itself only carries the dim subtitle's typography; the "Drill"
   // word is wrapped in its own .bc-page-title span (see DrillOverviewPage)
@@ -1075,7 +1077,9 @@
   .drill-page-head p {
     max-width: 620px;
 
-    @include refined-page-sub;
+    // The wrapping .drill-page-head already owns the bottom rhythm via
+    // refined-page-head-bordered, so suppress the mixin's 24px margin.
+    @include refined-page-sub($margin: 0);
   }
 
   .drill-body-grid {

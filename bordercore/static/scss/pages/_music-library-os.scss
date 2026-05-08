@@ -16,7 +16,10 @@
   --mlo-ok: var(--ok, #3fd29c);
 
   display: grid;
-  gap: 16px;
+
+  // Column gap between sidebar and main only — row spacing below the page
+  // head is owned by .mlo-pagehead's own margin-bottom, matching /collection/.
+  gap: 0 16px;
   grid-template-columns: 240px 1fr;
 
   // Search input that sits inside .mlo-pagehead-actions (between the title
@@ -192,12 +195,20 @@
     display: flex;
     min-width: 0;
     flex-direction: column;
-    padding: 20px 24px 40px;
+
+    // No top padding — .mlo-pagehead's margin-bottom owns the gap between
+    // the page head and the first card (.mlo-stat-strip).
+    padding: 0 24px 40px;
     gap: 16px;
     grid-column: 2;
     grid-row: 2;
   }
 
+  // Bordered page head — shares the refined-page-head-bordered rhythm with
+  // .cl-pagehead, .todo-head, .rb-page-head, .drill-page-head. The mixin's
+  // padding-bottom: 18px is emitted last and overrides the 0 set by the
+  // shorthand `padding: 0 24px` above, leaving 24px left/right padding and
+  // the canonical 18px below the title.
   .mlo-pagehead {
     display: flex;
     align-items: flex-end;
@@ -206,6 +217,8 @@
     gap: 16px;
     grid-column: 2;
     grid-row: 1;
+
+    @include refined-page-head-bordered;
   }
 
   .mlo-pagehead-title {

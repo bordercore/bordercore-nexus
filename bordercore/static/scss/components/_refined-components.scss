@@ -458,6 +458,20 @@
   }
 }
 
+// ==== Bordered page head ====
+// Standard "section-cap" treatment for the page-title region: an 18px gap
+// below the title block, a 1px hairline divider, and a 24px gap to the
+// first body element below. Pages applying this should host the title and
+// any subtitle as children of the bordered wrapper, and ensure the
+// subtitle's refined-page-sub margin is 0 so the wrapper's margin-bottom
+// owns the gap to the next section. Adopted by .cl-pagehead, .mlo-pagehead,
+// .todo-head, .rb-page-head, .drill-page-head.
+@mixin refined-page-head-bordered {
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 24px;
+}
+
 // ==== Page-header search input ====
 // Standard "icon + input + (optional) clear button" search bar adopted by
 // landing-page headers (.nl-search, .cl-search, ...). Renders a 32px-tall

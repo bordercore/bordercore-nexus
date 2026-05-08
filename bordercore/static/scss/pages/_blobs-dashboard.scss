@@ -377,6 +377,8 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 24px;
+
+  @include refined-page-head-bordered;
 }
 
 .rb-page-head-text { min-width: 0; }
@@ -388,7 +390,9 @@
 }
 
 .rb-page-sub {
-  @include refined-page-sub;
+  // The wrapping .rb-page-head already owns the bottom rhythm via
+  // refined-page-head-bordered, so suppress the mixin's 24px margin.
+  @include refined-page-sub($margin: 0);
 }
 
 .rb-page-actions {
