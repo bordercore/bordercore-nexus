@@ -189,19 +189,10 @@ $tag-colors: (
 }
 
 .cl-pagehead-title {
+  // The actual title text is rendered via an inner <span class="bc-page-title">
+  // that pulls the canonical Space Grotesk 44px gradient from %bc-page-title;
+  // the h1 wrapper itself only owns layout (4px gap down to .cl-pagehead-meta).
   margin: 0 0 4px;
-  font-family: var(--cl-font-display);
-  font-size: 30px;
-  font-weight: 600;
-  letter-spacing: -0.015em;
-
-  .cl-fav-star {
-    margin-right: 12px;
-    color: var(--warn);
-    filter: drop-shadow(0 0 8px color-mix(in oklch, var(--warn), transparent 50%));
-    font-size: 0.8em;
-    vertical-align: 2px;
-  }
 }
 
 .cl-pagehead-meta {

@@ -46,10 +46,7 @@ export function CollectionListPage({ collections, tagCounts, urls }: CollectionL
           <header className="cl-pagehead">
             <div>
               <h1 className="cl-pagehead-title">
-                <span className="cl-fav-star" aria-hidden="true">
-                  ★
-                </span>
-                <span className="bc-page-title">Favorites</span>
+                <span className="bc-page-title">Collections</span>
               </h1>
               <div className="cl-pagehead-meta">
                 <span className="count">{filtered.length}</span> collections
