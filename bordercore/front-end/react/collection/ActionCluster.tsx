@@ -1,6 +1,6 @@
 import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faSearch } from "@fortawesome/free-solid-svg-icons";
 import DensitySlider from "./DensitySlider";
 import type { Density } from "./density";
 
@@ -23,12 +23,10 @@ export function ActionCluster({
 }: ActionClusterProps) {
   return (
     <div className="cl-actions">
-      <div className="cl-search">
-        <span className="cl-search-icon" aria-hidden="true">
-          ⌕
-        </span>
+      <div className="cl-search" role="search">
+        <FontAwesomeIcon icon={faSearch} aria-hidden="true" />
         <input
-          type="text"
+          type="search"
           placeholder="search collections"
           value={searchQuery}
           onChange={e => onSearchChange(e.target.value)}

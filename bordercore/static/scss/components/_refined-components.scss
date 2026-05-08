@@ -458,6 +458,61 @@
   }
 }
 
+// ==== Page-header search input ====
+// Standard "icon + input + (optional) clear button" search bar adopted by
+// landing-page headers (.nl-search, .cl-search, ...). Renders a 32px-tall
+// rounded-rect with a leading icon — typically a FontAwesome <svg> — and an
+// inline <input>. Container can be a <form role="search"> or a <div>; the
+// mixin doesn't care. Width is the most-tweaked param so it's a parameter;
+// other dimensions and colors stay fixed for cross-page consistency. The
+// nested input rule deliberately does not set flex behavior — `width: 100%`
+// fills the remaining flex space without forcing a particular flex basis.
+@mixin refined-search-input($width: 240px) {
+  display: flex;
+  width: $width;
+  height: 32px;
+  align-items: center;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--bc-radius-sm, 6px);
+  background: var(--bg-2);
+  color: var(--fg-2);
+  gap: 8px;
+  transition: border-color var(--bc-t-fast) var(--bc-ease-out);
+
+  &:focus-within {
+    border-color: color-mix(in oklch, var(--accent), transparent 50%);
+    box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent), transparent 75%);
+  }
+
+  svg {
+    color: var(--fg-4);
+    font-size: 11px;
+  }
+
+  input {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    color: var(--fg-1);
+    font-family: var(--font-ui);
+    font-size: 13px;
+
+    &:focus { outline: none; }
+
+    &::placeholder { color: var(--fg-4); }
+
+    // Suppress WebKit's built-in clear "x" on <input type="search"> so
+    // consumer-supplied custom clear buttons (e.g. .cl-search-clear) can
+    // own that affordance without competing with a native widget. No-op
+    // when type="text" or in non-WebKit browsers.
+    // stylelint-disable-next-line property-no-vendor-prefix
+    &::-webkit-search-cancel-button {
+      appearance: none;
+    }
+  }
+}
+
 // ==== Card-style list row ====
 // Lifted "card on dark canvas" surface for grouped list rows (todo, reminder
 // dashboard). Sets padding, border, gradient surface, baseline shadow, and an

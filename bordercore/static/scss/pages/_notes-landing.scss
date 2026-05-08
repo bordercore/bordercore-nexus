@@ -62,40 +62,7 @@
 }
 
 .nl-search {
-  display: flex;
-  width: 240px;
-  height: 32px;
-  align-items: center;
-  padding: 0 12px;
-  border: 1px solid var(--line);
-  border-radius: var(--bc-radius-sm, 6px);
-  background: var(--bg-2);
-  color: var(--fg-2);
-  gap: 8px;
-  transition: border-color var(--bc-t-fast) var(--bc-ease-out);
-
-  &:focus-within {
-    border-color: color-mix(in oklch, var(--accent), transparent 50%);
-    box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent), transparent 75%);
-  }
-
-  svg {
-    color: var(--fg-4);
-    font-size: 11px;
-  }
-
-  input {
-    width: 100%;
-    border: 0;
-    background: transparent;
-    color: var(--fg-1);
-    font-family: var(--font-ui);
-    font-size: 13px;
-
-    &:focus { outline: none; }
-
-    &::placeholder { color: var(--fg-4); }
-  }
+  @include refined-search-input;
 }
 
 // ============================================================================

@@ -183,13 +183,13 @@ $tag-colors: (
   align-items: flex-end;
   justify-content: space-between;
   padding-bottom: 18px;
-  border-bottom: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line);
   margin-bottom: 24px;
   gap: 24px;
 }
 
 .cl-pagehead-title {
-  margin: 0;
+  margin: 0 0 4px;
   font-family: var(--cl-font-display);
   font-size: 30px;
   font-weight: 600;
@@ -205,10 +205,8 @@ $tag-colors: (
 }
 
 .cl-pagehead-meta {
-  margin-top: 6px;
-  color: var(--fg-4);
-  font-family: var(--font-mono);
-  font-size: 12px;
+  // page head owns spacing, so suppress the mixin's default bottom margin
+  @include refined-page-sub($margin: 0);
 }
 
 // --- Action cluster -----------------------------------------------------------
@@ -220,43 +218,10 @@ $tag-colors: (
 }
 
 .cl-search {
-  position: relative;
-  display: flex;
-  width: 340px;
-  height: 36px;
-  align-items: center;
-  padding: 0 14px 0 32px;
-  border: 1px solid var(--line-soft);
-  border-radius: 999px;
-  background: var(--bg-2);
+  @include refined-search-input($width: 280px);
 
-  .cl-search-icon {
-    position: absolute;
-    top: 50%;
-    left: 13px;
-    color: var(--fg-3);
-    font-size: 13px;
-    pointer-events: none;
-    transform: translateY(-50%);
-  }
-
-  input {
-    flex: 1;
-    border: 0;
-    background: transparent;
-    color: var(--fg-1);
-    font-family: inherit;
-    font-size: 13px;
-
-    &::placeholder {
-      color: var(--fg-4);
-    }
-
-    &:focus {
-      outline: none;
-    }
-  }
-
+  // Page-specific: a tiny "×" pill that clears the query when text is present.
+  // Sits as a flex sibling after the <input>; mixin handles everything else.
   .cl-search-clear {
     display: inline-flex;
     width: 18px;
@@ -270,20 +235,15 @@ $tag-colors: (
     cursor: pointer;
     font-size: 10px;
   }
-
-  &:focus-within {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 2px var(--cl-accent-25);
-  }
 }
 
 .cl-density {
   display: flex;
-  height: 36px;
+  height: 32px;
   align-items: center;
   padding: 6px 10px 6px 12px;
-  border: 1px solid var(--line-soft);
-  border-radius: 999px;
+  border: 1px solid var(--line);
+  border-radius: var(--bc-radius-sm, 6px);
   background: var(--bg-2);
   gap: 10px;
 
