@@ -112,7 +112,7 @@ export const RelatedTags = forwardRef<RelatedTagsHandle, RelatedTagsProps>(funct
                 >
                   {tag.tag_name}
                 </span>
-                <span className="count text-white ms-1">{tag.count}</span>
+                <span className="count ms-1">{tag.count}</span>
               </li>
             ))}
           </ul>

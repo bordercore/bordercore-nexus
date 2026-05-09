@@ -1363,27 +1363,28 @@
 
 // ==== Save bar (fixed to viewport, rendered outside .prefs-app) ====
 .prefs-savebar {
-  --prefs-accent: oklch(70% 0.15 278deg);
-  --prefs-accent-glow: oklch(70% 0.15 278deg / 22%);
-  --prefs-accent-fg: oklch(99% 0.01 278deg);
-  --prefs-bg-0: oklch(17% 0.012 280deg);
-  --prefs-bg-1: oklch(21% 0.013 280deg);
-  --prefs-bg-2: oklch(24.5% 0.014 280deg);
-  --prefs-bg-3: oklch(28.5% 0.015 280deg);
-  --prefs-fg-0: oklch(98% 0.006 280deg);
-  --prefs-fg-3: oklch(50% 0.016 280deg);
-  --prefs-line: oklch(32% 0.014 280deg);
-  --prefs-ok: oklch(80% 0.11 160deg);
-  --prefs-warn: oklch(82% 0.12 80deg);
+  // Alias the global theme tokens so the savebar retints under any theme.
+  --prefs-accent: var(--accent);
+  --prefs-accent-glow: var(--accent-glow);
+  --prefs-accent-fg: var(--accent-fg);
+  --prefs-bg-0: var(--bg-0);
+  --prefs-bg-1: var(--bg-1);
+  --prefs-bg-2: var(--bg-2);
+  --prefs-bg-3: var(--bg-3);
+  --prefs-fg-0: var(--fg-0);
+  --prefs-fg-3: var(--fg-3);
+  --prefs-line: var(--line);
+  --prefs-ok: var(--ok);
+  --prefs-warn: var(--warn);
 
   position: fixed;
   z-index: 40;
   right: 0;
   bottom: 0;
   left: 0;
-  border-top: 1px solid oklch(32% 0.014 280deg);
+  border-top: 1px solid var(--prefs-line);
   backdrop-filter: blur(20px) saturate(140%);
-  background: color-mix(in oklch, oklch(17% 0.012 280deg), transparent 15%);
+  background: color-mix(in oklch, var(--prefs-bg-0), transparent 15%);
   transform: translateY(100%);
   transition: transform 0.3s cubic-bezier(0.4, 0.2, 0.2, 1);
 

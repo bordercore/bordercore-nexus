@@ -21,7 +21,7 @@
   --be-radius-xs: 4px;
   --be-radius-sm: 6px;
   --be-radius-xl: 20px;
-  --be-fg-disabled: #3a3e4b;
+  --be-fg-disabled: var(--fg-4);
   --be-accent-hover: color-mix(in oklch, var(--accent), white 12%);
   --be-elev-1:
     0 1px 0 0 rgb(255 255 255 / 3%) inset,

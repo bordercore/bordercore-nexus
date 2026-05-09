@@ -23,7 +23,7 @@
   --bd-radius-sm: 6px;
   --bd-glow: 0.35;
   --bd-rail-w: 300px;
-  --bd-fg-disabled: #3a3e4b;
+  --bd-fg-disabled: var(--fg-4);
   --bd-accent-hover: color-mix(in oklch, var(--accent), white 12%);
   --bd-font-display: "Space Grotesk", "Inter", -apple-system, "Segoe UI", sans-serif;
   --bd-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
