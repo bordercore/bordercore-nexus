@@ -76,7 +76,7 @@ export function DeleteReminderModal({
           </div>
         )}
 
-        <div className="refined-modal-actions">
+        <div className="refined-modal-actions compact">
           <button type="button" className="refined-btn ghost" onClick={onClose}>
             cancel
           </button>
@@ -87,7 +87,7 @@ export function DeleteReminderModal({
             disabled={submitting}
           >
             <FontAwesomeIcon icon={faTrashAlt} className="refined-btn-icon" />
-            {submitting ? "deleting…" : "delete reminder"}
+            {submitting ? "deleting…" : "delete"}
           </button>
         </div>
       </div>

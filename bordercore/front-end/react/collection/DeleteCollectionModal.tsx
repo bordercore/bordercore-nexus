@@ -62,7 +62,7 @@ export function DeleteCollectionModal({
           </button>
           <button type="button" className="refined-btn danger" onClick={handleConfirm}>
             <FontAwesomeIcon icon={faTrashCan} className="refined-btn-icon" />
-            delete collection
+            delete
           </button>
         </div>
       </div>

@@ -91,7 +91,10 @@
     flex: 0 0 auto;
   }
 
-  .refined-btn.danger {
+  // Mirror of .refined-modal-actions's danger rule: the auto-margin
+  // separates a left-anchored destructive action from a trailing cluster,
+  // so only apply it when something follows the danger button.
+  .refined-btn.danger:not(:last-child) {
     margin-right: auto;
   }
 }

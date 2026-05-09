@@ -620,7 +620,7 @@ export function BlobUpdatePage({
                 </button>
                 <button type="button" className="refined-btn danger" onClick={confirmDelete}>
                   <FontAwesomeIcon icon={faTrashCan} className="refined-btn-icon" />
-                  delete blob
+                  delete
                 </button>
               </div>
             </div>

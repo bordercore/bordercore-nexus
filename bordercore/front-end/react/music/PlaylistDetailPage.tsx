@@ -367,7 +367,7 @@ export function PlaylistDetailPage({ playlist, urls, staticUrl }: PlaylistDetail
 
               <p className="refined-modal-lead">Are you sure you want to delete this playlist?</p>
 
-              <div className="refined-modal-actions">
+              <div className="refined-modal-actions compact">
                 <button
                   ref={deleteCancelRef}
                   type="button"

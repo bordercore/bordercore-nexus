@@ -49,7 +49,7 @@ export function DeactivateHabitModal({ open, onClose, onConfirm }: DeactivateHab
           view its history.
         </p>
 
-        <div className="refined-modal-actions">
+        <div className="refined-modal-actions compact">
           <button ref={cancelRef} type="button" className="refined-btn ghost" onClick={onClose}>
             cancel
           </button>

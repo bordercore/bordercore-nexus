@@ -204,7 +204,7 @@ export function TriplePaneFeedPage({
                 )}
               </p>
 
-              <div className="refined-modal-actions">
+              <div className="refined-modal-actions compact">
                 <button
                   ref={deleteCancelRef}
                   type="button"
@@ -220,7 +220,7 @@ export function TriplePaneFeedPage({
                   disabled={deleteSubmitting || !activeFeed}
                 >
                   <FontAwesomeIcon icon={faTrashAlt} className="refined-btn-icon" />
-                  {deleteSubmitting ? "deleting…" : "delete feed"}
+                  {deleteSubmitting ? "deleting…" : "delete"}
                 </button>
               </div>
             </div>

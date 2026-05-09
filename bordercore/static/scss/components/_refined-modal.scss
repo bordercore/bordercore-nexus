@@ -258,7 +258,14 @@
     flex: 0 0 auto;
   }
 
-  .refined-btn.danger {
+  // Push the danger button to the left only when something follows it (the
+  // EditTodoModal pattern: [delete | cancel save], where the auto-margin
+  // separates the destructive action from the cluster on the right). On
+  // pure-confirm modals where the row is [cancel, delete], the danger
+  // button is the last child and we want it to sit on the right alongside
+  // cancel — so don't apply the auto-margin there, otherwise it would eat
+  // the trailing space and override compact's justify-content: flex-end.
+  .refined-btn.danger:not(:last-child) {
     margin-right: auto;
   }
 
