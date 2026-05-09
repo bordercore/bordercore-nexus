@@ -68,7 +68,7 @@ def _wrap_element(browser, element):
 class SummaryPage:
 
     QUESTION = (By.CSS_SELECTOR, ".q-prompt p")
-    BREADCRUMB = (By.CSS_SELECTOR, ".drill-path .leaf")
+    BREADCRUMB = (By.CSS_SELECTOR, ".drill-progress-pill .pill-tag-chip")
 
     def __init__(self, browser):
         self.browser = browser
