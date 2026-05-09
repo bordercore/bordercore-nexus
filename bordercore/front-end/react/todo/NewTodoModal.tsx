@@ -221,7 +221,7 @@ export function NewTodoModal({
           />
         </div>
 
-        <div className="refined-modal-actions">
+        <div className="refined-modal-actions compact">
           <button type="button" className="refined-btn ghost" onClick={onClose}>
             cancel
           </button>
