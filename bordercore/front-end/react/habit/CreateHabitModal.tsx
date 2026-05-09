@@ -132,13 +132,13 @@ export function CreateHabitModal({ open, onClose, createUrl, onCreated }: Create
           />
         </div>
 
-        <div className="refined-modal-actions">
+        <div className="refined-modal-actions compact">
           <button type="button" className="refined-btn ghost" onClick={onClose}>
             cancel
           </button>
           <button type="submit" className="refined-btn primary" disabled={!canSubmit}>
             <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" />
-            create habit
+            create
           </button>
         </div>
       </form>

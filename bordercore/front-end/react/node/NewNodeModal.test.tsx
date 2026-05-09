@@ -52,7 +52,7 @@ describe("NewNodeModal", () => {
   it("disables the create button until a name is entered", async () => {
     const user = userEvent.setup();
     render(<NewNodeModal {...baseProps()} />);
-    const create = screen.getByRole("button", { name: /create node/i });
+    const create = screen.getByRole("button", { name: /^create$/i });
     expect(create).toBeDisabled();
 
     await user.type(screen.getByLabelText(/^name$/i), "new name");
@@ -63,7 +63,7 @@ describe("NewNodeModal", () => {
     const user = userEvent.setup();
     render(<NewNodeModal {...baseProps()} />);
     await user.type(screen.getByLabelText(/^name$/i), "new name");
-    await user.click(screen.getByRole("button", { name: /create node/i }));
+    await user.click(screen.getByRole("button", { name: /^create$/i }));
     expect(submitSpy).toHaveBeenCalledTimes(1);
   });
 
@@ -79,7 +79,7 @@ describe("NewNodeModal", () => {
   it("does not submit when the name is empty", async () => {
     const user = userEvent.setup();
     render(<NewNodeModal {...baseProps()} />);
-    await user.click(screen.getByRole("button", { name: /create node/i }));
+    await user.click(screen.getByRole("button", { name: /^create$/i }));
     expect(submitSpy).not.toHaveBeenCalled();
   });
 

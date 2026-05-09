@@ -108,7 +108,7 @@ export function NewNodeModal({ open, onClose, createUrl }: NewNodeModalProps) {
           />
         </div>
 
-        <div className="refined-modal-actions">
+        <div className="refined-modal-actions compact">
           <button type="button" className="refined-btn ghost" onClick={onClose}>
             cancel
           </button>
@@ -119,7 +119,7 @@ export function NewNodeModal({ open, onClose, createUrl }: NewNodeModalProps) {
             disabled={!canSubmit}
           >
             <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" />
-            create node
+            create
           </button>
         </div>
       </form>

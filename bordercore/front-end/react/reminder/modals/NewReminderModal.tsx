@@ -87,7 +87,7 @@ export function NewReminderModal({ open, onClose, createUrl, onCreated }: NewRem
           onSubmitOnEnter={submit}
         />
 
-        <div className="refined-modal-actions">
+        <div className="refined-modal-actions compact">
           <button type="button" className="refined-btn ghost" onClick={onClose}>
             cancel
           </button>
@@ -97,7 +97,7 @@ export function NewReminderModal({ open, onClose, createUrl, onCreated }: NewRem
             disabled={submitting || !state.name.trim()}
           >
             <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" />
-            {submitting ? "creating…" : "create reminder"}
+            {submitting ? "creating…" : "create"}
           </button>
         </div>
       </form>

@@ -190,13 +190,13 @@ export function NewBookmarkModal({
           </label>
         </div>
 
-        <div className="refined-modal-actions">
+        <div className="refined-modal-actions compact">
           <button type="button" className="refined-btn ghost" onClick={onClose}>
             cancel
           </button>
           <button type="submit" className="refined-btn primary" disabled={!canSubmit}>
             <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" />
-            create bookmark
+            create
           </button>
         </div>
       </form>

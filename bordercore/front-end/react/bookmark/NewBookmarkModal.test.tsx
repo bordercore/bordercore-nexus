@@ -55,7 +55,7 @@ describe("NewBookmarkModal", () => {
   it("disables Create until url and name are both filled", async () => {
     const user = userEvent.setup();
     render(<NewBookmarkModal {...baseProps()} />);
-    const submit = screen.getByRole("button", { name: /create bookmark/i });
+    const submit = screen.getByRole("button", { name: /^create$/i });
     expect(submit).toBeDisabled();
 
     await user.type(screen.getByLabelText(/^url$/i), "https://example.com");
@@ -100,7 +100,7 @@ describe("NewBookmarkModal", () => {
     await user.type(screen.getByLabelText(/^url$/i), "https://example.com");
     await user.type(screen.getByLabelText(/^name$/i), "Example");
     await user.click(screen.getByLabelText(/important/i));
-    await user.click(screen.getByRole("button", { name: /create bookmark/i }));
+    await user.click(screen.getByRole("button", { name: /^create$/i }));
 
     expect(doPost).toHaveBeenCalledTimes(1);
     const [calledUrl, params] = doPost.mock.calls[0];

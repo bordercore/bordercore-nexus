@@ -240,13 +240,13 @@ export function FeedEditorModal({
           />
         </div>
 
-        <div className="refined-modal-actions">
+        <div className="refined-modal-actions compact">
           <button type="button" className="refined-btn ghost" onClick={onClose}>
             cancel
           </button>
           <button type="submit" className="refined-btn primary" disabled={!canSubmit}>
             {!isEdit && <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" />}
-            {isEdit ? "save" : "create feed"}
+            {isEdit ? "save" : "create"}
           </button>
         </div>
       </form>

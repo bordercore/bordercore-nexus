@@ -126,7 +126,7 @@ export const CreateCollectionModal = forwardRef<
           </button>
           <button type="submit" className="refined-btn primary" disabled={!canSubmit}>
             <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" />
-            create collection
+            create
           </button>
         </div>
       </form>

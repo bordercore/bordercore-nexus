@@ -310,7 +310,7 @@ export function CreatePlaylistModal({
           </button>
           <button type="submit" className="refined-btn primary" disabled={disabledCreateButton}>
             <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" />
-            create playlist
+            create
           </button>
         </div>
       </form>
