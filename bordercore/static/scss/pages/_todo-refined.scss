@@ -73,14 +73,16 @@
   }
 
   // Title block + subhead on the left, primary "new" button pinned to the
-  // right. flex-start keeps the button top-aligned with the page title
-  // rather than baselining with the subhead. The bordered mixin owns the
-  // 18px-then-line-then-24px rhythm down to .todo-toolbar; .todo-subhead
-  // below is set to $margin: 0 so the gap doesn't stack.
+  // right. flex-end aligns the button's bottom with the subhead's bottom,
+  // matching the convention used by .cl-pagehead, .mlo-pagehead,
+  // .rb-page-head, .drill-page-head, .nd-title-row, and .rm-page-head.
+  // The bordered mixin owns the 18px-then-line-then-24px rhythm down to
+  // .todo-toolbar; .todo-subhead below is set to $margin: 0 so the gap
+  // doesn't stack.
   .todo-head {
     display: flex;
     flex-wrap: wrap;
-    align-items: flex-start;
+    align-items: flex-end;
     justify-content: space-between;
     gap: 20px;
 
