@@ -14,10 +14,9 @@ export function BookmarkPinnedBookmarks({ bookmarks, onUnpin }: BookmarkPinnedBo
   }
 
   return (
-    <div className="card-body backdrop-filter bookmark-pinned-bookmarks">
-      <div className="card-title-large">Pinned Bookmarks</div>
-      <hr className="divider" />
-      <ul className="list-group flex-column w-100">
+    <section className="bookmark-rail-section bookmark-pinned-bookmarks">
+      <div className="bookmark-rail-section-head">bookmarks</div>
+      <ul className="bookmark-rail-list">
         {bookmarks.map(bookmark => (
           <li
             key={bookmark.uuid}
@@ -61,7 +60,7 @@ export function BookmarkPinnedBookmarks({ bookmarks, onUnpin }: BookmarkPinnedBo
           </li>
         ))}
       </ul>
-    </div>
+    </section>
   );
 }
 

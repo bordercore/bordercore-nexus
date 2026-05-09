@@ -29,4 +29,14 @@
   // want the same secondary-glow hue. Drill's local --bc-accent-4 aliases
   // this so drill's existing namespace keeps working.
   --accent-cyan: color-mix(in oklch, var(--accent), var(--ok) 60%);
+
+  // Standard color for small uppercase mono section labels that sit inside
+  // a left-column rail/sidebar (e.g. /bookmark/'s "tags" / "bookmarks",
+  // /music/'s "library" / "playlists", /collection/'s rail labels, and
+  // similar headers on the blobs dashboard, drill page, and reminders
+  // dashboard). Aliases the per-theme --accent-bookmark token so each
+  // theme's own carefully picked blue value flows through; centralizing
+  // here keeps all rails visually consistent and gives a single place to
+  // retune the rail-head color sitewide.
+  --rail-head: var(--accent-bookmark);
 }

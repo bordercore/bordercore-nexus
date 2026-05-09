@@ -39,47 +39,73 @@
   }
 }
 
-// Combined search bar with inline filter chips
+// Combined search bar with inline filter chips. Dimensions/look mirror the
+// canonical `refined-search-input` mixin used on /music/ and /collection/ so
+// the bookmark page's action row matches the rest of the app — fixed 32px
+// height, 12px horizontal padding, 13px text. The mixin assumes a fixed
+// width, so the relevant declarations are inlined here with `flex: 1` to let
+// the bar grow into the action row's remaining space.
 .bookmark-search-bar {
   display: flex;
-  min-height: 3rem;
+  height: 32px;
   flex: 1;
   align-items: center;
-  padding: 0.25rem 0.5rem;
-  border: 1px solid var(--line-soft);
-  border-radius: var(--radius);
-  background-color: var(--bg-2);
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--bc-radius-sm, 6px);
+  background: var(--bg-2);
+  color: var(--fg-2);
   cursor: text;
-  gap: 0.375rem;
+  font-size: 13px;
+  gap: 8px;
+  transition: border-color var(--bc-t-fast) var(--bc-ease-out);
 
   &:focus-within {
-    border-color: var(--accent);
+    border-color: color-mix(in oklch, var(--accent), transparent 50%);
     box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent), transparent 75%);
   }
 
   .bookmark-search-bar-icon {
     flex-shrink: 0;
-    margin-left: 0.25rem;
-    color: var(--fg-2);
+    color: var(--fg-4);
+    font-size: 11px;
   }
 
   .bookmark-search-bar-form {
     min-width: 0;
     flex: 1;
 
-    // Reset the SelectValue wrapper styles inside the search bar
+    // Reset the SelectValue wrapper styles inside the search bar so the
+    // input line-aligns with the 32px outer track instead of stretching it.
     .select-value-wrapper {
       .form-control {
+        width: 100%;
         height: auto;
         min-height: 0;
-        padding: 0.25rem 0.5rem;
-        border: none;
+        padding: 0;
+        border: 0;
         background: transparent;
         box-shadow: none;
-        color: var(--fg-0);
+        color: var(--fg-1);
+        font-family: var(--font-ui);
+        font-size: 13px;
+
+        // Match the wrapper's line-height (which is 32px / wrapper height)
+        // so Chrome renders the text caret at the wrapper's full height.
+        // Without this, Bootstrap's .form-control { line-height: 1.5 } caps
+        // the line-box at 19.5px, which makes the caret render at the same
+        // visual height as the placeholder's letter stems and the two
+        // overlap at the first glyph. /music/'s plain <input> has no
+        // form-control class so it picks up the wrapper's 32px naturally.
+        line-height: 32px;
 
         &:focus {
           box-shadow: none;
+          outline: none;
+        }
+
+        &::placeholder {
+          color: var(--fg-4);
         }
       }
 
@@ -127,7 +153,14 @@
   }
 }
 
+// Sidebar surface — solid --bg-1 panel with a right-edge hairline, mirroring
+// the /music/ rail (.mlo-sidebar). The Bootstrap col-lg-3 wrapper still owns
+// width and column placement; this rule owns surface, padding, and rhythm.
 .bookmark-tags-sidebar {
+  padding: 20px 14px;
+  border-right: 1px solid var(--line-soft);
+  background: var(--bg-1);
+
   // Mobile drawer behavior
   @media (width < 992px) {
     position: fixed;
@@ -137,6 +170,7 @@
     width: 85%;
     max-width: 320px;
     height: 100vh;
+    border-right: 0;
     box-shadow: 2px 0 8px rgb(0 0 0 / 15%);
     overflow-y: auto;
     transform: translateX(-100%);
@@ -145,6 +179,98 @@
     &.drawer-open {
       transform: translateX(0);
     }
+  }
+
+  // Compact uppercase mono rail header. Same typography as /music/'s
+  // .mlo-section-head, colored via the sitewide --rail-head token so every
+  // left-column rail/sidebar header reads with the same theme-aware blue.
+  .bookmark-rail-section-head {
+    padding: 0 8px 6px;
+    color: var(--rail-head);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  // Reset the <ul> default margin/padding/bullets so the rail rows hug the
+  // section head and stack with their own gap.
+  .bookmark-rail-list {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    margin: 0;
+    gap: 1px;
+    list-style: none;
+  }
+
+  // Stacking gap between the "tags" and "bookmarks" sections.
+  .bookmark-rail-section + .bookmark-rail-section {
+    margin-top: 24px;
+  }
+
+  // Override the global .refined-side-item treatment so rail rows match
+  // /music/'s .mlo-nav-item exactly: dimmer rest color, transparent
+  // 1px-border that turns accent-tinted on active (no layout shift), bg-2
+  // hover, accent-tinted active background + soft accent glow shadow,
+  // left-aligned content with the count pushed by margin-left: auto on the
+  // count element. The global left accent bar (::before) is suppressed —
+  // the tinted background and border carry the active state cleanly.
+  .refined-side-item {
+    justify-content: flex-start;
+    padding: 6px 8px;
+    border: 1px solid transparent;
+    color: var(--fg-2);
+    font-size: 13px;
+
+    &:hover {
+      background: var(--bg-2);
+      color: var(--fg-1);
+    }
+
+    &.active {
+      border-color: color-mix(in oklch, var(--accent), transparent 75%);
+      background: color-mix(in oklch, var(--accent), transparent 85%);
+      box-shadow: 0 0 12px -4px color-mix(in oklch, var(--accent), transparent 55%);
+      color: var(--fg-1);
+    }
+
+    &.active::before {
+      display: none;
+    }
+  }
+
+  // Count chip restyled to mirror /music/'s .mlo-nav-count: plain mono
+  // numeral pushed to the right edge, no pill chrome. Font family / size
+  // already come from the global rule; this override only changes what
+  // diverges (size, padding, border, color, weight, letter-spacing).
+  .refined-count-badge {
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    margin-left: auto;
+    color: var(--fg-4);
+    font-weight: 500;
+    letter-spacing: 0;
+  }
+
+  // Hover / active variants written as full descendant chains rather than
+  // nested `&`-references because the parent's compiled selector is
+  // `.bookmark-tags-sidebar .refined-count-badge` — referencing it from
+  // inside a `.refined-side-item.active &` rule would inject the rail
+  // selector AFTER `.refined-side-item.active`, producing a chain that
+  // never matches (the rail wraps the row, not the other way around).
+  .refined-side-item:hover .refined-count-badge {
+    color: var(--fg-3);
+  }
+
+  // Suppress the global active-state pill fill so the active count reads
+  // as clean accent text instead of an accent-tinted chip.
+  .refined-side-item.active .refined-count-badge {
+    border-color: transparent;
+    background: transparent;
+    color: var(--accent);
   }
 }
 
@@ -212,39 +338,22 @@
   }
 }
 
-// Pinned tags sidebar — items use .refined-side-item from components/_refined-components.scss
+// Pinned tags rail section — items use .refined-side-item from
+// components/_refined-components.scss (with bookmark-tags-sidebar overrides).
 .bookmark-pinned-tags {
-  // Override Bootstrap .card-body's `flex: 1 1 auto` so the section sizes
-  // to content and doesn't stretch when a sibling sits below it.
-  flex: 0 0 auto;
-
-  .card-title-large {
-    color: var(--accent);
-    font-size: 1.5rem;
-  }
-
   // Drop-target highlight when a bookmark is dragged over a tag
   .refined-side-item.hover-tag {
     background-color: color-mix(in oklch, var(--accent), var(--bg-1) 65%);
   }
 }
 
-// Pinned bookmarks sidebar — sits below .bookmark-pinned-tags in the same column.
+// Pinned bookmarks rail section — sits below .bookmark-pinned-tags. Inter-section
+// spacing comes from `.bookmark-rail-section + .bookmark-rail-section` above.
 .bookmark-pinned-bookmarks {
-  flex: 0 0 auto;
-  margin-top: 1rem;
-
-  .card-title-large {
-    color: var(--accent);
-    font-size: 1.5rem;
-  }
-
+  // Padding, color, hover, border-radius all come from the rail-scoped
+  // .refined-side-item override above. This rule only owns the favicon-row
+  // gap; the link inside owns the layout for favicon + name + unpin button.
   .bookmark-pinned-bookmark-item {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    padding-right: 0.25rem;
-    padding-left: 0;
     gap: 0.5rem;
   }
 
@@ -494,6 +603,12 @@
 
     @include refined-row-card;
 
+    // Trim the mixin's 16px/20px down a notch so bookmark rows feel a bit
+    // tighter than the todo/reminder row defaults. Only the inner padding
+    // changes; surface, border, hover/selected glow all still come from
+    // refined-row-card.
+    padding: 12px 18px;
+
     &.selected {
       border-color: var(--bookmark-row-hover-border);
       box-shadow: var(--bookmark-row-selected-shadow), 0 0 0 1px var(--accent);
@@ -532,8 +647,17 @@
   }
 }
 
-// Drag overlay: portaled outside .bookmark-grid-container, needs top-level styles
+// Drag overlay: portaled outside .bookmark-grid-container, needs top-level
+// styles. The overlay element only carries `data-table-drag-overlay` and
+// `bookmark-grid-row` classes (no `bookmark-row`, no `data-grid-row`), so
+// none of the page-scoped or `data-grid-row`-scoped rules reach it. Every
+// dimension that contributes to the live row's height has to be restated
+// here for the dragged preview to match its footprint:
+//   - outer padding (matches .bookmark-row's 12px 18px override)
+//   - per-cell padding (tracks the global --data-table-cell-padding token
+//     so it stays in lockstep with the live row's cells)
 .data-table-drag-overlay.bookmark-grid-row {
+  padding: 12px 18px;
   border: 1px solid var(--bookmark-row-hover-border);
   border-radius: 0.5rem;
   background-color: var(--bookmark-row-bg);
@@ -541,7 +665,7 @@
 
   [role="cell"] {
     display: flex;
-    padding: 0.6rem 0.75rem;
+    padding: var(--data-table-cell-padding);
   }
 
   .content-cell {
@@ -618,172 +742,102 @@
 }
 
 // =============================================================================
-// BOOKMARK STATS CARDS
+// BOOKMARK PAGE HEAD
 // =============================================================================
+// Hero title for the bookmark overview page on the left, action cluster
+// (search bar, view-density toggle, dropdown) on the right. Uses the canonical
+// .bc-page-title gradient/halo treatment shared with Notes, Collections,
+// Drill, and Music.
 
-.bookmark-stats-row {
-  display: grid;
-  margin-bottom: 1rem;
-  gap: 0.75rem;
-  grid-template-columns: repeat(4, 1fr);
-
-  @media (width < 992px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-.bookmark-stat-card {
+.bookmark-page-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 1rem 1.25rem;
-  border: 1px solid var(--bookmark-row-border);
-  border-radius: 0.5rem;
-  background-color: var(--bookmark-row-bg);
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
+  padding-top: 32px;
+  gap: 1.5rem;
 
-  .stat-card-content {
-    display: flex;
-    min-width: 0;
-    flex-direction: column;
-  }
+  // Adopts the canonical "section-cap" rhythm shared with .cl-pagehead,
+  // .mlo-pagehead, .todo-head, .rb-page-head, .drill-page-head: 18px below
+  // the title row, a 1px hairline divider, then 24px of breathing room to
+  // the first body element below (the stats cards).
+  @include refined-page-head-bordered;
 
-  .stat-card-label {
-    color: var(--fg-2);
-    font-family: var(--font-monospace);
-    font-size: 0.7rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-  }
-
-  .stat-card-value {
-    overflow: hidden;
-    color: var(--fg-0);
-    font-size: 1.5rem;
-    font-weight: 700;
-    line-height: 1.2;
-    text-overflow: ellipsis;
-    transition: color 0.2s ease;
-    white-space: nowrap;
-  }
-
-  .stat-card-icon {
-    display: flex;
-    width: 2.5rem;
-    height: 2.5rem;
+  // Title sits flush left and never gets squeezed by the action row.
+  .bc-page-title {
     flex-shrink: 0;
+    margin: 0;
+  }
+
+  // Action cluster expands to fill the row; the search bar inside it
+  // takes the remaining flex space, view toggle and menu sit at the end.
+  .bookmark-page-actions {
+    min-width: 0;
+    flex: 1;
     align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background-color: var(--bg-2);
-    color: var(--fg-2);
-    font-size: 1rem;
-    transition:
-      background-color 0.2s ease,
-      color 0.2s ease;
   }
 
-  // Accent variants
-  &.stat-accent:hover {
-    border-color: var(--accent);
-    box-shadow: 0 0 10px color-mix(in oklch, var(--accent), transparent 75%), 0 0 20px color-mix(in oklch, var(--accent), transparent 75%);
-
-    .stat-card-value {
-      color: var(--accent);
-    }
-
-    .stat-card-icon {
-      background-color: color-mix(in oklch, var(--accent), transparent 75%);
-      color: var(--accent);
-    }
-  }
-
-  &.stat-purple:hover {
-    border-color: var(--accent-3);
-    box-shadow:
-      0 0 10px color-mix(in oklch, var(--accent-3), transparent 75%),
-      0 0 20px color-mix(in oklch, var(--accent-3), transparent 85%);
-
-    .stat-card-value {
-      color: var(--accent-3);
-    }
-
-    .stat-card-icon {
-      background-color: color-mix(in oklch, var(--accent-3), transparent 85%);
-      color: var(--accent-3);
-    }
-  }
-
-  &.stat-green:hover {
-    border-color: var(--ok);
-    box-shadow:
-      0 0 10px color-mix(in oklch, var(--ok), transparent 75%),
-      0 0 20px color-mix(in oklch, var(--ok), transparent 85%);
-
-    .stat-card-value {
-      color: var(--ok);
-    }
-
-    .stat-card-icon {
-      background-color: color-mix(in oklch, var(--ok), transparent 85%);
-      color: var(--ok);
-    }
-  }
-
-  &.stat-red:hover {
-    border-color: var(--danger);
-    box-shadow:
-      0 0 10px color-mix(in oklch, var(--danger), transparent 75%),
-      0 0 20px color-mix(in oklch, var(--danger), transparent 85%);
-
-    .stat-card-value {
-      color: var(--danger);
-    }
-
-    .stat-card-icon {
-      background-color: color-mix(in oklch, var(--danger), transparent 85%);
-      color: var(--danger);
-    }
+  // On narrow viewports stack the action row below the title so the
+  // search bar isn't crushed.
+  @media (width < 768px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
   }
 }
 
 // =============================================================================
-// TAG COVERAGE BAR
+// BOOKMARK STATS STRIP
 // =============================================================================
+// Flat horizontal strip of label · value pairs separated by 1px hairlines.
+// No card chrome, no icons — the value's color carries the semantic weight
+// (warn for "Untagged", danger for "Broken", neutral for the rest).
 
-.tag-coverage-bar {
+.bookmark-stats-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
   margin-bottom: 1rem;
+  margin-left: 18px;
 
-  .tag-coverage-label {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 0.375rem;
-    color: var(--fg-2);
-    font-family: var(--font-monospace);
-    font-size: 0.7rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-  }
+  // No outer border/background — the strip sits flat on the page surface,
+  // with vertical hairlines between entries doing the structural work. The
+  // 18px left margin mirrors each .bookmark-stat's internal padding so the
+  // first stat's "TOTAL" reads as if there were a virtual entry to its left.
+}
 
-  .tag-coverage-value {
-    color: var(--accent);
-    font-weight: 600;
-  }
+.bookmark-stat {
+  display: flex;
+  align-items: baseline;
+  padding: 0 18px;
+  border-left: 1px solid var(--line-soft);
+  gap: 10px;
 
-  .tag-coverage-track {
-    overflow: hidden;
-    height: 4px;
-    border-radius: 2px;
-    background-color: var(--bg-2);
-  }
-
-  .tag-coverage-fill {
-    height: 100%;
-    border-radius: 2px;
-    background-color: var(--accent);
-    transition: width 0.3s ease;
+  &:first-child {
+    padding-left: 0;
+    border-left: 0;
   }
 }
+
+.bookmark-stat-label {
+  color: var(--fg-3);
+  font: 500 10px/1.2 var(--font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.bookmark-stat-value {
+  overflow: hidden;
+  color: var(--fg-1);
+  font: 600 18px/1.1 "Space Grotesk", var(--font-ui);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  // Tone modifiers — only the numeral changes color; label stays muted mono.
+  &--warn {
+    color: var(--warn);
+  }
+
+  &--danger {
+    color: var(--danger);
+  }
+}
+

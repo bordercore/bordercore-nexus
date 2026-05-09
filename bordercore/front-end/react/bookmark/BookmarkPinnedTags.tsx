@@ -17,6 +17,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { doPost } from "../utils/reactUtils";
+import { tagSwatchColor } from "../utils/tagColors";
 import type { PinnedTag } from "./types";
 
 interface SortableTagItemProps {
@@ -96,6 +97,14 @@ function SortableTagItem({
           {...(isUntagged ? {} : { ...attributes, ...listeners })}
         >
           <span className="label">
+            {!isUntagged && (
+              <span
+                className="swatch"
+                aria-hidden="true"
+                // must remain inline (per-tag color variable)
+                style={{ "--swatch-color": tagSwatchColor(tag.name) } as React.CSSProperties}
+              />
+            )}
             <span className="text">{tag.name}</span>
           </span>
           {tag.bookmark_count !== undefined && tag.bookmark_count > 0 && (
@@ -110,7 +119,6 @@ function SortableTagItem({
 interface BookmarkPinnedTagsProps {
   tags: PinnedTag[];
   selectedTagName: string | null;
-  tagCoveragePct?: number;
   addTagUrl: string;
   removeTagUrl: string;
   sortTagsUrl: string;
@@ -122,7 +130,6 @@ interface BookmarkPinnedTagsProps {
 export function BookmarkPinnedTags({
   tags,
   selectedTagName,
-  tagCoveragePct,
   addTagUrl,
   removeTagUrl,
   sortTagsUrl,
@@ -219,48 +226,28 @@ export function BookmarkPinnedTags({
   );
 
   return (
-    <div className="card-body backdrop-filter bookmark-pinned-tags">
-      {tagCoveragePct !== undefined && (
-        <div className="tag-coverage-bar">
-          <div className="tag-coverage-label">
-            Tag Coverage <span className="tag-coverage-value">{tagCoveragePct}%</span>
-          </div>
-          <div className="tag-coverage-track">
-            <div
-              className="tag-coverage-fill"
-              style={{ width: `${tagCoveragePct}%` }} // must remain inline
-            />
-          </div>
-        </div>
-      )}
-      <div className="card-title-large">Pinned Tags</div>
-      <hr className="divider" />
-      <ul className="list-group flex-column w-100">
-        <div id="tag-list">
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext
-              items={tags.map(t => t.id.toString())}
-              strategy={verticalListSortingStrategy}
-            >
-              {tags.map(tag => (
-                <SortableTagItem
-                  key={tag.id}
-                  tag={tag}
-                  isSelected={tag.name === selectedTagName}
-                  onClickTag={handleTagClick}
-                  onBookmarkDrop={handleBookmarkDrop}
-                  bookmarkDragData={null}
-                />
-              ))}
-            </SortableContext>
-          </DndContext>
-        </div>
-      </ul>
-    </div>
+    <section className="bookmark-rail-section bookmark-pinned-tags">
+      <div className="bookmark-rail-section-head">tags</div>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext
+          items={tags.map(t => t.id.toString())}
+          strategy={verticalListSortingStrategy}
+        >
+          <ul className="bookmark-rail-list">
+            {tags.map(tag => (
+              <SortableTagItem
+                key={tag.id}
+                tag={tag}
+                isSelected={tag.name === selectedTagName}
+                onClickTag={handleTagClick}
+                onBookmarkDrop={handleBookmarkDrop}
+                bookmarkDragData={null}
+              />
+            ))}
+          </ul>
+        </SortableContext>
+      </DndContext>
+    </section>
   );
 }
 

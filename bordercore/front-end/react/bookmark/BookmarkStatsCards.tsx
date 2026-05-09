@@ -1,26 +1,24 @@
 import React from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faLink, faTag, faGlobe, faLinkSlash } from "@fortawesome/free-solid-svg-icons";
-import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import type { BookmarkStats } from "./types";
 
-interface StatCardProps {
+type StatTone = "neutral" | "warn" | "danger";
+
+interface StatProps {
   label: string;
   value: string | number;
-  icon: IconDefinition;
-  accentClass: string;
+  tone?: StatTone;
 }
 
-function StatCard({ label, value, icon, accentClass }: StatCardProps) {
+// Single label + value entry inside the stats strip. The tone modifier sits
+// on the value itself (not the wrapper) because only the numeral changes
+// color — the label stays in its muted mono treatment regardless.
+function Stat({ label, value, tone = "neutral" }: StatProps) {
+  const valueClass =
+    tone === "neutral" ? "bookmark-stat-value" : `bookmark-stat-value bookmark-stat-value--${tone}`;
   return (
-    <div className={`bookmark-stat-card ${accentClass}`}>
-      <div className="stat-card-content">
-        <div className="stat-card-label">{label}</div>
-        <div className="stat-card-value">{value}</div>
-      </div>
-      <div className="stat-card-icon">
-        <FontAwesomeIcon icon={icon} />
-      </div>
+    <div className="bookmark-stat">
+      <span className="bookmark-stat-label">{label}</span>
+      <span className={valueClass}>{value}</span>
     </div>
   );
 }
@@ -32,30 +30,10 @@ interface BookmarkStatsCardsProps {
 export function BookmarkStatsCards({ stats }: BookmarkStatsCardsProps) {
   return (
     <div className="bookmark-stats-row">
-      <StatCard
-        label="Total Links"
-        value={stats.total_count.toLocaleString()}
-        icon={faLink}
-        accentClass="stat-accent"
-      />
-      <StatCard
-        label="Untagged"
-        value={stats.untagged_count.toLocaleString()}
-        icon={faTag}
-        accentClass="stat-purple"
-      />
-      <StatCard
-        label="Top Domain"
-        value={stats.top_domain}
-        icon={faGlobe}
-        accentClass="stat-green"
-      />
-      <StatCard
-        label="Broken Links"
-        value={stats.broken_count.toLocaleString()}
-        icon={faLinkSlash}
-        accentClass="stat-red"
-      />
+      <Stat label="Total" value={stats.total_count.toLocaleString()} />
+      <Stat label="Untagged" value={stats.untagged_count.toLocaleString()} tone="warn" />
+      <Stat label="Top Domain" value={stats.top_domain} />
+      <Stat label="Broken" value={stats.broken_count.toLocaleString()} tone="danger" />
     </div>
   );
 }
