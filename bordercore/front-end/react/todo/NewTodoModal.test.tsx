@@ -69,7 +69,7 @@ describe("NewTodoModal", () => {
   it("disables the create button until a name is entered", async () => {
     const user = userEvent.setup();
     render(<NewTodoModal {...baseProps()} />);
-    const create = screen.getByRole("button", { name: /create todo/i });
+    const create = screen.getByRole("button", { name: /^create$/i });
     expect(create).toBeDisabled();
     await user.type(screen.getByLabelText(/^name$/i), "ship things");
     expect(create).toBeEnabled();
@@ -87,7 +87,7 @@ describe("NewTodoModal", () => {
     await user.type(screen.getByLabelText(/^name$/i), "write report");
     await user.selectOptions(screen.getByLabelText(/^priority$/i), "1");
     await user.type(screen.getByLabelText(/^url/i), "https://example.com");
-    await user.click(screen.getByRole("button", { name: /create todo/i }));
+    await user.click(screen.getByRole("button", { name: /^create$/i }));
 
     expect(doPost).toHaveBeenCalledTimes(1);
     const [calledUrl, params] = doPost.mock.calls[0];
@@ -113,7 +113,7 @@ describe("NewTodoModal", () => {
   it("does not submit when the name is empty", async () => {
     const user = userEvent.setup();
     render(<NewTodoModal {...baseProps()} />);
-    await user.click(screen.getByRole("button", { name: /create todo/i }));
+    await user.click(screen.getByRole("button", { name: /^create$/i }));
     expect(doPost).not.toHaveBeenCalled();
   });
 

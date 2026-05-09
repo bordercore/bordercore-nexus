@@ -227,7 +227,7 @@ export function NewTodoModal({
           </button>
           <button type="submit" className="refined-btn primary" disabled={!canSubmit}>
             <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" />
-            create todo
+            create
           </button>
         </div>
       </form>
