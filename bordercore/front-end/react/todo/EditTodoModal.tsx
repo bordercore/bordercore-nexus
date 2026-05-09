@@ -247,7 +247,7 @@ export function EditTodoModal({
           />
         </div>
 
-        <div className="refined-modal-actions">
+        <div className="refined-modal-actions compact">
           <button type="button" className="refined-btn danger" onClick={handleDelete}>
             <FontAwesomeIcon icon={faTrashAlt} className="refined-btn-icon" />
             delete

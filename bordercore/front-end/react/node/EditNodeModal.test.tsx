@@ -30,7 +30,7 @@ describe("EditNodeModal", () => {
   it("enables save only when the name is non-empty (after trim)", async () => {
     const user = userEvent.setup();
     render(<EditNodeModal {...baseProps()} />);
-    const save = screen.getByRole("button", { name: /save changes/i });
+    const save = screen.getByRole("button", { name: /^save$/i });
     expect(save).toBeEnabled();
 
     const input = screen.getByLabelText(/^name$/i);
@@ -51,7 +51,7 @@ describe("EditNodeModal", () => {
     const input = screen.getByLabelText(/^name$/i);
     await user.clear(input);
     await user.type(input, "  renamed  ");
-    await user.click(screen.getByRole("button", { name: /save changes/i }));
+    await user.click(screen.getByRole("button", { name: /^save$/i }));
     expect(onSave).toHaveBeenCalledWith("renamed", "original note");
   });
 

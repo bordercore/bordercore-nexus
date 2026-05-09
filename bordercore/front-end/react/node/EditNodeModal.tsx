@@ -94,7 +94,7 @@ export function EditNodeModal({
           />
         </div>
 
-        <div className="refined-modal-actions">
+        <div className="refined-modal-actions compact">
           <button type="button" className="refined-btn ghost" onClick={onClose}>
             cancel
           </button>
@@ -105,7 +105,7 @@ export function EditNodeModal({
             disabled={!canSubmit}
           >
             <FontAwesomeIcon icon={faCheck} className="refined-btn-icon" />
-            save changes
+            save
           </button>
         </div>
       </div>

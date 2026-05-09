@@ -346,7 +346,7 @@ export function EditPlaylistModal({
             cancel
           </button>
           <button type="submit" className="refined-btn primary" disabled={!isValid() || submitting}>
-            {submitting ? "Saving..." : "Save"}
+            {submitting ? "saving…" : "save"}
           </button>
         </div>
       </form>
