@@ -14,7 +14,10 @@
 
   display: grid;
   padding: 28px 36px 60px;
-  gap: 32px;
+
+  // Column gap between list and rail; row gap from .rm-page-head's bordered
+  // mixin margin-bottom owns the vertical rhythm down to the body.
+  gap: 0 32px;
   grid-template-columns: 1fr 320px;
 
   @media (width < 1100px) {
@@ -36,42 +39,64 @@
 }
 
 // -----------------------------------------------------------------------------
-// Page head
+// Page head — full-width across the .rm-dashboard grid (spans both columns).
+// A column flex container that stacks (a) the title-block + actions row
+// and (b) the filter pills toolbar above the bordered mixin's hairline.
 // -----------------------------------------------------------------------------
 .rm-page-head {
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 20px;
+  flex-direction: column;
+
+  // Tight gap from the title/sub block down to the pills+search row. The
+  // title-block already owns its own h1→sub rhythm (4px) so anything
+  // larger here reads as a "breath" between sections rather than a
+  // single page header.
+  gap: 8px;
+  grid-column: 1 / -1;
+
+  @include refined-page-head-bordered;
 
   .rm-page-head-text {
     max-width: 620px;
   }
 
   h1 {
-    margin: 0;
+    margin: 0 0 4px;
     color: var(--fg-0);
     font-size: 24px;
     font-weight: 600;
     letter-spacing: -0.01em;
   }
 
-  h1 .rm-page-head-meta {
-    color: var(--fg-3);
-    font-weight: 500;
-  }
-
-  p {
-    margin: 8px 0 0;
-    color: var(--fg-2);
-    font-size: 13.5px;
-    line-height: 1.5;
+  // Count line ("19 total · 18 active") below the title. Same treatment as
+  // /blob/notes/'s .nl-page-sub: 14.5px --fg-2 body, with the numeric tokens
+  // wrapped in <span class="count"> for the canonical bold tabular-nums
+  // emphasis.
+  .rm-page-head-sub {
+    @include refined-page-sub($margin: 0);
   }
 }
 
+// Bottom row inside .rm-page-head, sitting just above the bordered mixin's
+// hairline: filter pills on the left, actions cluster (search + new) on
+// the right. Both are flex-end-aligned so the bottoms line up with the
+// divider, regardless of internal height differences.
+.rm-page-head-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.rm-page-head-actions {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+
 // -----------------------------------------------------------------------------
-// Toolbar (search + filter pills)
+// Toolbar (filter pills only — search lives in .rm-page-head-actions)
 // -----------------------------------------------------------------------------
 .rm-toolbar {
   display: flex;
@@ -82,8 +107,7 @@
 
 .rm-search {
   position: relative;
-  max-width: 360px;
-  flex: 1 1 280px;
+  width: 320px;
 
   .rm-search-icon {
     position: absolute;
@@ -100,7 +124,10 @@
     height: 36px;
     padding: 0 14px 0 32px;
     border: 1px solid var(--line-soft);
-    border-radius: 999px;
+
+    // Canonical search-input radius — matches refined-search-input mixin
+    // adopted by /collection/, /music/, /blob/notes/.
+    border-radius: var(--bc-radius-sm, 6px);
     background: var(--bg-2);
     color: var(--fg-0);
     font-family: var(--font-ui);

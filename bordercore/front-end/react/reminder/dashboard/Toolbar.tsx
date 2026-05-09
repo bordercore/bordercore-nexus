@@ -1,11 +1,7 @@
 import React from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import type { FilterKey } from "../types";
 
 interface ToolbarProps {
-  query: string;
-  onQueryChange: (q: string) => void;
   filter: FilterKey;
   onFilterChange: (f: FilterKey) => void;
   counts: Record<FilterKey, number>;
@@ -17,20 +13,9 @@ const PILLS: { key: FilterKey; label: string }[] = [
   { key: "today", label: "firing today" },
 ];
 
-export function Toolbar({ query, onQueryChange, filter, onFilterChange, counts }: ToolbarProps) {
+export function Toolbar({ filter, onFilterChange, counts }: ToolbarProps) {
   return (
     <div className="rm-toolbar">
-      <label className="rm-search">
-        <FontAwesomeIcon icon={faSearch} className="rm-search-icon" />
-        <input
-          type="search"
-          autoComplete="off"
-          placeholder="filter reminders · fuzzy match name + note"
-          aria-label="filter reminders"
-          value={query}
-          onChange={e => onQueryChange(e.target.value)}
-        />
-      </label>
       <div className="rm-filter-pills" role="group" aria-label="filter">
         {PILLS.map(pill => (
           <button

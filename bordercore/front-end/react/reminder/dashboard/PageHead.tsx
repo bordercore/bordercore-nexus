@@ -1,32 +1,48 @@
 import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faSearch } from "@fortawesome/free-solid-svg-icons";
 
 interface PageHeadProps {
   total: number;
   active: number;
+  query: string;
+  onQueryChange: (q: string) => void;
   onNew: () => void;
+  children?: React.ReactNode;
 }
 
-export function PageHead({ total, active, onNew }: PageHeadProps) {
+export function PageHead({ total, active, query, onQueryChange, onNew, children }: PageHeadProps) {
   return (
     <header className="rm-page-head">
       <div className="rm-page-head-text">
         <h1>
-          <span className="bc-page-title">Reminders</span>{" "}
-          <span className="rm-page-head-meta">
-            / {total} total · {active} active
-          </span>
+          <span className="bc-page-title">Reminders</span>
         </h1>
-        <p>
-          Recurring nudges. The rail tracks what&apos;s next, what fires today, and the queue. Tap a
-          row to view, edit, or remove.
+        <p className="rm-page-head-sub">
+          <span className="count">{total}</span> total · <span className="count">{active}</span>{" "}
+          active
         </p>
       </div>
-      <button type="button" className="refined-btn primary" onClick={onNew}>
-        <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" />
-        new
-      </button>
+      <div className="rm-page-head-bottom">
+        {children}
+        <div className="rm-page-head-actions">
+          <label className="rm-search">
+            <FontAwesomeIcon icon={faSearch} className="rm-search-icon" />
+            <input
+              type="search"
+              autoComplete="off"
+              placeholder="filter reminders · fuzzy match name + note"
+              aria-label="filter reminders"
+              value={query}
+              onChange={e => onQueryChange(e.target.value)}
+            />
+          </label>
+          <button type="button" className="refined-btn primary" onClick={onNew}>
+            <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" />
+            new
+          </button>
+        </div>
+      </div>
     </header>
   );
 }

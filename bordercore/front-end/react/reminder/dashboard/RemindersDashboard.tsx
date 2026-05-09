@@ -69,15 +69,16 @@ export function RemindersDashboard({
 
   return (
     <div className="rm-dashboard">
+      <PageHead
+        total={reminders.length}
+        active={stats.active}
+        query={query}
+        onQueryChange={setQuery}
+        onNew={onNew}
+      >
+        <Toolbar filter={filter} onFilterChange={setFilter} counts={counts} />
+      </PageHead>
       <div className="rm-list-col">
-        <PageHead total={reminders.length} active={stats.active} onNew={onNew} />
-        <Toolbar
-          query={query}
-          onQueryChange={setQuery}
-          filter={filter}
-          onFilterChange={setFilter}
-          counts={counts}
-        />
         <ReminderList
           groups={groups}
           imminentUuid={imminent?.uuid ?? null}
