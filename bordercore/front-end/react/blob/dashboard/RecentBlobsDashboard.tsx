@@ -69,9 +69,7 @@ export function RecentBlobsDashboard({ data, urls }: RecentBlobsDashboardProps) 
       filtered · <span className="count">{filteredBlobs.length}</span> of{" "}
       <span className="count">{data.total_count}</span>
     </>
-  ) : (
-    "filter by doctype, tag, or date in the rail"
-  );
+  ) : null;
 
   return (
     <div className="rb-app">
@@ -90,7 +88,7 @@ export function RecentBlobsDashboard({ data, urls }: RecentBlobsDashboardProps) 
           <header className="rb-page-head">
             <div className="rb-page-head-text">
               <h1 className="rb-page-title">Recent Blobs</h1>
-              <p className="rb-page-sub">{subCopy}</p>
+              {subCopy && <p className="rb-page-sub">{subCopy}</p>}
             </div>
             <div className="rb-page-actions">
               <a href={urls.createBlob} className="refined-btn primary">
