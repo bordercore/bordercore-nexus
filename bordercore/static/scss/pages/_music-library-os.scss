@@ -244,14 +244,15 @@
 
   // Bordered page head — shares the refined-page-head-bordered rhythm with
   // .cl-pagehead, .todo-head, .rb-page-head, .drill-page-head. The mixin's
-  // padding-bottom: 18px is emitted last and overrides the 0 set by the
-  // shorthand `padding: 0 24px` above, leaving 24px left/right padding and
+  // padding-bottom: 18px is emitted last and overrides the bottom of the
+  // shorthand `padding: 32px 24px 0` above, leaving 24px left/right padding,
+  // 32px above the title (matching /collection/'s .cl-main padding-top), and
   // the canonical 18px below the title.
   .mlo-pagehead {
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
-    padding: 0 24px;
+    padding: 32px 24px 0;
     gap: 24px; // matches .cl-pagehead
     grid-column: 2;
     grid-row: 1;
