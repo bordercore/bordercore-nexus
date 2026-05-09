@@ -216,7 +216,11 @@
   .nl-head {
     display: grid;
     align-items: end;
-    margin-bottom: 24px;
+
+    // Tight gap from the title/description block down to the toolbar
+    // (search + sort + view + count) — matches the 8px rhythm used by
+    // /reminder/'s .rm-page-head.
+    margin-bottom: 8px;
     gap: 32px;
     grid-template-columns: 1fr auto;
 
@@ -368,7 +372,11 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    padding: 10px 0 18px;
+
+    // No padding-top: .nl-head's 8px margin-bottom owns the gap from
+    // the title block down to the search input. Bottom padding + hairline
+    // remain so the toolbar still caps off the page-header region.
+    padding: 0 0 18px;
     border-bottom: 1px solid var(--hairline);
     margin-bottom: 24px;
     gap: 14px;
@@ -393,7 +401,10 @@
       width: 100%;
       padding: 9px 34px;
       border: 1px solid var(--line-soft);
-      border-radius: 8px;
+
+      // Canonical search-input radius — matches refined-search-input mixin
+      // adopted by /collection/, /music/, /blob/notes/.
+      border-radius: var(--bc-radius-sm, 6px);
       background: var(--bg-1);
       color: var(--fg-1);
       font: 400 13px/1.3 var(--font-ui);
@@ -403,8 +414,8 @@
       &::placeholder { color: var(--fg-4); }
 
       &:focus {
-        border-color: var(--accent);
-        box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent) 20%, transparent);
+        border-color: color-mix(in oklch, var(--accent), transparent 50%);
+        box-shadow: 0 0 0 3px var(--accent-glow);
       }
     }
   }
