@@ -1,0 +1,16 @@
+// Page-specific overrides for /bookmark/update/<uuid>/.
+
+// The page reuses the shared .refined-page-shell + .refined-field shell, so
+// this partial only carries the per-page deviations from the family
+// defaults. Currently it recolors field captions ("url", "name", "note",
+// "tags") onto the theme accent — matching the .mlo-create-page treatment
+// on /music/create/ and the .be-label treatment on /blob/create/.
+
+// Scoped to #bookmark-edit-page (the React root id) so the shared
+// .refined-field used by every modal across the app keeps its neutral
+// --fg-2 caption color.
+#bookmark-edit-page {
+  .refined-field > label {
+    color: var(--accent);
+  }
+}
