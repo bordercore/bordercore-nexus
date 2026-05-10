@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCheck } from "@fortawesome/free-solid-svg-icons";
 
 interface SaveAsNoteFormProps {
   defaultTitle: string;
@@ -66,6 +68,7 @@ export function SaveAsNoteForm({ defaultTitle, onSave, onCancel }: SaveAsNoteFor
           className="chatbot-action-btn chatbot-action-btn--primary"
           onClick={submit}
         >
+          <FontAwesomeIcon icon={faCheck} className="refined-btn-icon" />
           save
         </button>
       </div>

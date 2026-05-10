@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTimes } from "@fortawesome/free-solid-svg-icons";
+import { faTimes, faCheck } from "@fortawesome/free-solid-svg-icons";
 import {
   NODE_COLORS,
   ROTATE_OPTIONS,
@@ -175,6 +175,7 @@ export default function NodeQuoteModal({
             cancel
           </button>
           <button type="submit" className="refined-btn primary">
+            <FontAwesomeIcon icon={faCheck} className="refined-btn-icon" />
             save
           </button>
         </div>

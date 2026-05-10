@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useCallback } from "react";
 import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faStar, faMusic, faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
+import { faStar, faMusic, faExclamationTriangle, faCheck } from "@fortawesome/free-solid-svg-icons";
 import { SelectValue, SelectValueHandle } from "../common/SelectValue";
 import { TagsInput, TagsInputHandle } from "../common/TagsInput";
 import { ToggleSwitch } from "../common/ToggleSwitch";
@@ -592,6 +592,7 @@ export function SongEditPage({
             Cancel <kbd>Esc</kbd>
           </a>
           <button type="submit" className="mlo-edit-save mlo-btn-primary" disabled={submitting}>
+            <FontAwesomeIcon icon={faCheck} className="refined-btn-icon" />
             {submitting ? "Saving…" : "Save"}
             <kbd>{modKey}</kbd>
             <kbd>S</kbd>

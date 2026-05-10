@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTimes } from "@fortawesome/free-solid-svg-icons";
+import { faTimes, faCheck } from "@fortawesome/free-solid-svg-icons";
 import TagsInput, { TagsInputHandle } from "../common/TagsInput";
 import { ToggleSwitch } from "../common/ToggleSwitch";
 import type { CollectionDetail } from "./types";
@@ -139,6 +139,7 @@ export function EditCollectionModal({
             cancel
           </button>
           <button type="submit" className="refined-btn primary" disabled={!canSubmit}>
+            <FontAwesomeIcon icon={faCheck} className="refined-btn-icon" />
             save
           </button>
         </div>

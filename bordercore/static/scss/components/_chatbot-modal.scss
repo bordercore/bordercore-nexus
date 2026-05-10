@@ -288,6 +288,10 @@
 }
 
 .chatbot-action-btn {
+  // inline-flex + gap accommodates the .refined-btn-icon prefix on the
+  // primary variant ("save") without hurting bare-text variants ("cancel").
+  display: inline-flex;
+  align-items: center;
   padding: 3px 8px;
   border: 1px solid transparent;
   border-radius: 6px;
@@ -296,6 +300,7 @@
   cursor: pointer;
   font-family: var(--font-ui);
   font-size: 11px;
+  gap: 6px;
   transition: all 120ms;
 }
 

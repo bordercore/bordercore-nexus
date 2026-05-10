@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowUpRightFromSquare, faTags } from "@fortawesome/free-solid-svg-icons";
+import { faArrowUpRightFromSquare, faTags, faCheck } from "@fortawesome/free-solid-svg-icons";
 import { TagsInput, TagsInputHandle } from "../common/TagsInput";
 import { ToggleSwitch } from "../common/ToggleSwitch";
 import { doGet, getCsrfToken } from "../utils/reactUtils";
@@ -341,7 +341,8 @@ export function BookmarkEditPage({
                   cancel
                 </a>
                 <button type="submit" className="refined-btn primary">
-                  save changes
+                  <FontAwesomeIcon icon={faCheck} className="refined-btn-icon" />
+                  save
                 </button>
               </div>
             </form>

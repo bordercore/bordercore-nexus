@@ -1,4 +1,6 @@
 import React, { useState, useRef, useCallback } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCheck } from "@fortawesome/free-solid-svg-icons";
 import { Card } from "../common/Card";
 import TagsInput, { TagsInputHandle } from "../common/TagsInput";
 import RelatedTags, { RelatedTagsHandle } from "../common/RelatedTags";
@@ -288,7 +290,13 @@ export function BookmarkFormPage({
                   <a href={urls.bookmarkOverview} className="btn btn-secondary">
                     Cancel
                   </a>
-                  <input className="btn btn-primary ms-2" type="submit" name="Go" value="Save" />
+                  <button
+                    type="submit"
+                    className="btn btn-primary ms-2 d-inline-flex align-items-center gap-2"
+                  >
+                    <FontAwesomeIcon icon={faCheck} className="refined-btn-icon" />
+                    Save
+                  </button>
                 </div>
               </div>
             </div>

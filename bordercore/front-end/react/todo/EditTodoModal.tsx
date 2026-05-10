@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTimes, faTrashAlt } from "@fortawesome/free-solid-svg-icons";
+import { faTimes, faTrashAlt, faCheck } from "@fortawesome/free-solid-svg-icons";
 import { TagsInput, TagsInputHandle } from "../common/TagsInput";
 import { RefinedDatePicker } from "../common/RefinedDatePicker";
 import { doPut } from "../utils/reactUtils";
@@ -256,6 +256,7 @@ export function EditTodoModal({
             cancel
           </button>
           <button type="submit" className="refined-btn primary" disabled={!canSubmit}>
+            <FontAwesomeIcon icon={faCheck} className="refined-btn-icon" />
             save
           </button>
         </div>

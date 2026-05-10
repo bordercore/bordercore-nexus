@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTimes } from "@fortawesome/free-solid-svg-icons";
+import { faTimes, faCheck } from "@fortawesome/free-solid-svg-icons";
 import { SelectValue } from "../common/SelectValue";
 import { ROTATE_OPTIONS, type NodeOptions } from "./types";
 
@@ -140,6 +140,7 @@ export default function NodeNodeModal({
             cancel
           </button>
           <button type="submit" className="refined-btn primary" disabled={!canSubmit}>
+            <FontAwesomeIcon icon={faCheck} className="refined-btn-icon" />
             save
           </button>
         </div>

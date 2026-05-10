@@ -1,4 +1,6 @@
 import React from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCheck } from "@fortawesome/free-solid-svg-icons";
 
 interface SaveBarProps {
   visible: boolean;
@@ -54,7 +56,8 @@ export function SaveBar({
             onClick={onSave}
             disabled={!dirty || saving}
           >
-            <span>{saving ? "saving…" : "save changes"}</span>
+            <FontAwesomeIcon icon={faCheck} className="refined-btn-icon" />
+            <span>{saving ? "saving…" : "save"}</span>
             <span className="kbd">⌘S</span>
           </button>
         </div>
