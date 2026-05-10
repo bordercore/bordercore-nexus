@@ -7,6 +7,7 @@ import {
   faExpand,
   faCompress,
   faTimes,
+  faCheck,
 } from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
 
@@ -404,18 +405,16 @@ export function BlobUpdatePage({
 
   return (
     <div className={`be-page ${flags.is_note ? "is-note" : ""}`}>
-      {/* Header */}
-      <header className="be-header">
-        {blobUuid ? (
+      {/* Header — only the edit-mode back-arrow lives here. Create mode
+          relies on the in-form cancel button next to Save instead, so the
+          header collapses entirely (no empty 48px bar). */}
+      {blobUuid && (
+        <header className="be-header">
           <a className="be-back" href={urls.detail} aria-label="Back to blob detail">
             <FontAwesomeIcon icon={faArrowLeft} />
           </a>
-        ) : (
-          <a className="be-back" href={urls.list} aria-label="Back to blobs list">
-            <FontAwesomeIcon icon={faArrowLeft} />
-          </a>
-        )}
-      </header>
+        </header>
+      )}
 
       <div className="be-workspace">
         {/* Left column */}
@@ -560,8 +559,17 @@ export function BlobUpdatePage({
                 <FontAwesomeIcon icon={faTrashCan} /> delete blob
               </button>
             )}
-            <button type="button" className="be-btn primary be-save-confirm" onClick={handleSubmit}>
-              Save changes
+            {/* be-save-spacer pushes the cancel + save pair to the right
+                edge; whichever element comes first in that group carries it. */}
+            <a
+              href={blobUuid ? urls.detail : urls.list}
+              className="refined-btn ghost be-save-spacer"
+            >
+              cancel
+            </a>
+            <button type="button" className="refined-btn primary" onClick={handleSubmit}>
+              <FontAwesomeIcon icon={faCheck} className="refined-btn-icon" />
+              save
             </button>
           </div>
         </section>
