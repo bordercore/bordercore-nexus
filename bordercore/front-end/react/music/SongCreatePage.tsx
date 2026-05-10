@@ -1,11 +1,30 @@
 import React, { useRef, useState, useCallback, useEffect } from "react";
 import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faStar, faMusic, faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
+import { faStar, faMusic, faExclamationTriangle, faCheck } from "@fortawesome/free-solid-svg-icons";
 import { SelectValue, SelectValueHandle } from "../common/SelectValue";
 import { ToggleSwitch } from "../common/ToggleSwitch";
 import { TagsInput, TagsInputHandle } from "../common/TagsInput";
 import { getCsrfToken } from "../utils/reactUtils";
+
+// Format an ISO timestamp as a short, sidebar-friendly "when". Returns
+// "today" / "yesterday" / "N days ago" for the last fortnight, falling back
+// to a locale date for older uploads. Returns "—" for null / invalid input
+// so the stats list still has a placeholder when the library is empty.
+function formatRelativeUpload(iso: string | null): string {
+  if (!iso) return "—";
+  const then = new Date(iso);
+  if (Number.isNaN(then.getTime())) return "—";
+  const now = new Date();
+  const dayMs = 24 * 60 * 60 * 1000;
+  const startOfThen = new Date(then.getFullYear(), then.getMonth(), then.getDate());
+  const startOfNow = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const days = Math.floor((startOfNow.getTime() - startOfThen.getTime()) / dayMs);
+  if (days <= 0) return "today";
+  if (days === 1) return "yesterday";
+  if (days < 14) return `${days} days ago`;
+  return then.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+}
 
 interface SourceOption {
   id: number;
@@ -60,11 +79,18 @@ interface SongInfo {
   songSize: string | null;
   sampleRate: string | null;
   bitRate: string | null;
+  genre: string | null;
 }
 
 interface TagSuggestion {
   name: string;
   count: number;
+}
+
+interface LibraryStats {
+  total_songs: number;
+  total_artists: number;
+  last_upload_iso: string | null;
 }
 
 interface SongCreatePageProps {
@@ -77,6 +103,7 @@ interface SongCreatePageProps {
   tagSuggestions: TagSuggestion[];
   sourceOptions: SourceOption[];
   initialSourceId: number | null;
+  libraryStats: LibraryStats | null;
 }
 
 export function SongCreatePage({
@@ -89,6 +116,7 @@ export function SongCreatePage({
   tagSuggestions,
   sourceOptions,
   initialSourceId,
+  libraryStats,
 }: SongCreatePageProps) {
   const [formData, setFormData] = useState<SongFormData>({
     title: "",
@@ -114,6 +142,7 @@ export function SongCreatePage({
     songSize: null,
     sampleRate: null,
     bitRate: null,
+    genre: null,
   });
   const [filename, setFilename] = useState("");
   const [songFile, setSongFile] = useState<File | null>(null);
@@ -123,17 +152,6 @@ export function SongCreatePage({
   const tagsInputRef = useRef<TagsInputHandle>(null);
   const selectValueRef = useRef<SelectValueHandle>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const formRef = useRef<HTMLFormElement>(null);
-
-  const isMac = React.useMemo(() => {
-    if (typeof navigator === "undefined") return false;
-    const platform =
-      (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData
-        ?.platform ||
-      navigator.platform ||
-      navigator.userAgent;
-    return /Mac|iPhone|iPod|iPad/i.test(platform);
-  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -220,6 +238,7 @@ export function SongCreatePage({
         songSize: data.filesize,
         sampleRate: data.sample_rate,
         bitRate: data.bit_rate,
+        genre: data.genre || null,
       });
 
       if (data.artist && data.title) {
@@ -258,7 +277,7 @@ export function SongCreatePage({
     if (tokenInput) tokenInput.value = getCsrfToken();
   };
 
-  // Keyboard shortcuts: 1-5 → rating, Cmd/Ctrl+S → save, Esc → cancel.
+  // Keyboard shortcuts: 1-5 → rating, Esc → cancel.
   // Bare digits only fire when focus is outside an editable field, so typing
   // a year of "1985" doesn't accidentally rewrite the rating.
   useEffect(() => {
@@ -270,11 +289,6 @@ export function SongCreatePage({
     };
 
     const onKey = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") {
-        event.preventDefault();
-        formRef.current?.requestSubmit();
-        return;
-      }
       if (event.key === "Escape" && !isEditing(event.target)) {
         event.preventDefault();
         window.location.href = cancelUrl;
@@ -297,7 +311,6 @@ export function SongCreatePage({
   }, [cancelUrl, setRating]);
 
   const displayRating = hoverRating ?? formData.rating ?? 0;
-  const modKey = isMac ? "⌘" : "Ctrl";
 
   return (
     <div className="music-library-os mlo-edit-page mlo-create-page">
@@ -351,6 +364,12 @@ export function SongCreatePage({
                   <span className="mlo-edit-hero-stat-value">{songInfo.bitRate}</span>
                 </div>
               )}
+              {songInfo.genre && (
+                <div className="mlo-edit-hero-stat">
+                  <span className="mlo-edit-hero-stat-label">genre</span>
+                  <span className="mlo-edit-hero-stat-value">{songInfo.genre}</span>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -360,6 +379,9 @@ export function SongCreatePage({
         {tagSuggestions.length > 0 && (
           <div className="mlo-edit-sidebar-card">
             <div className="mlo-edit-sidebar-head">Tag Suggestions</div>
+            <p className="mlo-create-hint mlo-create-hint-tight">
+              Click a chip to add it. Numbers show how many songs already use the tag.
+            </p>
             <div className="mlo-edit-sidebar-tags">
               {tagSuggestions.map(tag => (
                 <button
@@ -369,9 +391,27 @@ export function SongCreatePage({
                   onClick={() => handleTagClick(tag.name)}
                   title={`${tag.count} song${tag.count === 1 ? "" : "s"}`}
                 >
-                  {tag.name}
+                  <span className="mlo-edit-tag-chip-name">{tag.name}</span>
+                  <span className="mlo-edit-tag-chip-count">{tag.count}</span>
                 </button>
               ))}
+            </div>
+          </div>
+        )}
+        {songInfo.genre && (
+          <div className="mlo-edit-sidebar-card">
+            <div className="mlo-edit-sidebar-head">From this file</div>
+            <p className="mlo-create-hint mlo-create-hint-tight">
+              ID3 reported a genre. Click to add it as a tag.
+            </p>
+            <div className="mlo-edit-sidebar-tags">
+              <button
+                type="button"
+                className="mlo-edit-tag-chip mlo-edit-tag-chip-id3"
+                onClick={() => handleTagClick(songInfo.genre as string)}
+              >
+                <span className="mlo-edit-tag-chip-name">{songInfo.genre}</span>
+              </button>
             </div>
           </div>
         )}
@@ -379,15 +419,64 @@ export function SongCreatePage({
           <div className="mlo-edit-sidebar-card">
             <div className="mlo-edit-sidebar-head">How it works</div>
             <p className="mlo-create-hint">
-              Choose a local MP3 to upload. Embedded <strong>ID3v2</strong> tags will be scanned and
-              the form fields populated automatically.
+              Choose a local <strong>MP3</strong>. Embedded <strong>ID3v2</strong> tags fill in
+              title, artist, album, year, track, and length automatically — including the file's bit
+              rate, sample rate, and (when present) genre.
             </p>
+            <p className="mlo-create-hint">
+              As soon as artist and title are set, the page silently checks for{" "}
+              <strong>possible duplicates</strong> already in the library and surfaces them inline
+              under the Title field.
+            </p>
+            <p className="mlo-create-hint">
+              Click any chip in <strong>Tag Suggestions</strong> to add it; the most-used tags show
+              their song count so you can pick high-coverage ones first.
+            </p>
+          </div>
+        )}
+        <div className="mlo-edit-sidebar-card">
+          <div className="mlo-edit-sidebar-head">Shortcuts</div>
+          <ul className="mlo-create-shortcuts">
+            <li>
+              <span className="mlo-create-shortcut-keys">
+                <kbd>1</kbd>–<kbd>5</kbd>
+              </span>
+              <span className="mlo-create-shortcut-desc">set rating</span>
+            </li>
+            <li>
+              <span className="mlo-create-shortcut-keys">
+                <kbd>Esc</kbd>
+              </span>
+              <span className="mlo-create-shortcut-desc">cancel and return</span>
+            </li>
+          </ul>
+          <p className="mlo-create-hint mlo-create-hint-tight">
+            Bare digits only fire when you're not typing in a field, so a year like 1985 won't
+            rewrite the rating.
+          </p>
+        </div>
+        {libraryStats && (
+          <div className="mlo-edit-sidebar-card">
+            <div className="mlo-edit-sidebar-head">Library at a glance</div>
+            <dl className="mlo-create-stats">
+              <div className="mlo-create-stat">
+                <dt>songs</dt>
+                <dd>{libraryStats.total_songs.toLocaleString()}</dd>
+              </div>
+              <div className="mlo-create-stat">
+                <dt>artists</dt>
+                <dd>{libraryStats.total_artists.toLocaleString()}</dd>
+              </div>
+              <div className="mlo-create-stat">
+                <dt>last upload</dt>
+                <dd>{formatRelativeUpload(libraryStats.last_upload_iso)}</dd>
+              </div>
+            </dl>
           </div>
         )}
       </aside>
 
       <form
-        ref={formRef}
         id="song-form"
         className="mlo-edit-form"
         action={submitUrl}
@@ -432,7 +521,7 @@ export function SongCreatePage({
                   id="id_file"
                   name="song"
                   hidden
-                  accept="audio/*"
+                  accept="audio/mpeg,.mp3"
                   onChange={handleFileChange}
                   disabled={processingFile}
                 />
@@ -539,6 +628,9 @@ export function SongCreatePage({
               />
               <span>Compilation</span>
             </label>
+            <span className="mlo-edit-field-hint mlo-edit-toggle-hint">
+              groups the track under a shared "album artist" instead of the song's own artist
+            </span>
           </div>
 
           {formData.compilation && (
@@ -580,7 +672,12 @@ export function SongCreatePage({
               )}
             </div>
             <div className="refined-field">
-              <label htmlFor="id_original_year">Original year</label>
+              <label htmlFor="id_original_year">
+                Original year
+                <span className="mlo-edit-field-hint">
+                  for reissues — when the song first released
+                </span>
+              </label>
               <input
                 type="text"
                 id="id_original_year"
@@ -673,9 +770,8 @@ export function SongCreatePage({
             Cancel <kbd>Esc</kbd>
           </a>
           <button type="submit" className="mlo-edit-save mlo-btn-primary" disabled={submitting}>
+            <FontAwesomeIcon icon={faCheck} className="refined-btn-icon" />
             {submitting ? "Saving…" : "Save"}
-            <kbd>{modKey}</kbd>
-            <kbd>S</kbd>
           </button>
         </div>
       </form>

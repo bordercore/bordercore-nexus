@@ -41,6 +41,24 @@ if (container) {
     initialSourceId = parseInt(initialSourceIdStr, 10);
   }
 
+  // Parse the library snapshot rendered into the sidebar's "Library at a
+  // glance" card. The view sends totals + a last-upload ISO timestamp, but
+  // gracefully tolerate missing or malformed JSON (e.g. brand-new accounts
+  // with an empty library).
+  let libraryStats: {
+    total_songs: number;
+    total_artists: number;
+    last_upload_iso: string | null;
+  } | null = null;
+  const libraryStatsJson = container.getAttribute("data-library-stats");
+  if (libraryStatsJson) {
+    try {
+      libraryStats = JSON.parse(libraryStatsJson);
+    } catch (e) {
+      console.error("Error parsing library stats:", e);
+    }
+  }
+
   if (submitUrl && cancelUrl) {
     const root = createRoot(container);
     root.render(
@@ -54,6 +72,7 @@ if (container) {
         tagSuggestions={tagSuggestions}
         sourceOptions={sourceOptions}
         initialSourceId={initialSourceId}
+        libraryStats={libraryStats}
       />
     );
   } else {

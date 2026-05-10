@@ -1206,6 +1206,8 @@
   }
 
   .mlo-edit-tag-chip {
+    display: inline-flex;
+    align-items: center;
     padding: 3px 10px;
     border: 1px solid color-mix(in oklch, var(--mlo-accent-2), transparent 75%);
     border-radius: 999px;
@@ -1213,12 +1215,25 @@
     color: var(--mlo-accent-2);
     cursor: pointer;
     font: 500 11px var(--font-mono);
+    gap: 6px;
     transition: background 0.12s, color 0.12s, border-color 0.12s;
 
     &:hover {
       border-color: color-mix(in oklch, var(--mlo-accent), transparent 50%);
       background: color-mix(in oklch, var(--mlo-accent), transparent 80%);
       color: var(--mlo-accent);
+    }
+
+    // Count badge sits to the right of the tag name on the create page so
+    // users can pick high-coverage tags first. The chip is inline-flex so a
+    // bare-text chip (used elsewhere) still renders cleanly.
+    .mlo-edit-tag-chip-count {
+      padding: 0 6px;
+      border-radius: 999px;
+      background: color-mix(in oklch, var(--mlo-accent-2), transparent 80%);
+      color: var(--mlo-accent-2);
+      font-size: 10px;
+      line-height: 1.4;
     }
   }
 
@@ -1320,6 +1335,59 @@
   // time, so the hero falls back to the empty cover placeholder and
   // a generic byline.
   &.mlo-create-page {
+    // Card-title color is derived from the complementary hue
+    // (accent-h + 180°): every theme's accent is a cool blue/purple/magenta,
+    // so the complement lands in warm amber / yellow-green territory and
+    // reads visibly different from the plain --accent field captions
+    // below. Still theme-friendly because it tracks --accent-h on every
+    // theme switch.
+    --mlo-card-title-h: calc(var(--accent-h, 220) + 180);
+    --mlo-card-title: oklch(80% 0.13 var(--mlo-card-title-h));
+
+    // Override the shared .mlo-edit-page narrow-sidebar grid: on create the
+    // tag-suggestions sidebar is more substantial, so split the body 50/50.
+    grid-template-columns: 1fr 1fr;
+
+    // Lift the field captions ("File", "Title", "Artist", "Album", …) onto
+    // the per-theme accent — matches the .be-label treatment on /blob/create
+    // so all "refined" create pages read with the same colored caption style.
+    // Scoped to .mlo-create-page so the shared .refined-field used by every
+    // modal across the app keeps its neutral --fg-2 caption color.
+    .refined-field > label {
+      color: var(--accent);
+    }
+
+    // Card / section titles ("Tag Suggestions", "How it works", "Shortcuts",
+    // "Identity", "Catalog", "Notes", …). Lifts them off the tiny uppercase
+    // mono "eyebrow" used on the song-edit page into a proper card-header
+    // style: title-case, sans-serif, with a 3px bar to the left as a
+    // card-header marker.
+    .mlo-edit-sidebar-head,
+    .mlo-edit-section-head {
+      display: flex;
+      align-items: center;
+      color: var(--mlo-card-title);
+      font: 600 13px/1.2 "Space Grotesk", var(--font-ui);
+      gap: 8px;
+      letter-spacing: -0.01em;
+      text-transform: none;
+
+      &::before {
+        display: inline-block;
+        width: 3px;
+        height: 14px;
+        border-radius: 2px;
+        background: var(--mlo-card-title);
+        content: "";
+      }
+    }
+
+    // Soften the section divider so the heavier title doesn't sit on a
+    // flat hairline — tinted with the same color it announces.
+    .mlo-edit-section-head {
+      border-bottom-color: color-mix(in oklch, var(--mlo-card-title), transparent 80%);
+    }
+
     .mlo-create-file-btn {
       display: inline-flex;
       align-items: center;
@@ -1348,14 +1416,113 @@
     }
 
     .mlo-create-hint {
-      margin: 0;
+      margin: 0 0 10px;
       color: var(--mlo-fg-3);
       font: 400 12px/1.5 var(--font-ui);
+
+      &:last-child { margin-bottom: 0; }
 
       strong {
         color: var(--mlo-accent-2);
         font-weight: 600;
       }
+    }
+
+    // Compact variant used inside cards that lead with an explanatory
+    // single-liner (Tag Suggestions, From this file, Shortcuts).
+    .mlo-create-hint-tight {
+      margin-top: 0;
+      font-size: 11px;
+    }
+
+    // Reused on the toggle row so the explanatory copy reads as a hint
+    // rather than a label, and centers vertically against the toggle pill.
+    .mlo-edit-toggle-hint {
+      max-width: 32ch;
+      align-self: center;
+      margin-left: 0;
+      line-height: 1.4;
+    }
+
+    // Two-column "key | description" rows in the Shortcuts card.
+    .mlo-create-shortcuts {
+      padding: 0;
+      margin: 0 0 10px;
+      list-style: none;
+
+      li {
+        display: flex;
+        align-items: center;
+        padding: 4px 0;
+        border-bottom: 1px solid var(--mlo-hairline);
+        gap: 12px;
+
+        &:last-child { border-bottom: 0; }
+      }
+
+      kbd {
+        display: inline-block;
+        min-width: 22px;
+        padding: 2px 6px;
+        border: 1px solid var(--mlo-line-soft);
+        border-radius: 4px;
+        background: var(--mlo-bg-3);
+        color: var(--fg-1);
+        font: 600 10px/1 var(--font-mono);
+        text-align: center;
+      }
+    }
+
+    .mlo-create-shortcut-keys {
+      display: inline-flex;
+      flex: 0 0 auto;
+      align-items: center;
+      color: var(--mlo-fg-4);
+      font: 500 11px var(--font-mono);
+      gap: 4px;
+    }
+
+    .mlo-create-shortcut-desc {
+      color: var(--mlo-fg-2);
+      font: 400 12px var(--font-ui);
+    }
+
+    // "Library at a glance" — three label/value pairs stacked tightly so the
+    // card reads as a quick reference rather than a featured stats panel.
+    .mlo-create-stats {
+      display: grid;
+      padding: 0;
+      margin: 0;
+      gap: 6px;
+    }
+
+    .mlo-create-stat {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+
+      dt {
+        color: var(--mlo-fg-4);
+        font: 500 10px var(--font-mono);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      dd {
+        margin: 0;
+        color: var(--fg-1);
+        font: 600 13px var(--font-ui);
+      }
+    }
+
+    // Genre chip pulled directly from the just-uploaded file's ID3 tag —
+    // tinted with the warm accent to distinguish it from suggestions sourced
+    // from the user's existing library.
+    .mlo-edit-tag-chip-id3 {
+      border-color: color-mix(in oklch, var(--mlo-accent), transparent 55%);
+      background: color-mix(in oklch, var(--mlo-accent), transparent 85%);
+      color: var(--mlo-accent);
     }
   }
 }

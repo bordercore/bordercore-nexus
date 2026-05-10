@@ -20,6 +20,7 @@
          data-id3-info-url="{% url 'music:get_song_id3_info' %}"
          data-tag-suggestions="{{ tag_counts_json }}"
          data-source-options="{{ source_options_json }}"
-         data-initial-source-id="{{ initial_source_id }}">
+         data-initial-source-id="{{ initial_source_id }}"
+         data-library-stats="{{ library_stats_json }}">
     </div>
 {% endblock %}

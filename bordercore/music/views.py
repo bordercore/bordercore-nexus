@@ -714,6 +714,24 @@ class SongCreateView(LoginRequiredMixin, FormRequestMixin, CreateView):
             context["initial_source_id"] = initial_source.id
         except SongSource.DoesNotExist:
             context["initial_source_id"] = ""
+
+        # Library snapshot rendered in the create-page sidebar so the user can
+        # see the collection's current size without leaving the form. Pulled
+        # in a single pass: the .latest() lookup uses TimeStampedModel's
+        # `created` field via its Meta ordering, falling back to None on an
+        # empty library.
+        last_upload = (
+            Song.objects.filter(user=user)
+            .order_by("-created")
+            .values_list("created", flat=True)
+            .first()
+        )
+        library_stats = {
+            "total_songs": Song.objects.filter(user=user).count(),
+            "total_artists": Artist.objects.filter(song__user=user).distinct().count(),
+            "last_upload_iso": last_upload.isoformat() if last_upload else None,
+        }
+        context["library_stats_json"] = json.dumps(library_stats)
         return context
 
     def form_valid(self, form: SongForm) -> HttpResponse:

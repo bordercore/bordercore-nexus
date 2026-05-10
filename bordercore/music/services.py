@@ -596,6 +596,7 @@ def get_id3_info(song: bytes) -> dict[str, Any]:
         "album_name": None,
         "year": None,
         "track": None,
+        "genre": None,
     }
 
     for field in ("artist", "title"):
@@ -604,6 +605,10 @@ def get_id3_info(song: bytes) -> dict[str, Any]:
         data["year"] = info["date"][0]
     if info.get("album"):
         data["album_name"] = info["album"][0]
+    # Genre is part of the EasyID3 default key map, but only some files set
+    # it. Surface it so the create page can offer it as a one-click tag.
+    if info.get("genre"):
+        data["genre"] = info["genre"][0]
     data["length"] = int(info.info.length)
     data["length_pretty"] = convert_seconds(info.info.length)
 
