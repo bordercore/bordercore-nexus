@@ -28,6 +28,14 @@ const CONSTELLATION_VSCALE = 0.78;
 // constellation's tilt drifts only a few degrees while it crosses the bar.
 const ROTATION_PERIOD_S_MIN = 240; // 4 min
 const ROTATION_PERIOD_S_MAX = 360; // 6 min
+// Per-constellation vertical bob. A slow sine wave on the y-axis, randomized
+// in phase and frequency, so each constellation drifts up and down at its
+// own pace. Amplitude is a fraction of the unused vertical margin (i.e. the
+// space between the constellation and the top/bottom of the bar) so the
+// motion stays inside the bar regardless of canvas height.
+const Y_BOB_FREQ_MIN_HZ = 0.02; // ~50s period
+const Y_BOB_FREQ_MAX_HZ = 0.06; // ~16s period
+const Y_BOB_AMPLITUDE_FRAC = 0.25; // fraction of verticalMargin
 
 // Deterministic seeded RNG so the ambient star field is stable across
 // remounts and so React strict-mode double-effect doesn't reshuffle the
@@ -58,6 +66,9 @@ interface ActiveConstellation {
   scale: number; // pixel height of the constellation box
   rotation: number; // current angle in radians, accumulated over time
   rotationSpeed: number; // rad/sec, signed (negative = counter-clockwise)
+  vxSign: number; // +1 (moves right) or -1 (moves left)
+  yPhase: number; // radians; per-constellation phase for vertical bob
+  yBobFreq: number; // Hz; per-constellation vertical bob frequency
 }
 
 interface ShootingStar {
@@ -87,27 +98,36 @@ function readAccentColor(): string {
   return styles.getPropertyValue("--accent-3").trim() || "rgb(220, 180, 240)";
 }
 
+// Pick a constellation from CONSTELLATIONS, avoiding `prevDef` if one is
+// given so consecutive entries don't repeat. Returns the def only — the
+// caller is responsible for creating the ActiveConstellation around it.
+function pickConstellationDef(prevDef: Constellation | null, rng: () => number): Constellation {
+  const pool = prevDef ? CONSTELLATIONS.filter(c => c.name !== prevDef.name) : CONSTELLATIONS;
+  return pool[Math.floor(rng() * pool.length)];
+}
+
 function spawnConstellation(
-  prevDef: Constellation | null,
-  leftEdgePx: number,
+  def: Constellation,
+  xOffsetPx: number,
+  vxSign: number,
   canvasHeight: number,
   rng: () => number
 ): ActiveConstellation {
-  // Pick a different one from the previous if possible.
-  const pool = prevDef ? CONSTELLATIONS.filter(c => c.name !== prevDef.name) : CONSTELLATIONS;
-  const def = pool[Math.floor(rng() * pool.length)];
   const scale = canvasHeight * CONSTELLATION_VSCALE;
   const period = ROTATION_PERIOD_S_MIN + rng() * (ROTATION_PERIOD_S_MAX - ROTATION_PERIOD_S_MIN);
   const direction = rng() < 0.5 ? -1 : 1;
   return {
     def,
-    xOffsetPx: leftEdgePx,
+    xOffsetPx,
     yJitter: rng() * 2 - 1,
     scale,
     // Start upright so reduced-motion users see the canonical orientation;
     // animated users see the tilt accumulate from zero over time.
     rotation: 0,
     rotationSpeed: (direction * (Math.PI * 2)) / period,
+    vxSign,
+    yPhase: rng() * Math.PI * 2,
+    yBobFreq: Y_BOB_FREQ_MIN_HZ + rng() * (Y_BOB_FREQ_MAX_HZ - Y_BOB_FREQ_MIN_HZ),
   };
 }
 
@@ -151,11 +171,15 @@ export function ConstellationBg() {
       canvas.style.height = `${h}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      // Seed two constellations across the bar. In reduce-motion mode they
-      // sit at fixed offsets; in animated mode the right-hand one will pan
-      // in over time so it doesn't matter exactly where it starts.
-      const a = spawnConstellation(null, cw * 0.12, ch, rng);
-      const b = spawnConstellation(a.def, cw * 0.62, ch, rng);
+      // Seed two constellations across the bar with randomized horizontal
+      // directions. In reduce-motion mode they sit at fixed offsets and
+      // never move; in animated mode each picks its own direction and bob.
+      const defA = pickConstellationDef(null, rng);
+      const vxA = rng() < 0.5 ? -1 : 1;
+      const a = spawnConstellation(defA, cw * 0.12, vxA, ch, rng);
+      const defB = pickConstellationDef(defA, rng);
+      const vxB = rng() < 0.5 ? -1 : 1;
+      const b = spawnConstellation(defB, cw * 0.62, vxB, ch, rng);
       actives = [a, b];
     };
 
@@ -176,12 +200,19 @@ export function ConstellationBg() {
       ctx.globalAlpha = prevAlpha;
     };
 
-    const drawConstellation = (c: ActiveConstellation, isFront: boolean) => {
+    const drawConstellation = (c: ActiveConstellation, isFront: boolean, t: number) => {
       const widthPx = constellationWidthPx(c);
       // Vertical placement: center the constellation in the bar with a small
-      // jitter so successive entries don't sit on the exact same baseline.
+      // fixed jitter so successive entries don't sit on the exact same
+      // baseline, plus a slow sinusoidal bob so the constellation drifts up
+      // and down over time. Both terms scale with verticalMargin so the
+      // motion always stays inside the bar. Bob is skipped in reduce-motion
+      // so the canonical orientation stays put.
       const verticalMargin = ch - c.scale;
-      const yTop = verticalMargin * 0.5 + c.yJitter * verticalMargin * 0.35;
+      const bob = reduceMotion
+        ? 0
+        : Math.sin(t * c.yBobFreq * Math.PI * 2 + c.yPhase) * verticalMargin * Y_BOB_AMPLITUDE_FRAC;
+      const yTop = verticalMargin * 0.5 + c.yJitter * verticalMargin * 0.25 + bob;
 
       // Draw in a coordinate space whose origin is the constellation's center,
       // so rotation spins around that center rather than the canvas origin.
@@ -276,30 +307,51 @@ export function ConstellationBg() {
     };
 
     const advance = (t: number, dt: number) => {
-      // Pan and rotate constellations.
+      // Pan (signed by per-constellation direction) and rotate.
       for (const c of actives) {
-        c.xOffsetPx -= PAN_PX_PER_SEC * dt;
+        c.xOffsetPx += c.vxSign * PAN_PX_PER_SEC * dt;
         c.rotation += c.rotationSpeed * dt;
       }
 
-      // Recycle any that have fully exited on the left.
+      // Recycle any that have fully exited on either side. The replacement
+      // gets a new randomized horizontal direction and is spawned off-screen
+      // on the side opposite its travel direction so it enters heading inward.
       for (let i = 0; i < actives.length; i++) {
         const c = actives[i];
-        if (c.xOffsetPx + constellationWidthPx(c) < 0) {
-          // Find the true rightmost right-edge among other active constellations.
-          let rightmost = 0;
+        const w = constellationWidthPx(c);
+        const exitedLeft = c.xOffsetPx + w < 0;
+        const exitedRight = c.xOffsetPx > cw;
+        if (!exitedLeft && !exitedRight) continue;
+
+        const newDef = pickConstellationDef(c.def, rng);
+        const newWidth = newDef.width * (ch * CONSTELLATION_VSCALE);
+        const newVxSign = rng() < 0.5 ? -1 : 1;
+        const gap =
+          CONSTELLATION_GAP_MIN_PX + rng() * (CONSTELLATION_GAP_MAX_PX - CONSTELLATION_GAP_MIN_PX);
+
+        let spawnX: number;
+        if (newVxSign > 0) {
+          // Heading right — spawn off-screen on the left, behind any
+          // survivor that is currently on the left side too.
+          let leftmost = 0;
+          for (const other of actives) {
+            if (other === c) continue;
+            if (other.xOffsetPx < leftmost) leftmost = other.xOffsetPx;
+          }
+          spawnX = Math.min(leftmost, 0) - gap - newWidth;
+        } else {
+          // Heading left — spawn off-screen on the right, past any survivor
+          // already off the right edge.
+          let rightmost = cw;
           for (const other of actives) {
             if (other === c) continue;
             const re = other.xOffsetPx + constellationWidthPx(other);
             if (re > rightmost) rightmost = re;
           }
-          // Never spawn inside the bar — always at least past the right edge.
-          const spawnBase = Math.max(rightmost, cw);
-          const gap =
-            CONSTELLATION_GAP_MIN_PX +
-            rng() * (CONSTELLATION_GAP_MAX_PX - CONSTELLATION_GAP_MIN_PX);
-          actives[i] = spawnConstellation(c.def, spawnBase + gap, ch, rng);
+          spawnX = rightmost + gap;
         }
+
+        actives[i] = spawnConstellation(newDef, spawnX, newVxSign, ch, rng);
       }
 
       // Shooting-star scheduling.
@@ -336,7 +388,7 @@ export function ConstellationBg() {
         if (actives[i].xOffsetPx < actives[frontIdx].xOffsetPx) frontIdx = i;
       }
       for (let i = 0; i < actives.length; i++) {
-        drawConstellation(actives[i], i === frontIdx);
+        drawConstellation(actives[i], i === frontIdx, t);
       }
 
       if (!reduceMotion) drawShootingStar(t);
