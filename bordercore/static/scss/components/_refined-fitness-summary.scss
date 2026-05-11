@@ -1,0 +1,522 @@
+// =============================================================================
+// Refined Fitness Summary — card-grid landing page
+// =============================================================================
+// Replacement for the legacy active/inactive-table summary at /fitness/.
+// The page is a single 4-column grid of uniformly-sized cards sorted by
+// status (today → overdue → on-track), with a filter chip row across the
+// top and a show-inactive toggle below.
+// Theming: muscle-group identity is carried by --muscle-{slug} tokens
+// declared per theme (see themes/_theme-{dark,light}.scss). Each card
+// re-exposes its group token as --card-accent via a [data-group] selector,
+// then [data-status] modifiers brighten or mute that accent. Light themes
+// inherit softer hues automatically through the same selectors — no
+// per-mode branches in this file.
+
+// stylelint-disable no-descending-specificity, selector-class-pattern
+
+.fitness-summary {
+  position: relative;
+  min-height: 100vh;
+  padding: 24px 32px 80px;
+  margin: -1rem -1.5rem 0; // escape base layout's card padding
+  background: var(--bg-0);
+  color: var(--fg-1);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  letter-spacing: -0.005em;
+  line-height: 1.5;
+
+  &::before {
+    position: absolute;
+    z-index: 0;
+    background:
+      radial-gradient(
+        1100px 700px at 90% -5%,
+        color-mix(in oklch, var(--accent), transparent 88%),
+        transparent 55%
+      ),
+      radial-gradient(
+        900px 600px at 10% 110%,
+        color-mix(in oklch, var(--accent), transparent 94%),
+        transparent 60%
+      );
+    content: "";
+    inset: 0;
+    pointer-events: none;
+  }
+
+  > * {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+// ---- Top bar ----------------------------------------------------------------
+
+.fitness-summary__topbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--hairline);
+  margin-bottom: 14px;
+  gap: 16px;
+
+  @media (width <= 720px) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.fitness-summary__title {
+  // Spacing-only wrapper; typography flows from the inner .bc-page-title
+  // span (canonical %bc-page-title — Space Grotesk 44px, accent gradient).
+  margin: 0;
+}
+
+// ---- Filter chip row --------------------------------------------------------
+
+.fitness-summary__chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 4px 0 18px;
+  gap: 8px;
+}
+
+.fitness-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg-2);
+  color: var(--fg-2);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  gap: 6px;
+  letter-spacing: 0.02em;
+  transition:
+    background-color 120ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 120ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 120ms cubic-bezier(0.22, 1, 0.36, 1);
+
+  &:hover {
+    border-color: color-mix(in oklch, var(--accent), var(--line) 60%);
+    color: var(--fg-1);
+  }
+
+  &--active {
+    border-color: transparent;
+    background: var(--accent);
+    color: var(--accent-fg, var(--bg-0));
+  }
+
+  &__dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--card-accent, var(--fg-3));
+  }
+}
+
+// Set the per-chip color via [data-group] using the same token bridge as
+// the cards below. The `all` chip has no dot, so it doesn't read any token.
+.fitness-chip[data-group="chest"]      { --card-accent: var(--muscle-chest); }
+.fitness-chip[data-group="back"]       { --card-accent: var(--muscle-back); }
+.fitness-chip[data-group="legs"]       { --card-accent: var(--muscle-legs); }
+.fitness-chip[data-group="arms"]       { --card-accent: var(--muscle-arms); }
+.fitness-chip[data-group="shoulders"]  { --card-accent: var(--muscle-shoulders); }
+.fitness-chip[data-group="abdominals"] { --card-accent: var(--muscle-abs); }
+.fitness-chip[data-group="other"]      { --card-accent: var(--muscle-other); }
+
+// Page-header name search — mirrors /collection/'s .cl-search. Pushed to the
+// far right of the chip row via auto-margin so the chips stay left-aligned.
+.fitness-summary__search {
+  @include refined-search-input($width: 240px);
+
+  margin-left: auto;
+
+  .fitness-summary__search-clear {
+    display: inline-flex;
+    width: 18px;
+    height: 18px;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 999px;
+    background: var(--bg-3);
+    color: var(--fg-2);
+    cursor: pointer;
+    font-size: 10px;
+  }
+}
+
+// ---- Grid -------------------------------------------------------------------
+
+.fitness-summary__grid {
+  display: grid;
+  padding: 0;
+  margin: 0;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  list-style: none;
+
+  &--inactive {
+    margin-top: 12px;
+    opacity: 0.6;
+  }
+}
+
+.fitness-summary__cell {
+  display: flex;
+  min-width: 0;
+}
+
+.fitness-summary__empty {
+  padding: 32px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-lg, 14px);
+  background: var(--bg-1);
+  color: var(--fg-3);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-align: center;
+}
+
+// ---- Card -------------------------------------------------------------------
+// One root selector with shared structure; modifiers via [data-status] +
+// [data-group] tweak the look without duplicating layout rules. --card-accent
+// is the per-card identity token; each [data-group] sets it from the theme.
+
+.fitness-card {
+  position: relative;
+  display: flex;
+  overflow: hidden;
+  width: 100%;
+  flex-direction: column;
+  padding: 14px 14px 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-lg, 14px);
+  background: var(--bg-2);
+  box-shadow: var(--shadow-sm);
+  color: var(--fg-1);
+  gap: 10px;
+  isolation: isolate;
+  transition:
+    background-color 120ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 120ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 120ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 120ms cubic-bezier(0.22, 1, 0.36, 1);
+
+  &:hover {
+    border-color: var(--line);
+    background: var(--bg-3);
+    transform: translateY(-1px);
+  }
+
+  // Transparent overlay anchor that owns clicks for the whole card. Sits on
+  // top of the chrome so clicks anywhere on the card (header, sparkline,
+  // footer, ribbon) navigate to the exercise detail page. The element is
+  // empty, so it covers without hiding any content.
+  &__hit {
+    position: absolute;
+    z-index: 5;
+    color: transparent;
+    inset: 0;
+  }
+
+  // Per-group accent token. Drives the spine, badge, sparkline tint and the
+  // glow on the today variant.
+  &[data-group="chest"]      { --card-accent: var(--muscle-chest); }
+  &[data-group="back"]       { --card-accent: var(--muscle-back); }
+  &[data-group="legs"]       { --card-accent: var(--muscle-legs); }
+  &[data-group="arms"]       { --card-accent: var(--muscle-arms); }
+  &[data-group="shoulders"]  { --card-accent: var(--muscle-shoulders); }
+  &[data-group="abdominals"] { --card-accent: var(--muscle-abs); }
+  &[data-group="other"]      { --card-accent: var(--muscle-other); }
+}
+
+// The card relies on natural document-flow painting for its visible chrome
+// (header, title, sparkline, footer). The three absolutely-positioned
+// elements that DO need explicit stacking — __spine (1), __ribbon (2),
+// __hit (5) — set their own z-index. ``isolation: isolate`` on the card
+// root keeps the stacking context self-contained.
+
+// ---- Spine (left edge accent) ----------------------------------------------
+
+.fitness-card__spine {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 3px;
+  background: transparent;
+}
+
+.fitness-card[data-status="today"] .fitness-card__spine {
+  background: var(--card-accent);
+  box-shadow: 0 0 14px color-mix(in oklch, var(--card-accent), transparent 30%);
+}
+
+.fitness-card[data-status="overdue"] .fitness-card__spine {
+  background: var(--warn);
+  box-shadow: 0 0 12px color-mix(in oklch, var(--warn), transparent 50%);
+}
+
+// ---- Card header (group label + status badge) ------------------------------
+
+.fitness-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.fitness-card__group {
+  display: inline-flex;
+  align-items: center;
+  color: var(--card-accent, var(--fg-3));
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  gap: 6px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.fitness-card__group-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--card-accent, var(--fg-3));
+}
+
+.fitness-card__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: lowercase;
+
+  &--today {
+    background: var(--card-accent);
+    box-shadow: 0 0 12px color-mix(in oklch, var(--card-accent), transparent 40%);
+    color: var(--bg-0);
+  }
+}
+
+// Overdue cards flag their day count with a corner-fold ribbon. The ribbon
+// is a 56×56 triangular wedge in the top-right; the diagonal fill is a
+// linear-gradient (50/50 split) so the geometry is fully CSS — no clip-path
+// or extra SVG needed. The day count sits inside the wedge.
+.fitness-card__ribbon {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  right: 0;
+  display: flex;
+  width: 56px;
+  height: 56px;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 6px 6px 0 0;
+  background:
+    linear-gradient(
+      225deg,
+      var(--warn) 50%,
+      transparent 50%
+    );
+  color: var(--bg-0);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+}
+
+// ---- Title ------------------------------------------------------------------
+
+.fitness-card__title {
+  overflow: hidden;
+  margin: 0;
+  color: var(--fg-1);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// ---- Sparkline -------------------------------------------------------------
+
+// Sparkline picks up currentColor — point it at the card accent on today
+// cards, the warn color on overdue cards, and the muted fg-3 on on-track.
+.fitness-card__spark-wrap {
+  height: 36px;
+  color: var(--fg-3);
+}
+
+.fitness-card[data-status="today"] .fitness-card__spark-wrap {
+  color: var(--card-accent);
+}
+
+.fitness-card[data-status="overdue"] .fitness-card__spark-wrap {
+  color: color-mix(in oklch, var(--warn), var(--fg-2) 35%);
+}
+
+.fitness-card__sparkline {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.fitness-card__sparkline-line {
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.4;
+}
+
+.fitness-card__sparkline-fill {
+  // Path fills come from the inline gradient defined per <Sparkline />.
+  // The gradient stops below pick up currentColor via stop-color, so the
+  // shaded area retints automatically with the card state.
+}
+
+.fitness-card__sparkline-stop-top {
+  stop-color: currentcolor;
+  stop-opacity: 0.35;
+}
+
+.fitness-card__sparkline-stop-bottom {
+  stop-color: currentcolor;
+  stop-opacity: 0;
+}
+
+.fitness-card__sparkline-dot {
+  fill: currentcolor;
+  filter: drop-shadow(0 0 4px color-mix(in oklch, currentcolor, transparent 30%));
+}
+
+.fitness-card__sparkline--empty {
+  opacity: 0.35;
+}
+
+// ---- Footer (week strip + meta) --------------------------------------------
+
+.fitness-card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.fitness-card__week {
+  display: flex;
+  padding: 0;
+  margin: 0;
+  gap: 4px;
+  list-style: none;
+}
+
+.fitness-card__week-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--bg-3);
+
+  &--on { background: var(--card-accent, var(--fg-3)); }
+}
+
+.fitness-card__meta {
+  display: inline-flex;
+  align-items: baseline;
+  color: var(--fg-4);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  gap: 8px;
+}
+
+.fitness-card__meta-summary {
+  color: var(--fg-3);
+}
+
+// ---- State variants ---------------------------------------------------------
+
+.fitness-card[data-status="today"] {
+  border-color: color-mix(in oklch, var(--card-accent), var(--line) 30%);
+  background:
+    linear-gradient(
+      160deg,
+      color-mix(in oklch, var(--card-accent), transparent 78%) 0%,
+      color-mix(in oklch, var(--card-accent), transparent 90%) 40%,
+      var(--bg-2) 100%
+    );
+  box-shadow:
+    var(--shadow-md),
+    0 0 32px -10px color-mix(in oklch, var(--card-accent), transparent 50%),
+    inset 0 0 0 1px color-mix(in oklch, var(--card-accent), transparent 70%);
+}
+
+// Overdue cards leave the body neutral (--bg-2 + soft border) and carry
+// only the corner ribbon as a flag. Plain enough to scan a wall of them;
+// the ribbon's amber wedge does the at-a-glance signaling.
+.fitness-card[data-status="overdue"] {
+  border-color: var(--line-soft);
+  background: var(--bg-2);
+  box-shadow: var(--shadow-sm);
+}
+
+.fitness-card[data-status="on_track"] {
+  // Default look — keep this rule for explicit documentation even if empty.
+}
+
+.fitness-card[data-active="0"] {
+  filter: saturate(0.7);
+  opacity: 0.6;
+
+  .fitness-card__badge,
+  .fitness-card__ribbon {
+    display: none;
+  }
+}
+
+// ---- Show-inactive toggle --------------------------------------------------
+
+.fitness-summary__inactive {
+  margin-top: 24px;
+}
+
+.fitness-summary__inactive-toggle {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border: 1px dashed var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--fg-3);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  gap: 6px;
+  letter-spacing: 0.04em;
+  transition:
+    border-color 120ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 120ms cubic-bezier(0.22, 1, 0.36, 1);
+
+  &:hover {
+    border-color: var(--accent);
+    color: var(--fg-1);
+  }
+}

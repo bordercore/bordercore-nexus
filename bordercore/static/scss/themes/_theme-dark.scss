@@ -128,4 +128,15 @@
   --shadow-sm: 0 1px 0 rgb(255 255 255 / 4%) inset, 0 1px 2px rgb(0 0 0 / 30%);
   --shadow-md: 0 1px 0 rgb(255 255 255 / 5%) inset, 0 8px 20px rgb(0 0 0 / 35%);
   --shadow-lg: 0 1px 0 rgb(255 255 255 / 5%) inset, 0 20px 50px rgb(0 0 0 / 50%);
+
+  // Muscle-group accents — used by /fitness/ summary cards (and any other
+  // page that wants to color something by primary muscle group). Hues match
+  // the dark cyberpunk reference in design_handoff_fitness_card_grid/.
+  --muscle-chest:     oklch(70% 0.25 350deg); // hot pink
+  --muscle-back:      oklch(80% 0.13 230deg); // cyan
+  --muscle-legs:      var(--accent);          // purple
+  --muscle-arms:      oklch(72% 0.18 280deg); // blue-violet
+  --muscle-shoulders: oklch(78% 0.15 60deg);  // amber-orange
+  --muscle-abs:       var(--ok);              // green
+  --muscle-other:     var(--fg-3);
 }

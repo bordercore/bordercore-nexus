@@ -1,82 +1,10 @@
 // =============================================================================
 // PAGES: FITNESS
 // =============================================================================
-// Exercise tracking, workouts, and fitness-related components
-
-.fitness-col-new-workout-data {
-  width: 6rem;
-}
-
-#fitness-schedule-d-o-t-w {
-  width: 7em;
-}
-
-.fitness-col-name {
-  flex: 2;
-}
-
-.fitness-col-sets {
-  flex: 1;
-}
-
-.fitness-col-weight {
-  flex: 1;
-}
-
-.fitness-col-date {
-  flex: 1;
-}
-
-.overdue {
-  color: var(--error-color);
-}
-
-// Fitness table - uses .data-table-container + .data-table; overrides below
-.fitness-table {
-  tbody tr {
-    &.selected {
-      td {
-        background-color: color-mix(in oklch, var(--fg-0), transparent 92%);
-
-        // color: var(--selected-color); // Removed to use default text color
-      }
-
-      // a {
-      //   color: var(--selected-color); // Removed to use default link color
-      // }
-    }
-
-    // &.overdue {
-    //   td {
-    //     // background-color: var(--fitness-overdue-bg); // Removed per user request
-    //     // color: var(--fitness-overdue-color); // Removed per user request
-    //   }
-    //   a {
-    //     // color: var(--fitness-overdue-color); // Removed per user request
-    //   }
-    // }
-  }
-}
-
-// Legacy: Fitness summary table row highlighting for .table class
-// (order required for cascade; .table and .fitness-table can both apply to same table)
-/* stylelint-disable no-descending-specificity */
-.table {
-  tr.selected {
-    td {
-      background-color: color-mix(in oklch, var(--accent), transparent 82%);
-      color: var(--fg-0);
-    }
-
-    a {
-      color: var(--fg-0);
-    }
-  }
-
-
-}
-
-/* stylelint-enable no-descending-specificity */
+// Exercise tracking, workouts, and fitness-related components. The summary
+// landing page lives in components/_refined-fitness-summary.scss; this file
+// is now scoped to the exercise-detail page (description card, log-set form,
+// related-exercise rows).
 
 // Increase font size for panel titles
 #muscles-targeted .card-title,

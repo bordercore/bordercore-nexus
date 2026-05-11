@@ -1,30 +1,23 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-import FitnessSummaryPage from "../react/fitness/FitnessSummaryPage";
-import type { Exercise } from "../react/fitness/types";
+import FitnessSummaryPage from "../react/fitness/summary/FitnessSummaryPage";
+import type { SummaryPayload } from "../react/fitness/summary/types";
+
+const EMPTY: SummaryPayload = {
+  today_dow: 0,
+  groups: [],
+  exercises: [],
+};
 
 const container = document.getElementById("react-root");
 if (container) {
-  const activeExercisesJson = container.getAttribute("data-active-exercises") || "[]";
-  const inactiveExercisesJson = container.getAttribute("data-inactive-exercises") || "[]";
-
-  let activeExercises: Exercise[] = [];
-  let inactiveExercises: Exercise[] = [];
-
+  const raw = container.getAttribute("data-summary") || "";
+  let payload: SummaryPayload = EMPTY;
   try {
-    activeExercises = JSON.parse(activeExercisesJson);
+    payload = raw ? (JSON.parse(raw) as SummaryPayload) : EMPTY;
   } catch (e) {
-    console.error("Error parsing active exercises:", e);
+    console.error("Error parsing fitness summary payload:", e);
   }
 
-  try {
-    inactiveExercises = JSON.parse(inactiveExercisesJson);
-  } catch (e) {
-    console.error("Error parsing inactive exercises:", e);
-  }
-
-  const root = createRoot(container);
-  root.render(
-    <FitnessSummaryPage activeExercises={activeExercises} inactiveExercises={inactiveExercises} />
-  );
+  createRoot(container).render(<FitnessSummaryPage payload={payload} />);
 }

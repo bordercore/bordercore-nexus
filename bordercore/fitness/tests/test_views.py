@@ -56,6 +56,12 @@ def test_fitness_summary(authenticated_client, fitness):
     resp = client.get(url)
 
     assert resp.status_code == 200
+    # The card-grid landing page hands the React layer a single
+    # ``data-summary`` JSON blob built by get_fitness_card_summary.
+    html = resp.content.decode()
+    assert 'id="react-root"' in html
+    assert "data-summary" in html
+    assert "data-active-exercises" not in html  # legacy attribute removed
 
 
 def test_fitness_change_active_status(authenticated_client, fitness):

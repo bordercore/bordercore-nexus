@@ -119,4 +119,14 @@
   --shadow-sm: 0 1px 0 rgb(255 255 255 / 80%) inset, 0 1px 2px rgb(0 0 0 / 6%);
   --shadow-md: 0 1px 0 rgb(255 255 255 / 80%) inset, 0 8px 20px rgb(0 0 0 / 8%);
   --shadow-lg: 0 1px 0 rgb(255 255 255 / 80%) inset, 0 20px 50px rgb(0 0 0 / 12%);
+
+  // Muscle-group accents — see _theme-dark.scss. Light-mode values use a
+  // lower lightness so they read against pale card backgrounds.
+  --muscle-chest:     oklch(55% 0.22 350deg); // pink
+  --muscle-back:      oklch(55% 0.18 230deg); // blue
+  --muscle-legs:      var(--accent);          // purple
+  --muscle-arms:      oklch(55% 0.20 280deg); // blue-violet
+  --muscle-shoulders: oklch(60% 0.18 60deg);  // amber-orange
+  --muscle-abs:       var(--ok);              // green
+  --muscle-other:     var(--fg-3);
 }

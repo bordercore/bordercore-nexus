@@ -30,6 +30,19 @@
   // this so drill's existing namespace keeps working.
   --accent-cyan: color-mix(in oklch, var(--accent), var(--ok) 60%);
 
+  // Muscle-group accent fallbacks for themes that haven't defined their own
+  // (purple, cyberpunk, nebula, cobalt-abyss). These derive from each theme's
+  // canonical tokens via color-mix, so the fitness card grid stays readable
+  // under any theme without per-theme overrides. Themes that want a tuned
+  // palette (theme-dark, theme-light) override these inside their own file.
+  --muscle-chest:     color-mix(in oklch, var(--danger), var(--accent) 30%);
+  --muscle-back:      color-mix(in oklch, var(--accent), var(--ok) 60%);
+  --muscle-legs:      var(--accent);
+  --muscle-arms:      color-mix(in oklch, var(--accent), var(--accent-bookmark) 50%);
+  --muscle-shoulders: var(--warn);
+  --muscle-abs:       var(--ok);
+  --muscle-other:     var(--fg-3);
+
   // Standard color for small uppercase mono section labels that sit inside
   // a left-column rail/sidebar (e.g. /bookmark/'s "tags" / "bookmarks",
   // /music/'s "library" / "playlists", /collection/'s rail labels, and

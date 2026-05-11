@@ -27,7 +27,7 @@ from lib.mixins import get_user_object_or_404
 from django.views.decorators.http import require_POST
 from django.views.generic.detail import DetailView
 
-from fitness.services import get_fitness_summary
+from fitness.services import get_fitness_card_summary
 from lib.decorators import validate_post_data
 
 from .models import Data, Exercise, ExerciseUser, Workout
@@ -316,52 +316,20 @@ def fitness_add(request: HttpRequest, exercise_uuid: str) -> HttpResponse:
 
 @login_required
 def fitness_summary(request: HttpRequest) -> HttpResponse:
-    """Render a summary page with active/inactive exercises for the user.
+    """Render the card-grid fitness landing page.
 
-    Args:
-        request: The HTTP request object.
-
-    Returns:
-        HttpResponse: Rendered template response for the fitness summary page.
+    All per-card data — status, group, sparkline, schedule, last-workout meta —
+    is built in :func:`fitness.services.get_fitness_card_summary` and passed
+    to the template as a single JSON blob that the React entry parses.
     """
     user = cast(User, request.user)
-    active_exercises, inactive_exercises = get_fitness_summary(user)
-
-    def serialize_exercise(e: Exercise, include_schedule: bool = False) -> dict:
-        """Serialize an exercise for JSON."""
-        from django.urls import reverse
-
-        last_active = getattr(e, "last_active", None)
-        data = {
-            "exercise_url": reverse("fitness:exercise_detail", args=[e.uuid]),
-            "exercise": e.name,
-            "muscle_group": str(muscles[0].muscle_group) if (muscles := e.muscle.all()) else "",
-            "last_active": last_active.strftime("%Y-%m-%d") if last_active else None,
-            "last_active_unixtime": str(int(last_active.timestamp())) if last_active else "0",
-            "delta_days": e.delta_days if hasattr(e, "delta_days") else None,
-            "overdue": e.overdue if hasattr(e, "overdue") else 0,
-        }
-        if include_schedule:
-            data["schedule_days"] = e.schedule_days if hasattr(e, "schedule_days") else ""
-            data["schedule"] = e.schedule if hasattr(e, "schedule") else []
-            data["frequency"] = (
-                f"{e.frequency.days} day{'s' if e.frequency.days != 1 else ''}"
-                if hasattr(e, "frequency") and e.frequency
-                else ""
-            )
-        return data
-
-    active_exercises_json = json.dumps(
-        [serialize_exercise(e, include_schedule=True) for e in active_exercises]
-    )
-    inactive_exercises_json = json.dumps([serialize_exercise(e) for e in inactive_exercises])
+    payload = get_fitness_card_summary(user)
 
     return render(
         request,
         "fitness/summary.html",
         {
-            "active_exercises_json": active_exercises_json,
-            "inactive_exercises_json": inactive_exercises_json,
+            "summary_payload_json": json.dumps(payload),
             "title": "Fitness Summary",
         },
     )
