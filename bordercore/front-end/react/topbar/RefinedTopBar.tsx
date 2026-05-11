@@ -19,7 +19,7 @@ import RecentBlobs from "../blob/RecentBlobs";
 import Weather from "../common/Weather";
 import { Popover } from "../common/Popover";
 import { resolveSection } from "./sectionMap";
-import AuroraBg from "./AuroraBg";
+import TopBarBackground from "./TopBarBackground";
 
 interface BaseTemplateData {
   failedTestCount?: number;
@@ -267,7 +267,7 @@ export default function RefinedTopBar() {
   return (
     <>
       <div className="refined-tb">
-        <AuroraBg />
+        <TopBarBackground />
         {(() => {
           // Build the crumb chain root → section → leaf, then mark the last as current.
           // The current crumb is rendered as plain text (no link to itself).
