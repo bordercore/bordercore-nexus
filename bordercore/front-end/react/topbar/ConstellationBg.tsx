@@ -21,6 +21,13 @@ const CONSTELLATION_GAP_MAX_PX = 400;
 // the full bar height crowds the gutter, so we scale slightly inward and
 // add jitter in the remaining margin.
 const CONSTELLATION_VSCALE = 0.78;
+// Per-constellation rotation. Each gets a randomized full-turn period in
+// this range plus a randomized direction, so constellations rotate at
+// slightly different rates and don't appear to move in lockstep. Long
+// periods keep the motion subliminal — at 8–12 minutes per turn, a
+// constellation's tilt drifts only a few degrees while it crosses the bar.
+const ROTATION_PERIOD_S_MIN = 480; // 8 min
+const ROTATION_PERIOD_S_MAX = 720; // 12 min
 
 // Deterministic seeded RNG so the ambient star field is stable across
 // remounts and so React strict-mode double-effect doesn't reshuffle the
@@ -49,6 +56,8 @@ interface ActiveConstellation {
   xOffsetPx: number; // absolute left edge in canvas px
   yJitter: number; // -1..1 vertical jitter factor
   scale: number; // pixel height of the constellation box
+  rotation: number; // current angle in radians, accumulated over time
+  rotationSpeed: number; // rad/sec, signed (negative = counter-clockwise)
 }
 
 interface ShootingStar {
@@ -88,11 +97,17 @@ function spawnConstellation(
   const pool = prevDef ? CONSTELLATIONS.filter(c => c.name !== prevDef.name) : CONSTELLATIONS;
   const def = pool[Math.floor(rng() * pool.length)];
   const scale = canvasHeight * CONSTELLATION_VSCALE;
+  const period = ROTATION_PERIOD_S_MIN + rng() * (ROTATION_PERIOD_S_MAX - ROTATION_PERIOD_S_MIN);
+  const direction = rng() < 0.5 ? -1 : 1;
   return {
     def,
     xOffsetPx: leftEdgePx,
     yJitter: rng() * 2 - 1,
     scale,
+    // Start upright so reduced-motion users see the canonical orientation;
+    // animated users see the tilt accumulate from zero over time.
+    rotation: 0,
+    rotationSpeed: (direction * (Math.PI * 2)) / period,
   };
 }
 
@@ -168,8 +183,18 @@ export function ConstellationBg() {
       const verticalMargin = ch - c.scale;
       const yTop = verticalMargin * 0.5 + c.yJitter * verticalMargin * 0.35;
 
-      const sx = (sx0: number) => c.xOffsetPx + sx0 * widthPx;
-      const sy = (sy0: number) => yTop + sy0 * c.scale;
+      // Draw in a coordinate space whose origin is the constellation's center,
+      // so rotation spins around that center rather than the canvas origin.
+      // Star coordinates 0..1 in the dataset map to -widthPx/2..+widthPx/2
+      // and -scale/2..+scale/2 here.
+      const centerX = c.xOffsetPx + widthPx / 2;
+      const centerY = yTop + c.scale / 2;
+      const sx = (sx0: number) => (sx0 - 0.5) * widthPx;
+      const sy = (sy0: number) => (sy0 - 0.5) * c.scale;
+
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      ctx.rotate(c.rotation);
 
       // Lines first, so stars sit on top.
       ctx.strokeStyle = STAR_FIELD_COLOR;
@@ -206,21 +231,22 @@ export function ConstellationBg() {
       // (the one closer to the left edge of the bar — i.e. exiting first).
       if (isFront) {
         const b = c.def.stars[brightestIdx];
-        const cx = sx(b.x);
-        const cy = sy(b.y);
-        const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, ACCENT_HALO_RADIUS_PX * 2);
+        const hx = sx(b.x);
+        const hy = sy(b.y);
+        const grad = ctx.createRadialGradient(hx, hy, 0, hx, hy, ACCENT_HALO_RADIUS_PX * 2);
         grad.addColorStop(0, accent);
         grad.addColorStop(1, "rgba(0, 0, 0, 0)");
         ctx.fillStyle = grad;
         ctx.globalAlpha = 0.7;
         ctx.fillRect(
-          cx - ACCENT_HALO_RADIUS_PX * 2,
-          cy - ACCENT_HALO_RADIUS_PX * 2,
+          hx - ACCENT_HALO_RADIUS_PX * 2,
+          hy - ACCENT_HALO_RADIUS_PX * 2,
           ACCENT_HALO_RADIUS_PX * 4,
           ACCENT_HALO_RADIUS_PX * 4
         );
       }
       ctx.globalAlpha = prevAlpha;
+      ctx.restore();
     };
 
     const drawShootingStar = (t: number) => {
@@ -250,8 +276,11 @@ export function ConstellationBg() {
     };
 
     const advance = (t: number, dt: number) => {
-      // Pan constellations.
-      for (const c of actives) c.xOffsetPx -= PAN_PX_PER_SEC * dt;
+      // Pan and rotate constellations.
+      for (const c of actives) {
+        c.xOffsetPx -= PAN_PX_PER_SEC * dt;
+        c.rotation += c.rotationSpeed * dt;
+      }
 
       // Recycle any that have fully exited on the left.
       for (let i = 0; i < actives.length; i++) {
