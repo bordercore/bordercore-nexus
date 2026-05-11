@@ -313,14 +313,16 @@ export function ConstellationBg() {
         c.rotation += c.rotationSpeed * dt;
       }
 
-      // Recycle any that have fully exited on either side. The replacement
-      // gets a new randomized horizontal direction and is spawned off-screen
-      // on the side opposite its travel direction so it enters heading inward.
+      // Recycle any that have fully exited on either side. "Exited" requires
+      // both being off-screen AND still travelling away from the canvas;
+      // otherwise a constellation we just spawned off-screen (heading inward)
+      // would be re-recycled on the very next frame and would never become
+      // visible.
       for (let i = 0; i < actives.length; i++) {
         const c = actives[i];
         const w = constellationWidthPx(c);
-        const exitedLeft = c.xOffsetPx + w < 0;
-        const exitedRight = c.xOffsetPx > cw;
+        const exitedLeft = c.xOffsetPx + w < 0 && c.vxSign <= 0;
+        const exitedRight = c.xOffsetPx > cw && c.vxSign >= 0;
         if (!exitedLeft && !exitedRight) continue;
 
         const newDef = pickConstellationDef(c.def, rng);
