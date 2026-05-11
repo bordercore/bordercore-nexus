@@ -1,0 +1,529 @@
+// =============================================================================
+// Blob Import — refined hero
+// =============================================================================
+// A single, centered hero for /blob/import. The page deliberately abandons the
+// older two-column rail so the URL field reads as the page's only verb. The
+// shell reuses the radial-wash backdrop pattern from .refined-page-shell so
+// the page lives in the same visual world as /blob/edit and /todo/.
+// =============================================================================
+
+// stylelint-disable no-descending-specificity, selector-class-pattern
+
+.bi-shell {
+  // Page-local tokens — kept in one place so the rest of the file reads in
+  // semantic terms (token names, not raw values).
+  --bi-font-display: "Space Grotesk", "Inter", -apple-system, "Segoe UI", sans-serif;
+  --bi-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --bi-t-base: 180ms;
+  --bi-radius-pill: 999px;
+
+  position: relative;
+  z-index: 0;
+  min-height: calc(100vh - 56px);
+  padding: 64px 32px 80px;
+
+  // Escape the base layout's container padding so the radial blooms can reach
+  // the viewport edges. Mirrors the .refined-page-shell trick.
+  margin: -1rem -1.5rem 0;
+  background: var(--bg-0);
+  color: var(--fg-1);
+  font-family: var(--font-ui);
+
+  // Two diagonal radial blooms — purple top-right, accent-bookmark
+  // (cobalt) bottom-left. Pure decoration; never intercepts clicks.
+  &::before {
+    position: absolute;
+    z-index: 0;
+    background:
+      radial-gradient(
+        900px 600px at 92% -5%,
+        color-mix(in oklch, var(--accent), transparent 82%),
+        transparent 55%
+      ),
+      radial-gradient(
+        800px 600px at 8% 110%,
+        color-mix(in oklch, var(--accent-bookmark, var(--accent)), transparent 88%),
+        transparent 60%
+      );
+    content: "";
+    inset: 0;
+    pointer-events: none;
+  }
+
+  > * {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Hero card — glassmorphic centered panel.
+// ---------------------------------------------------------------------------
+
+.bi-hero {
+  position: relative;
+  display: flex;
+  max-width: 640px;
+  flex-direction: column;
+  padding: 36px 36px 32px;
+  border: 1px solid color-mix(in oklch, var(--accent), transparent 78%);
+  border-radius: 20px;
+  margin: 0 auto;
+  backdrop-filter: blur(14px);
+  background: color-mix(in oklch, var(--bg-2), transparent 28%);
+  box-shadow:
+    0 1px 0 0 rgb(255 255 255 / 4%) inset,
+    0 24px 60px -20px rgb(0 0 0 / 65%),
+    0 0 0 1px color-mix(in oklch, var(--accent), transparent 92%);
+  gap: 24px;
+}
+
+.bi-heading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.bi-title {
+  margin: 0;
+  color: var(--fg-1);
+  font-family: var(--bi-font-display);
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+
+.bi-subtitle {
+  margin: 0;
+  color: var(--fg-2);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+// ---------------------------------------------------------------------------
+// URL input pill. The pill is a flex container so its three logical zones
+// (leading icon + recognition badge, the input itself, trailing button) line
+// up on a single baseline. The native <input> is borderless; the pill owns
+// the chrome.
+// ---------------------------------------------------------------------------
+
+.bi-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.bi-input-pill {
+  display: flex;
+  align-items: center;
+  padding: 6px 6px 6px 18px;
+  border: 1.5px solid color-mix(in oklch, var(--accent), transparent 80%);
+  border-radius: var(--bi-radius-pill);
+  background: color-mix(in oklch, var(--bg-1), transparent 12%);
+  box-shadow: 0 1px 0 0 rgb(255 255 255 / 3%) inset;
+  gap: 10px;
+  transition:
+    border-color var(--bi-t-base) var(--bi-ease-out),
+    box-shadow var(--bi-t-base) var(--bi-ease-out);
+
+  &:focus-within {
+    border-color: var(--accent);
+    box-shadow:
+      0 0 0 1px color-mix(in oklch, var(--accent), transparent 60%),
+      0 0 22px -4px color-mix(in oklch, var(--accent), transparent 55%),
+      0 1px 0 0 rgb(255 255 255 / 4%) inset;
+  }
+}
+
+.bi-input-leader {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  color: var(--fg-3);
+  font-size: 16px;
+  gap: 8px;
+  transition: color var(--bi-t-base) var(--bi-ease-out);
+
+  // When a known site is recognised, the leader shows that site's favicon.
+  // The recognised state lifts the icon to full foreground.
+  &.is-recognized {
+    color: var(--fg-1);
+  }
+}
+
+.bi-leader-icon {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+
+  img,
+  svg {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    object-fit: contain;
+  }
+}
+
+.bi-leader-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border: 1px solid color-mix(in oklch, var(--accent), transparent 65%);
+  border-radius: var(--bi-radius-pill);
+  background: color-mix(in oklch, var(--accent), transparent 82%);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.bi-input-field {
+  min-width: 0;
+  flex: 1;
+  padding: 10px 6px;
+  border: 0;
+  background: transparent;
+  color: var(--fg-1);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  letter-spacing: -0.005em;
+  outline: none;
+
+  &::placeholder {
+    color: var(--fg-4);
+  }
+}
+
+// Right-edge action — either a "Paste" ghost or the primary "Import" button.
+// The two share dimensions so the pill never reflows when state swaps.
+.bi-input-action {
+  display: inline-flex;
+  height: 36px;
+  flex-shrink: 0;
+  align-items: center;
+  padding: 0 16px;
+  border: 0;
+  border-radius: var(--bi-radius-pill);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  gap: 6px;
+  letter-spacing: 0.02em;
+  transition:
+    background-color var(--bi-t-base) var(--bi-ease-out),
+    color var(--bi-t-base) var(--bi-ease-out),
+    box-shadow var(--bi-t-base) var(--bi-ease-out);
+
+  &.is-paste {
+    background: color-mix(in oklch, var(--bg-3), transparent 30%);
+    color: var(--fg-2);
+
+    &:hover {
+      background: var(--bg-3);
+      color: var(--fg-1);
+    }
+  }
+
+  &.is-import {
+    background: var(--accent);
+    box-shadow: 0 0 14px -2px color-mix(in oklch, var(--accent), transparent 55%);
+    color: var(--accent-fg, #0a0a10);
+
+    &:hover:not(:disabled) {
+      background: color-mix(in oklch, var(--accent), white 8%);
+      box-shadow: 0 0 18px -2px color-mix(in oklch, var(--accent), transparent 40%);
+    }
+
+    &:disabled {
+      background: color-mix(in oklch, var(--bg-3), transparent 30%);
+      box-shadow: none;
+      color: var(--fg-4);
+      cursor: not-allowed;
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// "Works with" strip — small icon row centered under the form. Each chip is
+// a square with the brand-tinted hover glow so the page advertises support
+// without the older bullet list.
+// ---------------------------------------------------------------------------
+
+.bi-works-with {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.bi-works-with-label {
+  color: var(--fg-3);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.bi-works-with-list {
+  display: flex;
+  align-items: center;
+  padding: 0;
+  margin: 0;
+  gap: 8px;
+  list-style: none;
+}
+
+.bi-works-with-chip {
+  position: relative;
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in oklch, var(--line), transparent 30%);
+  border-radius: 8px;
+  background: color-mix(in oklch, var(--bg-3), transparent 25%);
+  color: var(--fg-2);
+  cursor: default;
+  transition:
+    transform var(--bi-t-base) var(--bi-ease-out),
+    border-color var(--bi-t-base) var(--bi-ease-out),
+    box-shadow var(--bi-t-base) var(--bi-ease-out);
+
+  img,
+  svg {
+    width: 18px;
+    height: 18px;
+    border-radius: 3px;
+    object-fit: contain;
+  }
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+
+  // Each chip carries its brand-color glow on hover via per-chip CSS variable.
+  &[data-brand="instagram"]:hover {
+    border-color: #e1306c;
+    box-shadow: 0 0 14px -2px rgb(225 48 108 / 55%);
+  }
+
+  &[data-brand="artstation"]:hover {
+    border-color: #13aff0;
+    box-shadow: 0 0 14px -2px rgb(19 175 240 / 55%);
+  }
+
+  &[data-brand="nytimes"]:hover {
+    border-color: var(--fg-1);
+    box-shadow: 0 0 14px -2px color-mix(in oklch, var(--fg-1), transparent 55%);
+  }
+
+  &[data-brand="generic"]:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 14px -2px color-mix(in oklch, var(--accent), transparent 55%);
+  }
+}
+
+// Tooltip on hover. Built with a span so we don't rely on title="" (which
+// gives a sluggish native bubble that's also hard to style).
+.bi-works-with-tip {
+  position: absolute;
+  z-index: 5;
+  top: 100%;
+  left: 50%;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  margin-top: 6px;
+  background: var(--bg-3);
+  color: var(--fg-1);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  opacity: 0;
+  pointer-events: none;
+  text-transform: none;
+  transform: translateX(-50%) translateY(-2px);
+  transition:
+    opacity var(--bi-t-base) var(--bi-ease-out),
+    transform var(--bi-t-base) var(--bi-ease-out);
+  white-space: nowrap;
+
+  .bi-works-with-chip:hover & {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Inline error pill. Replaces the old toast-style card-body block above the
+// form. The hostname inside an error renders monospaced — see the React
+// component's message-formatting helper.
+// ---------------------------------------------------------------------------
+
+.bi-message {
+  display: flex;
+  align-items: flex-start;
+  padding: 10px 14px 10px 12px;
+  border: 1px solid color-mix(in oklch, var(--danger), transparent 60%);
+  border-radius: 12px;
+  background: color-mix(in oklch, var(--danger), transparent 86%);
+  box-shadow: 0 0 16px -4px color-mix(in oklch, var(--danger), transparent 55%);
+  color: var(--fg-1);
+  font-size: 13px;
+  gap: 10px;
+  line-height: 1.5;
+
+  &.is-info {
+    border-color: color-mix(in oklch, var(--accent), transparent 60%);
+    background: color-mix(in oklch, var(--accent), transparent 86%);
+    box-shadow: 0 0 16px -4px color-mix(in oklch, var(--accent), transparent 60%);
+  }
+}
+
+.bi-message-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--danger);
+
+  .bi-message.is-info & {
+    color: var(--accent);
+  }
+}
+
+.bi-message-body {
+  min-width: 0;
+  flex: 1;
+
+  // Treat any inline <strong> in the server message as a hostname/identifier.
+  strong,
+  code {
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 600;
+  }
+}
+
+.bi-message-close {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg-3);
+  cursor: pointer;
+  transition:
+    background-color var(--bi-t-base) var(--bi-ease-out),
+    color var(--bi-t-base) var(--bi-ease-out);
+
+  &:hover {
+    background: color-mix(in oklch, var(--bg-3), transparent 25%);
+    color: var(--fg-1);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Loading overlay — sits inside the hero card on submit so the form stays
+// mounted underneath. The bordercore shell already handles the spinner; here
+// we want a glassy "fetching from {host}" affordance with a pulse.
+// ---------------------------------------------------------------------------
+
+.bi-overlay {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  border-radius: inherit;
+  animation: bi-fade-in 220ms var(--bi-ease-out) both;
+  backdrop-filter: blur(10px);
+  background: color-mix(in oklch, var(--bg-2), transparent 12%);
+  gap: 16px;
+  inset: 0;
+}
+
+.bi-overlay-icon {
+  display: inline-flex;
+  width: 56px;
+  height: 56px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in oklch, var(--accent), transparent 65%);
+  border-radius: 14px;
+  background: color-mix(in oklch, var(--bg-3), transparent 20%);
+  color: var(--fg-1);
+
+  img,
+  svg {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    object-fit: contain;
+  }
+}
+
+.bi-overlay-text {
+  display: flex;
+  align-items: center;
+  color: var(--fg-1);
+  font-size: 14px;
+  gap: 10px;
+}
+
+.bi-overlay-host {
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.bi-overlay-pulse {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  animation: bi-pulse 1100ms ease-in-out infinite;
+  background: var(--accent);
+  box-shadow: 0 0 12px var(--accent);
+}
+
+@keyframes bi-pulse {
+  0%, 100% {
+    opacity: 0.35;
+    transform: scale(0.85);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+@keyframes bi-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+// Reduced-motion guard for the pulsing dot and the overlay fade.
+@media (prefers-reduced-motion: reduce) {
+  .bi-overlay,
+  .bi-overlay-pulse {
+    animation: none;
+  }
+}

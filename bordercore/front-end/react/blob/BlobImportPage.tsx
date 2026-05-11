@@ -1,6 +1,11 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
+import {
+  faExclamationTriangle,
+  faGlobe,
+  faPaste,
+  faTimes,
+} from "@fortawesome/free-solid-svg-icons";
 import { getCsrfToken } from "../utils/reactUtils";
 
 interface Message {
@@ -16,153 +21,261 @@ interface BlobImportPageProps {
   initialUrl?: string;
 }
 
+interface SupportedSite {
+  brand: string; // CSS hook (also used to look up data-brand styling)
+  domain: string; // bare-domain match — mirrors the server's split logic
+  label: string; // display name in tooltip / recognition badge
+  iconFile: string; // file under {staticUrl}img/
+  caveat?: string; // appended to tooltip when present (e.g. "metadata only")
+}
+
+const SUPPORTED_SITES: SupportedSite[] = [
+  { brand: "instagram", domain: "instagram.com", label: "Instagram", iconFile: "instagram.ico" },
+  {
+    brand: "artstation",
+    domain: "artstation.com",
+    label: "Artstation",
+    iconFile: "artstation.ico",
+  },
+  {
+    brand: "nytimes",
+    domain: "nytimes.com",
+    label: "New York Times",
+    iconFile: "nytimes.ico",
+    caveat: "metadata only",
+  },
+];
+
+// Matches the server-side split in blob/services.py::import_blob — last two
+// dotted parts of the hostname so "www.instagram.com" → "instagram.com".
+const baseDomain = (hostname: string): string => {
+  const parts = hostname.toLowerCase().split(".");
+  return parts.length >= 2 ? parts.slice(-2).join(".") : hostname;
+};
+
+interface RecognizedSite {
+  hostname: string;
+  match?: SupportedSite; // undefined ⇒ falls back to the generic-article path
+}
+
+// Returns null until the field holds a parseable absolute URL — the page
+// shouldn't claim recognition for a half-typed string like "https://".
+const recognizeUrl = (raw: string): RecognizedSite | null => {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  try {
+    const parsed = new URL(trimmed);
+    const domain = baseDomain(parsed.hostname);
+    const match = SUPPORTED_SITES.find(site => site.domain === domain);
+    return { hostname: parsed.hostname, match };
+  } catch {
+    return null;
+  }
+};
+
 export function BlobImportPage({
   staticUrl,
   importUrl,
-  messages,
+  messages: initialMessages,
   initialUrl = "",
 }: BlobImportPageProps) {
+  const [url, setUrl] = useState(initialUrl);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [pasteFailed, setPasteFailed] = useState(false);
+  const [messages, setMessages] = useState<Message[]>(initialMessages);
   const urlInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     urlInputRef.current?.focus();
   }, []);
 
+  const recognized = useMemo(() => recognizeUrl(url), [url]);
+  const hasUrl = url.trim().length > 0;
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    const url = urlInputRef.current?.value || "";
-    if (url === "") {
+    if (!hasUrl) {
       e.preventDefault();
       return;
     }
-    // Refresh CSRF token from cookie at submit time so it matches the live cookie
+    // Refresh CSRF from the live cookie so a long-idle tab still posts.
     const tokenInput = e.currentTarget.querySelector<HTMLInputElement>(
       'input[name="csrfmiddlewaretoken"]'
     );
     if (tokenInput) tokenInput.value = getCsrfToken();
     setIsProcessing(true);
-    // Form submits naturally - no preventDefault
+    // The form submits naturally; the overlay covers the hero until nav.
   };
 
+  const handlePaste = async () => {
+    if (!navigator.clipboard?.readText) {
+      setPasteFailed(true);
+      return;
+    }
+    try {
+      const text = (await navigator.clipboard.readText()).trim();
+      if (text) {
+        setUrl(text);
+        urlInputRef.current?.focus();
+      }
+    } catch {
+      // Permission denied or unsupported — fall back to letting the user paste
+      // manually with the keyboard. We surface a short hint via the title attr
+      // so they know why the click did nothing.
+      setPasteFailed(true);
+    }
+  };
+
+  const dismissMessage = (index: number) => {
+    setMessages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const overlayHost =
+    recognized?.hostname ||
+    (() => {
+      try {
+        return new URL(url).hostname;
+      } catch {
+        return url;
+      }
+    })();
+
   return (
-    <div className="row g-0 h-100 mx-2">
-      <div className="col-lg-3 d-flex flex-column">
-        <div className="left-panel-gradient card-body d-flex flex-column backdrop-filter">
-          <h5>Import blobs from external sites</h5>
-          <hr className="divider" />
+    <div className="bi-shell">
+      <div className="bi-hero">
+        <header className="bi-heading">
+          <h1 className="bi-title">Import a blob</h1>
+          <p className="bi-subtitle">Paste a URL — we'll fetch the metadata and assets for you.</p>
+        </header>
+
+        {messages.length > 0 && (
           <div>
-            Sites supported
-            <ul className="list-unstyled p-2">
-              <li className="d-flex align-items-center p-2">
-                <div className="sites-supported-icon-container">
-                  <img
-                    src={`${staticUrl}img/instagram.ico`}
-                    width="38"
-                    height="38"
-                    alt="Instagram"
-                  />
-                </div>
-                <strong className="ms-2">Instagram</strong>
-              </li>
-              <li className="d-flex align-items-center p-2">
-                <div className="sites-supported-icon-container">
-                  <img
-                    src={`${staticUrl}img/artstation.ico`}
-                    width="38"
-                    height="38"
-                    alt="Artstation"
-                  />
-                </div>
-                <strong className="ms-2">Artstation</strong>
-              </li>
-              <li className="d-flex align-items-start p-2">
-                <div className="sites-supported-icon-container">
-                  <img
-                    src={`${staticUrl}img/nytimes.ico`}
-                    width="38"
-                    height="38"
-                    alt="New York Times"
-                  />
-                </div>
-                <div className="d-flex flex-column ms-2">
-                  <strong>New York Times</strong>
-                  <div className="text-small text-secondary">metadata only</div>
-                </div>
-              </li>
-              <li className="d-flex align-items-center p-2">
-                <div className="sites-supported-icon-container">
-                  <svg
-                    width="38"
-                    height="38"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                    className="text-secondary"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z" />
-                  </svg>
-                </div>
-                <strong className="ms-2">Generic Article</strong>
-              </li>
-            </ul>
+            {messages.map((msg, index) => (
+              <div
+                key={index}
+                className={`bi-message ${msg.variant === "error" ? "" : "is-info"}`}
+                role="alert"
+              >
+                <FontAwesomeIcon icon={faExclamationTriangle} className="bi-message-icon" />
+                {/*
+                  Render as text — server messages can include user-controlled
+                  URL fragments. The literal <strong> tags from services.py
+                  show up verbatim, matching the previous behavior.
+                */}
+                <div className="bi-message-body">{msg.body}</div>
+                <button
+                  type="button"
+                  className="bi-message-close"
+                  onClick={() => dismissMessage(index)}
+                  aria-label="Dismiss message"
+                >
+                  <FontAwesomeIcon icon={faTimes} />
+                </button>
+              </div>
+            ))}
           </div>
+        )}
+
+        <form
+          id="import-blob-form"
+          className="bi-form"
+          method="post"
+          action={importUrl}
+          onSubmit={handleSubmit}
+        >
+          <input type="hidden" name="csrfmiddlewaretoken" defaultValue={getCsrfToken()} />
+
+          <div className="bi-input-pill">
+            <span className={`bi-input-leader ${recognized?.match ? "is-recognized" : ""}`}>
+              <span className="bi-leader-icon">
+                {recognized?.match ? (
+                  <img
+                    src={`${staticUrl}img/${recognized.match.iconFile}`}
+                    alt=""
+                    aria-hidden="true"
+                  />
+                ) : (
+                  <FontAwesomeIcon icon={faGlobe} />
+                )}
+              </span>
+              {recognized?.match && (
+                <span className="bi-leader-badge">{recognized.match.label}</span>
+              )}
+            </span>
+
+            <input
+              ref={urlInputRef}
+              className="bi-input-field"
+              name="url"
+              value={url}
+              onChange={e => setUrl(e.target.value)}
+              type="text"
+              placeholder="https://…"
+              autoComplete="off"
+              spellCheck={false}
+            />
+
+            {hasUrl ? (
+              <button type="submit" className="bi-input-action is-import">
+                Import
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="bi-input-action is-paste"
+                onClick={handlePaste}
+                title={
+                  pasteFailed
+                    ? "Clipboard unavailable — paste with the keyboard"
+                    : "Paste from clipboard"
+                }
+              >
+                <FontAwesomeIcon icon={faPaste} />
+                Paste
+              </button>
+            )}
+          </div>
+        </form>
+
+        <div className="bi-works-with">
+          <span className="bi-works-with-label">Works with</span>
+          <ul className="bi-works-with-list">
+            {SUPPORTED_SITES.map(site => (
+              <li key={site.brand} className="bi-works-with-chip" data-brand={site.brand}>
+                <img src={`${staticUrl}img/${site.iconFile}`} alt={site.label} />
+                <span className="bi-works-with-tip">
+                  {site.label}
+                  {site.caveat ? ` · ${site.caveat}` : ""}
+                </span>
+              </li>
+            ))}
+            <li className="bi-works-with-chip" data-brand="generic">
+              <FontAwesomeIcon icon={faGlobe} />
+              <span className="bi-works-with-tip">Any article · best-effort</span>
+            </li>
+          </ul>
         </div>
-      </div>
 
-      <div className="col-lg-9">
-        {messages.map((msg, index) => (
-          <div key={index} className={`message-${msg.variant} card-body ms-3 p-3`}>
-            <FontAwesomeIcon icon={faExclamationTriangle} className="me-1" />
-            {msg.body}
-          </div>
-        ))}
-
-        <div className="card-body backdrop-filter">
-          <div className="d-flex align-items-center">
-            <div id="blob-import-icon" className="me-3">
-              <img height="80" width="80" src={`${staticUrl}img/website.jpg`} alt="Website" />
-            </div>
-
-            <div className="w-100">
-              <form id="import-blob-form" method="post" action={importUrl} onSubmit={handleSubmit}>
-                <input type="hidden" name="csrfmiddlewaretoken" defaultValue={getCsrfToken()} />
-
-                <div className="row">
-                  <h3 className="col-lg-12 mb-4">
-                    Enter the url representing the blob you'd like to import.
-                  </h3>
-                </div>
-
-                <div className="row">
-                  <div className="col-lg-12">
-                    <input
-                      ref={urlInputRef}
-                      className="form-control"
-                      name="url"
-                      defaultValue={initialUrl}
-                      type="text"
-                      placeholder="Url"
-                      autoComplete="off"
-                    />
-                    <div className="d-flex mt-3">
-                      <button type="submit" className="btn btn-primary">
-                        Import
-                      </button>
-                      <div
-                        className={`spinner-border ms-3 text-secondary ${
-                          isProcessing ? "" : "d-none"
-                        }`}
-                        role="status"
-                      >
-                        <span className="sr-only">Loading...</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </form>
+        {isProcessing && (
+          <div className="bi-overlay" aria-live="polite">
+            <span className="bi-overlay-icon">
+              {recognized?.match ? (
+                <img
+                  src={`${staticUrl}img/${recognized.match.iconFile}`}
+                  alt=""
+                  aria-hidden="true"
+                />
+              ) : (
+                <FontAwesomeIcon icon={faGlobe} />
+              )}
+            </span>
+            <div className="bi-overlay-text">
+              <span className="bi-overlay-pulse" aria-hidden="true" />
+              <span>
+                Fetching from <span className="bi-overlay-host">{overlayHost}</span>…
+              </span>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

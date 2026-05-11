@@ -937,7 +937,7 @@ def import_blob(user: User, url: str) -> Blob | dict[str, Any]:
     if extracted_data["success"]:
         return extracted_data
 
-    raise ValueError(f"Site not supported for importing: <strong>{domain}</strong>. Generic extraction also failed: {extracted_data.get('error')}")
+    raise ValueError(f"Site not supported for importing: \"{domain}\". Generic extraction also failed: {extracted_data.get('error')}")
 
 
 def extract_article_data(url: str) -> dict[str, Any]:
