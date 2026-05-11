@@ -45,6 +45,7 @@ export interface PreferencesPageProps {
 interface FieldState {
   eyeCandy: boolean;
   theme: string;
+  topbarAnimation: string;
   background: FileDropValue;
   sidebar: FileDropValue;
   drillMutedTags: string[];
@@ -136,6 +137,12 @@ export function PreferencesPage(props: PreferencesPageProps) {
     return { value, label, ...palette };
   });
 
+  const topbarAnimationField = getField(formFields, "topbar_animation");
+  const topbarAnimationOptions = (topbarAnimationField?.choices || []).map(([value, label]) => ({
+    value,
+    label,
+  }));
+
   const defaultCollectionField = getField(formFields, "homepage_default_collection");
   const imageCollectionField = getField(formFields, "homepage_image_collection");
   const bookmarksPerPageField = getField(formFields, "bookmarks_per_page");
@@ -160,6 +167,7 @@ export function PreferencesPage(props: PreferencesPageProps) {
     return {
       eyeCandy,
       theme: themeField?.value || "",
+      topbarAnimation: topbarAnimationField?.value || "aurora",
       background: {
         url: backgroundImageUrl || "",
         name: backgroundImageUrl ? backgroundImageName || basename(backgroundImageUrl) : "",
@@ -204,6 +212,13 @@ export function PreferencesPage(props: PreferencesPageProps) {
     html.setAttribute("color-mode", state.theme);
   }, [state.theme]);
 
+  // Mirror the same live-preview behaviour for the top-bar animation. The
+  // dispatcher in <TopBarBackground/> observes this attribute and swaps the
+  // active canvas with no round-trip.
+  useEffect(() => {
+    document.documentElement.setAttribute("topbar-animation", state.topbarAnimation);
+  }, [state.topbarAnimation]);
+
   const upd = useCallback(
     <K extends keyof FieldState>(key: K) =>
       (value: FieldState[K]) => {
@@ -230,6 +245,7 @@ export function PreferencesPage(props: PreferencesPageProps) {
     const form = new FormData();
 
     form.append("theme", state.theme);
+    form.append("topbar_animation", state.topbarAnimation);
     form.append("eye_candy", state.eyeCandy ? "true" : "false");
     form.append(
       "drill_intervals",
@@ -388,6 +404,14 @@ export function PreferencesPage(props: PreferencesPageProps) {
           </Row>
           <Row label="Theme" hint="preview shows header, accent & panel">
             <ThemePicker value={state.theme} onChange={upd("theme")} themes={themeOptions} />
+          </Row>
+          <Row label="Top bar animation" hint="background effect behind the bar">
+            <Select
+              id="id_topbar_animation"
+              value={state.topbarAnimation}
+              onChange={upd("topbarAnimation")}
+              options={topbarAnimationOptions}
+            />
           </Row>
           <Row
             label="Background image"
