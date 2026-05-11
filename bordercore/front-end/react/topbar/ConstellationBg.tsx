@@ -23,11 +23,9 @@ const CONSTELLATION_GAP_MAX_PX = 400;
 const CONSTELLATION_VSCALE = 0.78;
 // Per-constellation rotation. Each gets a randomized full-turn period in
 // this range plus a randomized direction, so constellations rotate at
-// slightly different rates and don't appear to move in lockstep. Long
-// periods keep the motion subliminal — at 8–12 minutes per turn, a
-// constellation's tilt drifts only a few degrees while it crosses the bar.
-const ROTATION_PERIOD_S_MIN = 240; // 4 min
-const ROTATION_PERIOD_S_MAX = 360; // 6 min
+// slightly different rates and don't appear to move in lockstep.
+const ROTATION_PERIOD_S_MIN = 120; // 2 min
+const ROTATION_PERIOD_S_MAX = 180; // 3 min
 // Per-constellation vertical bob. A slow sine wave on the y-axis, randomized
 // in phase and frequency, so each constellation drifts up and down at its
 // own pace. Amplitude is a fraction of the unused vertical margin (i.e. the
