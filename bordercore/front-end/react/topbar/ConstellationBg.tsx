@@ -369,10 +369,15 @@ export function ConstellationBg() {
           t + SHOOTING_STAR_MIN_S + rng() * (SHOOTING_STAR_MAX_S - SHOOTING_STAR_MIN_S);
       }
       if (!pending && t >= nextShootingT) {
-        const x0 = cw * (0.7 + rng() * 0.3);
-        const y0 = ch * (0.0 + rng() * 0.3);
-        const x1 = x0 - cw * (0.25 + rng() * 0.25);
-        const y1 = y0 + ch * (0.4 + rng() * 0.6);
+        // Random origin and direction. Length is anchored to canvas width
+        // so the streak always covers a meaningful distance regardless of
+        // viewport size.
+        const x0 = cw * rng();
+        const y0 = ch * rng();
+        const angle = rng() * Math.PI * 2;
+        const length = cw * (0.25 + rng() * 0.35);
+        const x1 = x0 + Math.cos(angle) * length;
+        const y1 = y0 + Math.sin(angle) * length;
         pending = { startT: t, x0, y0, x1, y1 };
       }
     };
