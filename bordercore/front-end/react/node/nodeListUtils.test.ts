@@ -53,8 +53,8 @@ describe("ageTone", () => {
   it("returns rail and glow colors for every tier", () => {
     for (const iso of [DATE_2026, DATE_2025, DATE_2024, DATE_2023, DATE_2022]) {
       const tone = ageTone(iso);
-      expect(tone.rail).toMatch(/^#[0-9a-f]{6}$/i);
-      expect(tone.glow).toMatch(/^rgba\(/);
+      expect(tone.rail).toMatch(/^var\(--[\w-]+\)$/);
+      expect(tone.glow).toMatch(/^color-mix\(/);
     }
   });
 });
