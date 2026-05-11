@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faGripVertical,
@@ -12,7 +12,7 @@ import {
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { Todo, ViewType } from "./types";
-import DropDownMenu from "../common/DropDownMenu";
+import DropDownMenu, { DropDownMenuHandle } from "../common/DropDownMenu";
 import PriorityBadge from "./PriorityBadge";
 
 function formatDate(isoDate: string): string {
@@ -96,6 +96,12 @@ export function TodoRow({
     disabled: !canDrag,
   });
 
+  // DropDownMenu manages its own open state; closing it after an action
+  // requires the imperative handle since the menu items live in dropdownSlot
+  // (custom content), bypassing the built-in close-on-click for `links`.
+  const dropdownRef = useRef<DropDownMenuHandle>(null);
+  const closeDropdown = () => dropdownRef.current?.close();
+
   // Apply dnd-kit's transform/transition inline so the dragged row follows
   // the cursor and non-dragged rows shift smoothly to make room. Use
   // `Translate` (not `Transform`) so we omit dnd-kit's scaleX/scaleY — todo
@@ -172,11 +178,18 @@ export function TodoRow({
         <PriorityBadge priority={todo.priority} label={todo.priority_name} />
         <div className="todo-row-actions" onClick={e => e.stopPropagation()}>
           <DropDownMenu
+            ref={dropdownRef}
             dropdownSlot={
               <ul className="dropdown-menu-list">
                 {isSortable && todo.sort_order > 1 && (
                   <li>
-                    <button className="dropdown-menu-item" onClick={() => onMoveToTop(todo)}>
+                    <button
+                      className="dropdown-menu-item"
+                      onClick={() => {
+                        closeDropdown();
+                        onMoveToTop(todo);
+                      }}
+                    >
                       <span className="dropdown-menu-icon">
                         <FontAwesomeIcon icon={faArrowUp} />
                       </span>
@@ -185,7 +198,13 @@ export function TodoRow({
                   </li>
                 )}
                 <li>
-                  <button className="dropdown-menu-item" onClick={() => onEdit(todo)}>
+                  <button
+                    className="dropdown-menu-item"
+                    onClick={() => {
+                      closeDropdown();
+                      onEdit(todo);
+                    }}
+                  >
                     <span className="dropdown-menu-icon">
                       <FontAwesomeIcon icon={faPencilAlt} />
                     </span>
@@ -193,7 +212,13 @@ export function TodoRow({
                   </button>
                 </li>
                 <li>
-                  <button className="dropdown-menu-item" onClick={() => onDelete(todo)}>
+                  <button
+                    className="dropdown-menu-item"
+                    onClick={() => {
+                      closeDropdown();
+                      onDelete(todo);
+                    }}
+                  >
                     <span className="dropdown-menu-icon">
                       <FontAwesomeIcon icon={faTrashAlt} />
                     </span>
