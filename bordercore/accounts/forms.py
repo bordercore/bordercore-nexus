@@ -110,6 +110,7 @@ class UserProfileForm(ModelForm):
             "google_calendar",
             "google_calendar_email",
             "eye_candy",
+            "topbar_animation",
             "bookmarks_per_page",
         )
         widgets = {
