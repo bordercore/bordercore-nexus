@@ -26,8 +26,8 @@ const CONSTELLATION_VSCALE = 0.78;
 // slightly different rates and don't appear to move in lockstep. Long
 // periods keep the motion subliminal — at 8–12 minutes per turn, a
 // constellation's tilt drifts only a few degrees while it crosses the bar.
-const ROTATION_PERIOD_S_MIN = 480; // 8 min
-const ROTATION_PERIOD_S_MAX = 720; // 12 min
+const ROTATION_PERIOD_S_MIN = 240; // 4 min
+const ROTATION_PERIOD_S_MAX = 360; // 6 min
 
 // Deterministic seeded RNG so the ambient star field is stable across
 // remounts and so React strict-mode double-effect doesn't reshuffle the
