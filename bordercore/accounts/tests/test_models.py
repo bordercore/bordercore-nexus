@@ -1,6 +1,7 @@
 import pytest
 
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 
 from accounts.models import UserTag
 from accounts.tests.factories import TEST_USERNAME
@@ -48,3 +49,26 @@ def test_reorder(sort_order_user_tag, tag):
     assert tags[0] == tag[1]
     assert tags[1] == tag[0]
     assert len(tags) == 2
+
+
+def test_topbar_animation_defaults_to_aurora(django_user_model):
+    user = django_user_model.objects.create(username="topbar-anim-user")
+    assert user.userprofile.topbar_animation == "aurora"
+
+
+def test_topbar_animation_accepts_known_choices(django_user_model):
+    user = django_user_model.objects.create(username="topbar-anim-user-2")
+    # Exclude OneToOneFields that are null=True but not blank=True (pre-existing
+    # model gap unrelated to this test) so validation focuses on topbar_animation.
+    exclude = ["homepage_default_collection", "homepage_image_collection"]
+    for value in ("aurora", "constellations", "none"):
+        user.userprofile.topbar_animation = value
+        user.userprofile.full_clean(exclude=exclude)  # raises ValidationError if value rejected
+
+
+def test_topbar_animation_rejects_unknown_choice(django_user_model):
+    user = django_user_model.objects.create(username="topbar-anim-user-3")
+    user.userprofile.topbar_animation = "bogus"
+    with pytest.raises(ValidationError) as exc_info:
+        user.userprofile.full_clean(exclude=["homepage_default_collection", "homepage_image_collection"])
+    assert "topbar_animation" in exc_info.value.message_dict

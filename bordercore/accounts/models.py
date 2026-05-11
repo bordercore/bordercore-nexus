@@ -28,6 +28,12 @@ from drill.models import INTERVALS_DEFAULT
 from lib.mixins import SortOrderMixin
 from tag.models import Tag
 
+TOPBAR_ANIMATION_CHOICES = [
+    ("aurora", "Aurora"),
+    ("constellations", "Constellations"),
+    ("none", "None"),
+]
+
 
 def drill_intervals_default() -> list[int]:
     """Return the default list of drill intervals.
@@ -68,6 +74,11 @@ class UserProfile(models.Model):
     background_image = models.TextField(blank=True, null=True)
     drill_intervals = ArrayField(models.IntegerField(), default=drill_intervals_default)
     eye_candy = models.BooleanField(default=False)
+    topbar_animation = models.CharField(
+        max_length=32,
+        choices=TOPBAR_ANIMATION_CHOICES,
+        default="aurora",
+    )
     drill_tags_muted = models.ManyToManyField(Tag, related_name="drill_tags_muted")
     sidebar_order = JSONField(default=list, blank=True)
     bookmarks_per_page = models.PositiveIntegerField(default=50)
