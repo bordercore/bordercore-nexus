@@ -80,6 +80,7 @@ interface SongInfo {
   sampleRate: string | null;
   bitRate: string | null;
   genre: string | null;
+  artwork: string | null;
 }
 
 interface TagSuggestion {
@@ -143,6 +144,7 @@ export function SongCreatePage({
     sampleRate: null,
     bitRate: null,
     genre: null,
+    artwork: null,
   });
   const [filename, setFilename] = useState("");
   const [songFile, setSongFile] = useState<File | null>(null);
@@ -239,6 +241,7 @@ export function SongCreatePage({
         sampleRate: data.sample_rate,
         bitRate: data.bit_rate,
         genre: data.genre || null,
+        artwork: data.artwork || null,
       });
 
       if (data.artist && data.title) {
@@ -316,9 +319,13 @@ export function SongCreatePage({
     <div className="music-library-os mlo-edit-page mlo-create-page">
       <header className="mlo-edit-hero">
         <div className="mlo-edit-hero-cover">
-          <div className="mlo-edit-hero-cover-empty" aria-hidden="true">
-            <FontAwesomeIcon icon={faMusic} />
-          </div>
+          {songInfo.artwork ? (
+            <img src={songInfo.artwork} alt={formData.album_name || "Embedded cover art"} />
+          ) : (
+            <div className="mlo-edit-hero-cover-empty" aria-hidden="true">
+              <FontAwesomeIcon icon={faMusic} />
+            </div>
+          )}
         </div>
         <div className="mlo-edit-hero-text">
           <div className="mlo-edit-hero-eyebrow">creating song</div>

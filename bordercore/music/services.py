@@ -12,9 +12,12 @@ from io import BytesIO
 from typing import Any, Iterable, Iterator, TypedDict, cast
 from urllib.parse import unquote
 
+import base64
+
 import humanize
 from elasticsearch import Elasticsearch
 from mutagen.easyid3 import EasyID3
+from mutagen.id3 import APIC, ID3, ID3NoHeaderError
 from mutagen.mp3 import MP3
 
 from django.conf import settings
@@ -578,6 +581,35 @@ def create_album_from_zipfile(
     yield {"type": "done", "album_uuid": str(album.uuid)}
 
 
+def _extract_embedded_artwork(song: bytes) -> str | None:
+    """Return the MP3's embedded cover art as a data URL, or None.
+
+    ``EasyID3`` doesn't expose APIC frames, so we parse the full ID3 tag
+    block separately. When multiple pictures are present we prefer the front
+    cover (type 3) and fall back to the first attached picture.
+
+    Args:
+        song: Song data as bytes.
+
+    Returns:
+        A ``"data:<mime>;base64,..."`` string suitable for an ``<img src>``,
+        or None when the file has no embedded picture.
+    """
+    try:
+        tags = ID3(BytesIO(song))
+    except ID3NoHeaderError:
+        return None
+    pictures = cast(list[APIC], tags.getall("APIC"))
+    if not pictures:
+        return None
+    front = next((p for p in pictures if p.type == 3), pictures[0])
+    if not front.data:
+        return None
+    mime = front.mime or "image/jpeg"
+    encoded = base64.b64encode(front.data).decode("ascii")
+    return f"data:{mime};base64,{encoded}"
+
+
 def get_id3_info(song: bytes) -> dict[str, Any]:
     """Read a song's ID3 information.
 
@@ -597,6 +629,7 @@ def get_id3_info(song: bytes) -> dict[str, Any]:
         "year": None,
         "track": None,
         "genre": None,
+        "artwork": _extract_embedded_artwork(song),
     }
 
     for field in ("artist", "title"):

@@ -1,12 +1,21 @@
+import io
 from datetime import timedelta
+from pathlib import Path
 
 import pytest
 from faker import Factory as FakerFactory
+from mutagen.id3 import APIC, ID3
+from PIL import Image
 
 from django.utils import timezone
 
 from music.models import Listen
-from music.services import get_dashboard_stats, get_recent_albums, get_unique_artist_letters
+from music.services import (
+    get_dashboard_stats,
+    get_id3_info,
+    get_recent_albums,
+    get_unique_artist_letters,
+)
 from music.tests.factories import AlbumFactory, ArtistFactory, SongFactory
 from tag.tests.factories import TagFactory
 
@@ -88,6 +97,43 @@ def test_get_dashboard_stats_longest_streak(authenticated_client):
 
     stats = get_dashboard_stats(user)
     assert stats["longest_streak"] == 3
+
+
+def _make_jpeg_bytes(color: tuple[int, int, int] = (200, 80, 40)) -> bytes:
+    """Render a tiny in-memory JPEG suitable for embedding as APIC artwork."""
+    buf = io.BytesIO()
+    Image.new("RGB", (4, 4), color).save(buf, format="JPEG")
+    return buf.getvalue()
+
+
+def test_get_id3_info_returns_none_when_no_artwork():
+    """The fixture MP3 carries no APIC frame, so artwork should be None."""
+    song_path = Path(__file__).parent / "resources/Mysterious Lights.mp3"
+    info = get_id3_info(song_path.read_bytes())
+    assert info["artwork"] is None
+
+
+def test_get_id3_info_extracts_embedded_artwork():
+    """An APIC-bearing MP3 round-trips to a base64 image data URL."""
+    song_path = Path(__file__).parent / "resources/Mysterious Lights.mp3"
+    raw = song_path.read_bytes()
+
+    jpeg = _make_jpeg_bytes()
+    tagged = io.BytesIO(raw)
+    tags = ID3(tagged)
+    tags.add(APIC(encoding=3, mime="image/jpeg", type=3, desc="cover", data=jpeg))
+    out = io.BytesIO()
+    out.write(raw)
+    out.seek(0)
+    tags.save(out)
+    info = get_id3_info(out.getvalue())
+
+    assert info["artwork"] is not None
+    assert info["artwork"].startswith("data:image/jpeg;base64,")
+    # The encoded payload must decode back to the bytes we embedded.
+    import base64
+    encoded = info["artwork"].split(",", 1)[1]
+    assert base64.b64decode(encoded) == jpeg
 
 
 def test_get_recent_albums_includes_extended_fields(authenticated_client):
