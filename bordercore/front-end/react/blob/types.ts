@@ -5,6 +5,11 @@ export interface Book {
   name: string;
   url: string;
   cover_url: string;
+  author?: string;
+  year?: string;
+  created?: string;
+  date?: string;
+  tags?: string[];
 }
 
 export interface BookshelfTag {
@@ -12,13 +17,41 @@ export interface BookshelfTag {
   count: number;
 }
 
+export interface BookshelfCategory {
+  id: string;
+  label: string;
+  tags: BookshelfTag[];
+}
+
+export interface RecentBook {
+  uuid: string;
+  name: string;
+  author: string;
+  year: string;
+  created: string;
+  cover_url: string;
+  tags: string[];
+  url: string;
+}
+
+export interface SelectedTagMeta {
+  tag: string;
+  count: number;
+  category: string;
+  category_id: string;
+}
+
 export interface BookshelfPageProps {
   books: Book[];
   tagList: BookshelfTag[];
+  categories: BookshelfCategory[];
+  recentBooks: RecentBook[];
+  selectedTagMeta: SelectedTagMeta | null;
   totalCount: number;
   searchTerm: string | null;
   selectedTag: string | null;
   clearUrl: string;
+  bookshelfUrl: string;
 }
 
 // Types for Blob Detail page

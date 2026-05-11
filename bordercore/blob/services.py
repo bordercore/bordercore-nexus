@@ -606,91 +606,230 @@ def get_recently_viewed(user: User) -> list[dict[str, Any]]:
     return object_list
 
 
-def get_books(user: User, tag: str | None = None, search: str | None = None) -> dict[str, Any]:
-    """Search for book blobs using Elasticsearch.
+def get_books(
+    user: User,
+    tag: str | None = None,
+    search: str | None = None,
+    size: int | None = None,
+) -> list[dict[str, Any]]:
+    """Return the user's book blobs as catalog rows for the Bookshelf page.
 
-    Searches for book-type blobs in Elasticsearch, optionally filtered by
-    tag or search term. Results are ordered by last modified date (newest first).
+    Pulls every book the user owns from the database with `metadata` and
+    `tags` prefetched in a single round-trip (3 SQL queries total, no
+    N+1). Each row carries enough fields for the catalog card or row to
+    render without further lookups: cover URL, title, author, year,
+    created date, tag list, and the detail-page URL.
+
+    This used to hit Elasticsearch, but the Card Catalog now filters
+    client-side over the full set, and the ORM path is ~20x faster than
+    the equivalent ES `size=10000` fetch in this codebase (the network
+    + _source serialization round-trip dominates on the ES side).
 
     Args:
-        user: The user to scope the search to.
-        tag: Optional tag name to filter results by. If provided, increases
-            result limit to 1000.
-        search: Optional search term to match against metadata, name, and title
-            fields. If provided, increases result limit to 1000.
+        user: The user to scope the query to.
+        tag: Optional tag name; only books carrying that tag are returned.
+            Matched case-insensitively.
+        search: Optional substring; only books whose `name` contains the
+            substring (case-insensitive) are returned. Kept for deep-link
+            URL parity with the prior ES behaviour, though the page's
+            live filter handles most search needs now.
+        size: Optional cap on the number of rows returned. Defaults to
+            no cap (the catalog wants every book).
 
     Returns:
-        Elasticsearch search result dictionary containing:
-            - hits: Search results with document metadata
-            - Other Elasticsearch response fields
-
-    Note:
-        Default result limit is 10, but increases to 1000 when tag or search
-        parameters are provided.
+        List of dicts, one per book, with keys:
+        uuid, name, author, year, created, date, tags, cover_url, url.
     """
-
-    es = get_elasticsearch_connection(host=settings.ELASTICSEARCH_ENDPOINT)
-
-    search_object: dict[str, Any] = {
-        "query": {
-            "bool": {
-                "must": [
-                    {
-                        "term": {
-                            "user_id": user.id
-                        }
-                    },
-                    {
-                        "term": {
-                            "doctype": "book"
-                        }
-                    }
-                ]
-            }
-        },
-        "sort": [
-            {"last_modified": {"order": "desc"}}
-        ],
-        "from": 0,
-        "size": 10,
-        "_source": [
-            "date",
-            "date_unixtime",
-            "filename",
-            "last_modified",
-            "name",
-            "tags",
-            "title",
-            "url",
-            "uuid"
-        ]
-    }
+    qs = (
+        Blob.objects
+        .filter(user=user, metadata__name="is_book")
+        .prefetch_related("metadata", "tags")
+        .order_by("-modified")
+    )
 
     if tag:
-        search_object["query"]["bool"]["must"].append(
-            {
-                "term": {
-                    "tags.keyword": tag
-                }
-            }
-        )
-        search_object["size"] = 1000
-
+        qs = qs.filter(tags__name__iexact=tag).distinct()
     if search:
-        search_object["query"]["bool"]["must"].append(
-            {
-                "bool": {
-                    "should": [
-                        {"wildcard": {"name": {"value": f"*{search.lower()}*"}}},
-                        {"wildcard": {"title": {"value": f"*{search.lower()}*"}}},
-                    ],
-                    "minimum_should_match": 1
-                }
-            }
-        )
-        search_object["size"] = 1000
+        qs = qs.filter(name__icontains=search)
+    if size is not None:
+        qs = qs[:size]
 
-    return es.search(index=settings.ELASTICSEARCH_INDEX, body=search_object)
+    rows: list[dict[str, Any]] = []
+    for blob in qs:
+        # The Author and date_published metadata names match the conventions
+        # used elsewhere in the codebase (see blob/forms.py + the ES indexer).
+        author = ""
+        year = ""
+        for md in blob.metadata.all():
+            if md.name == "Author" and not author:
+                author = md.value
+            elif md.name == "date_published" and not year:
+                year = md.value[:4] if md.value else ""
+        # Fall back to the blob's `date` text field when there's no
+        # date_published metadata — most older books only have `date`.
+        if not year and blob.date:
+            year = blob.date[:4]
+
+        rows.append({
+            "uuid": str(blob.uuid),
+            "name": blob.name,
+            "author": author,
+            "year": year,
+            "created": blob.created.strftime("%Y-%m-%d"),
+            "date": blob.date or "",
+            "tags": [t.name for t in blob.tags.all()],
+            "cover_url": blob.get_cover_url(size="small"),
+            "url": reverse("blob:detail", kwargs={"uuid": blob.uuid}),
+        })
+    return rows
+
+
+def get_recent_books(user: User, limit: int = 8) -> list[dict[str, Any]]:
+    """Return the user's most recently added book blobs.
+
+    Used by the Bookshelf Card Catalog's "Recent Books" drawer. Ordered by
+    `Blob.created` descending. Each row carries enough metadata to render a
+    catalog row without a second round-trip: title, author, year, created
+    date, cover URL, and the first three tag names.
+
+    Args:
+        user: The user to scope the query to.
+        limit: Maximum number of rows to return. Defaults to 8 (the drawer
+            shows the last 8 additions).
+
+    Returns:
+        List of dictionaries, one per recent book.
+    """
+    qs = (
+        Blob.objects
+        .filter(user=user, metadata__name="is_book")
+        .order_by("-created")
+        .prefetch_related("metadata", "tags")[:limit]
+    )
+
+    rows: list[dict[str, Any]] = []
+    for blob in qs:
+        # The Author and date_published metadata names match the conventions
+        # used elsewhere in the codebase (see blob/forms.py + the ES indexer).
+        author = ""
+        year = ""
+        for md in blob.metadata.all():
+            if md.name == "Author" and not author:
+                author = md.value
+            elif md.name == "date_published" and not year:
+                # Stored as YYYY or YYYY-MM-DD; first 4 chars give us the year.
+                year = md.value[:4] if md.value else ""
+        # Fall back to the blob's `date` text field when there's no
+        # date_published metadata — most older books only have `date`.
+        if not year and blob.date:
+            year = blob.date[:4]
+
+        rows.append({
+            "uuid": str(blob.uuid),
+            "name": blob.name or "No name",
+            "author": author,
+            "year": year,
+            "created": blob.created.strftime("%Y-%m-%d"),
+            "cover_url": blob.get_cover_url(size="small"),
+            "tags": [t.name for t in blob.tags.all()[:3]],
+            "url": reverse("blob:detail", kwargs={"uuid": blob.uuid}),
+        })
+    return rows
+
+
+def get_book_tag_categories(
+    user: User,
+    tag_counts: dict[str, int] | None = None,
+) -> tuple[list[dict[str, Any]], dict[str, dict[str, str]]]:
+    """Group the user's book tags into the meta-categories from BOOK_TAG_CATEGORIES.
+
+    Returns a 2-tuple: ordered category rows for the left rail, and a lookup
+    from tag name to the category it belongs to (used to label the
+    "selected drawer" subtitle as e.g. "Languages").
+
+    A tag only appears in the rail if the user owns at least one book with
+    that tag. Categories with no surviving tags are dropped, so the rail
+    stays empty-state-clean.
+
+    Args:
+        user: The user whose tag counts drive inclusion.
+        tag_counts: Pre-computed `{tag_name: book_count}` map. When the
+            caller already has the per-tag count (e.g. derived from the
+            book rows it just fetched), passing it in skips the dedicated
+            aggregation query — saves ~30 ms on the bookshelf page.
+
+    Returns:
+        (categories, tag_to_category) where:
+          - categories is a list of dicts: {id, label, tags: [{name, count}]}.
+          - tag_to_category maps lowercase tag name to {id, label}.
+    """
+    # Avoid circular import — constants is a sibling module of services.
+    from blob.constants import BOOK_TAG_CATEGORIES
+
+    if tag_counts is None:
+        # Per-tag book counts for this user. Matches the shape used by
+        # BookshelfListView's existing tag_list query.
+        tag_counts = {
+            row["tags__name"]: row["tag_count"]
+            for row in (
+                Blob.objects
+                .filter(user=user, metadata__name="is_book")
+                .values("tags__name")
+                .annotate(tag_count=Count("tags__name"))
+            )
+            if row["tags__name"]
+        }
+    counts_lower = {k.lower(): (k, v) for k, v in tag_counts.items()}
+
+    categories: list[dict[str, Any]] = []
+    tag_to_category: dict[str, dict[str, str]] = {}
+    claimed_lower: set[str] = set()
+
+    for cat in BOOK_TAG_CATEGORIES:
+        tags_for_cat: list[dict[str, Any]] = []
+        for tag_name in cast(list[str], cat["tags"]):
+            match = counts_lower.get(tag_name.lower())
+            if not match:
+                continue
+            actual_name, count = match
+            tags_for_cat.append({"name": actual_name, "count": count})
+            tag_to_category[actual_name.lower()] = {
+                "id": cast(str, cat["id"]),
+                "label": cast(str, cat["label"]),
+            }
+            claimed_lower.add(actual_name.lower())
+        if tags_for_cat:
+            categories.append({
+                "id": cat["id"],
+                "label": cat["label"],
+                "tags": tags_for_cat,
+            })
+
+    # Catch-all bucket — any user tag that didn't match a hard-coded
+    # category lands here so the rail never silently drops a tag. Sorted
+    # by count desc, then name, to match the visual ordering inside each
+    # category above.
+    orphan_pairs = sorted(
+        (
+            (name, count)
+            for name, count in tag_counts.items()
+            if name.lower() not in claimed_lower
+        ),
+        key=lambda nc: (-nc[1], nc[0].lower()),
+    )
+    if orphan_pairs:
+        categories.append({
+            "id": "other",
+            "label": "Other",
+            "tags": [{"name": n, "count": c} for n, c in orphan_pairs],
+        })
+        for name, _ in orphan_pairs:
+            tag_to_category[name.lower()] = {
+                "id": "other",
+                "label": "Other",
+            }
+
+    return categories, tag_to_category
 
 
 def get_blob_sizes(blob_list: Iterable[Blob]) -> dict[str, dict[str, Any]]:

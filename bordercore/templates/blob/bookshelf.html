@@ -10,11 +10,15 @@
         data-search-term="{{ request.GET.search|default:'' }}"
         data-selected-tag="{{ request.GET.tag|default:'' }}"
         data-clear-url="{% url 'blob:bookshelf' %}"
+        data-bookshelf-url="{% url 'blob:bookshelf' %}"
     >
     </div>
 
     {{ object_list|json_script:"books" }}
     {{ tag_list|json_script:"tag_list" }}
+    {{ categories|json_script:"categories" }}
+    {{ recent_books|json_script:"recent_books" }}
+    {{ selected_tag_meta|json_script:"selected_tag_meta" }}
 
 {% endblock %}
 

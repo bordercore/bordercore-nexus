@@ -7,6 +7,7 @@ blobs and other objects like collections and nodes.
 import json
 import logging
 import threading
+from collections import Counter
 from http import HTTPStatus
 from typing import Any, Generator, cast
 
@@ -24,7 +25,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
-from django.db.models import Count, Q
+from django.db.models import Q
 from django.forms import BaseModelForm
 from django.http import (HttpRequest, HttpResponse, HttpResponseRedirect,
                          JsonResponse, StreamingHttpResponse)
@@ -43,7 +44,9 @@ from blob.models import (Blob, BlobTemplate, BlobToObject, MetaData,
 from tag.models import Tag
 from blob.services import add_related_object as add_related_object_service
 from blob.services import (chatbot, chatbot_followups, generate_note_thumbnail,
-                           get_books, get_node_to_object_query, import_blob)
+                           get_book_tag_categories, get_books,
+                           get_node_to_object_query, get_recent_books,
+                           import_blob)
 from collection.models import Collection, CollectionObject
 from lib.decorators import validate_post_data
 from lib.exceptions import (InvalidNodeTypeError, NodeNotFoundError,
@@ -1307,82 +1310,80 @@ def chat_save_as_note(request: Request) -> Response:
 class BookshelfListView(LoginRequiredMixin, ListView):
     """View for displaying the bookshelf page.
 
-    Shows a list of books (blobs with is_book metadata) with filtering
-    by tag and search functionality.
+    Backs the Card Catalog redesign: a tag index in the left rail, a
+    "selected drawer" of catalog cards in the right column, and a
+    pull-out "Recent Books" drawer on the right edge. Filtering by `?tag=`
+    and `?search=` use the same Elasticsearch path as before.
     """
 
     template_name = "blob/bookshelf.html"
 
     def get_queryset(self) -> Any:
-        """Get the queryset of books for the bookshelf.
+        """Load every book the user owns as catalog rows.
 
-        Retrieves books from Elasticsearch with optional tag and search
-        filtering. Also builds a tag list with counts.
-
-        Returns:
-            List of dictionaries containing book information:
-                - cover_url: URL of the book cover image
-                - date: Publication date
-                - name: Book name
-                - tags: List of tag names
-                - url: URL to book detail page
-                - uuid: Book UUID
+        The Card Catalog filters by `?tag=` and live search entirely on
+        the client, so the server always returns the full set. Doing it
+        this way avoids three otherwise-redundant queries (a per-tag
+        aggregation for the rail, a duplicate aggregation inside the
+        category builder, and a total-count query) since everything we
+        need can be derived from the row list itself.
         """
         user = cast(User, self.request.user)
-        book_list = get_books(
-            user,
-            self.request.GET.get("tag", None),
-            self.request.GET.get("search", None)
+        rows = get_books(user)
+
+        # Derive per-tag counts from the row list rather than re-querying
+        # the database. One pass, no DB round-trip.
+        tag_counter: Counter[str] = Counter()
+        for row in rows:
+            tag_counter.update(row["tags"])
+        # Sort by count desc, then name asc — matches the existing
+        # tag_list contract (legacy template-time consumers expect it).
+        self.tag_counts: dict[str, int] = dict(
+            sorted(tag_counter.items(), key=lambda kv: (-kv[1], kv[0]))
         )
-
         self.tag_list = [
-            {
-                "name": hit["tags__name"],
-                "count": hit["tag_count"]
-            }
-            for hit in
-            Blob.objects.filter(
-                user=user,
-                metadata__name="is_book"
-            ).values(
-                "tags__name"
-            ).annotate(
-                tag_count=Count("tags__name")
-            ).order_by(
-                "-tag_count"
-            )
+            {"name": name, "count": count}
+            for name, count in self.tag_counts.items()
         ]
 
-        return [
-            {
-                "cover_url": Blob.get_cover_url_static(src["uuid"], src["filename"], size="small"),
-                "date": src["date"],
-                "name": src["name"],
-                "tags": src["tags"],
-                "url": reverse("blob:detail", kwargs={"uuid": src["uuid"]}),
-                "uuid": src["uuid"]
-            }
-            for hit in book_list["hits"]["hits"]
-            for src in [hit["_source"]]
-        ]
+        return rows
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        """Get context data for the bookshelf view.
+        """Add catalog-specific context: recent books, categories, selected meta.
 
-        Args:
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            Context dictionary containing:
-                - tag_list: List of tags with book counts
-                - total_count: Total number of books for the user
-                - title: Page title "Bookshelf"
+        - `recent_books`: last 8 books by `Blob.created`, used by the drawer.
+        - `categories`: ordered category rows for the left rail.
+        - `selected_tag_meta`: when `?tag=foo` is present, the category label
+          + per-user book count for that tag (drives the "52 books · Languages"
+          subtitle in the right column).
+        - `total_count`: derived from the row list (no extra COUNT query).
         """
         context = super().get_context_data(**kwargs)
         user = cast(User, self.request.user)
+
+        # Pass pre-computed counts so the category builder doesn't re-run
+        # the same aggregation query we already derived from the rows.
+        categories, tag_to_category = get_book_tag_categories(
+            user, tag_counts=self.tag_counts
+        )
+
+        selected_tag = self.request.GET.get("tag") or ""
+        selected_tag_meta: dict[str, Any] | None = None
+        if selected_tag:
+            cat = tag_to_category.get(selected_tag.lower())
+            selected_tag_meta = {
+                "tag": selected_tag,
+                "count": self.tag_counts.get(selected_tag, 0),
+                "category": cat["label"] if cat else "",
+                "category_id": cat["id"] if cat else "",
+            }
+
         return {
             **context,
             "tag_list": self.tag_list,
-            "total_count": Blob.objects.filter(user=user, metadata__name="is_book").count(),
+            "categories": categories,
+            "recent_books": get_recent_books(user, limit=8),
+            "selected_tag_meta": selected_tag_meta,
+            "total_count": len(self.object_list),
             "title": "Bookshelf"
         }

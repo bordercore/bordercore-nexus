@@ -1,139 +1,229 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
-import { Card } from "../common/Card";
-import { Tooltip } from "bootstrap";
+import { faSearch } from "@fortawesome/free-solid-svg-icons";
+import { TagIndex } from "./bookshelf/TagIndex";
+import { SelectedDrawer } from "./bookshelf/SelectedDrawer";
+import { RecentDrawer } from "./bookshelf/RecentDrawer";
+import { relativeTime } from "./bookshelf/relativeTime";
 import type { BookshelfPageProps } from "./types";
 
+const DRAWER_LS_KEY = "bordercore:bookshelf:drawerOpen";
+
+function readDrawerInitial(): boolean {
+  if (typeof window === "undefined") return true;
+  try {
+    const v = window.localStorage.getItem(DRAWER_LS_KEY);
+    return v === null ? true : v === "1";
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * Bookshelf — Card Catalog. The page renders a title band, a two-column
+ * grid (tag index + selected drawer), and an overlay "Recent Books"
+ * pull-out drawer anchored to the right edge.
+ *
+ * Tag chip clicks and search submissions are plain GET reloads (matches
+ * the existing /bookshelf/ behaviour and keeps URL state predictable).
+ * The only client-side state we care about is whether the right drawer
+ * is open — persisted to localStorage so the preference sticks.
+ */
 export function BookshelfPage({
   books,
-  tagList,
+  categories,
+  recentBooks,
+  selectedTagMeta,
   totalCount,
   searchTerm,
   selectedTag,
   clearUrl,
+  bookshelfUrl,
 }: BookshelfPageProps) {
   const [searchValue, setSearchValue] = useState(searchTerm || "");
+  const [drawerOpen, setDrawerOpen] = useState<boolean>(readDrawerInitial);
 
-  // Initialize Bootstrap tooltips
   useEffect(() => {
-    const tooltipElements = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-    tooltipElements.forEach(el => {
-      new Tooltip(el);
-    });
+    try {
+      window.localStorage.setItem(DRAWER_LS_KEY, drawerOpen ? "1" : "0");
+    } catch {
+      /* localStorage unavailable — silently ignore. */
+    }
+  }, [drawerOpen]);
 
-    return () => {
-      tooltipElements.forEach(el => {
-        const tooltip = Tooltip.getInstance(el);
-        if (tooltip) {
-          tooltip.dispose();
-        }
-      });
-    };
-  }, [books]);
+  // Mirror the live search query back into ?search=… so the URL stays
+  // shareable / refresh-friendly without forcing a server round-trip.
+  // We use replaceState to avoid polluting the back-stack with every
+  // keystroke.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    if (searchValue) {
+      url.searchParams.set("search", searchValue);
+    } else {
+      url.searchParams.delete("search");
+    }
+    window.history.replaceState({}, "", url.toString());
+  }, [searchValue]);
 
-  const handleTagClick = (tagName: string) => {
-    window.location.href = `?tag=${encodeURIComponent(tagName)}`;
-  };
+  const buildTagHref = useCallback(
+    (tagName: string) => {
+      const params = new URLSearchParams({ tag: tagName });
+      return `${bookshelfUrl}?${params.toString()}`;
+    },
+    [bookshelfUrl]
+  );
 
-  const hasFilter = searchTerm || selectedTag;
+  const tagCount = useMemo(
+    () => categories.reduce((sum, c) => sum + c.tags.length, 0),
+    [categories]
+  );
 
-  // Determine card title based on filter state
-  let cardTitle: React.ReactNode = "Recent Books";
-  if (searchTerm) {
-    cardTitle = "Search Result";
-  } else if (selectedTag) {
-    cardTitle = (
-      <>
-        Books with tag <strong className="text-info">{selectedTag}</strong>
-      </>
-    );
-  }
+  const lastAddition = recentBooks[0];
+  const lastAdditionISO = lastAddition?.created || "";
+  const lastAdditionRelative = useMemo(
+    () => relativeTime(lastAdditionISO ? `${lastAdditionISO}T00:00:00` : ""),
+    [lastAdditionISO]
+  );
+
+  // Client-side filter: match on title, author, or any tag, case-insensitive
+  // substring. Pure local — operates on whatever the server already returned
+  // (which is up to 1000 rows when a tag or ?search= is in the URL). The
+  // initial search term arrives as a server-side ES filter; subsequent
+  // refinements narrow the loaded set without a reload.
+  //
+  // The filter only kicks in at 3+ characters so short queries (e.g. "py")
+  // don't over-match every book whose author happens to contain those
+  // letters. The URL still mirrors whatever the user types — the threshold
+  // gates the filter, not the input.
+  const MIN_QUERY_LEN = 3;
+  const trimmed = searchValue.trim().toLowerCase();
+  const effectiveQuery = trimmed.length >= MIN_QUERY_LEN ? trimmed : "";
+
+  const matchesQuery = useCallback(
+    (haystacks: Array<string | undefined>) => {
+      if (!effectiveQuery) return true;
+      return haystacks.some(h => h && h.toLowerCase().includes(effectiveQuery));
+    },
+    [effectiveQuery]
+  );
+
+  // When `?tag=foo` is in the URL, the server still ships every book so
+  // tag counts and the rail stay consistent — the client narrows the
+  // catalog list to that tag here.
+  const tagFilterLower = (selectedTag || "").toLowerCase();
+  const matchesTag = useCallback(
+    (tags: string[] | undefined) => {
+      if (!tagFilterLower) return true;
+      return (tags || []).some(t => t.toLowerCase() === tagFilterLower);
+    },
+    [tagFilterLower]
+  );
+
+  const filteredBooks = useMemo(
+    () =>
+      books.filter(b => matchesTag(b.tags) && matchesQuery([b.name, b.author, ...(b.tags || [])])),
+    [books, matchesQuery, matchesTag]
+  );
+
+  const filteredRecent = useMemo(
+    () => recentBooks.filter(b => matchesQuery([b.name, b.author, ...(b.tags || [])])),
+    [recentBooks, matchesQuery]
+  );
+
+  const hasFilter = Boolean(trimmed || selectedTag);
+  const clearSearch = useCallback(() => setSearchValue(""), []);
 
   return (
-    <div className="row g-0 h-100 m-2">
-      <div className="col-lg-3 d-flex flex-column">
-        <div className="card-body backdrop-filter d-flex align-items-center">
-          <div>
-            <span className="book_count">{totalCount}</span>
+    <div className="bcc-shell">
+      <header className="bcc-pagehead">
+        <div>
+          <h1 className="bcc-pagehead-title">
+            <span className="bc-page-title">Bookshelf</span>
+          </h1>
+          <div className="bcc-pagehead-meta">
+            <span className="count">{totalCount}</span> books
+            <span className="bcc-pagehead-sep">·</span>
+            <span className="count">{tagCount}</span> tags
+            {lastAddition ? (
+              <>
+                <span className="bcc-pagehead-sep">·</span>
+                <span>
+                  last addition <span className="bcc-pagehead-strong">{lastAddition.name}</span>
+                </span>
+                {lastAdditionRelative ? (
+                  <>
+                    <span className="bcc-pagehead-sep">·</span>
+                    <span>{lastAdditionRelative}</span>
+                  </>
+                ) : null}
+              </>
+            ) : null}
           </div>
-          <div className="ms-2">books in collection</div>
         </div>
-        <div className="card-body backdrop-filter flex-grow-1 bookmark-pinned-tags">
-          <div className="card-title-large">Tag List</div>
-          <hr className="divider" />
-          <ul className="list-group flex-column w-100">
-            {tagList.map(tag => (
-              <li
-                key={tag.name}
-                className="list-with-counts rounded d-flex ps-2 py-1 pr-1"
-                onClick={() => handleTagClick(tag.name)}
-              >
-                <div className="ps-2 text-truncate">{tag.name}</div>
-                <div className="ms-auto pe-2">
-                  <span className="px-2 badge rounded-pill">{tag.count}</span>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-      <div className="col-lg-9 d-flex flex-column">
-        <div className="has-search position-relative ms-2 me-0 mb-3">
-          <FontAwesomeIcon icon={faMagnifyingGlass} className="search-icon" />
-          <form action={window.location.pathname} method="get">
+
+        <div className="bcc-actions">
+          <div className="bcc-search" role="search">
+            <FontAwesomeIcon icon={faSearch} aria-hidden="true" />
             <input
-              type="text"
+              type="search"
               name="search"
-              className="form-control w-100"
-              placeholder="Search"
+              placeholder="search titles, authors, tags"
               value={searchValue}
               onChange={e => setSearchValue(e.target.value)}
+              autoComplete="off"
+              aria-label="Search bookshelf"
             />
-          </form>
+            {hasFilter ? (
+              // When a tag is part of the active filter, the clear pill is
+              // a link back to the bare /bookshelf/ URL — the tag lives in
+              // the URL so only a navigation can drop it. Otherwise it
+              // just blanks the live search (no reload).
+              selectedTag ? (
+                <a
+                  href={clearUrl}
+                  className="bcc-search-clear"
+                  aria-label="Clear search and tag filter"
+                >
+                  ×
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  className="bcc-search-clear"
+                  onClick={clearSearch}
+                  aria-label="Clear search"
+                >
+                  ×
+                </button>
+              )
+            ) : null}
+          </div>
         </div>
-        <Card
-          cardClassName="backdrop-filter h-100"
-          className="bookmark-pinned-tags"
-          titleSlot={
-            <div className="card-title-large d-flex">
-              <div>{cardTitle}</div>
-              {hasFilter && (
-                <div className="d-flex ms-auto">
-                  <small>
-                    <a href={clearUrl} className="text-secondary">
-                      Clear
-                    </a>
-                  </small>
-                </div>
-              )}
-            </div>
-          }
-        >
-          <hr className="divider mb-5" />
-          <ul className="d-flex flex-wrap text-center list-unstyled collection-sortable">
-            {books.map(book => (
-              <li key={book.uuid} className="mx-3">
-                <div className="zoom d-flex flex-column justify-content-top h-100 mb-4">
-                  <div>
-                    <a href={book.url}>
-                      <img src={book.cover_url} alt={book.name || "Book cover"} loading="lazy" />
-                    </a>
-                  </div>
-                  <div
-                    className="collection-item-name lh-sm mt-1"
-                    data-bs-toggle="tooltip"
-                    data-bs-placement="top"
-                    title={book.name}
-                  >
-                    <a href={book.url}>{book.name || "No Title"}</a>
-                  </div>
-                </div>
-              </li>
-            ))}
-            {books.length === 0 && <div>Nothing found</div>}
-          </ul>
-        </Card>
+      </header>
+
+      <div className="bcc-grid">
+        <TagIndex
+          categories={categories}
+          selectedTag={selectedTag}
+          searchQuery={effectiveQuery}
+          buildTagHref={buildTagHref}
+        />
+        <SelectedDrawer
+          books={filteredBooks}
+          selectedTag={selectedTag}
+          selectedTagMeta={selectedTagMeta}
+          searchTerm={effectiveQuery || null}
+        />
+
+        <RecentDrawer
+          books={filteredRecent}
+          totalCount={recentBooks.length}
+          searchQuery={effectiveQuery}
+          open={drawerOpen}
+          onToggle={() => setDrawerOpen(v => !v)}
+          onClose={() => setDrawerOpen(false)}
+        />
       </div>
     </div>
   );
