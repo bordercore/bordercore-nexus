@@ -63,8 +63,6 @@ module.exports = defineConfig({
         "dist/js/base-react": path.resolve(__dirname, "front-end", "entries", "base-react.tsx"),
         "dist/js/reminders": path.resolve(__dirname, "front-end", "entries", "reminders.tsx"),
         "dist/js/reminder-detail": path.resolve(__dirname, "front-end", "entries", "reminder-detail.tsx"),
-        "dist/js/reminder-form": path.resolve(__dirname, "front-end", "entries", "reminder-form.tsx"),
-        "dist/js/reminder-delete": path.resolve(__dirname, "front-end", "entries", "reminder-delete.tsx"),
         "dist/js/album-detail": path.resolve(__dirname, "front-end", "entries", "album-detail.tsx"),
         "dist/js/artist-detail": path.resolve(__dirname, "front-end", "entries", "artist-detail.tsx"),
         "dist/js/music-dashboard": path.resolve(__dirname, "front-end", "entries", "music-dashboard.tsx"),

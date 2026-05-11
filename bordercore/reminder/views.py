@@ -13,15 +13,12 @@ from rest_framework.views import APIView
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
-from django.forms import BaseModelForm
 from rest_framework.request import Request
 
-from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
-from django.urls import reverse, reverse_lazy
+from django.urls import reverse
 from django.utils import dateformat, timezone
-from django.views.generic import (CreateView, DeleteView, DetailView,
-                                  TemplateView, UpdateView)
+from django.views.generic import DetailView, TemplateView
 
 from lib.mixins import UserScopedQuerysetMixin
 
@@ -184,150 +181,98 @@ class ReminderFormAjaxView(APIView):
         return Response(data)
 
 
-class ReminderCreateView(LoginRequiredMixin, CreateView):
-    """Create a new reminder.
+class ReminderCreateAjaxView(APIView):
+    """Create a new reminder via AJAX (JSON only).
 
-    Handles creation of new reminder objects, automatically associating them
-    with the current user and calculating the initial next_trigger_at based
-    on the start_at time if provided.
+    Accepts POST with form-encoded reminder fields, validates via
+    ``ReminderForm``, and returns JSON success or field errors. The reminder
+    is associated with the current user and its ``next_trigger_at`` is
+    calculated from the schedule fields before saving.
     """
 
-    model = Reminder
-    form_class = ReminderForm
-    template_name = "reminder/update.html"
-    success_url = reverse_lazy("reminder:app")
-
-    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        """Add form URLs to context.
+    def post(self, request: Request) -> Response:
+        """Validate and create a reminder for the current user.
 
         Args:
-            **kwargs: Additional keyword arguments.
+            request: The HTTP request containing form-encoded reminder data.
 
         Returns:
-            Context dictionary with form URLs.
+            Response with ``{"success": True, "redirect_url": ...}`` on
+            success, or HTTP 400 with ``{"errors": {...}}`` on validation
+            failure.
         """
-        context = super().get_context_data(**kwargs)
-        context["title"] = "New Reminder"
-        context["is_edit"] = False
-        context["submit_url"] = reverse("reminder:create")
-        context["cancel_url"] = reverse("reminder:app")
-        return context
-
-    def form_valid(self, form: BaseModelForm) -> HttpResponse:
-        """Set the user and calculate next_trigger_at before saving.
-
-        Args:
-            form: The validated form containing reminder data.
-
-        Returns:
-            HttpResponse redirecting to the success URL or JSON response for AJAX.
-        """
-        form.instance.user = self.request.user
-        # Calculate next_trigger_at based on schedule settings
-        form.instance.next_trigger_at = form.instance.calculate_next_trigger_at()
-        response = super().form_valid(form)
-        # For AJAX requests, return JSON instead of redirect
-        if self.request.headers.get("X-Requested-With") == "XMLHttpRequest" or self.request.content_type == "application/x-www-form-urlencoded":
-            return JsonResponse({"success": True, "redirect_url": str(self.success_url)})
-        return response
-
-    def form_invalid(self, form: BaseModelForm) -> HttpResponse:
-        """Handle invalid form submission.
-
-        Args:
-            form: The form with validation errors.
-
-        Returns:
-            HttpResponse with form errors, JSON for AJAX requests.
-        """
-        if self.request.headers.get("X-Requested-With") == "XMLHttpRequest" or self.request.content_type == "application/x-www-form-urlencoded":
-            errors: dict[str, Any] = {}
-            for field, field_errors in form.errors.items():
-                errors[field] = field_errors
-            return JsonResponse({"errors": errors}, status=400)
-        return super().form_invalid(form)
+        user = cast(User, request.user)
+        form = ReminderForm(request.POST)
+        if not form.is_valid():
+            errors: dict[str, Any] = {
+                field: list(field_errors) for field, field_errors in form.errors.items()
+            }
+            return Response({"errors": errors}, status=400)
+        reminder = form.save(commit=False)
+        reminder.user = user
+        reminder.next_trigger_at = reminder.calculate_next_trigger_at()
+        reminder.save()
+        return Response({"success": True, "redirect_url": reverse("reminder:app")})
 
 
-class ReminderUpdateView(LoginRequiredMixin, UserScopedQuerysetMixin, UpdateView):
-    """Update an existing reminder.
+class ReminderUpdateAjaxView(APIView):
+    """Update an existing reminder via AJAX (JSON only).
 
-    Allows editing of reminder properties. Automatically recalculates
-    next_trigger_at based on the schedule settings.
-    Access is limited to the reminder's owner.
+    Accepts POST with form-encoded reminder fields, validates via
+    ``ReminderForm`` against the existing instance, and returns JSON success
+    or field errors. ``next_trigger_at`` is recalculated from the schedule
+    fields on every save. Access is limited to the reminder's owner — other
+    users' reminders return 404.
     """
 
-    model = Reminder
-    form_class = ReminderForm
-    template_name = "reminder/update.html"
-    slug_field = "uuid"
-    slug_url_kwarg = "uuid"
-    success_url = reverse_lazy("reminder:app")
-
-    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        """Add form URLs to context.
+    def post(self, request: Request, uuid: str) -> Response:
+        """Validate and update a reminder owned by the current user.
 
         Args:
-            **kwargs: Additional keyword arguments.
+            request: The HTTP request containing form-encoded reminder data.
+            uuid: UUID of the reminder to update.
 
         Returns:
-            Context dictionary with form URLs.
+            Response with ``{"success": True, "redirect_url": ...}`` on
+            success, or HTTP 400 with ``{"errors": {...}}`` on validation
+            failure.
         """
-        context = super().get_context_data(**kwargs)
-        context["title"] = "Edit Reminder"
-        context["is_edit"] = True
-        context["form_ajax_url"] = reverse(
-            "reminder:form-ajax", kwargs={"uuid": self.object.uuid}
-        )
-        context["submit_url"] = reverse("reminder:update", kwargs={"uuid": self.object.uuid})
-        context["cancel_url"] = reverse("reminder:app")
-        return context
-
-    def form_valid(self, form: BaseModelForm) -> HttpResponse:
-        """Calculate next_trigger_at based on schedule settings.
-
-        Args:
-            form: The validated form containing updated reminder data.
-
-        Returns:
-            HttpResponse redirecting to the success URL or JSON response for AJAX.
-        """
-        # Always recalculate next_trigger_at based on schedule settings
-        form.instance.next_trigger_at = form.instance.calculate_next_trigger_at()
-        response = super().form_valid(form)
-        # For AJAX requests, return JSON instead of redirect
-        if self.request.headers.get("X-Requested-With") == "XMLHttpRequest" or self.request.content_type == "application/x-www-form-urlencoded":
-            return JsonResponse({"success": True, "redirect_url": str(self.success_url)})
-        return response
-
-    def form_invalid(self, form: BaseModelForm) -> HttpResponse:
-        """Handle invalid form submission.
-
-        Args:
-            form: The form with validation errors.
-
-        Returns:
-            HttpResponse with form errors, JSON for AJAX requests.
-        """
-        if self.request.headers.get("X-Requested-With") == "XMLHttpRequest" or self.request.content_type == "application/x-www-form-urlencoded":
-            errors: dict[str, Any] = {}
-            for field, field_errors in form.errors.items():
-                errors[field] = field_errors
-            return JsonResponse({"errors": errors}, status=400)
-        return super().form_invalid(form)
+        user = cast(User, request.user)
+        reminder = get_object_or_404(Reminder, uuid=uuid, user=user)
+        form = ReminderForm(request.POST, instance=reminder)
+        if not form.is_valid():
+            errors: dict[str, Any] = {
+                field: list(field_errors) for field, field_errors in form.errors.items()
+            }
+            return Response({"errors": errors}, status=400)
+        reminder = form.save(commit=False)
+        reminder.next_trigger_at = reminder.calculate_next_trigger_at()
+        reminder.save()
+        return Response({"success": True, "redirect_url": reverse("reminder:app")})
 
 
-class ReminderDeleteView(LoginRequiredMixin, UserScopedQuerysetMixin, DeleteView):
-    """Delete a reminder.
+class ReminderDeleteAjaxView(APIView):
+    """Delete a reminder via AJAX (JSON only).
 
-    Handles deletion of reminder objects with confirmation. Access is limited
-    to the reminder's owner to prevent unauthorized deletion.
+    Accepts POST to remove the reminder and returns JSON success. Access is
+    limited to the reminder's owner — other users' reminders return 404.
     """
 
-    model = Reminder
-    template_name = "reminder/confirm_delete.html"
-    slug_field = "uuid"
-    slug_url_kwarg = "uuid"
-    success_url = reverse_lazy("reminder:app")
+    def post(self, request: Request, uuid: str) -> Response:
+        """Delete a reminder owned by the current user.
+
+        Args:
+            request: The HTTP request.
+            uuid: UUID of the reminder to delete.
+
+        Returns:
+            Response with ``{"success": True, "redirect_url": ...}`` on
+            success.
+        """
+        user = cast(User, request.user)
+        reminder = get_object_or_404(Reminder, uuid=uuid, user=user)
+        reminder.delete()
+        return Response({"success": True, "redirect_url": reverse("reminder:app")})
 
 
 class ReminderListAjaxView(APIView):

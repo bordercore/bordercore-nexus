@@ -187,26 +187,23 @@ def test_form_ajax_other_user_returns_404(reminder_client):
     assert resp.status_code == 404
 
 
-def test_create_get_requires_login(client):
-    """Create view GET requires authentication."""
+def test_create_requires_login(client):
+    """Create endpoint requires authentication."""
     url = reverse("reminder:create")
-    resp = client.get(url)
-    assert resp.status_code == 302
-    assert resp.url.startswith("/accounts/login/")
+    resp = client.post(url, {"name": "x", "schedule_type": "daily", "trigger_time": "09:00"})
+    assert resp.status_code == 403
 
 
-def test_create_get_returns_200(reminder_client):
-    """GET create returns 200."""
+def test_create_get_not_allowed(reminder_client):
+    """Create endpoint is POST-only; GET returns 405."""
     _, client = reminder_client
     url = reverse("reminder:create")
     resp = client.get(url)
-    assert resp.status_code == 200
-    assert resp.context["title"] == "New Reminder"
-    assert resp.context["is_edit"] is False
+    assert resp.status_code == 405
 
 
 def test_create_post_valid_creates_reminder(reminder_client):
-    """POST valid data to create creates reminder with user and next_trigger_at."""
+    """POST valid data creates a reminder for the current user and returns JSON success."""
     user, client = reminder_client
     url = reverse("reminder:create")
     data = {
@@ -215,15 +212,16 @@ def test_create_post_valid_creates_reminder(reminder_client):
         "trigger_time": "09:00",
     }
     resp = client.post(url, data)
-    assert resp.status_code == 302
-    assert resp.url == reverse("reminder:app")
-    assert Reminder.objects.filter(user=user, name="New Reminder").exists()
+    assert resp.status_code == 200
+    json_data = resp.json()
+    assert json_data["success"] is True
+    assert json_data["redirect_url"] == reverse("reminder:app")
     reminder = Reminder.objects.get(user=user, name="New Reminder")
     assert reminder.next_trigger_at is not None
 
 
 def test_create_post_invalid_returns_errors(reminder_client):
-    """POST invalid data (e.g. empty name) returns form errors."""
+    """POST invalid data (e.g. empty name) returns 400 with JSON field errors."""
     _, client = reminder_client
     url = reverse("reminder:create")
     data = {
@@ -232,49 +230,39 @@ def test_create_post_invalid_returns_errors(reminder_client):
         "trigger_time": "09:00",
     }
     resp = client.post(url, data)
-    assert resp.status_code == 200
-    assert "name" in resp.context["form"].errors
-
-
-def test_create_post_ajax_returns_json_success(reminder_client):
-    """POST create with X-Requested-With: XMLHttpRequest returns JSON success."""
-    _, client = reminder_client
-    url = reverse("reminder:create")
-    data = {
-        "name": "AJAX Reminder",
-        "schedule_type": Reminder.SCHEDULE_TYPE_DAILY,
-        "trigger_time": "09:00",
-    }
-    resp = client.post(url, data, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
-    assert resp.status_code == 200
-    json_data = resp.json()
-    assert json_data["success"] is True
-    assert "redirect_url" in json_data
+    assert resp.status_code == 400
+    assert "name" in resp.json()["errors"]
 
 
 def test_update_requires_login(client):
-    """Update view requires authentication."""
+    """Update endpoint requires authentication."""
     reminder = ReminderFactory()
     url = reverse("reminder:update", kwargs={"uuid": reminder.uuid})
+    resp = client.post(url, {"name": "x", "schedule_type": "daily", "trigger_time": "09:00"})
+    assert resp.status_code == 403
+
+
+def test_update_get_not_allowed(reminder_client):
+    """Update endpoint is POST-only; GET returns 405."""
+    user, client = reminder_client
+    reminder = ReminderFactory(user=user)
+    url = reverse("reminder:update", kwargs={"uuid": reminder.uuid})
     resp = client.get(url)
-    assert resp.status_code == 302
-    assert resp.url.startswith("/accounts/login/")
+    assert resp.status_code == 405
 
 
 def test_update_other_user_returns_404(reminder_client):
-    """GET/POST update for another user's reminder returns 404."""
+    """POST update for another user's reminder returns 404."""
     _, client = reminder_client
     other_user = UserFactory(username="other_reminder_user", email="other@example.com")
     reminder = ReminderFactory(user=other_user, name="Other")
     url = reverse("reminder:update", kwargs={"uuid": reminder.uuid})
-    resp = client.get(url)
-    assert resp.status_code == 404
     resp = client.post(url, {"name": "Hacked", "schedule_type": "daily", "trigger_time": "09:00"})
     assert resp.status_code == 404
 
 
 def test_update_post_valid_updates_and_recalculates(reminder_client):
-    """POST valid data to update updates reminder and recalculates next_trigger_at."""
+    """POST valid data updates the reminder, recalculates next_trigger_at, and returns JSON success."""
     user, client = reminder_client
     reminder = ReminderFactory(user=user, name="Original")
     url = reverse("reminder:update", kwargs={"uuid": reminder.uuid})
@@ -284,14 +272,17 @@ def test_update_post_valid_updates_and_recalculates(reminder_client):
         "trigger_time": "10:00",
     }
     resp = client.post(url, data)
-    assert resp.status_code == 302
+    assert resp.status_code == 200
+    json_data = resp.json()
+    assert json_data["success"] is True
+    assert json_data["redirect_url"] == reverse("reminder:app")
     reminder.refresh_from_db()
     assert reminder.name == "Updated Name"
     assert reminder.next_trigger_at is not None
 
 
 def test_update_post_invalid_returns_errors(reminder_client):
-    """POST invalid data to update returns form errors."""
+    """POST invalid data to update returns 400 with JSON field errors."""
     user, client = reminder_client
     reminder = ReminderFactory(user=user)
     url = reverse("reminder:update", kwargs={"uuid": reminder.uuid})
@@ -301,34 +292,25 @@ def test_update_post_invalid_returns_errors(reminder_client):
         "trigger_time": "09:00",
     }
     resp = client.post(url, data)
-    assert resp.status_code == 200
-    assert "name" in resp.context["form"].errors
-
-
-def test_update_post_ajax_returns_json_success(reminder_client):
-    """POST update with X-Requested-With: XMLHttpRequest returns JSON success."""
-    user, client = reminder_client
-    reminder = ReminderFactory(user=user, name="To Update")
-    url = reverse("reminder:update", kwargs={"uuid": reminder.uuid})
-    data = {
-        "name": "Updated via AJAX",
-        "schedule_type": Reminder.SCHEDULE_TYPE_DAILY,
-        "trigger_time": "09:00",
-    }
-    resp = client.post(url, data, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
-    assert resp.status_code == 200
-    json_data = resp.json()
-    assert json_data["success"] is True
-    assert "redirect_url" in json_data
+    assert resp.status_code == 400
+    assert "name" in resp.json()["errors"]
 
 
 def test_delete_requires_login(client):
-    """Delete view requires authentication."""
+    """Delete endpoint requires authentication."""
     reminder = ReminderFactory()
     url = reverse("reminder:delete", kwargs={"uuid": reminder.uuid})
     resp = client.post(url)
-    assert resp.status_code == 302
-    assert resp.url.startswith("/accounts/login/")
+    assert resp.status_code == 403
+
+
+def test_delete_get_not_allowed(reminder_client):
+    """Delete endpoint is POST-only; GET returns 405."""
+    user, client = reminder_client
+    reminder = ReminderFactory(user=user)
+    url = reverse("reminder:delete", kwargs={"uuid": reminder.uuid})
+    resp = client.get(url)
+    assert resp.status_code == 405
 
 
 def test_delete_other_user_returns_404(reminder_client):
@@ -343,11 +325,13 @@ def test_delete_other_user_returns_404(reminder_client):
 
 
 def test_delete_post_removes_reminder(reminder_client):
-    """POST delete removes reminder and redirects to app."""
+    """POST delete removes the reminder and returns JSON success."""
     user, client = reminder_client
     reminder = ReminderFactory(user=user, name="To Delete")
     url = reverse("reminder:delete", kwargs={"uuid": reminder.uuid})
     resp = client.post(url)
-    assert resp.status_code == 302
-    assert resp.url == reverse("reminder:app")
+    assert resp.status_code == 200
+    json_data = resp.json()
+    assert json_data["success"] is True
+    assert json_data["redirect_url"] == reverse("reminder:app")
     assert not Reminder.objects.filter(uuid=reminder.uuid).exists()

@@ -1,7 +1,7 @@
 import React from "react";
 import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEdit, faTrash, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
+import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 import MarkdownIt from "markdown-it";
 
 // Initialize markdown-it renderer
@@ -103,20 +103,10 @@ export function ReminderDetailPage({ detailAjaxUrl }: ReminderDetailPageProps) {
           )}
         </div>
         <div className="col-md-4 text-end">
-          <div className="btn-group">
-            <a href={reminder.update_url} className="btn btn-secondary">
-              <FontAwesomeIcon icon={faEdit} className="me-2" />
-              Edit
-            </a>
-            <a href={reminder.delete_url} className="btn btn-danger">
-              <FontAwesomeIcon icon={faTrash} className="me-2" />
-              Delete
-            </a>
-            <a href={reminder.app_url} className="btn btn-outline-secondary">
-              <FontAwesomeIcon icon={faArrowLeft} className="me-2" />
-              Back
-            </a>
-          </div>
+          <a href={reminder.app_url} className="btn btn-outline-secondary">
+            <FontAwesomeIcon icon={faArrowLeft} className="me-2" />
+            Back
+          </a>
         </div>
       </div>
 
