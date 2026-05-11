@@ -26,6 +26,10 @@ MIDDLEWARE = (
 os.environ["JUPYTER_PLATFORM_DIRS"] = "1"
 
 DATABASES["default"]["OPTIONS"]["application_name"] = "Django Dev"
+# Validate pooled connections on checkout so suspended-laptop / restarted-Postgres
+# stale sockets are detected and replaced instead of raising "the connection is closed".
+# Django's postgres backend wires this into the psycopg pool when CONN_HEALTH_CHECKS is True.
+DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
 
 INSTALLED_APPS += (
     "debug_toolbar",
