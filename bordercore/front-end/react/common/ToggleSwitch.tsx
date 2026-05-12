@@ -24,7 +24,7 @@ export function ToggleSwitch({
   const inputId = id || `toggle-${name}`;
 
   return (
-    <div className={`form-check form-switch ${className}`}>
+    <div className={`form-check form-switch toggle-switch ${className}`}>
       <input
         type="checkbox"
         className="form-check-input"

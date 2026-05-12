@@ -757,13 +757,6 @@
   font-family: var(--font-ui);
   font-size: 12.5px;
   gap: 8px;
-
-  input[type="checkbox"] {
-    width: 14px;
-    height: 14px;
-    accent-color: var(--accent);
-    cursor: pointer;
-  }
 }
 
 .rm-day-grid {

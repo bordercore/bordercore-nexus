@@ -114,6 +114,54 @@ a.tag,
   color: var(--fg-1);
 }
 
+// Toggle switch (the ToggleSwitch React component). This codebase doesn't
+// bundle Bootstrap CSS, so .form-check / .form-switch are inert; all of the
+// toggle's visual identity lives here, scoped to .toggle-switch (the marker
+// class the React component always emits on its wrapper). The "on" color
+// uses --accent so the toggle re-tints with the active theme.
+.toggle-switch {
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  margin: 0;
+}
+
+.toggle-switch .form-check-input {
+  width: 36px;
+  height: 20px;
+  flex-shrink: 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  appearance: none;
+  background-color: var(--bg-2);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'><circle cx='8' cy='8' r='7' fill='%23fff'/></svg>");
+  background-position: 2px center;
+  background-repeat: no-repeat;
+  background-size: 16px 16px;
+  cursor: pointer;
+  transition:
+    background-color 180ms ease,
+    background-position 180ms ease,
+    border-color 180ms ease;
+}
+
+.toggle-switch .form-check-input:checked {
+  border-color: var(--accent);
+  background-color: var(--accent);
+  background-position: calc(100% - 2px) center;
+}
+
+.toggle-switch .form-check-input:focus {
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent), transparent 80%);
+  outline: none;
+}
+
+.toggle-switch .form-check-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 // Object select
 .object-select-suggestion {
   padding: 0.5rem 1rem;

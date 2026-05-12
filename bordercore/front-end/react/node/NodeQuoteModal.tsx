@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTimes, faCheck } from "@fortawesome/free-solid-svg-icons";
+import { ToggleSwitch } from "../common/ToggleSwitch";
 import {
   NODE_COLORS,
   ROTATE_OPTIONS,
@@ -152,22 +153,20 @@ export default function NodeQuoteModal({
         </div>
 
         <div className="refined-field">
-          <div className="flex items-center">
-            <input
-              type="checkbox"
+          <label className="refined-toggle">
+            <ToggleSwitch
               id="favoritesOnly"
+              name="favorites_only"
               checked={options.favorites_only}
-              onChange={e =>
+              onChange={checked =>
                 setOptions(prev => ({
                   ...prev,
-                  favorites_only: e.target.checked,
+                  favorites_only: checked,
                 }))
               }
             />
-            <label className="ms-2 mb-0" htmlFor="favoritesOnly">
-              Favorites Only
-            </label>
-          </div>
+            <span>favorites only</span>
+          </label>
         </div>
 
         <div className="refined-modal-actions compact">

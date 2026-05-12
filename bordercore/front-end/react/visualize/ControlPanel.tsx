@@ -1,4 +1,5 @@
 import React from "react";
+import { ToggleSwitch } from "../common/ToggleSwitch";
 import type { Layer } from "./types";
 
 interface ControlPanelProps {
@@ -58,7 +59,7 @@ function LayerToggle({ layer, label, dotClass, layers, onToggle }: LayerTogglePr
   return (
     <li className="constellation-layer-row">
       <label>
-        <input type="checkbox" checked={active} onChange={() => onToggle(layer)} />
+        <ToggleSwitch name={`layer-${layer}`} checked={active} onChange={() => onToggle(layer)} />
         <span className={`constellation-layer-dot ${dotClass}`} />
         <span className="constellation-layer-label">{label}</span>
       </label>

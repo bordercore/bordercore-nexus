@@ -1,5 +1,7 @@
 import React from "react";
 
+import { ToggleSwitch } from "../../common/ToggleSwitch";
+
 export interface ReminderFormState {
   name: string;
   note: string;
@@ -203,18 +205,18 @@ export function ReminderFormBody({
 
       <div className="rm-modal-checks">
         <label className="rm-modal-check">
-          <input
-            type="checkbox"
+          <ToggleSwitch
+            name="is_active"
             checked={state.is_active}
-            onChange={e => setField("is_active", e.target.checked)}
+            onChange={checked => setField("is_active", checked)}
           />
           <span>active</span>
         </label>
         <label className="rm-modal-check">
-          <input
-            type="checkbox"
+          <ToggleSwitch
+            name="create_todo"
             checked={state.create_todo}
-            onChange={e => setField("create_todo", e.target.checked)}
+            onChange={checked => setField("create_todo", checked)}
           />
           <span>create todo when triggered</span>
         </label>

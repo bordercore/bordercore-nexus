@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTimes, faCheck } from "@fortawesome/free-solid-svg-icons";
 import { SelectValue } from "../common/SelectValue";
+import { ToggleSwitch } from "../common/ToggleSwitch";
 import { ROTATE_OPTIONS } from "./types";
 
 const DISPLAY_OPTIONS = [
@@ -300,13 +301,13 @@ export default function NodeCollectionModal({
 
         <div className="refined-toggle-row">
           <label className="refined-toggle">
-            <input
-              type="checkbox"
+            <ToggleSwitch
+              name="random_order"
               checked={settings.random_order}
-              onChange={e =>
+              onChange={checked =>
                 setSettings(prev => ({
                   ...prev,
-                  random_order: e.target.checked,
+                  random_order: checked,
                 }))
               }
             />
