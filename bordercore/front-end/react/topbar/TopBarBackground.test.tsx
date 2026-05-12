@@ -9,6 +9,9 @@ vi.mock("./AuroraBg", () => ({
 vi.mock("./ConstellationBg", () => ({
   default: () => <div data-testid="constellation-bg" />,
 }));
+vi.mock("./FirefliesBg", () => ({
+  default: () => <div data-testid="fireflies-bg" />,
+}));
 
 import TopBarBackground from "./TopBarBackground";
 
@@ -34,11 +37,18 @@ describe("TopBarBackground", () => {
     expect(getByTestId("constellation-bg")).toBeTruthy();
   });
 
+  it("renders FirefliesBg for 'fireflies'", () => {
+    document.documentElement.setAttribute("topbar-animation", "fireflies");
+    const { getByTestId } = render(<TopBarBackground />);
+    expect(getByTestId("fireflies-bg")).toBeTruthy();
+  });
+
   it("renders nothing for 'none'", () => {
     document.documentElement.setAttribute("topbar-animation", "none");
     const { queryByTestId } = render(<TopBarBackground />);
     expect(queryByTestId("aurora-bg")).toBeNull();
     expect(queryByTestId("constellation-bg")).toBeNull();
+    expect(queryByTestId("fireflies-bg")).toBeNull();
   });
 
   it("swaps the active component when the attribute changes at runtime", async () => {

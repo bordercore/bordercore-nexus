@@ -31,6 +31,7 @@ from tag.models import Tag
 TOPBAR_ANIMATION_CHOICES = [
     ("aurora", "Aurora"),
     ("constellations", "Constellations"),
+    ("fireflies", "Fireflies"),
     ("none", "None"),
 ]
 

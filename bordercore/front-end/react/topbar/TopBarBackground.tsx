@@ -1,15 +1,16 @@
 import React, { useEffect, useState } from "react";
 import AuroraBg from "./AuroraBg";
 import ConstellationBg from "./ConstellationBg";
+import FirefliesBg from "./FirefliesBg";
 
 // Mirrors the choices on UserProfile.topbar_animation. Adding a new
 // animation: add the value here, add a case below, and add the choice
 // tuple to TOPBAR_ANIMATION_CHOICES in accounts/models.py.
-type AnimationKey = "aurora" | "constellations" | "none";
+type AnimationKey = "aurora" | "constellations" | "fireflies" | "none";
 
 function readAnimation(): AnimationKey {
   const v = document.documentElement.getAttribute("topbar-animation");
-  if (v === "constellations" || v === "none") return v;
+  if (v === "constellations" || v === "fireflies" || v === "none") return v;
   return "aurora";
 }
 
@@ -26,6 +27,7 @@ export default function TopBarBackground() {
   }, []);
 
   if (key === "constellations") return <ConstellationBg />;
+  if (key === "fireflies") return <FirefliesBg />;
   if (key === "none") return null;
   return <AuroraBg />;
 }

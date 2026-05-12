@@ -61,7 +61,7 @@ def test_topbar_animation_accepts_known_choices(django_user_model):
     # Exclude OneToOneFields that are null=True but not blank=True (pre-existing
     # model gap unrelated to this test) so validation focuses on topbar_animation.
     exclude = ["homepage_default_collection", "homepage_image_collection"]
-    for value in ("aurora", "constellations", "none"):
+    for value in ("aurora", "constellations", "fireflies", "none"):
         user.userprofile.topbar_animation = value
         user.userprofile.full_clean(exclude=exclude)  # raises ValidationError if value rejected
 
