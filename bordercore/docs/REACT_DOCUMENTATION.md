@@ -397,8 +397,7 @@ front-end/react/
 │   ├── ToggleSwitch.tsx
 │   ├── TreeMenu.tsx
 │   ├── Weather.tsx
-│   ├── index.ts
-│   └── useBootstrapTable.ts
+│   └── index.ts
 ├── drill/
 │   ├── DrillDisabledTags.tsx
 │   ├── DrillListPage.tsx
