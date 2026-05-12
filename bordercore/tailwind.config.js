@@ -18,8 +18,7 @@
 //   muscle-{chest,back,...}            → fitness-summary accents
 //
 // Use these utilities (`bg-surface-2`, `text-ink-1`, `border-line-soft`, etc.)
-// for any new components and as the replacement target when migrating
-// Bootstrap classes during Phases 2-3 of TAILWIND_MIGRATION.md.
+// in JSX so every theme retints automatically.
 // =============================================================================
 
 const cssVar = name => `var(--${name})`;
@@ -102,22 +101,10 @@ module.exports = {
     "./front-end/**/*.{ts,tsx,js,jsx}",
     "./templates/**/*.html",
   ],
-  // Phase 0 of the Bootstrap → Tailwind migration.
-  // - Preflight is disabled so Tailwind's CSS reset doesn't compete with
-  //   Bootstrap's reboot; the goal of this phase is zero visual change.
-  // - The Tailwind stylesheet is imported BEFORE bordercore.scss in
-  //   front-end/entries/bordercore-css.js, so for any class name that exists
-  //   in both frameworks (e.g. .container), Bootstrap wins by source order.
-  //   Class names unique to Tailwind (e.g. bg-red-500) work as expected.
-  // - important: true mirrors Bootstrap's utility behaviour. Bootstrap
-  //   utility classes (.d-flex, .mb-3, .text-center, etc.) carry !important
-  //   so they win against component-level styles like .btn or .card. When
-  //   we migrate `<button class="btn d-flex">` to `<button class="btn flex">`,
-  //   Tailwind's .flex needs !important to keep beating .btn { display: inline-block }.
-  //   Without this flag, every utility migration would silently regress
-  //   anywhere a Bootstrap component class also targeted the same property.
-  important: true,
   corePlugins: {
+    // Preflight (Tailwind's element reset) is off because its opinions
+    // — notably `h1-h6 { font-size: inherit }` — would clash with the
+    // typography in static/scss/base/_reset.scss. The project owns the reset.
     preflight: false,
   },
   theme: {
@@ -143,11 +130,10 @@ module.exports = {
   plugins: [
     // strategy: "class" makes @tailwindcss/forms opt-in (via .form-input,
     // .form-select, .form-checkbox, .form-radio, .form-textarea). The
-    // default "base" strategy applies styles globally to every <input>,
-    // <select>, and <textarea> via low-specificity :where() selectors,
-    // which would silently restyle the ~150 raw form elements in this
-    // codebase that don't yet have a Bootstrap or custom class. Phase 0
-    // is supposed to be a no-visual-change baseline.
+    // default "base" strategy would apply styles globally to every <input>,
+    // <select>, and <textarea> via low-specificity :where() selectors and
+    // silently restyle the ~150 raw form elements in this codebase that
+    // don't carry one of those classes.
     require("@tailwindcss/forms")({ strategy: "class" }),
     require("@tailwindcss/typography"),
   ],

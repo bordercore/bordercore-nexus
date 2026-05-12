@@ -272,7 +272,7 @@ class TagBookmark(SortOrderMixin):
 
       <h6>Animated Gradient Box</h6>
 
-      <div className="animated-gradient-box w-50 p-12">
+      <div className="animated-gradient-box w-1/2 p-12">
         Lorem ipsum dolor sit amet
         <br />
         Consectetur adipiscing elit

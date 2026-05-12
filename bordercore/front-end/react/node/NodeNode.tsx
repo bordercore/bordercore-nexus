@@ -194,7 +194,7 @@ export default function NodeNode({
       <Card cardClassName="backdrop-filter node-color-1" titleSlot={titleSlot}>
         <div className="flex">
           {nodeInfo.images.map(image => (
-            <div key={image.uuid} className="w-50 me-2">
+            <div key={image.uuid} className="w-1/2 me-2">
               <a href={image.blob_url} target="_blank" rel="noopener noreferrer">
                 <img src={image.cover_url} className="max-w-full" alt="" />
               </a>
