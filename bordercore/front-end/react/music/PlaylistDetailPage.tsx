@@ -231,10 +231,10 @@ export function PlaylistDetailPage({ playlist, urls, staticUrl }: PlaylistDetail
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="row g-0 h-100 align-items-start mx-2">
+      <div className="row g-0 h-full items-start mx-2">
         {/* Left sidebar - Playlist info and audio player */}
-        <div className="sticky-top col-lg-3 d-flex flex-column">
-          <div className="card-grid ms-4 d-flex flex-column">
+        <div className="sticky-top col-lg-3 flex flex-col">
+          <div className="card-grid ms-4 flex flex-col">
             <div className="card-body mb-0">
               Songs
               <ul>
@@ -273,13 +273,13 @@ export function PlaylistDetailPage({ playlist, urls, staticUrl }: PlaylistDetail
         </div>
 
         {/* Main content area */}
-        <div className="col-lg-9 h-100 me-0">
-          <div className="card-grid h-100 ms-4">
-            <div className="d-flex flex-column h-100 me-2">
+        <div className="col-lg-9 h-full me-0">
+          <div className="card-grid h-full ms-4">
+            <div className="flex flex-col h-full me-2">
               {/* Playlist header card */}
               <div className="card backdrop-filter hover-target me-0">
                 <div className="card-body">
-                  <div className="d-flex">
+                  <div className="flex">
                     <h2 className="text-secondary">{playlist.name}</h2>
                     <div className="ms-auto">
                       <DropDownMenu
@@ -322,7 +322,7 @@ export function PlaylistDetailPage({ playlist, urls, staticUrl }: PlaylistDetail
               </div>
 
               {/* Song table card */}
-              <div className="card backdrop-filter flex-grow-1 me-0 mt-3 mb-3" id="album-song-list">
+              <div className="card backdrop-filter grow me-0 mt-3 mb-3" id="album-song-list">
                 <PlaylistSongTable
                   songs={songs}
                   currentSongUuid={currentSongUuid}
@@ -414,7 +414,7 @@ export function PlaylistDetailPage({ playlist, urls, staticUrl }: PlaylistDetail
             <div role="cell" className="playlist-col-actions">
               <div className="dropdown-wrapper">
                 <div className="dropdown-trigger dropdownmenu">
-                  <div className="d-flex align-items-center justify-content-center h-100 w-100">
+                  <div className="flex items-center justify-center h-full w-full">
                     <FontAwesomeIcon icon={faEllipsisV} />
                   </div>
                 </div>

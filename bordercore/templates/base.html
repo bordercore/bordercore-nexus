@@ -15,7 +15,7 @@
         <style>
             /* Prevent flash of unstyled content - hide elements immediately before CSS loads */
             #help-text,
-            .d-none {
+            .hidden {
                 display: none !important;
             }
 
@@ -45,14 +45,14 @@
 
         <div class="wrapper {% if request.session.show_sidebar == "false" %}collapsed{% else %}sidebar-transition{% endif %}">
 
-            <div class="container-fluid d-flex flex-column" id="content">
+            <div class="container-fluid flex flex-col" id="content">
 
                 <div class="row">
                     <div class="col-lg-12">
 
                         <div id="top-bar"></div>
 
-                        <span id="top-title-text" class="d-none">{% block title %}{% endblock %}</span>
+                        <span id="top-title-text" class="hidden">{% block title %}{% endblock %}</span>
 
                     </div>
                 </div>
@@ -60,7 +60,7 @@
                 {% block nav %}
                 {% endblock %}
 
-                <div class="row flex-grow-1">
+                <div class="row grow">
 
                     <div class="col-lg-12">
                     {% block content %}
@@ -202,7 +202,7 @@
         {% endblock %}
 
         {% block help %}
-            <div class="d-none" id="help-text">
+            <div class="hidden" id="help-text">
                 Bordercore is a place to organize all your information.
             </div>
         {% endblock %}

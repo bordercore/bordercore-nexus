@@ -96,7 +96,7 @@ function SortableItem({
     <div ref={setRef} className={`slicklist-item ${isDragging ? "dragging" : ""}`}>
       <div className="slicklist-list-item-inner">
         <li className="hover-target list-group-item pe-0" data-uuid={element.uuid}>
-          <div className="dropdown-height d-flex align-items-start">
+          <div className="dropdown-height flex items-start">
             <div className="drag-handle pe-2 cursor-grab" {...attributes} {...listeners}>
               <FontAwesomeIcon icon={faBars} />
             </div>
@@ -543,7 +543,7 @@ export default function NodeCollectionCard({
   );
 
   const titleSlot = (
-    <div className="card-title d-flex">
+    <div className="card-title flex">
       <div className="text-truncate">
         <FontAwesomeIcon icon={faSplotch} className="text-primary me-3" />
         {collection.name}
@@ -565,14 +565,14 @@ export default function NodeCollectionCard({
       onDragOver={e => e.preventDefault()}
       onDrop={handleObjectDrop}
     >
-      <Card cardClassName="backdrop-filter node-color-1 position-relative" titleSlot={titleSlot}>
+      <Card cardClassName="backdrop-filter node-color-1 relative" titleSlot={titleSlot}>
         <hr className="divider" />
         {collection.display === "individual" ? (
           <div className="drag-target">
             {currentObjectIndex !== null && objectList.length > 0 ? (
               <img
                 src={objectList[currentObjectIndex]?.cover_url_large}
-                className="mw-100 cursor-pointer"
+                className="max-w-full cursor-pointer"
                 onClick={handleObjectClick}
                 alt=""
               />
@@ -610,7 +610,7 @@ export default function NodeCollectionCard({
                 <div className="slicklist-item dragging">
                   <div className="slicklist-list-item-inner">
                     <li className="list-group-item pe-0">
-                      <div className="dropdown-height d-flex align-items-start">
+                      <div className="dropdown-height flex items-start">
                         <div className="drag-handle pe-2">
                           <FontAwesomeIcon icon={faBars} />
                         </div>

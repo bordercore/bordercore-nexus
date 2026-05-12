@@ -146,20 +146,20 @@ export function TagSearchPage({
   const albumCount = albums.length;
 
   return (
-    <div className="row g-0 h-100 align-items-start">
+    <div className="row g-0 h-full items-start">
       {/* Sidebar - Player */}
-      <div className="sticky-top col-lg-3 d-flex flex-column pt-0">
+      <div className="sticky-top col-lg-3 flex flex-col pt-0">
         <div className="card-grid ms-4">
           <div className="card backdrop-filter hover-target me-0 mb-3">
-            <div className="card-body d-flex flex-column align-items-center"></div>
+            <div className="card-body flex flex-col items-center"></div>
           </div>
         </div>
       </div>
 
       {/* Main content */}
-      <div className="col-lg-9 h-100 me-0">
-        <div className="card-grid h-100 ms-4">
-          <div className="d-flex flex-column h-100 me-2">
+      <div className="col-lg-9 h-full me-0">
+        <div className="card-grid h-full ms-4">
+          <div className="flex flex-col h-full me-2">
             {/* Albums grid */}
             {albumCount > 0 && (
               <AlbumGrid
@@ -174,7 +174,7 @@ export function TagSearchPage({
             {songCount > 0 && (
               <div className="card backdrop-filter hover-target me-0 mb-3">
                 <div className="card-body">
-                  <h4 className="fw-bold">
+                  <h4 className="font-bold">
                     {songCount} song{songCount !== 1 ? "s" : ""}
                   </h4>
                   <div className="table-responsive">

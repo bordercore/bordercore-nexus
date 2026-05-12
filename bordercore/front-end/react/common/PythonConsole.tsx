@@ -181,7 +181,7 @@ print(__repl_result)
       [update, evaluatePython]
     );
 
-    const containerClasses = `python-console-root d-flex flex-column min-h-0 ${height ? "" : "flex-grow-1"}`;
+    const containerClasses = `python-console-root flex flex-col min-h-0 ${height ? "" : "grow"}`;
 
     return (
       // Dynamic height prop - must remain inline when provided
@@ -205,7 +205,7 @@ print(__repl_result)
         <div id="output-container">
           <button
             type="button"
-            className="refined-btn primary position-relative"
+            className="refined-btn primary relative"
             onClick={evaluatePython}
             disabled={!isReady}
           >

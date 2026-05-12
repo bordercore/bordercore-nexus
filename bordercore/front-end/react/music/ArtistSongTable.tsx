@@ -129,7 +129,7 @@ export function ArtistSongTable({
                 {song.year_effective}
               </td>
               <td className="align-middle">
-                <div className="d-flex justify-content-end" onClick={e => e.stopPropagation()}>
+                <div className="flex justify-end" onClick={e => e.stopPropagation()}>
                   <StarRating
                     songUuid={song.uuid}
                     rating={song.rating}

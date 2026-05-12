@@ -47,7 +47,7 @@ export const IconButton = forwardRef<IconButtonHandle, IconButtonProps>(function
 
   return (
     <div
-      className={`icon-button d-flex flex-column align-items-center mx-2 cursor-pointer ${
+      className={`icon-button flex flex-col items-center mx-2 cursor-pointer ${
         enabled ? "enabled" : ""
       }`}
       onClick={handleClick}

@@ -36,7 +36,7 @@ export type CardProps = {
 
 // Tailwind utilities below provide every structural style Bootstrap's
 // .card / .card-body / .card-title rules contribute (display/flex layout,
-// min-width, flex-fill body, title margin). The `card`, `card-body`, and
+// min-width, flex-auto body, title margin). The `card`, `card-body`, and
 // `card-title` class names stay on the rendered DOM because project SCSS
 // (static/scss/layout/_layout.scss, components/_cards.scss, and a handful
 // of page-specific files) targets them for the visual chrome — borders,

@@ -136,7 +136,7 @@ function SortableBookmarkRow({
 
       {/* Content: icon box + title + hostname + note */}
       <div role="cell" className="bookmark-col-content content-cell">
-        <div className="d-flex align-items-center gap-3 overflow-hidden position-relative w-100">
+        <div className="flex items-center gap-3 overflow-hidden relative w-full">
           <div className="bookmark-icon-box">
             {viewType === "compact" ? (
               faviconHtml ? (
@@ -181,7 +181,7 @@ function SortableBookmarkRow({
             )}
           </div>
           {isYouTubeVideo && showYtDuration && bookmark.video_duration && (
-            <div className="yt-hover-target position-absolute text-secondary">
+            <div className="yt-hover-target absolute text-secondary">
               {bookmark.video_duration}
             </div>
           )}
@@ -372,7 +372,7 @@ export function BookmarkList({
     >
       <div
         id="bookmark-list-container"
-        className="scrollable-panel-scrollbar-hover h-100 data-grid-container bookmark-grid-container"
+        className="scrollable-panel-scrollbar-hover h-full data-grid-container bookmark-grid-container"
       >
         <div className={`data-grid bookmark-grid ${isUntagged ? "hide-tags" : ""}`} role="table">
           <div
@@ -426,7 +426,7 @@ export function BookmarkList({
               <FontAwesomeIcon icon={faBars} />
             </div>
             <div role="cell" className="bookmark-col-content content-cell">
-              <div className="d-flex align-items-center gap-3 overflow-hidden">
+              <div className="flex items-center gap-3 overflow-hidden">
                 <div className="bookmark-icon-box">
                   {viewType === "compact" ? (
                     activeFaviconHtml ? (

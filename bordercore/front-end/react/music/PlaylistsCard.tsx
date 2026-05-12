@@ -16,7 +16,7 @@ export function PlaylistsCard({ playlists, onClickCreate, className }: Playlists
     <Card
       className={className}
       titleSlot={
-        <div className="d-flex">
+        <div className="flex">
           <div className="card-title">Playlists</div>
           <div className="ms-auto">
             <DropDownMenu
@@ -47,8 +47,8 @@ export function PlaylistsCard({ playlists, onClickCreate, className }: Playlists
       <hr className="divider" />
       <ul className="list-group interior-borders">
         {playlists.map(playlist => (
-          <li key={playlist.uuid} className="list-with-counts d-flex ps-2 py-1 pe-2">
-            <a href={playlist.url} className="d-flex w-100">
+          <li key={playlist.uuid} className="list-with-counts flex ps-2 py-1 pe-2">
+            <a href={playlist.url} className="flex w-full">
               <div>{playlist.name}</div>
               <div className="ms-auto">
                 <span className="inline-block px-2 py-0.5 rounded-full text-xs font-bold bg-surface-3 text-ink-1">

@@ -183,7 +183,7 @@ export function BookmarkEditPage({
           {thumbnailUrl && (
             <section className="refined-section">
               <h3 className="refined-section-title">thumbnail</h3>
-              <img src={thumbnailUrl} className="mw-100" alt="" />
+              <img src={thumbnailUrl} className="max-w-full" alt="" />
             </section>
           )}
 
@@ -193,7 +193,7 @@ export function BookmarkEditPage({
                 <FontAwesomeIcon icon={faTags} className="me-2" />
                 related tags
               </h3>
-              <div className="d-flex flex-wrap gap-1">
+              <div className="flex flex-wrap gap-1">
                 {relatedTagInfo.map(rt => (
                   <button
                     key={rt.tag_name}

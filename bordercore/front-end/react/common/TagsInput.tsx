@@ -169,7 +169,7 @@ export const TagsInput = forwardRef<TagsInputHandle, TagsInputProps>(function Ta
   const isSearchable = !maxTags || selectedTags.length < maxTags;
 
   return (
-    <div className="tags-input-wrapper w-100" id={id}>
+    <div className="tags-input-wrapper w-full" id={id}>
       <AsyncCreatableSelect
         ref={selectRef}
         isMulti

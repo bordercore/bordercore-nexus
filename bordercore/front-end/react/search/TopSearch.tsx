@@ -224,7 +224,7 @@ export const TopSearch = forwardRef<TopSearchHandle, TopSearchProps>(function To
       className="search-popover-container"
     >
       <div id="top-search" className="search-popover-content">
-        <form id="top-search-form" className="form-inline w-100" method="get">
+        <form id="top-search-form" className="form-inline w-full" method="get">
           <input type="hidden" name="doctype" value={searchFilter} />
           <div className="search-input-wrapper">
             <SelectValue
@@ -289,7 +289,7 @@ export const TopSearch = forwardRef<TopSearchHandle, TopSearchProps>(function To
           </div>
         </form>
         {showFilter && (
-          <div className="search-filters-panel w-100">
+          <div className="search-filters-panel w-full">
             <div className="search-section">
               <div className="search-section-title">Filter Options</div>
               <div className="search-filter-list">

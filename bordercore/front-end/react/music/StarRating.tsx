@@ -65,7 +65,7 @@ export function StarRating({
   const displayRating = hoverRating ?? rating ?? 0;
 
   return (
-    <div className="rating-container d-flex" onMouseLeave={handleMouseLeave}>
+    <div className="rating-container flex" onMouseLeave={handleMouseLeave}>
       {[0, 1, 2, 3, 4].map(starIndex => (
         <span
           key={starIndex}

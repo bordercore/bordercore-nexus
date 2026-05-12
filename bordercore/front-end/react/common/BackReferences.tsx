@@ -44,7 +44,7 @@ export function BackReferences({ backReferences }: BackReferencesProps) {
             className="hoverable px-0 list-group-item list-group-item-secondary text-primary"
           >
             {node.type === "question" && (
-              <div className="d-flex">
+              <div className="flex">
                 <div className="mt-1 me-2">
                   <FontAwesomeIcon icon={faQuestion} className="text-success" />
                 </div>
@@ -69,13 +69,13 @@ export function BackReferences({ backReferences }: BackReferencesProps) {
               </div>
             )}
             {node.type === "blob" && (
-              <div className="d-flex">
+              <div className="flex">
                 <div className="mt-1 me-2">
                   <FontAwesomeIcon icon={faCopy} className="text-success" />
                 </div>
                 <div className="text-truncate">
                   {node.cover_url && (
-                    <img src={node.cover_url} className="mw-100" alt="" loading="lazy" />
+                    <img src={node.cover_url} className="max-w-full" alt="" loading="lazy" />
                   )}
                   {/* Content is trusted server-rendered HTML from the app's own database */}
                   <div

@@ -52,7 +52,7 @@ export function DeleteCollectionModal({
           cannot be undone.
         </p>
 
-        <form ref={formRef} action={deleteUrl} method="post" className="d-none">
+        <form ref={formRef} action={deleteUrl} method="post" className="hidden">
           <input type="hidden" name="csrfmiddlewaretoken" defaultValue={getCsrfToken()} />
         </form>
 

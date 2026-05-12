@@ -1,16 +1,16 @@
 {% load vite_tags %}
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html class="h-100" color-mode="dark">
+<html class="h-full" color-mode="dark">
     <head>
         <meta charset="utf-8" />
         <title>Bordercore :: Login</title>
         {% vite_asset "dist/css/bordercore" %}
     </head>
-    <body class="h-100">
+    <body class="h-full">
         <div
             id="react-root"
-            class="h-100"
+            class="h-full"
             data-message="{{ message|default:'' }}"
             data-initial-username="{% firstof request.POST.username request.COOKIES.bordercore_username '' %}"
             data-login-url="{% url 'accounts:login' %}"

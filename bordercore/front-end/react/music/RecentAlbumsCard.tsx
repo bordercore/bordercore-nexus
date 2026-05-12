@@ -26,7 +26,7 @@ export function RecentAlbumsCard({
     <Card
       className={className ? `hover-target ${className}` : "hover-target"}
       titleSlot={
-        <div className="d-flex">
+        <div className="flex">
           <div className="card-title">Recently Added Albums</div>
           <div className="ms-auto">
             <DropDownMenu
@@ -63,8 +63,8 @@ export function RecentAlbumsCard({
         </div>
       }
     >
-      <div className="d-flex ms-2">
-        <div id="album-list" className="album-grid flex-grow-1">
+      <div className="flex ms-2">
+        <div id="album-list" className="album-grid grow">
           {albums.map(album => (
             <div
               key={album.uuid}
@@ -82,7 +82,7 @@ export function RecentAlbumsCard({
                   />
                 </a>
               </div>
-              <div className="mt-1 fw-bold text-truncate">{album.title}</div>
+              <div className="mt-1 font-bold text-truncate">{album.title}</div>
               <div className="text-light text-truncate">
                 <a href={album.artist_url}>{album.artist_name}</a>
               </div>
@@ -91,7 +91,7 @@ export function RecentAlbumsCard({
         </div>
 
         {needsPagination && (
-          <h5 className="d-flex mb-0 me-1 pt-3 pagination-arrows">
+          <h5 className="flex mb-0 me-1 pt-3 pagination-arrows">
             <div>
               {paginator.has_previous ? (
                 <a

@@ -109,6 +109,14 @@ module.exports = {
   //   front-end/entries/bordercore-css.js, so for any class name that exists
   //   in both frameworks (e.g. .container), Bootstrap wins by source order.
   //   Class names unique to Tailwind (e.g. bg-red-500) work as expected.
+  // - important: true mirrors Bootstrap's utility behaviour. Bootstrap
+  //   utility classes (.d-flex, .mb-3, .text-center, etc.) carry !important
+  //   so they win against component-level styles like .btn or .card. When
+  //   we migrate `<button class="btn d-flex">` to `<button class="btn flex">`,
+  //   Tailwind's .flex needs !important to keep beating .btn { display: inline-block }.
+  //   Without this flag, every utility migration would silently regress
+  //   anywhere a Bootstrap component class also targeted the same property.
+  important: true,
   corePlugins: {
     preflight: false,
   },

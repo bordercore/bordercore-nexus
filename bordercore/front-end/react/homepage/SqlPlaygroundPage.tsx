@@ -195,9 +195,9 @@ export function SqlPlaygroundPage({ sqlDbUrl }: SqlPlaygroundPageProps) {
 
   return (
     <div className="sql-playground p-3">
-      <div className="d-flex flex-wrap mb-gutter">
+      <div className="flex flex-wrap mb-gutter">
         {Object.entries(tables).map(([tableName, tableInfo]) => (
-          <div key={tableName} className="w-100">
+          <div key={tableName} className="w-full">
             <Card title={`Table: ${tableName}`}>
               <DataTable data={tableInfo.data} columns={tableInfo.cols} hoverable />
             </Card>
@@ -205,7 +205,7 @@ export function SqlPlaygroundPage({ sqlDbUrl }: SqlPlaygroundPageProps) {
         ))}
 
         {Object.keys(tables).length === 0 && (
-          <div className="w-100">
+          <div className="w-full">
             <Card title="">
               <div>No tables found</div>
             </Card>
@@ -217,7 +217,7 @@ export function SqlPlaygroundPage({ sqlDbUrl }: SqlPlaygroundPageProps) {
         className="hover-target"
         cardClassName="mb-gutter"
         titleSlot={
-          <div className="d-flex">
+          <div className="flex">
             <div className="card-title">SQL</div>
             <div className="dropdown-menu-container ms-auto">
               <DropDownMenu
@@ -248,13 +248,13 @@ export function SqlPlaygroundPage({ sqlDbUrl }: SqlPlaygroundPageProps) {
         <SqlEditor
           value={sql}
           onChange={setSql}
-          className="mt-2 w-100"
+          className="mt-2 w-full"
           rows={3}
           placeholder="Your SQL Here..."
           onKeyDown={handleKeyDown}
         />
         <input className="refined-btn primary" type="button" value="Run" onClick={handleRunSQL} />
-        <input type="file" ref={fileInputRef} className="d-none" onChange={handleFileChange} />
+        <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileChange} />
       </Card>
 
       {error && (

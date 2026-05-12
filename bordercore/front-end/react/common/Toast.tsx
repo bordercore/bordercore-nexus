@@ -86,7 +86,7 @@ export function Toast({ initialMessages = [], defaultVariant = "info" }: ToastPr
   }, []);
 
   return (
-    <div className={`toast-wrapper position-fixed top-0 end-0 p-3 ${variant}`}>
+    <div className={`toast-wrapper fixed top-0 end-0 p-3 ${variant}`}>
       <div
         id="liveToast"
         className={`toast fade ${visible ? "show" : "hide"}`}
@@ -105,7 +105,7 @@ export function Toast({ initialMessages = [], defaultVariant = "info" }: ToastPr
             <FontAwesomeIcon icon={faTimes} />
           </button>
         </div>
-        <div className="toast-body d-flex align-items-top">
+        <div className="toast-body flex align-items-top">
           <FontAwesomeIcon
             className={`fa-lg me-2 mt-1 mb-1 pt-1 text-${variant}`}
             icon={getIcon()}

@@ -7,7 +7,7 @@
 
     <div id="react-root"
          data-is-pinned-note="{% if is_pinned_note %}true{% else %}false{% endif %}"
-         class="scrollable-panel-container row g-0 align-items-start h-100 mx-2">
+         class="scrollable-panel-container row g-0 items-start h-full mx-2">
     </div>
 
 {% endblock %}
@@ -51,7 +51,7 @@
 
 {% block help %}
 
-    <div class="d-none" id="help-text">
+    <div class="hidden" id="help-text">
 # Keyboard Shortcuts
 - **Alt-A** *-* Add to collection
     </div>

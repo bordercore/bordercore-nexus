@@ -213,12 +213,12 @@ export function ArtistDetailPage({
   );
 
   return (
-    <div className="row g-0 h-100 align-items-start">
+    <div className="row g-0 h-full items-start">
       {/* Sidebar - Artist image and player */}
-      <div className="sticky-top col-lg-3 d-flex flex-column pt-0">
+      <div className="sticky-top col-lg-3 flex flex-col pt-0">
         <div className="card-grid ms-4">
           <div className="card backdrop-filter hover-target me-0 mb-3">
-            <div className="card-body d-flex flex-column align-items-center">
+            <div className="card-body flex flex-col items-center">
               {hasArtistImage && (
                 <div
                   className={isDragOver ? "drag-over" : ""}
@@ -229,7 +229,7 @@ export function ArtistDetailPage({
                 >
                   <img
                     src={`${artistImageUrl}?t=${artistImageKey}`}
-                    className="mw-100 h-auto cursor-pointer"
+                    className="max-w-full h-auto cursor-pointer"
                     alt={artist.name}
                     role="button"
                     tabIndex={0}
@@ -249,10 +249,10 @@ export function ArtistDetailPage({
       </div>
 
       {/* Main content */}
-      <div className="col-lg-9 h-100 me-0">
-        <div className="card-grid h-100 ms-4">
-          <div className="d-flex flex-column h-100 me-2">
-            <div className="d-flex align-items-baseline gap-3 mb-3">
+      <div className="col-lg-9 h-full me-0">
+        <div className="card-grid h-full ms-4">
+          <div className="flex flex-col h-full me-2">
+            <div className="flex items-baseline gap-3 mb-3">
               <h1 className="bc-page-title mb-0">{artist.name}</h1>
               {albumCount > 0 && (
                 <span className="fs-5 text-muted">
@@ -284,7 +284,7 @@ export function ArtistDetailPage({
             {/* Songs list */}
             {songCount > 0 && (
               <div className="me-0 mb-3" id="album-song-list">
-                <h4 className="fw-bold mb-3">
+                <h4 className="font-bold mb-3">
                   {songCount} song{songCount !== 1 ? "s" : ""}
                 </h4>
                 <ArtistSongTable

@@ -204,8 +204,8 @@ export const RelatedObjects = forwardRef<RelatedObjectsHandle, RelatedObjectsPro
     }
 
     const titleSlot = (
-      <div className="d-flex">
-        <div className="card-title d-flex">
+      <div className="flex">
+        <div className="card-title flex">
           <FontAwesomeIcon icon={faBookmark} className="text-primary me-3 mt-1" />
           {title}
         </div>
@@ -237,7 +237,7 @@ export const RelatedObjects = forwardRef<RelatedObjectsHandle, RelatedObjectsPro
 
     return (
       <Card
-        className="backdrop-filter position-relative z-index-positive"
+        className="backdrop-filter relative z-index-positive"
         cardClassName="mb-gutter"
         titleSlot={titleSlot}
       >
@@ -326,8 +326,8 @@ function SortableRelatedObject({
     >
       <div className="slicklist-list-item-inner">
         <li className="list-group-item list-group-item-secondary px-0">
-          <div className="dropdown-height d-flex align-items-start">
-            <div className="d-flex flex-column flex-grow-1">
+          <div className="dropdown-height flex items-start">
+            <div className="flex flex-col grow">
               {element.type === "bookmark" && element.cover_url && (
                 <div className="pe-2">
                   <img src={element.cover_url} width="120" height="67" alt="" loading="lazy" />

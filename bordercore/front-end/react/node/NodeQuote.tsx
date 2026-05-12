@@ -186,8 +186,8 @@ export default function NodeQuote({
   const titleSlot =
     quoteOptions && quoteOptions.format !== "minimal" ? (
       <>
-        <div className="dropdown-height d-flex">
-          <div className="card-title d-flex">
+        <div className="dropdown-height flex">
+          <div className="card-title flex">
             <div>
               <FontAwesomeIcon icon={faQuoteLeft} className="text-primary me-3" />
               Quote

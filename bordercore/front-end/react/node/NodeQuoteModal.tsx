@@ -97,11 +97,11 @@ export default function NodeQuoteModal({
 
         <div className="refined-field">
           <label>color</label>
-          <div className="d-flex">
+          <div className="flex">
             {NODE_COLORS.map(c => (
               <div
                 key={c}
-                className={`${getColorClass(c)} flex-grow-1 mx-2 cursor-pointer`}
+                className={`${getColorClass(c)} grow mx-2 cursor-pointer`}
                 onClick={() => setOptions(prev => ({ ...prev, color: c }))}
               />
             ))}
@@ -152,7 +152,7 @@ export default function NodeQuoteModal({
         </div>
 
         <div className="refined-field">
-          <div className="d-flex align-items-center">
+          <div className="flex items-center">
             <input
               type="checkbox"
               id="favoritesOnly"

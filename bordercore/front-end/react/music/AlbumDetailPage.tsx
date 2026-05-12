@@ -145,13 +145,13 @@ export function AlbumDetailPage({
   };
 
   return (
-    <div className="row g-0 h-100 align-items-start">
+    <div className="row g-0 h-full items-start">
       {/* Sidebar - Album artwork and player */}
-      <div className="sticky-top col-lg-3 d-flex flex-column">
-        <div className="card-grid ms-4 d-flex flex-column align-items-center">
+      <div className="sticky-top col-lg-3 flex flex-col">
+        <div className="card-grid ms-4 flex flex-col items-center">
           <img
             src={album.cover_url}
-            className="mw-100"
+            className="max-w-full"
             height={400}
             width={400}
             alt={`${album.title} cover`}
@@ -177,13 +177,13 @@ export function AlbumDetailPage({
       </div>
 
       {/* Main content - Album info and song table */}
-      <div className="col-lg-9 h-100 me-0">
-        <div className="card-grid h-100 ms-4">
-          <div className="d-flex flex-column h-100 me-2">
+      <div className="col-lg-9 h-full me-0">
+        <div className="card-grid h-full ms-4">
+          <div className="flex flex-col h-full me-2">
             {/* Album header card */}
             <div className="card backdrop-filter hover-target me-0">
               <div className="card-body">
-                <div className="d-flex">
+                <div className="flex">
                   <h1>{album.title}</h1>
                   <div className="ms-auto">
                     <DropDownMenu
@@ -234,7 +234,7 @@ export function AlbumDetailPage({
             </div>
 
             {/* Song table */}
-            <div className="flex-grow-1 me-0 mt-3 mb-3" id="album-song-list">
+            <div className="grow me-0 mt-3 mb-3" id="album-song-list">
               <SongTable
                 songs={songs}
                 currentSongUuid={currentSongUuid}

@@ -159,7 +159,7 @@ export function DrillPinnedTags({
   }, []);
 
   const titleSlot = (
-    <div className="card-title d-flex align-items-center">
+    <div className="card-title flex items-center">
       <div>Pinned Tags</div>
       <div className="ms-auto">
         <DropDownMenu
@@ -259,8 +259,8 @@ export function DrillPinnedTags({
         ) : (
           <ul className="list-unstyled">
             {tagList.map(tag => (
-              <li key={tag.name} className="d-flex px-2">
-                <div className="item-name flex-fill">
+              <li key={tag.name} className="flex px-2">
+                <div className="item-name flex-auto">
                   <a href={tag.url}>{tag.name}</a>
                 </div>
                 <div className="item-value">{tag.progress}%</div>
@@ -324,7 +324,7 @@ function SortablePinnedTag({ element, onDelete }: SortablePinnedTagProps) {
     >
       <div className="slicklist-list-item-inner">
         <li className="list-group-item px-2 py-1">
-          <div className="d-flex">
+          <div className="flex">
             <div>{element.name}</div>
             <div className="ms-auto my-auto show-on-hover" onPointerDown={e => e.stopPropagation()}>
               <FontAwesomeIcon

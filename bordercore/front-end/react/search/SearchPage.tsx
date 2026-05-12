@@ -464,7 +464,7 @@ export function SearchPage({
                               metadata={source.last_modified}
                               metadataExtra={source.domain}
                               extraSlot={
-                                <div className="d-flex align-items-center text-primary">
+                                <div className="flex items-center text-primary">
                                   <img
                                     src={`https://www.bordercore.com/favicons/${source.domain}.ico`}
                                     width="20"
@@ -629,7 +629,7 @@ export function SearchPage({
                     })}
                   </div>
 
-                  <div className="d-flex justify-content-center">
+                  <div className="flex justify-center">
                     <Pagination paginator={paginator} onPageChange={handlePageChange} />
                   </div>
                 </>

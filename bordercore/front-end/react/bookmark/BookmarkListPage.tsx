@@ -455,13 +455,13 @@ export function BookmarkListPage({
   }, [isPinned, selectedTagName, urls]);
 
   return (
-    <div id="bookmark-list-page" className="row g-0 h-100 mx-2">
+    <div id="bookmark-list-page" className="row g-0 h-full mx-2">
       {/* Tags drawer overlay (for mobile) */}
       {drawerOpen && <div className="bookmark-tags-drawer-overlay" onClick={toggleDrawer} />}
 
       {/* Tags section - hidden on small screens, shown in drawer */}
       <div
-        className={`col-lg-3 d-flex flex-column bookmark-tags-sidebar ${
+        className={`col-lg-3 flex flex-col bookmark-tags-sidebar ${
           drawerOpen ? "drawer-open" : ""
         }`}
       >
@@ -481,7 +481,7 @@ export function BookmarkListPage({
       <div className="col-lg-9 ps-gutter">
         <header className="bookmark-page-head">
           <h1 className="bc-page-title">Bookmarks</h1>
-          <div id="bookmark-search-form" className="bookmark-page-actions d-flex">
+          <div id="bookmark-search-form" className="bookmark-page-actions flex">
             {/* Tags/Filters button for mobile */}
             <button
               type="button"
@@ -587,7 +587,7 @@ export function BookmarkListPage({
         </header>
         <BookmarkStatsCards stats={stats} />
 
-        <div className="card-grid h-100 ps-0 mt-2">
+        <div className="card-grid h-full ps-0 mt-2">
           <BookmarkList
             bookmarks={bookmarkList}
             viewType={viewType}

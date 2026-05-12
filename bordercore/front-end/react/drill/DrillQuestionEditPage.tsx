@@ -160,9 +160,9 @@ export function DrillQuestionEditPage({
 
   return (
     <>
-      <div className="row g-0 h-100 mx-2">
+      <div className="row g-0 h-full mx-2">
         {/* Left Panel */}
-        <div className="flex-grow-last col-lg-3 d-flex flex-column">
+        <div className="flex-grow-last col-lg-3 flex flex-col">
           {/* Related Objects */}
           {objectUuid && (
             <RelatedObjects
@@ -183,7 +183,7 @@ export function DrillQuestionEditPage({
           {/* Recent Tags */}
           <div className="card">
             <div className="card-body backdrop-filter">
-              <div className="card-title-large d-flex align-items-center">
+              <div className="card-title-large flex items-center">
                 <FontAwesomeIcon icon={faTags} className="me-3" />
                 Recent Tags
               </div>
@@ -192,7 +192,7 @@ export function DrillQuestionEditPage({
                 {recentTags.map(tag => (
                   <li
                     key={tag.name}
-                    className="list-with-counts ps-2 py-1 pe-1 d-flex cursor-pointer"
+                    className="list-with-counts ps-2 py-1 pe-1 flex cursor-pointer"
                     onClick={() => handleTagClick(tag.name)}
                   >
                     <div className="text-truncate">{tag.name}</div>
@@ -210,7 +210,7 @@ export function DrillQuestionEditPage({
             id="question-form"
             action={urls.submit}
             method="post"
-            className="d-flex flex-column h-100"
+            className="flex flex-col h-full"
           >
             <input type="hidden" name="csrfmiddlewaretoken" defaultValue={getCsrfToken()} />
             <input type="hidden" name="question" />
@@ -219,10 +219,10 @@ export function DrillQuestionEditPage({
             <input type="hidden" name="return_url" value={returnUrl} />
 
             {/* Question */}
-            <div className={`${errors.question ? "error " : ""}row flex-grow-1 mb-3`}>
-              <label className="fw-bold col-lg-2 col-form-label text-end">Question</label>
-              <div className="col-lg-9 h-100">
-                <MarkdownEditor ref={questionEditorRef} initialContent="" className="h-100" />
+            <div className={`${errors.question ? "error " : ""}row grow mb-3`}>
+              <label className="font-bold col-lg-2 col-form-label text-end">Question</label>
+              <div className="col-lg-9 h-full">
+                <MarkdownEditor ref={questionEditorRef} initialContent="" className="h-full" />
                 {errors.question?.map((error, i) => (
                   <span key={i} className="form-error">
                     {error}
@@ -232,10 +232,10 @@ export function DrillQuestionEditPage({
             </div>
 
             {/* Answer */}
-            <div className={`${errors.answer ? "error " : ""}row flex-grow-1 mb-3`}>
-              <label className="fw-bold col-lg-2 col-form-label text-end">Answer</label>
-              <div className="col-lg-9 h-100">
-                <MarkdownEditor ref={answerEditorRef} initialContent="" className="h-100" />
+            <div className={`${errors.answer ? "error " : ""}row grow mb-3`}>
+              <label className="font-bold col-lg-2 col-form-label text-end">Answer</label>
+              <div className="col-lg-9 h-full">
+                <MarkdownEditor ref={answerEditorRef} initialContent="" className="h-full" />
                 {errors.answer?.map((error, i) => (
                   <span key={i} className="form-error">
                     {error}
@@ -246,7 +246,7 @@ export function DrillQuestionEditPage({
 
             {/* Tags */}
             <div className={`${errors.tags ? "error " : ""}row mb-3`}>
-              <label className="fw-bold col-lg-2 col-form-label text-end">Tags</label>
+              <label className="font-bold col-lg-2 col-form-label text-end">Tags</label>
               <div className="col-lg-9">
                 <TagsInput
                   ref={tagsInputRef}
@@ -263,8 +263,8 @@ export function DrillQuestionEditPage({
 
             {/* Reversible */}
             <div className="row mb-3">
-              <label className="fw-bold col-lg-2 col-form-label text-end">Reversible</label>
-              <div className="col-lg-9 d-flex align-items-center">
+              <label className="font-bold col-lg-2 col-form-label text-end">Reversible</label>
+              <div className="col-lg-9 flex items-center">
                 <ToggleSwitch
                   id="is_reversible"
                   name="is_reversible"
@@ -276,7 +276,7 @@ export function DrillQuestionEditPage({
 
             {/* Buttons */}
             <div>
-              <div className="col-lg-9 offset-lg-2 d-flex" id="button-wrapper">
+              <div className="col-lg-9 offset-lg-2 flex" id="button-wrapper">
                 {objectUuid && urls.delete && (
                   <button
                     className="refined-btn danger me-auto"
@@ -286,7 +286,7 @@ export function DrillQuestionEditPage({
                     Delete
                   </button>
                 )}
-                <div className="d-flex ms-auto align-items-center">
+                <div className="flex ms-auto items-center">
                   <a className="refined-btn" href={urls.cancel}>
                     Cancel
                   </a>

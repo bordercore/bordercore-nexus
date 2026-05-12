@@ -185,14 +185,14 @@ export function BookmarkFormPage({
   };
 
   return (
-    <div className="row g-0 h-100" id="bookmark-form-page">
+    <div className="row g-0 h-full" id="bookmark-form-page">
       {/* Left sidebar */}
-      <div className="flex-grow-last col-lg-3 d-flex flex-column ps-2">
+      <div className="flex-grow-last col-lg-3 flex flex-col ps-2">
         {/* Thumbnail preview */}
         {thumbnailUrl && (
           <div className="card-body p-3">
-            <div className="d-flex justify-content-center">
-              <img src={`${thumbnailUrl}?foo=bar`} className="mw-100" alt="" />
+            <div className="flex justify-center">
+              <img src={`${thumbnailUrl}?foo=bar`} className="max-w-full" alt="" />
             </div>
           </div>
         )}
@@ -210,16 +210,16 @@ export function BookmarkFormPage({
 
         {/* Related Nodes */}
         {relatedNodes.length > 0 && (
-          <div className="d-flex">
-            <Card title="Related Nodes" className="backdrop-filter w-100">
+          <div className="flex">
+            <Card title="Related Nodes" className="backdrop-filter w-full">
               <ul className="list-group interior-borders cursor-pointer">
                 {relatedNodes.map(node => (
                   <li
                     key={node.uuid}
                     className="hoverable px-0 list-group-item list-group-item-secondary text-primary"
                   >
-                    <div className="d-flex align-items-center ps-3">
-                      <div className="d-flex w-100">
+                    <div className="flex items-center ps-3">
+                      <div className="flex w-full">
                         <a href={node.url}>{node.name}</a>
                       </div>
                     </div>
@@ -232,7 +232,7 @@ export function BookmarkFormPage({
       </div>
 
       {/* Main form */}
-      <div className="col-lg-9 d-flex flex-grow-last">
+      <div className="col-lg-9 flex flex-grow-last">
         <div className="card-body">
           <p className="lead offset-lg-2">
             {/* faviconHtml is trusted server-rendered HTML from the app's own database */}
@@ -260,8 +260,8 @@ export function BookmarkFormPage({
                     field.errors && field.errors.length > 0 ? "message-error " : ""
                   }row mb-3`}
                 >
-                  <label className="fw-bold col-lg-2 col-form-label text-end">{field.label}</label>
-                  <div className="col-lg-7 d-flex align-items-center">{renderField(field)}</div>
+                  <label className="font-bold col-lg-2 col-form-label text-end">{field.label}</label>
+                  <div className="col-lg-7 flex items-center">{renderField(field)}</div>
                 </div>
                 {field.errors && field.errors.length > 0 && (
                   <div className="row">
@@ -276,7 +276,7 @@ export function BookmarkFormPage({
             ))}
 
             <div>
-              <div className="col-lg-7 offset-lg-2 d-flex">
+              <div className="col-lg-7 offset-lg-2 flex">
                 {uuid && (
                   <input
                     className="refined-btn danger me-auto"
@@ -286,7 +286,7 @@ export function BookmarkFormPage({
                     onClick={handleDelete}
                   />
                 )}
-                <div className="d-flex ms-auto align-items-center">
+                <div className="flex ms-auto items-center">
                   <a href={urls.bookmarkOverview} className="refined-btn">
                     Cancel
                   </a>

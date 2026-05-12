@@ -252,7 +252,7 @@ function SidebarContent() {
                 item.title === "Bookmarks"
                   ? {
                       ...item,
-                      badge: { text: count, class: count === 0 ? "d-none" : "vsm--badge_default" },
+                      badge: { text: count, class: count === 0 ? "hidden" : "vsm--badge_default" },
                     }
                   : item
               )
@@ -298,7 +298,7 @@ function SidebarContent() {
       onReorder={onReorder}
       headerSlot={
         <div
-          className="d-flex align-items-center"
+          className="flex items-center"
           style={{
             padding: "1rem",
             paddingBottom: "0.5rem",

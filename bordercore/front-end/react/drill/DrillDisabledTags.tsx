@@ -107,7 +107,7 @@ export function DrillDisabledTags({
   }, []);
 
   const titleSlot = (
-    <div className="card-title d-flex align-items-center">
+    <div className="card-title flex items-center">
       <div>Disabled Tags</div>
       <div className="ms-auto">
         <DropDownMenu
@@ -137,7 +137,7 @@ export function DrillDisabledTags({
   );
 
   return (
-    <div className="d-flex flex-grow-1">
+    <div className="flex grow">
       {isModalOpen &&
         createPortal(
           <>
@@ -196,8 +196,8 @@ export function DrillDisabledTags({
 
       {/* Card component */}
       <Card
-        className="backdrop-filter hover-target flex-grow-1"
-        cardClassName="flex-grow-1"
+        className="backdrop-filter hover-target grow"
+        cardClassName="grow"
         titleSlot={titleSlot}
       >
         <hr className="divider" />
@@ -206,8 +206,8 @@ export function DrillDisabledTags({
         ) : (
           <ul className="list-unstyled">
             {tagList.map(tag => (
-              <li key={tag.name} className="d-flex px-2">
-                <div className="item-name flex-fill">
+              <li key={tag.name} className="flex px-2">
+                <div className="item-name flex-auto">
                   <a href={`${tag.url}?filter=review`}>{tag.name}</a>
                 </div>
                 <div className="item-value">{tag.progress}%</div>

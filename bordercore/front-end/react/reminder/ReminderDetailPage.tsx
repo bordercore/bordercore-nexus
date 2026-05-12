@@ -114,7 +114,7 @@ export function ReminderDetailPage({ detailAjaxUrl }: ReminderDetailPageProps) {
 
       <div className="row">
         <div className="col-md-6">
-          <div className="card dashboard-card h-100">
+          <div className="card dashboard-card h-full">
             <div className="card-body">
               <h5 className="card-title mb-4">Schedule</h5>
               <dl className="row mb-0">
@@ -165,7 +165,7 @@ export function ReminderDetailPage({ detailAjaxUrl }: ReminderDetailPageProps) {
         </div>
 
         <div className="col-md-6">
-          <div className="card dashboard-card h-100">
+          <div className="card dashboard-card h-full">
             <div className="card-body">
               <h5 className="card-title mb-4">Metadata</h5>
               <dl className="row mb-0">

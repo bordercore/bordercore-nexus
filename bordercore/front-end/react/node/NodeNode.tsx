@@ -172,8 +172,8 @@ export default function NodeNode({
   );
 
   const titleSlot = (
-    <div className="dropdown-height d-flex">
-      <div className="card-title d-flex">
+    <div className="dropdown-height flex">
+      <div className="card-title flex">
         <div className="text-truncate">
           <FontAwesomeIcon icon={faBox} className="text-primary me-3" />
           {nodeInfo && (
@@ -192,11 +192,11 @@ export default function NodeNode({
   return (
     <div className="hover-target">
       <Card cardClassName="backdrop-filter node-color-1" titleSlot={titleSlot}>
-        <div className="d-flex">
+        <div className="flex">
           {nodeInfo.images.map(image => (
             <div key={image.uuid} className="w-50 me-2">
               <a href={image.blob_url} target="_blank" rel="noopener noreferrer">
-                <img src={image.cover_url} className="mw-100" alt="" />
+                <img src={image.cover_url} className="max-w-full" alt="" />
               </a>
             </div>
           ))}
@@ -204,7 +204,7 @@ export default function NodeNode({
         <div id="node-node-misc">
           {nodeInfo.note_count > 0 && (
             <div className="text-truncate">
-              <div className="d-flex">
+              <div className="flex">
                 <div className="text-nowrap">
                   <strong>{nodeInfo.note_count}</strong> {pluralize("note", nodeInfo.note_count)}
                 </div>
@@ -216,7 +216,7 @@ export default function NodeNode({
           )}
           {nodeInfo.todo_count > 0 && (
             <div>
-              <div className="d-flex">
+              <div className="flex">
                 <div className="text-nowrap">
                   <strong>{nodeInfo.todo_count}</strong> {pluralize("todo", nodeInfo.todo_count)}
                 </div>

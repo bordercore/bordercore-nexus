@@ -237,7 +237,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
 
     return (
       <div className={`markdown-editor ${className} ${isDragOver ? "drag-over" : ""}`}>
-        <div className="markdown-toolbar d-flex flex-wrap align-items-center">
+        <div className="markdown-toolbar flex flex-wrap items-center">
           {toolbarButtons.map((btn, index) =>
             btn.divider ? (
               <div key={index} className="toolbar-divider" />

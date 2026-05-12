@@ -78,8 +78,8 @@ export default function NodeImage({
   );
 
   const titleSlot = (
-    <div className="dropdown-height d-flex">
-      <div className="card-title d-flex">
+    <div className="dropdown-height flex">
+      <div className="card-title flex">
         <div>
           <FontAwesomeIcon icon={faImage} className="text-primary me-3" />
           {imageTitle}
@@ -96,7 +96,7 @@ export default function NodeImage({
       <Card cardClassName="backdrop-filter node-color-1" titleSlot={titleSlot}>
         <img
           src={imageUrl}
-          className="mw-100 cursor-pointer"
+          className="max-w-full cursor-pointer"
           onClick={handleImageClick}
           alt={imageTitle}
         />

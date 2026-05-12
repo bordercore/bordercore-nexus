@@ -79,7 +79,7 @@ export const DropDownMenu = forwardRef<DropDownMenuHandle, DropDownMenuProps>(fu
 
   const trigger = (
     <div className={`dropdown-trigger ${showTarget ? "dropdownmenu" : ""}`}>
-      <div className="d-flex align-items-center justify-content-center h-100 w-100 cursor-pointer">
+      <div className="flex items-center justify-center h-full w-full cursor-pointer">
         {iconSlot || <FontAwesomeIcon icon={faEllipsisV} />}
       </div>
     </div>

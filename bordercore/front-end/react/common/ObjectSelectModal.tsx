@@ -122,7 +122,7 @@ export function ObjectSelectModal({
 
       return (
         <div
-          className="object-select-suggestion d-flex dropdown-item cursor-pointer"
+          className="object-select-suggestion flex dropdown-item cursor-pointer"
           onClick={e => {
             e.preventDefault();
             e.stopPropagation();
@@ -132,7 +132,7 @@ export function ObjectSelectModal({
           {option.cover_url && (
             <div className="cover-image me-2">
               <img
-                className="mh-100 mw-100 object-select-cover-image"
+                className="max-h-full max-w-full object-select-cover-image"
                 src={option.cover_url}
                 alt=""
               />
@@ -148,7 +148,7 @@ export function ObjectSelectModal({
               <img width="120" height="67" src={option.thumbnail_url} alt="" />
             </div>
           )}
-          <div className="name d-flex flex-column">
+          <div className="name flex flex-col">
             <div
               className="text-truncate"
               dangerouslySetInnerHTML={{ __html: boldenOption(option.name || "", search) }}

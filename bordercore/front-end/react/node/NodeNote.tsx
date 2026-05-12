@@ -194,16 +194,16 @@ export default function NodeNote({
   );
 
   const titleSlot = (
-    <div className="card-title d-flex">
-      <div className="dropdown-height d-flex">
+    <div className="card-title flex">
+      <div className="dropdown-height flex">
         <div>
           <FontAwesomeIcon icon={faStickyNote} className="text-primary me-3" />
         </div>
-        <div className="w-100">
+        <div className="w-full">
           {isEditingName ? (
             <input
               ref={nameInputRef}
-              className="form-control w-100"
+              className="form-control w-full"
               value={nodeNote.name}
               onChange={e => setNodeNote(prev => ({ ...prev, name: e.target.value }))}
               onBlur={handleNameBlur}

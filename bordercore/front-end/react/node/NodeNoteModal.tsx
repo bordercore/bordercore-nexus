@@ -104,11 +104,11 @@ export default function NodeNoteModal({
 
         <div className="refined-field">
           <label htmlFor="id_color_note">color</label>
-          <div id="id_color_note" className="d-flex">
+          <div id="id_color_note" className="flex">
             {NODE_COLORS.map(c => (
               <div
                 key={c}
-                className={`${getColorClass(c)} flex-grow-1 mx-2 cursor-pointer`}
+                className={`${getColorClass(c)} grow mx-2 cursor-pointer`}
                 onClick={() => {
                   setColor(c);
                   onColorChange?.(c);

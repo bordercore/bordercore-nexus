@@ -24,7 +24,7 @@ export function BookmarkPagination({ pagination, onGetPage }: BookmarkPagination
     pagination.num_pages - pagination.page_number !== pagination.paginate_by + 1;
 
   return (
-    <div className="d-flex justify-content-center">
+    <div className="flex justify-center">
       <div className="ms-3 mt-3">
         <div className="row">
           <nav aria-label="Page navigation">

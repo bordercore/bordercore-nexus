@@ -115,11 +115,11 @@ export function MetricListPage({ testResults }: MetricListPageProps) {
   };
 
   return (
-    <div className="h-100" id="metric-list-page">
-      <div className="h-100 row g-0 mx-2">
+    <div className="h-full" id="metric-list-page">
+      <div className="h-full row g-0 mx-2">
         {/* Left column - Methodology description */}
-        <div className="col d-flex flex-column pe-gutter">
-          <div className="card-body h-100">
+        <div className="col flex flex-col pe-gutter">
+          <div className="card-body h-full">
             <h3 className="mb-4">Bordercore Testing Methodology</h3>
             <h4 className="text-secondary mt-4">Unit Testing</h4>
             Tests that primarily focus on the Django models and integration tests on the Django
@@ -134,25 +134,25 @@ export function MetricListPage({ testResults }: MetricListPageProps) {
         </div>
 
         {/* Second column - Unit Tests and Wumpus Tests */}
-        <div className="col d-flex flex-column pe-gutter">
-          <Card title="Unit Tests" cardClassName="dashboard-card flex-grow-0 mb-gutter">
+        <div className="col flex flex-col pe-gutter">
+          <Card title="Unit Tests" cardClassName="dashboard-card grow-0 mb-gutter">
             <hr className="divider" />
-            <div className="d-flex" onClick={() => showTestResults("unit")}>
-              <div className="flex-grow-1">
-                <div className="d-flex">
-                  <div className="item-name fw-bold">Test Count</div>
+            <div className="flex" onClick={() => showTestResults("unit")}>
+              <div className="grow">
+                <div className="flex">
+                  <div className="item-name font-bold">Test Count</div>
                   <div className="item-value ms-auto">{testResults.unit.test_count}</div>
                 </div>
-                <div className="d-flex">
-                  <div className="item-name fw-bold">Errors</div>
+                <div className="flex">
+                  <div className="item-name font-bold">Errors</div>
                   <div className="item-value ms-auto">{testResults.unit.test_errors}</div>
                 </div>
-                <div className="d-flex">
-                  <div className="item-name fw-bold">Failures</div>
+                <div className="flex">
+                  <div className="item-name font-bold">Failures</div>
                   <div className="item-value ms-auto">{testResults.unit.test_failures}</div>
                 </div>
-                <div className="d-flex">
-                  <div className="item-name fw-bold">Runtime</div>
+                <div className="flex">
+                  <div className="item-name font-bold">Runtime</div>
                   <div className="item-value ms-auto">{testResults.unit.test_time_elapsed}</div>
                 </div>
               </div>
@@ -168,24 +168,24 @@ export function MetricListPage({ testResults }: MetricListPageProps) {
             </div>
           </Card>
 
-          <Card title="Wumpus Tests" cardClassName="dashboard-card flex-grow-1">
+          <Card title="Wumpus Tests" cardClassName="dashboard-card grow">
             <hr className="divider" />
-            <div className="d-flex" onClick={() => showTestResults("wumpus")}>
-              <div className="flex-grow-1">
-                <div className="d-flex">
-                  <div className="item-name fw-bold">Test Count</div>
+            <div className="flex" onClick={() => showTestResults("wumpus")}>
+              <div className="grow">
+                <div className="flex">
+                  <div className="item-name font-bold">Test Count</div>
                   <div className="item-value ms-auto">{testResults.wumpus.test_count}</div>
                 </div>
-                <div className="d-flex">
-                  <div className="item-name fw-bold">Errors</div>
+                <div className="flex">
+                  <div className="item-name font-bold">Errors</div>
                   <div className="item-value ms-auto">{testResults.wumpus.test_errors}</div>
                 </div>
-                <div className="d-flex">
-                  <div className="item-name fw-bold">Failures</div>
+                <div className="flex">
+                  <div className="item-name font-bold">Failures</div>
                   <div className="item-value ms-auto">{testResults.wumpus.test_failures}</div>
                 </div>
-                <div className="d-flex">
-                  <div className="item-name fw-bold">Runtime</div>
+                <div className="flex">
+                  <div className="item-name font-bold">Runtime</div>
                   <div className="item-value ms-auto">{testResults.wumpus.test_time_elapsed}</div>
                 </div>
               </div>
@@ -203,25 +203,25 @@ export function MetricListPage({ testResults }: MetricListPageProps) {
         </div>
 
         {/* Third column - Functional Tests and Code Coverage */}
-        <div className="col d-flex flex-column pe-gutter">
-          <Card title="Functional Tests" cardClassName="dashboard-card flex-grow-0 mb-gutter">
+        <div className="col flex flex-col pe-gutter">
+          <Card title="Functional Tests" cardClassName="dashboard-card grow-0 mb-gutter">
             <hr className="divider" />
-            <div className="d-flex" onClick={() => showTestResults("functional")}>
-              <div className="flex-grow-1">
-                <div className="d-flex">
-                  <div className="item-name fw-bold">Test Count</div>
+            <div className="flex" onClick={() => showTestResults("functional")}>
+              <div className="grow">
+                <div className="flex">
+                  <div className="item-name font-bold">Test Count</div>
                   <div className="item-value ms-auto">{testResults.functional.test_count}</div>
                 </div>
-                <div className="d-flex">
-                  <div className="item-name fw-bold">Errors</div>
+                <div className="flex">
+                  <div className="item-name font-bold">Errors</div>
                   <div className="item-value ms-auto">{testResults.functional.test_errors}</div>
                 </div>
-                <div className="d-flex">
-                  <div className="item-name fw-bold">Failures</div>
+                <div className="flex">
+                  <div className="item-name font-bold">Failures</div>
                   <div className="item-value ms-auto">{testResults.functional.test_failures}</div>
                 </div>
-                <div className="d-flex">
-                  <div className="item-name fw-bold">Runtime</div>
+                <div className="flex">
+                  <div className="item-name font-bold">Runtime</div>
                   <div className="item-value ms-auto">
                     {testResults.functional.test_time_elapsed}
                   </div>
@@ -241,12 +241,12 @@ export function MetricListPage({ testResults }: MetricListPageProps) {
             </div>
           </Card>
 
-          <Card title="Code Coverage" cardClassName="dashboard-card flex-grow-1">
+          <Card title="Code Coverage" cardClassName="dashboard-card grow">
             <hr className="divider" />
-            <div className="d-flex">
-              <div className="flex-grow-1">
-                <div className="d-flex">
-                  <div className="item-name fw-bold">Coverage</div>
+            <div className="flex">
+              <div className="grow">
+                <div className="flex">
+                  <div className="item-name font-bold">Coverage</div>
                   <div className="item-value ms-auto">{testResults.coverage.line_rate}%</div>
                 </div>
               </div>
@@ -264,26 +264,26 @@ export function MetricListPage({ testResults }: MetricListPageProps) {
         </div>
 
         {/* Fourth column - Data Quality Tests */}
-        <div className="col d-flex flex-column pe-gutter">
-          <div className="d-flex flex-grow-1">
-            <Card title="Data Quality Tests" cardClassName="dashboard-card w-100">
+        <div className="col flex flex-col pe-gutter">
+          <div className="flex grow">
+            <Card title="Data Quality Tests" cardClassName="dashboard-card w-full">
               <hr className="divider" />
-              <div className="d-flex" onClick={() => showTestResults("data")}>
-                <div className="flex-grow-1">
-                  <div className="d-flex">
-                    <div className="item-name fw-bold">Test Count</div>
+              <div className="flex" onClick={() => showTestResults("data")}>
+                <div className="grow">
+                  <div className="flex">
+                    <div className="item-name font-bold">Test Count</div>
                     <div className="item-value ms-auto">{testResults.data.test_count}</div>
                   </div>
-                  <div className="d-flex">
-                    <div className="item-name fw-bold">Errors</div>
+                  <div className="flex">
+                    <div className="item-name font-bold">Errors</div>
                     <div className="item-value ms-auto">{testResults.data.test_errors}</div>
                   </div>
-                  <div className="d-flex">
-                    <div className="item-name fw-bold">Failures</div>
+                  <div className="flex">
+                    <div className="item-name font-bold">Failures</div>
                     <div className="item-value ms-auto">{testResults.data.test_failures}</div>
                   </div>
-                  <div className="d-flex">
-                    <div className="item-name fw-bold">Runtime</div>
+                  <div className="flex">
+                    <div className="item-name font-bold">Runtime</div>
                     <div className="item-value ms-auto">{testResults.data.test_time_elapsed}</div>
                   </div>
                 </div>

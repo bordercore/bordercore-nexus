@@ -183,7 +183,7 @@ export default function NodeCollectionModal({
               searchUrl={searchUrl}
               onSelect={handleCollectionSelect}
               optionSlot={({ option }) => (
-                <div className="search-suggestion d-flex align-items-center">
+                <div className="search-suggestion flex items-center">
                   <div>
                     <img
                       className="me-2 mt-2"
@@ -193,7 +193,7 @@ export default function NodeCollectionModal({
                       alt=""
                     />
                   </div>
-                  <div className="d-flex flex-column">
+                  <div className="flex flex-col">
                     <div>{option.name}</div>
                     <div className="text-secondary lh-1">
                       <small>{option.num_objects} objects</small>
