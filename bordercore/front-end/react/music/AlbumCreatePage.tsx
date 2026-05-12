@@ -3,6 +3,7 @@ import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCompactDisc, faFileImport, faMusic } from "@fortawesome/free-solid-svg-icons";
 import { TagsInput, TagsInputHandle } from "../common/TagsInput";
+import { Spinner } from "../common/Spinner";
 import { getCsrfToken } from "../utils/reactUtils";
 
 interface SourceOption {
@@ -250,7 +251,10 @@ export function AlbumCreatePage({
       </div>
 
       {error && (
-        <div className="alert alert-danger" role="alert">
+        <div
+          role="alert"
+          className="mb-4 p-4 rounded border border-[var(--danger)] bg-surface-2 text-[var(--danger)]"
+        >
           {error}
         </div>
       )}
@@ -470,9 +474,7 @@ export function AlbumCreatePage({
               </div>
             ) : (
               <div className="text-center py-2">
-                <div className="spinner-border text-primary" role="status">
-                  <span className="visually-hidden">Processing...</span>
-                </div>
+                <Spinner />
               </div>
             )}
           </div>

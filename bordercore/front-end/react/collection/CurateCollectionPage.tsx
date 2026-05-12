@@ -13,6 +13,7 @@ import type {
 import CurateRail from "./CurateRail";
 import CurateHeader from "./CurateHeader";
 import CurateGrid from "./CurateGrid";
+import { Spinner } from "../common/Spinner";
 import ImageViewModal from "./ImageViewModal";
 import EditCollectionModal from "./EditCollectionModal";
 import DeleteCollectionModal from "./DeleteCollectionModal";
@@ -366,9 +367,7 @@ export function CurateCollectionPage({
               aria-label="processing"
               aria-live="polite"
             >
-              <div className="spinner-border text-primary" role="status">
-                <span className="visually-hidden">Processing...</span>
-              </div>
+              <Spinner />
               <div className="cd-curate-processing-label">Processing…</div>
             </div>
           </>,

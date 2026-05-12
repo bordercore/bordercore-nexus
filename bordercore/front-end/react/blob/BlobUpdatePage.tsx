@@ -13,6 +13,7 @@ import axios from "axios";
 
 import { MarkdownEditor, MarkdownEditorHandle } from "./MarkdownEditor";
 import { RefinedDatePicker } from "../common/RefinedDatePicker";
+import { Spinner } from "../common/Spinner";
 import { TagsInput } from "../common/TagsInput";
 import { EventBus, doGet, doPost } from "../utils/reactUtils";
 import { PreviewHero } from "./update/PreviewHero";
@@ -586,9 +587,7 @@ export function BlobUpdatePage({
               aria-live="polite"
             >
               <div className="refined-modal-processing-body">
-                <div className="spinner-border text-secondary" role="status">
-                  <span className="visually-hidden">Loading...</span>
-                </div>
+                <Spinner />
                 <span className="refined-modal-processing-text">Processing…</span>
               </div>
             </div>

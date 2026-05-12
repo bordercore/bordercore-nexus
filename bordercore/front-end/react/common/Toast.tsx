@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCheck, faExclamationTriangle, faQuestion } from "@fortawesome/free-solid-svg-icons";
+import { faCheck, faExclamationTriangle, faQuestion, faTimes } from "@fortawesome/free-solid-svg-icons";
 
 const DEFAULT_DELAY_MS = 5000;
 
@@ -96,7 +96,14 @@ export function Toast({ initialMessages = [], defaultVariant = "info" }: ToastPr
       >
         <div className="toast-header">
           <strong className="me-auto" dangerouslySetInnerHTML={{ __html: title }} />
-          <button type="button" className="btn-close" aria-label="Close" onClick={hide} />
+          <button
+            type="button"
+            aria-label="Close"
+            onClick={hide}
+            className="ml-2 inline-flex h-6 w-6 items-center justify-center rounded text-ink-3 hover:text-ink-0 hover:bg-surface-3 transition-colors"
+          >
+            <FontAwesomeIcon icon={faTimes} />
+          </button>
         </div>
         <div className="toast-body d-flex align-items-top">
           <FontAwesomeIcon

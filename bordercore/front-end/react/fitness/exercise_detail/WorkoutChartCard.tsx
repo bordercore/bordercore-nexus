@@ -177,7 +177,7 @@ export function WorkoutChartCard({
                 aria-selected={series === s}
               >
                 {s}
-                <span className="badge">
+                <span className="ml-1 inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-surface-3 text-ink-1">
                   {best}
                   {UNIT_LABEL[s]}
                 </span>

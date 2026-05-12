@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCheck, faExclamationTriangle, faPlus, faTimes } from "@fortawesome/free-solid-svg-icons";
 import { getReasonPhrase, StatusCodes } from "http-status-codes";
 import { doGet, doPut, doPost } from "../utils/reactUtils";
+import { Spinner } from "../common/Spinner";
 import type { Feed, FeedEditorData } from "./types";
 
 type StatusType = "ok" | "error" | "empty" | null;
@@ -128,11 +129,7 @@ export function FeedEditorModal({
     if (checkingStatus) {
       return (
         <div className="feed-status checking">
-          <span
-            className="spinner-border spinner-border-sm feed-status-spinner"
-            role="status"
-            aria-hidden="true"
-          />
+          <Spinner size="sm" className="feed-status-spinner" />
           <span>checking feed status…</span>
         </div>
       );

@@ -3,6 +3,7 @@ import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 import MarkdownIt from "markdown-it";
+import { Spinner } from "../common/Spinner";
 
 // Initialize markdown-it renderer
 const markdown = MarkdownIt({
@@ -69,9 +70,7 @@ export function ReminderDetailPage({ detailAjaxUrl }: ReminderDetailPageProps) {
   if (loading) {
     return (
       <div className="container mt-4 text-center">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
+        <Spinner />
       </div>
     );
   }
@@ -79,7 +78,10 @@ export function ReminderDetailPage({ detailAjaxUrl }: ReminderDetailPageProps) {
   if (error || !reminder) {
     return (
       <div className="container mt-4">
-        <div className="alert alert-danger" role="alert">
+        <div
+          role="alert"
+          className="mb-4 p-4 rounded border border-[var(--danger)] bg-surface-2 text-[var(--danger)]"
+        >
           {error || "Reminder not found."}
         </div>
         <a href="/reminder/" className="refined-btn">
@@ -119,9 +121,9 @@ export function ReminderDetailPage({ detailAjaxUrl }: ReminderDetailPageProps) {
                 <dt className="col-sm-5">Status</dt>
                 <dd className="col-sm-7">
                   {reminder.is_active ? (
-                    <span className="badge bg-success">Active</span>
+                    <span className="refined-badge is-cyan">Active</span>
                   ) : (
-                    <span className="badge bg-secondary">Inactive</span>
+                    <span className="refined-badge is-muted">Inactive</span>
                   )}
                 </dd>
 

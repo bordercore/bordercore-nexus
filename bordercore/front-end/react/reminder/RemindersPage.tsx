@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import axios from "axios";
 import type { Reminder } from "./types";
+import { Spinner } from "../common/Spinner";
 import { RemindersDashboard } from "./dashboard/RemindersDashboard";
 import { NewReminderModal } from "./modals/NewReminderModal";
 import { EditReminderModal } from "./modals/EditReminderModal";
@@ -71,9 +72,7 @@ export function RemindersPage({ listAjaxUrl, createUrl }: RemindersPageProps) {
   if (loading) {
     return (
       <div className="rm-dashboard-loading text-center p-3">
-        <div className="spinner-border" role="status">
-          <span className="visually-hidden">Loading…</span>
-        </div>
+        <Spinner />
       </div>
     );
   }

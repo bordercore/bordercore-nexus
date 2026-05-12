@@ -51,7 +51,9 @@ export function PlaylistsCard({ playlists, onClickCreate, className }: Playlists
             <a href={playlist.url} className="d-flex w-100">
               <div>{playlist.name}</div>
               <div className="ms-auto">
-                <span className="px-2 badge rounded-pill">{playlist.num_songs}</span>
+                <span className="inline-block px-2 py-0.5 rounded-full text-xs font-bold bg-surface-3 text-ink-1">
+                  {playlist.num_songs}
+                </span>
               </div>
             </a>
           </li>
