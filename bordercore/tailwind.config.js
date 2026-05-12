@@ -133,7 +133,14 @@ module.exports = {
     },
   },
   plugins: [
-    require("@tailwindcss/forms"),
+    // strategy: "class" makes @tailwindcss/forms opt-in (via .form-input,
+    // .form-select, .form-checkbox, .form-radio, .form-textarea). The
+    // default "base" strategy applies styles globally to every <input>,
+    // <select>, and <textarea> via low-specificity :where() selectors,
+    // which would silently restyle the ~150 raw form elements in this
+    // codebase that don't yet have a Bootstrap or custom class. Phase 0
+    // is supposed to be a no-visual-change baseline.
+    require("@tailwindcss/forms")({ strategy: "class" }),
     require("@tailwindcss/typography"),
   ],
 };
