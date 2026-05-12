@@ -93,13 +93,9 @@
 
 // Lists
 // =============================================================================
-// .list-group / .list-group-item structural styles. These mirror Bootstrap's
-// own rules for the same selectors so that the project no longer depends on
-// Bootstrap core CSS for list-group layout. Bootstrap is still loaded during
-// the Tailwind migration coexistence; once it's removed in Phase 4, these
-// rules provide everything needed for list-groups to render correctly. The
-// theme-aware chrome (border-color, background, color) folds into the same
-// rule rather than being a separate override of Bootstrap's defaults.
+// .list-group / .list-group-item — vertical stacked list with shared
+// borders and rounded outer corners. Used by templates and React code for
+// list rendering with theme-aware chrome.
 .list-group {
   display: flex;
   flex-direction: column;

@@ -285,8 +285,8 @@
   }
 }
 
-// RecentBlobs wraps its trigger in a Bootstrap mx-2 span — neutralize so the
-// bar's own gap controls spacing.
+// RecentBlobs wraps its trigger in an .mx-2 span — neutralize so the bar's
+// own gap controls spacing.
 .refined-tb .mx-2 {
   margin: 0 !important;
 }

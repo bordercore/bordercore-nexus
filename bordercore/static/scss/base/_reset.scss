@@ -3,11 +3,10 @@
 // =============================================================================
 // Base HTML elements, typography, scrollbars, fonts.
 //
-// Element-level resets below replace the parts of Bootstrap's reboot that
-// the project actually depended on, now that Bootstrap CSS is no longer
-// loaded (migration Phase 4). Tailwind's preflight is also disabled —
-// it has different opinions (notably `h1-h6 { font-size: inherit }`)
-// that would clash with the project's typography expectations.
+// The element-level resets below are the project's CSS reset. Tailwind's
+// preflight is disabled in tailwind.config.js because it has different
+// opinions (notably `h1-h6 { font-size: inherit }`) that would clash with
+// the typography expectations encoded here.
 
 // Universal box-sizing — critical for layout. Browser default is
 // content-box; without this, every element with padding renders wider
@@ -46,10 +45,9 @@ body {
   line-height: 2rem;
 }
 
-// Heading sizing — Bootstrap previously standardized these to fixed
-// rem values so headings would look consistent regardless of nesting
-// context (the browser default for h1 changes from 2em inside <body>
-// to 1.5em inside <section>/<article>).
+// Heading sizing — fixed rem values so headings look consistent regardless
+// of nesting context (the browser default for h1 changes from 2em inside
+// <body> to 1.5em inside <section>/<article>).
 h1, h2, h3, h4, h5, h6 {
   margin-top: 0;
   margin-bottom: 0.5rem;
@@ -64,8 +62,8 @@ h5 { font-size: 1.25rem; }
 h6 { font-size: 1rem; }
 
 // List margin / padding — browser default has padding-left: 40px on
-// <ul>/<ol>, which shifts the bullet column inward. Match Bootstrap's
-// 2rem padding plus 1rem bottom margin so list-spacing stays predictable.
+// <ul>/<ol>, which shifts the bullet column inward. The 2rem padding plus
+// 1rem bottom margin below give predictable list spacing across the app.
 ul, ol, dl {
   margin-top: 0;
   margin-bottom: 1rem;
@@ -147,10 +145,10 @@ svg {
 }
 
 // Keep actual page content above the ambient body::before background.
-// Do not add a z-index here: it creates a stacking context that traps
-// Bootstrap modals (z-index 1055) below the body-level backdrop
-// (z-index 1050). position: relative alone is enough to paint above
-// the fixed ambient pseudo-element.
+// Do not add a z-index here: it creates a stacking context that would
+// trap any portaled overlay (modals, dropdown popovers) inside body, where
+// a higher-z-index backdrop could end up above them. position: relative
+// alone is enough to paint above the fixed ambient pseudo-element.
 body > * {
   position: relative;
 }

@@ -1,15 +1,12 @@
 /*
- * Tailwind entry stylesheet — Phase 0 of the Bootstrap → Tailwind migration.
+ * Tailwind entry stylesheet.
  *
- * This file is imported from front-end/entries/bordercore-css.js BEFORE
- * bordercore.scss so that, during the coexistence period, Bootstrap CSS
- * wins source-order conflicts for class names that exist in both
- * frameworks (e.g. .container). New components that use Tailwind-only
- * class names are unaffected.
- *
- * Tailwind's preflight reset is disabled in tailwind.config.js for the
- * same reason; Bootstrap's reboot remains the page-wide CSS reset until
- * the migration is far enough along to flip the switch.
+ * Imported from front-end/entries/bordercore-css.js before bordercore.scss
+ * so project SCSS rules (loaded later) win source-order ties with Tailwind
+ * utilities of the same specificity. Tailwind's preflight reset is disabled
+ * in tailwind.config.js so its element-level opinions (notably
+ * `h1-h6 { font-size: inherit }`) don't conflict with the typography in
+ * static/scss/base/_reset.scss.
  */
 
 @tailwind base;

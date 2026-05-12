@@ -11,7 +11,7 @@
   color: var(--accent);
   font-size: 1.5rem;
 
-  // The close button for Bootstrap modals
+  // Modal close button (× in the top-right corner of the header).
   .close {
     color: var(--fg-0);
   }
@@ -45,7 +45,7 @@
   z-index: 2001;
 }
 
-// Bootstrap Popovers
+// Popovers
 .popover {
   border-color: var(--line-soft);
   background-color: var(--bg-1);

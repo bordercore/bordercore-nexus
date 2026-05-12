@@ -1,23 +1,18 @@
 // =============================================================================
 // COMPONENTS: GRID
 // =============================================================================
-// Reproduces Bootstrap 5's 12-column grid system (`.container`, `.row`,
-// `.col-N`, `.col-{sm,md,lg,xl,xxl}-N`, `.offset-{sm,md,lg,xl,xxl}-N`) at
-// the project level so layouts no longer depend on Bootstrap core CSS.
-// During the migration coexistence period both Bootstrap's and these
-// project rules ship in the bundle; this file is imported after Bootstrap
-// in bordercore.scss, so project rules win source-order conflicts and
-// values are byte-identical to Bootstrap's. Once Bootstrap is removed in
-// Phase 4 these rules continue to provide every grid feature the JSX uses.
+// 12-column responsive grid (`.container`, `.row`, `.col-N`,
+// `.col-{sm,md,lg,xl,xxl}-N`, `.offset-{sm,md,lg,xl,xxl}-N`) used by JSX and
+// Django templates throughout the app.
 //
-// Tailwind's content scanner also generates a `.container` rule, but it
-// uses Tailwind's screens config (640/768/1024/...). Both Tailwind's and
-// Bootstrap's `.container` are loaded before this file, so this one wins.
+// Tailwind's content scanner also generates a `.container` rule using its own
+// screens config (640/768/1024/...). This file is imported after Tailwind in
+// bordercore.scss, so this `.container` wins for any element that lands both
+// classes.
 
-// Breakpoint table matches Bootstrap 5 (sm:576, md:768, lg:992, xl:1200,
-// xxl:1400). These differ from Tailwind's defaults (sm:640, md:768,
-// lg:1024, xl:1280, 2xl:1536); the existing JSX was authored against the
-// Bootstrap values, so we keep them.
+// Breakpoint table (sm:576, md:768, lg:992, xl:1200, xxl:1400) — these are
+// the values consuming JSX/templates were authored against and differ from
+// Tailwind's defaults (sm:640, md:768, lg:1024, xl:1280, 2xl:1536).
 $bc-grid-breakpoints: (
   sm: 576px,
   md: 768px,

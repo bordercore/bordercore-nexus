@@ -34,18 +34,16 @@ export type CardProps = {
   children?: React.ReactNode;
 };
 
-// Tailwind utilities below provide every structural style Bootstrap's
-// .card / .card-body / .card-title rules contribute (display/flex layout,
-// min-width, flex-auto body, title margin). The `card`, `card-body`, and
-// `card-title` class names stay on the rendered DOM because project SCSS
-// (static/scss/layout/_layout.scss, components/_cards.scss, and a handful
-// of page-specific files) targets them for the visual chrome — borders,
-// background, padding, dashboard-card hover effects, etc. After Bootstrap
-// is removed in migration Phase 4, those class names become inert anchors
-// for our own SCSS rather than Bootstrap selectors.
+// Tailwind utilities here own the structural layout (display/flex, min-width,
+// flex-auto body, title margin). The `card`, `card-body`, and `card-title`
+// class names stay on the rendered DOM as anchors for project SCSS —
+// static/scss/layout/_layout.scss owns the visual chrome (border, background,
+// radius), components/_cards.scss handles dashboard-card hover effects, and
+// page-specific files (pages/_node-detail-refined.scss, etc.) re-skin the
+// surface where needed.
 const OUTER_CLASSES = "card relative flex flex-col min-w-0 break-words";
-// flex-auto (flex: 1 1 auto) matches Bootstrap's .card-body; Tailwind's
-// flex-1 would change flex-basis from auto to 0% and shift cards with a
+// flex-auto (flex: 1 1 auto) keeps the body sized to its content; Tailwind's
+// flex-1 would change flex-basis from auto to 0% and shift cards that have a
 // fixed height.
 const BODY_CLASSES = "card-body flex-auto";
 const TITLE_CLASSES = "card-title flex mb-2";

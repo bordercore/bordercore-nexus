@@ -20,10 +20,9 @@ interface ToastProps {
 type Variant = "info" | "danger" | "warning" | "success";
 
 // Map toast variant to the theme-aware Tailwind utility for the leading
-// icon's colour. After Bootstrap was removed in migration Phase 4, the
-// Bootstrap class names text-info / text-warning / text-success no
-// longer exist, so the template literal `text-${variant}` would emit
-// dead classes for three of the four variants.
+// icon's colour. Three of the four variants don't have a class that matches
+// their name (warning / success / danger → warn / ok / danger), so a direct
+// `text-${variant}` interpolation would emit dead classes.
 const VARIANT_ICON_CLASS: Record<Variant, string> = {
   info: "text-accent",
   danger: "text-danger",

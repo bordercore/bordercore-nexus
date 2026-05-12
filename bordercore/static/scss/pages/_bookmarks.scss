@@ -90,13 +90,12 @@
         font-family: var(--font-ui);
         font-size: 13px;
 
-        // Match the wrapper's line-height (which is 32px / wrapper height)
-        // so Chrome renders the text caret at the wrapper's full height.
-        // Without this, Bootstrap's .form-control { line-height: 1.5 } caps
-        // the line-box at 19.5px, which makes the caret render at the same
-        // visual height as the placeholder's letter stems and the two
-        // overlap at the first glyph. /music/'s plain <input> has no
-        // form-control class so it picks up the wrapper's 32px naturally.
+        // Match the wrapper's line-height (32px / wrapper height) so Chrome
+        // renders the text caret at the wrapper's full height. Without this,
+        // .form-control's line-height: 1.5 caps the line-box at 19.5px and
+        // the caret ends up at the same visual height as the placeholder's
+        // letter stems, overlapping at the first glyph. /music/'s plain
+        // <input> has no .form-control class and picks up the 32px naturally.
         line-height: 32px;
 
         &:focus {
@@ -154,8 +153,8 @@
 }
 
 // Sidebar surface — solid --bg-1 panel with a right-edge hairline, mirroring
-// the /music/ rail (.mlo-sidebar). The Bootstrap col-lg-3 wrapper still owns
-// width and column placement; this rule owns surface, padding, and rhythm.
+// the /music/ rail (.mlo-sidebar). The .col-lg-3 wrapper still owns width and
+// column placement; this rule owns surface, padding, and rhythm.
 .bookmark-tags-sidebar {
   padding: 20px 14px;
   border-right: 1px solid var(--line-soft);

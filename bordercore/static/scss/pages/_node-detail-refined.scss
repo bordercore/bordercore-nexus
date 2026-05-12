@@ -55,8 +55,8 @@
 
   // --- Root surface (escape base layout padding; match .node-app pattern) ---
   // NOTE: We deliberately do NOT create a stacking context here (no z-index).
-  // Bootstrap modals render their backdrop at document.body level with
-  // z-index: 1050; if .node-detail-app established a stacking context, the
+  // Modals (NodeNoteModal, NodeQuoteModal, etc.) portal their backdrop to
+  // document.body; if .node-detail-app established a stacking context, the
   // modal would be trapped inside it and the backdrop would overlay it,
   // blocking all input. The aurora is painted as a multi-layer background
   // directly on this element to avoid needing a pseudo-element + z-index.
@@ -81,7 +81,8 @@
     color: var(--nd-fg-1);
   }
 
-  // Reset Bootstrap hr / list defaults inside node-detail
+  // <hr>s inside node-detail inherit the page color (the rule in _reset.scss
+  // sets a theme border color that's too prominent against this surface).
   hr { color: inherit; }
 
   // --- Page container ---
@@ -324,8 +325,7 @@
   // ========================================================================
   // Card shell (wraps each layout item). Actual card content lives in the
   // existing sub-components, which ship their own .card / .card-body markup.
-  // We re-skin Bootstrap's .card inside the shell instead of refactoring
-  // each sub-component.
+  // We re-skin .card inside the shell instead of refactoring each sub-component.
   // ========================================================================
   .nd-item {
     position: relative;
@@ -346,8 +346,8 @@
     &:hover .nd-grip { opacity: 1; }
   }
 
-  // Re-skin the Bootstrap .card surface that each sub-component still renders.
-  // Resting chrome and hover state come from the shared refined-card mixins so
+  // Re-skin the .card surface that each sub-component renders. Resting
+  // chrome and hover state come from the shared refined-card mixins so
   // node-detail cards stay character-for-character identical to .ex-card and
   // any future card-bearing refined page that opts in.
   .card {
@@ -413,7 +413,7 @@
     }
   }
 
-  // Soften Bootstrap text-muted inside cards
+  // Soften .text-muted inside cards
   .text-muted { color: var(--nd-fg-4) !important; }
 
   // Links in card bodies pick up the accent. Exclude .refined-btn since the

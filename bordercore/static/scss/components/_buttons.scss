@@ -23,12 +23,14 @@
   cursor: pointer;
 }
 
-// Base .btn reset. Replaces the structural styling Bootstrap used to
-// supply for elements with class="btn ..." (the modifier classes
-// .btn-primary / .btn-secondary below paint over background/border/color).
-// Listed before the modifier rules so source-order conflicts go their way.
-// Real consumers: the 404/403/500 error pages and music/index.html — React
-// code uses refined-btn / namespaced classes instead.
+// Base .btn reset for elements with class="btn ..." — structural styling
+// only (display, padding, line-height, border-radius, text alignment,
+// link-decoration removal). The .btn-primary / .btn-secondary modifiers
+// below paint background/border/color on top. Listed first so source-order
+// conflicts go to the modifiers.
+//
+// Consumers: 404/403/500 error pages and music/index.html. React code uses
+// refined-btn / namespaced button classes instead.
 .btn {
   display: inline-block;
   padding: 0.375rem 0.75rem;
@@ -57,7 +59,8 @@
   }
 }
 
-// Bootstrap button overrides
+// .btn-close — small × close button used by modal headers and some popovers.
+// The filter recolors the SVG icon to suit the active theme.
 .btn-close {
   filter: var(--btn-close-filter);
 }

@@ -216,12 +216,11 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
 
-  // Bootstrap's .form-switch wrapper keeps the switch a fixed width, but it
-  // adds a padding-start that pushes the switch ~2.5em to the right. Reset
-  // it so the switch sits flush in our row.
-  // The font-size bump scales the em-based switch up to 28×14 px so the
-  // pill doesn't look squished at page scale; the label span keeps its
-  // own 11px from the wrapper.
+  // The .form-switch wrapper carries a padding-start that pushes the switch
+  // ~2.5em to the right; reset it so the switch sits flush in our row. The
+  // font-size bump scales the em-based switch up to ~28×14 px so the pill
+  // doesn't look squished at page scale; the label span keeps its own 11px
+  // from the wrapper.
   .form-switch {
     padding-left: 0;
     margin-bottom: 0;

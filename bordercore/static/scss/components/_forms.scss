@@ -3,13 +3,10 @@
 // =============================================================================
 // Form inputs, textareas, checkboxes, tags using the refined token set.
 
-// Form controls — inherit the canonical .refined-input surface plus the
-// structural Bootstrap defaults so .form-control no longer needs Bootstrap's
-// core CSS to render correctly. The refined mixin handles all of the visual
-// chrome (border, background, focus state, placeholder colour, typography);
-// the rules below add what Bootstrap's bare .form-control rule contributes
-// — display, width, line-height, appearance reset, etc. — so the project
-// stays self-sufficient once Bootstrap is removed in migration Phase 4.
+// .form-control — base form input surface. The refined-input mixin owns the
+// visual chrome (border, background, focus state, placeholder, typography);
+// the rules below add the structural defaults (display, width, line-height,
+// appearance reset) that block-level inputs need.
 input.form-control,
 textarea.form-control,
 select.form-control {
@@ -145,11 +142,12 @@ a.tag,
   position: relative;
 }
 
-// SelectValue's dropdown panel rides Bootstrap's .dropdown-menu, so we use the
-// chained selector .dropdown-menu.select-value-dropdown for higher specificity
-// than the generic .dropdown-menu chrome rule in _navigation.scss. The shared
-// %refined-popover-chrome puts this combobox surface in the same visual family
-// as the action menus and the TopSearch / RecentBlobs / AddPopover panels.
+// SelectValue's dropdown panel uses .dropdown-menu, so the chained selector
+// .dropdown-menu.select-value-dropdown gives higher specificity than the
+// generic .dropdown-menu chrome rule in _navigation.scss. The shared
+// %refined-popover-chrome puts this combobox surface in the same visual
+// family as the action menus and the TopSearch / RecentBlobs / AddPopover
+// panels.
 .dropdown-menu.select-value-dropdown {
   @extend %refined-popover-chrome;
 

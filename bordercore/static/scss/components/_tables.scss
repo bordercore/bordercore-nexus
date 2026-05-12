@@ -1,8 +1,9 @@
 // =============================================================================
 // COMPONENTS: TABLES
 // =============================================================================
-// Bootstrap tables, Oruga tables, and the custom data-grid with drag-and-drop.
-// Uses the refined token set (--bg-*, --fg-*, --line*, --accent).
+// Styles for `.table` (legacy templates), `.b-table` (Oruga), `.data-table`
+// (the custom drag-and-drop data grid), and a handful of shared container
+// classes. All colors come from the refined token set.
 
 // Data table container - shared by todo, music, tags, fitness, reminders
 .data-table-container {
@@ -17,10 +18,9 @@
   visibility: hidden;
 }
 
-// Bootstrap tables - base classes first (lower specificity)
+// .table — used by legacy Django templates that render plain HTML tables.
+// React code uses .data-table (further down) instead.
 .table {
-  --bs-table-border-color: var(--line-soft);
-
   color: var(--fg-1);
 
   thead {
@@ -32,7 +32,8 @@
     border-color: var(--line-soft);
   }
 
-  // Override Bootstrap's default border styling
+  // Color every cell's bottom border (descendant-combinator pattern lets the
+  // rule reach `<tr><td>` whether the row is in <thead>, <tbody>, or <tfoot>).
   > :not(caption) > * > * {
     border-bottom-color: var(--line-soft);
   }

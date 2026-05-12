@@ -236,12 +236,19 @@ class TagBookmark(SortOrderMixin):
       <button className="refined-btn primary" onClick={() => createToast("info")}>
         Info Toast
       </button>
-      {/* refined-btn has no success/warning variants yet; leave on Bootstrap
-          until those are added or this gallery moves to bespoke styling. */}
-      <button className="btn btn-success" onClick={() => createToast("success")}>
+      {/* refined-btn has no success/warning variants yet; these two buttons
+          render with the base .btn reset (padding/border-radius) and theme
+          semantic backgrounds until matching refined-btn variants land. */}
+      <button
+        className="btn bg-ok text-accent-fg border-0"
+        onClick={() => createToast("success")}
+      >
         Success Toast
       </button>
-      <button className="btn btn-warning" onClick={() => createToast("warning")}>
+      <button
+        className="btn bg-warn text-accent-fg border-0"
+        onClick={() => createToast("warning")}
+      >
         Warning Toast
       </button>
       <button className="refined-btn danger" onClick={() => createToast("danger")}>
