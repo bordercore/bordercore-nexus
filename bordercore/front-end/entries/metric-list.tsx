@@ -9,7 +9,8 @@ const defaultTestResult = {
   test_overdue: false,
   test_time_elapsed: "",
   test_runtime: "",
-  test_output: "",
+  test_output_tokens: [],
+  test_output_summary: {},
 };
 
 const defaultCoverageResult = {

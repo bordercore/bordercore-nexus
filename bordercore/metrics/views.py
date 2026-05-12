@@ -10,11 +10,11 @@ from django.contrib.auth.mixins import (LoginRequiredMixin,
                                         UserPassesTestMixin)
 from django.contrib.auth.models import User
 from django.db.models import QuerySet
-from django.template.defaultfilters import linebreaksbr
 from django.utils import timezone
 from django.views.generic.list import ListView
 
 from .models import Metric
+from .services import parse_pytest_output
 
 
 class MetricListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
@@ -123,8 +123,10 @@ class MetricListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
                     "test_overdue": False,
                     "test_time_elapsed": "",
                     "test_runtime": "",
-                    "test_output": "",
+                    "test_output_tokens": [],
+                    "test_output_summary": {},
                 }
+            parsed = parse_pytest_output(metric.latest_result.get("test_output", ""))  # type: ignore[attr-defined]
             return {
                 "test_count": str(metric.latest_result.get("test_count", "0")),  # type: ignore[attr-defined]
                 "test_errors": str(metric.latest_result.get("test_errors", "0")),  # type: ignore[attr-defined]
@@ -132,7 +134,8 @@ class MetricListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
                 "test_overdue": getattr(metric, "overdue", False),
                 "test_time_elapsed": str(metric.latest_result.get("test_time_elapsed", "")),  # type: ignore[attr-defined]
                 "test_runtime": timezone.localtime(metric.created).strftime("%b %d, %Y, %I:%M %p") if metric.created else "",  # type: ignore[attr-defined]
-                "test_output": linebreaksbr(metric.latest_result.get("test_output", "")),  # type: ignore[attr-defined]
+                "test_output_tokens": parsed["tokens"],
+                "test_output_summary": parsed["summary"],
             }
 
         def build_coverage_result(metric: Metric | None) -> dict[str, Any]:

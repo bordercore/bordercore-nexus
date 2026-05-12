@@ -45,6 +45,7 @@
   top: 50%;
   left: 50%;
   width: min(520px, calc(100vw - 40px));
+  max-height: calc(100vh - 40px);
   padding: 28px 28px 24px 32px;
   border: 1px solid color-mix(in oklch, var(--accent), transparent 82%);
   border-radius: 14px;
@@ -57,6 +58,7 @@
     0 0 40px -4px color-mix(in oklch, var(--accent), transparent 70%);
   color: var(--fg-1);
   font-family: var(--font-ui);
+  overflow-y: auto;
   transform: translate(-50%, -50%);
 }
 
@@ -449,6 +451,16 @@
     background: var(--bg-2);
     color: var(--fg-1);
   }
+}
+
+// =============================================================================
+// Wide variant — for modals whose body needs more horizontal room than the
+// default 520px (e.g. preformatted test output, log dumps). Keeps the chrome,
+// padding, and animation of the default modal; only widens the surface.
+// =============================================================================
+
+.refined-modal.refined-modal--wide {
+  width: 80vw;
 }
 
 // =============================================================================

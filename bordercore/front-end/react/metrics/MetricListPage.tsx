@@ -9,12 +9,31 @@ interface TestResultBase {
   test_runtime: string;
 }
 
+interface PytestToken {
+  kind: string;
+  text: string;
+}
+
+interface PytestSummary {
+  total?: number;
+  passed?: number;
+  failed?: number;
+  errors?: number;
+  skipped?: number;
+  xfailed?: number;
+  xpassed?: number;
+  warnings?: number;
+  duration_seconds?: number;
+  duration_pretty?: string;
+}
+
 interface StandardTestResult extends TestResultBase {
   test_count: string;
   test_errors: string;
   test_failures: string;
   test_time_elapsed: string;
-  test_output: string;
+  test_output_tokens: PytestToken[];
+  test_output_summary: PytestSummary;
 }
 
 interface CoverageResult extends TestResultBase {
@@ -288,7 +307,11 @@ export function MetricListPage({ testResults }: MetricListPageProps) {
         createPortal(
           <>
             <div className="refined-modal-scrim" onClick={closeModal} />
-            <div className="refined-modal" role="dialog" aria-label="test output">
+            <div
+              className="refined-modal refined-modal--wide"
+              role="dialog"
+              aria-label="test output"
+            >
               <button
                 type="button"
                 className="refined-modal-close"
@@ -300,13 +323,70 @@ export function MetricListPage({ testResults }: MetricListPageProps) {
 
               <h2 className="refined-modal-title">Test output</h2>
 
-              <div
-                dangerouslySetInnerHTML={{ __html: testResults[selectedTest].test_output || "" }}
+              <PytestOutput
+                tokens={testResults[selectedTest].test_output_tokens}
+                summary={testResults[selectedTest].test_output_summary}
               />
             </div>
           </>,
           document.body
         )}
+    </div>
+  );
+}
+
+/**
+ * Render a pre-parsed pytest log. Tokens come from the backend
+ * (metrics.services.parse_pytest_output) — every token's `kind` maps to a
+ * `pytest-token--<kind>` modifier class so coloring is theme-driven via SCSS.
+ * The chip header surfaces the run's headline counts; it's hidden when the
+ * backend couldn't find a result banner (e.g. an aborted run).
+ */
+function PytestOutput({ tokens, summary }: { tokens: PytestToken[]; summary: PytestSummary }) {
+  return (
+    <div className="pytest-output">
+      <PytestSummaryChips summary={summary} />
+      <pre className="pytest-log">
+        {tokens.map((t, i) => (
+          <span key={i} className={`pytest-token pytest-token--${t.kind}`}>
+            {t.text}
+          </span>
+        ))}
+      </pre>
+    </div>
+  );
+}
+
+function PytestSummaryChips({ summary }: { summary: PytestSummary }) {
+  const hasAny =
+    summary.total !== undefined ||
+    summary.failed ||
+    summary.errors ||
+    summary.passed ||
+    summary.skipped ||
+    summary.duration_pretty;
+  if (!hasAny) return null;
+
+  return (
+    <div className="pytest-summary">
+      {summary.total !== undefined && (
+        <span className="pytest-chip pytest-chip--total">{summary.total} tests</span>
+      )}
+      {summary.failed ? (
+        <span className="pytest-chip pytest-chip--failed">{summary.failed} failed</span>
+      ) : null}
+      {summary.errors ? (
+        <span className="pytest-chip pytest-chip--errors">{summary.errors} errors</span>
+      ) : null}
+      {summary.passed ? (
+        <span className="pytest-chip pytest-chip--passed">{summary.passed} passed</span>
+      ) : null}
+      {summary.skipped ? (
+        <span className="pytest-chip pytest-chip--skipped">{summary.skipped} skipped</span>
+      ) : null}
+      {summary.duration_pretty && (
+        <span className="pytest-chip pytest-chip--duration">{summary.duration_pretty}</span>
+      )}
     </div>
   );
 }

@@ -1,0 +1,182 @@
+// =============================================================================
+// Pytest log rendering inside the metrics modal. The backend
+// (metrics.services.parse_pytest_output) ships a per-line token stream;
+// this partial paints it. Each token has a `kind` that becomes a
+// `pytest-token--<kind>` modifier class — coloring lives entirely here so
+// the React component stays free of inline styles. Selectors live at root
+// scope because the modal is rendered via createPortal into <body>.
+// =============================================================================
+
+// stylelint-disable selector-class-pattern
+
+.pytest-output {
+  margin: 4px 0 0;
+}
+
+// -- Summary chip row ---------------------------------------------------------
+// Headline counts pulled from the final result banner: "47 tests · 1 failed ·
+// 46 passed · 0:05:29". Suppresses zero-count chips so a clean run is just
+// a green "passed" + duration.
+
+.pytest-summary {
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+  gap: 8px;
+}
+
+.pytest-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg-1);
+  color: var(--fg-2);
+  font: 600 11px/1.4 var(--font-ui);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+
+  &--failed {
+    border-color: color-mix(in oklch, var(--danger), transparent 55%);
+    background: color-mix(in oklch, var(--danger), transparent 85%);
+    color: var(--danger);
+  }
+
+  &--errors {
+    border-color: color-mix(in oklch, var(--warn), transparent 55%);
+    background: color-mix(in oklch, var(--warn), transparent 85%);
+    color: var(--warn);
+  }
+
+  &--passed {
+    border-color: color-mix(in oklch, var(--ok), transparent 55%);
+    background: color-mix(in oklch, var(--ok), transparent 85%);
+    color: var(--ok);
+  }
+
+  &--skipped {
+    color: var(--fg-3);
+  }
+
+  &--total,
+  &--duration {
+    color: var(--fg-2);
+  }
+}
+
+// -- Log body -----------------------------------------------------------------
+// `<pre>` preserves the per-line newlines emitted by the parser; the inline
+// <span>s only carry color. Horizontal scroll, not wrap, so tracebacks keep
+// their column alignment.
+
+.pytest-log {
+  overflow: auto;
+  max-height: 70vh;
+  padding: 14px 16px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  margin: 0;
+  background: var(--bg-0);
+  color: var(--fg-1);
+  font: 12.5px/1.55 var(--font-mono);
+  white-space: pre;
+}
+
+.pytest-token {
+  // Default: inherit the log's foreground. Modifiers below override.
+  color: inherit;
+
+  // Section banners ("=== test session starts ===", "=== FAILURES ===", etc.).
+  &--banner {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  // The final result banner — same shape as a banner but holds the counts,
+  // so it earns its own tinting to read as the run's bottom line.
+  &--result {
+    color: var(--fg-1);
+    font-weight: 700;
+  }
+
+  // "_____ test_books_with_contents _____" — the per-failure header.
+  &--failure-header {
+    color: var(--danger);
+    font-weight: 700;
+  }
+
+  // Sub-section dividers ("--- generated xml file ---").
+  &--divider {
+    color: var(--fg-3);
+  }
+
+  // "E   AssertionError: ..." — the assertion / exception itself, the line
+  // a reader cares about most.
+  &--error {
+    color: var(--danger);
+    font-weight: 600;
+  }
+
+  // ">   foo = bar(...)" — the project code that was running at failure.
+  &--code-pointer {
+    color: var(--warn);
+    font-weight: 600;
+  }
+
+  // "bordercore/blob/tests/test_data.py:292:" — project frames in traceback.
+  &--frame-project {
+    color: var(--accent);
+  }
+
+  // 3rd-party frames under .venv/ — almost always noise, so dim them.
+  &--frame-vendor {
+    color: var(--fg-3);
+  }
+
+  // Short-summary outcome lines ("FAILED ...", "PASSED ...", etc.).
+  &--summary-failed {
+    color: var(--danger);
+    font-weight: 600;
+  }
+
+  &--summary-error {
+    color: var(--warn);
+    font-weight: 600;
+  }
+
+  &--summary-passed {
+    color: var(--ok);
+  }
+
+  &--summary-skipped,
+  &--summary-xfail,
+  &--summary-xpass {
+    color: var(--fg-3);
+  }
+
+  // Progress-bar characters, colorized per outcome. Spaces and the "[100%]"
+  // suffix end up as "prog-other" and stay at the log's default color.
+  &--prog-pass {
+    color: var(--ok);
+  }
+
+  &--prog-fail {
+    color: var(--danger);
+    font-weight: 700;
+  }
+
+  &--prog-error {
+    color: var(--warn);
+    font-weight: 700;
+  }
+
+  &--prog-skip {
+    color: var(--fg-3);
+  }
+
+  &--prog-xfail,
+  &--prog-xpass {
+    color: var(--accent);
+  }
+}
