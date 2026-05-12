@@ -1195,6 +1195,42 @@
   .be-template select {
     @extend %be-input-base;
   }
+
+  // ---- drill question edit — Recent Tags list (rendered inside .be-section
+  // in the left rail). Local to .be-page so the hover affordance matches the
+  // refined-dark personality without leaking into other list-group usages.
+  .dq-recent-tags {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    margin: 0;
+    gap: 2px;
+    list-style: none;
+  }
+
+  .dq-recent-tag {
+    padding: 6px 8px;
+    border-radius: var(--be-radius-xs);
+    color: var(--fg-2);
+    cursor: pointer;
+    transition:
+      background var(--be-t-fast),
+      color var(--be-t-fast);
+  }
+
+  .dq-recent-tag:hover {
+    background: var(--bg-2);
+    color: var(--fg-1);
+  }
+
+  // Cover images inside the left-rail Related Objects list have no intrinsic
+  // size cap (the component renders blob covers without a width attribute).
+  // Constrain them to the column width so a large natural-resolution image
+  // can never bleed past .be-col-left.
+  .be-col-left .slicklist-item img {
+    max-width: 100%;
+    height: auto;
+  }
 }
 
 // When the app sidebar is collapsed (icon-only), shrink the left padding.

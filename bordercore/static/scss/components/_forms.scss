@@ -128,6 +128,15 @@ a.tag,
     background-color: color-mix(in oklch, var(--accent), transparent 82%);
     color: var(--fg-0);
   }
+
+  // The name column is a flex child; without min-width: 0 it defaults to
+  // min-width: auto and grows to fit its widest line, which prevents the
+  // inner .truncate from ever clipping. Allow the column to shrink so
+  // long titles render as ellipsis instead of disrupting the row width.
+  .name {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
 }
 
 .object-select-misc-item-below {

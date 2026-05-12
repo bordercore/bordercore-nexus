@@ -1,68 +1,6 @@
 {% extends "base.html" %}
 {% load vite_tags %}
 
-{% block extra_head %}
-    <style>
-        /* Markdown editor styles for drill question edit */
-        .markdown-editor {
-            display: flex;
-            flex-direction: column;
-            border: 1px solid var(--surface1);
-            border-radius: 0.25rem;
-            background-color: var(--form-bg);
-            color: var(--text1);
-        }
-        .markdown-editor.drag-over {
-            border-color: var(--form-border-color-hover);
-        }
-        .markdown-editor:focus-within {
-            border-color: var(--form-border-color-hover);
-        }
-        .markdown-toolbar {
-            flex-shrink: 0;
-            background-color: var(--form-bg);
-        }
-        .markdown-toolbar-item {
-            padding: 0.5rem 0.625rem;
-            border: none;
-            background: transparent;
-            color: var(--text1);
-            cursor: pointer;
-        }
-        .markdown-toolbar-item:hover {
-            color: var(--form-bg);
-            background-color: var(--text1);
-        }
-        .toolbar-divider {
-            width: 1px;
-            height: 20px;
-            margin: 0 0.25rem;
-            background: var(--border-color);
-        }
-        .markdown-textarea {
-            flex-grow: 1;
-            border: none;
-            border-radius: 0 0 0.25rem 0.25rem;
-            background-color: var(--form-bg);
-            color: var(--text1);
-            min-height: 200px;
-            resize: vertical;
-        }
-        .markdown-textarea:focus {
-            background-color: var(--form-bg-focus);
-            caret-color: var(--text4);
-            color: var(--text4);
-            box-shadow: none;
-        }
-        /* Card title styles matching Pinned Tags */
-        .card-title,
-        .card-title-large {
-            color: var(--text4);
-            font-size: 1.5rem;
-        }
-    </style>
-{% endblock %}
-
 {% block title %} Drill {% endblock %}
 
 {% block crumb_leaf %}{{ action|lower }} question{% endblock %}

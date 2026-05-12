@@ -97,6 +97,13 @@
   margin-bottom: 16px;
   gap: 6px;
 
+  // Pin the single grid track to 1fr with a 0 min-size. Without this the
+  // track auto-sizes to max-content, so a child with wide intrinsic content
+  // (notably an in-flow .dropdown-menu of object-select rows with long
+  // titles) would stretch the field past the modal's content box and drag
+  // the input along with it.
+  grid-template-columns: minmax(0, 1fr);
+
   &:last-of-type {
     margin-bottom: 20px;
   }

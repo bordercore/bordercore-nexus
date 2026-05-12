@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTags } from "@fortawesome/free-solid-svg-icons";
+import { faCheck, faTimes, faTrashCan } from "@fortawesome/free-solid-svg-icons";
 
 import { TagsInput, TagsInputHandle } from "../common/TagsInput";
 import { ToggleSwitch } from "../common/ToggleSwitch";
@@ -60,6 +61,8 @@ export function DrillQuestionEditPage({
   returnUrl,
 }: DrillQuestionEditPageProps) {
   const [isReversible, setIsReversible] = useState(initialIsReversible);
+  const [objectSelectOpen, setObjectSelectOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   // Refs
   const questionEditorRef = useRef<MarkdownEditorHandle>(null);
@@ -67,7 +70,7 @@ export function DrillQuestionEditPage({
   const tagsInputRef = useRef<TagsInputHandle>(null);
   const relatedObjectsRef = useRef<RelatedObjectsHandle>(null);
   const formRef = useRef<HTMLFormElement>(null);
-  const [objectSelectOpen, setObjectSelectOpen] = useState(false);
+  const cancelDeleteRef = useRef<HTMLButtonElement>(null);
 
   // Initialize editors with content
   useEffect(() => {
@@ -118,39 +121,61 @@ export function DrillQuestionEditPage({
     [urls.newObject, objectUuid]
   );
 
-  // Handle form submission
+  // Sync the React-controlled editor/tag values into the hidden form fields,
+  // refresh the CSRF token (the cookie may have rotated since page load),
+  // then submit.
   const handleSubmit = useCallback(() => {
     const form = formRef.current;
     if (!form) return;
 
-    // Get values from editors
     const questionValue = questionEditorRef.current?.getValue() || "";
     const answerValue = answerEditorRef.current?.getValue() || "";
     const tagsValue = tagsInputRef.current?.getTags().join(",") || "";
 
-    // Set hidden input values
     const questionInput = form.querySelector('input[name="question"]') as HTMLInputElement;
     const answerInput = form.querySelector('input[name="answer"]') as HTMLInputElement;
     const tagsInput = form.querySelector('input[name="tags"]') as HTMLInputElement;
+    const tokenInput = form.querySelector('input[name="csrfmiddlewaretoken"]') as HTMLInputElement;
 
     if (questionInput) questionInput.value = questionValue;
     if (answerInput) answerInput.value = answerValue;
     if (tagsInput) tagsInput.value = tagsValue;
-
-    // Refresh CSRF token from cookie at submit time so it matches the live cookie
-    const tokenInput = form.querySelector('input[name="csrfmiddlewaretoken"]') as HTMLInputElement;
     if (tokenInput) tokenInput.value = getCsrfToken();
 
-    // Submit the form
+    form.action = urls.submit;
     form.submit();
-  }, []);
+  }, [urls.submit]);
 
-  // Handle delete
-  const handleDelete = useCallback(() => {
+  // ⌘S / Ctrl-S submit (parity with blob update page)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        handleSubmit();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [handleSubmit]);
+
+  // Delete-confirm modal lifecycle: focus cancel, close on Escape
+  useEffect(() => {
+    if (!deleteOpen) return;
+    const t = window.setTimeout(() => cancelDeleteRef.current?.focus(), 40);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setDeleteOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.clearTimeout(t);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [deleteOpen]);
+
+  const confirmDelete = useCallback(() => {
     const form = formRef.current;
     if (!form || !urls.delete) return;
 
-    // Refresh CSRF token from cookie at submit time so it matches the live cookie
     const tokenInput = form.querySelector('input[name="csrfmiddlewaretoken"]') as HTMLInputElement;
     if (tokenInput) tokenInput.value = getCsrfToken();
 
@@ -159,11 +184,10 @@ export function DrillQuestionEditPage({
   }, [urls.delete]);
 
   return (
-    <>
-      <div className="row g-0 h-full mx-2">
-        {/* Left Panel */}
-        <div className="flex-grow-last col-lg-3 flex flex-col">
-          {/* Related Objects */}
+    <div className="be-page">
+      <div className="be-workspace">
+        {/* Left rail */}
+        <aside className="be-col-left">
           {objectUuid && (
             <RelatedObjects
               ref={relatedObjectsRef}
@@ -180,37 +204,30 @@ export function DrillQuestionEditPage({
             />
           )}
 
-          {/* Recent Tags */}
-          <div className="card">
-            <div className="card-body backdrop-filter">
-              <div className="card-title-large flex items-center">
-                <FontAwesomeIcon icon={faTags} className="me-4" />
-                Recent Tags
-              </div>
-              <hr className="divider" />
-              <ul className="list-group interior-borders">
-                {recentTags.map(tag => (
-                  <li
-                    key={tag.name}
-                    className="list-with-counts ps-2 py-1 pe-1 flex cursor-pointer"
-                    onClick={() => handleTagClick(tag.name)}
-                  >
-                    <div className="truncate">{tag.name}</div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
+          <section className="be-section">
+            <div className="be-section-title">Recent Tags</div>
+            <ul className="dq-recent-tags">
+              {recentTags.map(tag => (
+                <li
+                  key={tag.name}
+                  className="dq-recent-tag"
+                  onClick={() => handleTagClick(tag.name)}
+                >
+                  {tag.name}
+                </li>
+              ))}
+            </ul>
+          </section>
+        </aside>
 
-        {/* Right Panel */}
-        <div className="col-lg-9">
+        {/* Right column — form */}
+        <section className="be-col-right">
           <form
             ref={formRef}
             id="question-form"
             action={urls.submit}
             method="post"
-            className="flex flex-col h-full"
+            className="flex flex-col gap-4"
           >
             <input type="hidden" name="csrfmiddlewaretoken" defaultValue={getCsrfToken()} />
             <input type="hidden" name="question" />
@@ -218,89 +235,81 @@ export function DrillQuestionEditPage({
             <input type="hidden" name="tags" />
             <input type="hidden" name="return_url" value={returnUrl} />
 
-            {/* Question */}
-            <div className={`${errors.question ? "error " : ""}row grow mb-4`}>
-              <label className="font-bold col-lg-2 col-form-label text-end">Question</label>
-              <div className="col-lg-9 h-full">
-                <MarkdownEditor ref={questionEditorRef} initialContent="" className="h-full" />
-                {errors.question?.map((error, i) => (
-                  <span key={i} className="form-error">
-                    {error}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {/* Answer */}
-            <div className={`${errors.answer ? "error " : ""}row grow mb-4`}>
-              <label className="font-bold col-lg-2 col-form-label text-end">Answer</label>
-              <div className="col-lg-9 h-full">
-                <MarkdownEditor ref={answerEditorRef} initialContent="" className="h-full" />
-                {errors.answer?.map((error, i) => (
-                  <span key={i} className="form-error">
-                    {error}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {/* Tags */}
-            <div className={`${errors.tags ? "error " : ""}row mb-4`}>
-              <label className="font-bold col-lg-2 col-form-label text-end">Tags</label>
-              <div className="col-lg-9">
-                <TagsInput
-                  ref={tagsInputRef}
-                  searchUrl={urls.tagSearch}
-                  initialTags={initialTags}
-                />
-                {errors.tags?.map((error, i) => (
-                  <span key={i} className="form-error">
-                    Error: {error}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {/* Reversible */}
-            <div className="row mb-4">
-              <label className="font-bold col-lg-2 col-form-label text-end">Reversible</label>
-              <div className="col-lg-9 flex items-center">
-                <ToggleSwitch
-                  id="is_reversible"
-                  name="is_reversible"
-                  checked={isReversible}
-                  onChange={setIsReversible}
-                />
-              </div>
-            </div>
-
-            {/* Buttons */}
             <div>
-              <div className="col-lg-9 offset-lg-2 flex" id="button-wrapper">
-                {objectUuid && urls.delete && (
-                  <button
-                    className="refined-btn danger me-auto"
-                    type="button"
-                    onClick={handleDelete}
-                  >
-                    Delete
-                  </button>
-                )}
-                <div className="flex ms-auto items-center">
-                  <a className="refined-btn" href={urls.cancel}>
-                    Cancel
-                  </a>
-                  <button className="refined-btn primary ms-2" type="button" onClick={handleSubmit}>
-                    Save
-                  </button>
-                </div>
+              <div className="be-label">question</div>
+              <div className="be-content-card">
+                <MarkdownEditor ref={questionEditorRef} initialContent="" />
               </div>
+              {errors.question?.map((error, i) => (
+                <span key={i} className="form-error">
+                  {error}
+                </span>
+              ))}
+            </div>
+
+            <div>
+              <div className="be-label">answer</div>
+              <div className="be-content-card">
+                <MarkdownEditor ref={answerEditorRef} initialContent="" />
+              </div>
+              {errors.answer?.map((error, i) => (
+                <span key={i} className="form-error">
+                  {error}
+                </span>
+              ))}
+            </div>
+
+            <div>
+              <div className="be-label">tags</div>
+              <TagsInput
+                ref={tagsInputRef}
+                searchUrl={urls.tagSearch}
+                initialTags={initialTags}
+              />
+              {errors.tags?.map((error, i) => (
+                <span key={i} className="form-error">
+                  Error: {error}
+                </span>
+              ))}
+            </div>
+
+            <div>
+              <div className="be-label">reversible</div>
+              <ToggleSwitch
+                id="is_reversible"
+                name="is_reversible"
+                checked={isReversible}
+                onChange={setIsReversible}
+              />
+            </div>
+
+            <div className="be-save-bar">
+              {objectUuid && urls.delete && (
+                <button
+                  type="button"
+                  className="be-btn danger"
+                  onClick={() => setDeleteOpen(true)}
+                >
+                  <FontAwesomeIcon icon={faTrashCan} /> delete question
+                </button>
+              )}
+              <a href={urls.cancel} className="refined-btn ghost be-save-spacer">
+                cancel
+              </a>
+              <button
+                type="button"
+                className="refined-btn primary"
+                onClick={handleSubmit}
+              >
+                <FontAwesomeIcon icon={faCheck} className="refined-btn-icon" />
+                save
+              </button>
             </div>
           </form>
-        </div>
+        </section>
       </div>
 
-      {/* Object Select Modal */}
+      {/* Object select modal (related-objects flow) */}
       {objectUuid && (
         <ObjectSelectModal
           open={objectSelectOpen}
@@ -310,7 +319,47 @@ export function DrillQuestionEditPage({
           onSelectObject={handleObjectSelected}
         />
       )}
-    </>
+
+      {/* Delete-confirm modal */}
+      {deleteOpen &&
+        createPortal(
+          <>
+            <div className="refined-modal-scrim" onClick={() => setDeleteOpen(false)} />
+            <div className="refined-modal" role="dialog" aria-label="confirm delete question">
+              <button
+                type="button"
+                className="refined-modal-close"
+                onClick={() => setDeleteOpen(false)}
+                aria-label="close"
+              >
+                <FontAwesomeIcon icon={faTimes} />
+              </button>
+
+              <h2 className="refined-modal-title">Delete this question?</h2>
+
+              <p className="refined-modal-lead">
+                This question will be permanently removed. This cannot be undone.
+              </p>
+
+              <div className="refined-modal-actions compact">
+                <button
+                  ref={cancelDeleteRef}
+                  type="button"
+                  className="refined-btn ghost"
+                  onClick={() => setDeleteOpen(false)}
+                >
+                  cancel
+                </button>
+                <button type="button" className="refined-btn danger" onClick={confirmDelete}>
+                  <FontAwesomeIcon icon={faTrashCan} className="refined-btn-icon" />
+                  delete
+                </button>
+              </div>
+            </div>
+          </>,
+          document.body
+        )}
+    </div>
   );
 }
 
