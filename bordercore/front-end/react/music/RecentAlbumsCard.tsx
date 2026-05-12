@@ -83,7 +83,7 @@ export function RecentAlbumsCard({
                 </a>
               </div>
               <div className="mt-1 font-bold truncate">{album.title}</div>
-              <div className="text-light truncate">
+              <div className="text-ink-3 truncate">
                 <a href={album.artist_url}>{album.artist_name}</a>
               </div>
             </div>

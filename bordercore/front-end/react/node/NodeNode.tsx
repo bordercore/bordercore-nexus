@@ -209,7 +209,7 @@ export default function NodeNode({
                   <strong>{nodeInfo.note_count}</strong> {pluralize("note", nodeInfo.note_count)}
                 </div>
                 {nodeInfo.random_note && (
-                  <div className="truncate text-info ms-2">{nodeInfo.random_note.name}</div>
+                  <div className="truncate text-accent ms-2">{nodeInfo.random_note.name}</div>
                 )}
               </div>
             </div>
@@ -221,7 +221,7 @@ export default function NodeNode({
                   <strong>{nodeInfo.todo_count}</strong> {pluralize("todo", nodeInfo.todo_count)}
                 </div>
                 {nodeInfo.random_todo && (
-                  <div className="truncate text-info ms-2">{nodeInfo.random_todo.name}</div>
+                  <div className="truncate text-accent ms-2">{nodeInfo.random_todo.name}</div>
                 )}
               </div>
             </div>

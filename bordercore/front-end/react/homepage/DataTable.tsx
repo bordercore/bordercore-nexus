@@ -78,7 +78,7 @@ export function DataTable({
               <th
                 key={col}
                 onClick={() => handleSort(col)}
-                className="cursor-pointer user-select-none"
+                className="cursor-pointer select-none"
               >
                 {col}
                 {getSortIcon(col)}

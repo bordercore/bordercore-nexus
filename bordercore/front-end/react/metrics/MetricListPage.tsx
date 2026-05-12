@@ -65,7 +65,7 @@ const failure: StatusInfo = {
 };
 
 const success: StatusInfo = {
-  className: "text-success",
+  className: "text-ok",
   icon: faCheck,
 };
 

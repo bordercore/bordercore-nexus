@@ -182,7 +182,7 @@ export function ArtistSongTable({
                                     <span className="dropdown-menu-text">{playlist.name}</span>
                                     {song.playlists.includes(playlist.uuid) && (
                                       <span className="dropdown-menu-check">
-                                        <FontAwesomeIcon icon={faCheck} className="text-success" />
+                                        <FontAwesomeIcon icon={faCheck} className="text-ok" />
                                       </span>
                                     )}
                                   </button>

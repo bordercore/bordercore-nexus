@@ -215,7 +215,7 @@ export function BookmarkEditPage({
               <ul className="list-unstyled m-0">
                 {backReferences.map(ref => (
                   <li key={ref.uuid} className="mb-2">
-                    <a href={ref.url} className="text-decoration-none">
+                    <a href={ref.url} className="no-underline">
                       {ref.type === "question" ? ref.question : ref.name}
                     </a>
                   </li>
@@ -230,7 +230,7 @@ export function BookmarkEditPage({
               <ul className="list-unstyled m-0">
                 {relatedNodes.map(node => (
                   <li key={node.uuid} className="mb-2">
-                    <a href={node.url} className="text-decoration-none">
+                    <a href={node.url} className="no-underline">
                       {node.name}
                     </a>
                   </li>

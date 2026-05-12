@@ -170,13 +170,13 @@ class TagBookmark(SortOrderMixin):
             <ul className="list-group">
               <li className="list-group-item list-group-item-secondary text-accent">
                 Get stuff done
-                <span className="tag bg-info ms-1">linux</span>
-                <span className="tag bg-info">django</span>
+                <span className="tag bg-accent ms-1">linux</span>
+                <span className="tag bg-accent">django</span>
               </li>
               <li className="list-group-item list-group-item-secondary text-accent">
                 Get more stuff done
-                <span className="tag bg-info ms-1">linux</span>
-                <span className="tag bg-info">django</span>
+                <span className="tag bg-accent ms-1">linux</span>
+                <span className="tag bg-accent">django</span>
               </li>
             </ul>
           </Card>

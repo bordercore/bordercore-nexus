@@ -26,7 +26,7 @@ export function TreeMenu({ item, depth = 1, initialOpen = false }: TreeMenuProps
   return (
     <li className={depth === 0 ? "hide-list-element" : ""}>
       {depth > 0 && (
-        <div className={`text-break tree-node ${isFolder ? "tree-folder" : "tree-leaf"}`}>
+        <div className={`break-words tree-node ${isFolder ? "tree-folder" : "tree-leaf"}`}>
           {isFolder && (
             <span className={`tree-arrow ${isOpen ? "open" : ""}`} onClick={toggle}>
               &#9656;

@@ -73,12 +73,16 @@ export function BookListPage({ books, alphabet, selectedLetter, baseUrl }: BookL
   return (
     <div className="book-list-page">
       {/* Alphabet Navigation */}
-      <ul className="nav nav-pills mb-4">
+      <ul className="flex flex-wrap gap-1 mb-6 list-none p-0">
         {alphabet.map(letter => (
-          <li key={letter} className={letter === selectedLetter ? "active" : ""}>
+          <li key={letter}>
             <a
               href={`${baseUrl}${letter}`}
-              className={`nav-link ${letter === selectedLetter ? "active" : ""}`}
+              className={`inline-block px-3 py-2 rounded no-underline transition-colors ${
+                letter === selectedLetter
+                  ? "bg-accent text-accent-fg"
+                  : "text-ink-2 hover:bg-surface-2 hover:text-ink-0"
+              }`}
             >
               {letter}
             </a>

@@ -46,7 +46,7 @@ export function BackReferences({ backReferences }: BackReferencesProps) {
             {node.type === "question" && (
               <div className="flex">
                 <div className="mt-1 me-2">
-                  <FontAwesomeIcon icon={faQuestion} className="text-success" />
+                  <FontAwesomeIcon icon={faQuestion} className="text-ok" />
                 </div>
                 <div>
                   {/* Content is trusted server-rendered markdown from the app's own database */}
@@ -71,7 +71,7 @@ export function BackReferences({ backReferences }: BackReferencesProps) {
             {node.type === "blob" && (
               <div className="flex">
                 <div className="mt-1 me-2">
-                  <FontAwesomeIcon icon={faCopy} className="text-success" />
+                  <FontAwesomeIcon icon={faCopy} className="text-ok" />
                 </div>
                 <div className="truncate">
                   {node.cover_url && (
