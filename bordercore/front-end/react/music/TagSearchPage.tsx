@@ -149,8 +149,8 @@ export function TagSearchPage({
     <div className="row g-0 h-full items-start">
       {/* Sidebar - Player */}
       <div className="sticky-top col-lg-3 flex flex-col pt-0">
-        <div className="card-grid ms-4">
-          <div className="card backdrop-filter hover-target me-0 mb-3">
+        <div className="card-grid ms-6">
+          <div className="card backdrop-filter hover-target me-0 mb-4">
             <div className="card-body flex flex-col items-center"></div>
           </div>
         </div>
@@ -158,7 +158,7 @@ export function TagSearchPage({
 
       {/* Main content */}
       <div className="col-lg-9 h-full me-0">
-        <div className="card-grid h-full ms-4">
+        <div className="card-grid h-full ms-6">
           <div className="flex flex-col h-full me-2">
             {/* Albums grid */}
             {albumCount > 0 && (
@@ -172,7 +172,7 @@ export function TagSearchPage({
 
             {/* Songs list */}
             {songCount > 0 && (
-              <div className="card backdrop-filter hover-target me-0 mb-3">
+              <div className="card backdrop-filter hover-target me-0 mb-4">
                 <div className="card-body">
                   <h4 className="font-bold">
                     {songCount} song{songCount !== 1 ? "s" : ""}
@@ -233,7 +233,7 @@ export function TagSearchPage({
 
             {/* No results message */}
             {songCount === 0 && albumCount === 0 && (
-              <div className="card backdrop-filter hover-target me-0 mb-3">
+              <div className="card backdrop-filter hover-target me-0 mb-4">
                 <div className="card-body">
                   <p className="mb-0">No songs or albums found with tag "{tagName}".</p>
                 </div>

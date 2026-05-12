@@ -212,7 +212,7 @@ print(__repl_result)
             {isLoading ? "Loading Python..." : "Run"}
           </button>
           {output && (
-            <div id="code-output" className={`mt-3 ${pythonError ? "python-error" : ""}`}>
+            <div id="code-output" className={`mt-4 ${pythonError ? "python-error" : ""}`}>
               {output}
             </div>
           )}

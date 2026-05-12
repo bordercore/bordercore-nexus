@@ -316,7 +316,7 @@ const NodeTodoList = forwardRef<NodeTodoListHandle, NodeTodoListProps>(function 
   const titleSlot = (
     <div className="card-title flex">
       <div>
-        <FontAwesomeIcon icon={faTasks} className="text-primary me-3" />
+        <FontAwesomeIcon icon={faTasks} className="text-primary me-4" />
         Todo Tasks
       </div>
       <div className="dropdown-menu-container ms-auto hover-reveal-content">

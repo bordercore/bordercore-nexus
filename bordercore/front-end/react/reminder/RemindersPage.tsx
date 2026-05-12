@@ -71,7 +71,7 @@ export function RemindersPage({ listAjaxUrl, createUrl }: RemindersPageProps) {
 
   if (loading) {
     return (
-      <div className="rm-dashboard-loading text-center p-3">
+      <div className="rm-dashboard-loading text-center p-4">
         <Spinner />
       </div>
     );

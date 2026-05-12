@@ -24,13 +24,13 @@ export function AlbumGrid({ albums, imagesUrl, albumDetailUrlTemplate, title }: 
   }
 
   return (
-    <div className="card backdrop-filter hover-target me-0 mb-3">
+    <div className="card backdrop-filter hover-target me-0 mb-4">
       <div className="card-body">
         {title && <h4 className="font-bold">{title}</h4>}
         <div className="flex flex-wrap">
           {albums.map(album => (
             <div key={album.uuid} className="flex flex-col w-25 hoverable p-2">
-              <div className="mt-3">
+              <div className="mt-4">
                 <a href={getAlbumDetailUrl(album.uuid)}>
                   <img
                     src={getAlbumArtworkUrl(album.uuid)}

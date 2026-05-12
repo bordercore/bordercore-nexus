@@ -87,7 +87,7 @@ export const RelatedTags = forwardRef<RelatedTagsHandle, RelatedTagsProps>(funct
   const titleSlot = (
     <div className="flex">
       <div className="card-title flex">
-        <FontAwesomeIcon icon={faTags} className="text-primary me-3 mt-1" />
+        <FontAwesomeIcon icon={faTags} className="text-primary me-4 mt-1" />
         Related Tags
       </div>
     </div>
@@ -103,7 +103,7 @@ export const RelatedTags = forwardRef<RelatedTagsHandle, RelatedTagsProps>(funct
             {tagInfo.related.map(tag => (
               <li
                 key={tag.tag_name}
-                className="mt-3 cursor-pointer"
+                className="mt-4 cursor-pointer"
                 onClick={() => handleTagClick(tag.tag_name)}
               >
                 <span

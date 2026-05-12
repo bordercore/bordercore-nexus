@@ -544,7 +544,7 @@ export function BookmarkListPage({
                 />
               </form>
             </div>
-            <div className="refined-seg ms-3" role="group" aria-label="View density">
+            <div className="refined-seg ms-4" role="group" aria-label="View density">
               <button
                 type="button"
                 className={viewType === "normal" ? "active" : ""}

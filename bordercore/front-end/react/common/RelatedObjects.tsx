@@ -206,7 +206,7 @@ export const RelatedObjects = forwardRef<RelatedObjectsHandle, RelatedObjectsPro
     const titleSlot = (
       <div className="flex">
         <div className="card-title flex">
-          <FontAwesomeIcon icon={faBookmark} className="text-primary me-3 mt-1" />
+          <FontAwesomeIcon icon={faBookmark} className="text-primary me-4 mt-1" />
           {title}
         </div>
         <div className="dropdown-menu-container ms-auto">

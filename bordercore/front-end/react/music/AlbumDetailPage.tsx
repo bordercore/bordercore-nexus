@@ -148,7 +148,7 @@ export function AlbumDetailPage({
     <div className="row g-0 h-full items-start">
       {/* Sidebar - Album artwork and player */}
       <div className="sticky-top col-lg-3 flex flex-col">
-        <div className="card-grid ms-4 flex flex-col items-center">
+        <div className="card-grid ms-6 flex flex-col items-center">
           <img
             src={album.cover_url}
             className="max-w-full"
@@ -157,10 +157,10 @@ export function AlbumDetailPage({
             alt={`${album.title} cover`}
           />
 
-          {album.note && <h5 className="mt-3" dangerouslySetInnerHTML={renderAlbumNote()!} />}
+          {album.note && <h5 className="mt-4" dangerouslySetInnerHTML={renderAlbumNote()!} />}
 
           {album.tags.length > 0 && (
-            <div className="align-self-start ms-3 mt-3 mb-3">
+            <div className="align-self-start ms-4 mt-4 mb-4">
               Tags:{" "}
               {album.tags.map((tag, index) => (
                 <span
@@ -178,7 +178,7 @@ export function AlbumDetailPage({
 
       {/* Main content - Album info and song table */}
       <div className="col-lg-9 h-full me-0">
-        <div className="card-grid h-full ms-4">
+        <div className="card-grid h-full ms-6">
           <div className="flex flex-col h-full me-2">
             {/* Album header card */}
             <div className="card backdrop-filter hover-target me-0">
@@ -234,7 +234,7 @@ export function AlbumDetailPage({
             </div>
 
             {/* Song table */}
-            <div className="grow me-0 mt-3 mb-3" id="album-song-list">
+            <div className="grow me-0 mt-4 mb-4" id="album-song-list">
               <SongTable
                 songs={songs}
                 currentSongUuid={currentSongUuid}

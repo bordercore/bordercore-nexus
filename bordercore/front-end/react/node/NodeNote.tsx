@@ -197,7 +197,7 @@ export default function NodeNote({
     <div className="card-title flex">
       <div className="dropdown-height flex">
         <div>
-          <FontAwesomeIcon icon={faStickyNote} className="text-primary me-3" />
+          <FontAwesomeIcon icon={faStickyNote} className="text-primary me-4" />
         </div>
         <div className="w-full">
           {isEditingName ? (

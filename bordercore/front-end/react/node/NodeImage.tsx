@@ -81,7 +81,7 @@ export default function NodeImage({
     <div className="dropdown-height flex">
       <div className="card-title flex">
         <div>
-          <FontAwesomeIcon icon={faImage} className="text-primary me-3" />
+          <FontAwesomeIcon icon={faImage} className="text-primary me-4" />
           {imageTitle}
         </div>
       </div>

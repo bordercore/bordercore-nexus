@@ -189,7 +189,7 @@ export default function NodeQuote({
         <div className="dropdown-height flex">
           <div className="card-title flex">
             <div>
-              <FontAwesomeIcon icon={faQuoteLeft} className="text-primary me-3" />
+              <FontAwesomeIcon icon={faQuoteLeft} className="text-primary me-4" />
               Quote
             </div>
           </div>

@@ -190,7 +190,7 @@ export function BookmarkFormPage({
       <div className="flex-grow-last col-lg-3 flex flex-col ps-2">
         {/* Thumbnail preview */}
         {thumbnailUrl && (
-          <div className="card-body p-3">
+          <div className="card-body p-4">
             <div className="flex justify-center">
               <img src={`${thumbnailUrl}?foo=bar`} className="max-w-full" alt="" />
             </div>
@@ -218,7 +218,7 @@ export function BookmarkFormPage({
                     key={node.uuid}
                     className="hoverable px-0 list-group-item list-group-item-secondary text-primary"
                   >
-                    <div className="flex items-center ps-3">
+                    <div className="flex items-center ps-4">
                       <div className="flex w-full">
                         <a href={node.url}>{node.name}</a>
                       </div>
@@ -258,7 +258,7 @@ export function BookmarkFormPage({
                 <div
                   className={`${
                     field.errors && field.errors.length > 0 ? "message-error " : ""
-                  }row mb-3`}
+                  }row mb-4`}
                 >
                   <label className="font-bold col-lg-2 col-form-label text-end">{field.label}</label>
                   <div className="col-lg-7 flex items-center">{renderField(field)}</div>
@@ -266,7 +266,7 @@ export function BookmarkFormPage({
                 {field.errors && field.errors.length > 0 && (
                   <div className="row">
                     {field.errors.map((error, idx) => (
-                      <div key={idx} className="form-error-bookmarks col-lg-7 offset-lg-2 mb-3">
+                      <div key={idx} className="form-error-bookmarks col-lg-7 offset-lg-2 mb-4">
                         {error}
                       </div>
                     ))}

@@ -253,7 +253,7 @@ export function AlbumCreatePage({
       {error && (
         <div
           role="alert"
-          className="mb-4 p-4 rounded border border-[var(--danger)] bg-surface-2 text-[var(--danger)]"
+          className="mb-6 p-6 rounded border border-[var(--danger)] bg-surface-2 text-[var(--danger)]"
         >
           {error}
         </div>

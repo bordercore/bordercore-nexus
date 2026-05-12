@@ -25,7 +25,7 @@ export function BookmarkPagination({ pagination, onGetPage }: BookmarkPagination
 
   return (
     <div className="flex justify-center">
-      <div className="ms-3 mt-3">
+      <div className="ms-4 mt-4">
         <div className="row">
           <nav aria-label="Page navigation">
             <ul className="pagination">

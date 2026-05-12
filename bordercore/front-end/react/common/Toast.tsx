@@ -86,7 +86,7 @@ export function Toast({ initialMessages = [], defaultVariant = "info" }: ToastPr
   }, []);
 
   return (
-    <div className={`toast-wrapper fixed top-0 end-0 p-3 ${variant}`}>
+    <div className={`toast-wrapper fixed top-0 end-0 p-4 ${variant}`}>
       <div
         id="liveToast"
         className={`toast fade ${visible ? "show" : "hide"}`}

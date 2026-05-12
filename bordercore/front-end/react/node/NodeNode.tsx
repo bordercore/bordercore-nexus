@@ -175,7 +175,7 @@ export default function NodeNode({
     <div className="dropdown-height flex">
       <div className="card-title flex">
         <div className="text-truncate">
-          <FontAwesomeIcon icon={faBox} className="text-primary me-3" />
+          <FontAwesomeIcon icon={faBox} className="text-primary me-4" />
           {nodeInfo && (
             <span>
               <a href={nodeDetailUrl}>{nodeInfo.name}</a>

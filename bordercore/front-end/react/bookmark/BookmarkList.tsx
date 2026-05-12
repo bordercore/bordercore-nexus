@@ -136,7 +136,7 @@ function SortableBookmarkRow({
 
       {/* Content: icon box + title + hostname + note */}
       <div role="cell" className="bookmark-col-content content-cell">
-        <div className="flex items-center gap-3 overflow-hidden relative w-full">
+        <div className="flex items-center gap-4 overflow-hidden relative w-full">
           <div className="bookmark-icon-box">
             {viewType === "compact" ? (
               faviconHtml ? (
@@ -413,7 +413,7 @@ export function BookmarkList({
             </SortableContext>
           </div>
         </div>
-        {bookmarks.length === 0 && <div className="text-center pt-3">No bookmarks found.</div>}
+        {bookmarks.length === 0 && <div className="text-center pt-4">No bookmarks found.</div>}
       </div>
       <DragOverlay>
         {activeBookmark ? (
@@ -426,7 +426,7 @@ export function BookmarkList({
               <FontAwesomeIcon icon={faBars} />
             </div>
             <div role="cell" className="bookmark-col-content content-cell">
-              <div className="flex items-center gap-3 overflow-hidden">
+              <div className="flex items-center gap-4 overflow-hidden">
                 <div className="bookmark-icon-box">
                   {viewType === "compact" ? (
                     activeFaviconHtml ? (

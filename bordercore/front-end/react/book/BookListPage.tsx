@@ -73,7 +73,7 @@ export function BookListPage({ books, alphabet, selectedLetter, baseUrl }: BookL
   return (
     <div className="book-list-page">
       {/* Alphabet Navigation */}
-      <ul className="nav nav-pills mb-3">
+      <ul className="nav nav-pills mb-4">
         {alphabet.map(letter => (
           <li key={letter} className={letter === selectedLetter ? "active" : ""}>
             <a
@@ -87,7 +87,7 @@ export function BookListPage({ books, alphabet, selectedLetter, baseUrl }: BookL
       </ul>
 
       {/* Search Filter */}
-      <div className="mb-3">
+      <div className="mb-4">
         <input
           type="text"
           className="form-control book-list-search-input"

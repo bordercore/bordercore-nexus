@@ -91,7 +91,7 @@ export function RecentAlbumsCard({
         </div>
 
         {needsPagination && (
-          <h5 className="flex mb-0 me-1 pt-3 pagination-arrows">
+          <h5 className="flex mb-0 me-1 pt-4 pagination-arrows">
             <div>
               {paginator.has_previous ? (
                 <a

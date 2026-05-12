@@ -169,7 +169,7 @@ export function PlaylistSongTable({
         <div className="data-grid-body playlist-grid-body" role="rowgroup">
           {sortedSongs.length === 0 ? (
             <div role="row" className="data-grid-row playlist-grid-row no-songs">
-              <div role="cell" className="text-center w-full p-3">
+              <div role="cell" className="text-center w-full p-4">
                 No songs in the playlist
               </div>
             </div>

@@ -194,7 +194,7 @@ export function SqlPlaygroundPage({ sqlDbUrl }: SqlPlaygroundPageProps) {
   };
 
   return (
-    <div className="sql-playground p-3">
+    <div className="sql-playground p-4">
       <div className="flex flex-wrap mb-gutter">
         {Object.entries(tables).map(([tableName, tableInfo]) => (
           <div key={tableName} className="w-full">

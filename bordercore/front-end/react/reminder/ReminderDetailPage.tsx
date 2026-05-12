@@ -69,7 +69,7 @@ export function ReminderDetailPage({ detailAjaxUrl }: ReminderDetailPageProps) {
 
   if (loading) {
     return (
-      <div className="container mt-4 text-center">
+      <div className="container mt-6 text-center">
         <Spinner />
       </div>
     );
@@ -77,10 +77,10 @@ export function ReminderDetailPage({ detailAjaxUrl }: ReminderDetailPageProps) {
 
   if (error || !reminder) {
     return (
-      <div className="container mt-4">
+      <div className="container mt-6">
         <div
           role="alert"
-          className="mb-4 p-4 rounded border border-[var(--danger)] bg-surface-2 text-[var(--danger)]"
+          className="mb-6 p-6 rounded border border-[var(--danger)] bg-surface-2 text-[var(--danger)]"
         >
           {error || "Reminder not found."}
         </div>
@@ -93,8 +93,8 @@ export function ReminderDetailPage({ detailAjaxUrl }: ReminderDetailPageProps) {
   }
 
   return (
-    <div className="container mt-4">
-      <div className="row mb-4">
+    <div className="container mt-6">
+      <div className="row mb-6">
         <div className="col-md-8">
           <h1>{reminder.name}</h1>
           {reminder.note && (
@@ -116,7 +116,7 @@ export function ReminderDetailPage({ detailAjaxUrl }: ReminderDetailPageProps) {
         <div className="col-md-6">
           <div className="card dashboard-card h-full">
             <div className="card-body">
-              <h5 className="card-title mb-4">Schedule</h5>
+              <h5 className="card-title mb-6">Schedule</h5>
               <dl className="row mb-0">
                 <dt className="col-sm-5">Status</dt>
                 <dd className="col-sm-7">
@@ -167,7 +167,7 @@ export function ReminderDetailPage({ detailAjaxUrl }: ReminderDetailPageProps) {
         <div className="col-md-6">
           <div className="card dashboard-card h-full">
             <div className="card-body">
-              <h5 className="card-title mb-4">Metadata</h5>
+              <h5 className="card-title mb-6">Metadata</h5>
               <dl className="row mb-0">
                 <dt className="col-sm-5">Created</dt>
                 <dd className="col-sm-7">{reminder.created}</dd>

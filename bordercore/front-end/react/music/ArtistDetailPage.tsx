@@ -216,8 +216,8 @@ export function ArtistDetailPage({
     <div className="row g-0 h-full items-start">
       {/* Sidebar - Artist image and player */}
       <div className="sticky-top col-lg-3 flex flex-col pt-0">
-        <div className="card-grid ms-4">
-          <div className="card backdrop-filter hover-target me-0 mb-3">
+        <div className="card-grid ms-6">
+          <div className="card backdrop-filter hover-target me-0 mb-4">
             <div className="card-body flex flex-col items-center">
               {hasArtistImage && (
                 <div
@@ -250,9 +250,9 @@ export function ArtistDetailPage({
 
       {/* Main content */}
       <div className="col-lg-9 h-full me-0">
-        <div className="card-grid h-full ms-4">
+        <div className="card-grid h-full ms-6">
           <div className="flex flex-col h-full me-2">
-            <div className="flex items-baseline gap-3 mb-3">
+            <div className="flex items-baseline gap-4 mb-4">
               <h1 className="bc-page-title mb-0">{artist.name}</h1>
               {albumCount > 0 && (
                 <span className="fs-5 text-muted">
@@ -283,8 +283,8 @@ export function ArtistDetailPage({
 
             {/* Songs list */}
             {songCount > 0 && (
-              <div className="me-0 mb-3" id="album-song-list">
-                <h4 className="font-bold mb-3">
+              <div className="me-0 mb-4" id="album-song-list">
+                <h4 className="font-bold mb-4">
                   {songCount} song{songCount !== 1 ? "s" : ""}
                 </h4>
                 <ArtistSongTable

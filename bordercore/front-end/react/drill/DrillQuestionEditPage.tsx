@@ -184,7 +184,7 @@ export function DrillQuestionEditPage({
           <div className="card">
             <div className="card-body backdrop-filter">
               <div className="card-title-large flex items-center">
-                <FontAwesomeIcon icon={faTags} className="me-3" />
+                <FontAwesomeIcon icon={faTags} className="me-4" />
                 Recent Tags
               </div>
               <hr className="divider" />
@@ -219,7 +219,7 @@ export function DrillQuestionEditPage({
             <input type="hidden" name="return_url" value={returnUrl} />
 
             {/* Question */}
-            <div className={`${errors.question ? "error " : ""}row grow mb-3`}>
+            <div className={`${errors.question ? "error " : ""}row grow mb-4`}>
               <label className="font-bold col-lg-2 col-form-label text-end">Question</label>
               <div className="col-lg-9 h-full">
                 <MarkdownEditor ref={questionEditorRef} initialContent="" className="h-full" />
@@ -232,7 +232,7 @@ export function DrillQuestionEditPage({
             </div>
 
             {/* Answer */}
-            <div className={`${errors.answer ? "error " : ""}row grow mb-3`}>
+            <div className={`${errors.answer ? "error " : ""}row grow mb-4`}>
               <label className="font-bold col-lg-2 col-form-label text-end">Answer</label>
               <div className="col-lg-9 h-full">
                 <MarkdownEditor ref={answerEditorRef} initialContent="" className="h-full" />
@@ -245,7 +245,7 @@ export function DrillQuestionEditPage({
             </div>
 
             {/* Tags */}
-            <div className={`${errors.tags ? "error " : ""}row mb-3`}>
+            <div className={`${errors.tags ? "error " : ""}row mb-4`}>
               <label className="font-bold col-lg-2 col-form-label text-end">Tags</label>
               <div className="col-lg-9">
                 <TagsInput
@@ -262,7 +262,7 @@ export function DrillQuestionEditPage({
             </div>
 
             {/* Reversible */}
-            <div className="row mb-3">
+            <div className="row mb-4">
               <label className="font-bold col-lg-2 col-form-label text-end">Reversible</label>
               <div className="col-lg-9 flex items-center">
                 <ToggleSwitch

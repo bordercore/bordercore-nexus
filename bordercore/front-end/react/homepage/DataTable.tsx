@@ -66,7 +66,7 @@ export function DataTable({
   };
 
   if (data.length === 0) {
-    return <div className="text-muted p-3">{emptyMessage}</div>;
+    return <div className="text-muted p-4">{emptyMessage}</div>;
   }
 
   return (

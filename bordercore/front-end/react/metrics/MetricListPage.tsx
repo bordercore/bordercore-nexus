@@ -120,15 +120,15 @@ export function MetricListPage({ testResults }: MetricListPageProps) {
         {/* Left column - Methodology description */}
         <div className="col flex flex-col pe-gutter">
           <div className="card-body h-full">
-            <h3 className="mb-4">Bordercore Testing Methodology</h3>
-            <h4 className="text-secondary mt-4">Unit Testing</h4>
+            <h3 className="mb-6">Bordercore Testing Methodology</h3>
+            <h4 className="text-secondary mt-6">Unit Testing</h4>
             Tests that primarily focus on the Django models and integration tests on the Django
             views.
-            <h4 className="text-secondary mt-4">Functional Testing</h4>
+            <h4 className="text-secondary mt-6">Functional Testing</h4>
             Selenium-based tests for the front-end.
-            <h4 className="text-secondary mt-4">Data Quality Testing</h4>
+            <h4 className="text-secondary mt-6">Data Quality Testing</h4>
             Check for inconsistent or missing data in the database.
-            <h4 className="text-secondary mt-4">Wumpus Testing</h4>
+            <h4 className="text-secondary mt-6">Wumpus Testing</h4>
             Check that the data stored in S3 is consistent with the data stored on wumpus.
           </div>
         </div>
@@ -156,7 +156,7 @@ export function MetricListPage({ testResults }: MetricListPageProps) {
                   <div className="item-value ms-auto">{testResults.unit.test_time_elapsed}</div>
                 </div>
               </div>
-              <div className="ms-3">
+              <div className="ms-4">
                 <FontAwesomeIcon
                   className={`ms-1 fa-3x ${statusUnit.className}`}
                   icon={statusUnit.icon}
@@ -189,7 +189,7 @@ export function MetricListPage({ testResults }: MetricListPageProps) {
                   <div className="item-value ms-auto">{testResults.wumpus.test_time_elapsed}</div>
                 </div>
               </div>
-              <div className="ms-3">
+              <div className="ms-4">
                 <FontAwesomeIcon
                   className={`ms-1 fa-3x ${statusWumpus.className}`}
                   icon={statusWumpus.icon}
@@ -227,7 +227,7 @@ export function MetricListPage({ testResults }: MetricListPageProps) {
                   </div>
                 </div>
               </div>
-              <div className="ms-3">
+              <div className="ms-4">
                 <FontAwesomeIcon
                   className={`ms-1 fa-3x ${statusFunctional.className}`}
                   icon={statusFunctional.icon}
@@ -250,7 +250,7 @@ export function MetricListPage({ testResults }: MetricListPageProps) {
                   <div className="item-value ms-auto">{testResults.coverage.line_rate}%</div>
                 </div>
               </div>
-              <div className="ms-3">
+              <div className="ms-4">
                 <FontAwesomeIcon
                   className={`ms-1 fa-3x ${statusCoverage.className}`}
                   icon={statusCoverage.icon}
@@ -287,7 +287,7 @@ export function MetricListPage({ testResults }: MetricListPageProps) {
                     <div className="item-value ms-auto">{testResults.data.test_time_elapsed}</div>
                   </div>
                 </div>
-                <div className="ms-3">
+                <div className="ms-4">
                   <FontAwesomeIcon
                     className={`ms-1 fa-3x ${statusData.className}`}
                     icon={statusData.icon}

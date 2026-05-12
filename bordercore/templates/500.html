@@ -3,7 +3,7 @@
 {% block title %} Server Error {% endblock %}
 
 {% block content %}
-    <div class="mt-5 text-center">
+    <div class="mt-12 text-center">
         <div class="response-code">500</div>
         <h2>Oops</h2>
 
@@ -11,6 +11,6 @@
             Something went wrong. My minions have been alerted.
         </div>
 
-        <a href="{% url 'homepage:homepage' %}" type="button" class="mt-5 btn btn-primary">Back to the homepage</a>
+        <a href="{% url 'homepage:homepage' %}" type="button" class="mt-12 btn btn-primary">Back to the homepage</a>
     </div>
 {% endblock %}
