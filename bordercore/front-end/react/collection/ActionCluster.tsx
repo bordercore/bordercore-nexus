@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faSearch } from "@fortawesome/free-solid-svg-icons";
 import DensitySlider from "./DensitySlider";
 import type { Density } from "./density";
+import { useFocusOnCtrlK } from "../common/hooks/useFocusOnCtrlK";
 
 interface ActionClusterProps {
   searchQuery: string;
@@ -21,11 +22,14 @@ export function ActionCluster({
   onDensityChange,
   onCreateClick,
 }: ActionClusterProps) {
+  const searchRef = useRef<HTMLInputElement>(null);
+  useFocusOnCtrlK(searchRef);
   return (
     <div className="cl-actions">
       <div className="cl-search" role="search">
         <FontAwesomeIcon icon={faSearch} aria-hidden="true" />
         <input
+          ref={searchRef}
           type="search"
           placeholder="search collections"
           value={searchQuery}

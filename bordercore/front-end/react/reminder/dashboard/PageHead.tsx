@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faSearch } from "@fortawesome/free-solid-svg-icons";
+import { useFocusOnCtrlK } from "../../common/hooks/useFocusOnCtrlK";
 
 interface PageHeadProps {
   total: number;
@@ -12,6 +13,8 @@ interface PageHeadProps {
 }
 
 export function PageHead({ total, active, query, onQueryChange, onNew, children }: PageHeadProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  useFocusOnCtrlK(inputRef);
   return (
     <header className="rm-page-head">
       <div className="rm-page-head-text">
@@ -29,6 +32,7 @@ export function PageHead({ total, active, query, onQueryChange, onNew, children 
           <label className="rm-search">
             <FontAwesomeIcon icon={faSearch} className="rm-search-icon" />
             <input
+              ref={inputRef}
               type="search"
               autoComplete="off"
               placeholder="filter reminders · fuzzy match name + note"

@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSearch, faTimes, faList, faBars } from "@fortawesome/free-solid-svg-icons";
 import type { ViewType } from "./types";
+import { useFocusOnCtrlK } from "../common/hooks/useFocusOnCtrlK";
 
 export type SortField = "sort_order" | "name" | "priority" | "created_unixtime";
 
@@ -31,11 +32,14 @@ export function TodoToolbar({
   onViewChange,
   onSortChange,
 }: TodoToolbarProps) {
+  const searchRef = useRef<HTMLInputElement>(null);
+  useFocusOnCtrlK(searchRef);
   return (
     <div className="todo-toolbar">
       <div className="todo-search-wrap">
         <FontAwesomeIcon icon={faSearch} className="icon" />
         <input
+          ref={searchRef}
           type="text"
           className="refined-input todo-search-input"
           placeholder="Search tasks…"

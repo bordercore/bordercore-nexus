@@ -9,6 +9,7 @@ import {
   faList,
 } from "@fortawesome/free-solid-svg-icons";
 import DropDownMenu from "../common/DropDownMenu";
+import { useFocusOnCtrlK } from "../common/hooks/useFocusOnCtrlK";
 
 interface Props {
   searchValue: string;
@@ -40,16 +41,7 @@ const PageHead: React.FC<Props> = ({
     return /Mac|iPhone|iPod|iPad/i.test(platform);
   }, []);
 
-  React.useEffect(() => {
-    const handler = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
-        event.preventDefault();
-        inputRef.current?.focus();
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, []);
+  useFocusOnCtrlK(inputRef);
 
   const addLinks = [
     {

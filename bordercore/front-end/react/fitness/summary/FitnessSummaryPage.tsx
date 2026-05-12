@@ -1,8 +1,9 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import type { SummaryPayload, FilterGroup } from "./types";
 import { ExerciseCard } from "./ExerciseCard";
+import { useFocusOnCtrlK } from "../../common/hooks/useFocusOnCtrlK";
 
 const ALL_GROUP: FilterGroup = { slug: "all", label: "all", color_token: "" };
 
@@ -44,6 +45,8 @@ export function FitnessSummaryPage({ payload }: FitnessSummaryPageProps) {
   });
   const [query, setQuery] = useState("");
   const [showInactive, setShowInactive] = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
+  useFocusOnCtrlK(searchRef);
 
   useEffect(() => {
     syncFilterToUrl(filter);
@@ -75,6 +78,7 @@ export function FitnessSummaryPage({ payload }: FitnessSummaryPageProps) {
         <div className="fitness-summary__search" role="search">
           <FontAwesomeIcon icon={faSearch} aria-hidden="true" />
           <input
+            ref={searchRef}
             type="search"
             placeholder="search exercises"
             value={query}

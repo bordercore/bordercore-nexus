@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMagnifyingGlass, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { doGet } from "../../utils/reactUtils";
+import { useFocusOnCtrlK } from "../../common/hooks/useFocusOnCtrlK";
 
 interface SearchMatch {
   doctype: "Tag";
@@ -28,17 +29,7 @@ export function TagSearch({ activeName, searchUrl, onPick }: TagSearchProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        inputRef.current?.focus();
-        setOpen(true);
-      }
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, []);
+  useFocusOnCtrlK(inputRef);
 
   useEffect(() => {
     if (!open) return;

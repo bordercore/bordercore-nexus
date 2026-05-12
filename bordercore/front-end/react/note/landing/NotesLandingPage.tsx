@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSearch, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { PinnedColumn } from "./PinnedColumn";
@@ -6,6 +6,7 @@ import { FeaturedRecents } from "./FeaturedRecents";
 import { MoreRecent } from "./MoreRecent";
 import { TagCloud } from "./TagCloud";
 import type { NotesLandingData, NotesLandingUrls } from "./types";
+import { useFocusOnCtrlK } from "../../common/hooks/useFocusOnCtrlK";
 
 interface NotesLandingPageProps {
   data: NotesLandingData;
@@ -14,6 +15,8 @@ interface NotesLandingPageProps {
 
 export function NotesLandingPage({ data, urls }: NotesLandingPageProps) {
   const [query, setQuery] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
+  useFocusOnCtrlK(searchRef);
 
   const featured = useMemo(() => data.recents.slice(0, 3), [data.recents]);
   const more = useMemo(() => data.recents.slice(3, 14), [data.recents]);
@@ -41,6 +44,7 @@ export function NotesLandingPage({ data, urls }: NotesLandingPageProps) {
           <form className="nl-search" onSubmit={handleSubmit} role="search">
             <FontAwesomeIcon icon={faSearch} aria-hidden="true" />
             <input
+              ref={searchRef}
               type="search"
               name="query"
               value={query}

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { TagIndex } from "./bookshelf/TagIndex";
@@ -6,6 +6,7 @@ import { SelectedDrawer } from "./bookshelf/SelectedDrawer";
 import { RecentDrawer } from "./bookshelf/RecentDrawer";
 import { relativeTime } from "./bookshelf/relativeTime";
 import type { BookshelfPageProps } from "./types";
+import { useFocusOnCtrlK } from "../common/hooks/useFocusOnCtrlK";
 
 const DRAWER_LS_KEY = "bordercore:bookshelf:drawerOpen";
 
@@ -42,6 +43,8 @@ export function BookshelfPage({
 }: BookshelfPageProps) {
   const [searchValue, setSearchValue] = useState(searchTerm || "");
   const [drawerOpen, setDrawerOpen] = useState<boolean>(readDrawerInitial);
+  const searchRef = useRef<HTMLInputElement>(null);
+  useFocusOnCtrlK(searchRef);
 
   useEffect(() => {
     try {
@@ -166,6 +169,7 @@ export function BookshelfPage({
           <div className="bcc-search" role="search">
             <FontAwesomeIcon icon={faSearch} aria-hidden="true" />
             <input
+              ref={searchRef}
               type="search"
               name="search"
               placeholder="search titles, authors, tags"

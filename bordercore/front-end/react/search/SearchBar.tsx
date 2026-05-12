@@ -2,6 +2,7 @@ import React, { useState, useRef, forwardRef, useImperativeHandle, useCallback }
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
 import TagsInput, { TagsInputHandle } from "../common/TagsInput";
+import { useFocusOnCtrlK } from "../common/hooks/useFocusOnCtrlK";
 import type { SearchMode } from "./SearchModeNav";
 import type { TagCount } from "./types";
 
@@ -47,6 +48,14 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(function Se
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const tagsInputRef = useRef<TagsInputHandle>(null);
+  const semanticInputRef = useRef<HTMLInputElement>(null);
+
+  // Each mode renders at most one input, so only one of these refs is
+  // non-null at a time — the hook's null-guard ensures only the mounted
+  // input is focused on Ctrl-K.
+  useFocusOnCtrlK(searchInputRef);
+  useFocusOnCtrlK(tagsInputRef);
+  useFocusOnCtrlK(semanticInputRef);
 
   const focusTagSearch = useCallback(() => {
     tagsInputRef.current?.focus();
@@ -191,6 +200,7 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(function Se
             <div className="search-bar-input-wrap has-search">
               <FontAwesomeIcon icon={faMagnifyingGlass} className="search-icon" />
               <input
+                ref={semanticInputRef}
                 value={searchSemantic}
                 onChange={e => setSearchSemantic(e.target.value)}
                 name="semantic_search"
