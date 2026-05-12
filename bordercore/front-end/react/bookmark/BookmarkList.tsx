@@ -181,7 +181,7 @@ function SortableBookmarkRow({
             )}
           </div>
           {isYouTubeVideo && showYtDuration && bookmark.video_duration && (
-            <div className="yt-hover-target absolute text-secondary">
+            <div className="yt-hover-target absolute text-ink-2">
               {bookmark.video_duration}
             </div>
           )}

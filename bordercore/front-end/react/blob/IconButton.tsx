@@ -55,7 +55,7 @@ export const IconButton = forwardRef<IconButtonHandle, IconButtonProps>(function
     >
       <div className={`icon-circle ${enabled ? "active" : ""}`}>
         {iconDef && (
-          <FontAwesomeIcon icon={iconDef} className={enabled ? "text-primary" : "text-secondary"} />
+          <FontAwesomeIcon icon={iconDef} className={enabled ? "text-primary" : "text-ink-2"} />
         )}
       </div>
       <small className={`mt-1 ${enabled ? "text-primary" : "text-muted"}`}>{label}</small>

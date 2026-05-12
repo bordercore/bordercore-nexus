@@ -121,14 +121,14 @@ export function MetricListPage({ testResults }: MetricListPageProps) {
         <div className="col flex flex-col pe-gutter">
           <div className="card-body h-full">
             <h3 className="mb-6">Bordercore Testing Methodology</h3>
-            <h4 className="text-secondary mt-6">Unit Testing</h4>
+            <h4 className="text-ink-2 mt-6">Unit Testing</h4>
             Tests that primarily focus on the Django models and integration tests on the Django
             views.
-            <h4 className="text-secondary mt-6">Functional Testing</h4>
+            <h4 className="text-ink-2 mt-6">Functional Testing</h4>
             Selenium-based tests for the front-end.
-            <h4 className="text-secondary mt-6">Data Quality Testing</h4>
+            <h4 className="text-ink-2 mt-6">Data Quality Testing</h4>
             Check for inconsistent or missing data in the database.
-            <h4 className="text-secondary mt-6">Wumpus Testing</h4>
+            <h4 className="text-ink-2 mt-6">Wumpus Testing</h4>
             Check that the data stored in S3 is consistent with the data stored on wumpus.
           </div>
         </div>

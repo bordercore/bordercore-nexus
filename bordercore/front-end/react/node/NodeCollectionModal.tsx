@@ -195,7 +195,7 @@ export default function NodeCollectionModal({
                   </div>
                   <div className="flex flex-col">
                     <div>{option.name}</div>
-                    <div className="text-secondary lh-1">
+                    <div className="text-ink-2 lh-1">
                       <small>{option.num_objects} objects</small>
                     </div>
                   </div>

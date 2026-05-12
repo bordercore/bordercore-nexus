@@ -140,7 +140,7 @@ export function ObjectSelectModal({
           )}
           {!option.cover_url && option.doctype === "Note" && (
             <div className="cover-image me-2">
-              <FontAwesomeIcon icon={faStickyNote} className="fa-3x text-secondary" />
+              <FontAwesomeIcon icon={faStickyNote} className="fa-3x text-ink-2" />
             </div>
           )}
           {!option.cover_url && option.doctype === "Bookmark" && option.thumbnail_url && (
@@ -150,10 +150,10 @@ export function ObjectSelectModal({
           )}
           <div className="name flex flex-col">
             <div
-              className="text-truncate"
+              className="truncate"
               dangerouslySetInnerHTML={{ __html: boldenOption(option.name || "", search) }}
             />
-            <div className="date text-muted small my-1">
+            <div className="date text-muted text-sm my-1">
               {option.date}
               {option.important === 10 && (
                 <span className="ms-2">

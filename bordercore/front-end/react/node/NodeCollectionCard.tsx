@@ -106,7 +106,7 @@ function SortableItem({
               </div>
             ) : (
               <div className="pe-2">
-                <FontAwesomeIcon icon={faBookmark} className="text-secondary" />
+                <FontAwesomeIcon icon={faBookmark} className="text-ink-2" />
               </div>
             )}
 
@@ -544,11 +544,11 @@ export default function NodeCollectionCard({
 
   const titleSlot = (
     <div className="card-title flex">
-      <div className="text-truncate">
+      <div className="truncate">
         <FontAwesomeIcon icon={faSplotch} className="text-primary me-4" />
         {collection.name}
       </div>
-      <div className="text-secondary text-small text-nowrap ms-4">
+      <div className="text-ink-2 text-small text-nowrap ms-4">
         {objectCount} <span>{pluralize("object", objectCount)}</span>
       </div>
       <div className="dropdown-menu-container dropdown-menu-container-width ms-auto hover-reveal-content">
@@ -620,7 +620,7 @@ export default function NodeCollectionCard({
                           </div>
                         ) : (
                           <div className="pe-2">
-                            <FontAwesomeIcon icon={faBookmark} className="text-secondary" />
+                            <FontAwesomeIcon icon={faBookmark} className="text-ink-2" />
                           </div>
                         )}
                         <div>

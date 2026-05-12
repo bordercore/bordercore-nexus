@@ -202,7 +202,7 @@ export function DrillDisabledTags({
       >
         <hr className="divider" />
         {dataLoading ? (
-          <div className="text-secondary">Data Loading...</div>
+          <div className="text-ink-2">Data Loading...</div>
         ) : (
           <ul className="list-unstyled">
             {tagList.map(tag => (

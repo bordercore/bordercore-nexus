@@ -215,12 +215,12 @@ class TagBookmark(SortOrderMixin):
         control.
       </p>
 
-      <p className="mt-4 mb-1 text-muted small">Single-current form (e.g. detail / edit pages):</p>
+      <p className="mt-4 mb-1 text-muted text-sm">Single-current form (e.g. detail / edit pages):</p>
       <h1 className="refined-breadcrumb-h1">
         <span className="current">My favorite albums</span>
       </h1>
 
-      <p className="mt-6 mb-1 text-muted small">
+      <p className="mt-6 mb-1 text-muted text-sm">
         Chain form with dimmed parent (e.g. todo filter title):
       </p>
       <h1 className="refined-breadcrumb-h1">

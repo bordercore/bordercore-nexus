@@ -243,7 +243,7 @@ export const RelatedObjects = forwardRef<RelatedObjectsHandle, RelatedObjectsPro
       >
         <hr className="divider" />
         {dataLoading ? (
-          <div className="text-secondary">Loading...</div>
+          <div className="text-ink-2">Loading...</div>
         ) : objectList.length === 0 ? (
           <div className="text-muted">No related objects</div>
         ) : (
@@ -343,7 +343,7 @@ function SortableRelatedObject({
               </div>
               {!element.noteIsEditable ? (
                 <div
-                  className="node-object-note text-muted small cursor-pointer"
+                  className="node-object-note text-muted text-sm cursor-pointer"
                   onClick={() => toggleNoteEditable(element.uuid, true)}
                 >
                   {element.note}

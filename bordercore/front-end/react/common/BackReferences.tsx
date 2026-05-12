@@ -37,7 +37,7 @@ export function BackReferences({ backReferences }: BackReferencesProps) {
   return (
     <Card title="Back references">
       <hr className="divider" />
-      <ul className="list-group interior-borders cursor-pointer text-truncate">
+      <ul className="list-group interior-borders cursor-pointer truncate">
         {backReferences.map(node => (
           <li
             key={node.uuid}
@@ -73,13 +73,13 @@ export function BackReferences({ backReferences }: BackReferencesProps) {
                 <div className="mt-1 me-2">
                   <FontAwesomeIcon icon={faCopy} className="text-success" />
                 </div>
-                <div className="text-truncate">
+                <div className="truncate">
                   {node.cover_url && (
                     <img src={node.cover_url} className="max-w-full" alt="" loading="lazy" />
                   )}
                   {/* Content is trusted server-rendered HTML from the app's own database */}
                   <div
-                    className="text-truncate cursor-pointer"
+                    className="truncate cursor-pointer"
                     onClick={() => handleNodeClick(node.url)}
                     dangerouslySetInnerHTML={{ __html: node.name || "" }}
                   />

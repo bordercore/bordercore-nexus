@@ -306,7 +306,7 @@ export default function RefinedTopBar() {
                 );
               })}
               {/* Hidden h1 keeps the page title in the DOM for legacy consumers. */}
-              <h1 className="visually-hidden">{title}</h1>
+              <h1 className="sr-only">{title}</h1>
             </nav>
           );
         })()}

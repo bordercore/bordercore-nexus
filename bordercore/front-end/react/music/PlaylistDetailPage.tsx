@@ -280,7 +280,7 @@ export function PlaylistDetailPage({ playlist, urls, staticUrl }: PlaylistDetail
               <div className="card backdrop-filter hover-target me-0">
                 <div className="card-body">
                   <div className="flex">
-                    <h2 className="text-secondary">{playlist.name}</h2>
+                    <h2 className="text-ink-2">{playlist.name}</h2>
                     <div className="ms-auto">
                       <DropDownMenu
                         dropdownSlot={

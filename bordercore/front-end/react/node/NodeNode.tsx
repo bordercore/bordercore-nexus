@@ -174,7 +174,7 @@ export default function NodeNode({
   const titleSlot = (
     <div className="dropdown-height flex">
       <div className="card-title flex">
-        <div className="text-truncate">
+        <div className="truncate">
           <FontAwesomeIcon icon={faBox} className="text-primary me-4" />
           {nodeInfo && (
             <span>
@@ -203,13 +203,13 @@ export default function NodeNode({
         </div>
         <div id="node-node-misc">
           {nodeInfo.note_count > 0 && (
-            <div className="text-truncate">
+            <div className="truncate">
               <div className="flex">
                 <div className="text-nowrap">
                   <strong>{nodeInfo.note_count}</strong> {pluralize("note", nodeInfo.note_count)}
                 </div>
                 {nodeInfo.random_note && (
-                  <div className="text-truncate text-info ms-2">{nodeInfo.random_note.name}</div>
+                  <div className="truncate text-info ms-2">{nodeInfo.random_note.name}</div>
                 )}
               </div>
             </div>
@@ -221,7 +221,7 @@ export default function NodeNode({
                   <strong>{nodeInfo.todo_count}</strong> {pluralize("todo", nodeInfo.todo_count)}
                 </div>
                 {nodeInfo.random_todo && (
-                  <div className="text-truncate text-info ms-2">{nodeInfo.random_todo.name}</div>
+                  <div className="truncate text-info ms-2">{nodeInfo.random_todo.name}</div>
                 )}
               </div>
             </div>

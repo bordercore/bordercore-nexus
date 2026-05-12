@@ -281,7 +281,7 @@ export function AlbumCreatePage({
             accept=".zip"
             onChange={handleFileInputChange}
             disabled={processing}
-            className="visually-hidden"
+            className="sr-only"
           />
         </section>
       )}

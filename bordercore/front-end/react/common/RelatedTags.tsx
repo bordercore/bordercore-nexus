@@ -99,7 +99,7 @@ export const RelatedTags = forwardRef<RelatedTagsHandle, RelatedTagsProps>(funct
         <div key={tagInfo.name}>
           <hr className="divider" />
           <h5 className="text-success">{tagInfo.name}</h5>
-          <ul className="related-tags list-unstyled text-truncate ms-2 pb-1">
+          <ul className="related-tags list-unstyled truncate ms-2 pb-1">
             {tagInfo.related.map(tag => (
               <li
                 key={tag.tag_name}

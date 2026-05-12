@@ -195,7 +195,7 @@ export function DrillQuestionEditPage({
                     className="list-with-counts ps-2 py-1 pe-1 flex cursor-pointer"
                     onClick={() => handleTagClick(tag.name)}
                   >
-                    <div className="text-truncate">{tag.name}</div>
+                    <div className="truncate">{tag.name}</div>
                   </li>
                 ))}
               </ul>
