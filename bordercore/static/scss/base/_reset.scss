@@ -1,7 +1,22 @@
 // =============================================================================
 // BASE: RESET & CORE STYLES
 // =============================================================================
-// Base HTML elements, typography, scrollbars, fonts
+// Base HTML elements, typography, scrollbars, fonts.
+//
+// Element-level resets below replace the parts of Bootstrap's reboot that
+// the project actually depended on, now that Bootstrap CSS is no longer
+// loaded (migration Phase 4). Tailwind's preflight is also disabled —
+// it has different opinions (notably `h1-h6 { font-size: inherit }`)
+// that would clash with the project's typography expectations.
+
+// Universal box-sizing — critical for layout. Browser default is
+// content-box; without this, every element with padding renders wider
+// than its width attribute and most components quietly mis-size.
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 
 // Fonts
 @font-face {
@@ -23,11 +38,89 @@ body {
   // Use CSS variable for body background (defined in theme files)
   position: relative;
   min-height: 100vh;
+  margin: 0;
   background-color: var(--body-bg);
   color: var(--fg-0);
   font-family: Roboto, sans-serif;
   font-size: 1rem;
   line-height: 2rem;
+}
+
+// Heading sizing — Bootstrap previously standardized these to fixed
+// rem values so headings would look consistent regardless of nesting
+// context (the browser default for h1 changes from 2em inside <body>
+// to 1.5em inside <section>/<article>).
+h1, h2, h3, h4, h5, h6 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  line-height: 1.2;
+}
+
+h1 { font-size: 2.5rem; }
+h2 { font-size: 2rem; }
+h3 { font-size: 1.75rem; }
+h4 { font-size: 1.5rem; }
+h5 { font-size: 1.25rem; }
+h6 { font-size: 1rem; }
+
+// List margin / padding — browser default has padding-left: 40px on
+// <ul>/<ol>, which shifts the bullet column inward. Match Bootstrap's
+// 2rem padding plus 1rem bottom margin so list-spacing stays predictable.
+ul, ol, dl {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+ul, ol {
+  padding-left: 2rem;
+}
+
+ol ol,
+ul ul,
+ol ul,
+ul ol {
+  margin-bottom: 0;
+}
+
+dt { font-weight: 700; }
+
+dd {
+  margin-bottom: 0.5rem;
+  margin-left: 0;
+}
+
+// Form element font inheritance — browser defaults render <button>,
+// <input>, <select>, <textarea> in the OS system font at a fixed size
+// that ignores body typography.
+button,
+input,
+select,
+optgroup,
+textarea {
+  margin: 0;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+// Inline media alignment — browsers default to vertical-align: baseline
+// for inline media, which leaves a slight gap under images that's
+// usually unwanted.
+img,
+svg {
+  vertical-align: middle;
+}
+
+[hidden] {
+  display: none !important;
 }
 
 // Ambient radial-gradient accents on dark-family themes.
