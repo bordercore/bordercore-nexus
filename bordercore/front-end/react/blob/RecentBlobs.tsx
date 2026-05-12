@@ -55,12 +55,7 @@ export function RecentBlobs({ blobListInfo, blobDetailUrl, recentlyViewed }: Rec
   };
 
   const trigger = (
-    <span
-      className="top-search-icon"
-      data-bs-toggle="tooltip"
-      data-placement="bottom"
-      title="Recent Blobs"
-    >
+    <span className="top-search-icon" title="Recent Blobs">
       <FontAwesomeIcon className="top-search-target glow" icon={faObjectGroup} />
     </span>
   );

@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCheck, faExclamationTriangle, faQuestion } from "@fortawesome/free-solid-svg-icons";
-import { Toast as BootstrapToast } from "bootstrap";
+
+const DEFAULT_DELAY_MS = 5000;
 
 interface ToastMessage {
   title?: string;
@@ -20,10 +21,8 @@ export function Toast({ initialMessages = [], defaultVariant = "info" }: ToastPr
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("Toast Body");
   const [variant, setVariant] = useState<"info" | "danger" | "warning" | "success">(defaultVariant);
-  const [delay, setDelay] = useState(5000);
-  const [autoHide, setAutoHide] = useState(true);
-  const toastRef = useRef<HTMLDivElement>(null);
-  const bsToastRef = useRef<BootstrapToast | null>(null);
+  const [visible, setVisible] = useState(false);
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const getIcon = () => {
     if (variant === "danger") {
@@ -35,6 +34,18 @@ export function Toast({ initialMessages = [], defaultVariant = "info" }: ToastPr
     }
   };
 
+  const clearHideTimer = () => {
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
+    }
+  };
+
+  const hide = () => {
+    clearHideTimer();
+    setVisible(false);
+  };
+
   const showToast = (payload: ToastMessage) => {
     const newVariant = payload.variant !== undefined ? payload.variant : defaultVariant;
     setVariant(newVariant);
@@ -44,41 +55,33 @@ export function Toast({ initialMessages = [], defaultVariant = "info" }: ToastPr
       setTitle(newVariant.charAt(0).toUpperCase() + newVariant.slice(1));
     }
     setBody(payload.body);
-    if (payload.autoHide !== undefined && bsToastRef.current) {
-      (bsToastRef.current as any)._config.autohide = payload.autoHide;
-    }
-    if (payload.delay && bsToastRef.current) {
-      (bsToastRef.current as any)._config.delay = payload.delay;
-    }
-    if (bsToastRef.current) {
-      bsToastRef.current.show();
+    setVisible(true);
+
+    clearHideTimer();
+    // autoHide defaults to true; only an explicit `false` suppresses the timer.
+    const shouldAutoHide = payload.autoHide !== false;
+    if (shouldAutoHide) {
+      const delay = payload.delay ?? DEFAULT_DELAY_MS;
+      hideTimerRef.current = setTimeout(() => setVisible(false), delay);
     }
   };
 
   useEffect(() => {
-    if (toastRef.current) {
-      // toastRef.current IS the toast element, use it directly
-      bsToastRef.current = new BootstrapToast(toastRef.current, {
-        autohide: autoHide,
-        delay: delay,
+    if (window.EventBus) {
+      const handler = (payload: ToastMessage) => {
+        showToast(payload);
+      };
+      window.EventBus.$on("toast", handler);
+
+      // Show initial messages
+      initialMessages.forEach(message => {
+        showToast(message);
       });
 
-      // Listen for toast events from EventBus
-      if (window.EventBus) {
-        const handler = (payload: ToastMessage) => {
-          showToast(payload);
-        };
-        window.EventBus.$on("toast", handler);
-
-        // Show initial messages
-        initialMessages.forEach(message => {
-          showToast(message);
-        });
-
-        return () => {
-          window.EventBus.$off("toast", handler);
-        };
-      }
+      return () => {
+        window.EventBus.$off("toast", handler);
+        clearHideTimer();
+      };
     }
   }, []);
 
@@ -86,15 +89,14 @@ export function Toast({ initialMessages = [], defaultVariant = "info" }: ToastPr
     <div className={`toast-wrapper position-fixed top-0 end-0 p-3 ${variant}`}>
       <div
         id="liveToast"
-        className="toast hide"
+        className={`toast fade ${visible ? "show" : "hide"}`}
         role="alert"
         aria-live="assertive"
         aria-atomic="true"
-        ref={toastRef}
       >
         <div className="toast-header">
           <strong className="me-auto" dangerouslySetInnerHTML={{ __html: title }} />
-          <button type="button" className="btn-close" data-bs-dismiss="toast" aria-label="Close" />
+          <button type="button" className="btn-close" aria-label="Close" onClick={hide} />
         </div>
         <div className="toast-body d-flex align-items-top">
           <FontAwesomeIcon

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import Lottie from "lottie-react";
 import clearDayAnimation from "../../assets/weather-icons/clear-day.json";
 import partlyCloudyDayAnimation from "../../assets/weather-icons/partly-cloudy-day.json";
@@ -19,8 +19,6 @@ interface WeatherProps {
 }
 
 export function Weather({ weatherInfo }: WeatherProps) {
-  const tooltipRef = useRef<HTMLDivElement>(null);
-
   const getWeatherIconType = (): string | null => {
     if (!weatherInfo || !weatherInfo.current || !weatherInfo.current.condition) {
       return null;
@@ -75,33 +73,14 @@ export function Weather({ weatherInfo }: WeatherProps) {
   const weatherIconType = getWeatherIconType();
   const temperatureText = getTemperatureText();
 
-  useEffect(() => {
-    if (
-      weatherIconType &&
-      temperatureText &&
-      tooltipRef.current &&
-      (window as any).BootstrapTooltip
-    ) {
-      const tooltip = new (window as any).BootstrapTooltip(tooltipRef.current);
-      return () => {
-        if (tooltip) {
-          tooltip.dispose();
-        }
-      };
-    }
-  }, [weatherIconType, temperatureText]);
-
   if (!weatherIconType) {
     return null;
   }
 
   return (
     <div
-      ref={tooltipRef}
       className={`weather-icon icon-${weatherIconType}`}
       aria-label={weatherIconType}
-      data-bs-toggle="tooltip"
-      data-placement="bottom"
       title={temperatureText}
     >
       <Lottie animationData={getAnimationData()} className="weather-lottie" loop={true} />

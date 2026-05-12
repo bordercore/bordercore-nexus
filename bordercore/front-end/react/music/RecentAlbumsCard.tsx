@@ -69,8 +69,6 @@ export function RecentAlbumsCard({
             <div
               key={album.uuid}
               className="p-2 recent-album-item"
-              data-bs-toggle="tooltip"
-              data-placement="bottom"
               title={`Added ${album.created}`}
             >
               <div className="zoomable">

@@ -8,18 +8,9 @@ import {
   faCheck,
 } from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
-import MarkdownIt from "markdown-it";
 import type { Song, Playlist } from "./types";
 import StarRating from "./StarRating";
 import DropDownMenu from "../common/DropDownMenu";
-
-// markdown-it sanitizes HTML by default, providing XSS protection
-// The note content is from the database and entered by authenticated users
-const markdown = new MarkdownIt({
-  html: true,
-  linkify: true,
-  typographer: true,
-});
 
 interface SongTableProps {
   songs: Song[];
@@ -98,11 +89,6 @@ export function SongTable({
     }
   };
 
-  const renderNote = (note: string) => {
-    // markdown-it provides sanitization for the rendered HTML
-    return { __html: markdown.render(note) };
-  };
-
   // Get the appropriate equalizer image based on playing state
   const equalizerImage = isPlaying
     ? `${staticUrl}img/equaliser-animated-green.gif`
@@ -139,16 +125,7 @@ export function SongTable({
               </td>
               <td className="align-middle" onClick={() => handleRowClick(song, "note")}>
                 {song.note && (
-                  <span
-                    className="note-icon"
-                    title={song.note}
-                    data-bs-toggle="tooltip"
-                    data-bs-html="true"
-                  >
-                    <div
-                      className="note-tooltip-content d-none"
-                      dangerouslySetInnerHTML={renderNote(song.note)}
-                    />
+                  <span className="note-icon" title={song.note}>
                     <FontAwesomeIcon icon={faStickyNote} className="glow text-primary" />
                   </span>
                 )}

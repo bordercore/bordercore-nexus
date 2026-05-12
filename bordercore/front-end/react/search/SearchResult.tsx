@@ -68,13 +68,7 @@ export function SearchResult({
           <h4 className="search-result-title-text">
             <a href={url} dangerouslySetInnerHTML={{ __html: title || "No Title" }} />
             {importance > 1 && (
-              <FontAwesomeIcon
-                icon={faHeart}
-                className="favorite mx-2"
-                data-bs-toggle="tooltip"
-                data-placement="bottom"
-                title="Favorite"
-              />
+              <FontAwesomeIcon icon={faHeart} className="favorite mx-2" title="Favorite" />
             )}
           </h4>
           <div className="search-result-meta-line">
