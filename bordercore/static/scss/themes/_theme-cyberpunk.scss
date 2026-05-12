@@ -63,28 +63,11 @@
   --sidebar-gradient-end: var(--bg-1);
   --sidebar-hover-color: var(--fg-0);
 
-  // Override Bootstrap CSS properties
-  --bs-body-color: var(--fg-1);
-  --bs-body-bg: var(--bg-0);
-  --bs-list-group-bg: var(--bg-1);
-  --bs-list-group-color: var(--fg-1);
-  --bs-list-group-item-padding-x: 1.25rem;
-  --bs-list-group-item-padding-y: .75rem;
-  --bs-list-group-item-secondary: var(--fg-2);
-  --bs-modal-header-border-color: var(--line-soft);
-  --bs-secondary: var(--fg-2);
-  --card-spacer-y: 1.25;
-  --card-spacer-x: 1.25;
-
   // Oruga
 
   // Vue MultiSelect
 
   // Vue 3 Datepicker
-
-  .list-group {
-    --bs-list-group-border-color: var(--line-soft);
-  }
 
   // Media Chrome
 
