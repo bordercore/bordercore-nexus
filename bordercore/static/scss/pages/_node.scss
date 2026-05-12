@@ -40,39 +40,46 @@
   }
 }
 
+// .node-color-N rules style two distinct things: the swatches in
+// NodeNoteModal/NodeQuoteModal, and (historically) the card surface in each
+// NodeNote/NodeQuote/NodeImage/NodeNode etc. The card variant is intentionally
+// re-skinned inside .node-detail-app by pages/_node-detail-refined.scss (uses
+// --nd-bg-2 / refined accent gradients). Keep these rules un-!important so
+// the higher-specificity refined rules win on the detail page; the swatches
+// pick them up unopposed.
 .node-color-1 {
-  background-color: var(--node-color-1) !important;
+  background-color: var(--node-color-1);
   transition: 0.3s ease;
 
   &:hover {
-    background-color: var(--node-color-1-tinted) !important;
+    background-color: var(--node-color-1-tinted);
   }
 }
 
 .node-color-2 {
-  background-color: var(--node-color-2) !important;
+  background-color: var(--node-color-2);
   transition: 0.3s ease;
 
   &:hover {
-    background-color: var(--node-color-2-tinted) !important;
+    background-color: var(--node-color-2-tinted);
   }
 }
 
 .node-color-3 {
-  background-color: var(--node-color-3) !important;
+  background-color: var(--node-color-3);
   transition: 0.3s ease;
 
   &:hover {
-    background-color: var(--node-color-3-tinted) !important;
+    background-color: var(--node-color-3-tinted);
   }
 }
 
 .node-color-4 {
-  background-color: var(--node-color-4) !important;
+  background-color: var(--node-color-4);
   transition: 0.3s ease;
 
   &:hover {
-    background-color: var(--node-color-4-tinted) !important;
+    background-color: var(--node-color-4-tinted);
   }
 }
 
