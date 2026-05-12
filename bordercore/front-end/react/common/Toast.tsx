@@ -17,10 +17,24 @@ interface ToastProps {
   defaultVariant?: "info" | "danger" | "warning" | "success";
 }
 
+type Variant = "info" | "danger" | "warning" | "success";
+
+// Map toast variant to the theme-aware Tailwind utility for the leading
+// icon's colour. After Bootstrap was removed in migration Phase 4, the
+// Bootstrap class names text-info / text-warning / text-success no
+// longer exist, so the template literal `text-${variant}` would emit
+// dead classes for three of the four variants.
+const VARIANT_ICON_CLASS: Record<Variant, string> = {
+  info: "text-accent",
+  danger: "text-danger",
+  warning: "text-warn",
+  success: "text-ok",
+};
+
 export function Toast({ initialMessages = [], defaultVariant = "info" }: ToastProps) {
   const [title, setTitle] = useState("");
-  const [body, setBody] = useState("Toast Body");
-  const [variant, setVariant] = useState<"info" | "danger" | "warning" | "success">(defaultVariant);
+  const [body, setBody] = useState("");
+  const [variant, setVariant] = useState<Variant>(defaultVariant);
   const [visible, setVisible] = useState(false);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -85,34 +99,39 @@ export function Toast({ initialMessages = [], defaultVariant = "info" }: ToastPr
     }
   }, []);
 
+  // The fixed-position wrapper stays mounted so the EventBus listener
+  // keeps running; the toast card itself is conditionally rendered so
+  // nothing shows on screen unless EventBus emits a "toast" event.
   return (
-    <div className={`toast-wrapper fixed top-0 end-0 p-4 ${variant}`}>
-      <div
-        id="liveToast"
-        className={`toast fade ${visible ? "show" : "hide"}`}
-        role="alert"
-        aria-live="assertive"
-        aria-atomic="true"
-      >
-        <div className="toast-header">
-          <strong className="me-auto" dangerouslySetInnerHTML={{ __html: title }} />
-          <button
-            type="button"
-            aria-label="Close"
-            onClick={hide}
-            className="ml-2 inline-flex h-6 w-6 items-center justify-center rounded text-ink-3 hover:text-ink-0 hover:bg-surface-3 transition-colors"
-          >
-            <FontAwesomeIcon icon={faTimes} />
-          </button>
+    <div className="toast-wrapper fixed top-0 end-0 p-4 z-50 pointer-events-none">
+      {visible && (
+        <div
+          id="liveToast"
+          role="alert"
+          aria-live="assertive"
+          aria-atomic="true"
+          className="pointer-events-auto w-[350px] max-w-full rounded border border-line-soft bg-surface-1 shadow-lg"
+        >
+          <div className="flex items-center px-3 py-2 border-b border-line-soft bg-surface-2 rounded-t">
+            <strong className="me-auto text-sm" dangerouslySetInnerHTML={{ __html: title }} />
+            <button
+              type="button"
+              aria-label="Close"
+              onClick={hide}
+              className="ml-2 inline-flex h-6 w-6 items-center justify-center rounded text-ink-3 hover:text-ink-0 hover:bg-surface-3 transition-colors"
+            >
+              <FontAwesomeIcon icon={faTimes} />
+            </button>
+          </div>
+          <div className="p-3 flex items-start">
+            <FontAwesomeIcon
+              className={`fa-lg me-2 mt-1 mb-1 pt-1 ${VARIANT_ICON_CLASS[variant]}`}
+              icon={getIcon()}
+            />
+            <div className="mt-1 text-sm" dangerouslySetInnerHTML={{ __html: body }} />
+          </div>
         </div>
-        <div className="toast-body flex align-items-top">
-          <FontAwesomeIcon
-            className={`fa-lg me-2 mt-1 mb-1 pt-1 text-${variant}`}
-            icon={getIcon()}
-          />
-          <div className="mt-1" dangerouslySetInnerHTML={{ __html: body }} />
-        </div>
-      </div>
+      )}
     </div>
   );
 }
