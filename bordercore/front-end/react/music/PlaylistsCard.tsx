@@ -32,7 +32,7 @@ export function PlaylistsCard({ playlists, onClickCreate, className }: Playlists
                       }}
                     >
                       <span className="dropdown-menu-icon">
-                        <FontAwesomeIcon icon={faPlus} className="text-primary" />
+                        <FontAwesomeIcon icon={faPlus} className="text-accent" />
                       </span>
                       <span className="dropdown-menu-text">New Playlist</span>
                     </a>

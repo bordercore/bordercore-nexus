@@ -261,7 +261,7 @@ export const TopSearch = forwardRef<TopSearchHandle, TopSearchProps>(function To
                           dangerouslySetInnerHTML={{ __html: boldenOption(option.name, search) }}
                         />
                         {option.doctype === "Collection" && option.description && (
-                          <div className="text-muted text-sm mt-1">
+                          <div className="text-ink-3 text-sm mt-1">
                             {truncateDescription(option.description)}
                           </div>
                         )}

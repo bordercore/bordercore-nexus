@@ -22,7 +22,7 @@ export default function ProgressCard({ label, meta, data, variant, desc, split }
       <div className="body">
         <ProgressRing pct={data.pct} variant={variant} />
         <div className="desc">
-          <span className="lead">{desc}</span>
+          <span className="text-xl font-light">{desc}</span>
           <span className="count">
             <span className="num">{data.remaining}</span> of {data.total}{" "}
             {pluralize("question", data.total)} {data.remaining === 1 ? "needs" : "need"} review

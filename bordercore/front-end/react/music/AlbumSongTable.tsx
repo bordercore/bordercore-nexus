@@ -126,7 +126,7 @@ export function SongTable({
               <td className="align-middle" onClick={() => handleRowClick(song, "note")}>
                 {song.note && (
                   <span className="note-icon" title={song.note}>
-                    <FontAwesomeIcon icon={faStickyNote} className="glow text-primary" />
+                    <FontAwesomeIcon icon={faStickyNote} className="glow text-accent" />
                   </span>
                 )}
               </td>

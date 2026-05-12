@@ -155,7 +155,7 @@ export default function NodeNote({
           }}
         >
           <span className="dropdown-menu-icon">
-            <FontAwesomeIcon icon={faPencilAlt} className="text-primary" />
+            <FontAwesomeIcon icon={faPencilAlt} className="text-accent" />
           </span>
           <span className="dropdown-menu-text">Edit note</span>
         </a>
@@ -170,7 +170,7 @@ export default function NodeNote({
           }}
         >
           <span className="dropdown-menu-icon">
-            <FontAwesomeIcon icon={faPencilAlt} className="text-primary" />
+            <FontAwesomeIcon icon={faPencilAlt} className="text-accent" />
           </span>
           <span className="dropdown-menu-text">Edit note metadata</span>
         </a>
@@ -185,7 +185,7 @@ export default function NodeNote({
           }}
         >
           <span className="dropdown-menu-icon">
-            <FontAwesomeIcon icon={faTimes} className="text-primary" />
+            <FontAwesomeIcon icon={faTimes} className="text-accent" />
           </span>
           <span className="dropdown-menu-text">Delete note</span>
         </a>
@@ -197,7 +197,7 @@ export default function NodeNote({
     <div className="card-title flex">
       <div className="dropdown-height flex">
         <div>
-          <FontAwesomeIcon icon={faStickyNote} className="text-primary me-4" />
+          <FontAwesomeIcon icon={faStickyNote} className="text-accent me-4" />
         </div>
         <div className="w-full">
           {isEditingName ? (
@@ -250,7 +250,7 @@ export default function NodeNote({
               {noteContents ? (
                 <div dangerouslySetInnerHTML={{ __html: markdown.render(noteContents) }} />
               ) : (
-                <span className="text-muted">No content</span>
+                <span className="text-ink-3">No content</span>
               )}
             </div>
           )}

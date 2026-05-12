@@ -87,7 +87,7 @@ export const RelatedTags = forwardRef<RelatedTagsHandle, RelatedTagsProps>(funct
   const titleSlot = (
     <div className="flex">
       <div className="card-title flex">
-        <FontAwesomeIcon icon={faTags} className="text-primary me-4 mt-1" />
+        <FontAwesomeIcon icon={faTags} className="text-accent me-4 mt-1" />
         Related Tags
       </div>
     </div>

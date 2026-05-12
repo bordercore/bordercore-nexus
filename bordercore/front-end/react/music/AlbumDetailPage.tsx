@@ -227,7 +227,7 @@ export function AlbumDetailPage({
                 {album.original_release_year && album.original_release_year !== album.year && (
                   <h5>Originally released {album.original_release_year}</h5>
                 )}
-                <h6 className="text-primary smaller">
+                <h6 className="text-accent smaller">
                   <small>{album.playtime}</small>
                 </h6>
               </div>

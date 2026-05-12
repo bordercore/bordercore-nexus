@@ -99,7 +99,7 @@ export function ReminderDetailPage({ detailAjaxUrl }: ReminderDetailPageProps) {
           <h1>{reminder.name}</h1>
           {reminder.note && (
             <div
-              className="text-muted markdown"
+              className="text-ink-3 markdown"
               dangerouslySetInnerHTML={{ __html: markdown.render(reminder.note) }}
             />
           )}

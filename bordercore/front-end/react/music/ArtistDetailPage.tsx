@@ -255,7 +255,7 @@ export function ArtistDetailPage({
             <div className="flex items-baseline gap-4 mb-4">
               <h1 className="bc-page-title mb-0">{artist.name}</h1>
               {albumCount > 0 && (
-                <span className="fs-5 text-muted">
+                <span className="text-xl text-ink-3">
                   {albumCount} album{albumCount !== 1 ? "s" : ""}
                 </span>
               )}

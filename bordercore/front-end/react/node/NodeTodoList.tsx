@@ -106,7 +106,7 @@ function SortableTodoItem({ element, onEdit, onRemove }: SortableTodoItemProps) 
                         }}
                       >
                         <span className="dropdown-menu-icon">
-                          <FontAwesomeIcon icon={faPencilAlt} className="text-primary" />
+                          <FontAwesomeIcon icon={faPencilAlt} className="text-accent" />
                         </span>
                         <span className="dropdown-menu-text">Edit</span>
                       </a>
@@ -121,7 +121,7 @@ function SortableTodoItem({ element, onEdit, onRemove }: SortableTodoItemProps) 
                         }}
                       >
                         <span className="dropdown-menu-icon">
-                          <FontAwesomeIcon icon={faTrashAlt} className="text-primary" />
+                          <FontAwesomeIcon icon={faTrashAlt} className="text-accent" />
                         </span>
                         <span className="dropdown-menu-text">Remove</span>
                       </a>
@@ -290,7 +290,7 @@ const NodeTodoList = forwardRef<NodeTodoListHandle, NodeTodoListProps>(function 
           }}
         >
           <span className="dropdown-menu-icon">
-            <FontAwesomeIcon icon={faPlus} className="text-primary" />
+            <FontAwesomeIcon icon={faPlus} className="text-accent" />
           </span>
           <span className="dropdown-menu-text">Add Task</span>
         </a>
@@ -305,7 +305,7 @@ const NodeTodoList = forwardRef<NodeTodoListHandle, NodeTodoListProps>(function 
           }}
         >
           <span className="dropdown-menu-icon">
-            <FontAwesomeIcon icon={faPlus} className="text-primary" />
+            <FontAwesomeIcon icon={faPlus} className="text-accent" />
           </span>
           <span className="dropdown-menu-text">Remove Todo List</span>
         </a>
@@ -316,7 +316,7 @@ const NodeTodoList = forwardRef<NodeTodoListHandle, NodeTodoListProps>(function 
   const titleSlot = (
     <div className="card-title flex">
       <div>
-        <FontAwesomeIcon icon={faTasks} className="text-primary me-4" />
+        <FontAwesomeIcon icon={faTasks} className="text-accent me-4" />
         Todo Tasks
       </div>
       <div className="dropdown-menu-container ms-auto hover-reveal-content">
@@ -348,7 +348,7 @@ const NodeTodoList = forwardRef<NodeTodoListHandle, NodeTodoListProps>(function 
                   onRemove={handleTodoRemove}
                 />
               ))}
-              {todoList.length === 0 && <div className="text-muted">No tasks</div>}
+              {todoList.length === 0 && <div className="text-ink-3">No tasks</div>}
             </ul>
           </SortableContext>
           <DragOverlay>

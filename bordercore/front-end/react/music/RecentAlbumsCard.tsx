@@ -35,7 +35,7 @@ export function RecentAlbumsCard({
                   <li>
                     <a className="dropdown-menu-item" href={urls.createSong}>
                       <span className="dropdown-menu-icon">
-                        <FontAwesomeIcon icon={faPlus} className="text-primary" />
+                        <FontAwesomeIcon icon={faPlus} className="text-accent" />
                       </span>
                       <span className="dropdown-menu-text">New Song</span>
                     </a>
@@ -43,7 +43,7 @@ export function RecentAlbumsCard({
                   <li>
                     <a className="dropdown-menu-item" href={urls.artistList}>
                       <span className="dropdown-menu-icon">
-                        <FontAwesomeIcon icon={faPlus} className="text-primary" />
+                        <FontAwesomeIcon icon={faPlus} className="text-accent" />
                       </span>
                       <span className="dropdown-menu-text">Artist List</span>
                     </a>
@@ -51,7 +51,7 @@ export function RecentAlbumsCard({
                   <li>
                     <a className="dropdown-menu-item" href={urls.createAlbum}>
                       <span className="dropdown-menu-icon">
-                        <FontAwesomeIcon icon={faPlus} className="text-primary" />
+                        <FontAwesomeIcon icon={faPlus} className="text-accent" />
                       </span>
                       <span className="dropdown-menu-text">New Album</span>
                     </a>

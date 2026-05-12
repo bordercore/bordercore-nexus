@@ -464,7 +464,7 @@ export function SearchPage({
                               metadata={source.last_modified}
                               metadataExtra={source.domain}
                               extraSlot={
-                                <div className="flex items-center text-primary">
+                                <div className="flex items-center text-accent">
                                   <img
                                     src={`https://www.bordercore.com/favicons/${source.domain}.ico`}
                                     width="20"

@@ -153,7 +153,7 @@ export function ObjectSelectModal({
               className="truncate"
               dangerouslySetInnerHTML={{ __html: boldenOption(option.name || "", search) }}
             />
-            <div className="date text-muted text-sm my-1">
+            <div className="date text-ink-3 text-sm my-1">
               {option.date}
               {option.important === 10 && (
                 <span className="ms-2">

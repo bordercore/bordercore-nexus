@@ -216,7 +216,7 @@ export function BookmarkFormPage({
                 {relatedNodes.map(node => (
                   <li
                     key={node.uuid}
-                    className="hoverable px-0 list-group-item list-group-item-secondary text-primary"
+                    className="hoverable px-0 list-group-item list-group-item-secondary text-accent"
                   >
                     <div className="flex items-center ps-4">
                       <div className="flex w-full">
@@ -234,7 +234,7 @@ export function BookmarkFormPage({
       {/* Main form */}
       <div className="col-lg-9 flex flex-grow-last">
         <div className="card-body">
-          <p className="lead offset-lg-2">
+          <p className="text-xl font-light offset-lg-2">
             {/* faviconHtml is trusted server-rendered HTML from the app's own database */}
             {faviconHtml && <span dangerouslySetInnerHTML={{ __html: faviconHtml }} />}{" "}
             {bookmarkName || "New Bookmark"}

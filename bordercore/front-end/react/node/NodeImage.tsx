@@ -54,7 +54,7 @@ export default function NodeImage({
           className="dropdown-menu-item"
         >
           <span className="dropdown-menu-icon">
-            <FontAwesomeIcon icon={faExternalLinkAlt} className="text-primary" />
+            <FontAwesomeIcon icon={faExternalLinkAlt} className="text-accent" />
           </span>
           <span className="dropdown-menu-text">Media detail</span>
         </a>
@@ -69,7 +69,7 @@ export default function NodeImage({
           }}
         >
           <span className="dropdown-menu-icon">
-            <FontAwesomeIcon icon={faTimes} className="text-primary" />
+            <FontAwesomeIcon icon={faTimes} className="text-accent" />
           </span>
           <span className="dropdown-menu-text">Remove media</span>
         </a>
@@ -81,7 +81,7 @@ export default function NodeImage({
     <div className="dropdown-height flex">
       <div className="card-title flex">
         <div>
-          <FontAwesomeIcon icon={faImage} className="text-primary me-4" />
+          <FontAwesomeIcon icon={faImage} className="text-accent me-4" />
           {imageTitle}
         </div>
       </div>

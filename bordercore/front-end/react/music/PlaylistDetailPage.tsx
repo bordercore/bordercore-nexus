@@ -240,28 +240,28 @@ export function PlaylistDetailPage({ playlist, urls, staticUrl }: PlaylistDetail
               <ul>
                 {playlist.parameters.tag && (
                   <li>
-                    with tag <strong className="text-primary">{playlist.parameters.tag}</strong>
+                    with tag <strong className="text-accent">{playlist.parameters.tag}</strong>
                   </li>
                 )}
                 {playlist.parameters.start_year && (
                   <li>
                     from the years{" "}
-                    <strong className="text-primary">{playlist.parameters.start_year}</strong> to{" "}
-                    <strong className="text-primary">{playlist.parameters.end_year}</strong>
+                    <strong className="text-accent">{playlist.parameters.start_year}</strong> to{" "}
+                    <strong className="text-accent">{playlist.parameters.end_year}</strong>
                   </li>
                 )}
                 {playlist.type === "manual" && <li>Manually created playlist</li>}
                 {playlist.parameters.rating && (
                   <li>
                     with a{" "}
-                    <strong className="text-primary">{playlist.parameters.rating} star</strong>{" "}
+                    <strong className="text-accent">{playlist.parameters.rating} star</strong>{" "}
                     rating
                   </li>
                 )}
                 {playlist.parameters.exclude_recent && (
                   <li>
                     not listened to within the past{" "}
-                    <strong className="text-primary">{playlist.parameters.exclude_recent}</strong>{" "}
+                    <strong className="text-accent">{playlist.parameters.exclude_recent}</strong>{" "}
                     day
                     {playlist.parameters.exclude_recent > 1 ? "s" : ""}
                   </li>
@@ -313,7 +313,7 @@ export function PlaylistDetailPage({ playlist, urls, staticUrl }: PlaylistDetail
                   {playlist.note && <h6>{playlist.note}</h6>}
 
                   {songCount > 0 && (
-                    <small className="text-primary ms-2">
+                    <small className="text-accent ms-2">
                       <strong>{songCount}</strong> {pluralize("song", songCount)},{" "}
                       <strong>{totalTime}</strong>
                     </small>

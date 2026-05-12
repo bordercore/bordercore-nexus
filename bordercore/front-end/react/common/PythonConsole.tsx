@@ -186,7 +186,7 @@ print(__repl_result)
     return (
       // Dynamic height prop - must remain inline when provided
       <div className={containerClasses} style={height ? { height } : {}}>
-        <div className="code-header text-primary mb-2">Python Console</div>
+        <div className="code-header text-accent mb-2">Python Console</div>
 
         <div className="code-input code-input-pre-element-styled">
           <textarea

@@ -160,7 +160,7 @@ export default function NodeQuote({
           }}
         >
           <span className="dropdown-menu-icon">
-            <FontAwesomeIcon icon={faPencilAlt} className="text-primary" />
+            <FontAwesomeIcon icon={faPencilAlt} className="text-accent" />
           </span>
           <span className="dropdown-menu-text">Edit quote</span>
         </a>
@@ -175,7 +175,7 @@ export default function NodeQuote({
           }}
         >
           <span className="dropdown-menu-icon">
-            <FontAwesomeIcon icon={faPlus} className="text-primary" />
+            <FontAwesomeIcon icon={faPlus} className="text-accent" />
           </span>
           <span className="dropdown-menu-text">Remove quote</span>
         </a>
@@ -189,7 +189,7 @@ export default function NodeQuote({
         <div className="dropdown-height flex">
           <div className="card-title flex">
             <div>
-              <FontAwesomeIcon icon={faQuoteLeft} className="text-primary me-4" />
+              <FontAwesomeIcon icon={faQuoteLeft} className="text-accent me-4" />
               Quote
             </div>
           </div>
@@ -211,7 +211,7 @@ export default function NodeQuote({
         {quote && (
           <div key={quote.uuid}>
             <div>{quote.quote}</div>
-            <div className="text-primary text-smaller">
+            <div className="text-accent text-smaller">
               <strong>{quote.source}</strong>
             </div>
           </div>

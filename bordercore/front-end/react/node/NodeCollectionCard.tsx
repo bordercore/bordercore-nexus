@@ -149,7 +149,7 @@ function SortableItem({
                         }}
                       >
                         <span className="dropdown-menu-icon">
-                          <FontAwesomeIcon icon={faTrashAlt} className="text-primary" />
+                          <FontAwesomeIcon icon={faTrashAlt} className="text-accent" />
                         </span>
                         <span className="dropdown-menu-text">Remove</span>
                       </a>
@@ -164,7 +164,7 @@ function SortableItem({
                         }}
                       >
                         <span className="dropdown-menu-icon">
-                          <FontAwesomeIcon icon={faPencilAlt} className="text-primary" />
+                          <FontAwesomeIcon icon={faPencilAlt} className="text-accent" />
                         </span>
                         <span className="dropdown-menu-text">
                           {element.note ? "Edit" : "Add"} Note
@@ -486,7 +486,7 @@ export default function NodeCollectionCard({
             }}
           >
             <span className="dropdown-menu-icon">
-              <FontAwesomeIcon icon={faPlus} className="text-primary" />
+              <FontAwesomeIcon icon={faPlus} className="text-accent" />
             </span>
             <span className="dropdown-menu-text">Add Object</span>
           </a>
@@ -501,7 +501,7 @@ export default function NodeCollectionCard({
             className="dropdown-menu-item"
           >
             <span className="dropdown-menu-icon">
-              <FontAwesomeIcon icon={faExternalLinkAlt} className="text-primary" />
+              <FontAwesomeIcon icon={faExternalLinkAlt} className="text-accent" />
             </span>
             <span className="dropdown-menu-text">Collection Detail</span>
           </a>
@@ -517,7 +517,7 @@ export default function NodeCollectionCard({
           }}
         >
           <span className="dropdown-menu-icon">
-            <FontAwesomeIcon icon={faPencilAlt} className="text-primary" />
+            <FontAwesomeIcon icon={faPencilAlt} className="text-accent" />
           </span>
           <span className="dropdown-menu-text">Edit Collection</span>
         </a>
@@ -532,7 +532,7 @@ export default function NodeCollectionCard({
           }}
         >
           <span className="dropdown-menu-icon">
-            <FontAwesomeIcon icon={faTimes} className="text-primary" />
+            <FontAwesomeIcon icon={faTimes} className="text-accent" />
           </span>
           <span className="dropdown-menu-text">
             {collection.collection_type === "ad-hoc" ? "Delete" : "Remove"} Collection
@@ -545,7 +545,7 @@ export default function NodeCollectionCard({
   const titleSlot = (
     <div className="card-title flex">
       <div className="truncate">
-        <FontAwesomeIcon icon={faSplotch} className="text-primary me-4" />
+        <FontAwesomeIcon icon={faSplotch} className="text-accent me-4" />
         {collection.name}
       </div>
       <div className="text-ink-2 text-small text-nowrap ms-4">
@@ -577,7 +577,7 @@ export default function NodeCollectionCard({
                 alt=""
               />
             ) : (
-              <span className="text-muted">No objects</span>
+              <span className="text-ink-3">No objects</span>
             )}
           </div>
         ) : (
@@ -602,7 +602,7 @@ export default function NodeCollectionCard({
                     onStartEditNote={setEditingNoteUuid}
                   />
                 ))}
-                {objectList.length === 0 && <div className="text-muted">No objects</div>}
+                {objectList.length === 0 && <div className="text-ink-3">No objects</div>}
               </ul>
             </SortableContext>
             <DragOverlay>

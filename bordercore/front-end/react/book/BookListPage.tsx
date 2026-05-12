@@ -99,7 +99,7 @@ export function BookListPage({ books, alphabet, selectedLetter, baseUrl }: BookL
 
       {/* Books Table */}
       {filteredAndSortedBooks.length === 0 ? (
-        <p className="text-muted">No books found.</p>
+        <p className="text-ink-3">No books found.</p>
       ) : (
         <table className="table table-striped">
           <thead>

@@ -148,7 +148,7 @@ export default function NodeNode({
           }}
         >
           <span className="dropdown-menu-icon">
-            <FontAwesomeIcon icon={faExternalLinkAlt} className="text-primary" />
+            <FontAwesomeIcon icon={faExternalLinkAlt} className="text-accent" />
           </span>
           <span className="dropdown-menu-text">Edit Node</span>
         </a>
@@ -163,7 +163,7 @@ export default function NodeNode({
           }}
         >
           <span className="dropdown-menu-icon">
-            <FontAwesomeIcon icon={faExternalLinkAlt} className="text-primary" />
+            <FontAwesomeIcon icon={faExternalLinkAlt} className="text-accent" />
           </span>
           <span className="dropdown-menu-text">Remove Node</span>
         </a>
@@ -175,7 +175,7 @@ export default function NodeNode({
     <div className="dropdown-height flex">
       <div className="card-title flex">
         <div className="truncate">
-          <FontAwesomeIcon icon={faBox} className="text-primary me-4" />
+          <FontAwesomeIcon icon={faBox} className="text-accent me-4" />
           {nodeInfo && (
             <span>
               <a href={nodeDetailUrl}>{nodeInfo.name}</a>

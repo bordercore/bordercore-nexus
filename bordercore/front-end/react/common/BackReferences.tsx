@@ -41,7 +41,7 @@ export function BackReferences({ backReferences }: BackReferencesProps) {
         {backReferences.map(node => (
           <li
             key={node.uuid}
-            className="hoverable px-0 list-group-item list-group-item-secondary text-primary"
+            className="hoverable px-0 list-group-item list-group-item-secondary text-accent"
           >
             {node.type === "question" && (
               <div className="flex">

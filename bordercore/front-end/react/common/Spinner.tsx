@@ -13,12 +13,13 @@ export type SpinnerProps = {
  * Inline circular loading spinner using the theme accent color.
  *
  * Replaces Bootstrap's `.spinner-border` / `.spinner-border-sm`. The
- * legacy code carried `text-primary` and `text-ink-2` modifiers,
- * but those were silently overridden by `_bootstrap.scss .spinner-border
- * { color: var(--accent) }`, so every existing spinner rendered in the
- * accent color regardless. This component is intentionally single-tone
- * for that reason; if a non-accent spinner is needed in the future, pass
- * a Tailwind text-* utility via `className` to override.
+ * legacy code carried Bootstrap `text-primary` and `text-secondary`
+ * modifiers, but those were silently overridden by
+ * `_bootstrap.scss .spinner-border { color: var(--accent) }`, so every
+ * existing spinner rendered in the accent color regardless. This
+ * component is intentionally single-tone for that reason; if a
+ * non-accent spinner is needed in the future, pass a Tailwind text-*
+ * utility via `className` to override.
  *
  * The `aria-label` is sufficient for screen readers, so callers no
  * longer need to wrap a `sr-only` label span.

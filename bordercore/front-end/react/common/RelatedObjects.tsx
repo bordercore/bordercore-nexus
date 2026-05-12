@@ -206,7 +206,7 @@ export const RelatedObjects = forwardRef<RelatedObjectsHandle, RelatedObjectsPro
     const titleSlot = (
       <div className="flex">
         <div className="card-title flex">
-          <FontAwesomeIcon icon={faBookmark} className="text-primary me-4 mt-1" />
+          <FontAwesomeIcon icon={faBookmark} className="text-accent me-4 mt-1" />
           {title}
         </div>
         <div className="dropdown-menu-container ms-auto">
@@ -245,7 +245,7 @@ export const RelatedObjects = forwardRef<RelatedObjectsHandle, RelatedObjectsPro
         {dataLoading ? (
           <div className="text-ink-2">Loading...</div>
         ) : objectList.length === 0 ? (
-          <div className="text-muted">No related objects</div>
+          <div className="text-ink-3">No related objects</div>
         ) : (
           <DndContext
             sensors={sensors}
@@ -343,7 +343,7 @@ function SortableRelatedObject({
               </div>
               {!element.noteIsEditable ? (
                 <div
-                  className="node-object-note text-muted text-sm cursor-pointer"
+                  className="node-object-note text-ink-3 text-sm cursor-pointer"
                   onClick={() => toggleNoteEditable(element.uuid, true)}
                 >
                   {element.note}

@@ -168,12 +168,12 @@ class TagBookmark(SortOrderMixin):
             }
           >
             <ul className="list-group">
-              <li className="list-group-item list-group-item-secondary text-primary">
+              <li className="list-group-item list-group-item-secondary text-accent">
                 Get stuff done
                 <span className="tag bg-info ms-1">linux</span>
                 <span className="tag bg-info">django</span>
               </li>
-              <li className="list-group-item list-group-item-secondary text-primary">
+              <li className="list-group-item list-group-item-secondary text-accent">
                 Get more stuff done
                 <span className="tag bg-info ms-1">linux</span>
                 <span className="tag bg-info">django</span>
@@ -209,18 +209,18 @@ class TagBookmark(SortOrderMixin):
 
       <h4 className="mt-12">Refined Breadcrumb H1</h4>
 
-      <p className="text-muted">
+      <p className="text-ink-3">
         Page-title h1 used on detail/edit pages and on the todo filter title. Site-wide navigation
         breadcrumbs live in the global top bar — this is a content heading, not a navigation
         control.
       </p>
 
-      <p className="mt-4 mb-1 text-muted text-sm">Single-current form (e.g. detail / edit pages):</p>
+      <p className="mt-4 mb-1 text-ink-3 text-sm">Single-current form (e.g. detail / edit pages):</p>
       <h1 className="refined-breadcrumb-h1">
         <span className="current">My favorite albums</span>
       </h1>
 
-      <p className="mt-6 mb-1 text-muted text-sm">
+      <p className="mt-6 mb-1 text-ink-3 text-sm">
         Chain form with dimmed parent (e.g. todo filter title):
       </p>
       <h1 className="refined-breadcrumb-h1">
