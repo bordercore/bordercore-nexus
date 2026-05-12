@@ -711,6 +711,32 @@
       color: color-mix(in oklch, var(--danger), white 32%);
     }
   }
+
+  &.success {
+    border-color: color-mix(in oklch, var(--ok), transparent 60%);
+    background: transparent;
+    box-shadow: none;
+    color: color-mix(in oklch, var(--ok), white 18%);
+
+    &:hover {
+      border-color: var(--ok);
+      background: color-mix(in oklch, var(--ok), transparent 88%);
+      color: color-mix(in oklch, var(--ok), white 32%);
+    }
+  }
+
+  &.warning {
+    border-color: color-mix(in oklch, var(--warn), transparent 60%);
+    background: transparent;
+    box-shadow: none;
+    color: color-mix(in oklch, var(--warn), white 18%);
+
+    &:hover {
+      border-color: var(--warn);
+      background: color-mix(in oklch, var(--warn), transparent 88%);
+      color: color-mix(in oklch, var(--warn), white 32%);
+    }
+  }
 }
 
 .refined-btn-icon { font-size: 10px; }
