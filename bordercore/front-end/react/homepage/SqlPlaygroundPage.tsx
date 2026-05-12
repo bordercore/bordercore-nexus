@@ -253,7 +253,7 @@ export function SqlPlaygroundPage({ sqlDbUrl }: SqlPlaygroundPageProps) {
           placeholder="Your SQL Here..."
           onKeyDown={handleKeyDown}
         />
-        <input className="btn btn-primary" type="button" value="Run" onClick={handleRunSQL} />
+        <input className="refined-btn primary" type="button" value="Run" onClick={handleRunSQL} />
         <input type="file" ref={fileInputRef} className="d-none" onChange={handleFileChange} />
       </Card>
 

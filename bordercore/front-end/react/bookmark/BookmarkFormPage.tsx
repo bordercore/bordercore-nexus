@@ -279,7 +279,7 @@ export function BookmarkFormPage({
               <div className="col-lg-7 offset-lg-2 d-flex">
                 {uuid && (
                   <input
-                    className="btn btn-outline-danger me-auto"
+                    className="refined-btn danger me-auto"
                     type="button"
                     name="Go"
                     value="Delete"
@@ -287,13 +287,10 @@ export function BookmarkFormPage({
                   />
                 )}
                 <div className="d-flex ms-auto align-items-center">
-                  <a href={urls.bookmarkOverview} className="btn btn-secondary">
+                  <a href={urls.bookmarkOverview} className="refined-btn">
                     Cancel
                   </a>
-                  <button
-                    type="submit"
-                    className="btn btn-primary ms-2 d-inline-flex align-items-center gap-2"
-                  >
+                  <button type="submit" className="refined-btn primary ms-2">
                     <FontAwesomeIcon icon={faCheck} className="refined-btn-icon" />
                     Save
                   </button>

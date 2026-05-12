@@ -82,7 +82,7 @@ export function ReminderDetailPage({ detailAjaxUrl }: ReminderDetailPageProps) {
         <div className="alert alert-danger" role="alert">
           {error || "Reminder not found."}
         </div>
-        <a href="/reminder/" className="btn btn-outline-secondary">
+        <a href="/reminder/" className="refined-btn">
           <FontAwesomeIcon icon={faArrowLeft} className="me-2" />
           Back to Reminders
         </a>
@@ -103,7 +103,7 @@ export function ReminderDetailPage({ detailAjaxUrl }: ReminderDetailPageProps) {
           )}
         </div>
         <div className="col-md-4 text-end">
-          <a href={reminder.app_url} className="btn btn-outline-secondary">
+          <a href={reminder.app_url} className="refined-btn">
             <FontAwesomeIcon icon={faArrowLeft} className="me-2" />
             Back
           </a>

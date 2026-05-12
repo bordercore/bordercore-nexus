@@ -485,7 +485,7 @@ export function BookmarkListPage({
             {/* Tags/Filters button for mobile */}
             <button
               type="button"
-              className="btn btn-primary bookmark-tags-drawer-toggle d-lg-none me-2"
+              className="refined-btn primary bookmark-tags-drawer-toggle d-lg-none me-2"
               onClick={toggleDrawer}
               aria-label="Toggle Tags"
             >

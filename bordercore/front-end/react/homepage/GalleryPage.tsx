@@ -233,16 +233,18 @@ class TagBookmark(SortOrderMixin):
 
       <h4 className="mt-5">Toasts</h4>
 
-      <button className="btn btn-primary" onClick={() => createToast("info")}>
+      <button className="refined-btn primary" onClick={() => createToast("info")}>
         Info Toast
       </button>
+      {/* refined-btn has no success/warning variants yet; leave on Bootstrap
+          until those are added or this gallery moves to bespoke styling. */}
       <button className="btn btn-success" onClick={() => createToast("success")}>
         Success Toast
       </button>
       <button className="btn btn-warning" onClick={() => createToast("warning")}>
         Warning Toast
       </button>
-      <button className="btn btn-danger" onClick={() => createToast("danger")}>
+      <button className="refined-btn danger" onClick={() => createToast("danger")}>
         Danger Toast
       </button>
 

@@ -205,7 +205,7 @@ print(__repl_result)
         <div id="output-container">
           <button
             type="button"
-            className="btn btn-primary position-relative"
+            className="refined-btn primary position-relative"
             onClick={evaluatePython}
             disabled={!isReady}
           >

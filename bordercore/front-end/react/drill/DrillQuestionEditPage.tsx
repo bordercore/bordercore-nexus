@@ -279,7 +279,7 @@ export function DrillQuestionEditPage({
               <div className="col-lg-9 offset-lg-2 d-flex" id="button-wrapper">
                 {objectUuid && urls.delete && (
                   <button
-                    className="btn btn-outline-danger me-auto"
+                    className="refined-btn danger me-auto"
                     type="button"
                     onClick={handleDelete}
                   >
@@ -287,10 +287,10 @@ export function DrillQuestionEditPage({
                   </button>
                 )}
                 <div className="d-flex ms-auto align-items-center">
-                  <a className="btn btn-secondary" href={urls.cancel}>
+                  <a className="refined-btn" href={urls.cancel}>
                     Cancel
                   </a>
-                  <button className="btn btn-primary ms-2" type="button" onClick={handleSubmit}>
+                  <button className="refined-btn primary ms-2" type="button" onClick={handleSubmit}>
                     Save
                   </button>
                 </div>

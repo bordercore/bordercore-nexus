@@ -64,7 +64,7 @@ export function ConstellationPage({ graphUrl }: ConstellationPageProps) {
           <div className="constellation-message-card">
             <h2>Couldn&rsquo;t load constellation</h2>
             <p>{error}</p>
-            <button className="btn btn-primary" onClick={reload}>
+            <button className="refined-btn primary" onClick={reload}>
               Try again
             </button>
           </div>
@@ -79,7 +79,7 @@ export function ConstellationPage({ graphUrl }: ConstellationPageProps) {
               Create some blobs and link them, and this page will fill in with the shape of your
               knowledge.
             </p>
-            <a className="btn btn-primary" href="/blob/new/">
+            <a className="refined-btn primary" href="/blob/new/">
               Create a blob
             </a>
           </div>
