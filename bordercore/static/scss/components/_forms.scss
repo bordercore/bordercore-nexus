@@ -3,14 +3,26 @@
 // =============================================================================
 // Form inputs, textareas, checkboxes, tags using the refined token set.
 
-// Form controls — inherit the canonical .refined-input surface.
+// Form controls — inherit the canonical .refined-input surface plus the
+// structural Bootstrap defaults so .form-control no longer needs Bootstrap's
+// core CSS to render correctly. The refined mixin handles all of the visual
+// chrome (border, background, focus state, placeholder colour, typography);
+// the rules below add what Bootstrap's bare .form-control rule contributes
+// — display, width, line-height, appearance reset, etc. — so the project
+// stays self-sufficient once Bootstrap is removed in migration Phase 4.
 input.form-control,
 textarea.form-control,
 select.form-control {
   @include refined-input-surface;
 
+  display: block;
+  width: 100%;
   min-height: 46px;
   padding: 11px 14px;
+  appearance: none;
+  background-clip: padding-box;
+  font-weight: 400;
+  line-height: 1.5;
 
   &:hover {
     border-color: var(--fg-3);
