@@ -301,7 +301,12 @@ export function BookmarkEditPage({
                 <label htmlFor="id_note">
                   note <span className="optional">· optional</span>
                 </label>
-                <textarea id="id_note" name="note" defaultValue={noteField?.value || ""} />
+                <textarea
+                  id="id_note"
+                  name="note"
+                  className="form-control"
+                  defaultValue={noteField?.value || ""}
+                />
                 {renderError(noteField)}
               </div>
 

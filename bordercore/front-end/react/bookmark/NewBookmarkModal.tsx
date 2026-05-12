@@ -159,7 +159,12 @@ export function NewBookmarkModal({
           <label htmlFor="bookmark-new-note">
             note <span className="optional">· optional</span>
           </label>
-          <textarea id="bookmark-new-note" value={note} onChange={e => setNote(e.target.value)} />
+          <textarea
+            id="bookmark-new-note"
+            className="form-control"
+            value={note}
+            onChange={e => setNote(e.target.value)}
+          />
         </div>
 
         <div className="refined-field">
