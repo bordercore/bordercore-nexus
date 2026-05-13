@@ -20,7 +20,7 @@
   // Escape base.html's content padding so the sidebar sits flush with the
   // viewport edge (left of the breadcrumb), matching .cl-shell and
   // .todo-app's full-bleed convention.
-  margin: -1rem -1.5rem 0;
+  margin: -1rem -0.75rem 0 0;
 
   // Column gap between sidebar and main only — row spacing below the page
   // head is owned by .mlo-pagehead's own margin-bottom, matching /collection/.

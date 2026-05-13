@@ -34,12 +34,11 @@
   position: relative;
   min-height: 100vh;
 
-  // The Bordercore app keeps a fixed left sidebar (#sidebar) overlaying
-  // page content. Push our rail clear of it. The icon-only collapsed
-  // sidebar is ~70px; the expanded sidebar with labels is ~240px. Default
-  // to the wider value and override when .wrapper.collapsed is set.
-  padding: 0 0 0 240px;
-  margin: -1rem -1.5rem 0;
+  // #content (in _layout.scss) provides the sidebar-clearing padding for
+  // every page. This page only needs to bleed past base.html's container
+  // padding for its edge-to-edge background.
+  padding: 0;
+  margin: -1rem -0.75rem 0 0;
   background:
     radial-gradient(1100px 700px at 90% -5%, color-mix(in oklch, var(--accent) 8%, transparent), transparent 55%),
     radial-gradient(900px 600px at 10% 110%, color-mix(in oklch, var(--accent) 4%, transparent), transparent 60%),
@@ -1130,11 +1129,6 @@
   // Selectors for these live outside .bd-page since the portal mounts to body.
 }
 
-// When the app sidebar is collapsed (icon-only), shrink the left padding.
-.wrapper.collapsed .bd-page {
-  padding-left: 70px;
-}
-
 // AddPopover and Drawer mount via FloatingPortal / fixed positioning, so they
 // live outside the .bd-page DOM subtree. Style globally but namespace via the
 // .bd-* class names.
@@ -1405,12 +1399,6 @@
   min-height: 100vh;
   padding: 0;
   margin: 0;
-}
-
-// Cancel the collapsed-sidebar padding override too — the reader fills the
-// viewport regardless of app chrome state.
-.wrapper.collapsed .bd-page.bd-fullscreen-reader-root {
-  padding-left: 0;
 }
 
 .bd-fullscreen-close {

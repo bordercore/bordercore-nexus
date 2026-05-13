@@ -3,17 +3,29 @@
 // =============================================================================
 // Top bar, content area, sidebar, and overall page layout
 
-// Content container
+// Content container.
+// The Bordercore sidebar (.sidebar inside #sidebar) is position: fixed and
+// the .wrapper has no padding-left, so #content must reserve the sidebar's
+// footprint itself or every page renders underneath the navbar. The padding
+// tracks the REAL DOM state of the React-rendered sidebar via :has() rather
+// than the server-rendered .wrapper.collapsed class — those two can diverge
+// when the user toggles the sidebar without a page reload, leaving the
+// wrapper class stale until the next request. Mobile resets to a small
+// inset because the sidebar's behavior changes below 992px.
 #content {
   display: flex;
   min-height: 100vh;
   flex-direction: column;
-  padding-left: 64px; /* Reserve space for collapsed sidebar icons */
+  padding-left: 240px;
   transition: padding-left 0.3s ease;
 
   @media (width < 992px) {
-    padding-left: 1rem; /* Reset padding on mobile where sidebar is hidden/different */
+    padding-left: 1rem;
   }
+}
+
+.wrapper:has(.sidebar[data-collapsed="true"]) #content {
+  padding-left: 64px;
 }
 
 // Content block area - provides spacing for Django content block

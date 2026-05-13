@@ -28,7 +28,7 @@
 
   position: relative;
   min-height: 100vh;
-  margin: -1rem -1.5rem 0; // bleed past base.html's content padding
+  margin: -1rem -0.75rem 0 0; // bleed past base.html's content padding
   background: var(--bg-0);
   color: var(--fg-1);
   font-family: var(--font-ui);

@@ -45,11 +45,11 @@
   position: relative;
   min-height: 100vh;
 
-  // The Bordercore app keeps a fixed left sidebar (#sidebar) overlaying
-  // page content. Push our content clear of it. Default to the wider value
-  // and override when .wrapper.collapsed is set.
-  padding: 0 0 0 240px;
-  margin: -1rem -1.5rem 0;
+  // #content (in _layout.scss) provides the sidebar-clearing padding for
+  // every page. This page only needs to bleed past base.html's container
+  // padding for its edge-to-edge background.
+  padding: 0;
+  margin: -1rem -0.75rem 0 0;
   background:
     radial-gradient(1100px 700px at 30% -10%, color-mix(in oklch, var(--accent) 10%, transparent), transparent 60%),
     var(--bg-0);
@@ -1233,7 +1233,3 @@
   }
 }
 
-// When the app sidebar is collapsed (icon-only), shrink the left padding.
-.wrapper.collapsed .be-page {
-  padding-left: 70px;
-}

@@ -24,7 +24,7 @@
 
   // Escape the base layout's container padding so the radial blooms can reach
   // the viewport edges. Mirrors the .refined-page-shell trick.
-  margin: -1rem -1.5rem 0;
+  margin: -1rem -0.75rem 0 0;
   background: var(--bg-0);
   color: var(--fg-1);
   font-family: var(--font-ui);
