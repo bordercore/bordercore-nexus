@@ -8,12 +8,14 @@ import {
   faPenToSquare,
   faPlus,
 } from "@fortawesome/free-solid-svg-icons";
+import { faPython } from "@fortawesome/free-brands-svg-icons";
 
 interface DrillTopbarProps {
   isFavorite: boolean;
   onFavoriteToggle: () => void;
   onAskChatbot: () => void;
   onOpenObjectSelectModal: () => void;
+  onOpenPythonConsole: () => void;
   addQuestionUrl: string;
   editUrl: string;
   studySession: { type: string; tag?: string; list: string[] } | null;
@@ -25,6 +27,7 @@ export function DrillTopbar({
   onFavoriteToggle,
   onAskChatbot,
   onOpenObjectSelectModal,
+  onOpenPythonConsole,
   addQuestionUrl,
   editUrl,
   studySession,
@@ -79,6 +82,15 @@ export function DrillTopbar({
           type="button"
         >
           <FontAwesomeIcon icon={faCube} />
+        </button>
+        <button
+          className="drill-icon-btn"
+          title="Python console"
+          aria-label="Python console"
+          onClick={onOpenPythonConsole}
+          type="button"
+        >
+          <FontAwesomeIcon icon={faPython} />
         </button>
         <button
           className="drill-icon-btn"

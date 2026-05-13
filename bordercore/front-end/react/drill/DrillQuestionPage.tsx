@@ -22,6 +22,7 @@ const prismLanguagesLoaded = Promise.all([
 ]);
 
 import ObjectSelectModal from "../common/ObjectSelectModal";
+import { PythonConsole, PythonConsoleHandle } from "../common/PythonConsole";
 import { RelatedObjectsHandle } from "../common/RelatedObjects";
 import { doPost, EventBus } from "../utils/reactUtils";
 
@@ -147,6 +148,9 @@ export function DrillQuestionPage({
   const relatedObjectsRef = useRef<RelatedObjectsHandle>(null);
   const [objectSelectOpen, setObjectSelectOpen] = useState(false);
 
+  const [showPythonConsole, setShowPythonConsole] = useState(false);
+  const pythonConsoleRef = useRef<PythonConsoleHandle>(null);
+
   // Markdown of the user's own questions / answers. When a fenced code
   // block has no language tag, fall back to a Prism language inferred
   // from the question's own tags so untagged fences still get colored.
@@ -210,6 +214,13 @@ export function DrillQuestionPage({
 
   const handleOpenObjectSelectModal = useCallback(() => {
     setObjectSelectOpen(true);
+  }, []);
+
+  // Mounting <PythonConsole> auto-loads Pyodide via its own effect; we just
+  // flip the flag once and leave it mounted so subsequent clicks scroll back
+  // to it instead of paying the load cost again.
+  const handleOpenPythonConsole = useCallback(() => {
+    setShowPythonConsole(true);
   }, []);
 
   const handleObjectSelected = useCallback(
@@ -319,6 +330,7 @@ export function DrillQuestionPage({
         onFavoriteToggle={handleFavoriteToggle}
         onAskChatbot={handleAskChatbot}
         onOpenObjectSelectModal={handleOpenObjectSelectModal}
+        onOpenPythonConsole={handleOpenPythonConsole}
         addQuestionUrl={addQuestionUrl}
         editUrl={editUrl}
         studySession={studySession}
@@ -369,6 +381,9 @@ export function DrillQuestionPage({
             sqlPlaygroundUrl={sqlPlaygroundUrl}
             startStudySessionUrl={urls.startStudySession}
           />
+          {showPythonConsole && (
+            <PythonConsole ref={pythonConsoleRef} height="40vh" />
+          )}
         </div>
       </div>
 

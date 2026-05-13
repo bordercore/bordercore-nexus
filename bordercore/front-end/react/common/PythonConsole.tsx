@@ -186,23 +186,35 @@ print(__repl_result)
     return (
       // Dynamic height prop - must remain inline when provided
       <div className={containerClasses} style={height ? { height } : {}}>
-        <div className="code-header text-accent mb-2">Python Console</div>
-
-        <div className="code-input code-input-pre-element-styled">
-          <textarea
-            ref={textareaRef}
-            rows={5}
-            spellCheck={false}
-            onInput={update}
-            onKeyDown={handleKeyDown}
-            onScroll={syncScroll}
-          />
-          <pre ref={preRef} className="python-console language-python" aria-hidden="true">
-            <code ref={codeRef} className="language-python" />
-          </pre>
+        <div className="pyc-titlebar code-header">
+          <span className="pyc-dot pyc-dot-red" />
+          <span className="pyc-dot pyc-dot-yellow" />
+          <span className="pyc-dot pyc-dot-green" />
+          <span className="pyc-title">python console</span>
+          <span
+            className={`pyc-status ${isReady ? "ready" : isLoading ? "loading" : "idle"}`}
+          >
+            {isLoading ? "loading…" : isReady ? "ready" : "idle"}
+          </span>
         </div>
 
-        <div id="output-container">
+        <div className="pyc-body">
+          <div className="code-input code-input-pre-element-styled">
+            <textarea
+              ref={textareaRef}
+              rows={5}
+              spellCheck={false}
+              onInput={update}
+              onKeyDown={handleKeyDown}
+              onScroll={syncScroll}
+            />
+            <pre ref={preRef} className="python-console language-python" aria-hidden="true">
+              <code ref={codeRef} className="language-python" />
+            </pre>
+          </div>
+        </div>
+
+        <div id="output-container" className="pyc-footer">
           <button
             type="button"
             className="refined-btn primary relative"
@@ -212,7 +224,10 @@ print(__repl_result)
             {isLoading ? "Loading Python..." : "Run"}
           </button>
           {output && (
-            <div id="code-output" className={`mt-4 ${pythonError ? "python-error" : ""}`}>
+            <div
+              id="code-output"
+              className={`pyc-output mt-4 ${pythonError ? "python-error" : ""}`}
+            >
               {output}
             </div>
           )}
