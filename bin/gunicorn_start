@@ -23,7 +23,7 @@ export PYTHONPATH=$PYTHONPATH
 source /var/www/.env
 
 # Install Python packages
-/var/www/.local/bin/uv sync --group prod
+/var/www/.local/bin/uv sync --project "$DJANGODIR/bordercore" --group prod
 
 # Start your Django Unicorn
 # Programs meant to be run under supervisor should not daemonize themselves (do not use --daemon)
@@ -36,4 +36,6 @@ exec gunicorn ${DJANGO_WSGI_MODULE}:application \
   --bind=$HOST \
   --log-level=info \
   --log-file=- \
+  --max-requests=500 \
+  --max-requests-jitter=50 \
   --worker-tmp-dir=/dev/shm
