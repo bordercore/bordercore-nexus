@@ -3,13 +3,12 @@
 // =============================================================================
 // 12-column responsive grid (`.container`, `.row`, `.col-N`,
 // `.col-{sm,md,lg,xl,xxl}-N`, `.offset-{sm,md,lg,xl,xxl}-N`) used by JSX and
-// Django templates throughout the app.
-//
-// Tailwind's content scanner also generates a `.container` rule using its own
-// screens config (640/768/1024/...). This file is imported after Tailwind in
-// bordercore.scss, so this `.container` wins for any element that lands both
-// classes.
+// Django templates throughout the app. Tailwind's content scanner also
+// generates a `.container` rule using its own screens config
+// (640/768/1024/...). This file is imported after Tailwind in bordercore.scss,
+// so this `.container` wins for any element that lands both classes.
 
+@use "sass:map";
 @use "sass:math";
 
 // Breakpoint table (sm:576, md:768, lg:992, xl:1200, xxl:1400) — these are
@@ -22,7 +21,6 @@ $bc-grid-breakpoints: (
   xl: 1200px,
   xxl: 1400px,
 );
-
 $bc-grid-container-max-widths: (
   sm: 540px,
   md: 720px,
@@ -44,7 +42,7 @@ $bc-grid-container-max-widths: (
 @each $name, $size in $bc-grid-breakpoints {
   @media (min-width: $size) {
     .container {
-      max-width: map-get($bc-grid-container-max-widths, $name);
+      max-width: map.get($bc-grid-container-max-widths, $name);
     }
   }
 }
@@ -53,6 +51,7 @@ $bc-grid-container-max-widths: (
 .row {
   --bs-gutter-x: 1.5rem;
   --bs-gutter-y: 0;
+
   display: flex;
   flex-wrap: wrap;
   margin-top: calc(-1 * var(--bs-gutter-y));
@@ -60,10 +59,10 @@ $bc-grid-container-max-widths: (
   margin-left: calc(-0.5 * var(--bs-gutter-x));
 
   > * {
-    box-sizing: border-box;
-    flex-shrink: 0;
     width: 100%;
     max-width: 100%;
+    box-sizing: border-box;
+    flex-shrink: 0;
     padding-right: calc(var(--bs-gutter-x) * 0.5);
     padding-left: calc(var(--bs-gutter-x) * 0.5);
     margin-top: var(--bs-gutter-y);
@@ -73,14 +72,14 @@ $bc-grid-container-max-widths: (
 // Columns — base (.col-1 through .col-12) and .col-auto
 @for $i from 1 through 12 {
   .col-#{$i} {
+    width: math.percentage(math.div($i, 12));
     flex: 0 0 auto;
-    width: percentage(math.div($i, 12));
   }
 }
 
 .col-auto {
-  flex: 0 0 auto;
   width: auto;
+  flex: 0 0 auto;
 }
 
 .col {
@@ -92,19 +91,19 @@ $bc-grid-container-max-widths: (
   @media (min-width: $size) {
     @for $i from 1 through 12 {
       .col-#{$name}-#{$i} {
+        width: math.percentage(math.div($i, 12));
         flex: 0 0 auto;
-        width: percentage(math.div($i, 12));
       }
     }
 
     .col-#{$name}-auto {
-      flex: 0 0 auto;
       width: auto;
+      flex: 0 0 auto;
     }
 
     @for $i from 0 through 11 {
       .offset-#{$name}-#{$i} {
-        margin-left: if($i == 0, 0, percentage(math.div($i, 12)));
+        margin-left: if($i == 0, 0, math.percentage(math.div($i, 12)));
       }
     }
   }

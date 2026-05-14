@@ -9,6 +9,8 @@
  * static/scss/base/_reset.scss.
  */
 
+/* stylelint-disable scss/at-rule-no-unknown -- @tailwind is processed by
+   PostCSS/Tailwind before stylelint sees the output. */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

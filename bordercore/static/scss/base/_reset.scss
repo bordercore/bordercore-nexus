@@ -1,12 +1,11 @@
 // =============================================================================
 // BASE: RESET & CORE STYLES
 // =============================================================================
-// Base HTML elements, typography, scrollbars, fonts.
-//
-// The element-level resets below are the project's CSS reset. Tailwind's
-// preflight is disabled in tailwind.config.js because it has different
-// opinions (notably `h1-h6 { font-size: inherit }`) that would clash with
-// the typography expectations encoded here.
+// Base HTML elements, typography, scrollbars, fonts. The element-level resets
+// below are the project's CSS reset. Tailwind's preflight is disabled in
+// tailwind.config.js because it has different opinions (notably
+// `h1-h6 { font-size: inherit }`) that would clash with the typography
+// expectations encoded here.
 
 // Universal box-sizing — critical for layout. Browser default is
 // content-box; without this, every element with padding renders wider
@@ -51,6 +50,7 @@ body {
 h1, h2, h3, h4, h5, h6 {
   margin-top: 0;
   margin-bottom: 0.5rem;
+  font-weight: 600;
   line-height: 1.2;
 }
 
@@ -151,10 +151,6 @@ svg {
 // alone is enough to paint above the fixed ambient pseudo-element.
 body > * {
   position: relative;
-}
-
-h1, h2, h3, h4, h5, h6 {
-  font-weight: 600;
 }
 
 p {

@@ -100,8 +100,8 @@
   display: flex;
   flex-direction: column;
   padding-left: 0;
-  margin-bottom: 0;
   border-radius: var(--radius);
+  margin-bottom: 0;
   list-style: none;
 }
 
@@ -146,6 +146,11 @@
 }
 
 .interior-borders {
+  // The .list-group-flush rule above uses `:last-child`, which raises its
+  // specificity above this plain `.list-group-item`. Both selectors are
+  // intentionally scoped (one to `.list-group-flush`, one to
+  // `.interior-borders`), so the source-order convention doesn't apply.
+  // stylelint-disable-next-line no-descending-specificity
   .list-group-item {
     border-top: none;
     border-right: none;
