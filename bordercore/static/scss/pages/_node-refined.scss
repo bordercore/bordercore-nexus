@@ -54,7 +54,6 @@
   min-height: 100vh;
   padding: 0;
   margin: -1rem -0.75rem 0 0;
-  background: var(--bg-1);
   color: var(--fg-1);
   font-family: var(--font-ui);
   font-size: 14px;
@@ -66,9 +65,7 @@
   &::before {
     position: absolute;
     z-index: 0;
-    background:
-      radial-gradient(1200px 800px at 10% -10%, color-mix(in oklch, var(--accent) 12%, transparent), transparent 60%),
-      radial-gradient(900px 700px at 110% 20%, color-mix(in oklch, var(--accent-4) 8%, transparent), transparent 55%);
+    background: none;
     content: "";
     inset: 0;
     pointer-events: none;

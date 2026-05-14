@@ -39,10 +39,7 @@
   // padding for its edge-to-edge background.
   padding: 0;
   margin: -1rem -0.75rem 0 0;
-  background:
-    radial-gradient(1100px 700px at 90% -5%, color-mix(in oklch, var(--accent) 8%, transparent), transparent 55%),
-    radial-gradient(900px 600px at 10% 110%, color-mix(in oklch, var(--accent) 4%, transparent), transparent 60%),
-    var(--bg-0);
+  background: radial-gradient(900px 600px at 10% 110%, color-mix(in oklch, var(--accent) 4%, transparent), transparent 60%);
   color: var(--fg-1);
   font-family: var(--font-ui);
   font-size: 14px;

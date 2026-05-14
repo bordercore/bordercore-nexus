@@ -80,16 +80,14 @@
 // ==== Surface ====
 .refined-tb {
   position: relative;
+  z-index: 10; // elevate the bar (and its bleed-canvas) above the page row
   display: flex;
-  overflow: hidden;
-  width: 100%;
+  overflow: visible; // let .refined-tb-bg extend below the bar into the page
   height: 64px;
   align-items: center;
   padding: 0 24px;
-  border-bottom: 1px solid var(--bc-hairline);
-  margin: 0;
-  backdrop-filter: blur(14px);
-  background: color-mix(in oklch, var(--bg-1) 72%, transparent);
+  margin: 0 -0.75rem 0 0;
+  background: transparent; // body's --bg-0 shows through, matching the page
   font-family: var(--bc-font-sans);
   font-size: 14px;
   gap: 12px;
@@ -103,20 +101,17 @@
 }
 
 // ==== Background animation layer ====
+// Extends 64px past the bar bottom so the constellation/aurora animation
+// bleeds into the upper portion of the page below, softening the transition.
 .refined-tb-bg {
   position: absolute;
   z-index: 0;
+  top: 0;
+  right: 0;
+  left: 0;
   overflow: hidden;
-  inset: 0;
+  height: 128px;
   pointer-events: none;
-
-  &::after {
-    position: absolute;
-    background: linear-gradient(180deg, color-mix(in oklch, var(--bg-1) 35%, transparent), color-mix(in oklch, var(--bg-1) 55%, transparent));
-    content: "";
-    inset: 0;
-    pointer-events: none;
-  }
 }
 
 .refined-tb-bg-canvas {
@@ -125,6 +120,10 @@
   width: 100%;
   height: 100%;
   inset: 0;
+
+  // Full opacity in the bar area (top 50%), fading to transparent over the
+  // bleed area below so stars/glows dissipate into the page seamlessly.
+  mask-image: linear-gradient(180deg, #000 50%, transparent 100%);
 }
 
 // ==== Breadcrumb (Bordercore / section / leaf) ====

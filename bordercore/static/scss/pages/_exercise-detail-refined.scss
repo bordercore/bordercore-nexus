@@ -34,7 +34,6 @@
   min-height: calc(100vh - 56px);
   padding: 28px 36px 120px;
   margin: -1rem -0.75rem 0 0;
-  background: var(--bg-0);
   color: var(--fg-1);
   font-family: var(--font-ui);
   font-size: 14px;
@@ -46,8 +45,6 @@
     position: absolute;
     z-index: 0;
     background:
-      radial-gradient(1400px 900px at 15% -10%, color-mix(in oklch, var(--accent) 13%, transparent), transparent 60%),
-      radial-gradient(900px 700px at 110% 30%, color-mix(in oklch, var(--accent-4) 8%, transparent), transparent 55%),
       radial-gradient(600px 400px at 80% 110%, color-mix(in oklch, var(--accent-3) 6%, transparent), transparent 50%);
     content: "";
     inset: 0;

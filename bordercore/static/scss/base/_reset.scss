@@ -33,11 +33,10 @@
 
 // Common HTML elements
 body {
-  // Use CSS variable for body background (defined in theme files)
   position: relative;
   min-height: 100vh;
   margin: 0;
-  background-color: var(--body-bg);
+  background-color: var(--bg-0);
   color: var(--fg-0);
   font-family: Roboto, sans-serif;
   font-size: 1rem;
