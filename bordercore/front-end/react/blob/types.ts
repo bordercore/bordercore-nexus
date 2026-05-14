@@ -104,6 +104,7 @@ export interface BlobDetailUrls {
   sqlPlayground?: string;
   pdfViewer?: string;
   rename?: string;
+  visualize?: string;
 }
 
 export interface RelatedObjectItem {

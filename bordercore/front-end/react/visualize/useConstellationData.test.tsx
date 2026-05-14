@@ -22,8 +22,9 @@ function Harness({ url, layers }: { url: string; layers: Set<Layer> }) {
 }
 
 const sampleResponse: GraphPayload = {
-  nodes: [{ uuid: "a", type: "blob", name: "A", detail_url: "/a/", degree: 0 }],
+  nodes: [{ uuid: "a", type: "blob", name: "A", detail_url: "/a/", degree: 0, community: null }],
   edges: [],
+  community_labels: {},
 };
 
 beforeEach(() => {

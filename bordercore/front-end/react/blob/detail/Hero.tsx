@@ -12,6 +12,7 @@ import {
   faPlay,
   faCopy,
   faExpand,
+  faCircleNodes,
 } from "@fortawesome/free-solid-svg-icons";
 
 import { doPost, EventBus } from "../../utils/reactUtils";
@@ -169,6 +170,11 @@ export function Hero({
                   <a className="bd-more-item" href={urls.edit}>
                     <FontAwesomeIcon icon={faPencilAlt} /> Edit blob
                   </a>
+                  {urls.visualize && (
+                    <a className="bd-more-item" href={urls.visualize}>
+                      <FontAwesomeIcon icon={faCircleNodes} /> Visualize
+                    </a>
+                  )}
                   <a className="bd-more-item" href={urls.clone}>
                     <FontAwesomeIcon icon={faClone} /> Clone blob
                   </a>

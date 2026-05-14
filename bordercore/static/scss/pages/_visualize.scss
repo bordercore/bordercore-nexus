@@ -1,3 +1,5 @@
+@use "sass:list";
+
 // =============================================================================
 // PAGES: VISUALIZE (Constellation)
 // =============================================================================
@@ -5,11 +7,24 @@
 // fixed-palette and does NOT consume theme tokens — a constellation reads as
 // a constellation only against a dark cosmic background, and the SCSS layer
 // dots (#7d95d0 / #6b7aa8 / #8a6bc4) mirror DIRECT_EDGE_COLOR / TAG_EDGE_COLOR
-// / COLLECTION_EDGE_COLOR in front-end/react/visualize/ForceGraph.tsx so the
-// SVG rendering and the CSS legend agree. The body text shades (#cfe0ff /
-// #8a97c4 / #fff) and the panel chrome (rgb(15 21 48 / X%) over rgb(255 255
-// 255 / 10%) borders) are calibrated for legibility on that fixed gradient.
-// Same precedent as the $tag-colors map in _collections.scss.
+// / COLLECTION_EDGE_COLOR in front-end/react/visualize/ForceGraph.tsx. The
+// cluster dots (.constellation-cluster-dot-0..9) mirror COMMUNITY_PALETTE in
+// the same file. Both directions must stay in sync — change one, change the
+// other. The body text shades (#cfe0ff / #8a97c4 / #fff) and the panel chrome
+// (rgb(15 21 48 / X%) over rgb(255 255 255 / 10%) borders) are calibrated for
+// legibility on that fixed gradient. Same precedent as the $tag-colors map in
+// _collections.scss.
+
+// Mirrors COMMUNITY_PALETTE in ForceGraph.tsx. Server-side Louvain in
+// bordercore/visualize/services.py sorts communities by size and emits ids
+// 0..N (capped at MAX_COMMUNITIES = 10); anything past the cap, or smaller
+// than MIN_COMMUNITY_SIZE, comes back as community=null and lands in the
+// unclustered bucket below.
+$constellation-cluster-colors: (
+  #7ab8ff, #ffb685, #8ddc9e, #e58fb4, #c9a7ff,
+  #ffd166, #5fd0e1, #ff9090, #b3e07a, #d8b094
+);
+$constellation-unclustered-color: #7d8aa8;
 
 .constellation-page {
   position: fixed;
@@ -59,6 +74,58 @@
   50%      { opacity: 0.85; }
 }
 
+// ---- Twinkle --------------------------------------------------------------
+// Per-node opacity oscillation. Two amplitude tiers: starred blobs visibly
+// breathe (high-amp), everyone else barely shimmers (low-amp). 8 phase
+// buckets (selected from the uuid in ForceGraph.tsx) spread the cycle across
+// nodes via negative animation-delay so the field doesn't pulse in unison.
+// Animation is GPU-accelerated opacity, so ~1500 simultaneous animations
+// stay cheap on modern hardware.
+@keyframes constellation-twinkle-low {
+  0%, 100% { opacity: 0.85; }
+  50%      { opacity: 1; }
+}
+
+@keyframes constellation-twinkle-high {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 1; }
+}
+
+.constellation-node {
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+
+  &.constellation-node-amp-low {
+    animation-duration: 4.5s;
+    animation-name: constellation-twinkle-low;
+  }
+
+  &.constellation-node-amp-high {
+    animation-duration: 3.2s;
+    animation-name: constellation-twinkle-high;
+  }
+}
+
+// Negative delays mean "treat the animation as if it began N seconds ago,"
+// which gives the appearance of a randomized starting phase per node without
+// any per-node inline styles. The denominator (8) matches TWINKLE_PHASE_BUCKETS.
+.constellation-node-phase-0 { animation-delay: 0s; }
+.constellation-node-phase-1 { animation-delay: -0.4s; }
+.constellation-node-phase-2 { animation-delay: -0.8s; }
+.constellation-node-phase-3 { animation-delay: -1.2s; }
+.constellation-node-phase-4 { animation-delay: -1.6s; }
+.constellation-node-phase-5 { animation-delay: -2s; }
+.constellation-node-phase-6 { animation-delay: -2.4s; }
+.constellation-node-phase-7 { animation-delay: -2.8s; }
+
+// Respect users who've asked the OS to reduce motion. The constellation
+// still reads with the gradients + spikes; only the pulse goes away.
+@media (prefers-reduced-motion: reduce) {
+  .constellation-node {
+    animation: none;
+  }
+}
+
 // ---- Control panel --------------------------------------------------------
 
 .constellation-control-panel {
@@ -87,6 +154,63 @@
   margin: 0 0 0.75rem;
   color: #8a97c4;
   font-size: 0.75rem;
+}
+
+.constellation-control-subtitle {
+  margin: 0.75rem 0 0.35rem;
+  color: #8a97c4;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.constellation-cluster-list {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  margin: 0;
+  gap: 0.25rem;
+  list-style: none;
+}
+
+.constellation-cluster-row {
+  display: flex;
+  align-items: center;
+  font-size: 0.82rem;
+  gap: 0.5rem;
+}
+
+.constellation-cluster-label {
+  flex: 1 1 auto;
+  color: #cfe0ff;
+}
+
+.constellation-cluster-count {
+  color: #8a97c4;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.constellation-cluster-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: 50%;
+
+  &.constellation-cluster-dot-unclustered {
+    background: $constellation-unclustered-color;
+  }
+}
+
+// Emit one .constellation-cluster-dot-N rule per palette slot. Loop keeps the
+// SCSS and the TS palette in lockstep — adding a slot here means adding the
+// matching hex in COMMUNITY_PALETTE.
+@for $i from 1 through list.length($constellation-cluster-colors) {
+  .constellation-cluster-dot-#{$i - 1} {
+    background: list.nth($constellation-cluster-colors, $i);
+  }
 }
 
 .constellation-layer-list {
@@ -149,6 +273,118 @@
 .constellation-layer-label {
   flex: 1 1 auto;
   color: #cfe0ff;
+}
+
+// ---- Search ---------------------------------------------------------------
+
+.constellation-search {
+  position: absolute;
+  top: 1rem;
+
+  // The global left sidebar (240px expanded, 64px collapsed) is z-index 999
+  // and the constellation-page is full-bleed (inset: 64px 0 0), so the
+  // search has to inset itself past the sidebar instead of relying on the
+  // page boundary. .wrapper.collapsed is set on a constellation-page
+  // ancestor — see templates/base.html. The transition matches the
+  // sidebar's own 250ms collapse animation so the search glides along
+  // rather than snapping.
+  left: calc(240px + 1rem);
+  width: 280px;
+  font-size: 0.85rem;
+  transition: left 250ms ease;
+
+  .wrapper.collapsed & {
+    left: calc(64px + 1rem);
+  }
+}
+
+.constellation-search-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 0 0.65rem;
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 999px;
+  backdrop-filter: blur(10px);
+  background: rgb(15 21 48 / 70%);
+}
+
+.constellation-search-icon {
+  color: #8a97c4;
+  font-size: 0.75rem;
+}
+
+.constellation-search-input {
+  width: 100%;
+  flex: 1 1 auto;
+  padding: 0.55rem 0.5rem;
+  border: none;
+  background: transparent;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.85rem;
+  outline: none;
+
+  &::placeholder {
+    color: #8a97c4;
+  }
+}
+
+.constellation-search-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #8a97c4;
+  cursor: pointer;
+
+  &:hover {
+    color: #fff;
+  }
+}
+
+.constellation-search-results {
+  display: flex;
+  flex-direction: column;
+  padding: 0.3rem;
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 10px;
+  margin-top: 0.4rem;
+  backdrop-filter: blur(10px);
+  background: rgb(15 21 48 / 85%);
+  gap: 0.1rem;
+  list-style: none;
+}
+
+.constellation-search-result {
+  display: flex;
+  align-items: center;
+  padding: 0.4rem 0.55rem;
+  border-radius: 6px;
+  color: #cfe0ff;
+  cursor: pointer;
+  gap: 0.5rem;
+
+  &.constellation-search-result-active {
+    background: rgb(122 184 255 / 18%);
+    color: #fff;
+  }
+}
+
+.constellation-search-result-name {
+  overflow: hidden;
+  flex: 1 1 auto;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.constellation-search-result-type {
+  color: #8a97c4;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 // ---- Hover tooltip --------------------------------------------------------

@@ -548,6 +548,9 @@ class BlobDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView):
             "sqlPlayground": reverse("homepage:sql"),
             "pdfViewer": reverse("blob:pdf_viewer", kwargs={"uuid": self.object.uuid}),
             "rename": reverse("blob:rename", kwargs={"uuid": self.object.uuid}),
+            "visualize": (
+                reverse("visualize:constellation") + f"?focus={self.object.uuid}"
+            ),
         }
 
         context["blob_urls"] = context["urls"]

@@ -37,9 +37,10 @@ def test_graph_api_returns_expected_shape(authenticated_client):
 
     assert resp.status_code == 200
     body = resp.json()
-    assert set(body) == {"nodes", "edges"}
+    assert set(body) == {"nodes", "edges", "community_labels"}
     assert isinstance(body["nodes"], list)
     assert isinstance(body["edges"], list)
+    assert isinstance(body["community_labels"], dict)
 
 
 def test_graph_api_accepts_layers_param(authenticated_client):

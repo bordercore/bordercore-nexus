@@ -14,11 +14,20 @@ Edges come in three kinds:
 
 If a pair is connected by a direct edge, any tag/collection edge for
 the same pair is suppressed — the stronger semantic wins.
+
+After edges are finalized, a community-detection pass (Louvain) assigns
+each node a stable ``community`` id (or ``None`` for the gray bucket of
+singletons / tiny clusters / overflow past ``MAX_COMMUNITIES``). The
+frontend uses this id to pick a color from a fixed palette.
 """
 from __future__ import annotations
 
+import math
 from collections import defaultdict
 from typing import Any
+
+import networkx as nx
+from networkx.algorithms.community import louvain_communities
 
 from django.contrib.auth.models import User
 
@@ -26,8 +35,30 @@ from blob.models import Blob, BlobToObject
 from bookmark.models import Bookmark
 from collection.models import CollectionObject
 from drill.models import Question
+from tag.models import Tag
 
 DEFAULT_TOP_K = 4
+
+# Louvain edge weights — direct links are user-confirmed and should pull
+# harder than the computed similarity edges, but we cap similarity weights
+# so a heavily-shared-tag pair can't out-bind a direct link.
+DIRECT_EDGE_LOUVAIN_WEIGHT = 4.0
+SIMILARITY_EDGE_WEIGHT_CAP = 3.0
+
+# Frontend palette has 10 slots; communities past this are bucketed as
+# "unclustered" (community=None) along with anything below MIN_COMMUNITY_SIZE.
+MAX_COMMUNITIES = 10
+MIN_COMMUNITY_SIZE = 3
+
+# Seed makes Louvain deterministic across runs with identical input.
+LOUVAIN_SEED = 0
+
+# Cluster labels are derived from member tags via TF-IDF. Up to LABELS_PER_COMMUNITY
+# tag names are returned per cluster; a tag must appear on at least MIN_TAG_HITS
+# members of the cluster to be considered (one stray tag shouldn't label a
+# 50-node cluster).
+LABELS_PER_COMMUNITY = 2
+MIN_TAG_HITS = 2
 
 
 def build_graph(user: User, layers: set[str], top_k: int = DEFAULT_TOP_K) -> dict[str, Any]:
@@ -47,6 +78,11 @@ def build_graph(user: User, layers: set[str], top_k: int = DEFAULT_TOP_K) -> dic
     # Collect nodes first so we can scope edge computation to them.
     nodes_by_uuid, node_records = _collect_nodes(user)
 
+    # Tag membership powers both the tag-similarity edges (if that layer
+    # is on) and the community labels (always). Computing it once and
+    # threading it through avoids duplicate queries.
+    members_by_tag = _members_by_tag(user, nodes_by_uuid)
+
     edges: list[dict[str, Any]] = []
     direct_pairs: set[frozenset[str]] = set()
 
@@ -60,7 +96,7 @@ def build_graph(user: User, layers: set[str], top_k: int = DEFAULT_TOP_K) -> dic
         edges.extend(
             _similarity_edges(
                 kind="tag",
-                pair_counts=_shared_tag_counts(user, nodes_by_uuid),
+                pair_counts=_tag_pair_counts(members_by_tag, nodes_by_uuid),
                 top_k=top_k,
                 skip_pairs=direct_pairs,
             )
@@ -82,10 +118,146 @@ def build_graph(user: User, layers: set[str], top_k: int = DEFAULT_TOP_K) -> dic
         degree[edge["source"]] += 1
         degree[edge["target"]] += 1
 
+    communities = _assign_communities(node_records, edges)
+
     for record in node_records:
         record["degree"] = degree.get(record["uuid"], 0)
+        record["community"] = communities.get(record["uuid"])
 
-    return {"nodes": node_records, "edges": edges}
+    community_labels = _label_communities(
+        uuid_to_community=communities,
+        members_by_tag=members_by_tag,
+        total_nodes=len(node_records),
+    )
+
+    return {
+        "nodes": node_records,
+        "edges": edges,
+        "community_labels": community_labels,
+    }
+
+
+def _assign_communities(
+    node_records: list[dict[str, Any]],
+    edges: list[dict[str, Any]],
+) -> dict[str, int | None]:
+    """Run Louvain over the edge list and return uuid → community id.
+
+    Communities are sorted by size descending and renumbered 0..N. Anything
+    smaller than ``MIN_COMMUNITY_SIZE`` or past ``MAX_COMMUNITIES`` maps to
+    ``None`` (the unclustered bucket — rendered gray on the frontend).
+    """
+    uuid_to_community: dict[str, int | None] = {
+        record["uuid"]: None for record in node_records
+    }
+
+    if not edges:
+        return uuid_to_community
+
+    graph = nx.Graph()
+    graph.add_nodes_from(record["uuid"] for record in node_records)
+    for edge in edges:
+        weight = _louvain_weight(edge)
+        # If the pair already has an edge (shouldn't happen post-dedup, but
+        # be defensive), keep the stronger weight rather than summing.
+        existing = graph.get_edge_data(edge["source"], edge["target"])
+        if existing is None or existing.get("weight", 0) < weight:
+            graph.add_edge(edge["source"], edge["target"], weight=weight)
+
+    raw_communities = louvain_communities(graph, weight="weight", seed=LOUVAIN_SEED)
+
+    # Sort by size desc, then by smallest member uuid for tie-break stability.
+    sized = sorted(
+        (frozenset(members) for members in raw_communities),
+        key=lambda members: (-len(members), min(members)),
+    )
+
+    next_id = 0
+    for members in sized:
+        if len(members) < MIN_COMMUNITY_SIZE or next_id >= MAX_COMMUNITIES:
+            continue
+        for uuid_str in members:
+            uuid_to_community[uuid_str] = next_id
+        next_id += 1
+
+    return uuid_to_community
+
+
+def _louvain_weight(edge: dict[str, Any]) -> float:
+    """Map an edge dict to the weight used by Louvain."""
+    if edge["kind"] == "direct":
+        return DIRECT_EDGE_LOUVAIN_WEIGHT
+    return min(float(edge["weight"]), SIMILARITY_EDGE_WEIGHT_CAP)
+
+
+def _label_communities(
+    uuid_to_community: dict[str, int | None],
+    members_by_tag: dict[int, list[str]],
+    total_nodes: int,
+) -> dict[str, list[str]]:
+    """Pick the top tag names per community using TF-IDF over tag membership.
+
+    A tag scores well for a cluster when it's frequent *within* the cluster
+    (high term frequency) and uncommon *outside* it (high inverse document
+    frequency). This excludes globally-common tags like "misc" from
+    labelling every cluster, even if they happen to be the single most
+    frequent tag inside one.
+
+    Returns ``{str(community_id): [tag_name, ...]}`` with keys as strings
+    so the dict serializes cleanly to JSON.
+    """
+    if total_nodes == 0 or not members_by_tag:
+        return {}
+
+    # community_id -> set of member uuids (only numbered communities, not None).
+    community_members: dict[int, set[str]] = defaultdict(set)
+    for uuid_str, community_id in uuid_to_community.items():
+        if community_id is not None:
+            community_members[community_id].add(uuid_str)
+
+    if not community_members:
+        return {}
+
+    # IDF per tag: log(N / (1 + n_with_tag)). Tags everyone has go to ~0;
+    # tags only a handful of nodes have stay high.
+    idf_by_tag: dict[int, float] = {
+        tag_id: math.log(total_nodes / (1 + len(set(members))))
+        for tag_id, members in members_by_tag.items()
+    }
+
+    # Per-community TF-IDF ranking; collect the tag ids we'll need to
+    # resolve into names afterward.
+    ranked_by_community: dict[int, list[int]] = {}
+    needed_tag_ids: set[int] = set()
+    for community_id, members in community_members.items():
+        scores: dict[int, float] = {}
+        for tag_id, tag_members in members_by_tag.items():
+            hits = sum(1 for member in tag_members if member in members)
+            if hits < MIN_TAG_HITS:
+                continue
+            term_frequency = hits / len(members)
+            scores[tag_id] = term_frequency * idf_by_tag[tag_id]
+        if not scores:
+            continue
+        # Sort desc by score, tie-break by tag_id for determinism.
+        ranked = sorted(scores.items(), key=lambda kv: (-kv[1], kv[0]))
+        top_ids = [tag_id for tag_id, _ in ranked[:LABELS_PER_COMMUNITY]]
+        ranked_by_community[community_id] = top_ids
+        needed_tag_ids.update(top_ids)
+
+    if not needed_tag_ids:
+        return {}
+
+    name_by_id = dict(
+        Tag.objects.filter(id__in=needed_tag_ids).values_list("id", "name")
+    )
+
+    labels: dict[str, list[str]] = {}
+    for community_id, tag_ids in ranked_by_community.items():
+        names = [name_by_id[tid] for tid in tag_ids if tid in name_by_id]
+        if names:
+            labels[str(community_id)] = names
+    return labels
 
 
 def _collect_nodes(user: User) -> tuple[set[str], list[dict[str, Any]]]:
@@ -201,29 +373,44 @@ def _resolve_target_uuid(row: BlobToObject) -> str | None:
     return None
 
 
-def _shared_tag_counts(
+def _members_by_tag(
     user: User, node_uuids: set[str]
-) -> dict[frozenset[str], int]:
-    """For every pair of user-owned objects that share a tag, count shared tags."""
-    counts: dict[frozenset[str], int] = defaultdict(int)
+) -> dict[int, list[str]]:
+    """Merge tag membership across blobs, bookmarks, and questions.
 
-    blob_tag_members = _members_by_tag_for_blobs(user)
-    bookmark_tag_members = _members_by_tag_for_bookmarks(user)
-    question_tag_members = _members_by_tag_for_questions(user)
-
-    all_tag_members: dict[int, list[str]] = defaultdict(list)
-    for mapping in (blob_tag_members, bookmark_tag_members, question_tag_members):
+    Returns ``tag_id -> list of member uuids`` scoped to nodes that are
+    actually in the graph. Used by both the tag-similarity edge layer
+    and the community labeller, so we only pay the queries once.
+    """
+    merged: dict[int, list[str]] = defaultdict(list)
+    for mapping in (
+        _members_by_tag_for_blobs(user),
+        _members_by_tag_for_bookmarks(user),
+        _members_by_tag_for_questions(user),
+    ):
         for tag_id, members in mapping.items():
-            all_tag_members[tag_id].extend(members)
+            merged[tag_id].extend(m for m in members if m in node_uuids)
+    return merged
 
-    for members in all_tag_members.values():
-        scoped = [m for m in members if m in node_uuids]
-        for i, a in enumerate(scoped):
-            for b in scoped[i + 1 :]:
+
+def _tag_pair_counts(
+    members_by_tag: dict[int, list[str]], node_uuids: set[str]
+) -> dict[frozenset[str], int]:
+    """For every pair of nodes that share a tag, count how many tags they share.
+
+    ``node_uuids`` is accepted for symmetry with the collection-counts
+    helper; ``members_by_tag`` is already scoped to the graph in
+    ``_members_by_tag``, so the parameter is currently unused but kept
+    in the signature so callers stay parallel.
+    """
+    del node_uuids  # kept for signature parity; see docstring.
+    counts: dict[frozenset[str], int] = defaultdict(int)
+    for members in members_by_tag.values():
+        for i, a in enumerate(members):
+            for b in members[i + 1 :]:
                 if a == b:
                     continue
                 counts[frozenset((a, b))] += 1
-
     return counts
 
 

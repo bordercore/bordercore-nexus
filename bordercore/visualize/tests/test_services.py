@@ -32,10 +32,11 @@ def test_returns_expected_shape():
 
     payload = build_graph(user=user, layers={"direct", "tags"})
 
-    assert set(payload) == {"nodes", "edges"}
+    assert set(payload) == {"nodes", "edges", "community_labels"}
     assert len(payload["nodes"]) == 1
     assert payload["nodes"][0]["type"] == "blob"
     assert payload["nodes"][0]["degree"] == 0
+    assert payload["community_labels"] == {}
 
 
 def test_direct_blob_to_blob_edge_emitted():
@@ -226,3 +227,170 @@ def test_degree_reflects_emitted_edges():
     assert by_uuid[str(hub.uuid)]["degree"] == 2
     assert by_uuid[str(a.uuid)]["degree"] == 1
     assert by_uuid[str(b.uuid)]["degree"] == 1
+
+
+# ---- Community detection --------------------------------------------------
+
+
+def test_community_is_none_when_graph_has_no_edges():
+    user = UserFactory.create()
+    BlobFactory.create(user=user)
+    BlobFactory.create(user=user)
+
+    payload = build_graph(user=user, layers={"direct", "tags"})
+
+    assert all(n["community"] is None for n in payload["nodes"])
+
+
+def test_community_none_for_pair_below_min_size():
+    # A two-node component is below MIN_COMMUNITY_SIZE (3) and should be
+    # bucketed as unclustered.
+    user = UserFactory.create()
+    a = BlobFactory.create(user=user)
+    b = BlobFactory.create(user=user)
+    BlobToObject.objects.create(node=a, blob=b)
+
+    payload = build_graph(user=user, layers={"direct", "tags"})
+
+    by_uuid = {n["uuid"]: n for n in payload["nodes"]}
+    assert by_uuid[str(a.uuid)]["community"] is None
+    assert by_uuid[str(b.uuid)]["community"] is None
+
+
+def test_two_disjoint_clusters_get_distinct_community_ids():
+    user = UserFactory.create()
+    # Cluster 1: triangle of three blobs.
+    a1 = BlobFactory.create(user=user)
+    a2 = BlobFactory.create(user=user)
+    a3 = BlobFactory.create(user=user)
+    BlobToObject.objects.create(node=a1, blob=a2)
+    BlobToObject.objects.create(node=a2, blob=a3)
+    BlobToObject.objects.create(node=a3, blob=a1)
+    # Cluster 2: triangle of three blobs, no edges to cluster 1.
+    b1 = BlobFactory.create(user=user)
+    b2 = BlobFactory.create(user=user)
+    b3 = BlobFactory.create(user=user)
+    BlobToObject.objects.create(node=b1, blob=b2)
+    BlobToObject.objects.create(node=b2, blob=b3)
+    BlobToObject.objects.create(node=b3, blob=b1)
+
+    payload = build_graph(user=user, layers={"direct", "tags"})
+
+    by_uuid = {n["uuid"]: n for n in payload["nodes"]}
+    cluster_a_ids = {by_uuid[str(b.uuid)]["community"] for b in (a1, a2, a3)}
+    cluster_b_ids = {by_uuid[str(b.uuid)]["community"] for b in (b1, b2, b3)}
+
+    assert len(cluster_a_ids) == 1
+    assert len(cluster_b_ids) == 1
+    assert cluster_a_ids != cluster_b_ids
+    assert cluster_a_ids | cluster_b_ids == {0, 1}
+
+
+def test_community_ids_are_deterministic_across_runs():
+    user = UserFactory.create()
+    nodes = [BlobFactory.create(user=user) for _ in range(6)]
+    # Two clear triangles.
+    for i in range(3):
+        BlobToObject.objects.create(node=nodes[i], blob=nodes[(i + 1) % 3])
+    for i in range(3, 6):
+        BlobToObject.objects.create(node=nodes[i], blob=nodes[3 + (i - 2) % 3])
+
+    payload_a = build_graph(user=user, layers={"direct", "tags"})
+    payload_b = build_graph(user=user, layers={"direct", "tags"})
+
+    by_a = {n["uuid"]: n["community"] for n in payload_a["nodes"]}
+    by_b = {n["uuid"]: n["community"] for n in payload_b["nodes"]}
+    assert by_a == by_b
+
+
+# ---- Community labels -----------------------------------------------------
+
+
+def _triangle(user, members):
+    """Make a 3-blob triangle so the members form one Louvain community."""
+    BlobToObject.objects.create(node=members[0], blob=members[1])
+    BlobToObject.objects.create(node=members[1], blob=members[2])
+    BlobToObject.objects.create(node=members[2], blob=members[0])
+
+
+def test_distinctive_tag_becomes_cluster_label():
+    user = UserFactory.create()
+    linux = TagFactory.create(name="linux", user=user)
+    cluster = [BlobFactory.create(user=user) for _ in range(3)]
+    _triangle(user, cluster)
+    for blob in cluster:
+        blob.tags.add(linux)
+
+    payload = build_graph(user=user, layers={"direct", "tags"})
+
+    by_uuid = {n["uuid"]: n for n in payload["nodes"]}
+    cluster_id = by_uuid[str(cluster[0].uuid)]["community"]
+    assert cluster_id is not None
+    labels = payload["community_labels"][str(cluster_id)]
+    assert "linux" in labels
+
+
+def test_globally_common_tag_loses_to_distinctive_tag():
+    # Two distinct clusters; every node is tagged "misc" (common everywhere)
+    # but each cluster also has its own distinctive tag. The distinctive tag
+    # should win the label, not "misc".
+    user = UserFactory.create()
+    misc = TagFactory.create(name="misc", user=user)
+    linux = TagFactory.create(name="linux", user=user)
+    python = TagFactory.create(name="python", user=user)
+
+    cluster_a = [BlobFactory.create(user=user) for _ in range(3)]
+    cluster_b = [BlobFactory.create(user=user) for _ in range(3)]
+    _triangle(user, cluster_a)
+    _triangle(user, cluster_b)
+
+    for blob in cluster_a + cluster_b:
+        blob.tags.add(misc)
+    for blob in cluster_a:
+        blob.tags.add(linux)
+    for blob in cluster_b:
+        blob.tags.add(python)
+
+    payload = build_graph(user=user, layers={"direct", "tags"})
+
+    by_uuid = {n["uuid"]: n for n in payload["nodes"]}
+    id_a = by_uuid[str(cluster_a[0].uuid)]["community"]
+    id_b = by_uuid[str(cluster_b[0].uuid)]["community"]
+    labels_a = payload["community_labels"][str(id_a)]
+    labels_b = payload["community_labels"][str(id_b)]
+
+    # The distinctive tag must rank above "misc" in each cluster.
+    assert labels_a[0] in {"linux"}
+    assert labels_b[0] in {"python"}
+
+
+def test_singleton_tag_below_min_hits_does_not_label():
+    # Only one member of the cluster has the tag — below MIN_TAG_HITS (2).
+    # The cluster should get no label entry.
+    user = UserFactory.create()
+    rare = TagFactory.create(name="lonely", user=user)
+    cluster = [BlobFactory.create(user=user) for _ in range(3)]
+    _triangle(user, cluster)
+    cluster[0].tags.add(rare)
+
+    payload = build_graph(user=user, layers={"direct", "tags"})
+
+    by_uuid = {n["uuid"]: n for n in payload["nodes"]}
+    cluster_id = by_uuid[str(cluster[0].uuid)]["community"]
+    assert str(cluster_id) not in payload["community_labels"]
+
+
+def test_community_labels_omitted_for_unclustered_nodes():
+    # A pair of nodes is below MIN_COMMUNITY_SIZE (community=None); labels
+    # only describe numbered communities, never the unclustered bucket.
+    user = UserFactory.create()
+    tag = TagFactory.create(name="solo", user=user)
+    a = BlobFactory.create(user=user)
+    b = BlobFactory.create(user=user)
+    BlobToObject.objects.create(node=a, blob=b)
+    a.tags.add(tag)
+    b.tags.add(tag)
+
+    payload = build_graph(user=user, layers={"direct", "tags"})
+
+    assert payload["community_labels"] == {}

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import ForceGraph from "./ForceGraph";
 import ControlPanel from "./ControlPanel";
+import Search from "./Search";
 import Starfield from "./Starfield";
 import { useConstellationData } from "./useConstellationData";
 import type { Layer } from "./types";
@@ -11,12 +12,24 @@ interface ConstellationPageProps {
   graphUrl: string;
 }
 
+/** Read the ?focus=<uuid> param from the current URL, or null if absent. */
+function readFocusFromUrl(): string | null {
+  if (typeof window === "undefined") return null;
+  const params = new URLSearchParams(window.location.search);
+  const value = params.get("focus");
+  return value && value.length > 0 ? value : null;
+}
+
 export function ConstellationPage({ graphUrl }: ConstellationPageProps) {
   const [layers, setLayers] = useState<Set<Layer>>(() => new Set<Layer>(["direct", "tags"]));
   const [dims, setDims] = useState(() => ({
     width: typeof window !== "undefined" ? window.innerWidth : 1200,
     height: typeof window !== "undefined" ? window.innerHeight : 800,
   }));
+  // Seeded once from ?focus=<uuid>; subsequent updates come from the search
+  // box. ForceGraph's effect fires whenever this value changes to a uuid it
+  // hasn't already flown to.
+  const [focusUuid, setFocusUuid] = useState<string | null>(() => readFocusFromUrl());
 
   useEffect(() => {
     const handle = () => setDims({ width: window.innerWidth, height: window.innerHeight });
@@ -99,12 +112,16 @@ export function ConstellationPage({ graphUrl }: ConstellationPageProps) {
             edges={clippedEdges}
             width={dims.width}
             height={dims.height}
+            focusUuid={focusUuid}
           />
+          <Search nodes={clippedNodes} onPick={setFocusUuid} />
           <ControlPanel
             nodeCount={clippedNodes.length}
             edgeCount={clippedEdges.length}
             layers={layers}
             onToggleLayer={toggleLayer}
+            nodes={clippedNodes}
+            communityLabels={data.community_labels}
           />
         </>
       )}
