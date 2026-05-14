@@ -381,9 +381,7 @@ export function DrillQuestionPage({
             sqlPlaygroundUrl={sqlPlaygroundUrl}
             startStudySessionUrl={urls.startStudySession}
           />
-          {showPythonConsole && (
-            <PythonConsole ref={pythonConsoleRef} height="40vh" />
-          )}
+          {showPythonConsole && <PythonConsole ref={pythonConsoleRef} height="40vh" />}
         </div>
       </div>
 

@@ -261,11 +261,7 @@ export function DrillQuestionEditPage({
 
             <div>
               <div className="be-label">tags</div>
-              <TagsInput
-                ref={tagsInputRef}
-                searchUrl={urls.tagSearch}
-                initialTags={initialTags}
-              />
+              <TagsInput ref={tagsInputRef} searchUrl={urls.tagSearch} initialTags={initialTags} />
               {errors.tags?.map((error, i) => (
                 <span key={i} className="form-error">
                   Error: {error}
@@ -285,22 +281,14 @@ export function DrillQuestionEditPage({
 
             <div className="be-save-bar">
               {objectUuid && urls.delete && (
-                <button
-                  type="button"
-                  className="be-btn danger"
-                  onClick={() => setDeleteOpen(true)}
-                >
+                <button type="button" className="be-btn danger" onClick={() => setDeleteOpen(true)}>
                   <FontAwesomeIcon icon={faTrashCan} /> delete question
                 </button>
               )}
               <a href={urls.cancel} className="refined-btn ghost be-save-spacer">
                 cancel
               </a>
-              <button
-                type="button"
-                className="refined-btn primary"
-                onClick={handleSubmit}
-              >
+              <button type="button" className="refined-btn primary" onClick={handleSubmit}>
                 <FontAwesomeIcon icon={faCheck} className="refined-btn-icon" />
                 save
               </button>

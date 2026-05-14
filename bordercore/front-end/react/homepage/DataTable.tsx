@@ -75,11 +75,7 @@ export function DataTable({
         <thead>
           <tr>
             {columns.map(col => (
-              <th
-                key={col}
-                onClick={() => handleSort(col)}
-                className="cursor-pointer select-none"
-              >
+              <th key={col} onClick={() => handleSort(col)} className="cursor-pointer select-none">
                 {col}
                 {getSortIcon(col)}
               </th>

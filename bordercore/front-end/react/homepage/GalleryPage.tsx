@@ -215,7 +215,9 @@ class TagBookmark(SortOrderMixin):
         control.
       </p>
 
-      <p className="mt-4 mb-1 text-ink-3 text-sm">Single-current form (e.g. detail / edit pages):</p>
+      <p className="mt-4 mb-1 text-ink-3 text-sm">
+        Single-current form (e.g. detail / edit pages):
+      </p>
       <h1 className="refined-breadcrumb-h1">
         <span className="current">My favorite albums</span>
       </h1>

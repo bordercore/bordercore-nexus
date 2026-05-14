@@ -45,10 +45,6 @@ export function summarizeClusters(nodes: GraphNode[]): ClusterRow[] {
 }
 
 /**
- * Top-right glass-morph card: shows counts, a cluster legend, and layer
- * toggles. Direct links are shown but not toggleable.
- */
-/**
  * Build the human-readable name for a cluster legend row. Prefers the
  * server-supplied TF-IDF tag labels (e.g. "linux · kernel"); falls back
  * to a generic "Cluster N" for numbered clusters without labels and the
@@ -56,7 +52,7 @@ export function summarizeClusters(nodes: GraphNode[]): ClusterRow[] {
  */
 export function clusterDisplayName(
   community: number | null,
-  communityLabels: Record<string, string[]>,
+  communityLabels: Record<string, string[]>
 ): string {
   if (community === null) return "Unclustered";
   const labels = communityLabels[String(community)];
@@ -64,6 +60,10 @@ export function clusterDisplayName(
   return `Cluster ${community + 1}`;
 }
 
+/**
+ * Top-right glass-morph card: shows counts, a cluster legend, and layer
+ * toggles. Direct links are shown but not toggleable.
+ */
 export function ControlPanel({
   nodeCount,
   edgeCount,

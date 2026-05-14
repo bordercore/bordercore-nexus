@@ -1,6 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCheck, faExclamationTriangle, faQuestion, faTimes } from "@fortawesome/free-solid-svg-icons";
+import {
+  faCheck,
+  faExclamationTriangle,
+  faQuestion,
+  faTimes,
+} from "@fortawesome/free-solid-svg-icons";
 
 const DEFAULT_DELAY_MS = 5000;
 

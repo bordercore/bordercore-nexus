@@ -191,9 +191,7 @@ print(__repl_result)
           <span className="pyc-dot pyc-dot-yellow" />
           <span className="pyc-dot pyc-dot-green" />
           <span className="pyc-title">python console</span>
-          <span
-            className={`pyc-status ${isReady ? "ready" : isLoading ? "loading" : "idle"}`}
-          >
+          <span className={`pyc-status ${isReady ? "ready" : isLoading ? "loading" : "idle"}`}>
             {isLoading ? "loading…" : isReady ? "ready" : "idle"}
           </span>
         </div>

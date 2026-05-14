@@ -288,10 +288,7 @@ export function ForceGraph({
     // Animate via d3 transition; the zoom behavior pipes intermediate
     // transforms through its "zoom" handler so our React `transform` state
     // updates each frame and the SVG group re-renders accordingly.
-    svg
-      .transition()
-      .duration(FOCUS_TRANSITION_MS)
-      .call(zoomBehaviorRef.current.transform, target);
+    svg.transition().duration(FOCUS_TRANSITION_MS).call(zoomBehaviorRef.current.transform, target);
 
     // Surface the focused node the same way a hover would: tooltip + neighbor
     // highlight. We anchor the tooltip at the post-pan viewport position so
@@ -429,8 +426,7 @@ export function ForceGraph({
               const starred = isStarred(node);
               // Body radius: starred blobs bump up a notch (magnitude metaphor).
               // Render radius is larger so the gradient's fade has room.
-              const bodyRadius =
-                nodeRadius(node.degree) * (starred ? STARRED_RADIUS_BOOST : 1);
+              const bodyRadius = nodeRadius(node.degree) * (starred ? STARRED_RADIUS_BOOST : 1);
               const hoverScale = isHover ? 1.3 : 1;
               const renderRadius = bodyRadius * RENDER_RADIUS_MULT * hoverScale;
               const opacity = dimmed ? 0.2 : 1;

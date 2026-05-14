@@ -260,7 +260,9 @@ export function BookmarkFormPage({
                     field.errors && field.errors.length > 0 ? "message-error " : ""
                   }row mb-4`}
                 >
-                  <label className="font-bold col-lg-2 col-form-label text-end">{field.label}</label>
+                  <label className="font-bold col-lg-2 col-form-label text-end">
+                    {field.label}
+                  </label>
                   <div className="col-lg-7 flex items-center">{renderField(field)}</div>
                 </div>
                 {field.errors && field.errors.length > 0 && (
