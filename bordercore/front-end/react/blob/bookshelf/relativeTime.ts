@@ -14,14 +14,14 @@ export function relativeTime(iso: string | null | undefined, now: Date = new Dat
 
   const units: Array<[number, string]> = [
     [60, "minute"],
-    [60, "hour"],
-    [24, "day"],
-    [7, "week"],
-    [4.345, "month"],
-    [12, "year"],
+    [24, "hour"],
+    [7, "day"],
+    [4.345, "week"],
+    [12, "month"],
+    [Infinity, "year"],
   ];
 
-  let value = diffSec;
+  let value = diffSec / 60;
   for (let i = 0; i < units.length; i++) {
     const [divisor, name] = units[i];
     if (value < divisor || i === units.length - 1) {
