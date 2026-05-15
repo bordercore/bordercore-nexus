@@ -53,17 +53,33 @@
     grid-template-columns: 260px 1fr;
   }
 
+  // ==== Visualizer (col 1 / row 1, to the left of .todo-head) ====
+  // padding-bottom mirrors .todo-head's margin-bottom (from
+  // refined-page-head-bordered) so the canvas ends flush with the head's
+  // border-bottom line.
+  .todo-viz {
+    overflow: hidden;
+    min-height: 96px;
+    padding-bottom: 24px;
+    grid-column: 1;
+    grid-row: 1;
+  }
+
   // ==== Sidebar ====
   .todo-sidebar {
     position: sticky;
     top: 32px;
     min-width: 0;
     align-self: start;
+    grid-column: 1;
+    grid-row: 2;
   }
 
   // ==== Main column ====
   .todo-main {
     min-width: 0;
+    grid-column: 2;
+    grid-row: 2;
   }
 
   // Title block + subhead on the left, primary "new" button pinned to the
@@ -79,6 +95,8 @@
     align-items: flex-end;
     justify-content: space-between;
     gap: 20px;
+    grid-column: 2;
+    grid-row: 1;
 
     @include refined-page-head-bordered;
   }
@@ -357,9 +375,25 @@
       grid-template-columns: 1fr;
     }
 
+    .todo-viz {
+      display: none;
+    }
+
+    .todo-head {
+      grid-column: 1;
+      grid-row: 1;
+    }
+
     .todo-sidebar {
       position: relative;
       top: auto;
+      grid-column: 1;
+      grid-row: 2;
+    }
+
+    .todo-main {
+      grid-column: 1;
+      grid-row: 3;
     }
 
     .todo-filter-title {

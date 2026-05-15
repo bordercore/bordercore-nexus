@@ -11,6 +11,7 @@ import DisabledTagsCard from "./components/DisabledTagsCard";
 import StudyModal from "./components/StudyModal";
 import type { DrillPayload } from "./types";
 import { pluralize } from "./utils";
+import VisualizerSlot from "../visualizers/VisualizerSlot";
 
 const VALID_METHODS = new Set(["all", "favorites", "recent", "tag", "random", "keyword"]);
 function normalizedScope(key: string): string {
@@ -49,19 +50,21 @@ export default function DrillOverviewPage({ payload }: Props) {
   return (
     <div className="drill-shell">
       <RingDefs />
+      <div className="drill-viz">
+        <VisualizerSlot />
+      </div>
+      <div className="drill-page-head">
+        <h1>
+          <span className="bc-page-title">Drill</span>{" "}
+          <span className="dim">— spaced-repetition overview</span>
+        </h1>
+        <p>
+          Review your overdue tags, drill on a category, or start a global session. Intervals
+          advance on <code>easy</code>/<code>good</code> and step back on <code>hard</code>.
+        </p>
+      </div>
       <Sidebar payload={payload} activeScope={activeScope} onSelectScope={setActiveScope} />
       <main className="drill-main">
-        <div className="drill-page-head">
-          <h1>
-            <span className="bc-page-title">Drill</span>{" "}
-            <span className="dim">— spaced-repetition overview</span>
-          </h1>
-          <p>
-            Review your overdue tags, drill on a category, or start a global session. Intervals
-            advance on <code>easy</code>/<code>good</code> and step back on <code>hard</code>.
-          </p>
-        </div>
-
         <div className="drill-hero">
           <ActionCard
             streak={payload.streak}

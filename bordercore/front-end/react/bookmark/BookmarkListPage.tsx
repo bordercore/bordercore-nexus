@@ -20,6 +20,7 @@ import BookmarkStatsCards from "./BookmarkStatsCards";
 import BookmarkList from "./BookmarkList";
 import BookmarkPagination from "./BookmarkPagination";
 import NewBookmarkModal from "./NewBookmarkModal";
+import VisualizerSlot from "../visualizers/VisualizerSlot";
 import type {
   Bookmark,
   BookmarkStats,
@@ -455,16 +456,122 @@ export function BookmarkListPage({
   }, [isPinned, selectedTagName, urls]);
 
   return (
-    <div id="bookmark-list-page" className="row g-0 h-full mx-2">
+    <div id="bookmark-list-page" className="bookmark-list-page mx-2">
       {/* Tags drawer overlay (for mobile) */}
       {drawerOpen && <div className="bookmark-tags-drawer-overlay" onClick={toggleDrawer} />}
 
-      {/* Tags section - hidden on small screens, shown in drawer */}
-      <div
-        className={`col-lg-3 flex flex-col bookmark-tags-sidebar ${
-          drawerOpen ? "drawer-open" : ""
-        }`}
-      >
+      <div className="bookmark-viz">
+        <VisualizerSlot />
+      </div>
+
+      <header className="bookmark-page-head">
+        <h1 className="bc-page-title">Bookmarks</h1>
+        <div id="bookmark-search-form" className="bookmark-page-actions flex">
+          {/* Tags/Filters button for mobile */}
+          <button
+            type="button"
+            className="refined-btn primary bookmark-tags-drawer-toggle d-lg-none me-2"
+            onClick={toggleDrawer}
+            aria-label="Toggle Tags"
+          >
+            <FontAwesomeIcon icon={faTags} className="me-2" />
+            Tags
+          </button>
+          <div className="bookmark-search-bar" onClick={() => selectValueRef.current?.focus()}>
+            <FontAwesomeIcon icon={faSearch} className="bookmark-search-bar-icon" />
+            {tagIsSelected && (
+              <span
+                className="tag bookmark-search-chip"
+                style={tagStyle(selectedTagName!)} // must remain inline
+              >
+                {selectedTagName}
+                <a
+                  href="#"
+                  onClick={e => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    removeTagFilter();
+                  }}
+                >
+                  <FontAwesomeIcon icon={faTimes} />
+                </a>
+              </span>
+            )}
+            {searchTerm && (
+              <span className="bookmark-search-chip">
+                {searchTerm}
+                <a
+                  href="#"
+                  onClick={e => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    removeSearchTermFilter();
+                  }}
+                >
+                  <FontAwesomeIcon icon={faTimes} />
+                </a>
+              </span>
+            )}
+            <form
+              className="bookmark-search-bar-form"
+              role="form"
+              method="get"
+              onSubmit={e => e.preventDefault()}
+            >
+              <input value={selectedTagName || ""} type="hidden" name="tag" />
+              <SelectValue
+                ref={selectValueRef}
+                id="bookmarkSearch"
+                searchUrl={`${urls.getTagsUsedByBookmarks}?query=`}
+                placeHolder={tagIsSelected || searchTerm ? "" : "Filter by keyword or tag"}
+                onSelect={selectTag}
+                onSearch={handleSearch}
+              />
+            </form>
+          </div>
+          <div className="refined-seg ms-4" role="group" aria-label="View density">
+            <button
+              type="button"
+              className={viewType === "normal" ? "active" : ""}
+              onClick={() => switchViewType("normal")}
+              aria-pressed={viewType === "normal"}
+              title="Normal view"
+            >
+              <FontAwesomeIcon icon={faList} />
+            </button>
+            <button
+              type="button"
+              className={viewType === "compact" ? "active" : ""}
+              onClick={() => switchViewType("compact")}
+              aria-pressed={viewType === "compact"}
+              title="Compact view"
+            >
+              <FontAwesomeIcon icon={faBars} />
+            </button>
+          </div>
+          {tagIsSelected && (
+            <button
+              type="button"
+              className="refined-btn ms-2"
+              onClick={handleTogglePinStatus}
+              title={isPinned ? "Unpin tag" : "Pin tag"}
+            >
+              <FontAwesomeIcon icon={faThumbTack} className="refined-btn-icon" />
+              {isPinned ? "unpin" : "pin"}
+            </button>
+          )}
+          <button
+            type="button"
+            className="refined-btn primary ms-2"
+            onClick={() => setNewBookmarkOpen(true)}
+          >
+            <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" />
+            new
+          </button>
+        </div>
+      </header>
+
+      <div className={`bookmark-tags-sidebar flex flex-col ${drawerOpen ? "drawer-open" : ""}`}>
         <BookmarkPinnedTags
           tags={pinnedTags}
           selectedTagName={selectedTagName}
@@ -478,113 +585,7 @@ export function BookmarkListPage({
         <BookmarkPinnedBookmarks bookmarks={pinnedBookmarks} onUnpin={handleUnpinBookmark} />
       </div>
 
-      <div className="col-lg-9 ps-gutter">
-        <header className="bookmark-page-head">
-          <h1 className="bc-page-title">Bookmarks</h1>
-          <div id="bookmark-search-form" className="bookmark-page-actions flex">
-            {/* Tags/Filters button for mobile */}
-            <button
-              type="button"
-              className="refined-btn primary bookmark-tags-drawer-toggle d-lg-none me-2"
-              onClick={toggleDrawer}
-              aria-label="Toggle Tags"
-            >
-              <FontAwesomeIcon icon={faTags} className="me-2" />
-              Tags
-            </button>
-            <div className="bookmark-search-bar" onClick={() => selectValueRef.current?.focus()}>
-              <FontAwesomeIcon icon={faSearch} className="bookmark-search-bar-icon" />
-              {tagIsSelected && (
-                <span
-                  className="tag bookmark-search-chip"
-                  style={tagStyle(selectedTagName!)} // must remain inline
-                >
-                  {selectedTagName}
-                  <a
-                    href="#"
-                    onClick={e => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      removeTagFilter();
-                    }}
-                  >
-                    <FontAwesomeIcon icon={faTimes} />
-                  </a>
-                </span>
-              )}
-              {searchTerm && (
-                <span className="bookmark-search-chip">
-                  {searchTerm}
-                  <a
-                    href="#"
-                    onClick={e => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      removeSearchTermFilter();
-                    }}
-                  >
-                    <FontAwesomeIcon icon={faTimes} />
-                  </a>
-                </span>
-              )}
-              <form
-                className="bookmark-search-bar-form"
-                role="form"
-                method="get"
-                onSubmit={e => e.preventDefault()}
-              >
-                <input value={selectedTagName || ""} type="hidden" name="tag" />
-                <SelectValue
-                  ref={selectValueRef}
-                  id="bookmarkSearch"
-                  searchUrl={`${urls.getTagsUsedByBookmarks}?query=`}
-                  placeHolder={tagIsSelected || searchTerm ? "" : "Filter by keyword or tag"}
-                  onSelect={selectTag}
-                  onSearch={handleSearch}
-                />
-              </form>
-            </div>
-            <div className="refined-seg ms-4" role="group" aria-label="View density">
-              <button
-                type="button"
-                className={viewType === "normal" ? "active" : ""}
-                onClick={() => switchViewType("normal")}
-                aria-pressed={viewType === "normal"}
-                title="Normal view"
-              >
-                <FontAwesomeIcon icon={faList} />
-              </button>
-              <button
-                type="button"
-                className={viewType === "compact" ? "active" : ""}
-                onClick={() => switchViewType("compact")}
-                aria-pressed={viewType === "compact"}
-                title="Compact view"
-              >
-                <FontAwesomeIcon icon={faBars} />
-              </button>
-            </div>
-            {tagIsSelected && (
-              <button
-                type="button"
-                className="refined-btn ms-2"
-                onClick={handleTogglePinStatus}
-                title={isPinned ? "Unpin tag" : "Pin tag"}
-              >
-                <FontAwesomeIcon icon={faThumbTack} className="refined-btn-icon" />
-                {isPinned ? "unpin" : "pin"}
-              </button>
-            )}
-            <button
-              type="button"
-              className="refined-btn primary ms-2"
-              onClick={() => setNewBookmarkOpen(true)}
-            >
-              <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" />
-              new
-            </button>
-          </div>
-        </header>
+      <div className="bookmark-main-col ps-gutter">
         <BookmarkStatsCards stats={stats} />
 
         <div className="card-grid h-full ps-0 mt-2">

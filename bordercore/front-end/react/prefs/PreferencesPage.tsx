@@ -11,6 +11,7 @@ import SectionCard from "./components/SectionCard";
 import TagInput from "./components/TagInput";
 import ThemePicker, { ThemeOption } from "./components/ThemePicker";
 import Toggle from "./components/Toggle";
+import VisualizerPicker from "./components/VisualizerPicker";
 
 interface FormField {
   name: string;
@@ -46,6 +47,7 @@ interface FieldState {
   eyeCandy: boolean;
   theme: string;
   topbarAnimation: string;
+  visualizer: string;
   background: FileDropValue;
   sidebar: FileDropValue;
   drillMutedTags: string[];
@@ -143,6 +145,12 @@ export function PreferencesPage(props: PreferencesPageProps) {
     label,
   }));
 
+  const visualizerField = getField(formFields, "visualizer");
+  const visualizerOptions = (visualizerField?.choices || []).map(([value, label]) => ({
+    value,
+    label,
+  }));
+
   const defaultCollectionField = getField(formFields, "homepage_default_collection");
   const imageCollectionField = getField(formFields, "homepage_image_collection");
   const bookmarksPerPageField = getField(formFields, "bookmarks_per_page");
@@ -168,6 +176,7 @@ export function PreferencesPage(props: PreferencesPageProps) {
       eyeCandy,
       theme: themeField?.value || "",
       topbarAnimation: topbarAnimationField?.value || "aurora",
+      visualizer: visualizerField?.value || "torus",
       background: {
         url: backgroundImageUrl || "",
         name: backgroundImageUrl ? backgroundImageName || basename(backgroundImageUrl) : "",
@@ -219,6 +228,10 @@ export function PreferencesPage(props: PreferencesPageProps) {
     document.documentElement.setAttribute("topbar-animation", state.topbarAnimation);
   }, [state.topbarAnimation]);
 
+  useEffect(() => {
+    document.documentElement.setAttribute("visualizer", state.visualizer);
+  }, [state.visualizer]);
+
   const upd = useCallback(
     <K extends keyof FieldState>(key: K) =>
       (value: FieldState[K]) => {
@@ -246,6 +259,7 @@ export function PreferencesPage(props: PreferencesPageProps) {
 
     form.append("theme", state.theme);
     form.append("topbar_animation", state.topbarAnimation);
+    form.append("visualizer", state.visualizer);
     form.append("eye_candy", state.eyeCandy ? "true" : "false");
     form.append(
       "drill_intervals",
@@ -411,6 +425,13 @@ export function PreferencesPage(props: PreferencesPageProps) {
               value={state.topbarAnimation}
               onChange={upd("topbarAnimation")}
               options={topbarAnimationOptions}
+            />
+          </Row>
+          <Row label="Visualizer" hint="wireframe artwork in page-header slots">
+            <VisualizerPicker
+              value={state.visualizer}
+              onChange={upd("visualizer")}
+              options={visualizerOptions}
             />
           </Row>
           <Row

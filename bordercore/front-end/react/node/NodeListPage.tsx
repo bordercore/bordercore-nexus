@@ -7,6 +7,7 @@ import NodeSidebar from "./NodeSidebar";
 import NewNodeModal from "./NewNodeModal";
 import type { NodeFilter, NodeListItem, NodeSort } from "./types";
 import { matchesFilter, yearOf } from "./nodeListUtils";
+import VisualizerSlot from "../visualizers/VisualizerSlot";
 
 const DENSITY_STORAGE_KEY = "bc:nodes:density";
 
@@ -122,6 +123,38 @@ export default function NodeListPage({
   return (
     <>
       <div className="nl-shell">
+        <div className="nl-viz">
+          <VisualizerSlot />
+        </div>
+
+        <div className="nl-head">
+          <div>
+            <h1>Nodes</h1>
+            <p>
+              every topic is a node. attach collections, notes, todos, images, and nested nodes.
+              they surface in the homepage and drill queue when you revisit them.
+            </p>
+          </div>
+          <div className="nl-head-meta">
+            <div className="nl-head-stat">
+              <span className="v">{nodes.length}</span>
+              <span className="k">nodes</span>
+            </div>
+            <div className="nl-head-stat">
+              <span className="v">{totalColl}</span>
+              <span className="k">collections</span>
+            </div>
+            <div className="nl-head-stat">
+              <span className="v">{totalTodo}</span>
+              <span className="k">todos</span>
+            </div>
+            <button type="button" className="refined-btn primary" onClick={() => setNewOpen(true)}>
+              <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" />
+              new
+            </button>
+          </div>
+        </div>
+
         <NodeSidebar
           nodes={nodes}
           totalColl={totalColl}
@@ -131,38 +164,6 @@ export default function NodeListPage({
         />
 
         <main className="nl-main">
-          <div className="nl-head">
-            <div>
-              <h1>Nodes</h1>
-              <p>
-                every topic is a node. attach collections, notes, todos, images, and nested nodes.
-                they surface in the homepage and drill queue when you revisit them.
-              </p>
-            </div>
-            <div className="nl-head-meta">
-              <div className="nl-head-stat">
-                <span className="v">{nodes.length}</span>
-                <span className="k">nodes</span>
-              </div>
-              <div className="nl-head-stat">
-                <span className="v">{totalColl}</span>
-                <span className="k">collections</span>
-              </div>
-              <div className="nl-head-stat">
-                <span className="v">{totalTodo}</span>
-                <span className="k">todos</span>
-              </div>
-              <button
-                type="button"
-                className="refined-btn primary"
-                onClick={() => setNewOpen(true)}
-              >
-                <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" />
-                new
-              </button>
-            </div>
-          </div>
-
           <NodeToolbar
             q={q}
             setQ={setQ}

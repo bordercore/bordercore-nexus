@@ -7,6 +7,7 @@ import { MoreRecent } from "./MoreRecent";
 import { TagCloud } from "./TagCloud";
 import type { NotesLandingData, NotesLandingUrls } from "./types";
 import { useFocusOnCtrlK } from "../../common/hooks/useFocusOnCtrlK";
+import VisualizerSlot from "../../visualizers/VisualizerSlot";
 
 interface NotesLandingPageProps {
   data: NotesLandingData;
@@ -31,36 +32,40 @@ export function NotesLandingPage({ data, urls }: NotesLandingPageProps) {
 
   return (
     <div className="nl-app">
-      <header className="nl-page-head">
-        <div className="nl-page-head-text">
-          <h1 className="nl-page-title">Notes</h1>
-          <p className="nl-page-sub">
-            <span className="count">{data.totals.recents}</span> notes ·{" "}
-            <span className="count">{data.totals.pinned}</span> pinned ·{" "}
-            <span className="count">{data.totals.tags}</span> tags
-          </p>
-        </div>
-        <div className="nl-page-actions">
-          <form className="nl-search" onSubmit={handleSubmit} role="search">
-            <FontAwesomeIcon icon={faSearch} aria-hidden="true" />
-            <input
-              ref={searchRef}
-              type="search"
-              name="query"
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              placeholder="search notes…"
-              aria-label="Search notes"
-            />
-          </form>
-          <a href={urls.createNote} className="refined-btn primary">
-            <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" aria-hidden="true" />
-            <span>new</span>
-          </a>
-        </div>
-      </header>
-
       <div className="nl-shell">
+        <div className="nl-viz">
+          <VisualizerSlot />
+        </div>
+
+        <header className="nl-page-head">
+          <div className="nl-page-head-text">
+            <h1 className="nl-page-title">Notes</h1>
+            <p className="nl-page-sub">
+              <span className="count">{data.totals.recents}</span> notes ·{" "}
+              <span className="count">{data.totals.pinned}</span> pinned ·{" "}
+              <span className="count">{data.totals.tags}</span> tags
+            </p>
+          </div>
+          <div className="nl-page-actions">
+            <form className="nl-search" onSubmit={handleSubmit} role="search">
+              <FontAwesomeIcon icon={faSearch} aria-hidden="true" />
+              <input
+                ref={searchRef}
+                type="search"
+                name="query"
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder="search notes…"
+                aria-label="Search notes"
+              />
+            </form>
+            <a href={urls.createNote} className="refined-btn primary">
+              <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" aria-hidden="true" />
+              <span>new</span>
+            </a>
+          </div>
+        </header>
+
         <PinnedColumn initialPinned={data.pinned} sortPinnedUrl={urls.sortPinned} />
 
         <main className="nl-main">

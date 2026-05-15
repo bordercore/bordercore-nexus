@@ -1,0 +1,12 @@
+// =============================================================================
+// Visualizer slot — page-header artwork (wireframe torus, icosahedron, etc.)
+// =============================================================================
+// Used by <VisualizerSlot/> on pages that opt into a corner slot (e.g.
+// .todo-viz on /todo/). The dispatcher renders one canvas child; this rule
+// makes any of the registered visualizers stretch to the host container.
+
+.viz-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}

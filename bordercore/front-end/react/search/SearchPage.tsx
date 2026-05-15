@@ -4,6 +4,7 @@ import SearchResult from "./SearchResult";
 import SearchNoResult from "./SearchNoResult";
 import Pagination from "./Pagination";
 import SearchSidebar from "./SearchSidebar";
+import VisualizerSlot from "../visualizers/VisualizerSlot";
 import { doGet } from "../utils/reactUtils";
 import type { SearchMatch, SearchSource, Aggregation, Paginator, SearchApiResponse } from "./types";
 
@@ -335,6 +336,13 @@ export function SearchPage({
 
   return (
     <div className="search-page-layout">
+      <div className="search-viz">
+        <VisualizerSlot />
+      </div>
+      <h1 className="search-pagehead">
+        <span className="bc-page-title">Search</span>{" "}
+        <span className="dim">— across your knowledge base</span>
+      </h1>
       <SearchSidebar
         searchMode={searchMode}
         onSearchModeChange={handleSearchModeChange}
@@ -353,10 +361,6 @@ export function SearchPage({
         onReset={handleReset}
       />
       <div className="search-main-content">
-        <h1>
-          <span className="bc-page-title">Search</span>{" "}
-          <span className="dim">— across your knowledge base</span>
-        </h1>
         <SearchBar
           ref={searchBarRef}
           exactMatchInitial={exactMatch}

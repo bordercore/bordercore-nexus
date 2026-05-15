@@ -8,6 +8,7 @@ import TagRail from "./TagRail";
 import { filterCollections } from "./filter";
 import { loadDensity, saveDensity, type Density } from "./density";
 import type { Collection, CollectionListUrls, TagCounts } from "./types";
+import VisualizerSlot from "../visualizers/VisualizerSlot";
 
 interface CollectionListPageProps {
   collections: Collection[];
@@ -35,6 +36,30 @@ export function CollectionListPage({ collections, tagCounts, urls }: CollectionL
   return (
     <>
       <div className="cl-shell">
+        <div className="cl-viz">
+          <VisualizerSlot />
+        </div>
+
+        <header className="cl-pagehead">
+          <div>
+            <h1 className="cl-pagehead-title">
+              <span className="bc-page-title">Collections</span>
+            </h1>
+            <div className="cl-pagehead-meta">
+              <span className="count">{filtered.length}</span> collections
+            </div>
+          </div>
+
+          <ActionCluster
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            density={density}
+            filteredCount={filtered.length}
+            onDensityChange={setDensity}
+            onCreateClick={handleCreate}
+          />
+        </header>
+
         <TagRail
           totalCount={collections.length}
           tagCounts={tagCounts}
@@ -43,26 +68,6 @@ export function CollectionListPage({ collections, tagCounts, urls }: CollectionL
         />
 
         <main className="cl-main">
-          <header className="cl-pagehead">
-            <div>
-              <h1 className="cl-pagehead-title">
-                <span className="bc-page-title">Collections</span>
-              </h1>
-              <div className="cl-pagehead-meta">
-                <span className="count">{filtered.length}</span> collections
-              </div>
-            </div>
-
-            <ActionCluster
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              density={density}
-              filteredCount={filtered.length}
-              onDensityChange={setDensity}
-              onCreateClick={handleCreate}
-            />
-          </header>
-
           {filtered.length === 0 ? (
             <div className="cl-empty">No collections match the current filters.</div>
           ) : (

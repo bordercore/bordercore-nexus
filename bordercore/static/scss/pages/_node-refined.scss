@@ -96,6 +96,8 @@
     border-right: 1px solid var(--line-soft);
     background: var(--bg-1);
     gap: 18px;
+    grid-column: 1;
+    grid-row: 2;
 
     h3 {
       margin: 0 8px 6px;
@@ -206,19 +208,33 @@
   .nl-main {
     width: 100%;
     max-width: 1280px;
-    padding: 28px 40px 120px;
+    padding: 0 40px 120px;
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  // ==== Visualizer slot (col 1 / row 1) ====
+  .nl-viz {
+    overflow: hidden;
+    min-height: 96px;
+    padding-bottom: 24px;
+    grid-column: 1;
+    grid-row: 1;
   }
 
   // ==== Page head ====
   .nl-head {
     display: grid;
     align-items: end;
+    padding: 28px 40px 0;
 
     // Tight gap from the title/description block down to the toolbar
     // (search + sort + view + count) — matches the 8px rhythm used by
     // /reminder/'s .rm-page-head.
     margin-bottom: 8px;
     gap: 32px;
+    grid-column: 2;
+    grid-row: 1;
     grid-template-columns: 1fr auto;
 
     h1 {
@@ -899,8 +915,19 @@
   // ==== Responsive ====
   @media (width <= 1020px) {
     .nl-shell { grid-template-columns: 1fr; }
+    .nl-viz { display: none; }
     .nl-sidebar { display: none; }
-    .nl-head { grid-template-columns: 1fr; }
+
+    .nl-head {
+      grid-column: 1;
+      grid-row: 1;
+      grid-template-columns: 1fr;
+    }
+
+    .nl-main {
+      grid-column: 1;
+      grid-row: 2;
+    }
 
     .nl-head-meta {
       padding-left: 0;

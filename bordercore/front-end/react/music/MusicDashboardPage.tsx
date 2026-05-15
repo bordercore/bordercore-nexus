@@ -12,6 +12,7 @@ import RecentPlaysCard from "./RecentPlaysCard";
 import CreatePlaylistModal from "./CreatePlaylistModal";
 import SearchPalette from "./SearchPalette";
 import SearchResultsView from "./SearchResultsView";
+import VisualizerSlot from "../visualizers/VisualizerSlot";
 import type {
   MusicDashboardProps,
   PaginatorInfo,
@@ -215,6 +216,10 @@ export function MusicDashboardPage({
 
   return (
     <div className="music-library-os">
+      <div className="mlo-viz">
+        <VisualizerSlot />
+      </div>
+
       <PageHead
         searchValue={search}
         onSearchChange={setSearch}

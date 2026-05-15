@@ -871,6 +871,31 @@
     }
   }
 
+  // ==== Visualizer picker ====
+  // Reuses .prefs-theme-grid / .prefs-theme-card chrome; the per-card
+  // .viz-preview replaces .theme-preview to host a live canvas (or a text
+  // placeholder for the none/random options).
+  .prefs-viz-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+
+  .viz-preview {
+    position: relative;
+    overflow: hidden;
+    height: 110px;
+    background: var(--prefs-bg-2);
+  }
+
+  .viz-preview-text {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--prefs-fg-3);
+    font: 500 12px var(--font-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
   // ==== File dropzone ====
   .prefs-file-drop {
     display: flex;

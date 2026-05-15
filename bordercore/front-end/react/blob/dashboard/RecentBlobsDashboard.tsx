@@ -7,6 +7,7 @@ import FilterRail from "./FilterRail";
 import ActiveFiltersStrip from "./ActiveFiltersStrip";
 import BlobCardGrid from "./BlobCardGrid";
 import { isFilterActive, useFilteredBlobs } from "./hooks/useFilteredBlobs";
+import VisualizerSlot from "../../visualizers/VisualizerSlot";
 
 interface RecentBlobsDashboardProps {
   data: DashboardData;
@@ -74,6 +75,29 @@ export function RecentBlobsDashboard({ data, urls }: RecentBlobsDashboardProps) 
   return (
     <div className="rb-app">
       <div className="rb-shell">
+        <div className="rb-viz">
+          <VisualizerSlot />
+        </div>
+
+        <header className="rb-page-head">
+          <div className="rb-page-head-text">
+            <h1 className="rb-page-title">Recent Blobs</h1>
+            {subCopy && <p className="rb-page-sub">{subCopy}</p>}
+          </div>
+          <div className="rb-page-actions">
+            <a href={urls.createBlob} className="refined-btn primary">
+              <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" />
+              new
+            </a>
+            <a href={urls.importBlob} className="refined-btn">
+              import
+            </a>
+            <a href={urls.bookshelf} className="refined-btn">
+              bookshelf
+            </a>
+          </div>
+        </header>
+
         <FilterRail
           data={data}
           filters={filters}
@@ -85,25 +109,6 @@ export function RecentBlobsDashboard({ data, urls }: RecentBlobsDashboardProps) 
         />
 
         <main className="rb-main">
-          <header className="rb-page-head">
-            <div className="rb-page-head-text">
-              <h1 className="rb-page-title">Recent Blobs</h1>
-              {subCopy && <p className="rb-page-sub">{subCopy}</p>}
-            </div>
-            <div className="rb-page-actions">
-              <a href={urls.createBlob} className="refined-btn primary">
-                <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" />
-                new
-              </a>
-              <a href={urls.importBlob} className="refined-btn">
-                import
-              </a>
-              <a href={urls.bookshelf} className="refined-btn">
-                bookshelf
-              </a>
-            </div>
-          </header>
-
           {filtersActive && (
             <ActiveFiltersStrip
               filters={filters}

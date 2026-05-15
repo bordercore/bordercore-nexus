@@ -58,6 +58,8 @@ $tag-colors: (
   border-right: 1px solid var(--line-soft);
   background: var(--bg-1);
   gap: 18px;
+  grid-column: 1;
+  grid-row: 2;
 }
 
 .cl-rail-label {
@@ -172,7 +174,19 @@ $tag-colors: (
 
 .cl-main {
   max-width: 1400px;
-  padding: 32px 40px 80px;
+  padding: 0 40px 80px;
+  grid-column: 2;
+  grid-row: 2;
+}
+
+// --- Visualizer slot (col 1 / row 1) -----------------------------------------
+
+.cl-viz {
+  overflow: hidden;
+  min-height: 96px;
+  padding-bottom: 24px;
+  grid-column: 1;
+  grid-row: 1;
 }
 
 // --- Page head ----------------------------------------------------------------
@@ -181,7 +195,10 @@ $tag-colors: (
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
+  padding: 32px 40px 0;
   gap: 24px;
+  grid-column: 2;
+  grid-row: 1;
 
   @include refined-page-head-bordered;
 }

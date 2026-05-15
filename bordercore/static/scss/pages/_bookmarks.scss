@@ -159,6 +159,8 @@
   padding: 20px 14px;
   border-right: 1px solid var(--line-soft);
   background: var(--bg-1);
+  grid-column: 1;
+  grid-row: 2;
 
   // Mobile drawer behavior
   @media (width < 992px) {
@@ -432,6 +434,41 @@
     0 0 30px color-mix(in oklch, var(--accent), transparent 85%),
     var(--shadow-md);
   --bookmark-icon-box-bg: var(--bg-2);
+
+  display: grid;
+
+  // ~25% sidebar / ~75% main, matching the previous .col-lg-3 / .col-lg-9 split.
+  grid-template-columns: 25% 1fr;
+  grid-template-rows: auto 1fr;
+
+  // Below 992px the sidebar becomes a fixed-position drawer; collapse to a
+  // single column so pagehead and main span the viewport width.
+  @media (width < 992px) {
+    grid-template-columns: 1fr;
+
+    .bookmark-page-head,
+    .bookmark-main-col {
+      grid-column: 1;
+    }
+  }
+
+  .bookmark-viz {
+    overflow: hidden;
+    min-height: 96px;
+    padding-bottom: 24px;
+    grid-column: 1;
+    grid-row: 1;
+
+    @media (width < 992px) {
+      display: none;
+    }
+  }
+
+  .bookmark-main-col {
+    min-width: 0;
+    grid-column: 2;
+    grid-row: 2;
+  }
 }
 
 // Grid columns: drag | content | tags | date | actions
@@ -753,6 +790,8 @@
   align-items: center;
   padding-top: 32px;
   gap: 1.5rem;
+  grid-column: 2;
+  grid-row: 1;
 
   // Adopts the canonical "section-cap" rhythm shared with .cl-pagehead,
   // .mlo-pagehead, .todo-head, .rb-page-head, .drill-page-head: 18px below

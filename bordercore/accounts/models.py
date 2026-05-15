@@ -35,6 +35,16 @@ TOPBAR_ANIMATION_CHOICES = [
     ("none", "None"),
 ]
 
+VISUALIZER_CHOICES = [
+    ("torus", "Torus"),
+    ("icosahedron", "Icosahedron"),
+    ("tesseract", "Tesseract"),
+    ("mobius", "Möbius strip"),
+    ("globe", "Globe"),
+    ("random", "Random"),
+    ("none", "None"),
+]
+
 
 def drill_intervals_default() -> list[int]:
     """Return the default list of drill intervals.
@@ -79,6 +89,11 @@ class UserProfile(models.Model):
         max_length=32,
         choices=TOPBAR_ANIMATION_CHOICES,
         default="aurora",
+    )
+    visualizer = models.CharField(
+        max_length=32,
+        choices=VISUALIZER_CHOICES,
+        default="torus",
     )
     drill_tags_muted = models.ManyToManyField(Tag, related_name="drill_tags_muted")
     sidebar_order = JSONField(default=list, blank=True)

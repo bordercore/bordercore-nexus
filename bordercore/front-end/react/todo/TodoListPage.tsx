@@ -33,6 +33,7 @@ import TodoFilterSidebar, { FilterValue } from "./TodoFilterSidebar";
 import TodoFilterTitle, { ActiveFilter } from "./TodoFilterTitle";
 import TodoToolbar, { SortField } from "./TodoToolbar";
 import TodoRow from "./TodoRow";
+import VisualizerSlot from "../visualizers/VisualizerSlot";
 
 const VIEW_STORAGE_KEY = "todo_view_density";
 const SORT_STORAGE_KEY = "todo_sort_field";
@@ -406,6 +407,25 @@ export function TodoListPage({
   return (
     <div className={`todo-app view-${view === "compact" ? "compact" : "normal"}`}>
       <div className="todo-shell">
+        <div className="todo-viz">
+          <VisualizerSlot />
+        </div>
+
+        <div className="todo-head">
+          <div className="todo-head-text">
+            <TodoFilterTitle filter={breadcrumbFilter} />
+            <p className="todo-subhead">
+              <span className="count">{totalFiltered}</span>{" "}
+              {totalFiltered === 1 ? "task" : "tasks"}
+              {subheadPhrase}
+            </p>
+          </div>
+          <button type="button" className="refined-btn primary" onClick={handleCreateTodo}>
+            <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" />
+            new
+          </button>
+        </div>
+
         <TodoFilterSidebar
           tags={tags}
           priorityOptions={priorityOptions}
@@ -416,21 +436,6 @@ export function TodoListPage({
         />
 
         <main className="todo-main">
-          <div className="todo-head">
-            <div className="todo-head-text">
-              <TodoFilterTitle filter={breadcrumbFilter} />
-              <p className="todo-subhead">
-                <span className="count">{totalFiltered}</span>{" "}
-                {totalFiltered === 1 ? "task" : "tasks"}
-                {subheadPhrase}
-              </p>
-            </div>
-            <button type="button" className="refined-btn primary" onClick={handleCreateTodo}>
-              <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" />
-              new
-            </button>
-          </div>
-
           <TodoToolbar
             search={searchInput}
             view={view}

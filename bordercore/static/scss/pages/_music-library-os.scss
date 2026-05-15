@@ -109,7 +109,7 @@
     border-right: 1px solid var(--line-soft);
     background: var(--bg-1);
     grid-column: 1;
-    grid-row: 1 / span 2;
+    grid-row: 2;
 
     .mlo-section-head {
       padding: 0 8px 6px;
@@ -258,6 +258,15 @@
     grid-row: 1;
 
     @include refined-page-head-bordered;
+  }
+
+  // Visualizer slot — col 1 / row 1, to the left of .mlo-pagehead.
+  .mlo-viz {
+    overflow: hidden;
+    min-height: 96px;
+    padding-bottom: 24px;
+    grid-column: 1;
+    grid-row: 1;
   }
 
   .mlo-pagehead-title {
