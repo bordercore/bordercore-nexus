@@ -342,44 +342,90 @@
     &:hover .nd-grip { opacity: 1; }
   }
 
-  // Re-skin the .card surface that each sub-component renders. Resting
-  // chrome and hover state come from the shared refined-card mixins so
-  // node-detail cards stay character-for-character identical to .ex-card and
-  // any future card-bearing refined page that opts in.
+  // Per-type hue assignment. SortableLayoutItem stamps data-type on .nd-item;
+  // the descendant .card picks up --card-hue for its corner glow. Hues are
+  // decorative (not theme-driven) so each card type reads consistently
+  // across themes.
+  .nd-item[data-type="note"]       { --card-hue: 255 184 107; }
+  .nd-item[data-type="quote"]      { --card-hue: 255 122 209; }
+  .nd-item[data-type="image"]      { --card-hue: 122 255 212; }
+  .nd-item[data-type="todo"]       { --card-hue: 122 162 255; }
+  .nd-item[data-type="collection"] { --card-hue: 200 160 255; }
+  .nd-item[data-type="node"]       { --card-hue: 255 212 122; }
+
+  // Card surface: animated aurora base + per-type corner glow. The aurora
+  // (multi-radial gradient sliding via background-position) overrides the
+  // refined-card flat fill; the ::before glow sits at z-index -1 within an
+  // isolated stacking context so it lives behind content but inside the
+  // card. Theme tokens drive the aurora hues; --card-hue (set above) drives
+  // the glow.
   .card {
     @include refined-card;
     @include refined-card-hover;
 
+    animation: nd-card-aurora 14s ease-in-out infinite alternate;
+    background:
+      radial-gradient(120% 80% at 0% 0%,
+        color-mix(in oklab, var(--nd-accent) 22%, transparent), transparent 55%),
+      radial-gradient(120% 80% at 100% 100%,
+        color-mix(in oklab, var(--nd-accent-3) 18%, transparent), transparent 55%),
+      radial-gradient(80% 80% at 60% 30%,
+        color-mix(in oklab, var(--nd-accent-4) 14%, transparent), transparent 60%),
+      var(--nd-bg-2);
+    background-size: 200% 200%, 200% 200%, 200% 200%, 100% 100%;
     color: var(--nd-fg-1);
+    isolation: isolate;
 
-    // Per-node color overrides that sub-components apply (NodeNote)
-    &.node-color-1 { background: var(--nd-bg-2); }
+    &::before {
+      position: absolute;
+      z-index: -1;
+      background: radial-gradient(160px 160px at 100% 0%,
+        rgb(var(--card-hue, 122 162 255) / 28%), transparent 65%);
+      content: "";
+      inset: 0;
+      pointer-events: none;
+    }
 
+    // Per-note user color picker: shifts the aurora mix only. The corner
+    // glow keeps the type hue so notes still read as notes regardless of
+    // the user's color choice. Color-1 inherits the base aurora.
     &.node-color-2 {
-      background: linear-gradient(
-        180deg,
-        color-mix(in oklab, var(--nd-accent) 10%, var(--nd-bg-2)),
-        var(--nd-bg-2) 40%
-      );
+      background:
+        radial-gradient(140% 90% at 0% 0%,
+          color-mix(in oklab, var(--nd-accent) 32%, transparent), transparent 55%),
+        radial-gradient(120% 80% at 100% 100%,
+          color-mix(in oklab, var(--nd-accent-3) 14%, transparent), transparent 55%),
+        radial-gradient(80% 80% at 60% 30%,
+          color-mix(in oklab, var(--nd-accent-4) 12%, transparent), transparent 60%),
+        var(--nd-bg-2);
+      background-size: 200% 200%, 200% 200%, 200% 200%, 100% 100%;
     }
 
     &.node-color-3 {
-      background: linear-gradient(
-        180deg,
-        color-mix(in oklab, var(--nd-accent-4) 10%, var(--nd-bg-2)),
-        var(--nd-bg-2) 40%
-      );
+      background:
+        radial-gradient(120% 80% at 0% 0%,
+          color-mix(in oklab, var(--nd-accent) 14%, transparent), transparent 55%),
+        radial-gradient(120% 80% at 100% 100%,
+          color-mix(in oklab, var(--nd-accent-3) 14%, transparent), transparent 55%),
+        radial-gradient(140% 90% at 60% 30%,
+          color-mix(in oklab, var(--nd-accent-4) 30%, transparent), transparent 60%),
+        var(--nd-bg-2);
+      background-size: 200% 200%, 200% 200%, 200% 200%, 100% 100%;
     }
 
     &.node-color-4 {
-      background: linear-gradient(
-        180deg,
-        color-mix(in oklab, var(--nd-accent-3) 9%, var(--nd-bg-2)),
-        var(--nd-bg-2) 40%
-      );
+      background:
+        radial-gradient(120% 80% at 0% 0%,
+          color-mix(in oklab, var(--nd-accent) 14%, transparent), transparent 55%),
+        radial-gradient(140% 90% at 100% 100%,
+          color-mix(in oklab, var(--nd-accent-3) 30%, transparent), transparent 55%),
+        radial-gradient(80% 80% at 60% 30%,
+          color-mix(in oklab, var(--nd-accent-4) 12%, transparent), transparent 60%),
+        var(--nd-bg-2);
+      background-size: 200% 200%, 200% 200%, 200% 200%, 100% 100%;
     }
 
-    .card-body { padding: 16px 18px; }
+    .card-body { padding: 6px 8px; }
 
     .card-title {
       display: flex;
@@ -402,7 +448,7 @@
     hr {
       padding: 0;
       border: none;
-      margin: 0 -18px 14px;
+      margin: 0 -8px 10px;
       background: var(--nd-hairline);
       block-size: 1px;
       opacity: 1;
@@ -420,6 +466,20 @@
     &:hover { color: var(--nd-accent); }
   }
 
+  // Stagger card aurora drift so a screenful of cards doesn't move in
+  // lockstep. Four offset buckets via :nth-child are enough at typical
+  // densities (3-column grid).
+  .nd-item:nth-child(4n + 2) .card { animation-delay: -3.5s; }
+  .nd-item:nth-child(4n + 3) .card { animation-delay: -7s; }
+  .nd-item:nth-child(4n) .card     { animation-delay: -10.5s; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card {
+      animation: none;
+      background-position: 15% 10%, 85% 90%, 55% 45%, 0 0;
+    }
+  }
+
   // ========================================================================
   // Responsive
   // ========================================================================
@@ -433,6 +493,12 @@
     .nd-title-row { flex-direction: column; }
     .nd-head-actions { width: 100%; }
   }
+}
+
+// Card aurora drift — global keyframes (CSS @keyframes can't be scoped).
+@keyframes nd-card-aurora {
+  0%   { background-position: 0% 0%, 100% 100%, 50% 50%, 0 0; }
+  100% { background-position: 30% 20%, 70% 80%, 60% 40%, 0 0; }
 }
 
 // =============================================================================
