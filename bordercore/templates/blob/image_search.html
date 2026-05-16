@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}Image Search{% endblock %}
+
+{% block content %}
+<div class="image-search container">
+  <h1>Image Search</h1>
+
+  <form method="post" enctype="multipart/form-data" class="image-search__form mb-4">
+    {% csrf_token %}
+
+    <div class="mb-3">
+      <label class="form-label">Upload an image</label>
+      {{ form.image }}
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Or describe what you're looking for</label>
+      {{ form.text }}
+    </div>
+
+    <div class="mb-3">
+      <label for="id_threshold" class="form-label">
+        Similarity threshold: <output id="threshold-value">{{ form.threshold.value|default:"0.6" }}</output>
+      </label>
+      <input type="range" name="threshold" id="id_threshold" class="form-range"
+             min="0.4" max="1.0" step="0.01"
+             value="{{ form.threshold.value|default:'0.6' }}"
+             oninput="document.getElementById('threshold-value').textContent = this.value">
+    </div>
+
+    {% if form.errors %}
+      <div class="alert alert-danger">
+        {{ form.non_field_errors }}
+      </div>
+    {% endif %}
+
+    <button type="submit" class="btn btn-primary">Search</button>
+  </form>
+
+  {% if matches is not None %}
+    <h2 class="h4">Results ({{ matches|length }})</h2>
+    {% if matches %}
+      <div class="image-search__results d-flex flex-wrap gap-3">
+        {% for blob, score in matches %}
+          <a href="{% url 'blob:detail' blob.uuid %}" class="image-search__result d-block text-center"
+             title="similarity: {{ score|floatformat:2 }}">
+            <img src="{{ blob.get_cover_url }}" alt="{{ blob.name }}" class="image-search__thumb">
+            <div><small>{{ score|floatformat:2 }}</small></div>
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p>No matches above the similarity threshold.</p>
+    {% endif %}
+  {% endif %}
+</div>
+{% endblock %}
