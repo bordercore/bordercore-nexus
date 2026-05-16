@@ -17,13 +17,29 @@
   min-height: 100vh;
   flex-direction: column;
   padding-left: 240px;
-  transition: padding-left 0.3s ease;
 
   @media (width < 992px) {
     padding-left: 1rem;
   }
 }
 
+// Gate the padding-left transition on React having mounted the sidebar.
+// Before mount, the unstyled-then-styled transition from 0 → final-value
+// would animate over 300ms and read as initial-page jitter. After mount,
+// the value is already correct, so enabling the transition here only
+// affects subsequent client-side sidebar toggles.
+.wrapper:has(.sidebar) #content {
+  transition: padding-left 0.3s ease;
+}
+
+// The `.wrapper.collapsed` fallback matches the server-rendered class on
+// initial paint, before React mounts the sidebar. Without it, the base
+// `padding-left: 240px` rule animates from the unstyled 0 toward 240px and
+// then snaps back to 64px once React inserts `.sidebar[data-collapsed="true"]`
+// — visible as a left-then-right page jitter on every load. Once React is
+// mounted, the `:has()` rule takes over and stays authoritative for
+// client-side toggles where the wrapper class can go stale.
+.wrapper.collapsed #content,
 .wrapper:has(.sidebar[data-collapsed="true"]) #content {
   padding-left: 64px;
 }
