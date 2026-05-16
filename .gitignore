@@ -66,3 +66,6 @@ docs/superpowers/specs/
 
 # Git worktrees
 .worktrees/
+
+# CLIP ONNX models — exported via manage.py export_clip_onnx
+bordercore/aws/create_image_embedding/models/
