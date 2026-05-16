@@ -1,0 +1,106 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Create Image Embeddings
+
+Globals:
+    Function:
+        Timeout: 60
+
+Parameters:
+    ElasticsearchEndpointParameter:
+        Type: String
+        Description: The Elasticsearch endpoint
+    ElasticsearchIndexParameter:
+        Type: String
+        Description: The Elasticsearch index name
+    StorageBucketNameParameter:
+        Type: String
+        Description: The S3 bucket used to store blobs (thumbnails)
+    SecurityGroupParameter:
+        Type: String
+        Description: The VPC security group that lambda is in
+    SubnetParameter:
+        Type: String
+        Description: The VPC subnet
+
+Resources:
+
+    CreateImageEmbeddingFunction:
+        Type: AWS::Serverless::Function
+        # Tell SAM to build the image from the local Dockerfile instead of
+        # referencing an existing ECR image. With this Metadata block,
+        # `sam build` runs `docker build`, `sam package` pushes to the
+        # repository passed via --image-repository, and `sam deploy`
+        # updates the function with the resulting ImageUri.
+        Metadata:
+            Dockerfile: Dockerfile
+            DockerContext: .
+            DockerTag: latest
+        Properties:
+            PackageType: Image
+            FunctionName: CreateImageEmbedding
+            Timeout: 60
+            MemorySize: 2048
+            Role: !GetAtt CreateImageEmbeddingLambdaRole.Arn
+            VpcConfig:
+                SecurityGroupIds:
+                    - !Ref SecurityGroupParameter
+                # This subnet should match the private subnet created for the NAT gateway,
+                #  which I am labeling 'Private Lambda'
+                SubnetIds:
+                    - !Ref SubnetParameter
+
+            Environment:
+                Variables:
+                    ELASTICSEARCH_ENDPOINT: !Ref ElasticsearchEndpointParameter
+                    ELASTICSEARCH_INDEX: !Ref ElasticsearchIndexParameter
+                    AWS_STORAGE_BUCKET_NAME: !Ref StorageBucketNameParameter
+
+    LambdaFunctionLogGroup:
+        Type: "AWS::Logs::LogGroup"
+        DependsOn: "CreateImageEmbeddingFunction"
+        Properties:
+            RetentionInDays: 90
+            LogGroupName: !Join ["", ["/aws/lambda/", !Ref CreateImageEmbeddingFunction]]
+
+    CreateImageEmbeddingLambdaRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                    - Effect: "Allow"
+                      Principal:
+                          Service:
+                              - "lambda.amazonaws.com"
+                      Action:
+                          - "sts:AssumeRole"
+
+            Policies:
+            - PolicyName: LambdaWriteToLogs
+              PolicyDocument:
+                  Statement:
+                      - Effect: "Allow"
+                        Action:
+                            - "logs:CreateLogGroup"
+                            - "logs:CreateLogStream"
+                            - "logs:PutLogEvents"
+                            - "logs:DescribeLogStreams"
+                        Resource:
+                            - "arn:aws:logs:*:*:*"
+            - PolicyName: LambdaReadFromBlobsBucket
+              PolicyDocument:
+                  Statement:
+                      - Effect: Allow
+                        Action:
+                            - s3:GetObject
+                        Resource: !Sub "arn:aws:s3:::${StorageBucketNameParameter}/*"
+            ManagedPolicyArns:
+            - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+
+
+Outputs:
+
+    CreateImageEmbeddingFunction:
+      Description: "Create Image Embeddings"
+      Value: !GetAtt CreateImageEmbeddingFunction.Arn
