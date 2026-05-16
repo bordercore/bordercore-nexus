@@ -570,7 +570,12 @@ def test_blobs_on_filesystem_exist_in_s3():
 
 
 def test_elasticsearch_blobs_exist_in_db(es):
-    """Assert that all blobs in Elasticsearch exist in the database - Optimized Version"""
+    """Assert that all blobs in Elasticsearch exist in the database.
+
+    Pages through Elasticsearch with the scroll API so the test scales past
+    ``index.max_result_window`` (10 000) and stays under the per-request read
+    timeout as the index grows.
+    """
 
     search_object = {
         "query": {
@@ -578,26 +583,44 @@ def test_elasticsearch_blobs_exist_in_db(es):
                 "doctype": ["book", "blob", "document"]
             }
         },
-        "size": 10000,
-        "_source": ["uuid"]
+        "size": 1000,
+        "_source": ["uuid"],
     }
 
-    found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)["hits"]["hits"]
+    missing_from_db: set[str] = set()
+    total_seen = 0
+    scroll_id: str | None = None
 
-    if not found:
+    try:
+        response = es.search(
+            index=settings.ELASTICSEARCH_INDEX,
+            scroll="2m",
+            **search_object,
+        )
+
+        while True:
+            hits = response["hits"]["hits"]
+            if not hits:
+                break
+
+            scroll_id = response["_scroll_id"]
+            batch_uuids = [hit["_source"]["uuid"] for hit in hits]
+            total_seen += len(batch_uuids)
+
+            db_uuids = {
+                str(uuid) for uuid in Blob.objects
+                .filter(uuid__in=batch_uuids)
+                .values_list("uuid", flat=True)
+            }
+            missing_from_db.update(set(batch_uuids) - db_uuids)
+
+            response = es.scroll(scroll_id=scroll_id, scroll="2m")
+    finally:
+        if scroll_id is not None:
+            es.clear_scroll(scroll_id=scroll_id, ignore=(404,))
+
+    if total_seen == 0:
         pytest.fail("Expected non-empty UUIDs from Elasticsearch; none found.")
-
-    # Extract all UUIDs from ES
-    es_uuids = [blob["_source"]["uuid"] for blob in found]
-
-    # Single database query to get all existing UUIDs
-    db_uuids = set(
-        str(uuid) for uuid in Blob.objects.filter(uuid__in=es_uuids)
-        .values_list("uuid", flat=True)
-    )
-
-    # Find missing UUIDs
-    missing_from_db = set(es_uuids) - db_uuids
 
     if missing_from_db:
         pytest.fail(f"Blobs found in Elasticsearch but not in the database: {missing_from_db}")
