@@ -484,12 +484,18 @@ export function SearchPage({
                       const tags: string[] = JSON.parse(match.tags_json || "[]") ?? [];
                       const source = match.source;
                       const isImportant = source.importance === 10;
+                      const showScore = searchMode === "image" && typeof match.score === "number";
 
                       return (
                         <div
                           key={`${source.url}-${index}`}
                           className={`search-result-card ${isImportant ? "important" : ""}`}
                         >
+                          {showScore && (
+                            <span className="search-result-score-badge" title="Cosine similarity">
+                              {Math.round((match.score ?? 0) * 100)}%
+                            </span>
+                          )}
                           {source.doctype === "drill" && (
                             <SearchResult
                               icon="graduation-cap"

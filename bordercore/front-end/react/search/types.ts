@@ -27,6 +27,7 @@ export interface SearchMatch {
   source: SearchSource;
   highlight?: SearchHighlight;
   tags_json: string;
+  score?: number;
 }
 
 // Aggregation from Elasticsearch (doctype counts)

@@ -87,3 +87,26 @@
     display: none;
   }
 }
+
+// Small pill in the top-right of a search-result-card showing the
+// cosine-similarity percentage for image-search results.
+.search-result-card {
+  position: relative;
+}
+
+.search-result-score-badge {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.6rem;
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border: 1px solid var(--accent-color);
+  border-radius: 999px;
+  background: rgb(99 102 241 / 12%);
+  color: var(--accent-color);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.4;
+  pointer-events: auto;
+}
