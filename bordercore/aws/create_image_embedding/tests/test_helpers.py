@@ -16,6 +16,7 @@ import lib.elasticsearch_writer  # noqa: E402, F401
 
 @patch("lib.thumbnail_fetcher.boto3")
 def test_fetch_thumbnail_reads_from_correct_s3_key(mock_boto3):
+    """fetch_thumbnail downloads from the expected S3 key path."""
     from lib.thumbnail_fetcher import fetch_thumbnail
 
     body = MagicMock()
@@ -32,6 +33,7 @@ def test_fetch_thumbnail_reads_from_correct_s3_key(mock_boto3):
 
 @patch("lib.elasticsearch_writer.requests")
 def test_store_image_embedding_posts_painless_update(mock_requests):
+    """store_image_embedding sends a Painless script update to the correct ES URL."""
     from lib.elasticsearch_writer import store_image_embedding
 
     mock_requests.post.return_value.status_code = 200

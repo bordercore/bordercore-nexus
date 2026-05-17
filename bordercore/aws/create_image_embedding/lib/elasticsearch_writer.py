@@ -12,6 +12,22 @@ def store_image_embedding(
     index: str,
     timeout: int = 10,
 ) -> None:
+    """Write a CLIP image embedding to the Elasticsearch document for a blob.
+
+    Uses a Painless script update to set the ``image_embedding`` field on the
+    existing document identified by ``uuid``.
+
+    Args:
+        uuid: The blob's UUID string, used as the Elasticsearch document ID.
+        embedding: The 512-dim embedding vector as a numpy array or sequence
+            of floats.
+        host: Elasticsearch hostname (without scheme or port).
+        index: Elasticsearch index name.
+        timeout: HTTP request timeout in seconds.
+
+    Raises:
+        requests.HTTPError: If Elasticsearch returns a non-2xx response.
+    """
     if isinstance(embedding, np.ndarray):
         value = embedding.tolist()
     else:

@@ -36,9 +36,12 @@ def _es_host_from_endpoint(endpoint: str) -> str:
 
 
 class Command(BaseCommand):
+    """Bulk-encode image blobs with CLIP and backfill their embeddings in ES."""
+
     help = "Encode all image blobs with CLIP and write embeddings to ES."
 
     def add_arguments(self, parser):
+        """Register --limit and --no-skip-existing CLI arguments."""
         parser.add_argument(
             "--limit",
             type=int,
@@ -52,6 +55,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **opts):
+        """Run the backfill: load CLIP, encode image blobs in batches, write to ES."""
         from sentence_transformers import SentenceTransformer  # type: ignore[import-untyped]
 
         es_host = _es_host_from_endpoint(
@@ -109,6 +113,17 @@ class Command(BaseCommand):
             )
 
     def _fetch_thumbnail(self, s3, bucket, uuid):
+        """Download the cover thumbnail for a blob and return it as a PIL Image.
+
+        Args:
+            s3: A boto3 S3 client.
+            bucket: Name of the S3 bucket.
+            uuid: The blob's UUID, used to build the thumbnail key.
+
+        Returns:
+            An RGB PIL Image, or ``None`` if the thumbnail is absent or
+            the download fails.
+        """
         from PIL import Image  # type: ignore[import-untyped]
 
         try:
@@ -125,6 +140,17 @@ class Command(BaseCommand):
             return None
 
     def _already_indexed(self, uuid, host, index) -> bool:
+        """Return True if the blob already has an image_embedding stored in ES.
+
+        Args:
+            uuid: The blob's UUID string.
+            host: Elasticsearch hostname.
+            index: Elasticsearch index name.
+
+        Returns:
+            ``True`` if the document exists and has an ``image_embedding``
+            field; ``False`` on any error or absence.
+        """
         url = (
             f"http://{host}:{ES_PORT}/{index}/_doc/{uuid}"
             "?_source_includes=image_embedding"
@@ -138,6 +164,17 @@ class Command(BaseCommand):
             return False
 
     def _write(self, uuid: str, vec: list, host: str, index: str) -> None:
+        """Write a CLIP embedding vector to the blob's Elasticsearch document.
+
+        Args:
+            uuid: The blob's UUID string (Elasticsearch document ID).
+            vec: The embedding vector as a list of floats.
+            host: Elasticsearch hostname.
+            index: Elasticsearch index name.
+
+        Raises:
+            requests.HTTPError: If Elasticsearch returns a non-2xx response.
+        """
         body = {
             "script": {
                 "source": "ctx._source.image_embedding = params.value",

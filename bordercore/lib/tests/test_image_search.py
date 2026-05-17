@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 
 @patch("lib.image_search.boto3")
 def test_encode_image_invokes_lambda_with_base64(mock_boto3):
+    """encode_image_query base64-encodes the bytes and invokes the Lambda in query_image mode."""
     from lib.image_search import encode_image_query
 
     client = MagicMock()
@@ -27,6 +28,7 @@ def test_encode_image_invokes_lambda_with_base64(mock_boto3):
 
 @patch("lib.image_search.boto3")
 def test_encode_text_invokes_lambda_with_text(mock_boto3):
+    """encode_text_query sends the text string to the Lambda in query_text mode."""
     from lib.image_search import encode_text_query
 
     client = MagicMock()

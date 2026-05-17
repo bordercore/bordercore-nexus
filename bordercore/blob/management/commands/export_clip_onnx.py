@@ -11,9 +11,12 @@ from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
+    """Export the CLIP-ViT-B-32 image and text encoders to ONNX artefacts."""
+
     help = "Export CLIP-ViT-B-32 image and text encoders to ONNX."
 
     def handle(self, *args, **options):
+        """Load the CLIP model, export both encoders and the tokenizer to disk."""
         import torch
         from sentence_transformers import SentenceTransformer
 
@@ -30,22 +33,28 @@ class Command(BaseCommand):
         text_proj = model[0].model.text_projection
 
         class ImageEncoder(torch.nn.Module):
+            """Thin wrapper combining the CLIP vision model and visual projection head."""
+
             def __init__(self):
                 super().__init__()
                 self.vision_model = vision
                 self.visual_projection = visual_proj
 
             def forward(self, pixel_values):
+                """Run the vision backbone and projection to produce an image embedding."""
                 pooled = self.vision_model(pixel_values=pixel_values).pooler_output
                 return self.visual_projection(pooled)
 
         class TextEncoder(torch.nn.Module):
+            """Thin wrapper combining the CLIP text model and text projection head."""
+
             def __init__(self):
                 super().__init__()
                 self.text_model = text_model
                 self.text_projection = text_proj
 
             def forward(self, input_ids, attention_mask):
+                """Run the text backbone and projection to produce a text embedding."""
                 pooled = self.text_model(
                     input_ids=input_ids,
                     attention_mask=attention_mask,

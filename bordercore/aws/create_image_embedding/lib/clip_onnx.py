@@ -30,6 +30,7 @@ _tokenizer: Tokenizer | None = None
 
 
 def _get_image_session() -> ort.InferenceSession:
+    """Return the singleton ONNX image encoder session, loading it on first call."""
     global _image_session
     if _image_session is None:
         with _lock:
@@ -41,6 +42,7 @@ def _get_image_session() -> ort.InferenceSession:
 
 
 def _get_text_session() -> ort.InferenceSession:
+    """Return the singleton ONNX text encoder session, loading it on first call."""
     global _text_session
     if _text_session is None:
         with _lock:
@@ -52,6 +54,7 @@ def _get_text_session() -> ort.InferenceSession:
 
 
 def _get_tokenizer() -> Tokenizer:
+    """Return the singleton CLIP tokenizer, loading and configuring it on first call."""
     global _tokenizer
     if _tokenizer is None:
         with _lock:
@@ -63,6 +66,18 @@ def _get_tokenizer() -> Tokenizer:
 
 
 def _preprocess_image(img: Image.Image) -> np.ndarray:
+    """Resize, centre-crop, normalise, and batch an image for the CLIP image encoder.
+
+    Applies the standard CLIP preprocessing pipeline: shortest-edge resize to
+    224 px, centre crop to 224×224, per-channel normalisation with CLIP mean
+    and std, and transposition to CHW format with a batch dimension prepended.
+
+    Args:
+        img: A PIL Image in any mode; converted to RGB internally.
+
+    Returns:
+        A float32 numpy array of shape ``(1, 3, 224, 224)``.
+    """
     img = img.convert("RGB")
     short = min(img.size)
     img = img.resize(
@@ -79,11 +94,20 @@ def _preprocess_image(img: Image.Image) -> np.ndarray:
 
 
 def _normalize(vec: np.ndarray) -> np.ndarray:
+    """L2-normalise a vector to unit length, returning float32."""
     n = np.linalg.norm(vec)
     return (vec / n).astype(np.float32) if n > 0 else vec.astype(np.float32)
 
 
 def encode_image(image: Union[Image.Image, bytes]) -> np.ndarray:
+    """Encode an image to a 512-dim L2-normalised CLIP embedding.
+
+    Args:
+        image: A PIL ``Image`` object or raw image bytes (JPEG, PNG, etc.).
+
+    Returns:
+        A float32 numpy array of shape ``(512,)`` with unit L2 norm.
+    """
     if isinstance(image, bytes):
         from io import BytesIO
         image = Image.open(BytesIO(image))
@@ -93,6 +117,17 @@ def encode_image(image: Union[Image.Image, bytes]) -> np.ndarray:
 
 
 def encode_text(text: str) -> np.ndarray:
+    """Encode a text string to a 512-dim L2-normalised CLIP embedding.
+
+    Tokenises the input with the CLIP BPE tokenizer (padding/truncating to
+    77 tokens) and runs the ONNX text encoder.
+
+    Args:
+        text: The text query to encode.
+
+    Returns:
+        A float32 numpy array of shape ``(512,)`` with unit L2 norm.
+    """
     enc = _get_tokenizer().encode(text)
     ids = np.array([enc.ids], dtype=np.int64)
     mask = np.array([enc.attention_mask], dtype=np.int64)

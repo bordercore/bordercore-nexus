@@ -28,6 +28,28 @@ S3_BUCKET = os.environ.get("AWS_STORAGE_BUCKET_NAME", "")
 # parses one layer of JSON. Pre-serialising would double-encode and the
 # caller would receive a string instead of a dict.
 def handler(event: dict[str, Any], context: Any) -> dict[str, Any] | None:
+    """Route an incoming Lambda event to the appropriate embedding action.
+
+    Dispatches on the ``mode`` key:
+
+    * ``"index"`` — download the blob thumbnail from S3, encode it, and write
+      the resulting vector to Elasticsearch (fire-and-forget; returns ``None``).
+    * ``"query_image"`` — decode a base64 image, encode it, and return the
+      vector as ``{"vector": [...]}``.
+    * ``"query_text"`` — encode a text string and return ``{"vector": [...]}``.
+
+    Any unrecognised mode returns ``{"error": "unknown mode: ..."}``.
+
+    Args:
+        event: Lambda event dict.  Must contain a ``"mode"`` key; required
+            additional keys depend on the mode (``"uuid"``, ``"image_b64"``,
+            or ``"text"``).
+        context: Lambda context object (unused but required by the interface).
+
+    Returns:
+        A dict with a ``"vector"`` key for query modes, ``None`` for ``"index"``
+        mode, or a dict with an ``"error"`` key on failure.
+    """
     mode = event.get("mode")
     try:
         if mode == "index":

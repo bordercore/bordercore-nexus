@@ -14,6 +14,7 @@ sys.modules.setdefault("boto3", ModuleType("boto3"))
 @patch("create_image_embedding_lambda.encode_image")
 @patch("create_image_embedding_lambda.fetch_thumbnail")
 def test_index_mode_fetches_encodes_stores(mock_fetch, mock_encode, mock_store):
+    """index mode calls fetch, encode, and store in sequence and returns None."""
     from create_image_embedding_lambda import handler
 
     mock_fetch.return_value = b"PNGDATA"
@@ -29,6 +30,7 @@ def test_index_mode_fetches_encodes_stores(mock_fetch, mock_encode, mock_store):
 
 @patch("create_image_embedding_lambda.encode_image")
 def test_query_image_mode_returns_vector(mock_encode):
+    """query_image mode decodes base64, encodes the image, and returns the vector dict."""
     from create_image_embedding_lambda import handler
 
     mock_encode.return_value = np.array([0.1] * 512, dtype=np.float32)
@@ -42,6 +44,7 @@ def test_query_image_mode_returns_vector(mock_encode):
 
 @patch("create_image_embedding_lambda.encode_text")
 def test_query_text_mode_returns_vector(mock_encode):
+    """query_text mode passes the text to the encoder and returns the vector dict."""
     from create_image_embedding_lambda import handler
 
     mock_encode.return_value = np.array([0.2] * 512, dtype=np.float32)
@@ -54,6 +57,7 @@ def test_query_text_mode_returns_vector(mock_encode):
 
 
 def test_unknown_mode_returns_error():
+    """An unrecognised mode returns a dict with an ``error`` key."""
     from create_image_embedding_lambda import handler
 
     result = handler({"mode": "bogus"}, None)

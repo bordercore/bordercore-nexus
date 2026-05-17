@@ -42,6 +42,7 @@ _RESULT_RESPONSE = {
 
 
 def _image_url():
+    """Return the URL for the image_search_results API endpoint."""
     return urls.reverse("search:image_search_results_api")
 
 
@@ -51,6 +52,7 @@ def _image_url():
 
 
 def test_get_returns_405(authenticated_client):
+    """GET requests to the image search endpoint are rejected with 405."""
     _, client = authenticated_client()
     resp = client.get(_image_url())
     assert resp.status_code == 405
@@ -62,6 +64,7 @@ def test_get_returns_405(authenticated_client):
 
 
 def test_requires_auth(client):
+    """Unauthenticated requests are rejected with 403."""
     resp = client.post(_image_url(), data={})
     assert resp.status_code == 403
 
@@ -72,6 +75,7 @@ def test_requires_auth(client):
 
 
 def test_post_with_neither_returns_400(authenticated_client):
+    """A POST with no image or text payload returns 400 with a detail message."""
     _, client = authenticated_client()
     resp = client.post(_image_url(), data={})
     assert resp.status_code == 400
@@ -85,6 +89,7 @@ def test_post_with_neither_returns_400(authenticated_client):
 
 @patch("search.api.perform_image_search")
 def test_post_with_text_returns_search_response(mock_perform, authenticated_client):
+    """A text-only POST delegates to perform_image_search and returns the result shape."""
     _, client = authenticated_client()
     mock_perform.return_value = _RESULT_RESPONSE
 
@@ -110,6 +115,7 @@ def test_post_with_text_returns_search_response(mock_perform, authenticated_clie
 
 @patch("search.api.perform_image_search")
 def test_post_with_image_passes_bytes_to_service(mock_perform, authenticated_client):
+    """An image-file POST reads the upload and passes raw bytes to perform_image_search."""
     _, client = authenticated_client()
     mock_perform.return_value = _EMPTY_RESPONSE
 
@@ -136,6 +142,7 @@ def test_post_with_image_passes_bytes_to_service(mock_perform, authenticated_cli
 
 @patch("search.api.perform_image_search", side_effect=ValueError("bad input"))
 def test_value_error_returns_400(mock_perform, authenticated_client):
+    """A ValueError from perform_image_search is surfaced as a 400 response."""
     _, client = authenticated_client()
     resp = client.post(_image_url(), data={"text": "something"})
     assert resp.status_code == 400
@@ -144,6 +151,7 @@ def test_value_error_returns_400(mock_perform, authenticated_client):
 
 @patch("search.api.perform_image_search", side_effect=RuntimeError("lambda down"))
 def test_runtime_error_returns_502(mock_perform, authenticated_client):
+    """A RuntimeError from perform_image_search is surfaced as a 502 response."""
     _, client = authenticated_client()
     resp = client.post(_image_url(), data={"text": "something"})
     assert resp.status_code == 502

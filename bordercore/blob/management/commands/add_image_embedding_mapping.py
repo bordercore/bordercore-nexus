@@ -6,9 +6,12 @@ from lib.util import get_elasticsearch_connection
 
 
 class Command(BaseCommand):
+    """Add the image_embedding dense_vector mapping to the Elasticsearch blob index."""
+
     help = "Add the image_embedding dense_vector field to the ES blob mapping."
 
     def handle(self, *args, **options):
+        """Execute the mapping update and report success to stdout."""
         es = get_elasticsearch_connection()
         body = {
             "properties": {

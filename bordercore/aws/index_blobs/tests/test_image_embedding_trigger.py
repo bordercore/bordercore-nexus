@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 @patch("lib.elasticsearch_indexer.boto3")
 def test_invoke_create_image_embedding(mock_boto3):
+    """create_image_embedding invokes CreateImageEmbedding Lambda in Event mode."""
     from lib.elasticsearch_indexer import create_image_embedding
 
     create_image_embedding("abc-uuid")
@@ -19,6 +20,7 @@ def test_invoke_create_image_embedding(mock_boto3):
 
 
 def test_is_image_blob_detects_image_content_types():
+    """is_image_blob returns True for image/* MIME types and False otherwise."""
     from lib.elasticsearch_indexer import is_image_blob
 
     assert is_image_blob("image/jpeg") is True

@@ -18,6 +18,7 @@ pytestmark = pytest.mark.skipif(
 
 
 def test_encode_image_returns_512_dim_unit_vector():
+    """encode_image produces a 512-dim float32 unit vector."""
     from lib.clip_onnx import encode_image
 
     img = Image.new("RGB", (640, 480), (128, 64, 200))
@@ -29,6 +30,7 @@ def test_encode_image_returns_512_dim_unit_vector():
 
 
 def test_encode_text_returns_512_dim_unit_vector():
+    """encode_text produces a 512-dim float32 unit vector."""
     from lib.clip_onnx import encode_text
 
     vec = encode_text("a photo of a cat")
