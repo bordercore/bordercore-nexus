@@ -3,6 +3,16 @@ import os
 import tempfile
 from unittest.mock import MagicMock
 
+# AWS Lambda subdirs use bare `lib.*` imports that only resolve when
+# pytest runs from inside the Lambda directory (their own conftest sets
+# up sys.path). Skip them during project-root collection so `make test_*`
+# targets — which override addopts via the test_runner — don't trip on
+# them.
+collect_ignore_glob = [
+    "aws/create_image_embedding/*",
+    "aws/index_blobs/*",
+]
+
 import boto3
 import botocore
 import pytest
