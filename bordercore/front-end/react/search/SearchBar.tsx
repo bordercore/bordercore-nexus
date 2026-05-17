@@ -271,14 +271,22 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(function Se
           onSubmit={handleImageSubmit}
           autoComplete="off"
         >
-          <input
-            type="text"
-            value={searchImageText}
-            onChange={e => setSearchImageText(e.target.value)}
-            placeholder="Describe what you're looking for..."
-            className="image-search-form__text-input"
-            disabled={!!imageFile}
-          />
+          <div className="search-bar-input-group">
+            <div className="search-bar-input-wrap has-search">
+              <FontAwesomeIcon icon={faMagnifyingGlass} className="search-icon" />
+              <input
+                type="text"
+                value={searchImageText}
+                onChange={e => setSearchImageText(e.target.value)}
+                placeholder="Describe what you're looking for..."
+                className="search-bar-input form-control"
+                disabled={!!imageFile}
+              />
+            </div>
+            <button className="search-bar-submit" type="submit" disabled={imageSearchDisabled}>
+              Search
+            </button>
+          </div>
           <div
             className={`image-search-form__drop-zone${dragging ? " dragging" : ""}`}
             onDragOver={handleImageDragOver}
@@ -318,13 +326,6 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(function Se
               </button>
             </div>
           )}
-          <button
-            className="search-bar-submit image-search-form__submit"
-            type="submit"
-            disabled={imageSearchDisabled}
-          >
-            Search
-          </button>
         </form>
       )}
     </div>

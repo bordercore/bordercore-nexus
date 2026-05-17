@@ -10,27 +10,6 @@
   align-items: stretch;
   gap: 0.75rem;
 
-  &__text-input {
-    display: block;
-    width: 100%;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    background: var(--input-bg, var(--card-bg));
-    color: var(--text-primary);
-    font-size: 0.95rem;
-
-    &:focus {
-      border-color: var(--accent-color);
-      box-shadow: 0 0 0 2px rgb(99 102 241 / 20%);
-      outline: none;
-    }
-
-    &::placeholder {
-      color: var(--text-muted);
-    }
-  }
-
   &__drop-zone {
     display: flex;
     height: 8rem;
@@ -101,10 +80,6 @@
         color: var(--text-primary);
       }
     }
-  }
-
-  &__submit {
-    align-self: flex-start;
   }
 
   // The real file input: hidden from view, triggered programmatically
