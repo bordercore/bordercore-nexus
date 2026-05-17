@@ -35,15 +35,15 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.views.generic.base import View
 from django.views.generic.detail import DetailView
-from django.views.generic.edit import CreateView, FormView, ModelFormMixin, UpdateView
+from django.views.generic.edit import CreateView, ModelFormMixin, UpdateView
 from django.views.generic.list import ListView
 
-from blob.forms import BlobForm, ImageSearchForm
+from blob.forms import BlobForm
 from blob.models import (Blob, BlobTemplate, BlobToObject, MetaData,
                          RecentlyViewedBlob)
 from tag.models import Tag
 from blob.services import add_related_object as add_related_object_service
-from blob.services import (chatbot, chatbot_followups, find_similar_images,
+from blob.services import (chatbot, chatbot_followups,
                            generate_note_thumbnail, get_book_tag_categories,
                            get_books, get_node_to_object_query,
                            get_recent_books, import_blob)
@@ -1392,48 +1392,3 @@ class BookshelfListView(LoginRequiredMixin, ListView):
         }
 
 
-class ImageSearchView(LoginRequiredMixin, FormView):
-    """Search for blobs by visual similarity using CLIP embeddings.
-
-    Accepts either an uploaded image or a text description and returns a ranked
-    list of blobs whose image embeddings are closest to the query vector.
-    """
-
-    template_name = "blob/image_search.html"
-    form_class = ImageSearchForm
-
-    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        ctx = super().get_context_data(**kwargs)
-        ctx.setdefault("matches", None)
-        return ctx
-
-    def form_valid(self, form: ImageSearchForm) -> HttpResponse:  # type: ignore[override]
-        data = form.cleaned_data
-        kwargs: dict[str, Any] = {
-            "user_id": self.request.user.id,
-            "threshold": data["threshold"],
-            "limit": 30,
-        }
-        if data.get("image"):
-            kwargs["image_bytes"] = data["image"].read()
-        else:
-            kwargs["text"] = data["text"]
-
-        try:
-            results = find_similar_images(**kwargs)
-        except (ValueError, RuntimeError) as e:
-            form.add_error(None, f"Image search failed: {e}")
-            return self.render_to_response(self.get_context_data(form=form, matches=None))
-
-        matches: list[tuple[Blob, float]] = []
-        if results:
-            uuids = [u for u, _ in results]
-            blob_map = {
-                str(b.uuid): b
-                for b in Blob.objects.filter(uuid__in=uuids, user=cast(User, self.request.user))
-            }
-            for uuid, score in results:
-                if uuid in blob_map:
-                    matches.append((blob_map[uuid], score))
-
-        return self.render_to_response(self.get_context_data(form=form, matches=matches))

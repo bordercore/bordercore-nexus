@@ -201,20 +201,3 @@ class BlobForm(ModelForm):
         field_classes = {
             "importance": CheckboxIntegerField
         }
-
-
-class ImageSearchForm(forms.Form):
-    """Form for the image-search page: accepts either an uploaded image or a text query."""
-
-    image = forms.FileField(required=False)
-    text = forms.CharField(required=False, max_length=200)
-    threshold = forms.FloatField(min_value=0.0, max_value=1.0, initial=0.6)
-
-    def clean(self) -> dict[str, Any]:
-        cleaned: dict[str, Any] = super().clean() or {}
-        provided = [bool(cleaned.get(f)) for f in ("image", "text")]
-        if sum(provided) != 1:
-            raise forms.ValidationError(
-                "Provide exactly one of image or text."
-            )
-        return cleaned

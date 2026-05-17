@@ -134,9 +134,4 @@ urlpatterns = [
         view=views.BookshelfListView.as_view(),
         name="bookshelf"
     ),
-    path(
-        route="image-search/",
-        view=views.ImageSearchView.as_view(),
-        name="image_search"
-    ),
 ]
