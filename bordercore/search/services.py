@@ -21,6 +21,7 @@ from django.contrib.auth.models import User
 from django.http import HttpRequest, QueryDict
 
 from lib.embeddings import len_safe_get_embedding
+from lib.image_search import encode_image_query, encode_text_query
 from lib.time_utils import get_date_from_pattern, get_relative_date
 from lib.util import get_elasticsearch_connection, get_pagination_range
 
@@ -440,6 +441,112 @@ def perform_search(
     }
 
 
+def find_similar_images(
+    user_id: int,
+    *,
+    blob_uuid: str | None = None,
+    image_bytes: bytes | None = None,
+    text: str | None = None,
+    threshold: float = 0.6,
+    limit: int = 30,
+) -> list[tuple[str, float]]:
+    """Return ranked (uuid, similarity) pairs for image similarity queries.
+
+    Exactly one of ``blob_uuid``, ``image_bytes``, or ``text`` must be
+    provided.
+
+    ``threshold`` is a cosine-similarity floor in [0, 1] (0.5 means
+    "weakly similar"; 0.95 means "near-duplicate"). Returned similarity
+    values are in [0, 1] — ES 7.x's script_score emits
+    ``cosineSimilarity(...) + 1.0`` in [0, 2]; we halve that.
+
+    For ``blob_uuid`` mode, the query vector is pulled directly from the
+    existing ES document — no Lambda call is needed. The source blob is
+    excluded from the results. For ``image_bytes`` and ``text`` modes the
+    input is forwarded to the CreateImageEmbedding Lambda for encoding.
+
+    The ``user_id`` filter mirrors the existing search in
+    ``build_search_object``, which scopes every ES query to a single
+    owner via ``{"term": {"user_id": …}}``.
+
+    Args:
+        user_id: ID of the user whose blobs to search.
+        blob_uuid: UUID of an existing blob whose stored embedding to use
+            as the query vector.
+        image_bytes: Raw bytes of a query image (JPEG, PNG, …).
+        text: Free-text query describing the desired image.
+        threshold: Minimum cosine similarity (inclusive) for a hit to be
+            included in the results.
+        limit: Maximum number of results to return.
+
+    Returns:
+        List of ``(blob_uuid, similarity)`` tuples, ranked by ES score
+        (highest first). Only hits at or above ``threshold`` are included.
+
+    Raises:
+        ValueError: If not exactly one of blob_uuid / image_bytes / text
+            is given, or if the referenced blob has no stored embedding.
+    """
+    provided = [x for x in (blob_uuid, image_bytes, text) if x is not None]
+    if len(provided) != 1:
+        raise ValueError("Provide exactly one of blob_uuid, image_bytes, text")
+
+    es = get_elasticsearch_connection()
+    index = settings.ELASTICSEARCH_INDEX
+
+    if blob_uuid is not None:
+        doc = es.get(
+            index=index, id=blob_uuid, _source_includes=["image_embedding"]
+        )
+        vector = doc["_source"].get("image_embedding")
+        if vector is None:
+            raise ValueError(f"Blob {blob_uuid} has no image_embedding stored")
+    elif image_bytes is not None:
+        vector = encode_image_query(image_bytes)
+    else:
+        assert text is not None  # enforced by the provided-count check above
+        vector = encode_text_query(text)
+
+    must_clauses = [{"exists": {"field": "image_embedding"}}]
+    filter_clauses: list[dict] = [{"term": {"user_id": user_id}}]
+    if blob_uuid is not None:
+        filter_clauses.append(
+            {"bool": {"must_not": {"term": {"uuid": blob_uuid}}}}
+        )
+
+    body = {
+        "size": limit,
+        "_source": False,
+        "query": {
+            "script_score": {
+                "query": {
+                    "bool": {
+                        "must": must_clauses,
+                        "filter": filter_clauses,
+                    }
+                },
+                "script": {
+                    "source": (
+                        "doc['image_embedding'].size() == 0 ? 0 : "
+                        "cosineSimilarity(params.query_vector, "
+                        "'image_embedding') + 1.0"
+                    ),
+                    "params": {"query_vector": vector},
+                },
+            }
+        },
+    }
+
+    response = es.search(index=index, body=body)
+    out: list[tuple[str, float]] = []
+    for hit in response["hits"]["hits"]:
+        # ES script returns (1 + cosine) in [0, 2]; halve to get [0, 1].
+        similarity = hit["_score"] / 2.0
+        if similarity >= threshold:
+            out.append((hit["_id"], similarity))
+    return out
+
+
 def perform_image_search(
     user: User,
     *,
@@ -468,8 +575,6 @@ def perform_image_search(
             or if the underlying similarity service raises.
         RuntimeError: If the embedding Lambda is unavailable.
     """
-    from blob.services import find_similar_images
-
     uuid_similarity_pairs = find_similar_images(
         user_id=cast(int, user.id),
         image_bytes=image_bytes,

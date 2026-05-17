@@ -4,11 +4,11 @@ from unittest.mock import patch
 import pytest
 
 
-@patch("blob.services.get_elasticsearch_connection")
-@patch("blob.services.encode_text_query")
+@patch("search.services.get_elasticsearch_connection")
+@patch("search.services.encode_text_query")
 def test_find_by_text_calls_lambda_then_script_score(mock_encode, mock_get_es):
     """Text mode encodes via Lambda, runs a script_score query, and converts ES scores to similarity."""
-    from blob.services import find_similar_images
+    from search.services import find_similar_images
 
     mock_encode.return_value = [0.1] * 512
     es = mock_get_es.return_value
@@ -32,10 +32,10 @@ def test_find_by_text_calls_lambda_then_script_score(mock_encode, mock_get_es):
     assert results == [("uuid-1", 0.975), ("uuid-2", 0.915)]
 
 
-@patch("blob.services.get_elasticsearch_connection")
+@patch("search.services.get_elasticsearch_connection")
 def test_find_by_blob_uuid_pulls_stored_vector(mock_get_es):
     """blob_uuid mode fetches the stored embedding from ES instead of calling the Lambda."""
-    from blob.services import find_similar_images
+    from search.services import find_similar_images
 
     es = mock_get_es.return_value
     es.get.return_value = {"_source": {"image_embedding": [0.3] * 512}}
@@ -52,11 +52,11 @@ def test_find_by_blob_uuid_pulls_stored_vector(mock_get_es):
     assert results == [("uuid-x", 1.0)]
 
 
-@patch("blob.services.get_elasticsearch_connection")
-@patch("blob.services.encode_image_query")
+@patch("search.services.get_elasticsearch_connection")
+@patch("search.services.encode_image_query")
 def test_find_by_image_bytes(mock_encode, mock_get_es):
     """image_bytes mode encodes the uploaded bytes via the Lambda and queries ES."""
-    from blob.services import find_similar_images
+    from search.services import find_similar_images
 
     mock_encode.return_value = [0.2] * 512
     mock_get_es.return_value.search.return_value = {"hits": {"hits": []}}
@@ -67,11 +67,11 @@ def test_find_by_image_bytes(mock_encode, mock_get_es):
     assert results == []
 
 
-@patch("blob.services.get_elasticsearch_connection")
-@patch("blob.services.encode_text_query")
+@patch("search.services.get_elasticsearch_connection")
+@patch("search.services.encode_text_query")
 def test_threshold_filters_below_floor(mock_encode, mock_get_es):
     """Hits whose cosine similarity falls below the threshold are excluded from results."""
-    from blob.services import find_similar_images
+    from search.services import find_similar_images
 
     mock_encode.return_value = [0.5] * 512
     mock_get_es.return_value.search.return_value = {
@@ -89,7 +89,7 @@ def test_threshold_filters_below_floor(mock_encode, mock_get_es):
 
 def test_requires_exactly_one_input():
     """find_similar_images raises ValueError when zero or more than one input is provided."""
-    from blob.services import find_similar_images
+    from search.services import find_similar_images
 
     with pytest.raises(ValueError):
         find_similar_images(user_id=42, threshold=0.5, limit=10)
