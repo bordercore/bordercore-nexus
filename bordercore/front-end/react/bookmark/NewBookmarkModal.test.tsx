@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 const doPost = vi.fn();
@@ -23,6 +23,14 @@ function baseProps(overrides: Partial<React.ComponentProps<typeof NewBookmarkMod
     onAdd: vi.fn(),
     ...overrides,
   };
+}
+
+// The modal auto-focuses the URL input on mount via a 40ms setTimeout. If a
+// test starts dispatching keystrokes before that timer fires, the focus jump
+// can land them in the URL field instead of wherever the test was aiming.
+// Awaiting this helper after render flushes the timer first.
+async function waitForUrlFocus() {
+  await waitFor(() => expect(screen.getByLabelText(/^url$/i)).toHaveFocus());
 }
 
 beforeEach(() => {
@@ -55,6 +63,7 @@ describe("NewBookmarkModal", () => {
   it("disables Create until url and name are both filled", async () => {
     const user = userEvent.setup();
     render(<NewBookmarkModal {...baseProps()} />);
+    await waitForUrlFocus();
     const submit = screen.getByRole("button", { name: /^create$/i });
     expect(submit).toBeDisabled();
 
@@ -72,6 +81,7 @@ describe("NewBookmarkModal", () => {
     });
 
     render(<NewBookmarkModal {...baseProps()} />);
+    await waitForUrlFocus();
     await user.type(screen.getByLabelText(/^url$/i), "https://example.com");
     await user.tab();
 
@@ -82,6 +92,7 @@ describe("NewBookmarkModal", () => {
   it("does not fetch the title when the name is already filled", async () => {
     const user = userEvent.setup();
     render(<NewBookmarkModal {...baseProps()} />);
+    await waitForUrlFocus();
     await user.type(screen.getByLabelText(/^name$/i), "Manual title");
     await user.type(screen.getByLabelText(/^url$/i), "https://example.com");
     await user.tab();
@@ -97,6 +108,7 @@ describe("NewBookmarkModal", () => {
     });
 
     render(<NewBookmarkModal {...baseProps({ onAdd, onClose })} />);
+    await waitForUrlFocus();
     await user.type(screen.getByLabelText(/^url$/i), "https://example.com");
     await user.type(screen.getByLabelText(/^name$/i), "Example");
     await user.click(screen.getByLabelText(/important/i));
@@ -126,6 +138,7 @@ describe("NewBookmarkModal", () => {
       cb({ data: { uuid: "x", url: "https://x", name: "X" } })
     );
     render(<NewBookmarkModal {...baseProps()} />);
+    await waitForUrlFocus();
     await user.type(screen.getByLabelText(/^url$/i), "https://x");
     await user.click(screen.getByLabelText(/^name$/i));
     await user.keyboard("X{Enter}");
