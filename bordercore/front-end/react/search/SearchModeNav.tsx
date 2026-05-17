@@ -1,8 +1,8 @@
 import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faMagnifyingGlass, faTag, faBrain } from "@fortawesome/free-solid-svg-icons";
+import { faMagnifyingGlass, faTag, faBrain, faImage } from "@fortawesome/free-solid-svg-icons";
 
-export type SearchMode = "term" | "tag" | "semantic";
+export type SearchMode = "term" | "tag" | "semantic" | "image";
 
 interface SearchModeNavProps {
   activeMode: SearchMode;
@@ -13,6 +13,7 @@ const MODES: { key: SearchMode; label: string; icon: typeof faMagnifyingGlass }[
   { key: "term", label: "Term Search", icon: faMagnifyingGlass },
   { key: "tag", label: "Tag Search", icon: faTag },
   { key: "semantic", label: "Semantic Search", icon: faBrain },
+  { key: "image", label: "Image Search", icon: faImage },
 ];
 
 export function SearchModeNav({ activeMode, onModeChange }: SearchModeNavProps) {

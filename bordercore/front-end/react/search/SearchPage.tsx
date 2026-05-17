@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useCallback, useState } from "react";
+import axios from "axios";
 import SearchBar, { SearchBarHandle } from "./SearchBar";
 import SearchResult from "./SearchResult";
 import SearchNoResult from "./SearchNoResult";
 import Pagination from "./Pagination";
 import SearchSidebar from "./SearchSidebar";
 import VisualizerSlot from "../visualizers/VisualizerSlot";
-import { doGet } from "../utils/reactUtils";
+import { doGet, getCsrfToken, EventBus } from "../utils/reactUtils";
 import type { SearchMatch, SearchSource, Aggregation, Paginator, SearchApiResponse } from "./types";
 
 interface SearchPageProps {
@@ -23,6 +24,7 @@ interface SearchPageProps {
   tagsChangedUrl: string;
   termSearchUrl: string;
   semanticSearchUrl: string;
+  imageSearchApiUrl: string;
   tagUrl: string;
   imagesUrl: string;
   hasRequest: boolean;
@@ -30,7 +32,7 @@ interface SearchPageProps {
 }
 
 type ViewMode = "list" | "grid";
-type SearchMode = "term" | "tag" | "semantic";
+type SearchMode = "term" | "tag" | "semantic" | "image";
 
 export function SearchPage({
   results: initialResults,
@@ -47,6 +49,7 @@ export function SearchPage({
   tagsChangedUrl,
   termSearchUrl,
   semanticSearchUrl,
+  imageSearchApiUrl,
   tagUrl,
   imagesUrl,
   hasRequest: initialHasRequest,
@@ -228,6 +231,59 @@ export function SearchPage({
     [buildSearchParams, fetchResults]
   );
 
+  const handleImageSearch = useCallback(
+    (payload: { text?: string; file?: File }) => {
+      setIsLoading(true);
+      setHasRequest(false);
+
+      const formData = new FormData();
+      const csrfToken = getCsrfToken();
+      if (csrfToken) {
+        formData.append("csrfmiddlewaretoken", csrfToken);
+      }
+      if (payload.file) {
+        formData.append("image", payload.file);
+      } else if (payload.text) {
+        formData.append("text", payload.text);
+      }
+
+      const headers: Record<string, string> = {};
+      if (csrfToken) {
+        headers["X-CSRFToken"] = csrfToken;
+      }
+
+      axios(imageSearchApiUrl, {
+        method: "POST",
+        data: formData,
+        headers,
+        withCredentials: true,
+      })
+        .then((response: { data: SearchApiResponse }) => {
+          const data = response.data;
+          setResults(data.results);
+          setAggregations(data.aggregations);
+          setPaginator(data.paginator);
+          setCount(data.count);
+          setHasRequest(true);
+          setIsLoading(false);
+        })
+        .catch((error: unknown) => {
+          const axiosError = error as {
+            response?: { data?: { detail?: string } };
+            message?: string;
+          };
+          EventBus.$emit("toast", {
+            title: "Error",
+            body: axiosError.response?.data?.detail || axiosError.message || "Image search failed",
+            variant: "danger",
+            autoHide: true,
+          });
+          setIsLoading(false);
+        });
+    },
+    [imageSearchApiUrl]
+  );
+
   const handleDoctypeSelect = useCallback(
     (selectedDoctype: string) => {
       const newDoctype = selectedDoctype === currentDoctype ? "" : selectedDoctype;
@@ -374,6 +430,7 @@ export function SearchPage({
           searchMode={searchMode}
           onSearch={handleSearch}
           onSemanticSearch={handleSemanticSearch}
+          onImageSearch={handleImageSearch}
         />
         <div className={`search-results-area ${isLoading ? "search-loading" : ""}`}>
           {isLoading && (

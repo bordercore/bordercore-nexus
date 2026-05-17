@@ -11,7 +11,8 @@ import re
 from typing import Any, cast
 from urllib.parse import unquote
 
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, parser_classes, permission_classes
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -25,7 +26,8 @@ from tag.services import get_tag_aliases, get_tag_link
 from .helpers import (get_doctype, get_doctypes_from_request, get_link,
                       get_name, is_cached, sort_results)
 from .services import (build_base_query, execute_search, get_cover_url,
-                       get_elasticsearch_source_fields, perform_search)
+                       get_elasticsearch_source_fields, perform_image_search,
+                       perform_search)
 
 SEARCH_LIMIT = 100
 
@@ -518,4 +520,52 @@ def search_results(request: Request) -> Response:
     """
     is_semantic = "semantic_search" in request.GET
     data = perform_search(request.user, request.GET, is_semantic=is_semantic)
+    return Response(data)
+
+
+@api_view(["POST"])
+@parser_classes([MultiPartParser, FormParser])
+def image_search_results(request: Request) -> Response:
+    """Accept a multipart POST with either an image file or text query.
+
+    Exactly one of the following fields must be present:
+      - ``image`` — an uploaded image file
+      - ``text``  — a text description
+
+    Returns the same ``{results, aggregations, paginator, count}`` shape
+    as ``search_results``.
+
+    Args:
+        request: DRF multipart request.
+
+    Returns:
+        JSON response with search results, or a 400/502 error response.
+    """
+    image_file = request.FILES.get("image")
+    text = request.data.get("text", "").strip()
+
+    if not image_file and not text:
+        return Response(
+            {"detail": "Provide either an image file or a text query."},
+            status=400,
+        )
+
+    try:
+        if image_file:
+            image_bytes: bytes | None = image_file.read()
+            text_query: str | None = None
+        else:
+            image_bytes = None
+            text_query = text
+
+        data = perform_image_search(
+            request.user,
+            image_bytes=image_bytes,
+            text=text_query,
+        )
+    except ValueError as exc:
+        return Response({"detail": str(exc)}, status=400)
+    except RuntimeError as exc:
+        return Response({"detail": str(exc)}, status=502)
+
     return Response(data)

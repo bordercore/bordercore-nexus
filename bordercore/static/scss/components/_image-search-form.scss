@@ -1,0 +1,114 @@
+// =============================================================================
+// IMAGE SEARCH FORM
+// Drop-zone and text input for the image-search mode on /search/
+// =============================================================================
+
+.image-search-form {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.75rem;
+
+  &__text-input {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--input-bg, var(--card-bg));
+    color: var(--text-primary);
+    font-size: 0.95rem;
+
+    &:focus {
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 2px rgb(99 102 241 / 20%);
+      outline: none;
+    }
+
+    &::placeholder {
+      color: var(--text-muted);
+    }
+  }
+
+  &__drop-zone {
+    display: flex;
+    height: 8rem;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    border: 2px dashed var(--border-color);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.9rem;
+    gap: 0.4rem;
+    text-align: center;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+
+    &:hover {
+      border-color: var(--accent-color);
+      color: var(--text-primary);
+    }
+
+    &.dragging {
+      border: 2px solid var(--accent-color);
+      background-color: rgb(99 102 241 / 8%);
+      color: var(--text-primary);
+    }
+  }
+
+  &__drop-icon {
+    font-size: 1.5rem;
+    opacity: 0.6;
+  }
+
+  &__drop-hint {
+    font-size: 0.85rem;
+    line-height: 1.3;
+  }
+
+  &__preview {
+    display: flex;
+    align-items: center;
+    padding: 0.4rem 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--card-bg);
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    gap: 0.5rem;
+
+    &-name {
+      overflow: hidden;
+      flex: 1;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &-clear {
+      padding: 0 0.2rem;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1rem;
+      line-height: 1;
+
+      &:hover {
+        color: var(--text-primary);
+      }
+    }
+  }
+
+  &__submit {
+    align-self: flex-start;
+  }
+
+  // The real file input: hidden from view, triggered programmatically
+  &__file-input {
+    display: none;
+  }
+}

@@ -15,6 +15,11 @@ urlpatterns = [
         name="search_results_api",
     ),
     path(
+        route="api/image-results/",
+        view=api.image_search_results,
+        name="image_search_results_api",
+    ),
+    path(
         route="tagstitle/",
         view=api.search_tags_and_names,
         name="search_tags_and_names"

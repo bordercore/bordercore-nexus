@@ -8,10 +8,11 @@ const MODE_LABELS: Record<SearchMode, string> = {
   term: "Term Search",
   tag: "Tag Search",
   semantic: "Semantic Search",
+  image: "Image Search",
 };
 
 describe("SearchModeNav", () => {
-  it("renders all three mode buttons", () => {
+  it("renders all four mode buttons", () => {
     render(<SearchModeNav activeMode="term" onModeChange={() => {}} />);
     for (const label of Object.values(MODE_LABELS)) {
       expect(screen.getByRole("button", { name: new RegExp(label) })).toBeInTheDocument();
@@ -23,16 +24,19 @@ describe("SearchModeNav", () => {
     const tag = screen.getByRole("button", { name: /Tag Search/ });
     const term = screen.getByRole("button", { name: /Term Search/ });
     const semantic = screen.getByRole("button", { name: /Semantic Search/ });
+    const image = screen.getByRole("button", { name: /Image Search/ });
 
     expect(tag.className).toMatch(/\bactive\b/);
     expect(term.className).not.toMatch(/\bactive\b/);
     expect(semantic.className).not.toMatch(/\bactive\b/);
+    expect(image.className).not.toMatch(/\bactive\b/);
   });
 
   it.each<[SearchMode, string]>([
     ["term", "Term Search"],
     ["tag", "Tag Search"],
     ["semantic", "Semantic Search"],
+    ["image", "Image Search"],
   ])("invokes onModeChange with %s when its button is clicked", async (mode, label) => {
     const onModeChange = vi.fn();
     const user = userEvent.setup();

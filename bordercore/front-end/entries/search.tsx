@@ -10,6 +10,7 @@ if (container) {
   const tagsChangedUrl = container.getAttribute("data-tags-changed-url") || "";
   const termSearchUrl = container.getAttribute("data-term-search-url") || "";
   const semanticSearchUrl = container.getAttribute("data-semantic-search-url") || "";
+  const imageSearchApiUrl = container.getAttribute("data-image-search-api-url") || "";
   const tagUrl = container.getAttribute("data-tag-url") || "";
   const searchApiUrl = container.getAttribute("data-search-api-url") || "";
   const imagesUrl = container.getAttribute("data-images-url") || "";
@@ -96,6 +97,7 @@ if (container) {
       tagsChangedUrl={tagsChangedUrl}
       termSearchUrl={termSearchUrl}
       semanticSearchUrl={semanticSearchUrl}
+      imageSearchApiUrl={imageSearchApiUrl}
       tagUrl={tagUrl}
       imagesUrl={imagesUrl}
       hasRequest={hasRequest}

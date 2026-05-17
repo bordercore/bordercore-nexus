@@ -1,6 +1,6 @@
 import React, { useState, useRef, forwardRef, useImperativeHandle, useCallback } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
+import { faMagnifyingGlass, faImage } from "@fortawesome/free-solid-svg-icons";
 import TagsInput, { TagsInputHandle } from "../common/TagsInput";
 import { useFocusOnCtrlK } from "../common/hooks/useFocusOnCtrlK";
 import type { SearchMode } from "./SearchModeNav";
@@ -20,6 +20,7 @@ interface SearchBarProps {
   searchMode?: SearchMode;
   onSearch?: (term: string) => void;
   onSemanticSearch?: (term: string) => void;
+  onImageSearch?: (payload: { text?: string; file?: File }) => void;
 }
 
 export interface SearchBarHandle {
@@ -40,13 +41,18 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(function Se
     searchMode = "term",
     onSearch,
     onSemanticSearch,
+    onImageSearch,
   },
   ref
 ) {
   const [searchTerm, setSearchTerm] = useState(searchTermInitial);
   const [searchSemantic, setSearchSemantic] = useState(searchSemanticInitial);
+  const [searchImageText, setSearchImageText] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [dragging, setDragging] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const tagsInputRef = useRef<TagsInputHandle>(null);
   const semanticInputRef = useRef<HTMLInputElement>(null);
 
@@ -113,8 +119,51 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(function Se
     [onSemanticSearch, searchSemantic]
   );
 
+  const handleImageDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setDragging(true);
+  }, []);
+
+  const handleImageDragLeave = useCallback(() => {
+    setDragging(false);
+  }, []);
+
+  const handleImageDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith("image/")) {
+      setImageFile(file);
+    }
+  }, []);
+
+  const handleFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+    }
+  }, []);
+
+  const handleDropZoneClick = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleImageSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!onImageSearch) return;
+      if (imageFile) {
+        onImageSearch({ file: imageFile });
+      } else if (searchImageText.trim()) {
+        onImageSearch({ text: searchImageText.trim() });
+      }
+    },
+    [onImageSearch, imageFile, searchImageText]
+  );
+
   const termSearchDisabled = searchTerm === "";
   const semanticSearchDisabled = searchSemantic === "";
+  const imageSearchDisabled = !imageFile && searchImageText.trim() === "";
 
   return (
     <div className="search-bar-container">
@@ -212,6 +261,70 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(function Se
               Search
             </button>
           </div>
+        </form>
+      )}
+
+      {/* Image Search Form */}
+      {searchMode === "image" && (
+        <form
+          className="search-bar-form image-search-form"
+          onSubmit={handleImageSubmit}
+          autoComplete="off"
+        >
+          <input
+            type="text"
+            value={searchImageText}
+            onChange={e => setSearchImageText(e.target.value)}
+            placeholder="Describe what you're looking for..."
+            className="image-search-form__text-input"
+            disabled={!!imageFile}
+          />
+          <div
+            className={`image-search-form__drop-zone${dragging ? " dragging" : ""}`}
+            onDragOver={handleImageDragOver}
+            onDragLeave={handleImageDragLeave}
+            onDrop={handleImageDrop}
+            onClick={handleDropZoneClick}
+            role="button"
+            tabIndex={0}
+            onKeyDown={e => {
+              if (e.key === "Enter" || e.key === " ") handleDropZoneClick();
+            }}
+            aria-label="Upload image"
+          >
+            <FontAwesomeIcon icon={faImage} className="image-search-form__drop-icon" />
+            <span className="image-search-form__drop-hint">
+              Drag image here, or click to browse
+            </span>
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileInputChange}
+            className="image-search-form__file-input"
+            tabIndex={-1}
+          />
+          {imageFile && (
+            <div className="image-search-form__preview">
+              <span className="image-search-form__preview-name">{imageFile.name}</span>
+              <button
+                type="button"
+                className="image-search-form__preview-clear"
+                onClick={() => setImageFile(null)}
+                aria-label="Remove image"
+              >
+                ×
+              </button>
+            </div>
+          )}
+          <button
+            className="search-bar-submit image-search-form__submit"
+            type="submit"
+            disabled={imageSearchDisabled}
+          >
+            Search
+          </button>
         </form>
       )}
     </div>

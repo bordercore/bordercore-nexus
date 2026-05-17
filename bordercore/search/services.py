@@ -440,6 +440,87 @@ def perform_search(
     }
 
 
+def perform_image_search(
+    user: User,
+    *,
+    image_bytes: bytes | None = None,
+    text: str | None = None,
+) -> dict[str, Any]:
+    """Run an image-similarity search and return enriched results.
+
+    Encodes the query (image bytes or text description) via the
+    CreateImageEmbedding Lambda, queries Elasticsearch for similar blobs,
+    fetches the full source documents for each hit, and enriches them with
+    the same fields that ``perform_search`` produces.
+
+    Args:
+        user: The authenticated user performing the search.
+        image_bytes: Raw bytes of a query image.
+        text: Free-text description of the desired image.
+
+    Returns:
+        A dict with ``results`` (list of enriched hits), ``aggregations``
+        (empty list — image search has no facets), ``paginator``
+        (single-page dict), and ``count`` (number of hits).
+
+    Raises:
+        ValueError: If neither or both of ``image_bytes`` / ``text`` are given,
+            or if the underlying similarity service raises.
+        RuntimeError: If the embedding Lambda is unavailable.
+    """
+    from blob.services import find_similar_images
+
+    uuid_similarity_pairs = find_similar_images(
+        user_id=cast(int, user.id),
+        image_bytes=image_bytes,
+        text=text,
+        threshold=0.0,
+        limit=30,
+    )
+
+    if not uuid_similarity_pairs:
+        return {"results": [], "aggregations": [], "paginator": {}, "count": 0}
+
+    uuids = [pair[0] for pair in uuid_similarity_pairs]
+    similarity_map = {pair[0]: pair[1] for pair in uuid_similarity_pairs}
+
+    es = get_elasticsearch_connection()
+    index = settings.ELASTICSEARCH_INDEX
+    mget_response = es.mget(index=index, body={"ids": uuids})
+
+    hits = []
+    for doc in mget_response["docs"]:
+        if not doc.get("found"):
+            continue
+        source = doc["_source"]
+        # Only surface blobs belonging to this user (mget doesn't filter)
+        if source.get("user_id") != user.id:
+            continue
+        blob_uuid = doc["_id"]
+        hits.append({
+            "_source": source,
+            "_score": similarity_map.get(blob_uuid, 0.0),
+            "_id": blob_uuid,
+            "highlight": {},
+        })
+
+    # Preserve the similarity ordering from find_similar_images
+    uuid_order = {u: i for i, u in enumerate(uuids)}
+    hits.sort(key=lambda h: uuid_order.get(h["_id"], len(uuids)))
+
+    _filter_results(hits, None)
+
+    count = len(hits)
+    paginator = _build_pagination_dict(1, count) if count > 0 else {}
+
+    return {
+        "results": hits,
+        "aggregations": [],
+        "paginator": paginator,
+        "count": count,
+    }
+
+
 def semantic_search(request: HttpRequest, search: str) -> dict[str, Any]:
     """Perform semantic search using embeddings and Elasticsearch.
 
