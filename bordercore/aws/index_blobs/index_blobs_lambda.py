@@ -5,6 +5,8 @@ invocations to index blob content in Elasticsearch. It extracts blob UUIDs
 from S3 keys or event payloads and triggers indexing operations.
 """
 
+from __future__ import annotations
+
 import json
 import logging
 import os

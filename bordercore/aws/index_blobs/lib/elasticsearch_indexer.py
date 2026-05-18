@@ -7,6 +7,8 @@ monkeypatched merge function to work around date-range field issues in
 elasticsearch-dsl.
 """
 
+from __future__ import annotations
+
 import base64
 import io
 import json
