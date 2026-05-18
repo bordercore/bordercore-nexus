@@ -53,11 +53,29 @@ actor ReminderNotificationService {
         }
     }
 
-    func sync(reminders: [ReminderItem]) async {
-        let isAuthorized = await requestAuthorizationIfNeeded()
-        guard isAuthorized else {
-            return
+    func sync(
+        reminders: [ReminderItem],
+        requestsAuthorization: Bool = true
+    ) async {
+        let authorizationStatus = await notificationAuthorizationStatus()
+        let isAuthorized: Bool
+
+        switch authorizationStatus {
+        case .authorized, .provisional:
+            isAuthorized = true
+        case .notDetermined:
+            if requestsAuthorization {
+                isAuthorized = await requestAuthorizationIfNeeded()
+            } else {
+                isAuthorized = false
+            }
+        case .denied:
+            isAuthorized = false
+        @unknown default:
+            isAuthorized = false
         }
+
+        guard isAuthorized else { return }
 
         let existingManagedIdentifiers = Set(await pendingManagedNotificationIdentifiers())
 

@@ -52,6 +52,20 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         }
         completionHandler()
     }
+
+    nonisolated func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        let identifier = notification.request.identifier
+        if identifier.hasPrefix(ReminderNotificationService.managedPrefix) {
+            completionHandler([.banner, .sound, .badge, .list])
+            return
+        }
+
+        completionHandler([])
+    }
 }
 
 @main

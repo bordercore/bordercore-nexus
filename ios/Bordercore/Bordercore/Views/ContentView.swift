@@ -2,6 +2,8 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var authManager: AuthManager
+    @Environment(\.scenePhase) private var scenePhase
+    @StateObject private var reminderNotificationSync = ReminderNotificationSyncCoordinator()
 
     var body: some View {
         Group {
@@ -10,6 +12,56 @@ struct ContentView: View {
             } else {
                 LoginView()
             }
+        }
+        .task {
+            await reminderNotificationSync.handleAuthenticationState(isAuthenticated: authManager.isAuthenticated)
+        }
+        .onChange(of: authManager.isAuthenticated) { _, isAuthenticated in
+            Task {
+                await reminderNotificationSync.handleAuthenticationState(isAuthenticated: isAuthenticated)
+            }
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            guard newPhase == .active else { return }
+            Task {
+                await reminderNotificationSync.syncIfAuthenticated()
+            }
+        }
+    }
+}
+
+@MainActor
+private final class ReminderNotificationSyncCoordinator: ObservableObject {
+    private let authManager: AuthManager
+    private let notificationService: ReminderNotificationService
+
+    init(
+        authManager: AuthManager = .shared,
+        notificationService: ReminderNotificationService = .shared
+    ) {
+        self.authManager = authManager
+        self.notificationService = notificationService
+    }
+
+    func handleAuthenticationState(isAuthenticated: Bool) async {
+        if isAuthenticated {
+            await syncIfAuthenticated()
+        } else {
+            await notificationService.cancelAllManagedNotifications()
+        }
+    }
+
+    func syncIfAuthenticated() async {
+        guard let token = authManager.getToken() else {
+            await notificationService.cancelAllManagedNotifications()
+            return
+        }
+
+        do {
+            let reminders: [ReminderItem] = try await APIClient.shared.getList("/api/reminders/", token: token)
+            await notificationService.sync(reminders: reminders, requestsAuthorization: false)
+        } catch {
+            // Keep existing scheduled reminders if refresh fails unexpectedly.
         }
     }
 }
