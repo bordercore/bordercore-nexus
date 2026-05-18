@@ -34,6 +34,7 @@ import TodoFilterTitle, { ActiveFilter } from "./TodoFilterTitle";
 import TodoToolbar, { SortField } from "./TodoToolbar";
 import TodoRow from "./TodoRow";
 import VisualizerSlot from "../visualizers/VisualizerSlot";
+import { useLiveChannel } from "../common/hooks/useLiveChannel";
 
 const VIEW_STORAGE_KEY = "todo_view_density";
 const SORT_STORAGE_KEY = "todo_sort_field";
@@ -263,6 +264,25 @@ export function TodoListPage({
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
+
+  // Live updates: when a Todo for this user changes anywhere (other tab,
+  // iOS app, admin), the server pushes a ping and we refetch with the
+  // current filter/sort/search. Bursts of pings are collapsed by a 200ms
+  // debouncer so a 50-row bulk import becomes one refetch.
+  const refetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useLiveChannel("/ws/todos/", () => {
+    if (refetchTimerRef.current) clearTimeout(refetchTimerRef.current);
+    refetchTimerRef.current = setTimeout(() => {
+      refetchTimerRef.current = null;
+      fetchTodos();
+    }, 200);
+  });
+  useEffect(
+    () => () => {
+      if (refetchTimerRef.current) clearTimeout(refetchTimerRef.current);
+    },
+    []
+  );
 
   const handleSelectFilter = useCallback((filter: FilterValue) => {
     setSearchInput("");
