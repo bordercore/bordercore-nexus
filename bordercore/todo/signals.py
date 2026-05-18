@@ -16,6 +16,7 @@ from channels.layers import get_channel_layer
 from django.db.models.signals import m2m_changed, post_delete, post_save
 from django.dispatch import receiver
 
+from tag.models import TagTodo
 from todo.models import Todo
 
 logger = logging.getLogger(__name__)
@@ -58,3 +59,12 @@ def todo_tags_changed(
         return
     # `instance` is the Todo (forward-side m2m_changed).
     _notify(instance.user_id)
+
+
+@receiver(post_save, sender=TagTodo)
+def tagtodo_saved(sender: type[TagTodo], instance: TagTodo, **kwargs: Any) -> None:
+    """Fan out on TagTodo changes — specifically drag-reorder, which
+    calls .save() on the moved row. m2m_changed already covers tag
+    add/remove, so this only meaningfully fires on sort_order updates.
+    """
+    _notify(instance.todo.user_id)
