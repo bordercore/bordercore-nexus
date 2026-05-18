@@ -111,3 +111,9 @@ LOGGING["loggers"]["django"] = {"handlers": ["console"]}
 #     "level": "DEBUG",
 #     "handlers": ["console"]
 # }
+
+# No local Redis in dev — in-memory layer is fine for a single process
+# and is also what the test suite uses.
+CHANNEL_LAYERS = {
+    "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"},
+}
