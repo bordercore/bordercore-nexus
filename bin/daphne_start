@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# Daphne ASGI server for Django Channels (WebSocket endpoints under /ws/).
+# Modelled on bin/gunicorn_start.
+
+NAME="django_daphne"
+DJANGODIR=/var/www/django
+HOST=127.0.0.1
+PORT=9003
+USER=www-data
+GROUP=www-data
+DJANGO_SETTINGS_MODULE=config.settings.prod
+DJANGO_ASGI_MODULE=config.asgi
+PYTHONPATH=/var/www/django/bordercore:/var/www/django/bordercore/bordercore
+
+echo "Starting $NAME as `whoami`"
+
+source $DJANGODIR/bordercore/.venv/bin/activate
+export DJANGO_SETTINGS_MODULE=$DJANGO_SETTINGS_MODULE
+export PYTHONPATH=$PYTHONPATH
+
+source /var/www/.env
+
+/var/www/.local/bin/uv sync --project "$DJANGODIR/bordercore" --group prod
+
+exec daphne -b $HOST -p $PORT ${DJANGO_ASGI_MODULE}:application
