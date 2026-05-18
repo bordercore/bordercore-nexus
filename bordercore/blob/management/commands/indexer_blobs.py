@@ -68,40 +68,36 @@ class Command(BaseCommand):
 
         search_object = {
             "query": {
-                "bool": {
-                    "should": [
-                        {
-                            "term": {
-                                "doctype": "blob"
-                            }
-                        },
-                        {
-                            "term": {
-                                "doctype": "document"
-                            }
-                        },
-                        {
-                            "term": {
-                                "doctype": "note"
-                            }
-                        },
-                        {
-                            "term": {
-                                "doctype": "book"
-                            }
-                        },
-                    ]
+                "terms": {
+                    "doctype": ["blob", "document", "note", "book"]
                 }
             },
-            "size": 10000,
-            "_source": ["uuid"]
+            "size": 1000,
+            "_source": ["uuid"],
         }
 
-        found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
+        blobs: set[str] = set()
+        scroll_id = None
 
-        blobs = {}
-        for match in found["hits"]["hits"]:
-            blobs[match["_source"]["uuid"]] = True
+        try:
+            response = es.search(
+                index=settings.ELASTICSEARCH_INDEX,
+                scroll="2m",
+                **search_object,
+            )
+
+            while True:
+                hits = response["hits"]["hits"]
+                if not hits:
+                    break
+
+                scroll_id = response["_scroll_id"]
+                blobs.update(hit["_source"]["uuid"] for hit in hits)
+
+                response = es.scroll(scroll_id=scroll_id, scroll="2m")
+        finally:
+            if scroll_id is not None:
+                es.clear_scroll(scroll_id=scroll_id, ignore=(404,))
 
         return blobs
 
