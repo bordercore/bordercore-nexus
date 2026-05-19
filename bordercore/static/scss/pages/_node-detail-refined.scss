@@ -443,6 +443,25 @@
       }
     }
 
+    // Card-level action dropdown floats in the upper-right corner of the card
+    // rather than sitting inline with the title. Each titleSlot still emits the
+    // dropdown inside `.dropdown-menu-container`; absolute positioning relative
+    // to `.card` (which carries Tailwind `relative`) pulls it out of flow.
+    // Reserve right padding on the title row so long titles don't slide under
+    // the trigger.
+    .card-body > .card-title,
+    .card-body > .dropdown-height {
+      padding-inline-end: 28px;
+    }
+
+    .dropdown-menu-container {
+      position: absolute;
+      z-index: 2;
+      margin: 0;
+      inset-block-start: 6px;
+      inset-inline-end: 8px;
+    }
+
     hr.divider,
     .divider,
     hr {
