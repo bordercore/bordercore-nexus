@@ -7,6 +7,8 @@ from urllib.parse import quote_plus, urlparse
 import boto3
 import pytest
 from faker import Factory as FakerFactory
+from django.core.cache import cache
+from django.test import override_settings
 
 pytestmark = [pytest.mark.django_db]
 
@@ -409,3 +411,51 @@ def test_recently_viewed_blob_add(authenticated_client):
     # Dupe check
     RecentlyViewedBlob.add(user=user, node=node_1)
     assert RecentlyViewedBlob.objects.all().count() == 3
+
+
+@override_settings(CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}})
+def test_blob_save_invalidates_recent_blobs_cache(authenticated_client):
+    """Blob.save() must delete the per-user recent_blobs and recent_media cache entries."""
+    user, _ = authenticated_client()
+
+    cache_key = f"recent_blobs_{user.id}_10"
+    cache.set(cache_key, [{"name": "stale"}], timeout=300)
+    assert cache.get(cache_key) is not None
+
+    media_key = f"recent_media_{user.id}_10"
+    cache.set(media_key, [{"url": "stale"}], timeout=300)
+    assert cache.get(media_key) is not None
+
+    BlobFactory.create(user=user)
+
+    assert cache.get(cache_key) is None, \
+        "Blob.save() should invalidate the user's recent_blobs cache"
+    assert cache.get(media_key) is None, \
+        "Blob.save() should invalidate the user's recent_media cache"
+
+
+@override_settings(CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}})
+def test_blob_delete_invalidates_recent_blobs_cache(authenticated_client, monkeypatch):
+    """Blob.delete() must delete the per-user recent_blobs and recent_media cache entries."""
+    user, _ = authenticated_client()
+
+    blob = BlobFactory.create(user=user)
+
+    cache_key = f"recent_blobs_{user.id}_10"
+    cache.set(cache_key, [{"name": "stale"}], timeout=300)
+    assert cache.get(cache_key) is not None
+
+    media_key = f"recent_media_{user.id}_10"
+    cache.set(media_key, [{"url": "stale"}], timeout=300)
+    assert cache.get(media_key) is not None
+
+    # Stub out the on_commit S3/ES cleanup so the test only exercises cache
+    # invalidation without requiring real AWS credentials or Elasticsearch.
+    monkeypatch.setattr("django.db.transaction.on_commit", lambda fn: None)
+
+    blob.delete()
+
+    assert cache.get(cache_key) is None, \
+        "Blob.delete() should invalidate the user's recent_blobs cache"
+    assert cache.get(media_key) is None, \
+        "Blob.delete() should invalidate the user's recent_media cache"
