@@ -14,4 +14,9 @@ urlpatterns = [
         view=views.MetricListView.as_view(),
         name="list"
     ),
+    path(
+        route="api/failed-count/",
+        view=views.failed_count_api,
+        name="failed_count_api"
+    ),
 ]

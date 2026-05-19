@@ -10,11 +10,24 @@ from django.contrib.auth.mixins import (LoginRequiredMixin,
                                         UserPassesTestMixin)
 from django.contrib.auth.models import User
 from django.db.models import QuerySet
+from django.http import HttpRequest
 from django.utils import timezone
 from django.views.generic.list import ListView
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
 from .models import Metric
 from .services import parse_pytest_output
+
+
+@api_view(["GET"])
+def failed_count_api(request: HttpRequest) -> Response:
+    """Return the current failed-test count for the user.
+
+    Used by the topbar's live-refetch after a /ws/metrics/ ping.
+    """
+    user = cast(User, request.user)
+    return Response({"count": Metric.objects.get_failed_test_count(user)})
 
 
 class MetricListView(LoginRequiredMixin, UserPassesTestMixin, ListView):

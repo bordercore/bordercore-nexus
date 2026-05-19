@@ -9,3 +9,8 @@ from django.apps import AppConfig
 
 class MetricsConfig(AppConfig):
     name = "metrics"
+    default_auto_field = "django.db.models.BigAutoField"
+
+    def ready(self) -> None:
+        # Side-effect import: registers signal handlers.
+        from metrics import signals  # noqa: F401

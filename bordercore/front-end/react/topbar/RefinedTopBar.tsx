@@ -179,7 +179,7 @@ export default function RefinedTopBar() {
   const [helpText, setHelpText] = useState("");
   const [recentBlobs, setRecentBlobs] = useState<any>(null);
   const [recentlyViewed, setRecentlyViewed] = useState<any>(null);
-  const [failedTestCount] = useState(data.failedTestCount || 0);
+  const [failedTestCount, setFailedTestCount] = useState(data.failedTestCount || 0);
   const [pageTitle] = useState<string>(data.title || "");
   const [menuOpen, setMenuOpen] = useState(false);
   const username = data.username || "User";
@@ -222,6 +222,30 @@ export default function RefinedTopBar() {
   useEffect(
     () => () => {
       if (refetchTimerRef.current) clearTimeout(refetchTimerRef.current);
+    },
+    []
+  );
+
+  // Live sync: refetch the failing-tests count when test_runner.py writes
+  // a new MetricData row (typically from cron).
+  const metricsRefetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useLiveChannel("/ws/metrics/", () => {
+    if (metricsRefetchTimerRef.current) clearTimeout(metricsRefetchTimerRef.current);
+    metricsRefetchTimerRef.current = setTimeout(async () => {
+      metricsRefetchTimerRef.current = null;
+      try {
+        const res = await axios.get("/metrics/api/failed-count/");
+        setFailedTestCount(res.data.count);
+      } catch (err) {
+        console.error("Failed to refetch failed test count:", err);
+      }
+    }, 200);
+  });
+
+  useEffect(
+    () => () => {
+      if (metricsRefetchTimerRef.current) clearTimeout(metricsRefetchTimerRef.current);
     },
     []
   );
