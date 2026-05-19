@@ -134,4 +134,9 @@ urlpatterns = [
         view=views.BookshelfListView.as_view(),
         name="bookshelf"
     ),
+    path(
+        route="api/recently-viewed/",
+        view=views.recently_viewed_api,
+        name="recently_viewed_api"
+    ),
 ]

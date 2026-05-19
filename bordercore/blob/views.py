@@ -46,7 +46,8 @@ from blob.services import add_related_object as add_related_object_service
 from blob.services import (chatbot, chatbot_followups,
                            generate_note_thumbnail, get_book_tag_categories,
                            get_books, get_node_to_object_query,
-                           get_recent_books, import_blob)
+                           get_recent_books, get_recently_viewed,
+                           import_blob)
 from collection.models import Collection, CollectionObject
 from lib.decorators import validate_post_data
 from lib.exceptions import (InvalidNodeTypeError, NodeNotFoundError,
@@ -1390,5 +1391,17 @@ class BookshelfListView(LoginRequiredMixin, ListView):
             "total_count": len(self.object_list),
             "title": "Bookshelf"
         }
+
+
+@api_view(["GET"])
+def recently_viewed_api(request: HttpRequest) -> Response:
+    """Return the same shape embedded by the recently_viewed context processor.
+
+    Used by the topbar dropdown's live-refetch after a /ws/blobs/ ping.
+    """
+    user = cast(User, request.user)
+    return Response({
+        "blobList": get_recently_viewed(user),
+    })
 
 

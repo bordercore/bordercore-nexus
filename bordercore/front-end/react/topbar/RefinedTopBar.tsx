@@ -20,6 +20,7 @@ import Weather from "../common/Weather";
 import { Popover } from "../common/Popover";
 import { resolveSection } from "./sectionMap";
 import TopBarBackground from "./TopBarBackground";
+import { useLiveChannel } from "../common/hooks/useLiveChannel";
 
 interface BaseTemplateData {
   failedTestCount?: number;
@@ -198,6 +199,32 @@ export default function RefinedTopBar() {
     if (recentBlobsEl) setRecentBlobs(JSON.parse(recentBlobsEl.textContent || "{}"));
     if (recentlyViewedEl) setRecentlyViewed(JSON.parse(recentlyViewedEl.textContent || "{}"));
   }, []);
+
+  // Live sync: when the backend pushes a /ws/blobs/ ping, refetch the
+  // recently-viewed payload. Debounced 200ms so a burst of view-tracking
+  // writes (e.g. navigating quickly between blob detail pages) collapses
+  // into a single fetch.
+  const refetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useLiveChannel("/ws/blobs/", () => {
+    if (refetchTimerRef.current) clearTimeout(refetchTimerRef.current);
+    refetchTimerRef.current = setTimeout(async () => {
+      refetchTimerRef.current = null;
+      try {
+        const res = await axios.get("/blob/api/recently-viewed/");
+        setRecentlyViewed(res.data);
+      } catch (err) {
+        console.error("Failed to refetch recently viewed:", err);
+      }
+    }, 200);
+  });
+
+  useEffect(
+    () => () => {
+      if (refetchTimerRef.current) clearTimeout(refetchTimerRef.current);
+    },
+    []
+  );
 
   useEffect(() => {
     const url = data.urls?.getWeather;
