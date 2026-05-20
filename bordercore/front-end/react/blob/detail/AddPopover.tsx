@@ -64,7 +64,7 @@ export function AddPopover({
   const { refs, floatingStyles, context } = useFloating({
     open,
     onOpenChange,
-    placement: "bottom-end",
+    placement: "bottom-start",
     middleware: [offset(6), flip(), shift({ padding: 8 })],
     whileElementsMounted: autoUpdate,
   });
