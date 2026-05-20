@@ -21,6 +21,7 @@ import { doGet, doPost, EventBus } from "../../utils/reactUtils";
 import { Hero } from "./Hero";
 import { Rail } from "./Rail";
 import { FullscreenReader } from "./FullscreenReader";
+import { ImageLightbox } from "./ImageLightbox";
 import { BackrefsSection } from "./sections/BackrefsSection";
 import type { BlobDetailPageProps, Collection, ElasticsearchInfo, BackReference } from "../types";
 
@@ -85,6 +86,7 @@ export function BlobDetailPage({
   const [isPinnedNote, setIsPinnedNote] = useState(initialIsPinnedNote);
   const [contentRoot, setContentRoot] = useState<HTMLElement | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isImageLightboxOpen, setIsImageLightboxOpen] = useState(false);
 
   const markdown = useMemo(() => markdownit(), []);
 
@@ -222,8 +224,12 @@ export function BlobDetailPage({
           )}
 
           {(blob.isImage || blob.isPdf) && blob.coverUrl && (
-            <div className="bd-cover">
-              <img src={blob.coverUrl} alt={blob.name} />
+            <div className={`bd-cover${blob.isImage ? " is-clickable" : ""}`}>
+              <img
+                src={blob.coverUrl}
+                alt={blob.name}
+                onClick={blob.isImage ? () => setIsImageLightboxOpen(true) : undefined}
+              />
             </div>
           )}
 
@@ -272,6 +278,14 @@ export function BlobDetailPage({
           blob={blob}
           renderedContent={renderedContent}
           onClose={() => setIsFullscreen(false)}
+        />
+      )}
+
+      {isImageLightboxOpen && blob.isImage && (blob.fileUrl || blob.coverUrl) && (
+        <ImageLightbox
+          src={blob.fileUrl || blob.coverUrl || ""}
+          alt={blob.name}
+          onClose={() => setIsImageLightboxOpen(false)}
         />
       )}
     </div>

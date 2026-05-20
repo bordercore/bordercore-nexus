@@ -5,6 +5,7 @@ import { faXmark } from "@fortawesome/free-solid-svg-icons";
 import Prism from "prismjs";
 
 import { tagStyle } from "../../utils/tagColors";
+import { useBodyScrollLock } from "../../utils/useBodyScrollLock";
 import type { BlobDetail } from "../types";
 
 interface FullscreenReaderProps {
@@ -18,15 +19,7 @@ interface FullscreenReaderProps {
 export function FullscreenReader({ blob, renderedContent, onClose }: FullscreenReaderProps) {
   const contentRef = useRef<HTMLElement | null>(null);
 
-  // Lock background scroll while the reader is open. Save and restore the
-  // previous overflow value so we don't clobber any other consumer.
-  useEffect(() => {
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = previous;
-    };
-  }, []);
+  useBodyScrollLock();
 
   // Close on Esc.
   useEffect(() => {

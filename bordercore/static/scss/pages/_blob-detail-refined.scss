@@ -1116,6 +1116,10 @@
     border-radius: var(--radius);
   }
 
+  .bd-cover.is-clickable img {
+    cursor: zoom-in;
+  }
+
   .bd-video {
     width: 100%;
     border-radius: var(--radius);
@@ -1503,5 +1507,48 @@
 @keyframes bd-fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+.bd-image-lightbox {
+  position: fixed;
+  z-index: 1100;
+  display: grid;
+  animation: bd-fade-in 160ms cubic-bezier(0.22, 1, 0.36, 1);
+  background: rgb(0 0 0 / 92%);
+  cursor: zoom-out;
+  inset: 0;
+  place-items: center;
+}
+
+.bd-image-lightbox-img {
+  display: block;
+  max-width: 100vw;
+  max-height: 100vh;
+  cursor: default;
+  object-fit: contain;
+}
+
+.bd-image-lightbox-close {
+  position: fixed;
+  top: 18px;
+  right: 22px;
+  display: inline-grid;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--line-soft);
+  border-radius: 50%;
+  backdrop-filter: blur(8px);
+  background: color-mix(in oklch, var(--bg-2) 70%, transparent);
+  color: var(--fg-2);
+  cursor: pointer;
+  font-size: 16px;
+  place-items: center;
+  transition: all var(--bd-t-fast);
+}
+
+.bd-image-lightbox-close:hover {
+  border-color: var(--line);
+  background: var(--bg-3);
+  color: var(--fg-1);
 }
 
