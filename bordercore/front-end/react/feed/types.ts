@@ -4,7 +4,9 @@ export interface FeedItem {
   link: string;
   pubDate: string;
   readAt: string | null;
-  summary: string;
+  // Lazily fetched by the reader pane. `undefined` = not yet loaded;
+  // `""` = loaded, but the source feed did not include a summary.
+  summary?: string;
   thumbnailUrl: string;
 }
 

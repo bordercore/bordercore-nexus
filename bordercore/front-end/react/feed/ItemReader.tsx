@@ -9,18 +9,32 @@ import {
 import type { Feed, FeedItem } from "./types";
 import { feedHueClass, feedInitials } from "./utils/favicon";
 import { formatRelativeShort } from "./utils/time";
-import { markItemRead } from "./utils/api";
+import { fetchItemSummary, markItemRead } from "./utils/api";
 
 interface ItemReaderProps {
   feed: Feed | null;
   item: FeedItem | null;
   onMarkRead: (itemId: number, patch: Partial<FeedItem>) => void;
+  onSummaryLoaded: (itemId: number, summary: string) => void;
 }
 
 const DWELL_MS = 800;
 
-export function ItemReader({ feed, item, onMarkRead }: ItemReaderProps) {
+export function ItemReader({ feed, item, onMarkRead, onSummaryLoaded }: ItemReaderProps) {
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!item || item.summary !== undefined) return;
+    const id = item.id;
+    let cancelled = false;
+    fetchItemSummary(id, summary => {
+      if (cancelled) return;
+      onSummaryLoaded(id, summary);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [item?.id, item?.summary, onSummaryLoaded]);
 
   useEffect(() => {
     if (!item || item.readAt !== null) return;
@@ -119,7 +133,9 @@ export function ItemReader({ feed, item, onMarkRead }: ItemReaderProps) {
         {item.link}
       </a>
 
-      {item.summary ? (
+      {item.summary === undefined ? (
+        <p className="tp-reader-summary tp-reader-summary--loading">Loading…</p>
+      ) : item.summary ? (
         <p className="tp-reader-summary">{item.summary}</p>
       ) : (
         <div className="tp-reader-placeholder">

@@ -138,6 +138,34 @@ def test_update_feed_list(authenticated_client, feed):
     assert resp.json()["updated_count"] == 3
 
 
+def test_fetch_item_summary(authenticated_client, feed):
+    """Fetching an item summary returns the FeedItem's summary text."""
+    _, client = authenticated_client()
+    item = feed[0].feeditem_set.first()
+    item.summary = "hello world"
+    item.save(update_fields=["summary"])
+
+    url = urls.reverse("feed:fetch_item_summary", kwargs={"pk": item.pk})
+    resp = client.get(url)
+
+    assert resp.status_code == 200
+    assert resp.json()["summary"] == "hello world"
+
+
+def test_fetch_item_summary_other_users_item_404(authenticated_client):
+    """A user cannot fetch the summary of another user's item."""
+    other_user = UserFactory(username="other_user")
+    other_feed = FeedFactory(user=other_user)
+    other_item = other_feed.feeditem_set.first()
+
+    _, client = authenticated_client()
+
+    url = urls.reverse("feed:fetch_item_summary", kwargs={"pk": other_item.pk})
+    resp = client.get(url)
+
+    assert resp.status_code == 404
+
+
 def test_mark_item_read(authenticated_client, feed):
     """Marking an item as read creates a UserFeedItemState with read_at set."""
     user, client = authenticated_client()

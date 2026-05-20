@@ -25,6 +25,11 @@ urlpatterns = [
         name="mark_item_read"
     ),
     path(
+        route="items/<int:pk>/summary/",
+        view=views.fetch_item_summary,
+        name="fetch_item_summary"
+    ),
+    path(
         route="<uuid:feed_uuid>/mark_all_read/",
         view=views.mark_feed_read,
         name="mark_feed_read"

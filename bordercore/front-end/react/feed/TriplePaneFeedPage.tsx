@@ -88,6 +88,11 @@ export function TriplePaneFeedPage({
     );
   }, []);
 
+  const handleSummaryLoaded = useCallback(
+    (itemId: number, summary: string) => updateItem(itemId, { summary }),
+    [updateItem]
+  );
+
   const markFeedItemsRead = useCallback((feedId: number) => {
     const now = new Date().toISOString();
     setFeedList(prev =>
@@ -172,7 +177,12 @@ export function TriplePaneFeedPage({
         onEditFeed={handleEditFeed}
         onDeleteFeed={handleDeleteFeedClick}
       />
-      <ItemReader feed={activeFeed} item={activeItem} onMarkRead={updateItem} />
+      <ItemReader
+        feed={activeFeed}
+        item={activeItem}
+        onMarkRead={updateItem}
+        onSummaryLoaded={handleSummaryLoaded}
+      />
 
       {deleteModalOpen &&
         createPortal(

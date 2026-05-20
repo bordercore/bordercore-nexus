@@ -1,4 +1,12 @@
-import { doPost } from "../../utils/reactUtils";
+import { doGet, doPost } from "../../utils/reactUtils";
+
+export function fetchItemSummary(itemId: number, onSuccess: (summary: string) => void): void {
+  doGet(
+    `/feed/items/${itemId}/summary/`,
+    response => onSuccess(response.data.summary ?? ""),
+    "Failed to load item"
+  );
+}
 
 export function markItemRead(itemId: number, onSuccess: (readAt: string) => void): void {
   doPost(

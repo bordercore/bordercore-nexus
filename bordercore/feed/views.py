@@ -34,14 +34,19 @@ from lib.decorators import validate_post_data
 
 
 class FeedItemPayload(TypedDict):
-    """Serialized representation of a single feed item for the template context."""
+    """Serialized representation of a single feed item for the template context.
+
+    ``summary`` is intentionally omitted from the initial page payload and
+    fetched on-demand by the reader pane (see ``fetch_item_summary``). The
+    aggregate summary HTML across a user's items can run to tens of MB; only
+    the actively selected item ever needs it.
+    """
 
     id: int
     link: str
     title: str
     pubDate: str
     readAt: str | None
-    summary: str
     thumbnailUrl: str
 
 
@@ -112,7 +117,6 @@ class FeedListView(LoginRequiredMixin, ListView):
                         "title": item.title,
                         "pubDate": item.pub_date.isoformat(),
                         "readAt": _read_at(item),
-                        "summary": item.summary,
                         "thumbnailUrl": item.thumbnail_url,
                     }
                     for item in feed.feeditem_set.all()
@@ -242,8 +246,29 @@ def check_url(request: HttpRequest, url: str) -> Response:
     })
 
 
+@api_view(["GET"])
+def fetch_item_summary(request: HttpRequest, pk: int) -> Response:
+    """Return the summary text for a single feed item.
+
+    The summary is excluded from the bulk feed payload (see
+    ``FeedListView``) because it dominates the JSON size. The reader pane
+    fetches it lazily when the user selects an item.
+
+    Args:
+        request: The HTTP request object.
+        pk: The primary key of the FeedItem.
+
+    Returns:
+        JSON response with the item's ``summary`` string.
+    """
+    user = cast(User, request.user)
+    item = get_object_or_404(
+        FeedItem.objects.only("summary"), pk=pk, feed__user=user
+    )
+    return Response({"summary": item.summary})
+
+
 @api_view(["POST"])
-@permission_classes([IsAuthenticated])
 def mark_item_read(request: HttpRequest, pk: int) -> Response:
     """Mark a single feed item as read for the current user.
 
