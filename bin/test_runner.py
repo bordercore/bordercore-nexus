@@ -17,6 +17,7 @@ import datetime
 import getpass
 import os
 import pathlib
+import shutil
 import sys
 import xml.etree.ElementTree as ET
 from subprocess import PIPE, STDOUT, Popen
@@ -32,6 +33,7 @@ from metrics.models import Metric, MetricData
 
 TEST_REPORT = f"/tmp/test_report-{getpass.getuser()}.xml"
 COVERAGE_REPORT = f"/tmp/coverage-{getpass.getuser()}.xml"
+UV_BIN = shutil.which("uv") or "/var/www/.local/bin/uv"
 
 TestKind = Literal["unit", "coverage", "functional", "wumpus", "data"]
 
@@ -119,7 +121,7 @@ def run_test(test_kind: TestKind, is_verbose: bool = False) -> int:
         args: dict[str, Any] = {
             "name": "Bordercore Unit Tests",
             "command": [
-                "uv",
+                UV_BIN,
                 "run",
                 "pytest",
                 "-n",
@@ -137,7 +139,7 @@ def run_test(test_kind: TestKind, is_verbose: bool = False) -> int:
         args = {
             "name": "Bordercore Coverage Report",
             "command": [
-                "uv",
+                UV_BIN,
                 "run",
                 "pytest",
                 "-n",
@@ -158,7 +160,7 @@ def run_test(test_kind: TestKind, is_verbose: bool = False) -> int:
         args = {
             "name": "Bordercore Functional Tests",
             "command": [
-                "uv",
+                UV_BIN,
                 "run",
                 "pytest",
                 "-m",
@@ -174,7 +176,7 @@ def run_test(test_kind: TestKind, is_verbose: bool = False) -> int:
         args = {
             "name": "Bordercore Wumpus Tests",
             "command": [
-                "uv",
+                UV_BIN,
                 "run",
                 "pytest",
                 "-m",
@@ -194,7 +196,7 @@ def run_test(test_kind: TestKind, is_verbose: bool = False) -> int:
         args = {
             "name": "Bordercore Data Quality Tests",
             "command": [
-                "/var/www/.local/bin/uv",
+                UV_BIN,
                 "run",
                 "pytest",
                 "-n",
