@@ -109,12 +109,14 @@ def test_tagtodo_reorder_sends_todos_changed():
 
 
 @pytest.mark.django_db
-def test_channel_layer_error_does_not_break_save(caplog):
+def test_channel_layer_error_does_not_break_save():
     """If Redis is down, the Todo write must still succeed."""
     user = UserFactory()
-    with patch("todo.signals.async_to_sync") as mock_sync:
+    with patch("todo.signals.async_to_sync") as mock_sync, \
+         patch("todo.signals.logger") as mock_logger:
         mock_sync.side_effect = ConnectionError("redis down")
         # Should NOT raise:
         todo = Todo.objects.create(user=user, name="test todo")
     assert todo.pk is not None
-    assert any("Failed to send todos.changed" in rec.message for rec in caplog.records)
+    mock_logger.warning.assert_called_once()
+    assert "Failed to send todos.changed" in mock_logger.warning.call_args.args[0]
