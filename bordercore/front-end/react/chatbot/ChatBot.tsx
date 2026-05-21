@@ -12,14 +12,15 @@ import { ModeChips } from "./ModeChips";
 import { MessageList } from "./MessageList";
 import { ChatInput } from "./ChatInput";
 import { loadUiState, saveUiState } from "./storage";
-import type { ChatMessage, ChatMode } from "./types";
+import { flattenSegmentsToText, streamDjangoReply } from "./streamDjangoReply";
+import type { ChatMessage, ChatMode, DjangoSegment } from "./types";
 import { getCsrfToken } from "../utils/reactUtils";
 
 interface ChatBotProps {
   blobUuid?: string;
   chatUrl: string;
   followupsUrl: string;
-  saveAsNoteUrl: string;
+  djangoChatUrl?: string;
 }
 
 export interface ChatBotHandle {
@@ -33,7 +34,7 @@ const SYSTEM_MESSAGE: ChatMessage = {
 };
 
 export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
-  { blobUuid = "", chatUrl, followupsUrl, saveAsNoteUrl },
+  { blobUuid = "", chatUrl, followupsUrl, djangoChatUrl = "" },
   ref
 ) {
   const initialUi = loadUiState();
@@ -45,8 +46,6 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
   const [draft, setDraft] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [followups, setFollowups] = useState<string[]>([]);
-  const [saveFormOpenForId, setSaveFormOpenForId] = useState<number | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   useImperativeHandle(ref, () => ({ show }));
@@ -75,6 +74,8 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
       let nextHistory = startingHistory;
       let nextMode = mode;
 
+      const isDjango = mode === "django" && !opts.questionUuid && !opts.exerciseUuid;
+
       if (opts.questionUuid) {
         nextHistory = [SYSTEM_MESSAGE];
         nextMode = "question";
@@ -86,6 +87,13 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
       } else if (mode === "blob") {
         nextHistory = [SYSTEM_MESSAGE];
         payload = { content, blob_uuid: blobUuid };
+      } else if (isDjango) {
+        const userMsg: ChatMessage = {
+          id: startingHistory.length + 1,
+          content,
+          role: "user",
+        };
+        nextHistory = [...startingHistory, userMsg];
       } else {
         const userMsg: ChatMessage = {
           id: startingHistory.length + 1,
@@ -109,39 +117,76 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
         id: nextHistory.length + 1,
         content: "",
         role: "assistant",
+        ...(isDjango ? { segments: [] } : {}),
       };
       setHistory(prev => [...prev, assistantMsg]);
-
-      const formData = new FormData();
-      Object.entries(payload).forEach(([k, v]) => formData.append(k, v));
 
       const controller = new AbortController();
       abortRef.current = controller;
 
       try {
-        const resp = await fetch(chatUrl, {
-          method: "POST",
-          headers: { "X-Csrftoken": getCsrfToken() },
-          body: formData,
-          signal: controller.signal,
-        });
-        if (!resp.ok) throw new Error("network");
-        const reader = resp.body?.getReader();
-        if (!reader) throw new Error("no body");
-        const decoder = new TextDecoder("utf-8");
-
         let assembledReply = "";
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          const chunk = decoder.decode(value, { stream: true });
-          assembledReply += chunk;
-          setHistory(prev => {
-            const updated = [...prev];
-            const last = updated[updated.length - 1];
-            if (last && last.role === "assistant") last.content += chunk;
-            return updated;
+
+        if (isDjango) {
+          await streamDjangoReply({
+            url: djangoChatUrl,
+            userText: content,
+            signal: controller.signal,
+            updateAssistant: mutate => {
+              setHistory(prev => {
+                const updated = [...prev];
+                const last = updated[updated.length - 1];
+                if (last && last.role === "assistant") {
+                  const nextSegments = mutate(last.segments ?? []);
+                  updated[updated.length - 1] = {
+                    ...last,
+                    segments: nextSegments,
+                    content: nextSegments
+                      .filter(
+                        (s): s is Extract<DjangoSegment, { kind: "text" }> => s.kind === "text"
+                      )
+                      .map(s => s.text)
+                      .join(""),
+                  };
+                }
+                return updated;
+              });
+            },
           });
+          // Compute the final assembled text from segments for follow-ups.
+          setHistory(prev => {
+            const last = prev[prev.length - 1];
+            if (last && last.role === "assistant") {
+              assembledReply = flattenSegmentsToText(last);
+            }
+            return prev;
+          });
+        } else {
+          const formData = new FormData();
+          Object.entries(payload).forEach(([k, v]) => formData.append(k, v));
+          const resp = await fetch(chatUrl, {
+            method: "POST",
+            headers: { "X-Csrftoken": getCsrfToken() },
+            body: formData,
+            signal: controller.signal,
+          });
+          if (!resp.ok) throw new Error("network");
+          const reader = resp.body?.getReader();
+          if (!reader) throw new Error("no body");
+          const decoder = new TextDecoder("utf-8");
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            const chunk = decoder.decode(value, { stream: true });
+            assembledReply += chunk;
+            setHistory(prev => {
+              const updated = [...prev];
+              const last = updated[updated.length - 1];
+              if (last && last.role === "assistant") last.content += chunk;
+              return updated;
+            });
+          }
         }
 
         // Fetch follow-ups (non-blocking — fire-and-forget).
@@ -167,7 +212,7 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
         abortRef.current = null;
       }
     },
-    [history, mode, blobUuid, chatUrl, followupsUrl]
+    [history, mode, blobUuid, chatUrl, followupsUrl, djangoChatUrl]
   );
 
   // Listen to EventBus for Alt-C and external triggers.
@@ -221,37 +266,6 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
     sendMessage(lastUser.content, { baseHistory: trimmed });
   }, [history, isStreaming, sendMessage]);
 
-  const handleSaveAsNote = useCallback(
-    async (data: { title: string; tags: string }) => {
-      const message = history.find(m => m.id === saveFormOpenForId);
-      if (!message) return;
-      try {
-        const resp = await fetch(saveAsNoteUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Csrftoken": getCsrfToken(),
-          },
-          body: JSON.stringify({
-            title: data.title,
-            tags: data.tags,
-            content: message.content,
-          }),
-        });
-        if (resp.ok) {
-          const body = (await resp.json()) as { url?: string };
-          setToast(`saved · ${body.url}`);
-          window.setTimeout(() => setToast(null), 4000);
-        }
-      } catch {
-        // ignore
-      } finally {
-        setSaveFormOpenForId(null);
-      }
-    },
-    [history, saveFormOpenForId, saveAsNoteUrl]
-  );
-
   if (!show) return null;
 
   return (
@@ -262,16 +276,17 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
       onClose={closeChat}
     >
       <ChatBotHeader pinned={pinned} onClose={closeChat} onTogglePin={togglePin} />
-      <ModeChips mode={mode} hasBlobContext={!!blobUuid} onChange={setMode} />
+      <ModeChips
+        mode={mode}
+        hasBlobContext={!!blobUuid}
+        showDjango={!!djangoChatUrl}
+        onChange={setMode}
+      />
       <MessageList
         messages={history}
         isStreaming={isStreaming}
         followups={followups}
-        saveFormOpenForId={saveFormOpenForId}
         onRegenerate={handleRegenerate}
-        onOpenSaveForm={setSaveFormOpenForId}
-        onCancelSaveForm={() => setSaveFormOpenForId(null)}
-        onSaveAsNote={handleSaveAsNote}
         onSelectFollowUp={text => sendMessage(text)}
       />
       <ChatInput
@@ -283,7 +298,6 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
         isStreaming={isStreaming}
         autoFocus
       />
-      {toast && <div className="chatbot-toast">{toast}</div>}
     </ChatBotShell>
   );
 });

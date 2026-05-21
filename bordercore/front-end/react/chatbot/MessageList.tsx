@@ -6,11 +6,7 @@ interface MessageListProps {
   messages: ChatMessage[];
   isStreaming: boolean;
   followups: string[];
-  saveFormOpenForId: number | null;
   onRegenerate: () => void;
-  onOpenSaveForm: (id: number) => void;
-  onCancelSaveForm: () => void;
-  onSaveAsNote: (data: { title: string; tags: string }) => void;
   onSelectFollowUp: (text: string) => void;
 }
 
@@ -18,11 +14,7 @@ export function MessageList({
   messages,
   isStreaming,
   followups,
-  saveFormOpenForId,
   onRegenerate,
-  onOpenSaveForm,
-  onCancelSaveForm,
-  onSaveAsNote,
   onSelectFollowUp,
 }: MessageListProps) {
   const ref = useRef<HTMLDivElement>(null);
@@ -50,11 +42,7 @@ export function MessageList({
           isLastAssistant={i === lastAssistantIdx}
           isStreaming={isStreaming}
           followups={i === lastAssistantIdx ? followups : []}
-          saveFormOpen={saveFormOpenForId === m.id}
           onRegenerate={onRegenerate}
-          onOpenSaveForm={() => onOpenSaveForm(m.id)}
-          onCancelSaveForm={onCancelSaveForm}
-          onSaveAsNote={onSaveAsNote}
           onSelectFollowUp={onSelectFollowUp}
         />
       ))}

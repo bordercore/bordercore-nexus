@@ -41,13 +41,13 @@ from django.views.generic.list import ListView
 from blob.forms import BlobForm
 from blob.models import (Blob, BlobTemplate, BlobToObject, MetaData,
                          RecentlyViewedBlob)
-from tag.models import Tag
 from blob.services import add_related_object as add_related_object_service
 from blob.services import (chatbot, chatbot_followups,
                            generate_note_thumbnail, get_book_tag_categories,
                            get_books, get_node_to_object_query,
                            get_recent_books, get_recently_viewed,
                            import_blob)
+from blob.services_django_chat import stream_django_chat
 from collection.models import Collection, CollectionObject
 from lib.decorators import validate_post_data
 from lib.exceptions import (InvalidNodeTypeError, NodeNotFoundError,
@@ -1265,6 +1265,43 @@ def chat(request: HttpRequest) -> StreamingHttpResponse:
     return StreamingHttpResponse(content_iterator, content_type="text/plain")
 
 
+@login_required
+@require_POST
+def chat_django(request: HttpRequest) -> HttpResponse | StreamingHttpResponse:
+    """Stream a Claude-powered chat with access to the Django ORM.
+
+    Restricted to superusers since the underlying tools execute arbitrary
+    Python and SQL. The agentic loop and SSE protocol live in
+    ``stream_django_chat``.
+
+    Args:
+        request: POST request with a JSON body of the form
+            ``{"messages": [...]}`` in Anthropic message format.
+
+    Returns:
+        ``StreamingHttpResponse`` of ``text/event-stream`` on success.
+        ``HttpResponse`` with status 403 for non-superusers, 400 for an
+        invalid or empty ``messages`` payload.
+    """
+    user = cast(User, request.user)
+    if not user.is_superuser:
+        return HttpResponse(status=HTTPStatus.FORBIDDEN)
+
+    try:
+        body = json.loads(request.body or b"{}")
+    except json.JSONDecodeError:
+        return HttpResponse("Invalid JSON", status=HTTPStatus.BAD_REQUEST)
+
+    messages_in = body.get("messages") or []
+    if not isinstance(messages_in, list) or not messages_in:
+        return HttpResponse("messages must be a non-empty list", status=HTTPStatus.BAD_REQUEST)
+
+    return StreamingHttpResponse(
+        stream_django_chat(messages_in),
+        content_type="text/event-stream",
+    )
+
+
 @api_view(["POST"])
 def chat_followups(request: Request) -> Response:
     """Return 2-3 suggested follow-up prompts for a given assistant reply."""
@@ -1272,43 +1309,6 @@ def chat_followups(request: Request) -> Response:
     mode = request.data.get("mode", "chat")
     suggestions = chatbot_followups(assistant_reply, mode=mode)
     return Response({"suggestions": suggestions})
-
-
-@api_view(["POST"])
-def chat_save_as_note(request: Request) -> Response:
-    """Create a note-typed Blob from a chatbot assistant reply.
-
-    Body: { title: str, tags: str (comma-separated, optional), content: str }
-    Returns: { uuid: str, url: str }
-    """
-    user = cast(User, request.user)
-    title = (request.data.get("title") or "").strip()
-    content = request.data.get("content") or ""
-    tags_raw = request.data.get("tags") or ""
-
-    if not title:
-        return Response(
-            {"error": "title is required"},
-            status=HTTPStatus.BAD_REQUEST,
-        )
-
-    with transaction.atomic():
-        blob = Blob.objects.create(
-            user=user,
-            name=title,
-            content=content,
-            is_note=True,
-        )
-
-        tag_names = [t.strip() for t in tags_raw.split(",") if t.strip()]
-        for tag_name in tag_names:
-            tag, _ = Tag.objects.get_or_create(name=tag_name, user=user)
-            blob.tags.add(tag)
-
-    return Response({
-        "uuid": str(blob.uuid),
-        "url": reverse("blob:detail", kwargs={"uuid": blob.uuid}),
-    })
 
 
 class BookshelfListView(LoginRequiredMixin, ListView):

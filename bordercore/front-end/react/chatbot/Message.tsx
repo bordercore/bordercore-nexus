@@ -3,7 +3,6 @@ import type { ChatMessage } from "./types";
 import { renderMarkdown } from "./markdown";
 import { SanitizedHtml } from "./SanitizedHtml";
 import { MessageActions } from "./MessageActions";
-import { SaveAsNoteForm } from "./SaveAsNoteForm";
 import { FollowUps } from "./FollowUps";
 
 interface MessageProps {
@@ -11,18 +10,8 @@ interface MessageProps {
   isLastAssistant: boolean;
   isStreaming: boolean;
   followups: string[];
-  saveFormOpen: boolean;
   onRegenerate: () => void;
-  onOpenSaveForm: () => void;
-  onCancelSaveForm: () => void;
-  onSaveAsNote: (data: { title: string; tags: string }) => void;
   onSelectFollowUp: (text: string) => void;
-}
-
-function summarize(text: string): string {
-  // First sentence, truncated to 80 chars.
-  const firstSentence = text.split(/[.!?]\s/)[0] || text;
-  return firstSentence.slice(0, 80).trim();
 }
 
 export function Message({
@@ -30,14 +19,19 @@ export function Message({
   isLastAssistant,
   isStreaming,
   followups,
-  saveFormOpen,
   onRegenerate,
-  onOpenSaveForm,
-  onCancelSaveForm,
-  onSaveAsNote,
   onSelectFollowUp,
 }: MessageProps) {
-  const html = useMemo(() => renderMarkdown(message.content), [message.content]);
+  const html = useMemo(() => {
+    if (message.segments) {
+      const merged = message.segments
+        .filter(s => s.kind === "text")
+        .map(s => (s as { kind: "text"; text: string }).text)
+        .join("");
+      return renderMarkdown(merged);
+    }
+    return renderMarkdown(message.content);
+  }, [message.content, message.segments]);
 
   const showCursor = isLastAssistant && isStreaming;
   const isAssistant = message.role === "assistant";
@@ -47,6 +41,13 @@ export function Message({
       <div className="chatbot-message-who">{message.role === "user" ? "you" : "ai"}</div>
       <div className="chatbot-message-text">
         <SanitizedHtml html={html} />
+        {message.segments?.map((seg, i) =>
+          seg.kind === "error" ? (
+            <div key={i} className="chatbot-message-error">
+              {seg.message}
+            </div>
+          ) : null
+        )}
         {showCursor && <span className="chatbot-cursor" />}
       </div>
       {message.content && (
@@ -55,14 +56,6 @@ export function Message({
           content={message.content}
           canRegenerate={isAssistant && isLastAssistant && !isStreaming}
           onRegenerate={onRegenerate}
-          onSaveAsNote={onOpenSaveForm}
-        />
-      )}
-      {saveFormOpen && (
-        <SaveAsNoteForm
-          defaultTitle={summarize(message.content)}
-          onSave={onSaveAsNote}
-          onCancel={onCancelSaveForm}
         />
       )}
       {isAssistant && isLastAssistant && !isStreaming && (

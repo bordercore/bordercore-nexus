@@ -146,7 +146,7 @@
                         blobUuid: "{{ blob.uuid|default:'' }}",
                         chatUrl: "{% url 'blob:chat' %}",
                         followupsUrl: "{% url 'blob:chat_followups' %}",
-                        saveAsNoteUrl: "{% url 'blob:chat_save_as_note' %}",
+                        {% if request.user.is_superuser %}djangoChatUrl: "{% url 'blob:chat_django' %}",{% endif %}
                     },
                     overdueTasksConfig: {
                         rescheduleTaskUrl: "{% url 'todo:snooze_task' %}",

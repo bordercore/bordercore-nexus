@@ -6,7 +6,6 @@ interface MessageActionsProps {
   content: string;
   canRegenerate: boolean;
   onRegenerate: () => void;
-  onSaveAsNote: () => void;
 }
 
 export function MessageActions({
@@ -14,7 +13,6 @@ export function MessageActions({
   content,
   canRegenerate,
   onRegenerate,
-  onSaveAsNote,
 }: MessageActionsProps) {
   const [copied, setCopied] = useState(false);
 
@@ -36,11 +34,6 @@ export function MessageActions({
       {role === "assistant" && canRegenerate && (
         <button type="button" className="chatbot-action-btn" onClick={onRegenerate}>
           ↻ regenerate
-        </button>
-      )}
-      {role === "assistant" && (
-        <button type="button" className="chatbot-action-btn" onClick={onSaveAsNote}>
-          📑 save as note
         </button>
       )}
     </div>

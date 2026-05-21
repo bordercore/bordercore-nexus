@@ -120,14 +120,14 @@ urlpatterns = [
         name="chat"
     ),
     path(
+        route="chat/django",
+        view=views.chat_django,
+        name="chat_django"
+    ),
+    path(
         route="chat/followups",
         view=views.chat_followups,
         name="chat_followups"
-    ),
-    path(
-        route="chat/save_as_note",
-        view=views.chat_save_as_note,
-        name="chat_save_as_note"
     ),
     path(
         route="bookshelf",

@@ -45,7 +45,7 @@ function ChatBotContent() {
       blobUuid={data.chatBotConfig?.blobUuid || ""}
       chatUrl={data.chatBotConfig?.chatUrl || ""}
       followupsUrl={data.chatBotConfig?.followupsUrl || ""}
-      saveAsNoteUrl={data.chatBotConfig?.saveAsNoteUrl || ""}
+      djangoChatUrl={data.chatBotConfig?.djangoChatUrl || ""}
     />
   );
 }

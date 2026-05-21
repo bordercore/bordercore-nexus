@@ -162,6 +162,7 @@
 }
 
 .chatbot-message {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -213,6 +214,33 @@
   animation: chatbot-cursor-blink 1s steps(1) infinite;
   background: var(--accent);
   vertical-align: -1px;
+}
+
+// -----------------------------------------------------------------------------
+// Tables (GFM tables rendered by markdown-it)
+// -----------------------------------------------------------------------------
+.chatbot-message-text table {
+  width: 100%;
+  margin: 8px 0;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.chatbot-message-text th,
+.chatbot-message-text td {
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.chatbot-message-text th {
+  background: var(--bg-0);
+  font-weight: 600;
+}
+
+.chatbot-message-text tr:nth-child(even) td {
+  background: color-mix(in oklch, var(--bg-0), transparent 70%);
 }
 
 // -----------------------------------------------------------------------------
@@ -270,20 +298,25 @@
 // Per-message actions
 // -----------------------------------------------------------------------------
 .chatbot-message-actions {
+  position: absolute;
+  top: 0;
+  right: 0;
   display: flex;
-  margin-top: 4px;
   gap: 6px;
   opacity: 0;
+  pointer-events: none;
   transition: opacity 120ms;
 }
 
 .chatbot-message:hover .chatbot-message-actions {
   opacity: 1;
+  pointer-events: auto;
 }
 
 @media (hover: none) {
   .chatbot-message-actions {
     opacity: 1;
+    pointer-events: auto;
   }
 }
 
@@ -313,63 +346,6 @@
 .chatbot-action-btn--primary {
   border-color: var(--accent);
   color: var(--accent);
-}
-
-// -----------------------------------------------------------------------------
-// Save-as-note inline strip
-// -----------------------------------------------------------------------------
-.chatbot-save-as-note {
-  display: grid;
-  padding: 10px 12px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  margin-top: 8px;
-  background: var(--bg-0);
-  gap: 8px;
-}
-
-.chatbot-save-field {
-  display: grid;
-  gap: 4px;
-}
-
-.chatbot-save-field label {
-  color: var(--fg-2);
-  font-family: var(--font-ui);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.chatbot-save-field label .optional {
-  color: var(--fg-3);
-  font-weight: 400;
-  letter-spacing: 0;
-  text-transform: lowercase;
-}
-
-.chatbot-save-field input {
-  width: 100%;
-  padding: 6px 10px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--bg-1);
-  color: var(--fg-1);
-  font: 400 12.5px/1.4 var(--font-ui);
-  outline: none;
-  transition: border-color 120ms, box-shadow 120ms;
-}
-
-.chatbot-save-field input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent), transparent 80%);
-}
-
-.chatbot-save-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 6px;
 }
 
 // -----------------------------------------------------------------------------
@@ -489,18 +465,3 @@
   background: var(--accent);
 }
 
-// -----------------------------------------------------------------------------
-// Toast (save confirmation)
-// -----------------------------------------------------------------------------
-.chatbot-toast {
-  position: absolute;
-  bottom: 12px;
-  left: 50%;
-  padding: 6px 12px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--bg-2);
-  color: var(--fg-1);
-  font-size: 11px;
-  transform: translateX(-50%);
-}

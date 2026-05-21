@@ -4,12 +4,13 @@ import type { ChatMode } from "./types";
 interface ModeChipsProps {
   mode: ChatMode;
   hasBlobContext: boolean;
+  showDjango: boolean;
   onChange: (mode: ChatMode) => void;
 }
 
-const SELECTABLE_MODES: ChatMode[] = ["chat", "notes", "blob"];
+const SELECTABLE_MODES: ChatMode[] = ["chat", "notes", "blob", "django"];
 
-export function ModeChips({ mode, hasBlobContext, onChange }: ModeChipsProps) {
+export function ModeChips({ mode, hasBlobContext, showDjango, onChange }: ModeChipsProps) {
   // question / exercise are set by event payload, never user-selectable.
   // Render as a non-clickable indicator when active.
   if (mode === "question" || mode === "exercise") {
@@ -22,7 +23,11 @@ export function ModeChips({ mode, hasBlobContext, onChange }: ModeChipsProps) {
     );
   }
 
-  const visible = SELECTABLE_MODES.filter(m => m !== "blob" || hasBlobContext);
+  const visible = SELECTABLE_MODES.filter(m => {
+    if (m === "blob") return hasBlobContext;
+    if (m === "django") return showDjango;
+    return true;
+  });
 
   return (
     <div className="chatbot-mode-chips" role="group" aria-label="chat mode">
