@@ -86,9 +86,15 @@
   }
 
   .react-select__option {
+    overflow: hidden;
     padding: 0.75rem;
     color: var(--fg-0);
     cursor: pointer;
+    text-overflow: ellipsis;
+
+    // Keep each option on a single line so menu height is determined by the
+    // result count alone, not by how long any individual tag happens to be.
+    white-space: nowrap;
 
     &:hover,
     &--is-focused {

@@ -59,6 +59,12 @@
   color: var(--fg-1);
   font-family: var(--font-ui);
   overflow-y: auto;
+
+  // Reserve scrollbar space so the inner content width stays constant whether
+  // or not the vertical scrollbar is showing. Without this, opening a tags
+  // autocomplete (whose absolutely-positioned dropdown contributes to the
+  // modal's scrollHeight) toggles the scrollbar and reflows every field.
+  scrollbar-gutter: stable;
   transform: translate(-50%, -50%);
 }
 
