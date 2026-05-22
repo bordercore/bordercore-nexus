@@ -539,3 +539,106 @@
 }
 
 .refined-tb-menu-divider { @extend %refined-menu-sep; }
+
+// ==== Reminders bell pill ====
+// Same visual structure as .refined-tb-overdue but tinted with --accent
+// rather than --warn. Renders only when at least one reminder fired in
+// the last hour (the React component returns null otherwise).
+.refined-tb-reminders {
+  display: inline-flex;
+  height: 28px;
+  align-items: center;
+  padding: 0 10px;
+  border: 1px solid color-mix(in oklch, var(--accent), transparent 68%);
+  border-radius: var(--bc-radius-pill);
+  background: color-mix(in oklch, var(--accent), transparent 88%);
+  color: var(--accent);
+  cursor: pointer;
+  font-family: var(--bc-font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  gap: 6px;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  transition: all var(--bc-t-fast) var(--bc-ease-out);
+
+  &:hover {
+    background: color-mix(in oklch, var(--accent), transparent 82%);
+    color: var(--accent);
+  }
+
+  .num {
+    font-family: var(--bc-font-mono);
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .word {
+    font-size: 11px;
+    text-transform: lowercase;
+  }
+}
+
+.refined-tb-reminders-menu {
+  display: flex;
+  min-width: 280px;
+  flex-direction: column;
+  padding: 6px 0;
+}
+
+.refined-tb-reminders-item {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 12px;
+  color: inherit;
+  font-size: 13px;
+  gap: 2px;
+  text-decoration: none;
+
+  &:hover {
+    background: var(--bc-bg-3);
+  }
+
+  .row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .name {
+    font-weight: 600;
+  }
+
+  .ago {
+    color: var(--bc-fg-2);
+    font-size: 11px;
+  }
+
+  .note {
+    color: var(--bc-fg-2);
+    font-size: 12px;
+  }
+}
+
+.refined-tb-reminders-divider {
+  height: 1px;
+  margin: 4px 0;
+  background: var(--bc-border-1);
+}
+
+.refined-tb-reminders-clear {
+  padding: 8px 12px;
+  border: 0;
+  background: none;
+  color: var(--bc-fg-2);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+
+  &:hover {
+    background: var(--bc-bg-3);
+    color: var(--accent);
+  }
+}

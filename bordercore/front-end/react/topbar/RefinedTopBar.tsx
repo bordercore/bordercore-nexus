@@ -16,6 +16,7 @@ import axios from "axios";
 import TopSearch, { TopSearchHandle } from "../search/TopSearch";
 import OverdueTasks from "../todo/OverdueTasks";
 import RecentBlobs from "../blob/RecentBlobs";
+import RemindersBell from "./RemindersBell";
 import Weather from "../common/Weather";
 import { Popover } from "../common/Popover";
 import { resolveSection } from "./sectionMap";
@@ -380,6 +381,7 @@ export default function RefinedTopBar() {
             />
           )}
           <AlertPill count={failedTestCount} metricsUrl={metricsUrl} />
+          <RemindersBell />
           {overdueTasks.length > 0 && (
             <button
               type="button"
