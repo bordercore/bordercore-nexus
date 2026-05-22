@@ -1,27 +1,22 @@
 #!/bin/bash
 # Short pytest wrapper that excludes data_quality and functional tests
-# Usage: pt [-d] [-f] [-n] <test_substring>
+# Usage: pt [-d] [-f] [-n] [-p] <test_substring>
 #   -d: exclude data_quality tests
 #   -f: exclude functional tests
 #   -n: disable database access (faster, uses -p no:django)
+#   -p: run against the production checkout as www-data
+#       (sources /var/www/.env, sudos to www-data, uses /var/www paths)
 #   Default: runs with pytest-django active (test database)
 # Example: pt test_get_cover_info
 # Example: pt -n test_get_cover_info  # no DB, faster
-
-# Get the directory where this script is located
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-VENV_PATH="$PROJECT_DIR/.venv/bin/activate"
-
-if [ -f "$VENV_PATH" ]; then
-    source "$VENV_PATH"
-fi
+# Example: pt -p test_blob_list       # run in production as www-data
 
 EXCLUDE_DATA_QUALITY=false
 EXCLUDE_FUNCTIONAL=false
 NO_DB=false
+PROD=false
 
-while getopts "dfn" opt; do
+while getopts "dfnp" opt; do
     case $opt in
         d)
             EXCLUDE_DATA_QUALITY=true
@@ -32,11 +27,15 @@ while getopts "dfn" opt; do
         n)
             NO_DB=true
             ;;
+        p)
+            PROD=true
+            ;;
         \?)
-            echo "Usage: $0 [-d] [-f] [-n] <test_substring>"
+            echo "Usage: $0 [-d] [-f] [-n] [-p] <test_substring>"
             echo "  -d: exclude data_quality tests"
             echo "  -f: exclude functional tests"
             echo "  -n: no database (disable pytest-django for faster runs)"
+            echo "  -p: run in production as www-data"
             exit 1
             ;;
     esac
@@ -45,34 +44,52 @@ done
 shift $((OPTIND - 1))
 
 if [ $# -eq 0 ]; then
-    echo "Usage: $0 [-d] [-f] [-n] <test_substring>"
+    echo "Usage: $0 [-d] [-f] [-n] [-p] <test_substring>"
     echo "  -d: exclude data_quality tests"
     echo "  -f: exclude functional tests"
     echo "  -n: no database (disable pytest-django for faster runs)"
+    echo "  -p: run in production as www-data"
     echo "Example: $0 test_get_cover_info"
     echo "Example: $0 -n test_get_cover_info  # no DB, faster"
+    echo "Example: $0 -p test_blob_list       # run in production"
     exit 1
 fi
 
-# Only disable django plugin when explicitly requested with -n
-if [ "$NO_DB" = true ]; then
-    NO_DJANGO_OPTS=(-p no:django -o addopts=)
+if [ "$PROD" = true ]; then
+    PROJECT_DIR="/var/www/django/bordercore"
+    UV_BIN="/var/www/.local/bin/uv"
+    set -a
+    . /var/www/.env
+    set +a
+    RUNNER=(sudo -u www-data --preserve-env=BORDERCORE_HOME,DJANGO_SETTINGS_MODULE,PYTHONPATH,ELASTICSEARCH_ENDPOINT "$UV_BIN" run pytest)
 else
-    NO_DJANGO_OPTS=()
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+    VENV_PATH="$PROJECT_DIR/.venv/bin/activate"
+    if [ -f "$VENV_PATH" ]; then
+        source "$VENV_PATH"
+    fi
+    RUNNER=(uv run pytest)
+fi
+
+# Only disable django plugin when explicitly requested with -n.
+# In prod we still clear addopts so the pytest.ini defaults don't apply.
+if [ "$NO_DB" = true ]; then
+    EXTRA_OPTS=(-p no:django -o addopts=)
+elif [ "$PROD" = true ]; then
+    EXTRA_OPTS=(-o addopts=)
+else
+    EXTRA_OPTS=()
 fi
 
 # Build the marker expression and run pytest
 if [ "$EXCLUDE_DATA_QUALITY" = true ] && [ "$EXCLUDE_FUNCTIONAL" = true ]; then
-    # Both flags passed: exclude both
     MARKER_EXPR="not data_quality and not functional"
-    uv run pytest "${NO_DJANGO_OPTS[@]}" -m "$MARKER_EXPR" "$PROJECT_DIR/bordercore/" -k "$1"
+    "${RUNNER[@]}" "${EXTRA_OPTS[@]}" -m "$MARKER_EXPR" "$PROJECT_DIR/bordercore/" -k "$1"
 elif [ "$EXCLUDE_DATA_QUALITY" = true ]; then
-    # Only -d: exclude data_quality only
-    uv run pytest "${NO_DJANGO_OPTS[@]}" -m "not data_quality" "$PROJECT_DIR/bordercore/" -k "$1"
+    "${RUNNER[@]}" "${EXTRA_OPTS[@]}" -m "not data_quality" "$PROJECT_DIR/bordercore/" -k "$1"
 elif [ "$EXCLUDE_FUNCTIONAL" = true ]; then
-    # Only -f: exclude functional only
-    uv run pytest "${NO_DJANGO_OPTS[@]}" -m "not functional" "$PROJECT_DIR/bordercore/" -k "$1"
+    "${RUNNER[@]}" "${EXTRA_OPTS[@]}" -m "not functional" "$PROJECT_DIR/bordercore/" -k "$1"
 else
-    # No flags: don't exclude any markers
-    uv run pytest "${NO_DJANGO_OPTS[@]}" "$PROJECT_DIR/bordercore/" -k "$1"
+    "${RUNNER[@]}" "${EXTRA_OPTS[@]}" "$PROJECT_DIR/bordercore/" -k "$1"
 fi
