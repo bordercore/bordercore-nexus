@@ -462,15 +462,16 @@ def test_build_notes_rag_messages_truncates_and_lists_sources():
     messages, footer = _build_notes_rag_messages("What is Alpha?", hits)
 
     assert messages[0]["role"] == "system"
+    assert "Cite sources inline as markdown links" in messages[0]["content"]
     assert "Question: What is Alpha?" in messages[1]["content"]
-    assert '[Note: "Alpha"]' in messages[1]["content"]
+    assert "Source 1: [Alpha]" in messages[1]["content"]
+    assert "Source 2: [Beta]" in messages[1]["content"]
     assert "x" * 1500 in messages[1]["content"]
     assert "x" * 1501 not in messages[1]["content"]
-    assert '[Note: "Beta"]' in messages[1]["content"]
-    assert note_uuid in footer
-    assert "Sources:" in footer
-    assert "- [Alpha]" in footer
-    assert "- [Beta]" in footer
+    assert note_uuid in messages[1]["content"]
+    assert "**Sources:**" in footer
+    assert "1. [Alpha]" in footer
+    assert "2. [Beta]" in footer
 
 
 @patch("blob.services.OpenAI")
@@ -540,10 +541,11 @@ def test_chatbot_notes_uses_top_hits_and_streams_sources(mock_semantic_search, m
     }))
 
     assert "Answer text" in output
-    assert "Sources:" in output
-    assert "- [Best]" in output
-    assert "- [Second]" in output
+    assert "**Sources:**" in output
+    assert "1. [Best]" in output
+    assert "2. [Second]" in output
     call_messages = mock_client.chat.completions.create.call_args.kwargs["messages"]
     assert call_messages[0]["role"] == "system"
-    assert '[Note: "Best"]' in call_messages[1]["content"]
-    assert '[Note: "Second"]' in call_messages[1]["content"]
+    assert "Cite sources inline as markdown links" in call_messages[0]["content"]
+    assert "Source 1: [Best]" in call_messages[1]["content"]
+    assert "Source 2: [Second]" in call_messages[1]["content"]

@@ -1380,10 +1380,18 @@ NOTES_RAG_MAX_SOURCES = 3
 NOTES_RAG_EXCERPT_CHARS = 1500
 
 NOTES_RAG_SYSTEM_PROMPT = (
-    "You answer questions using only the provided note excerpts from the user's "
-    "personal knowledge base. If the excerpts do not contain enough information "
-    "to answer the question, say so explicitly. Mention note titles when "
-    "referencing specific notes."
+    "You answer questions using only the note excerpts supplied in the user message. "
+    "These excerpts come from the user's personal knowledge base.\n\n"
+    "Rules:\n"
+    "1. Use ONLY information from the provided excerpts. Do not use outside knowledge.\n"
+    "2. If the excerpts do not contain enough information, say clearly that you "
+    "could not find enough in their notes to answer.\n"
+    "3. Cite sources inline as markdown links using the title and URL shown for "
+    "each source (for example: [Kitchen Remodel](/blobs/uuid/)). Cite every note "
+    "you draw from.\n"
+    "4. When several notes contribute to the answer, cite each one where its "
+    "information appears.\n"
+    "5. Be concise. Use bullet points when listing multiple items."
 )
 
 
@@ -1425,7 +1433,8 @@ def _build_notes_rag_messages(
     """Build LLM messages and a markdown sources footer from ranked note hits.
 
     Uses at most :data:`NOTES_RAG_MAX_SOURCES` hits. Each excerpt is truncated
-    to :data:`NOTES_RAG_EXCERPT_CHARS` characters before being sent to the model.
+    to :data:`NOTES_RAG_EXCERPT_CHARS` characters. Sources are numbered and
+    include markdown links so the model can cite them inline in its reply.
 
     Args:
         prompt: The user's question from chat history.
@@ -1434,18 +1443,20 @@ def _build_notes_rag_messages(
     Returns:
         A tuple of ``(messages, sources_footer)`` where ``messages`` is a
         system/user pair for OpenAI and ``sources_footer`` is markdown appended
-        after the streamed assistant reply.
+        after the streamed assistant reply with a numbered source list.
     """
     context_parts: list[str] = []
     source_lines: list[str] = []
 
-    for hit in hits[:NOTES_RAG_MAX_SOURCES]:
+    for index, hit in enumerate(hits[:NOTES_RAG_MAX_SOURCES], start=1):
         source = hit["_source"]
         title = _note_display_title(source)
         excerpt = (source.get("contents") or "")[:NOTES_RAG_EXCERPT_CHARS]
-        context_parts.append(f'[Note: "{title}"]\n{excerpt}')
         detail_url = reverse("blob:detail", kwargs={"uuid": source["uuid"]})
-        source_lines.append(f"- [{title}]({detail_url})")
+        context_parts.append(
+            f"Source {index}: [{title}]({detail_url})\n{excerpt}"
+        )
+        source_lines.append(f"{index}. [{title}]({detail_url})")
 
     context_block = "\n---\n".join(context_parts)
     messages = [
@@ -1454,11 +1465,12 @@ def _build_notes_rag_messages(
             "role": "user",
             "content": (
                 f"Question: {prompt}\n\n"
-                f"Note excerpts:\n---\n{context_block}\n---"
+                f"Note excerpts (cite using the Source links above):\n"
+                f"---\n{context_block}\n---"
             ),
         },
     ]
-    sources_footer = "\n\n\nSources:\n" + "\n".join(source_lines)
+    sources_footer = "\n\n\n**Sources:**\n" + "\n".join(source_lines)
     return messages, sources_footer
 
 
