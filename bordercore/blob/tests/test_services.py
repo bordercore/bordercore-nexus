@@ -13,8 +13,8 @@ pytestmark = [pytest.mark.django_db]
 
 from blob.models import Blob
 from blob.services import (_build_notes_rag_messages, _filter_notes_hits,
-                           chatbot, chatbot_followups, get_authors,
-                           get_blob_naturalsize, get_dashboard_blobs,
+                           _rewrite_notes_search_query, chatbot, chatbot_followups,
+                           get_authors, get_blob_naturalsize, get_dashboard_blobs,
                            get_recent_blobs, get_recent_media, import_artstation,
                            import_instagram, import_newyorktimes, parse_date,
                            parse_shortcode)
@@ -475,6 +475,54 @@ def test_build_notes_rag_messages_truncates_and_lists_sources():
 
 
 @patch("blob.services.OpenAI")
+def test_rewrite_notes_search_query_skips_rewrite_on_first_turn(mock_openai_cls):
+    """_rewrite_notes_search_query returns the user message without calling OpenAI."""
+    history = [{"role": "user", "content": "kitchen remodel"}]
+
+    assert _rewrite_notes_search_query(history) == "kitchen remodel"
+    mock_openai_cls.assert_not_called()
+
+
+@patch("blob.services.OpenAI")
+def test_rewrite_notes_search_query_rewrites_follow_up(mock_openai_cls):
+    """_rewrite_notes_search_query uses gpt-4o-mini to rewrite multi-turn follow-ups."""
+    mock_client = MagicMock()
+    mock_openai_cls.return_value = mock_client
+    mock_response = MagicMock()
+    mock_response.choices = [
+        MagicMock(message=MagicMock(content="kitchen remodel timeline decisions"))
+    ]
+    mock_client.chat.completions.create.return_value = mock_response
+
+    history = [
+        {"role": "user", "content": "What did I note about the kitchen remodel?"},
+        {"role": "assistant", "content": "You planned new cabinets and flooring."},
+        {"role": "user", "content": "What about the timeline?"},
+    ]
+
+    assert _rewrite_notes_search_query(history) == "kitchen remodel timeline decisions"
+    kwargs = mock_client.chat.completions.create.call_args.kwargs
+    assert kwargs["model"] == "gpt-4o-mini"
+    assert kwargs["temperature"] == 0
+    assert kwargs["max_tokens"] == 64
+    assert "What about the timeline?" in kwargs["messages"][1]["content"]
+    assert "kitchen remodel" in kwargs["messages"][1]["content"]
+
+
+@patch("blob.services.OpenAI")
+def test_rewrite_notes_search_query_falls_back_on_failure(mock_openai_cls):
+    """_rewrite_notes_search_query falls back to the latest user message on API failure."""
+    mock_openai_cls.return_value.chat.completions.create.side_effect = Exception("api down")
+    history = [
+        {"role": "user", "content": "kitchen remodel notes"},
+        {"role": "assistant", "content": "You noted cabinets."},
+        {"role": "user", "content": "What about the timeline?"},
+    ]
+
+    assert _rewrite_notes_search_query(history) == "What about the timeline?"
+
+
+@patch("blob.services.OpenAI")
 @patch("blob.services.semantic_search")
 def test_chatbot_notes_no_hits_returns_message(mock_semantic_search, mock_openai_cls, authenticated_client):
     """Notes mode yields a friendly message and skips OpenAI when search returns no hits."""
@@ -549,3 +597,56 @@ def test_chatbot_notes_uses_top_hits_and_streams_sources(mock_semantic_search, m
     assert "Cite sources inline as markdown links" in call_messages[0]["content"]
     assert "Source 1: [Best]" in call_messages[1]["content"]
     assert "Source 2: [Second]" in call_messages[1]["content"]
+
+
+@patch("blob.services.OpenAI")
+@patch("blob.services.semantic_search")
+def test_chatbot_notes_rewrites_follow_up_for_retrieval(
+    mock_semantic_search, mock_openai_cls, authenticated_client
+):
+    """Notes mode rewrites follow-up retrieval queries but keeps the literal user question."""
+    user, _ = authenticated_client()
+    request = MagicMock()
+    request.user = user
+    note_uuid = str(uuid.uuid4())
+    mock_semantic_search.return_value = {
+        "hits": {
+            "hits": [
+                _make_note_hit("Kitchen Remodel", "timeline content", 1.9, note_uuid=note_uuid),
+            ],
+        },
+    }
+
+    mock_client = MagicMock()
+    mock_openai_cls.return_value = mock_client
+    rewrite_response = MagicMock()
+    rewrite_response.choices = [
+        MagicMock(message=MagicMock(content="kitchen remodel timeline decisions"))
+    ]
+    mock_chunk = MagicMock()
+    mock_chunk.choices = [MagicMock(delta=MagicMock(content="Timeline answer"))]
+
+    def create_side_effect(**kwargs):
+        if kwargs.get("stream"):
+            return iter([mock_chunk])
+        return rewrite_response
+
+    mock_client.chat.completions.create.side_effect = create_side_effect
+
+    chat_history = [
+        {"role": "user", "content": "What did I note about the kitchen remodel?"},
+        {"role": "assistant", "content": "You planned new cabinets."},
+        {"role": "user", "content": "What about the timeline?"},
+    ]
+    output = "".join(chatbot(request, {
+        "mode": "notes",
+        "chat_history": json.dumps(chat_history),
+    }))
+
+    mock_semantic_search.assert_called_once_with(
+        request, "kitchen remodel timeline decisions"
+    )
+    assert "Timeline answer" in output
+    stream_kwargs = mock_client.chat.completions.create.call_args_list[-1].kwargs
+    assert stream_kwargs["stream"] is True
+    assert "Question: What about the timeline?" in stream_kwargs["messages"][1]["content"]

@@ -1394,6 +1394,17 @@ NOTES_RAG_SYSTEM_PROMPT = (
     "5. Be concise. Use bullet points when listing multiple items."
 )
 
+NOTES_RAG_REWRITE_MODEL = "gpt-4o-mini"
+NOTES_RAG_REWRITE_MAX_TURNS = 4
+
+NOTES_RAG_REWRITE_SYSTEM_PROMPT = (
+    "You rewrite conversational follow-ups into standalone search queries for a "
+    "personal notes knowledge base. Given the chat history, output ONE short search "
+    "query that captures what the user is asking now, including needed context from "
+    "earlier turns. Use keywords likely to appear in notes. Output only the query, "
+    "no quotes, explanation, or punctuation beyond what the query needs."
+)
+
 
 def _filter_notes_hits(
     hits: list[dict[str, Any]],
@@ -1424,6 +1435,62 @@ def _note_display_title(source: dict[str, Any]) -> str:
         The note ``name``, then ``title``, or ``"No title"`` if both are empty.
     """
     return source.get("name") or source.get("title") or "No title"
+
+
+def _format_notes_rewrite_context(chat_history: list[dict[str, Any]]) -> str:
+    """Format recent chat turns for the notes query-rewrite prompt.
+
+    Args:
+        chat_history: Parsed chat history from the Notes chatbot request.
+
+    Returns:
+        A newline-separated ``User:`` / ``Assistant:`` transcript of the most
+        recent turns, up to :data:`NOTES_RAG_REWRITE_MAX_TURNS` messages.
+    """
+    lines: list[str] = []
+    for message in chat_history[-NOTES_RAG_REWRITE_MAX_TURNS:]:
+        role = message.get("role")
+        content = (message.get("content") or "").strip()
+        if role in ("user", "assistant") and content:
+            lines.append(f"{role.capitalize()}: {content}")
+    return "\n".join(lines)
+
+
+def _rewrite_notes_search_query(chat_history: list[dict[str, Any]]) -> str:
+    """Build a standalone search query from Notes chat history.
+
+    The first user message is embedded as-is. Follow-up turns call
+    :data:`NOTES_RAG_REWRITE_MODEL` to resolve pronouns and other context from
+    earlier messages. On any rewrite failure, falls back to the latest user
+    message so retrieval still runs.
+
+    Args:
+        chat_history: Parsed chat history from the Notes chatbot request.
+
+    Returns:
+        A search string suitable for :func:`search.services.semantic_search`.
+    """
+    user_messages = [m for m in chat_history if m.get("role") == "user"]
+    last_prompt = user_messages[-1]["content"] if user_messages else chat_history[-1]["content"]
+
+    if len(user_messages) <= 1:
+        return last_prompt
+
+    try:
+        client = OpenAI()
+        response = client.chat.completions.create(
+            model=NOTES_RAG_REWRITE_MODEL,
+            messages=[
+                {"role": "system", "content": NOTES_RAG_REWRITE_SYSTEM_PROMPT},
+                {"role": "user", "content": _format_notes_rewrite_context(chat_history)},
+            ],
+            temperature=0,
+            max_tokens=64,
+        )
+        rewritten = (response.choices[0].message.content or "").strip()
+        return rewritten or last_prompt
+    except Exception:  # noqa: BLE001 — graceful degradation: any failure → last prompt
+        return last_prompt
 
 
 def _build_notes_rag_messages(
@@ -1490,7 +1557,8 @@ def chatbot(request: HttpRequest, args: dict[str, Any]) -> Generator[str, None, 
             - mode: Chat mode; ``"notes"`` runs semantic search over the user's
               notes, uses up to three excerpted sources above a similarity
               threshold, and returns a friendly message when nothing relevant
-              is found
+              is found. Follow-up turns rewrite the retrieval query with
+              gpt-4o-mini before searching.
             - chat_history: JSON string of chat history (for general chat)
             - content: User prompt content (when using blob_uuid)
 
@@ -1535,8 +1603,10 @@ def chatbot(request: HttpRequest, args: dict[str, Any]) -> Generator[str, None, 
         ]
     elif args["mode"] == "notes":
         chat_history = json.loads(args["chat_history"])
-        prompt = chat_history[-1]["content"]
-        es_response = semantic_search(request, prompt)
+        user_messages = [m for m in chat_history if m.get("role") == "user"]
+        prompt = user_messages[-1]["content"] if user_messages else chat_history[-1]["content"]
+        search_query = _rewrite_notes_search_query(chat_history)
+        es_response = semantic_search(request, search_query)
         hits = _filter_notes_hits(es_response.get("hits", {}).get("hits", []))
         if not hits:
             yield (
