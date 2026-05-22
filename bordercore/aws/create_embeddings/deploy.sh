@@ -7,6 +7,11 @@ SAM=~/.local/bin/sam
 SECURITY_GROUP=sg-bfa013fe
 SUBNET=subnet-09460047abea1c3bd
 
+# Sync shared library files into the build context (these are gitignored;
+# the canonical copies live at bordercore/lib/). Keep this in step with
+# control.sh so SAM and direct-Docker builds produce identical images.
+cp ../../lib/embeddings.py ./lib/ &&
+
 $SAM build --use-container &&
 
 $SAM package \

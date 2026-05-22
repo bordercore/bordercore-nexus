@@ -11,6 +11,8 @@ export DOCKER_BUILDKIT=1
 
 build() {
 
+    cp ../../lib/embeddings.py ./lib/
+
     docker build -t $LAMBDA:$TAG .
 
     docker rmi $IMAGE_REPO

@@ -46,12 +46,19 @@ class Command(BaseCommand):
             help="Only process blobs marked as notes (is_note=True)",
             action="store_true",
         )
+        parser.add_argument(
+            "--async",
+            dest="invoke_async",
+            help="Queue Lambda invocations without waiting for results (fire-and-forget)",
+            action="store_true",
+        )
 
-    def handle(self, *args, limit, dry_run, force, notes_only, **kwargs):
+    def handle(self, *args, limit, dry_run, force, notes_only, invoke_async, **kwargs):
         queryset = self._candidate_queryset(notes_only=notes_only)
         self.stdout.write(f"Total blobs in scope: {queryset.count()}")
 
         count = 0
+        failures = 0
         for blob in queryset.iterator():
             if not force and not self._blob_needs_embedding(blob.uuid):
                 continue
@@ -60,23 +67,60 @@ class Command(BaseCommand):
             count += 1
 
             if not dry_run:
-                try:
-                    response = client.invoke(
-                        FunctionName="CreateEmbeddings",
-                        InvocationType="Event",
-                        Payload=json.dumps({"uuid": str(blob.uuid)}),
+                if not self._invoke_embedding(str(blob.uuid), invoke_async=invoke_async):
+                    failures += 1
+                    self.stderr.write(
+                        self.style.ERROR(
+                            f"Failed to embed {blob.uuid} {blob.name!r}. "
+                            "See /aws/lambda/CreateEmbeddings in CloudWatch for details."
+                        )
                     )
-                    if response["StatusCode"] != 202:
-                        self.stderr.write(str(response))
-                        sys.exit(1)
-                except Exception as e:
-                    self.stderr.write(f"Exception during invoke_lambda: {e}")
-                    sys.exit(1)
 
             if count >= limit:
                 break
 
-        self.stdout.write(f"Queued {count} blob(s) for embedding.")
+        if dry_run:
+            self.stdout.write(f"Would queue {count} blob(s) for embedding.")
+            return
+
+        mode = "Queued" if invoke_async else "Processed"
+        self.stdout.write(f"{mode} {count} blob(s) for embedding.")
+        if failures:
+            self.stderr.write(
+                self.style.ERROR(f"{failures} of {count} embedding invocation(s) failed.")
+            )
+            sys.exit(1)
+
+    def _invoke_embedding(self, blob_uuid: str, *, invoke_async: bool) -> bool:
+        """Invoke CreateEmbeddings and return True on success.
+
+        By default uses synchronous invocation so embedding and Elasticsearch
+        store errors fail the management command immediately. Pass
+        ``invoke_async=True`` to queue work without waiting for results.
+        """
+        try:
+            response = client.invoke(
+                FunctionName="CreateEmbeddings",
+                InvocationType="Event" if invoke_async else "RequestResponse",
+                Payload=json.dumps({"uuid": blob_uuid}),
+            )
+        except Exception as e:
+            self.stderr.write(f"Exception during invoke_lambda for {blob_uuid}: {e}")
+            return False
+
+        status_code = response.get("StatusCode", 0)
+        if invoke_async:
+            return status_code == 202
+
+        if status_code != 200 or response.get("FunctionError"):
+            error_payload = response.get("Payload")
+            if error_payload is not None:
+                body = error_payload.read().decode("utf-8", errors="replace")
+                if body:
+                    self.stderr.write(f"Lambda error for {blob_uuid}: {body}")
+            return False
+
+        return True
 
     def _candidate_queryset(self, *, notes_only: bool) -> QuerySet[Blob]:
         """Return blobs with non-empty content, optionally limited to notes."""

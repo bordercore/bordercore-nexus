@@ -23,6 +23,20 @@ ELASTICSEARCH_ENDPOINT = os.environ.get("ELASTICSEARCH_ENDPOINT", "localhost")
 ELASTICSEARCH_INDEX = os.environ.get("ELASTICSEARCH_INDEX", "bordercore")
 
 
+def _elasticsearch_update_url(uuid: str | UUID) -> str:
+    """Build the Elasticsearch _update URL for a blob UUID.
+
+    ``ELASTICSEARCH_ENDPOINT`` may be either a bare hostname or include a scheme
+    (for example ``http://ec2-...amazonaws.com``). Avoid doubling the scheme.
+    """
+    endpoint = ELASTICSEARCH_ENDPOINT.strip().rstrip("/")
+    if endpoint.startswith("http://") or endpoint.startswith("https://"):
+        base = endpoint
+    else:
+        base = f"http://{endpoint}"
+    return f"{base}:9200/{ELASTICSEARCH_INDEX}/_update/{uuid}"
+
+
 def store_in_elasticsearch(uuid: str | UUID, embeddings: list[float]) -> None:
     """Store embeddings vector in Elasticsearch for a blob.
 
@@ -34,7 +48,7 @@ def store_in_elasticsearch(uuid: str | UUID, embeddings: list[float]) -> None:
         embeddings: List of float values representing the embedding vector.
     """
 
-    url = f"http://{ELASTICSEARCH_ENDPOINT}:9200/{ELASTICSEARCH_INDEX}/_update/{uuid}"
+    url = _elasticsearch_update_url(uuid)
     headers = {"Content-Type": "application/json"}
 
     data = {
@@ -50,9 +64,11 @@ def store_in_elasticsearch(uuid: str | UUID, embeddings: list[float]) -> None:
     response = requests.post(url, headers=headers, data=json.dumps(data), timeout=10)
 
     if response.status_code != 200:
-        print(f"Failed to store data. Response from Elasticsearch: {response.text}")
-    else:
-        print(f"{uuid} Data stored successfully.")
+        raise RuntimeError(
+            f"Failed to store embeddings for {uuid}. "
+            f"Elasticsearch responded {response.status_code}: {response.text}"
+        )
+    print(f"{uuid} Data stored successfully.")
 
 
 def get_blob_payload(uuid: str | UUID) -> dict[str, Any]:
@@ -129,7 +145,5 @@ def handler(event: dict[str, Any], context: Any) -> str | None:
         return None
 
     except Exception as e:
-        log.error(f"{type(e)} exception: {e}")
-        import traceback
-        print(traceback.format_exc())
-        return None
+        log.error("%s exception: %s", type(e).__name__, e, exc_info=True)
+        raise
