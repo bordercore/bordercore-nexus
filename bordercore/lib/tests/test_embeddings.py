@@ -1,6 +1,6 @@
 import pytest
 
-from lib.embeddings import batched
+from lib.embeddings import batched, build_blob_embedding_text
 
 
 def test_batched():
@@ -32,3 +32,26 @@ def test_batched():
     # Error case: n is negative
     with pytest.raises(ValueError, match="n must be at least one"):
         list(batched("ABC", -1))
+
+
+def test_build_blob_embedding_text_includes_title_tags_and_body():
+    """build_blob_embedding_text prepends title and tags before the body."""
+    text = build_blob_embedding_text(
+        "Note body here.",
+        name="Kitchen Remodel",
+        tags=["home", "budget"],
+    )
+
+    assert text == (
+        "Title: Kitchen Remodel\n\n"
+        "Tags: budget, home\n\n"
+        "Note body here."
+    )
+
+
+def test_build_blob_embedding_text_omits_empty_fields():
+    """build_blob_embedding_text skips blank title, tags, and body sections."""
+    assert build_blob_embedding_text("Only body.", name="", tags=[]) == "Only body."
+    assert build_blob_embedding_text("", name="Title only", tags=[]) == "Title: Title only"
+    assert build_blob_embedding_text("", name="", tags=["solo"]) == "Tags: solo"
+    assert build_blob_embedding_text("", name="", tags=[]) == ""

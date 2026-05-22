@@ -13,9 +13,42 @@ from itertools import islice
 import tiktoken
 from openai import OpenAI
 
-EMBEDDING_MODEL = "text-embedding-ada-002"
+EMBEDDING_MODEL = "text-embedding-3-small"
 EMBEDDING_CTX_LENGTH = 8191
 EMBEDDING_ENCODING = "cl100k_base"
+
+
+def build_blob_embedding_text(
+    content: str,
+    *,
+    name: str = "",
+    tags: Iterable[str] | None = None,
+) -> str:
+    """Compose embedding input from a blob title, tags, and body.
+
+    Title and tags are prepended so semantic search can match notes by name
+    or tag even when the body omits those terms.
+
+    Args:
+        content: Blob body text.
+        name: Blob display name / title.
+        tags: Tag names associated with the blob.
+
+    Returns:
+        Combined text for :func:`len_safe_get_embedding`, or an empty string
+        when title, tags, and body are all empty.
+    """
+    parts: list[str] = []
+    title = (name or "").strip()
+    if title:
+        parts.append(f"Title: {title}")
+    tag_names = sorted({str(tag).strip() for tag in (tags or []) if str(tag).strip()})
+    if tag_names:
+        parts.append(f"Tags: {', '.join(tag_names)}")
+    body = (content or "").strip()
+    if body:
+        parts.append(body)
+    return "\n\n".join(parts)
 
 
 def get_embedding(

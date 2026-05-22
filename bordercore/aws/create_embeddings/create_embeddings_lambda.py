@@ -13,7 +13,7 @@ from uuid import UUID
 
 import requests
 
-from lib.embeddings import len_safe_get_embedding
+from lib.embeddings import build_blob_embedding_text, len_safe_get_embedding
 
 logging.getLogger().setLevel(logging.INFO)
 log = logging.getLogger(__name__)
@@ -55,17 +55,14 @@ def store_in_elasticsearch(uuid: str | UUID, embeddings: list[float]) -> None:
         print(f"{uuid} Data stored successfully.")
 
 
-def get_blob_text(uuid: str | UUID) -> str:
-    """Retrieve blob text content from the Bordercore REST API.
-
-    Fetches the blob content using the Django REST Framework API endpoint
-    with authentication token.
+def get_blob_payload(uuid: str | UUID) -> dict[str, Any]:
+    """Retrieve blob fields needed for embedding from the Bordercore REST API.
 
     Args:
         uuid: UUID string or UUID object identifying the blob.
 
     Returns:
-        Text content of the blob.
+        Parsed JSON body from the blob detail endpoint.
 
     Raises:
         Exception: If the API request fails or returns a non-200 status code.
@@ -80,7 +77,24 @@ def get_blob_text(uuid: str | UUID) -> str:
     if r.status_code != 200:
         raise Exception(f"Error when accessing Bordercore REST API: status code={r.status_code}")
 
-    return r.json()["content"]
+    return r.json()
+
+
+def get_blob_embedding_text(uuid: str | UUID) -> str:
+    """Build the text payload embedded for a blob.
+
+    Args:
+        uuid: UUID string or UUID object identifying the blob.
+
+    Returns:
+        Title, tags, and content formatted for embedding.
+    """
+    payload = get_blob_payload(uuid=uuid)
+    return build_blob_embedding_text(
+        payload.get("content") or "",
+        name=payload.get("name") or "",
+        tags=payload.get("tags") or [],
+    )
 
 
 def handler(event: dict[str, Any], context: Any) -> str | None:
@@ -103,7 +117,7 @@ def handler(event: dict[str, Any], context: Any) -> str | None:
             uuid = event["uuid"]
 
             log.info(f"Creating embeddings for uuid={uuid}")
-            blob_text = get_blob_text(uuid=uuid)
+            blob_text = get_blob_embedding_text(uuid=uuid)
             embeddings = len_safe_get_embedding(blob_text)
 
             if embeddings is not None:
