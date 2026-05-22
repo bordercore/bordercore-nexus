@@ -1,39 +1,59 @@
 import React, { useEffect, useRef } from "react";
-import { CONSTELLATIONS, Constellation } from "./constellations";
 
 // ============================================================================
 // Tunable parameters — single-line constants for easy adjustment.
 // ============================================================================
-const STAR_COUNT = 100;
-const PAN_PX_PER_SEC = 8;
-const LINE_ALPHA = 0.08;
+const STAR_COUNT = 60;
+const PAN_PX_PER_SEC = 14;
+const LINE_ALPHA = 0.64;
 const STAR_FIELD_COLOR = "oklch(94% 0.02 240)";
-const CONST_STAR_ALPHA = 0.55;
-const ACCENT_HALO_RADIUS_PX = 3;
+const CONST_STAR_ALPHA = 0.6;
+const ACCENT_HALO_RADIUS_PX = 4;
+// Subtle perspective grid (Aura-style backdrop).
+const GRID_SPACING_PX = 28;
+const GRID_ALPHA = 0.035;
+// Dynamic linked particle mesh — drifting nodes connect when nearby,
+// with z-depth driving size, opacity, and parallax for a 3D field.
+const MESH_COUNT = 85;
+const MESH_LINK_DIST_PX = 78;
+const MESH_LINE_ALPHA = 0.16;
+const MESH_SPEED_MIN = 3.5;
+const MESH_SPEED_MAX = 7;
+const MESH_WANDER_FORCE = 10;
+const MESH_WANDER_FREQ_MIN = 0.12;
+const MESH_WANDER_FREQ_MAX = 0.28;
+const DEPTH_SCALE_MIN = 0.55;
+const DEPTH_SCALE_MAX = 1.0;
+const DEPTH_ALPHA_MIN = 0.22;
+const DEPTH_ALPHA_MAX = 0.88;
+const DEPTH_Y_SHIFT_FRAC = 0.12;
+const STAR_GLOW_RADIUS_MUL = 2.4;
+// Procedural cluster graphs — irregular node blobs with proximity links,
+// replacing linear stick-figure constellations with Aura-style meshes.
+const CLUSTER_NODE_COUNT_MIN = 9;
+const CLUSTER_NODE_COUNT_MAX = 14;
+const CLUSTER_LINK_DIST_NORM = 0.44;
+const CLUSTER_NODE_DRIFT_AMP = 0.07;
+const CLUSTER_WIDTH_MIN = 1.3;
+const CLUSTER_WIDTH_MAX = 2.2;
+const CLUSTER_MIN_NODE_SEP = 0.11;
+// Slow foreshortening tilt on clusters so they read as 3D shapes.
+const CONST_TILT_FREQ_HZ = 0.06;
+const CONST_TILT_AMP = 0.32;
+const PAN_WAVE_AMP_PX = 14;
+const PAN_WAVE_FREQ_HZ = 0.09;
 const SHOOTING_STAR_MIN_S = 25;
 const SHOOTING_STAR_MAX_S = 60;
 const SHOOTING_STAR_DURATION_S = 0.7;
 const SHOOTING_STAR_TAIL_PX = 80;
-const CONSTELLATION_GAP_MIN_PX = 200;
-const CONSTELLATION_GAP_MAX_PX = 400;
-// Vertical scale for a constellation relative to the canvas height. The
-// constellation's intrinsic box is normalized 0..1 in y — drawing it at
-// the full bar height crowds the gutter, so we scale slightly inward and
-// add jitter in the remaining margin.
+const CONSTELLATION_GAP_MIN_PX = 160;
+const CONSTELLATION_GAP_MAX_PX = 320;
 const CONSTELLATION_VSCALE = 0.78;
-// Per-constellation rotation. Each gets a randomized full-turn period in
-// this range plus a randomized direction, so constellations rotate at
-// slightly different rates and don't appear to move in lockstep.
-const ROTATION_PERIOD_S_MIN = 45;
-const ROTATION_PERIOD_S_MAX = 75;
-// Per-constellation vertical bob. A slow sine wave on the y-axis, randomized
-// in phase and frequency, so each constellation drifts up and down at its
-// own pace. Amplitude is a fraction of the unused vertical margin (i.e. the
-// space between the constellation and the top/bottom of the bar) so the
-// motion stays inside the bar regardless of canvas height.
-const Y_BOB_FREQ_MIN_HZ = 0.02; // ~50s period
-const Y_BOB_FREQ_MAX_HZ = 0.06; // ~16s period
-const Y_BOB_AMPLITUDE_FRAC = 0.25; // fraction of verticalMargin
+const ROTATION_PERIOD_S_MIN = 28;
+const ROTATION_PERIOD_S_MAX = 48;
+const Y_BOB_FREQ_MIN_HZ = 0.03;
+const Y_BOB_FREQ_MAX_HZ = 0.08;
+const Y_BOB_AMPLITUDE_FRAC = 0.35;
 
 // Deterministic seeded RNG so the ambient star field is stable across
 // remounts and so React strict-mode double-effect doesn't reshuffle the
@@ -52,21 +72,51 @@ function makeRng(seed: number): () => number {
 interface AmbientStar {
   x: number; // 0..1
   y: number; // 0..1
+  z: number; // 0..1 depth
   mag: number; // 0.15..0.55
   phase: number; // 0..2π
   freq: number; // Hz
 }
 
-interface ActiveConstellation {
-  def: Constellation;
-  xOffsetPx: number; // absolute left edge in canvas px
-  yJitter: number; // -1..1 vertical jitter factor
-  scale: number; // pixel height of the constellation box
-  rotation: number; // current angle in radians, accumulated over time
-  rotationSpeed: number; // rad/sec, signed (negative = counter-clockwise)
-  vxSign: number; // +1 (moves right) or -1 (moves left)
-  yPhase: number; // radians; per-constellation phase for vertical bob
-  yBobFreq: number; // Hz; per-constellation vertical bob frequency
+interface MeshParticle {
+  x: number; // px
+  y: number; // px
+  z: number; // 0..1 depth
+  vx: number; // px/s
+  vy: number; // px/s
+  vz: number; // depth units/s
+  wanderPhase: number;
+  wanderFreq: number;
+}
+
+interface ClusterNode {
+  nx: number; // -0.5..0.5 normalized offset from cluster center
+  ny: number;
+  nz: number; // 0..1 depth within cluster
+  mag: number;
+  driftPhase: number;
+  driftFreq: number;
+}
+
+interface ActiveCluster {
+  nodes: ClusterNode[];
+  width: number; // aspect ratio w/h
+  xOffsetPx: number;
+  yJitter: number;
+  scale: number;
+  rotation: number;
+  rotationSpeed: number;
+  vxSign: number;
+  yPhase: number;
+  yBobFreq: number;
+  panWavePhase: number;
+}
+
+interface DepthPoint {
+  x: number;
+  y: number;
+  scale: number;
+  alpha: number;
 }
 
 interface ShootingStar {
@@ -77,12 +127,20 @@ interface ShootingStar {
   y1: number;
 }
 
+function depthProject(x: number, y: number, z: number, ch: number): DepthPoint {
+  const scale = DEPTH_SCALE_MIN + z * (DEPTH_SCALE_MAX - DEPTH_SCALE_MIN);
+  const alpha = DEPTH_ALPHA_MIN + z * (DEPTH_ALPHA_MAX - DEPTH_ALPHA_MIN);
+  const yShift = (0.5 - z) * ch * DEPTH_Y_SHIFT_FRAC;
+  return { x, y: y + yShift, scale, alpha };
+}
+
 function buildAmbientStars(rng: () => number): AmbientStar[] {
   const out: AmbientStar[] = [];
   for (let i = 0; i < STAR_COUNT; i++) {
     out.push({
       x: rng(),
       y: rng(),
+      z: rng(),
       mag: 0.15 + rng() * 0.4,
       phase: rng() * Math.PI * 2,
       freq: 0.15 + rng() * 0.25,
@@ -91,42 +149,204 @@ function buildAmbientStars(rng: () => number): AmbientStar[] {
   return out;
 }
 
-function readAccentColor(): string {
-  const styles = getComputedStyle(document.documentElement);
-  return styles.getPropertyValue("--accent-3").trim() || "rgb(220, 180, 240)";
+function buildMeshParticles(rng: () => number, cw: number, ch: number): MeshParticle[] {
+  const out: MeshParticle[] = [];
+  for (let i = 0; i < MESH_COUNT; i++) {
+    const speed = MESH_SPEED_MIN + rng() * (MESH_SPEED_MAX - MESH_SPEED_MIN);
+    const angle = rng() * Math.PI * 2;
+    out.push({
+      x: rng() * cw,
+      y: rng() * ch,
+      z: 0.15 + rng() * 0.85,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      vz: (rng() - 0.5) * 0.025,
+      wanderPhase: rng() * Math.PI * 2,
+      wanderFreq: MESH_WANDER_FREQ_MIN + rng() * (MESH_WANDER_FREQ_MAX - MESH_WANDER_FREQ_MIN),
+    });
+  }
+  return out;
 }
 
-// Pick a constellation from CONSTELLATIONS, avoiding `prevDef` if one is
-// given so consecutive entries don't repeat. Returns the def only — the
-// caller is responsible for creating the ActiveConstellation around it.
-function pickConstellationDef(prevDef: Constellation | null, rng: () => number): Constellation {
-  const pool = prevDef ? CONSTELLATIONS.filter(c => c.name !== prevDef.name) : CONSTELLATIONS;
-  return pool[Math.floor(rng() * pool.length)];
+function wrapMeshParticle(p: MeshParticle, cw: number, ch: number) {
+  if (p.x < 0) p.x += cw;
+  if (p.x > cw) p.x -= cw;
+  if (p.y < 0) p.y += ch;
+  if (p.y > ch) p.y -= ch;
+  if (p.z <= 0.05 || p.z >= 0.95) {
+    p.vz *= -1;
+    p.z = Math.max(0.05, Math.min(0.95, p.z));
+  }
 }
 
-function spawnConstellation(
-  def: Constellation,
+function advanceMesh(mesh: MeshParticle[], dt: number, cw: number, ch: number) {
+  for (const p of mesh) {
+    p.wanderPhase += p.wanderFreq * Math.PI * 2 * dt;
+    p.vx += Math.cos(p.wanderPhase) * MESH_WANDER_FORCE * dt;
+    p.vy += Math.sin(p.wanderPhase * 1.37) * MESH_WANDER_FORCE * dt;
+    const speed = Math.hypot(p.vx, p.vy);
+    const maxSpeed = MESH_SPEED_MAX * 1.15;
+    const minSpeed = MESH_SPEED_MIN * 0.65;
+    if (speed > maxSpeed) {
+      p.vx = (p.vx / speed) * maxSpeed;
+      p.vy = (p.vy / speed) * maxSpeed;
+    } else if (speed < minSpeed && speed > 0) {
+      p.vx = (p.vx / speed) * minSpeed;
+      p.vy = (p.vy / speed) * minSpeed;
+    }
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.z += p.vz * dt;
+    wrapMeshParticle(p, cw, ch);
+  }
+}
+
+function generateClusterNodes(rng: () => number): ClusterNode[] {
+  const target =
+    CLUSTER_NODE_COUNT_MIN +
+    Math.floor(rng() * (CLUSTER_NODE_COUNT_MAX - CLUSTER_NODE_COUNT_MIN + 1));
+  const nodes: ClusterNode[] = [];
+  let guard = 0;
+  while (nodes.length < target && guard++ < target * 30) {
+    const nx = (rng() - 0.5) * 0.92;
+    const ny = (rng() - 0.5) * 0.88;
+    const tooClose = nodes.some(n => Math.hypot(n.nx - nx, n.ny - ny) < CLUSTER_MIN_NODE_SEP);
+    if (tooClose) continue;
+    nodes.push({
+      nx,
+      ny,
+      nz: 0.2 + rng() * 0.8,
+      mag: 0.45 + rng() * 0.55,
+      driftPhase: rng() * Math.PI * 2,
+      driftFreq: 0.1 + rng() * 0.22,
+    });
+  }
+  while (nodes.length < CLUSTER_NODE_COUNT_MIN) {
+    nodes.push({
+      nx: (rng() - 0.5) * 0.85,
+      ny: (rng() - 0.5) * 0.85,
+      nz: rng(),
+      mag: 0.55 + rng() * 0.35,
+      driftPhase: rng() * Math.PI * 2,
+      driftFreq: 0.12 + rng() * 0.18,
+    });
+  }
+  return nodes;
+}
+
+function spawnCluster(
   xOffsetPx: number,
   vxSign: number,
   canvasHeight: number,
   rng: () => number
-): ActiveConstellation {
+): ActiveCluster {
   const scale = canvasHeight * CONSTELLATION_VSCALE;
   const period = ROTATION_PERIOD_S_MIN + rng() * (ROTATION_PERIOD_S_MAX - ROTATION_PERIOD_S_MIN);
   const direction = rng() < 0.5 ? -1 : 1;
   return {
-    def,
+    nodes: generateClusterNodes(rng),
+    width: CLUSTER_WIDTH_MIN + rng() * (CLUSTER_WIDTH_MAX - CLUSTER_WIDTH_MIN),
     xOffsetPx,
     yJitter: rng() * 2 - 1,
     scale,
-    // Start upright so reduced-motion users see the canonical orientation;
-    // animated users see the tilt accumulate from zero over time.
     rotation: 0,
     rotationSpeed: (direction * (Math.PI * 2)) / period,
     vxSign,
     yPhase: rng() * Math.PI * 2,
     yBobFreq: Y_BOB_FREQ_MIN_HZ + rng() * (Y_BOB_FREQ_MAX_HZ - Y_BOB_FREQ_MIN_HZ),
+    panWavePhase: rng() * Math.PI * 2,
   };
+}
+
+function drawStarGlow(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  radius: number,
+  alpha: number,
+  color: string
+) {
+  const glowR = radius * STAR_GLOW_RADIUS_MUL;
+  const grad = ctx.createRadialGradient(x, y, 0, x, y, glowR);
+  grad.addColorStop(0, color);
+  grad.addColorStop(0.35, color);
+  grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+  const prevAlpha = ctx.globalAlpha;
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(x, y, glowR, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = prevAlpha;
+}
+
+function drawGrid(ctx: CanvasRenderingContext2D, cw: number, ch: number) {
+  const cx = cw * 0.5;
+  const cy = ch * 0.5;
+  const maxR = Math.hypot(cx, cy) || 1;
+  ctx.strokeStyle = STAR_FIELD_COLOR;
+  ctx.lineWidth = 1;
+  const prevAlpha = ctx.globalAlpha;
+  for (let x = 0; x <= cw; x += GRID_SPACING_PX) {
+    const xFade = Math.max(0, 1 - Math.abs(x - cx) / maxR);
+    ctx.globalAlpha = GRID_ALPHA * xFade;
+    ctx.beginPath();
+    ctx.moveTo(x + 0.5, 0);
+    ctx.lineTo(x + 0.5, ch);
+    ctx.stroke();
+  }
+  for (let y = 0; y <= ch; y += GRID_SPACING_PX) {
+    const yFade = Math.max(0, 1 - Math.abs(y - cy) / maxR);
+    ctx.globalAlpha = GRID_ALPHA * yFade;
+    ctx.beginPath();
+    ctx.moveTo(0, y + 0.5);
+    ctx.lineTo(cw, y + 0.5);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = prevAlpha;
+}
+
+function drawMeshNetwork(ctx: CanvasRenderingContext2D, mesh: MeshParticle[], ch: number) {
+  const projected = mesh.map(p => ({ p, ...depthProject(p.x, p.y, p.z, ch) }));
+
+  ctx.strokeStyle = STAR_FIELD_COLOR;
+  ctx.lineWidth = 1;
+  const prevAlpha = ctx.globalAlpha;
+  for (let i = 0; i < projected.length; i++) {
+    for (let j = i + 1; j < projected.length; j++) {
+      const a = projected[i];
+      const b = projected[j];
+      const dist = Math.hypot(a.x - b.x, a.y - b.y);
+      if (dist > MESH_LINK_DIST_PX) continue;
+      const distFade = 1 - dist / MESH_LINK_DIST_PX;
+      const depthFade = (a.alpha + b.alpha) * 0.5;
+      ctx.globalAlpha = MESH_LINE_ALPHA * distFade * distFade * depthFade;
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+    }
+  }
+
+  ctx.fillStyle = STAR_FIELD_COLOR;
+  for (const pt of projected) {
+    const r = (0.7 + pt.p.z * 0.9) * pt.scale;
+    drawStarGlow(ctx, pt.x, pt.y, r, pt.alpha * 0.45, STAR_FIELD_COLOR);
+    ctx.globalAlpha = pt.alpha * 0.9;
+    ctx.beginPath();
+    ctx.arc(pt.x, pt.y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = prevAlpha;
+}
+
+function readAccentColor(): string {
+  const styles = getComputedStyle(document.documentElement);
+  return styles.getPropertyValue("--accent-3").trim() || "rgb(220, 180, 240)";
+}
+
+function clusterWidthPx(c: ActiveCluster) {
+  return c.width * c.scale;
 }
 
 export function ConstellationBg() {
@@ -150,7 +370,8 @@ export function ConstellationBg() {
     let accent = readAccentColor();
     const rng = makeRng(0x5eed51e1);
     const stars = buildAmbientStars(rng);
-    let actives: ActiveConstellation[] = [];
+    let mesh: MeshParticle[] = [];
+    let actives: ActiveCluster[] = [];
     let pending: ShootingStar | null = null;
     let nextShootingT: number | null = null;
     let lastT = 0;
@@ -169,113 +390,122 @@ export function ConstellationBg() {
       canvas.style.height = `${h}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      // Seed two constellations across the bar with randomized horizontal
-      // directions. In reduce-motion mode they sit at fixed offsets and
-      // never move; in animated mode each picks its own direction and bob.
-      const defA = pickConstellationDef(null, rng);
+      mesh = buildMeshParticles(rng, cw, ch);
+
       const vxA = rng() < 0.5 ? -1 : 1;
-      const a = spawnConstellation(defA, cw * 0.12, vxA, ch, rng);
-      const defB = pickConstellationDef(defA, rng);
+      const a = spawnCluster(cw * 0.12, vxA, ch, rng);
       const vxB = rng() < 0.5 ? -1 : 1;
-      const b = spawnConstellation(defB, cw * 0.62, vxB, ch, rng);
+      const b = spawnCluster(cw * 0.62, vxB, ch, rng);
       actives = [a, b];
     };
 
-    const constellationWidthPx = (c: ActiveConstellation) => c.def.width * c.scale;
-
-    const drawAmbient = (t: number) => {
-      ctx.fillStyle = STAR_FIELD_COLOR;
-      const prevAlpha = ctx.globalAlpha;
-      for (const s of stars) {
-        const breath = reduceMotion ? 0 : 0.08 * Math.sin(t * s.freq * Math.PI * 2 + s.phase);
-        const alpha = Math.max(0, Math.min(1, s.mag + breath));
-        const r = 0.6 + s.mag * 1.0;
-        ctx.globalAlpha = alpha;
-        ctx.beginPath();
-        ctx.arc(s.x * cw, s.y * ch, r, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.globalAlpha = prevAlpha;
-    };
-
-    const drawConstellation = (c: ActiveConstellation, isFront: boolean, t: number) => {
-      const widthPx = constellationWidthPx(c);
-      // Vertical placement: center the constellation in the bar with a small
-      // fixed jitter so successive entries don't sit on the exact same
-      // baseline, plus a slow sinusoidal bob so the constellation drifts up
-      // and down over time. Both terms scale with verticalMargin so the
-      // motion always stays inside the bar. Bob is skipped in reduce-motion
-      // so the canonical orientation stays put.
+    const drawCluster = (c: ActiveCluster, isFront: boolean, t: number) => {
+      const widthPx = clusterWidthPx(c);
       const verticalMargin = ch - c.scale;
       const bob = reduceMotion
         ? 0
         : Math.sin(t * c.yBobFreq * Math.PI * 2 + c.yPhase) * verticalMargin * Y_BOB_AMPLITUDE_FRAC;
-      const yTop = verticalMargin * 0.5 + c.yJitter * verticalMargin * 0.25 + bob;
+      const panWave = reduceMotion
+        ? 0
+        : Math.sin(t * PAN_WAVE_FREQ_HZ * Math.PI * 2 + c.panWavePhase) * PAN_WAVE_AMP_PX;
+      const yTop = verticalMargin * 0.5 + c.yJitter * verticalMargin * 0.25 + bob + panWave;
 
-      // Draw in a coordinate space whose origin is the constellation's center,
-      // so rotation spins around that center rather than the canvas origin.
-      // Star coordinates 0..1 in the dataset map to -widthPx/2..+widthPx/2
-      // and -scale/2..+scale/2 here.
       const centerX = c.xOffsetPx + widthPx / 2;
       const centerY = yTop + c.scale / 2;
-      const sx = (sx0: number) => (sx0 - 0.5) * widthPx;
-      const sy = (sy0: number) => (sy0 - 0.5) * c.scale;
+      const tilt = reduceMotion
+        ? 0
+        : Math.sin(t * CONST_TILT_FREQ_HZ * Math.PI * 2 + c.yPhase) * CONST_TILT_AMP;
+      const yForeshorten = 1 - Math.abs(tilt);
+      const linkDistPx = CLUSTER_LINK_DIST_NORM * Math.max(widthPx, c.scale);
+      const cosR = Math.cos(c.rotation);
+      const sinR = Math.sin(c.rotation);
+
+      const projected = c.nodes.map(node => {
+        const drift = reduceMotion
+          ? 0
+          : Math.sin(t * node.driftFreq * Math.PI * 2 + node.driftPhase) * CLUSTER_NODE_DRIFT_AMP;
+        const lx = (node.nx + drift * Math.cos(node.driftPhase)) * widthPx;
+        const ly = (node.ny + drift * Math.sin(node.driftPhase * 1.3)) * c.scale * yForeshorten;
+        const rx = lx * cosR - ly * sinR;
+        const ry = lx * sinR + ly * cosR;
+        const depth = depthProject(centerX + rx, centerY + ry, node.nz, ch);
+        return { node, ...depth, mag: node.mag };
+      });
 
       ctx.save();
-      ctx.translate(centerX, centerY);
-      ctx.rotate(c.rotation);
-
-      // Lines first, so stars sit on top.
       ctx.strokeStyle = STAR_FIELD_COLOR;
       ctx.lineWidth = 1;
       const prevAlpha = ctx.globalAlpha;
-      ctx.globalAlpha = LINE_ALPHA;
-      ctx.beginPath();
-      for (const [i, j] of c.def.lines) {
-        const a = c.def.stars[i];
-        const b = c.def.stars[j];
-        ctx.moveTo(sx(a.x), sy(a.y));
-        ctx.lineTo(sx(b.x), sy(b.y));
-      }
-      ctx.stroke();
+      const lineAlpha = LINE_ALPHA * (0.65 + yForeshorten * 0.35);
 
-      // Stars.
+      for (let i = 0; i < projected.length; i++) {
+        for (let j = i + 1; j < projected.length; j++) {
+          const a = projected[i];
+          const b = projected[j];
+          const dist = Math.hypot(a.x - b.x, a.y - b.y);
+          if (dist > linkDistPx) continue;
+          const distFade = 1 - dist / linkDistPx;
+          const depthFade = (a.alpha + b.alpha) * 0.5;
+          ctx.globalAlpha = lineAlpha * distFade * distFade * depthFade;
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.stroke();
+        }
+      }
+
       ctx.fillStyle = STAR_FIELD_COLOR;
       let brightestIdx = 0;
       let brightestMag = -1;
-      for (let i = 0; i < c.def.stars.length; i++) {
-        const s = c.def.stars[i];
-        if (s.mag > brightestMag) {
-          brightestMag = s.mag;
+      for (let i = 0; i < projected.length; i++) {
+        const pt = projected[i];
+        if (pt.mag > brightestMag) {
+          brightestMag = pt.mag;
           brightestIdx = i;
         }
-        ctx.globalAlpha = CONST_STAR_ALPHA * (0.6 + s.mag * 0.6);
-        const r = 1.5 + s.mag * 1.0;
+        const starAlpha = CONST_STAR_ALPHA * (0.6 + pt.mag * 0.6) * (0.7 + yForeshorten * 0.3);
+        const r = (1.4 + pt.mag * 1.1) * pt.scale * (0.85 + yForeshorten * 0.15);
+        drawStarGlow(ctx, pt.x, pt.y, r, starAlpha * 0.5, STAR_FIELD_COLOR);
+        ctx.globalAlpha = starAlpha;
         ctx.beginPath();
-        ctx.arc(sx(s.x), sy(s.y), r, 0, Math.PI * 2);
+        ctx.arc(pt.x, pt.y, r, 0, Math.PI * 2);
         ctx.fill();
       }
 
-      // Accent halo on the brightest star of the front-most constellation
-      // (the one closer to the left edge of the bar — i.e. exiting first).
       if (isFront) {
-        const b = c.def.stars[brightestIdx];
-        const hx = sx(b.x);
-        const hy = sy(b.y);
-        const grad = ctx.createRadialGradient(hx, hy, 0, hx, hy, ACCENT_HALO_RADIUS_PX * 2);
+        const b = projected[brightestIdx];
+        const grad = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, ACCENT_HALO_RADIUS_PX * 2);
         grad.addColorStop(0, accent);
         grad.addColorStop(1, "rgba(0, 0, 0, 0)");
         ctx.fillStyle = grad;
         ctx.globalAlpha = 0.7;
         ctx.fillRect(
-          hx - ACCENT_HALO_RADIUS_PX * 2,
-          hy - ACCENT_HALO_RADIUS_PX * 2,
+          b.x - ACCENT_HALO_RADIUS_PX * 2,
+          b.y - ACCENT_HALO_RADIUS_PX * 2,
           ACCENT_HALO_RADIUS_PX * 4,
           ACCENT_HALO_RADIUS_PX * 4
         );
       }
       ctx.globalAlpha = prevAlpha;
       ctx.restore();
+    };
+
+    const drawAmbient = (t: number) => {
+      ctx.fillStyle = STAR_FIELD_COLOR;
+      const prevAlpha = ctx.globalAlpha;
+      for (const s of stars) {
+        const breath = reduceMotion ? 0 : 0.08 * Math.sin(t * s.freq * Math.PI * 2 + s.phase);
+        const baseAlpha = Math.max(0, Math.min(1, s.mag + breath));
+        const pt = depthProject(s.x * cw, s.y * ch, s.z, ch);
+        const alpha = baseAlpha * pt.alpha;
+        const r = (0.5 + s.mag * 0.8) * pt.scale;
+        drawStarGlow(ctx, pt.x, pt.y, r, alpha * 0.35, STAR_FIELD_COLOR);
+        ctx.globalAlpha = alpha;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = prevAlpha;
     };
 
     const drawShootingStar = (t: number) => {
@@ -305,6 +535,8 @@ export function ConstellationBg() {
     };
 
     const advance = (t: number, dt: number) => {
+      if (!reduceMotion) advanceMesh(mesh, dt, cw, ch);
+
       // Pan (signed by per-constellation direction) and rotate.
       for (const c of actives) {
         c.xOffsetPx += c.vxSign * PAN_PX_PER_SEC * dt;
@@ -318,21 +550,20 @@ export function ConstellationBg() {
       // visible.
       for (let i = 0; i < actives.length; i++) {
         const c = actives[i];
-        const w = constellationWidthPx(c);
+        const w = clusterWidthPx(c);
         const exitedLeft = c.xOffsetPx + w < 0 && c.vxSign <= 0;
         const exitedRight = c.xOffsetPx > cw && c.vxSign >= 0;
         if (!exitedLeft && !exitedRight) continue;
 
-        const newDef = pickConstellationDef(c.def, rng);
-        const newWidth = newDef.width * (ch * CONSTELLATION_VSCALE);
+        const newWidth =
+          (CLUSTER_WIDTH_MIN + rng() * (CLUSTER_WIDTH_MAX - CLUSTER_WIDTH_MIN)) *
+          (ch * CONSTELLATION_VSCALE);
         const newVxSign = rng() < 0.5 ? -1 : 1;
         const gap =
           CONSTELLATION_GAP_MIN_PX + rng() * (CONSTELLATION_GAP_MAX_PX - CONSTELLATION_GAP_MIN_PX);
 
         let spawnX: number;
         if (newVxSign > 0) {
-          // Heading right — spawn off-screen on the left, behind any
-          // survivor that is currently on the left side too.
           let leftmost = 0;
           for (const other of actives) {
             if (other === c) continue;
@@ -340,18 +571,16 @@ export function ConstellationBg() {
           }
           spawnX = Math.min(leftmost, 0) - gap - newWidth;
         } else {
-          // Heading left — spawn off-screen on the right, past any survivor
-          // already off the right edge.
           let rightmost = cw;
           for (const other of actives) {
             if (other === c) continue;
-            const re = other.xOffsetPx + constellationWidthPx(other);
+            const re = other.xOffsetPx + clusterWidthPx(other);
             if (re > rightmost) rightmost = re;
           }
           spawnX = rightmost + gap;
         }
 
-        actives[i] = spawnConstellation(newDef, spawnX, newVxSign, ch, rng);
+        actives[i] = spawnCluster(spawnX, newVxSign, ch, rng);
       }
 
       // Shooting-star scheduling.
@@ -384,6 +613,8 @@ export function ConstellationBg() {
 
     const draw = (t: number) => {
       ctx.clearRect(0, 0, cw, ch);
+      drawGrid(ctx, cw, ch);
+      drawMeshNetwork(ctx, mesh, ch);
       drawAmbient(t);
 
       // Pick the leftmost (front-most, exiting first) active to receive the
@@ -393,7 +624,7 @@ export function ConstellationBg() {
         if (actives[i].xOffsetPx < actives[frontIdx].xOffsetPx) frontIdx = i;
       }
       for (let i = 0; i < actives.length; i++) {
-        drawConstellation(actives[i], i === frontIdx, t);
+        drawCluster(actives[i], i === frontIdx, t);
       }
 
       if (!reduceMotion) drawShootingStar(t);
