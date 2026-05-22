@@ -297,12 +297,35 @@
     border: 1px solid var(--line);
     border-radius: 8px;
     background: var(--bg-1);
+    transition:
+      border-color 200ms var(--bc-ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+      box-shadow 200ms var(--bc-ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+      transform 200ms var(--bc-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
   }
   .mag-section.is-pink    { --mag-accent: var(--accent-3); }
   .mag-section.is-cyan    { --mag-accent: var(--accent-4); }
   .mag-section.is-purple  { --mag-accent: var(--accent); }
   .mag-section.is-danger  { --mag-accent: var(--danger); }
   .mag-section.is-neutral { --mag-accent: var(--fg-2); }
+
+  .mag-section:hover {
+    border-color: color-mix(in srgb, var(--mag-accent) 60%, transparent);
+    box-shadow:
+      0 8px 24px -12px color-mix(in srgb, var(--mag-accent) 35%, transparent),
+      0 0 24px -10px color-mix(in srgb, var(--mag-accent) 45%, transparent);
+  }
+
+  // Neutral sections resolve --mag-accent to a muted grey; the glow looks dead,
+  // so keep only the border highlight.
+  .mag-section.is-neutral:hover {
+    box-shadow: none;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .mag-section:hover {
+      transform: translateY(-2px);
+    }
+  }
 
   .mag-section-kicker {
     display: flex;
@@ -324,6 +347,11 @@
     border-radius: 999px;
     background: var(--mag-accent);
     box-shadow: 0 0 8px var(--mag-accent);
+    transition: box-shadow 200ms var(--bc-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+  }
+
+  .mag-section:hover .mag-section-kicker-dot {
+    box-shadow: 0 0 14px var(--mag-accent);
   }
 
   .mag-section-kicker-label {
@@ -413,7 +441,9 @@
     width: 8px;
     height: 8px;
     flex: none;
+    align-self: flex-start;
     border-radius: 50%;
+    margin-top: 14px;
     background: var(--danger);
     box-shadow: 0 0 8px var(--danger);
   }
