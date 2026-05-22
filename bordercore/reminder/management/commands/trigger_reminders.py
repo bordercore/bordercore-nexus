@@ -19,6 +19,7 @@ from datetime import datetime
 from typing import Any
 
 from reminder.models import Reminder
+from reminder.services import notify_reminder_fired
 from todo.models import Todo
 
 from django.core.mail import send_mail
@@ -130,6 +131,18 @@ class Command(BaseCommand):
                 reminder.last_triggered_at = now
                 reminder.next_trigger_at = reminder.calculate_next_trigger_at(from_datetime=now)
                 reminder.save(update_fields=["last_triggered_at", "next_trigger_at"])
+
+                # Push live indicator to any open browser tab.
+                # Defense-in-depth: notify_reminder_fired already swallows all
+                # channel-layer errors internally, but wrap it again so any
+                # future exception leak from that function can never undo a
+                # durable trigger.
+                try:
+                    notify_reminder_fired(reminder, now)
+                except Exception:
+                    logger.warning(
+                        "notify_reminder_fired raised for reminder %s", reminder.uuid, exc_info=True
+                    )
 
             self.reminders_sent += 1
 

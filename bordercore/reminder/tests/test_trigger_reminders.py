@@ -177,3 +177,65 @@ def test_one_failure_others_still_processed():
     reminder_fail.refresh_from_db()
     assert reminder_ok.last_triggered_at is not None
     assert reminder_fail.last_triggered_at is None
+
+
+def test_trigger_calls_notify_reminder_fired_on_success():
+    """A successful trigger fans out via notify_reminder_fired."""
+    user = UserFactory(username="user_notify", email="notify@example.com")
+    reminder = ReminderFactory(
+        user=user,
+        name="Notify Me",
+        is_active=True,
+        next_trigger_at=timezone.now() - timedelta(minutes=1),
+    )
+
+    with patch("reminder.management.commands.trigger_reminders.send_mail"), \
+         patch("reminder.management.commands.trigger_reminders.notify_reminder_fired") as mock_notify:
+        call_command("trigger_reminders", verbosity=0)
+
+    mock_notify.assert_called_once()
+    notified_reminder, fired_at = mock_notify.call_args.args
+    assert notified_reminder.pk == reminder.pk
+    assert fired_at is not None
+
+
+def test_dry_run_does_not_call_notify_reminder_fired():
+    """--dry-run must not fan out fake events."""
+    user = UserFactory(username="user_dry_notify", email="drynotify@example.com")
+    ReminderFactory(
+        user=user,
+        name="No Notify In Dry Run",
+        is_active=True,
+        next_trigger_at=timezone.now() - timedelta(minutes=1),
+    )
+
+    with patch("reminder.management.commands.trigger_reminders.send_mail"), \
+         patch("reminder.management.commands.trigger_reminders.notify_reminder_fired") as mock_notify:
+        call_command("trigger_reminders", "--dry-run", verbosity=0)
+
+    mock_notify.assert_not_called()
+
+
+def test_trigger_succeeds_even_if_notify_raises():
+    """A notify-layer exception must not abort the trigger (belt-and-suspenders)."""
+    user = UserFactory(username="user_notify_err", email="notifyerr@example.com")
+    reminder = ReminderFactory(
+        user=user,
+        name="Resilient",
+        is_active=True,
+        next_trigger_at=timezone.now() - timedelta(minutes=1),
+    )
+    last_before = reminder.last_triggered_at
+
+    with patch("reminder.management.commands.trigger_reminders.send_mail"), \
+         patch(
+             "reminder.management.commands.trigger_reminders.notify_reminder_fired",
+             side_effect=RuntimeError("channel layer exploded"),
+         ):
+        call_command("trigger_reminders", verbosity=0)
+
+    reminder.refresh_from_db()
+    # The DB update happens BEFORE notify_reminder_fired, so the trigger
+    # is durable even if notify raises.
+    assert reminder.last_triggered_at != last_before
+    assert reminder.last_triggered_at is not None
