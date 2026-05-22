@@ -30,6 +30,7 @@ if (container) {
   const drillListUrl = container.getAttribute("data-drill-list-url") || "";
   const bookmarkOverviewUrl = container.getAttribute("data-bookmark-overview-url") || "";
   const getCalendarEventsUrl = container.getAttribute("data-get-calendar-events-url") || "";
+  const randomImageUrl = container.getAttribute("data-random-image-url") || "";
 
   const userName = container.getAttribute("data-user-name") || "";
 
@@ -98,6 +99,7 @@ if (container) {
       drillListUrl={drillListUrl}
       bookmarkOverviewUrl={bookmarkOverviewUrl}
       getCalendarEventsUrl={getCalendarEventsUrl}
+      randomImageUrl={randomImageUrl}
       tasks={tasks}
       drillProgress={drillProgress}
       overdueExercises={overdueExercises}

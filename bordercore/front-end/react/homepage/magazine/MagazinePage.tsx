@@ -23,6 +23,7 @@ export interface MagazinePageProps {
   drillListUrl: string;
   bookmarkOverviewUrl: string;
   getCalendarEventsUrl: string;
+  randomImageUrl: string;
 
   tasks: Task[];
   drillProgress: DrillProgress;
@@ -57,6 +58,7 @@ export function MagazinePage(props: MagazinePageProps) {
         blobDetailUrlTemplate={props.blobDetailUrlTemplate}
         collectionDetailUrlTemplate={props.collectionDetailUrlTemplate}
         userName={props.userName}
+        randomImageUrl={props.randomImageUrl}
       />
 
       <main className="mag-body">

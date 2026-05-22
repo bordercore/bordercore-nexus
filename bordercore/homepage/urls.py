@@ -16,6 +16,11 @@ urlpatterns = [
         name="get_calendar_events"
     ),
     path(
+        route="random-image/",
+        view=views.random_image,
+        name="random_image"
+    ),
+    path(
         route="gallery",
         view=views.gallery,
         name="gallery"

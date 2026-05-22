@@ -24,6 +24,11 @@ from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
 
+from rest_framework import status
+from rest_framework.decorators import api_view
+from rest_framework.request import Request
+from rest_framework.response import Response
+
 from blob.models import Blob
 from bookmark.models import Bookmark
 from collection.models import Collection
@@ -119,31 +124,19 @@ def homepage(request: HttpRequest) -> HttpResponse:
     ])
 
     # Random image
-    random_image_info = None
     try:
-        random_image = get_random_image(user, "image/*")
-        if random_image:
-            try:
-                random_image_info = {
-                    **random_image,
-                    "url": Blob.get_cover_url_static(
-                        cast(UUID, random_image["uuid"]),
-                        str(random_image["filename"]),
-                        "large",
-                    ),
-                }
-            except ClientError as e:
-                messages.add_message(request, messages.ERROR, f"Error getting random image info for uuid={random_image['uuid']}: {e}")
+        random_image_info = get_random_image_info(user)
     except (ConnectionRefusedError, ConnectionError):
+        random_image_info = None
         messages.add_message(request, messages.ERROR, "Cannot connect to Elasticsearch")
     except ObjectDoesNotExist:
+        random_image_info = None
         messages.add_message(request, messages.ERROR, "Blob found in Elasticsearch but not the DB")
+    except ClientError as e:
+        random_image_info = None
+        messages.add_message(request, messages.ERROR, f"Error getting random image info: {e}")
 
-    random_image_info_json = json_for_html_attr({
-        "uuid": str(random_image_info["uuid"]),
-        "name": random_image_info["name"],
-        "url": random_image_info["url"],
-    } if random_image_info else None)
+    random_image_info_json = json_for_html_attr(random_image_info)
 
     # Default collection
     default_collection = get_default_collection_blobs(user)
@@ -248,6 +241,66 @@ def get_calendar_events(request: HttpRequest) -> JsonResponse:
         events = []
 
     return JsonResponse(events, safe=False)
+
+
+def get_random_image_info(user: User) -> dict[str, object] | None:
+    """Get a random homepage image with its S3 cover URL resolved.
+
+    Returns the serialized shape consumed by the homepage frontend, or
+    ``None`` if no image is available. Exceptions from Elasticsearch, the
+    database, and S3 propagate to the caller so each context (page render
+    vs. JSON API) can decide how to surface them.
+
+    Args:
+        user: The user to fetch a random image for.
+
+    Returns:
+        Dict with ``uuid``, ``name``, ``url`` keys, or ``None``.
+    """
+    random_image = get_random_image(user, "image/*")
+    if not random_image:
+        return None
+
+    url = Blob.get_cover_url_static(
+        cast(UUID, random_image["uuid"]),
+        str(random_image["filename"]),
+        "large",
+    )
+    return {
+        "uuid": str(random_image["uuid"]),
+        "name": random_image["name"],
+        "url": url,
+    }
+
+
+@api_view(["GET"])
+def random_image(request: Request) -> Response:
+    """Return a fresh random homepage image as JSON.
+
+    Powers the in-place "shuffle" action on the homepage hero. Returns
+    ``{"image": null}`` (HTTP 200) when no image is available, so the
+    frontend can treat "no image" as a normal state rather than an error.
+    """
+    user = cast(User, request.user)
+    try:
+        info = get_random_image_info(user)
+    except (ConnectionRefusedError, ConnectionError):
+        return Response(
+            {"error": "Cannot connect to Elasticsearch"},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+    except ObjectDoesNotExist:
+        return Response(
+            {"error": "Blob found in Elasticsearch but not the DB"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    except ClientError as e:
+        return Response(
+            {"error": f"Error resolving image URL: {e}"},
+            status=status.HTTP_502_BAD_GATEWAY,
+        )
+
+    return Response({"image": info})
 
 
 def get_random_image(user: User, content_type: str | None = None) -> dict[str, object] | None:

@@ -170,6 +170,48 @@ def test_get_default_collection_blobs_with_collection(monkeypatch_collection, au
     assert "blob_list" in result
 
 
+def test_random_image_endpoint(monkeypatch_collection, authenticated_client):
+    """Random-image endpoint returns the serialized image payload."""
+    user, client = authenticated_client()
+
+    collection = CollectionFactory(user=user)
+    blob = BlobFactory(user=user, file="test.jpg")
+    collection.add_object(blob)
+    user.userprofile.homepage_image_collection = collection
+    user.userprofile.save()
+
+    url = urls.reverse("homepage:random_image")
+    resp = client.get(url)
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["image"] is not None
+    assert body["image"]["uuid"] == str(blob.uuid)
+    assert body["image"]["name"] == blob.name
+    assert "url" in body["image"]
+
+
+def test_random_image_endpoint_no_image(authenticated_client, mock_elasticsearch):
+    """Random-image endpoint returns image=null (HTTP 200) when nothing found."""
+    _, client = authenticated_client()
+
+    mock_elasticsearch.search.return_value = {"hits": {"hits": []}}
+
+    url = urls.reverse("homepage:random_image")
+    resp = client.get(url)
+
+    assert resp.status_code == 200
+    assert resp.json() == {"image": None}
+
+
+def test_random_image_endpoint_requires_auth(client):
+    """Random-image endpoint requires authentication."""
+    url = urls.reverse("homepage:random_image")
+    resp = client.get(url)
+
+    assert resp.status_code in (302, 401, 403)
+
+
 def test_get_calendar_events_no_credentials(authenticated_client):
     """Test calendar events endpoint returns empty list without credentials."""
     _, client = authenticated_client()

@@ -58,6 +58,55 @@
     height: 100%;
     inset: 0;
     object-fit: cover;
+    transition: opacity 3000ms var(--bc-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+    will-change: opacity;
+  }
+
+  .mag-hero-img-incoming {
+    z-index: 1;
+    opacity: 0;
+  }
+
+  // Stack the incoming image on top once it's mounted; setting opacity in a
+  // later frame triggers the transition. The .is-loaded class is applied via
+  // the React render that mounts the element with opacity:0, then promotes to
+  // opacity:1 on the next paint via a class swap (CSS handles the rest).
+  .mag-hero-img-incoming.mag-hero-img-loaded {
+    opacity: 1;
+  }
+
+  .mag-hero-img-outgoing {
+    z-index: 0;
+  }
+
+  // Subtle pulse while fetching a fresh shuffle image (only visible while
+  // waiting for the network — once the incoming image mounts, the crossfade
+  // takes over).
+  .mag-hero.is-shuffling .mag-hero-img:not(.mag-hero-img-incoming) {
+    animation: mag-hero-pulse 1.4s ease-in-out infinite;
+  }
+
+  @keyframes mag-hero-pulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.72; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mag-hero-img,
+    .mag-hero-img-incoming,
+    .mag-hero.is-shuffling .mag-hero-img:not(.mag-hero-img-incoming) {
+      animation: none;
+      transition: none;
+    }
+  }
+
+  .mag-hero-link[disabled] {
+    cursor: progress;
+    opacity: 0.65;
+  }
+
+  .mag-hero-shuffle-error {
+    color: var(--accent-3);
   }
 
   .mag-hero-fallback {
