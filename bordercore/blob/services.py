@@ -1374,6 +1374,94 @@ def import_newyorktimes(user: User, url: str) -> Blob:
     return blob
 
 
+# Notes RAG: ES script_score uses cosineSimilarity + 1.0, so raw similarity 0.3 → score 1.3.
+NOTES_RAG_MIN_SCORE = 1.3
+NOTES_RAG_MAX_SOURCES = 3
+NOTES_RAG_EXCERPT_CHARS = 1500
+
+NOTES_RAG_SYSTEM_PROMPT = (
+    "You answer questions using only the provided note excerpts from the user's "
+    "personal knowledge base. If the excerpts do not contain enough information "
+    "to answer the question, say so explicitly. Mention note titles when "
+    "referencing specific notes."
+)
+
+
+def _filter_notes_hits(
+    hits: list[dict[str, Any]],
+    min_score: float = NOTES_RAG_MIN_SCORE,
+) -> list[dict[str, Any]]:
+    """Drop semantic-search hits below the minimum similarity threshold.
+
+    Elasticsearch scores note matches with ``cosineSimilarity + 1.0``, so a
+    ``min_score`` of 1.3 corresponds to roughly 0.3 raw cosine similarity.
+
+    Args:
+        hits: Elasticsearch hit dicts from :func:`search.services.semantic_search`.
+        min_score: Minimum ``_score`` required to keep a hit.
+
+    Returns:
+        Hits at or above ``min_score``, preserving their original order.
+    """
+    return [hit for hit in hits if hit.get("_score", 0) >= min_score]
+
+
+def _note_display_title(source: dict[str, Any]) -> str:
+    """Return the best available display title for a note hit.
+
+    Args:
+        source: Elasticsearch ``_source`` dict for a note document.
+
+    Returns:
+        The note ``name``, then ``title``, or ``"No title"`` if both are empty.
+    """
+    return source.get("name") or source.get("title") or "No title"
+
+
+def _build_notes_rag_messages(
+    prompt: str,
+    hits: list[dict[str, Any]],
+) -> tuple[list[dict[str, str]], str]:
+    """Build LLM messages and a markdown sources footer from ranked note hits.
+
+    Uses at most :data:`NOTES_RAG_MAX_SOURCES` hits. Each excerpt is truncated
+    to :data:`NOTES_RAG_EXCERPT_CHARS` characters before being sent to the model.
+
+    Args:
+        prompt: The user's question from chat history.
+        hits: Ranked Elasticsearch hits that passed :func:`_filter_notes_hits`.
+
+    Returns:
+        A tuple of ``(messages, sources_footer)`` where ``messages`` is a
+        system/user pair for OpenAI and ``sources_footer`` is markdown appended
+        after the streamed assistant reply.
+    """
+    context_parts: list[str] = []
+    source_lines: list[str] = []
+
+    for hit in hits[:NOTES_RAG_MAX_SOURCES]:
+        source = hit["_source"]
+        title = _note_display_title(source)
+        excerpt = (source.get("contents") or "")[:NOTES_RAG_EXCERPT_CHARS]
+        context_parts.append(f'[Note: "{title}"]\n{excerpt}')
+        detail_url = reverse("blob:detail", kwargs={"uuid": source["uuid"]})
+        source_lines.append(f"- [{title}]({detail_url})")
+
+    context_block = "\n---\n".join(context_parts)
+    messages = [
+        {"role": "system", "content": NOTES_RAG_SYSTEM_PROMPT},
+        {
+            "role": "user",
+            "content": (
+                f"Question: {prompt}\n\n"
+                f"Note excerpts:\n---\n{context_block}\n---"
+            ),
+        },
+    ]
+    sources_footer = "\n\n\nSources:\n" + "\n".join(source_lines)
+    return messages, sources_footer
+
+
 def chatbot(request: HttpRequest, args: dict[str, Any]) -> Generator[str, None, None]:
     """Generate a chatbot response using OpenAI.
 
@@ -1387,7 +1475,10 @@ def chatbot(request: HttpRequest, args: dict[str, Any]) -> Generator[str, None, 
             - blob_uuid: UUID of a blob to use as context (optional)
             - question_uuid: UUID of a question to answer (optional)
             - exercise_uuid: UUID of an exercise to describe (optional)
-            - mode: Chat mode, "notes" for semantic search-based responses
+            - mode: Chat mode; ``"notes"`` runs semantic search over the user's
+              notes, uses up to three excerpted sources above a similarity
+              threshold, and returns a friendly message when nothing relevant
+              is found
             - chat_history: JSON string of chat history (for general chat)
             - content: User prompt content (when using blob_uuid)
 
@@ -1433,21 +1524,22 @@ def chatbot(request: HttpRequest, args: dict[str, Any]) -> Generator[str, None, 
     elif args["mode"] == "notes":
         chat_history = json.loads(args["chat_history"])
         prompt = chat_history[-1]["content"]
-        results = semantic_search(request, prompt)["hits"]["hits"][0]["_source"]
-        text = results["contents"]
-        messages = [
-            {
-                "role": "user",
-                "content": f"Answer the following question based ONLY on the following text. Do not use any other source of information. The question is '{prompt}'. The text is '{text}'"
-            }
-        ]
+        es_response = semantic_search(request, prompt)
+        hits = _filter_notes_hits(es_response.get("hits", {}).get("hits", []))
+        if not hits:
+            yield (
+                "I couldn't find any relevant notes to answer that question. "
+                "Try rephrasing or check that your notes are indexed."
+            )
+            return
 
+        messages, sources_footer = _build_notes_rag_messages(prompt, hits)
         added_values.append(
             {
                 "choices": [
                     {
                         "delta": {
-                            "content": f"\n\n\nSource: [{results['name'] or 'No title'}]({reverse('blob:detail', kwargs={'uuid': results['uuid']})})"
+                            "content": sources_footer
                         }
                     }
                 ]

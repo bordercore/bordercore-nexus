@@ -12,10 +12,12 @@ from instaloader.instaloader import Instaloader
 pytestmark = [pytest.mark.django_db]
 
 from blob.models import Blob
-from blob.services import (chatbot_followups, get_authors, get_blob_naturalsize,
-                           get_dashboard_blobs, get_recent_blobs, get_recent_media,
-                           import_artstation, import_instagram, import_newyorktimes,
-                           parse_date, parse_shortcode)
+from blob.services import (_build_notes_rag_messages, _filter_notes_hits,
+                           chatbot, chatbot_followups, get_authors,
+                           get_blob_naturalsize, get_dashboard_blobs,
+                           get_recent_blobs, get_recent_media, import_artstation,
+                           import_instagram, import_newyorktimes, parse_date,
+                           parse_shortcode)
 from blob.tests.factories import BlobFactory
 
 faker = FakerFactory.create()
@@ -411,3 +413,137 @@ def test_chatbot_followups_returns_empty_on_api_error(mock_openai_cls):
     result = chatbot_followups("Some reply.", mode="chat")
 
     assert result == []
+
+
+def _make_note_hit(name: str, contents: str, score: float, note_uuid: str | None = None) -> dict:
+    """Build a fake Elasticsearch hit dict for notes RAG tests.
+
+    Args:
+        name: Note title stored in ``_source.name``.
+        contents: Note body stored in ``_source.contents``.
+        score: Similarity ``_score`` assigned to the hit.
+        note_uuid: Optional note UUID; a random UUID is generated when omitted.
+
+    Returns:
+        A minimal hit dict matching the shape returned by ``semantic_search``.
+    """
+    return {
+        "_score": score,
+        "_source": {
+            "uuid": note_uuid or str(uuid.uuid4()),
+            "name": name,
+            "contents": contents,
+        },
+    }
+
+
+def test_filter_notes_hits_drops_low_scores():
+    """_filter_notes_hits keeps hits at or above NOTES_RAG_MIN_SCORE."""
+    hits = [
+        _make_note_hit("Good", "content", 1.8),
+        _make_note_hit("Weak", "content", 1.1),
+        _make_note_hit("Borderline", "content", 1.3),
+    ]
+
+    filtered = _filter_notes_hits(hits)
+
+    assert [h["_source"]["name"] for h in filtered] == ["Good", "Borderline"]
+
+
+def test_build_notes_rag_messages_truncates_and_lists_sources():
+    """_build_notes_rag_messages truncates long notes and builds a sources footer."""
+    long_body = "x" * 2000
+    note_uuid = str(uuid.uuid4())
+    hits = [
+        _make_note_hit("Alpha", long_body, 1.9, note_uuid=note_uuid),
+        _make_note_hit("Beta", "short", 1.7),
+    ]
+
+    messages, footer = _build_notes_rag_messages("What is Alpha?", hits)
+
+    assert messages[0]["role"] == "system"
+    assert "Question: What is Alpha?" in messages[1]["content"]
+    assert '[Note: "Alpha"]' in messages[1]["content"]
+    assert "x" * 1500 in messages[1]["content"]
+    assert "x" * 1501 not in messages[1]["content"]
+    assert '[Note: "Beta"]' in messages[1]["content"]
+    assert note_uuid in footer
+    assert "Sources:" in footer
+    assert "- [Alpha]" in footer
+    assert "- [Beta]" in footer
+
+
+@patch("blob.services.OpenAI")
+@patch("blob.services.semantic_search")
+def test_chatbot_notes_no_hits_returns_message(mock_semantic_search, mock_openai_cls, authenticated_client):
+    """Notes mode yields a friendly message and skips OpenAI when search returns no hits."""
+    user, _ = authenticated_client()
+    request = MagicMock()
+    request.user = user
+    mock_semantic_search.return_value = {"hits": {"hits": []}}
+
+    output = "".join(chatbot(request, {
+        "mode": "notes",
+        "chat_history": json.dumps([{"role": "user", "content": "kitchen remodel"}]),
+    }))
+
+    assert "couldn't find any relevant notes" in output
+    mock_openai_cls.assert_not_called()
+
+
+@patch("blob.services.OpenAI")
+@patch("blob.services.semantic_search")
+def test_chatbot_notes_low_score_returns_message(mock_semantic_search, mock_openai_cls, authenticated_client):
+    """Notes mode treats sub-threshold hits as no match and does not call OpenAI."""
+    user, _ = authenticated_client()
+    request = MagicMock()
+    request.user = user
+    mock_semantic_search.return_value = {
+        "hits": {"hits": [_make_note_hit("Weak match", "content", 0.5)]},
+    }
+
+    output = "".join(chatbot(request, {
+        "mode": "notes",
+        "chat_history": json.dumps([{"role": "user", "content": "kitchen remodel"}]),
+    }))
+
+    assert "couldn't find any relevant notes" in output
+    mock_openai_cls.assert_not_called()
+
+
+@patch("blob.services.OpenAI")
+@patch("blob.services.semantic_search")
+def test_chatbot_notes_uses_top_hits_and_streams_sources(mock_semantic_search, mock_openai_cls, authenticated_client):
+    """Notes mode sends multiple note excerpts to OpenAI and appends source links."""
+    user, _ = authenticated_client()
+    request = MagicMock()
+    request.user = user
+    note_uuid = str(uuid.uuid4())
+    mock_semantic_search.return_value = {
+        "hits": {
+            "hits": [
+                _make_note_hit("Best", "best content", 1.9, note_uuid=note_uuid),
+                _make_note_hit("Second", "second content", 1.6),
+            ],
+        },
+    }
+
+    mock_client = MagicMock()
+    mock_openai_cls.return_value = mock_client
+    mock_chunk = MagicMock()
+    mock_chunk.choices = [MagicMock(delta=MagicMock(content="Answer text"))]
+    mock_client.chat.completions.create.return_value = iter([mock_chunk])
+
+    output = "".join(chatbot(request, {
+        "mode": "notes",
+        "chat_history": json.dumps([{"role": "user", "content": "What did I decide?"}]),
+    }))
+
+    assert "Answer text" in output
+    assert "Sources:" in output
+    assert "- [Best]" in output
+    assert "- [Second]" in output
+    call_messages = mock_client.chat.completions.create.call_args.kwargs["messages"]
+    assert call_messages[0]["role"] == "system"
+    assert '[Note: "Best"]' in call_messages[1]["content"]
+    assert '[Note: "Second"]' in call_messages[1]["content"]

@@ -626,16 +626,22 @@ def perform_image_search(
     }
 
 
-def semantic_search(request: HttpRequest, search: str) -> dict[str, Any]:
+def semantic_search(
+    request: HttpRequest,
+    search: str,
+    *,
+    size: int = 8,
+) -> dict[str, Any]:
     """Perform semantic search using embeddings and Elasticsearch.
 
     Searches for notes using cosine similarity between the query embedding
     and document embeddings. Results are filtered by user and limited to
-    note document types, returning the top match.
+    note document types.
 
     Args:
         request: The HTTP request object containing the authenticated user.
         search: The search query string to generate embeddings from.
+        size: Maximum number of note hits to return, ordered by similarity.
 
     Returns:
         A dictionary containing Elasticsearch search results with hits,
@@ -649,7 +655,7 @@ def semantic_search(request: HttpRequest, search: str) -> dict[str, Any]:
     search_object = build_base_query(
         cast(int, request.user.id),
         additional_must=[{"term": {"doctype": "note"}}],
-        size=1,
+        size=size,
         source_fields=[
             "date",
             "contents",
