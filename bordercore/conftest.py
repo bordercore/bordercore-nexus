@@ -26,6 +26,12 @@ from django.conf import settings
 
 django.setup()
 
+# Tests should not require a live Redis. Consumer tests that exercise
+# WebsocketCommunicator + group_send work fine against the in-memory layer.
+settings.CHANNEL_LAYERS = {
+    "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"},
+}
+
 try:
     from moto import mock_aws
 except ModuleNotFoundError:
