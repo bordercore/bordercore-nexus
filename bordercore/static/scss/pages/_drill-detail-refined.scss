@@ -952,9 +952,6 @@
   .qcard-toolbar .dot.dot-warn { background: var(--warn); }
   .qcard-toolbar .dot.dot-ok { background: var(--ok); }
 
-  // Path token after the dots
-  .qcard-toolbar .qcard-toolbar-path { margin-left: 10px; }
-
   // Compact tags-row variant — used inside the question body, no top divider
   .tags-row.tags-row-compact {
     padding-top: 0;

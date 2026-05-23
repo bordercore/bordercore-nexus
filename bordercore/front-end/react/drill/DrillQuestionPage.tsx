@@ -444,7 +444,6 @@ export function DrillQuestionPage({
 
         <div className="drill-main">
           <QuestionCard
-            uuid={question.uuid}
             questionHtml={questionHtml}
             answerHtml={answerHtml}
             tags={question.tags}

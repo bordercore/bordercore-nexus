@@ -12,7 +12,6 @@ interface IntervalEntry {
 }
 
 interface QuestionCardProps {
-  uuid: string;
   questionHtml: string;
   answerHtml: string;
   tags: { name: string }[];
@@ -36,7 +35,6 @@ interface QuestionCardProps {
 }
 
 export function QuestionCard({
-  uuid,
   questionHtml,
   answerHtml,
   tags,
@@ -58,14 +56,12 @@ export function QuestionCard({
   onRephrase,
   onShowOriginal,
 }: QuestionCardProps) {
-  const shortUuid = `${uuid.slice(0, 4)}-${uuid.slice(-4)}`;
   return (
     <div className="qcard">
       <div className="qcard-toolbar">
         <span className="dot dot-danger" />
         <span className="dot dot-warn" />
         <span className="dot dot-ok" />
-        <span className="qcard-toolbar-path">{`// drill / question / ${shortUuid}`}</span>
         {needsReview && <span className="due">● needs review</span>}
         {isDisabled && <span className="due">● disabled</span>}
         {canRephrase && (
