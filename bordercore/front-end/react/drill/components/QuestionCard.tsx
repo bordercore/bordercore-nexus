@@ -72,12 +72,12 @@ export function QuestionCard({
           <div className="qcard-toolbar-rephrase">
             <button
               type="button"
-              className="ghost-btn qcard-rephrase-btn"
+              className="play-btn"
               onClick={onRephrase}
               disabled={rephraseLoading}
               title={isRephrased ? "Get another variant" : "Rephrase this question"}
             >
-              <FontAwesomeIcon icon={faShuffle} className="qcard-rephrase-icon" />
+              <FontAwesomeIcon icon={faShuffle} className="play-btn-icon" />
               {rephraseLoading
                 ? "rephrasing…"
                 : isRephrased
@@ -87,7 +87,7 @@ export function QuestionCard({
             {isRephrased && !rephraseLoading && (
               <button
                 type="button"
-                className="ghost-btn qcard-rephrase-original"
+                className="ghost-btn"
                 onClick={onShowOriginal}
               >
                 show original

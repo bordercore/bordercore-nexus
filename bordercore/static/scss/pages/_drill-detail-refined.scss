@@ -15,9 +15,33 @@
 
 // stylelint-disable no-descending-specificity
 
-// Shared small action button used in the toolbar and utility row of the
+// Shared small action buttons used in the toolbar and utility row of the
 // drill detail page. Hoisted above .drill-detail-app so the cascade picks
-// it up regardless of which row inside the page renders it.
+// them up regardless of which row inside the page renders them.
+.drill-detail-app .play-btn {
+  padding: 5px 14px;
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 6px;
+  background: linear-gradient(
+    180deg,
+    var(--bc-accent-4),
+    color-mix(in oklch, var(--accent-4), black 25%)
+  );
+  box-shadow: 0 0 14px -4px color-mix(in oklch, var(--accent-4) 60%, transparent);
+  color: color-mix(in oklch, var(--accent-4), black 75%);
+  cursor: pointer;
+  font: 600 12px/1 var(--font-ui);
+
+  &[disabled] {
+    cursor: progress;
+    opacity: 0.6;
+  }
+}
+
+.drill-detail-app .play-btn .play-btn-icon {
+  margin-right: 6px;
+}
+
 .drill-detail-app .ghost-btn {
   padding: 5px 12px;
   border: 1px solid var(--line-soft);
@@ -342,10 +366,6 @@
     // Push the rephrase group to the right when nothing else (.due) already does.
     &:not(:has(.due)) .qcard-toolbar-rephrase {
       margin-left: auto;
-    }
-
-    .qcard-rephrase-icon {
-      margin-right: 6px;
     }
 
     .qcard-rephrase-error {
@@ -775,20 +795,6 @@
       gap: 6px;
     }
 
-    .play-btn {
-      padding: 5px 14px;
-      border: 1px solid rgb(255 255 255 / 10%);
-      border-radius: 6px;
-      background: linear-gradient(
-        180deg,
-        var(--bc-accent-4),
-        color-mix(in oklch, var(--accent-4), black 25%)
-      );
-      box-shadow: 0 0 14px -4px color-mix(in oklch, var(--accent-4) 60%, transparent);
-      color: color-mix(in oklch, var(--accent-4), black 75%);
-      cursor: pointer;
-      font: 600 12px/1 var(--font-ui);
-    }
   }
 
   // tag progress
@@ -963,8 +969,6 @@
     margin: 0;
   }
 
-  // Icon spacing in utility-row buttons
-  .utility-row .play-btn .play-btn-icon { margin-right: 6px; }
 
   // status dot
   .status-dot {
