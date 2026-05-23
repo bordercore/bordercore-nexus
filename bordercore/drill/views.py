@@ -428,7 +428,6 @@ class QuestionDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView
             "isFavorite": self.object.is_favorite,
             "isDisabled": self.object.is_disabled,
             "isReversible": self.object.is_reversible,
-            "allowDataVariation": self.object.allow_data_variation,
             "tags": [{"name": tag.name} for tag in tags],
         }
 

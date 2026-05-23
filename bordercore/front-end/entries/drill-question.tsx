@@ -65,7 +65,6 @@ if (container) {
     isFavorite: false,
     isDisabled: false,
     isReversible: false,
-    allowDataVariation: false,
     tags: [] as { name: string }[],
     intervalIndex: 0,
     intervalCount: 0,

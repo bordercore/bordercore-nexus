@@ -36,7 +36,6 @@ document.addEventListener("DOMContentLoaded", () => {
     initialAnswer: rootElement.dataset.initialAnswer || "",
     initialTags,
     initialIsReversible: rootElement.dataset.isReversible === "true",
-    initialAllowDataVariation: rootElement.dataset.allowDataVariation === "true",
     objectUuid,
     action: (rootElement.dataset.action || "Add") as "Add" | "Edit",
     recentTags,

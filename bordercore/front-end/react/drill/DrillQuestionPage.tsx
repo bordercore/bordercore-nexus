@@ -93,7 +93,6 @@ interface DrillQuestionPageProps {
     isFavorite: boolean;
     isDisabled: boolean;
     isReversible: boolean;
-    allowDataVariation: boolean;
     tags: { name: string }[];
   };
   lastResponse: string | null;
@@ -149,11 +148,9 @@ export function DrillQuestionPage({
   const [isFavorite, setIsFavorite] = useState(question.isFavorite);
 
   // Rephrase state. `rephrased` holds the most recent LLM variant; null means
-  // we're displaying the original. `answer` may be null for reword-only
-  // rephrases — in that case the original stored answer is still valid.
-  const [rephrased, setRephrased] = useState<{ question: string; answer: string | null } | null>(
-    null
-  );
+  // we're displaying the original. The LLM always returns a matching answer
+  // (verbatim when no data changed, freshly computed when it did).
+  const [rephrased, setRephrased] = useState<{ question: string; answer: string } | null>(null);
   const [rephraseLoading, setRephraseLoading] = useState(false);
   const [rephraseError, setRephraseError] = useState<string | null>(null);
 
@@ -290,13 +287,19 @@ export function DrillQuestionPage({
     })
       .then(response => {
         const data = response?.data;
-        if (!data || typeof data.question !== "string" || !data.question.trim()) {
+        if (
+          !data ||
+          typeof data.question !== "string" ||
+          !data.question.trim() ||
+          typeof data.answer !== "string" ||
+          !data.answer.trim()
+        ) {
           setRephraseError("Couldn't rephrase. Try again.");
           return;
         }
         setRephrased({
           question: data.question,
-          answer: typeof data.answer === "string" ? data.answer : null,
+          answer: data.answer,
         });
         // Re-typeset MathJax / Prism against the new content. Deferred so the
         // render commit lands first.

@@ -72,14 +72,6 @@ class Question(ElasticsearchMixin, TimeStampedModel):
     is_favorite = models.BooleanField(default=False)
     is_reversible = models.BooleanField(default=False, help_text="If true, question and answer can be swapped during review")
     is_disabled = models.BooleanField(default=False, help_text="Disabled questions are excluded from study sessions")
-    allow_data_variation = models.BooleanField(
-        default=False,
-        help_text=(
-            "If true, the rephrase feature may also vary numbers/names in the "
-            "question and generate a matching new answer. If false, rephrasing "
-            "only reworks phrasing and the stored answer remains valid."
-        ),
-    )
     user = models.ForeignKey(User, on_delete=models.PROTECT)
     bc_objects = models.ManyToManyField(
         "drill.BCObject",

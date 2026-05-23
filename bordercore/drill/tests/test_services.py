@@ -16,33 +16,8 @@ pytestmark = [pytest.mark.django_db]
 # ----- service: rephrase_question -----------------------------------------
 
 @patch("drill.services.OpenAI")
-def test_rephrase_reword_only_returns_question_and_null_answer(mock_openai_cls):
-    """For allow_data_variation=False, the service returns just the new question."""
-    mock_client = MagicMock()
-    mock_openai_cls.return_value = mock_client
-    mock_client.chat.completions.create.return_value = MagicMock(
-        choices=[
-            MagicMock(message=MagicMock(content=json.dumps({
-                "question": "What do you call the capital city of France?",
-            })))
-        ]
-    )
-
-    q = QuestionFactory(
-        question="What is the capital of France?",
-        answer="Paris",
-        allow_data_variation=False,
-    )
-
-    result = rephrase_question(q)
-
-    assert result["question"] == "What do you call the capital city of France?"
-    assert result["answer"] is None
-
-
-@patch("drill.services.OpenAI")
-def test_rephrase_data_varying_returns_question_and_new_answer(mock_openai_cls):
-    """For allow_data_variation=True, the service returns a matching new answer."""
+def test_rephrase_returns_question_and_matching_answer(mock_openai_cls):
+    """Happy path: the LLM returns both fields and the service forwards them."""
     mock_client = MagicMock()
     mock_openai_cls.return_value = mock_client
     mock_client.chat.completions.create.return_value = MagicMock(
@@ -54,39 +29,28 @@ def test_rephrase_data_varying_returns_question_and_new_answer(mock_openai_cls):
         ]
     )
 
-    q = QuestionFactory(
-        question="What is 5 times 7?",
-        answer="35",
-        allow_data_variation=True,
-    )
+    q = QuestionFactory(question="What is 5 times 7?", answer="35")
 
     result = rephrase_question(q)
 
-    assert result["question"] == "What is 6 times 8?"
-    assert result["answer"] == "48"
+    assert result == {"question": "What is 6 times 8?", "answer": "48"}
 
 
 @patch("drill.services.OpenAI")
-def test_rephrase_uses_different_system_prompts_for_each_mode(mock_openai_cls):
-    """Reword-only mode must NOT instruct the model to vary data."""
+def test_rephrase_sends_original_question_and_answer_in_prompt(mock_openai_cls):
+    """The service must give the LLM both Q and A so it can produce a consistent variant."""
     mock_client = MagicMock()
     mock_openai_cls.return_value = mock_client
     mock_client.chat.completions.create.return_value = MagicMock(
-        choices=[MagicMock(message=MagicMock(content='{"question": "x"}'))]
-    )
-
-    q_reword = QuestionFactory(allow_data_variation=False)
-    rephrase_question(q_reword)
-    reword_system = mock_client.chat.completions.create.call_args.kwargs["messages"][0]["content"]
-    assert "EXACTLY" in reword_system  # preserve facts exactly
-
-    mock_client.chat.completions.create.return_value = MagicMock(
         choices=[MagicMock(message=MagicMock(content='{"question": "x", "answer": "y"}'))]
     )
-    q_vary = QuestionFactory(allow_data_variation=True)
-    rephrase_question(q_vary)
-    vary_system = mock_client.chat.completions.create.call_args.kwargs["messages"][0]["content"]
-    assert "vary concrete data" in vary_system
+
+    q = QuestionFactory(question="What is the capital of France?", answer="Paris")
+    rephrase_question(q)
+
+    user_message = mock_client.chat.completions.create.call_args.kwargs["messages"][1]["content"]
+    assert "What is the capital of France?" in user_message
+    assert "Paris" in user_message
 
 
 @patch("drill.services.OpenAI")
@@ -98,10 +62,8 @@ def test_rephrase_raises_on_invalid_json(mock_openai_cls):
         choices=[MagicMock(message=MagicMock(content="not json"))]
     )
 
-    q = QuestionFactory(allow_data_variation=False)
-
     with pytest.raises(RuntimeError, match="not valid JSON"):
-        rephrase_question(q)
+        rephrase_question(QuestionFactory())
 
 
 @patch("drill.services.OpenAI")
@@ -110,28 +72,24 @@ def test_rephrase_raises_when_question_field_missing(mock_openai_cls):
     mock_client = MagicMock()
     mock_openai_cls.return_value = mock_client
     mock_client.chat.completions.create.return_value = MagicMock(
-        choices=[MagicMock(message=MagicMock(content='{"question": ""}'))]
+        choices=[MagicMock(message=MagicMock(content='{"question": "", "answer": "y"}'))]
     )
 
-    q = QuestionFactory(allow_data_variation=False)
-
     with pytest.raises(RuntimeError, match="missing 'question'"):
-        rephrase_question(q)
+        rephrase_question(QuestionFactory())
 
 
 @patch("drill.services.OpenAI")
-def test_rephrase_data_varying_raises_when_answer_missing(mock_openai_cls):
-    """Data-varying mode requires a matching answer; missing one is a failure."""
+def test_rephrase_raises_when_answer_field_missing(mock_openai_cls):
+    """Empty/missing 'answer' in the JSON payload is treated as a failure."""
     mock_client = MagicMock()
     mock_openai_cls.return_value = mock_client
     mock_client.chat.completions.create.return_value = MagicMock(
-        choices=[MagicMock(message=MagicMock(content='{"question": "What is 6 * 8?"}'))]
+        choices=[MagicMock(message=MagicMock(content='{"question": "x"}'))]
     )
 
-    q = QuestionFactory(allow_data_variation=True)
-
     with pytest.raises(RuntimeError, match="missing 'answer'"):
-        rephrase_question(q)
+        rephrase_question(QuestionFactory())
 
 
 # ----- view: drill:rephrase -----------------------------------------------
@@ -146,13 +104,13 @@ def test_rephrase_view_returns_rephrased_payload(
     target.user = user
     target.save()
 
-    mock_rephrase.return_value = {"question": "new q", "answer": None}
+    mock_rephrase.return_value = {"question": "new q", "answer": "new a"}
 
     url = urls.reverse("drill:rephrase", kwargs={"uuid": target.uuid})
     resp = client.post(url)
 
     assert resp.status_code == 200
-    assert resp.json() == {"question": "new q", "answer": None}
+    assert resp.json() == {"question": "new q", "answer": "new a"}
     mock_rephrase.assert_called_once()
 
 
