@@ -93,7 +93,7 @@ class QuestionForm(ModelForm):
         """
 
         model = Question
-        fields = ("question", "answer", "is_reversible", "tags")
+        fields = ("question", "answer", "is_reversible", "allow_data_variation", "tags")
         widgets = {
             # Add "v-pre" attribute in case the question or answer happens to contain
             #  any template mustache tags

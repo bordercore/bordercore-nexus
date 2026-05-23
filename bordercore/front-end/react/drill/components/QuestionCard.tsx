@@ -1,6 +1,6 @@
 import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTerminal } from "@fortawesome/free-solid-svg-icons";
+import { faTerminal, faShuffle } from "@fortawesome/free-solid-svg-icons";
 import AnswerVeil from "./AnswerVeil";
 import RatingBar, { RatingKey } from "./RatingBar";
 import { tagStyle } from "../../utils/tagColors";
@@ -27,6 +27,12 @@ interface QuestionCardProps {
   onSkip: () => void;
   sqlPlaygroundUrl: string | null;
   startStudySessionUrl: string;
+  canRephrase: boolean;
+  isRephrased: boolean;
+  rephraseLoading: boolean;
+  rephraseError: string | null;
+  onRephrase: () => void;
+  onShowOriginal: () => void;
 }
 
 export function QuestionCard({
@@ -45,6 +51,12 @@ export function QuestionCard({
   onSkip,
   sqlPlaygroundUrl,
   startStudySessionUrl,
+  canRephrase,
+  isRephrased,
+  rephraseLoading,
+  rephraseError,
+  onRephrase,
+  onShowOriginal,
 }: QuestionCardProps) {
   const shortUuid = `${uuid.slice(0, 4)}-${uuid.slice(-4)}`;
   return (
@@ -56,6 +68,38 @@ export function QuestionCard({
         <span className="qcard-toolbar-path">{`// drill / question / ${shortUuid}`}</span>
         {needsReview && <span className="due">● needs review</span>}
         {isDisabled && <span className="due">● disabled</span>}
+        {canRephrase && (
+          <div className="qcard-toolbar-rephrase">
+            <button
+              type="button"
+              className="ghost-btn qcard-rephrase-btn"
+              onClick={onRephrase}
+              disabled={rephraseLoading}
+              title={isRephrased ? "Get another variant" : "Rephrase this question"}
+            >
+              <FontAwesomeIcon icon={faShuffle} className="qcard-rephrase-icon" />
+              {rephraseLoading
+                ? "rephrasing…"
+                : isRephrased
+                  ? "rephrase again"
+                  : "rephrase"}
+            </button>
+            {isRephrased && !rephraseLoading && (
+              <button
+                type="button"
+                className="ghost-btn qcard-rephrase-original"
+                onClick={onShowOriginal}
+              >
+                show original
+              </button>
+            )}
+            {rephraseError && (
+              <span className="qcard-rephrase-error" role="alert">
+                {rephraseError}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="qcard-body">

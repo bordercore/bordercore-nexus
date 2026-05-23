@@ -37,6 +37,7 @@ from accounts.models import DrillTag
 from blob.models import Blob
 from bookmark.models import Bookmark
 from drill.forms import QuestionForm
+from drill.services import rephrase_question
 from lib.mixins import FormRequestMixin, UserScopedQuerysetMixin, get_user_object_or_404
 from lib.util import parse_title_from_url
 from tag.models import Tag
@@ -427,6 +428,7 @@ class QuestionDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView
             "isFavorite": self.object.is_favorite,
             "isDisabled": self.object.is_disabled,
             "isReversible": self.object.is_reversible,
+            "allowDataVariation": self.object.allow_data_variation,
             "tags": [{"name": tag.name} for tag in tags],
         }
 
@@ -681,6 +683,39 @@ def record_response(request: HttpRequest, uuid: str, response_type: str) -> Resp
 
     redirect_url = _get_next_question_url(request)
     return Response({"redirect_url": redirect_url})
+
+
+@api_view(["POST"])
+def rephrase(request: HttpRequest, uuid: str) -> Response:
+    """Return an AI-rephrased variant of a question.
+
+    For questions with ``allow_data_variation=False`` the response only
+    contains a reworded question. For data-variable questions the response
+    also contains a newly generated matching answer. The result is
+    ephemeral; nothing is persisted.
+
+    Args:
+        request: The HTTP request.
+        uuid: The UUID of the question to rephrase.
+
+    Returns:
+        JSON ``{"question": str, "answer": str | null}``. ``answer`` is
+        null when only phrasing was changed and the stored answer is still
+        valid. Returns 502 if the LLM call or parse fails.
+    """
+    user = cast(User, request.user)
+    question = get_user_object_or_404(user, Question, uuid=uuid)
+
+    try:
+        result = rephrase_question(question)
+    except Exception as exc:  # noqa: BLE001 — surface any LLM failure as 502
+        log.warning("Rephrase failed for question %s: %s", uuid, exc)
+        return Response(
+            {"detail": "Rephrase service unavailable. Try again."},
+            status=status.HTTP_502_BAD_GATEWAY,
+        )
+
+    return Response(result)
 
 
 @api_view(["GET"])

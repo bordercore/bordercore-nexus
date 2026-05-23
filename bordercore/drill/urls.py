@@ -50,6 +50,11 @@ urlpatterns = [
         name="record_response"
     ),
     path(
+        route="question/<uuid:uuid>/rephrase/",
+        view=views.rephrase,
+        name="rephrase"
+    ),
+    path(
         route="start_study_session",
         view=views.start_study_session,
         name="start_study_session"

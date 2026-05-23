@@ -24,7 +24,8 @@ const prismLanguagesLoaded = Promise.all([
 import ObjectSelectModal from "../common/ObjectSelectModal";
 import { PythonConsole, PythonConsoleHandle } from "../common/PythonConsole";
 import { RelatedObjectsHandle } from "../common/RelatedObjects";
-import { doPost, EventBus } from "../utils/reactUtils";
+import axios from "axios";
+import { doPost, EventBus, getCsrfToken } from "../utils/reactUtils";
 
 import DrillTopbar from "./components/DrillTopbar";
 import ReviewStatePanel from "./components/ReviewStatePanel";
@@ -92,6 +93,7 @@ interface DrillQuestionPageProps {
     isFavorite: boolean;
     isDisabled: boolean;
     isReversible: boolean;
+    allowDataVariation: boolean;
     tags: { name: string }[];
   };
   lastResponse: string | null;
@@ -110,6 +112,7 @@ interface DrillQuestionPageProps {
     recordResponseHard: string;
     recordResponseEasy: string;
     recordResponseReset: string;
+    rephrase: string;
     isFavoriteMutate: string;
     relatedObjects: string;
     newObject: string;
@@ -145,6 +148,15 @@ export function DrillQuestionPage({
   const [revealed, setRevealed] = useState(false);
   const [isFavorite, setIsFavorite] = useState(question.isFavorite);
 
+  // Rephrase state. `rephrased` holds the most recent LLM variant; null means
+  // we're displaying the original. `answer` may be null for reword-only
+  // rephrases — in that case the original stored answer is still valid.
+  const [rephrased, setRephrased] = useState<{ question: string; answer: string | null } | null>(
+    null
+  );
+  const [rephraseLoading, setRephraseLoading] = useState(false);
+  const [rephraseError, setRephraseError] = useState<string | null>(null);
+
   const relatedObjectsRef = useRef<RelatedObjectsHandle>(null);
   const [objectSelectOpen, setObjectSelectOpen] = useState(false);
 
@@ -174,8 +186,19 @@ export function DrillQuestionPage({
     });
   }, [question.tags]);
 
-  const renderedQuestion = useMemo(() => md.render(question.question), [md, question.question]);
-  const renderedAnswer = useMemo(() => md.render(question.answer), [md, question.answer]);
+  // When a rephrase is active, swap in its text. If the LLM produced a new
+  // answer (data-varying mode), use it; otherwise keep the stored answer.
+  const displayedQuestionText = rephrased?.question ?? question.question;
+  const displayedAnswerText = rephrased?.answer ?? question.answer;
+
+  const renderedQuestion = useMemo(
+    () => md.render(displayedQuestionText),
+    [md, displayedQuestionText]
+  );
+  const renderedAnswer = useMemo(
+    () => md.render(displayedAnswerText),
+    [md, displayedAnswerText]
+  );
 
   const questionHtml = reverseQuestion ? renderedAnswer : renderedQuestion;
   const answerHtml = reverseQuestion ? renderedQuestion : renderedAnswer;
@@ -249,6 +272,59 @@ export function DrillQuestionPage({
   const handleSkip = useCallback(() => {
     window.location.href = urls.drillStudy;
   }, [urls.drillStudy]);
+
+  const handleRephrase = useCallback(() => {
+    if (rephraseLoading) return;
+    setRephraseLoading(true);
+    setRephraseError(null);
+
+    const token = getCsrfToken();
+    const body = new URLSearchParams();
+    if (token) body.append("csrfmiddlewaretoken", token);
+
+    axios(urls.rephrase, {
+      method: "POST",
+      data: body,
+      headers: token ? { "X-CSRFToken": token } : {},
+      withCredentials: true,
+    })
+      .then(response => {
+        const data = response?.data;
+        if (!data || typeof data.question !== "string" || !data.question.trim()) {
+          setRephraseError("Couldn't rephrase. Try again.");
+          return;
+        }
+        setRephrased({
+          question: data.question,
+          answer: typeof data.answer === "string" ? data.answer : null,
+        });
+        // Re-typeset MathJax / Prism against the new content. Deferred so the
+        // render commit lands first.
+        setTimeout(() => {
+          prismLanguagesLoaded.then(() => Prism.highlightAll());
+          if (typeof (window as any).MathJax?.typeset === "function") {
+            (window as any).MathJax.typeset();
+          }
+        }, 10);
+      })
+      .catch(error => {
+        setRephraseError(error.response?.data?.detail || "Couldn't rephrase. Try again.");
+      })
+      .finally(() => {
+        setRephraseLoading(false);
+      });
+  }, [rephraseLoading, urls.rephrase]);
+
+  const handleShowOriginal = useCallback(() => {
+    setRephrased(null);
+    setRephraseError(null);
+    setTimeout(() => {
+      prismLanguagesLoaded.then(() => Prism.highlightAll());
+      if (typeof (window as any).MathJax?.typeset === "function") {
+        (window as any).MathJax.typeset();
+      }
+    }, 10);
+  }, []);
 
   const editUrl = `${urls.drillUpdate}?return_url=${encodeURIComponent(currentPath)}`;
 
@@ -380,6 +456,12 @@ export function DrillQuestionPage({
             onSkip={handleSkip}
             sqlPlaygroundUrl={sqlPlaygroundUrl}
             startStudySessionUrl={urls.startStudySession}
+            canRephrase={!reverseQuestion}
+            isRephrased={rephrased !== null}
+            rephraseLoading={rephraseLoading}
+            rephraseError={rephraseError}
+            onRephrase={handleRephrase}
+            onShowOriginal={handleShowOriginal}
           />
           {showPythonConsole && <PythonConsole ref={pythonConsoleRef} height="40vh" />}
         </div>

@@ -20,6 +20,7 @@ interface DrillQuestionEditPageProps {
   initialAnswer: string;
   initialTags: string[];
   initialIsReversible: boolean;
+  initialAllowDataVariation: boolean;
   // Object being edited (if any)
   objectUuid?: string;
   // Action type
@@ -53,6 +54,7 @@ export function DrillQuestionEditPage({
   initialAnswer,
   initialTags,
   initialIsReversible,
+  initialAllowDataVariation,
   objectUuid,
   action,
   recentTags,
@@ -61,6 +63,7 @@ export function DrillQuestionEditPage({
   returnUrl,
 }: DrillQuestionEditPageProps) {
   const [isReversible, setIsReversible] = useState(initialIsReversible);
+  const [allowDataVariation, setAllowDataVariation] = useState(initialAllowDataVariation);
   const [objectSelectOpen, setObjectSelectOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
@@ -276,6 +279,16 @@ export function DrillQuestionEditPage({
                 name="is_reversible"
                 checked={isReversible}
                 onChange={setIsReversible}
+              />
+            </div>
+
+            <div>
+              <div className="be-label">allow data variation</div>
+              <ToggleSwitch
+                id="allow_data_variation"
+                name="allow_data_variation"
+                checked={allowDataVariation}
+                onChange={setAllowDataVariation}
               />
             </div>
 

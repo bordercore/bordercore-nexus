@@ -33,6 +33,7 @@ if (container) {
   const recordResponseHardUrl = container.getAttribute("data-record-response-hard-url") || "";
   const recordResponseEasyUrl = container.getAttribute("data-record-response-easy-url") || "";
   const recordResponseResetUrl = container.getAttribute("data-record-response-reset-url") || "";
+  const rephraseUrl = container.getAttribute("data-rephrase-url") || "";
   const isFavoriteMutateUrl = container.getAttribute("data-is-favorite-mutate-url") || "";
   const relatedObjectsUrl = container.getAttribute("data-related-objects-url") || "";
   const newObjectUrl = container.getAttribute("data-new-object-url") || "";
@@ -64,6 +65,7 @@ if (container) {
     isFavorite: false,
     isDisabled: false,
     isReversible: false,
+    allowDataVariation: false,
     tags: [] as { name: string }[],
     intervalIndex: 0,
     intervalCount: 0,
@@ -125,6 +127,7 @@ if (container) {
         recordResponseHard: recordResponseHardUrl,
         recordResponseEasy: recordResponseEasyUrl,
         recordResponseReset: recordResponseResetUrl,
+        rephrase: rephraseUrl,
         isFavoriteMutate: isFavoriteMutateUrl,
         relatedObjects: relatedObjectsUrl,
         newObject: newObjectUrl,

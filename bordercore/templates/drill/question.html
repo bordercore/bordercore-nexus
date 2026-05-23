@@ -29,6 +29,7 @@
         data-record-response-hard-url="{% url 'drill:record_response' question.uuid 'hard' %}"
         data-record-response-easy-url="{% url 'drill:record_response' question.uuid 'easy' %}"
         data-record-response-reset-url="{% url 'drill:record_response' question.uuid 'reset' %}"
+        data-rephrase-url="{% url 'drill:rephrase' question.uuid %}"
         data-is-favorite-mutate-url="{% url 'drill:is_favorite_mutate' %}"
         data-related-objects-url="{% url 'drill:related_objects' object.uuid %}"
         data-new-object-url="{% url 'blob:add_related_object' %}"
