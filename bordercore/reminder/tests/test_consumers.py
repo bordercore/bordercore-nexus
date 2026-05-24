@@ -8,6 +8,8 @@ from channels.testing import WebsocketCommunicator
 from accounts.tests.factories import UserFactory
 from reminder.consumers import RemindersConsumer
 
+pytestmark = pytest.mark.usefixtures("channels_layer")
+
 
 async def test_anonymous_connection_is_rejected():
     communicator = WebsocketCommunicator(RemindersConsumer.as_asgi(), "/ws/reminders/")

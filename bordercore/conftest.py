@@ -26,11 +26,56 @@ from django.conf import settings
 
 django.setup()
 
-# Tests should not require a live Redis. Consumer tests that exercise
-# WebsocketCommunicator + group_send work fine against the in-memory layer.
-settings.CHANNEL_LAYERS = {
-    "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"},
-}
+# Install a no-op channel layer for the whole session. Production signals
+# (todo/blob/metrics post_save handlers, reminder services) call group_send
+# via get_channel_layer; under tests they become free no-ops, so nothing
+# accumulates in process memory and tests don't need a live Redis. Consumer
+# tests that exercise WebsocketCommunicator round-trip opt into a real
+# InMemoryChannelLayer via the `channels_layer` fixture below.
+class _NullChannelLayer:
+    extensions: list[str] = []
+
+    async def send(self, channel, message):
+        return None
+
+    async def receive(self, channel):
+        raise NotImplementedError
+
+    async def new_channel(self, prefix="specific."):
+        return f"{prefix}null"
+
+    async def group_send(self, group, message):
+        return None
+
+    async def group_add(self, group, channel):
+        return None
+
+    async def group_discard(self, group, channel):
+        return None
+
+    async def flush(self):
+        return None
+
+
+from channels.layers import channel_layers as _channel_layer_manager
+_channel_layer_manager.backends["default"] = _NullChannelLayer()
+
+
+@pytest.fixture
+def channels_layer():
+    """Swap in a real InMemoryChannelLayer for WebsocketCommunicator tests.
+
+    Apply at module scope in consumer test files:
+
+        pytestmark = pytest.mark.usefixtures("channels_layer")
+    """
+    from channels.layers import InMemoryChannelLayer
+    saved = _channel_layer_manager.backends.get("default")
+    _channel_layer_manager.backends["default"] = InMemoryChannelLayer()
+    try:
+        yield
+    finally:
+        _channel_layer_manager.backends["default"] = saved
 
 try:
     from moto import mock_aws

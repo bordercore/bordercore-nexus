@@ -7,6 +7,8 @@ from channels.testing import WebsocketCommunicator
 from accounts.tests.factories import UserFactory
 from todo.consumers import TodoConsumer
 
+pytestmark = pytest.mark.usefixtures("channels_layer")
+
 
 @pytest.mark.asyncio
 async def test_anonymous_connection_is_rejected():

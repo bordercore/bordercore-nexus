@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from django import urls
 
+from accounts.tests.factories import UserFactory
 from drill.services import rephrase_question
 from drill.tests.factories import QuestionFactory
 
@@ -138,7 +139,16 @@ def test_rephrase_view_rejects_questions_owned_by_other_users(
     mock_rephrase, authenticated_client, question
 ):
     """A user cannot rephrase someone else's question (owner-scoped lookup)."""
-    _, client = authenticated_client()  # logs in a fresh user, not question[0].user
+    # UserFactory uses django_get_or_create on username, so we need an
+    # explicit non-default username to get a user that actually differs
+    # from question[0].user.
+    other_user = UserFactory(username="someone_else")
+    # Defensive: an unset return_value makes mock_rephrase return a MagicMock,
+    # which DRF's JSON renderer would recursively explode on if the 404 path
+    # ever regressed and the mock got called.
+    mock_rephrase.return_value = {"question": "x", "answer": "y"}
+
+    _, client = authenticated_client(user=other_user)
 
     url = urls.reverse("drill:rephrase", kwargs={"uuid": question[0].uuid})
     resp = client.post(url)
