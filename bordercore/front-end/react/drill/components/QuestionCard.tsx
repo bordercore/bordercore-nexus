@@ -74,18 +74,10 @@ export function QuestionCard({
               title={isRephrased ? "Get another variant" : "Rephrase this question"}
             >
               <FontAwesomeIcon icon={faShuffle} className="play-btn-icon" />
-              {rephraseLoading
-                ? "rephrasing…"
-                : isRephrased
-                  ? "rephrase again"
-                  : "rephrase"}
+              {rephraseLoading ? "rephrasing…" : isRephrased ? "rephrase again" : "rephrase"}
             </button>
             {isRephrased && !rephraseLoading && (
-              <button
-                type="button"
-                className="ghost-btn"
-                onClick={onShowOriginal}
-              >
+              <button type="button" className="ghost-btn" onClick={onShowOriginal}>
                 show original
               </button>
             )}

@@ -192,10 +192,7 @@ export function DrillQuestionPage({
     () => md.render(displayedQuestionText),
     [md, displayedQuestionText]
   );
-  const renderedAnswer = useMemo(
-    () => md.render(displayedAnswerText),
-    [md, displayedAnswerText]
-  );
+  const renderedAnswer = useMemo(() => md.render(displayedAnswerText), [md, displayedAnswerText]);
 
   const questionHtml = reverseQuestion ? renderedAnswer : renderedQuestion;
   const answerHtml = reverseQuestion ? renderedQuestion : renderedAnswer;

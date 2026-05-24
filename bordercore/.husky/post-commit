@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+# Force-push to the local bare repo so the web-served copy and any
+# downstream mirrors (e.g. GitHub) pick up the latest commit. Preserved
+# from the previous .git/hooks/post-commit when husky took over hooks.
+git push --force /home/git/bordercore.git

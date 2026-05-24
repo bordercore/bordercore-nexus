@@ -1,0 +1,35 @@
+#!/usr/bin/env sh
+# Guard: merge conflict markers in staged added lines
+if git diff --cached --no-color --unified=0 \
+   | grep -E '^\+' | grep -v '^\+\+\+ ' \
+   | grep -qE '^\+(<<<<<<< |=======$|>>>>>>> )'; then
+  echo "Error: merge conflict markers found in staged changes"
+  exit 1
+fi
+
+# Guard: newly-added files exceeding 1000KB
+MAX_KB=1000
+LARGE_FILES=$(git diff --cached --name-only --diff-filter=A | while read -r f; do
+  [ -f "$f" ] || continue
+  SIZE_KB=$(du -k "$f" | cut -f1)
+  if [ "$SIZE_KB" -gt "$MAX_KB" ]; then
+    echo "$f ($SIZE_KB KB)"
+  fi
+done)
+if [ -n "$LARGE_FILES" ]; then
+  echo "Error: files exceed ${MAX_KB}KB limit:"
+  echo "$LARGE_FILES"
+  exit 1
+fi
+
+# Guard: private keys introduced in staged added lines
+if git diff --cached --no-color --unified=0 \
+   | grep -E '^\+' | grep -v '^\+\+\+ ' \
+   | grep -qE 'BEGIN [A-Z0-9 ]*PRIVATE KEY'; then
+  echo "Error: staged changes appear to introduce a private key"
+  exit 1
+fi
+
+# Format/lint staged files via lint-staged. Hooks run from git root but
+# the JS workspace lives in the bordercore/ subdirectory.
+cd "$(git rev-parse --show-toplevel)/bordercore" && npx lint-staged
