@@ -155,9 +155,7 @@ class Album(ElasticsearchMixin, TimeStampedModel):
             **kwargs: Arbitrary keyword arguments.
         """
         super().save(*args, **kwargs)
-
-        # Index the album in Elasticsearch after the transaction commits
-        transaction.on_commit(self.index_es_document)
+        self.index_es_document()
 
     def delete(
             self,
@@ -247,9 +245,7 @@ class Song(ElasticsearchMixin, TimeStampedModel):
             **kwargs: Arbitrary keyword arguments.
         """
         super().save(*args, **kwargs)
-
-        # Index the song in Elasticsearch after the transaction commits
-        transaction.on_commit(self.index_es_document)
+        self.index_es_document()
 
     def delete(
             self,

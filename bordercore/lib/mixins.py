@@ -78,8 +78,26 @@ class ElasticsearchMixin(models.Model):
         raise NotImplementedError("Subclasses must define elasticsearch_document")
 
     def index_es_document(self) -> None:
-        """Index this object in Elasticsearch."""
-        index_document(self.elasticsearch_document)
+        """Schedule indexing of this object in Elasticsearch after the
+        current transaction commits.
+
+        Postgres is the source of truth; ES is a derived index. The ES write
+        is deferred via ``transaction.on_commit()`` so a row never appears in
+        ES that Postgres later rolls back, and any ES outage logs a warning
+        instead of propagating out and breaking the Postgres write. Mirrors
+        ``delete_from_elasticsearch``.
+        """
+        document = self.elasticsearch_document
+        model_name = type(self).__name__.lower()
+        obj_uuid = str(getattr(self, "uuid", "<no-uuid>"))
+
+        def do_index() -> None:
+            try:
+                index_document(document)
+            except Exception as e:
+                log.warning("Failed to index %s %s in Elasticsearch: %s", model_name, obj_uuid, e)
+
+        transaction.on_commit(do_index)
 
     def delete_from_elasticsearch(self) -> None:
         """Schedule deletion of this object from Elasticsearch after transaction commit.
