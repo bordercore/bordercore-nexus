@@ -123,20 +123,24 @@ class Command(BaseCommand):
             self.send_reminder_notification(reminder)
 
             if not self.dry_run:
-                # Create todo task if create_todo is enabled
-                if reminder.create_todo:
-                    self.create_todo_from_reminder(reminder)
-
-                # Update timestamps only after successful notification
+                # Advance timestamps as soon as the email is out. The email is
+                # the durable side effect; if we delay this update behind any
+                # downstream write (Todo creation, channel-layer fan-out) and
+                # that write fails, the next cron tick will re-select this
+                # reminder and re-send the email.
                 reminder.last_triggered_at = now
                 reminder.next_trigger_at = reminder.calculate_next_trigger_at(from_datetime=now)
                 reminder.save(update_fields=["last_triggered_at", "next_trigger_at"])
 
-                # Push live indicator to any open browser tab.
-                # Defense-in-depth: notify_reminder_fired already swallows all
-                # channel-layer errors internally, but wrap it again so any
-                # future exception leak from that function can never undo a
-                # durable trigger.
+                if reminder.create_todo:
+                    try:
+                        self.create_todo_from_reminder(reminder)
+                    except Exception:
+                        logger.warning(
+                            "create_todo_from_reminder raised for reminder %s",
+                            reminder.uuid, exc_info=True
+                        )
+
                 try:
                     notify_reminder_fired(reminder, now)
                 except Exception:

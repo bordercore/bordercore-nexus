@@ -216,6 +216,37 @@ def test_dry_run_does_not_call_notify_reminder_fired():
     mock_notify.assert_not_called()
 
 
+def test_trigger_succeeds_even_if_todo_creation_raises():
+    """A Todo-persistence exception must not abort the trigger.
+
+    If the Todo write fails (e.g. Elasticsearch is unreachable) we still
+    need the reminder's timestamps to advance, otherwise the next cron
+    tick re-selects the same reminder and re-sends the email.
+    """
+    user = UserFactory(username="user_todo_err", email="todoerr@example.com")
+    reminder = ReminderFactory(
+        user=user,
+        name="Resilient Todo",
+        is_active=True,
+        create_todo=True,
+        next_trigger_at=timezone.now() - timedelta(minutes=1),
+    )
+    last_before = reminder.last_triggered_at
+    next_before = reminder.next_trigger_at
+
+    with patch("reminder.management.commands.trigger_reminders.send_mail"), \
+         patch(
+             "reminder.management.commands.trigger_reminders.Todo.objects.create",
+             side_effect=RuntimeError("elasticsearch unreachable"),
+         ):
+        call_command("trigger_reminders", verbosity=0)
+
+    reminder.refresh_from_db()
+    assert reminder.last_triggered_at is not None
+    assert reminder.last_triggered_at != last_before
+    assert reminder.next_trigger_at != next_before
+
+
 def test_trigger_succeeds_even_if_notify_raises():
     """A notify-layer exception must not abort the trigger (belt-and-suspenders)."""
     user = UserFactory(username="user_notify_err", email="notifyerr@example.com")
