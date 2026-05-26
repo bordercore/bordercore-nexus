@@ -11,6 +11,7 @@ from pathlib import Path
 
 import boto3
 import pytest
+from elasticsearch.helpers import scan
 
 import django
 from django.conf import settings
@@ -153,24 +154,18 @@ def test_songs_in_s3_exist_in_db():
 
 def test_elasticsearch_songs_exist_in_s3(es):
     """Assert that all songs in Elasticsearch exist in S3"""
-    # Get all song UUIDs from Elasticsearch in one query
-    search_object = {
+    query = {
         "query": {
-            "bool": {
-                "must": [
-                    {
-                        "term": {
-                            "doctype": "song"
-                        }
-                    }
-                ]
+            "term": {
+                "doctype": "song"
             }
         },
-        "from_": 0, "size": 10000,
-        "_source": ["uuid"]
+        "_source": ["uuid"],
     }
-    songs_in_elasticsearch = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)["hits"]["hits"]
-    es_uuids = [song["_source"]["uuid"] for song in songs_in_elasticsearch]
+    es_uuids = [
+        hit["_source"]["uuid"]
+        for hit in scan(es, index=settings.ELASTICSEARCH_INDEX, query=query, size=1000)
+    ]
     if not es_uuids:
         pytest.fail("Expected non-empty UUIDs from Elasticsearch; none found.")
 

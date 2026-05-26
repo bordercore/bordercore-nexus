@@ -22,6 +22,7 @@ from pwd import getpwuid
 
 import boto3
 import pytest
+from elasticsearch.helpers import scan
 
 from django.conf import settings
 from django.db.models import Q
@@ -78,8 +79,9 @@ def test_books_with_tags(es):
                 ]
             }
         },
-        "from_": 0, "size": 10000,
-        "_source": ["uuid"]
+        "size": 1,
+        "_source": False,
+        "track_total_hits": True,
     }
 
     found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)['hits']
@@ -128,8 +130,9 @@ def test_documents_and_notes_with_dates(es):
                 ]
             }
         },
-        "from_": 0, "size": 10000,
-        "_source": ["uuid"]
+        "size": 1,
+        "_source": False,
+        "track_total_hits": True,
     }
 
     found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)["hits"]
@@ -162,8 +165,9 @@ def test_videos_with_durations(es):
                 ]
             }
         },
-        "from_": 0, "size": 10000,
-        "_source": ["uuid"]
+        "size": 1,
+        "_source": False,
+        "track_total_hits": True,
     }
 
     found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)["hits"]
@@ -207,8 +211,8 @@ def test_dates_with_unixtimes(es):
                 ]
             }
         },
-        "from_": 0, "size": 10000,
-        "_source": ["uuid"]
+        "size": 0,
+        "track_total_hits": True,
     }
 
     found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)["hits"]["total"]["value"]
@@ -240,8 +244,8 @@ def test_books_with_names(es):
                 ]
             }
         },
-        "from_": 0, "size": 10000,
-        "_source": ["uuid"]
+        "size": 0,
+        "track_total_hits": True,
     }
 
     found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)["hits"]["total"]["value"]
@@ -279,8 +283,9 @@ def test_books_with_author(es):
                 ]
             }
         },
-        "from_": 0, "size": 10000,
-        "_source": ["uuid"]
+        "size": 1,
+        "_source": False,
+        "track_total_hits": True,
     }
 
     found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)["hits"]
@@ -290,7 +295,7 @@ def test_books_with_author(es):
 def test_books_with_contents(es):
     "Assert that all books have contents"
     blobs_not_indexed = [str(x.uuid) for x in Blob.objects.filter(is_indexed=False).only("uuid")]
-    search_object = {
+    query = {
         "query": {
             "bool": {
                 "must": [
@@ -313,13 +318,10 @@ def test_books_with_contents(es):
                 ]
             }
         },
-        "from_": 0, "size": 10000,
-        "_source": ["filename", "uuid"]
+        "_source": ["filename"],
     }
 
-    found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)["hits"]
-
-    for match in found["hits"]:
+    for match in scan(es, index=settings.ELASTICSEARCH_INDEX, query=query, size=1000):
         if match["_source"]["filename"].endswith("pdf") and match["_id"] not in blobs_not_indexed:
             pytest.fail(f"Book has no content, uuid={match['_id']}")
 
@@ -384,7 +386,7 @@ def test_blobs_in_s3_exist_in_db():
     # Step 1: Extract all UUIDs from S3
     s3_uuids = set()
     paginator = s3_resource.meta.client.get_paginator("list_objects_v2")
-    page_iterator = paginator.paginate(Bucket=bucket_name)
+    page_iterator = paginator.paginate(Bucket=bucket_name, Prefix="blobs/")
 
     # Compile regex once for better performance
     uuid_pattern = re.compile(r"^blobs/(.*?)/")
@@ -479,29 +481,26 @@ def test_images_have_thumbnails():
 def test_elasticsearch_blobs_exist_in_s3(es):
     "Assert that all blobs in Elasticsearch exist in S3"
 
-    search_object = {
+    query = {
         "query": {
             "bool": {
-                "must":
-                {
-                    "exists": {
-                        "field": "sha1sum"
-                    }
-                },
-                "must_not":
-                {
-                    "term": {
-                        "sha1sum": ""
-                    }
-                }
+                "must": {"exists": {"field": "sha1sum"}},
+                "must_not": {"term": {"sha1sum": ""}},
             }
         },
-        "from_": 0, "size": 10000,
-        "_source": ["filename", "sha1sum", "uuid"]
+        "_source": ["uuid"],
     }
 
-    found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)["hits"]["hits"]
-    if not found:
+    es_uuids = [
+        hit["_source"]["uuid"]
+        for hit in scan(
+            es,
+            index=settings.ELASTICSEARCH_INDEX,
+            query=query,
+            size=1000,
+        )
+    ]
+    if not es_uuids:
         pytest.fail("Expected non-empty UUIDs from Elasticsearch; none found.")
 
     s3_resource = boto3.resource("s3")
@@ -509,7 +508,7 @@ def test_elasticsearch_blobs_exist_in_s3(es):
     s3_uuids = set()
 
     paginator = s3_resource.meta.client.get_paginator("list_objects_v2")
-    page_iterator = paginator.paginate(Bucket=bucket_name)
+    page_iterator = paginator.paginate(Bucket=bucket_name, Prefix="blobs/")
 
     for page in page_iterator:
         if "Contents" not in page:
@@ -522,9 +521,9 @@ def test_elasticsearch_blobs_exist_in_s3(es):
     if not s3_uuids:
         pytest.fail("Expected non-empty UUIDs from S3; none found.")
 
-    for blob in found:
-        if blob["_source"]["uuid"] not in s3_uuids:
-            pytest.fail(f"blob {blob['_source']['uuid']} exists in Elasticsearch but not in S3")
+    for uuid in es_uuids:
+        if uuid not in s3_uuids:
+            pytest.fail(f"blob {uuid} exists in Elasticsearch but not in S3")
 
 @pytest.mark.wumpus
 def test_blobs_in_s3_exist_on_filesystem():
@@ -533,7 +532,7 @@ def test_blobs_in_s3_exist_on_filesystem():
     s3_resource = boto3.resource("s3")
 
     paginator = s3_resource.meta.client.get_paginator("list_objects_v2")
-    page_iterator = paginator.paginate(Bucket=bucket_name)
+    page_iterator = paginator.paginate(Bucket=bucket_name, Prefix="blobs/")
 
     for page in page_iterator:
         for key in page["Contents"]:
@@ -552,7 +551,7 @@ def test_blobs_on_filesystem_exist_in_s3():
     s3_resource = boto3.resource("s3")
 
     paginator = s3_resource.meta.client.get_paginator("list_objects_v2")
-    page_iterator = paginator.paginate(Bucket=bucket_name)
+    page_iterator = paginator.paginate(Bucket=bucket_name, Prefix="blobs/")
 
     blobs = {}
 
@@ -862,8 +861,9 @@ def test_blobs_have_size_field(es):
                 ]
             }
         },
-        "from_": 0, "size": 10000,
-        "_source": ["uuid"]
+        "size": 1,
+        "_source": ["uuid"],
+        "track_total_hits": True,
     }
 
     found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)["hits"]
@@ -889,8 +889,9 @@ def test_no_test_data_in_elasticsearch(es):
                 },
             }
         },
-        "from_": 0, "size": 10000,
-        "_source": ["uuid"]
+        "size": 1,
+        "_source": False,
+        "track_total_hits": True,
     }
 
     found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)["hits"]
@@ -900,7 +901,7 @@ def test_no_test_data_in_elasticsearch(es):
 
 def test_embeddings_exist(es):
     "Assert that all documents with non-empty contents also have text embeddings."
-    search_object = {
+    query = {
         "query": {
             "bool": {
                 "must": [
@@ -912,15 +913,15 @@ def test_embeddings_exist(es):
                 ]
             }
         },
-        "size": 10000,
-        "_source": ["contents", "uuid"]
+        "_source": ["contents"],
     }
-
-    found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)["hits"]
 
     # Note that we can't filter out documents whose contents are the empty string
     # in the query, since that field is analyzed and thus whitespace would be
     # removed during analysis. Therefore we filter these out afterwards in Python.
-    matches = [x for x in found["hits"] if x["_source"]["contents"] != ""]
+    matches = [
+        hit for hit in scan(es, index=settings.ELASTICSEARCH_INDEX, query=query, size=1000)
+        if hit["_source"]["contents"] != ""
+    ]
 
     assert len(matches) == 0, f"{len(matches)} documents with no embeddings found, uuid={matches[0]['_id']}"

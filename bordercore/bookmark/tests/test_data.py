@@ -9,6 +9,7 @@ import re
 
 import boto3
 import pytest
+from elasticsearch.helpers import scan
 
 import django
 from django.conf import settings
@@ -178,24 +179,22 @@ def test_elasticsearch_bookmarks_exist_in_db(es):
         AssertionError: If any bookmark IDs found in Elasticsearch are missing
             from the database.
     """
-    search_object = {
+    query = {
         "query": {
             "term": {
                 "doctype": "bookmark"
             }
         },
-        "from_": 0,
-        "size": 10000,
-        "_source": ["uuid"]
+        "_source": ["uuid"],
     }
 
-    found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)["hits"]["hits"]
+    es_uuids = [
+        hit["_source"]["uuid"]
+        for hit in scan(es, index=settings.ELASTICSEARCH_INDEX, query=query, size=1000)
+    ]
 
-    if not found:
+    if not es_uuids:
         pytest.fail("Expected non-empty UUIDs from Elasticsearch; none found.")
-
-    # Extract ES UUIDs
-    es_uuids = [bookmark["_source"]["uuid"] for bookmark in found]
 
     # Single database query to get all existing UUIDs
     db_uuids = set(
@@ -251,7 +250,7 @@ def test_bookmark_thumbnails_in_s3_exist_in_db():
 
     # Extract all UUIDs from S3
     paginator = s3_resource.meta.client.get_paginator("list_objects_v2")
-    page_iterator = paginator.paginate(Bucket=bucket_name)
+    page_iterator = paginator.paginate(Bucket=bucket_name, Prefix="bookmarks/")
 
     for page in page_iterator:
         if "Contents" not in page:

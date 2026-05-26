@@ -1,4 +1,5 @@
 import pytest
+from elasticsearch.helpers import scan
 
 import django
 from django.conf import settings
@@ -115,16 +116,15 @@ def test_elasticsearch_todo_tasks_exist_in_db(es):
     """Assert that all todo tasks in Elasticsearch exist in the database"""
 
     # Get all todos from Elasticsearch
-    search_object = {
+    query = {
         "query": {
             "term": {
                 "doctype": "todo"
             }
         },
-        "from_": 0, "size": 10000,
-        "_source": ["_id", "bordercore_id"]
+        "_source": ["bordercore_id"],
     }
-    found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)["hits"]["hits"]
+    found = list(scan(es, index=settings.ELASTICSEARCH_INDEX, query=query, size=1000))
 
     if not found:
         pytest.fail("Expected non-empty IDs from Elasticsearch; none found.")

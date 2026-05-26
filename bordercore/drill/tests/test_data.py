@@ -8,6 +8,7 @@ between the database and the Elasticsearch index.
 
 import django
 import pytest
+from elasticsearch.helpers import scan
 
 from django.conf import settings
 
@@ -68,18 +69,19 @@ def test_questions_in_db_exist_in_elasticsearch(es):
 def test_elasticsearch_questions_exist_in_db(es):
     """Assert that all questions in Elasticsearch exist in the database"""
 
-    search_object = {
+    query = {
         "query": {
             "term": {
                 "doctype": "drill"
             }
         },
-        "from_": 0, "size": 10000,
-        "_source": ["uuid"]
+        "_source": ["uuid"],
     }
 
-    found = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)["hits"]["hits"]
-    es_uuids = [question["_source"]["uuid"] for question in found]
+    es_uuids = [
+        hit["_source"]["uuid"]
+        for hit in scan(es, index=settings.ELASTICSEARCH_INDEX, query=query, size=1000)
+    ]
     if not es_uuids:
         pytest.fail("Expected non-empty UUIDs from Elasticsearch; none found.")
 
