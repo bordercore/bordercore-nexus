@@ -16,6 +16,7 @@ interface TriplePaneFeedPageProps {
   editFeedUrl: string;
   newFeedUrl: string;
   feedCheckUrl: string;
+  sortFeedUrl: string;
 }
 
 export function TriplePaneFeedPage({
@@ -25,6 +26,7 @@ export function TriplePaneFeedPage({
   editFeedUrl,
   newFeedUrl,
   feedCheckUrl,
+  sortFeedUrl,
 }: TriplePaneFeedPageProps) {
   const [feedList, setFeedList] = useState<Feed[]>(initialFeedList);
   const [activeFeedId, setActiveFeedId] = useState<number | null>(initialCurrentFeed?.id ?? null);
@@ -108,6 +110,26 @@ export function TriplePaneFeedPage({
     );
   }, []);
 
+  // Persist a manual drag-reorder of the feed list. The new order is applied
+  // optimistically; the backend stores it via UserFeed.reorder (1-indexed
+  // position). Mirrors BookmarkList's reorder handling — no revert on failure,
+  // just surface an error.
+  const handleReorderFeeds = useCallback(
+    (newList: Feed[], feedId: number, position: number) => {
+      setFeedList(newList);
+      if (sortFeedUrl) {
+        doPost(
+          sortFeedUrl,
+          { feed_id: feedId.toString(), position: position.toString() },
+          () => {},
+          "",
+          "Sort error"
+        );
+      }
+    },
+    [sortFeedUrl]
+  );
+
   const handleNewFeed = useCallback(() => {
     setEditorAction("Create");
     setEditorFeedInfo({ name: "", url: "", homepage: "" });
@@ -168,6 +190,7 @@ export function TriplePaneFeedPage({
         activeFeedId={activeFeedId}
         onSelectFeed={handleSelectFeed}
         onNewFeed={handleNewFeed}
+        onReorderFeeds={handleReorderFeeds}
       />
       <ItemList
         feed={activeFeed}

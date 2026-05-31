@@ -18,7 +18,7 @@
   height: calc(100vh - 80px);
   color: var(--bc-fg-1);
   font-family: var(--bc-font-sans);
-  grid-template-columns: 240px 380px 1fr;
+  grid-template-columns: 280px 380px 1fr;
 }
 
 // ---- shared bits -----------------------------------------------------------
@@ -167,9 +167,57 @@
   list-style: none;
 }
 
+// Each feed occupies a row: a hover-revealed drag handle followed by the
+// selectable feed button.
+.tp-feed-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border-radius: var(--bc-radius-sm);
+  gap: 2px;
+  transform: var(--sortable-transform, none);
+  transition: var(--sortable-transition);
+
+  // The hover fill lives on the whole row so the drag handle and the feed
+  // button share one continuous, rounded highlight. This also overrides the
+  // global bare `li:hover { background }` rule, which would otherwise paint a
+  // square-cornered overlay. The radius matches the selected (.tp-feed--active)
+  // highlight.
+  &:hover {
+    background: var(--bc-bg-2);
+  }
+
+  &.dragging {
+    opacity: 0.4;
+  }
+}
+
+.tp-feed-drag {
+  display: flex;
+  width: 16px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  color: var(--bc-fg-4);
+  cursor: grab;
+  font-size: 11px;
+  opacity: 0;
+  touch-action: none;
+  transition: opacity var(--bc-t-fast) var(--bc-ease-out);
+
+  &:active {
+    cursor: grabbing;
+  }
+
+  .tp-feed-row:hover & {
+    opacity: 1;
+  }
+}
+
 .tp-feed {
   display: flex;
-  width: 100%;
+  min-width: 0;
+  flex: 1 1 auto;
   align-items: center;
   padding: 5px 8px;
   border: 1px solid transparent;
@@ -184,8 +232,9 @@
               color var(--bc-t-fast) var(--bc-ease-out),
               border-color var(--bc-t-fast) var(--bc-ease-out);
 
+  // Background comes from the row hover (.tp-feed-row:hover) so it spans the
+  // drag handle too; only the text color brightens here.
   &:hover {
-    background: var(--bc-bg-2);
     color: var(--bc-fg-1);
   }
 
@@ -215,6 +264,14 @@
   color: var(--bc-fg-4);
   font-family: var(--bc-font-mono);
   font-size: 11px;
+}
+
+// The dnd-kit drag overlay floats a copy of the dragged feed under the cursor.
+.tp-feed-drag-overlay {
+  border-color: color-mix(in oklch, var(--accent) 30%, transparent);
+  background: var(--bc-bg-2);
+  box-shadow: var(--shadow-md);
+  cursor: grabbing;
 }
 
 // ---- column 2: items list -------------------------------------------------

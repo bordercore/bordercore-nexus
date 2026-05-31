@@ -9,6 +9,7 @@ if (container) {
   const editFeedUrl = container.getAttribute("data-edit-feed-url") || "";
   const newFeedUrl = container.getAttribute("data-new-feed-url") || "";
   const feedCheckUrl = container.getAttribute("data-feed-check-url") || "";
+  const sortFeedUrl = container.getAttribute("data-sort-feed-url") || "";
 
   const feedListJson = container.getAttribute("data-feed-list") || "[]";
   const currentFeedJson = container.getAttribute("data-current-feed") || "null";
@@ -38,6 +39,7 @@ if (container) {
         editFeedUrl={editFeedUrl}
         newFeedUrl={newFeedUrl}
         feedCheckUrl={feedCheckUrl}
+        sortFeedUrl={sortFeedUrl}
       />
     );
   } else {
