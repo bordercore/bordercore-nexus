@@ -421,6 +421,11 @@
     padding: 8px 0;
     border-bottom: 1px dashed var(--hairline);
     gap: 10px;
+
+    // Opt out of the global bare `li:hover { background }` rule.
+    &:hover {
+      background-color: transparent;
+    }
   }
 
   .mag-task-name {
