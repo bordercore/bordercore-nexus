@@ -447,7 +447,14 @@
 .refined-modal-close {
   position: absolute;
   top: 14px;
-  right: 14px;
+
+  // .refined-modal reserves a stable scrollbar gutter on the right edge, which
+  // sits inside this button's abspos containing block — so the visual right gap
+  // is `right` + the reserved gutter width. Subtract the gutter (exposed as
+  // --scrollbar-width by base-react) so the gap matches `top` on every platform:
+  // it resolves to ~0 on classic scrollbars (Linux/Windows) and 14px on overlay
+  // scrollbars (macOS, where the gutter reserves nothing). Falls back to 14px.
+  right: calc(14px - var(--scrollbar-width, 0px));
   display: grid;
   width: 30px;
   height: 30px;

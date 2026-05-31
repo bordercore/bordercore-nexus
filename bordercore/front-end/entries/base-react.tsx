@@ -323,6 +323,22 @@ function SidebarContent() {
   );
 }
 
+// Expose the OS scrollbar width as a global CSS variable. It is 0 on
+// overlay-scrollbar systems (e.g. macOS) and ~15px on classic-scrollbar
+// systems (Linux/Windows). Components that reserve a `scrollbar-gutter` use
+// this to offset absolutely-positioned chrome (see .refined-modal-close) so
+// their spacing stays consistent across platforms.
+function setScrollbarWidthVar(): void {
+  const probe = document.createElement("div");
+  probe.style.cssText =
+    "position:absolute;top:-9999px;width:50px;height:50px;overflow:scroll;visibility:hidden";
+  document.body.appendChild(probe);
+  const width = probe.offsetWidth - probe.clientWidth;
+  probe.remove();
+  document.documentElement.style.setProperty("--scrollbar-width", `${width}px`);
+}
+setScrollbarWidthVar();
+
 // Mount components to their respective DOM elements
 const toastContainer = document.getElementById("react-toast");
 if (toastContainer) {
