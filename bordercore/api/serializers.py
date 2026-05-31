@@ -111,13 +111,18 @@ class BlobSerializer(serializers.ModelSerializer):
     file = BlobFileField(read_only=True)
     metadata = BlobMetaDataField(many=True, read_only=True)
     sha1sum = serializers.CharField(required=False)
-    tags = BlobTagsField(queryset=Tag.objects.all(), many=True)
+    tags = BlobTagsField(queryset=Tag.objects.all(), many=True, required=False)
 
     class Meta:
         model = Blob
         fields = ["created", "content", "date", "file", "id", "importance",
                   "is_note", "metadata", "modified", "name",
                   "note", "sha1sum", "tags", "user", "uuid"]
+        # Drop the auto-generated UniqueTogetherValidator for the
+        # (sha1sum, user) constraint. It forces sha1sum to be required on
+        # write, which blocks creating notes (they have no file/sha1sum). The
+        # database UniqueConstraint still enforces uniqueness for real hashes.
+        validators: list = []
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the serializer, optionally filtering fields.
@@ -170,6 +175,25 @@ class BlobSerializer(serializers.ModelSerializer):
         """
         tags = validated_data.pop("tags", None)
         instance = super().update(instance, validated_data)
+        if tags is not None:
+            instance.tags.set(self._tags_from_names(tags, instance.user))
+        return instance
+
+    def create(self, validated_data: dict[str, Any]) -> Blob:
+        """Create a blob owned by the requesting user, resolving tags by name.
+
+        The ``user`` field is read-only, so it is taken from the request
+        rather than the request body.
+
+        Args:
+            validated_data: Validated data, with ``tags`` as a list of names.
+
+        Returns:
+            The newly created Blob instance.
+        """
+        tags = validated_data.pop("tags", None)
+        validated_data["user"] = self.context["request"].user
+        instance = super().create(validated_data)
         if tags is not None:
             instance.tags.set(self._tags_from_names(tags, instance.user))
         return instance

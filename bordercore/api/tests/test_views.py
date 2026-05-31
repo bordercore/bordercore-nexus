@@ -73,6 +73,48 @@ def test_blob_viewset(authenticated_client, blob_image_factory):
     assert resp.status_code == 404
 
 
+def test_blob_create_tags_by_name(authenticated_client):
+    """POST /api/blobs/ creates a note owned by the caller, resolving tag names."""
+    from blob.models import Blob
+    from tag.models import Tag
+
+    user, client = authenticated_client()
+
+    url = urls.reverse("blob-list")
+    resp = client.post(
+        url,
+        {"name": "tdd-created", "content": "body", "is_note": True,
+         "tags": ["tdd-create-existing", "tdd-create-new"]},
+        content_type="application/json",
+    )
+
+    assert resp.status_code == 201, resp.data
+    blob = Blob.objects.get(uuid=resp.data["uuid"])
+    assert blob.user == user
+    assert blob.name == "tdd-created"
+    assert sorted(t.name for t in blob.tags.all()) == ["tdd-create-existing", "tdd-create-new"]
+    assert Tag.objects.filter(name="tdd-create-new", user=user).count() == 1
+
+
+def test_blob_create_without_tags(authenticated_client):
+    """POST /api/blobs/ succeeds with no tags supplied."""
+    from blob.models import Blob
+
+    user, client = authenticated_client()
+
+    url = urls.reverse("blob-list")
+    resp = client.post(
+        url,
+        {"name": "tdd-notags", "content": "body", "is_note": True},
+        content_type="application/json",
+    )
+
+    assert resp.status_code == 201, resp.data
+    blob = Blob.objects.get(uuid=resp.data["uuid"])
+    assert blob.user == user
+    assert blob.tags.count() == 0
+
+
 def test_blob_update_tags_by_name(authenticated_client):
     """PATCH /api/blobs/{uuid}/ accepts tag names, creating tags as needed."""
     from tag.models import Tag
