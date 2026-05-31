@@ -170,6 +170,9 @@ def mock_elasticsearch(request, monkeypatch):
     monkeypatch.setattr("search.services._index_document", lambda *a, **kw: None)
     monkeypatch.setattr("search.services._delete_document", lambda *a, **kw: None)
     monkeypatch.setattr("blob.tests.factories.index_blob", lambda *a, **kw: None)
+    # Blob.index_blob() (model/view path) publishes an SNS message to trigger
+    # async indexing; no-op it so saving a blob in tests doesn't hit AWS.
+    monkeypatch.setattr("blob.services.publish_index_blob", lambda *a, **kw: None)
     monkeypatch.setattr("blob.services.get_recent_blobs", lambda *a, **kw: ([], {}))
 
     yield mock_client

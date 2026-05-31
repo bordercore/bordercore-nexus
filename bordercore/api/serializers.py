@@ -141,6 +141,39 @@ class BlobSerializer(serializers.ModelSerializer):
                 for field_name in existing - allowed:
                     self.fields.pop(field_name)
 
+    def _tags_from_names(self, names: Any, user: Any) -> list[Tag]:
+        """Resolve tag names to Tag instances, creating any that don't exist.
+
+        Args:
+            names: Iterable of tag name strings from the request.
+            user: The user who owns the tags.
+
+        Returns:
+            List of Tag instances; blank names are skipped.
+        """
+        tags = []
+        for name in names:
+            name = str(name).strip()
+            if name:
+                tags.append(Tag.objects.get_or_create(name=name, user=user)[0])
+        return tags
+
+    def update(self, instance: Blob, validated_data: dict[str, Any]) -> Blob:
+        """Update a blob, associating tags by name (creating them as needed).
+
+        Args:
+            instance: The blob being updated.
+            validated_data: Validated data, with ``tags`` as a list of names.
+
+        Returns:
+            The updated Blob instance.
+        """
+        tags = validated_data.pop("tags", None)
+        instance = super().update(instance, validated_data)
+        if tags is not None:
+            instance.tags.set(self._tags_from_names(tags, instance.user))
+        return instance
+
 
 class BlobSha1sumSerializer(serializers.ModelSerializer):
     """Blob serializer that uses sha1sum as the lookup field."""

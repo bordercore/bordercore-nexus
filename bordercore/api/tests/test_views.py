@@ -73,6 +73,35 @@ def test_blob_viewset(authenticated_client, blob_image_factory):
     assert resp.status_code == 404
 
 
+def test_blob_update_tags_by_name(authenticated_client):
+    """PATCH /api/blobs/{uuid}/ accepts tag names, creating tags as needed."""
+    from tag.models import Tag
+
+    # nplusone profiler flags the queryset's eager loads on metadata/tags;
+    # they're intentional for the read hot path, so quiet them here.
+    settings.NPLUSONE_WHITELIST = [
+        {"label": "unused_eager_load", "model": "blob.Blob"},
+        {"label": "n_plus_one", "model": "blob.Blob"},
+    ]
+
+    user, client = authenticated_client()
+    blob = BlobFactory(user=user, tags=["tdd-existing"])
+
+    url = urls.reverse("blob-detail", kwargs={"uuid": blob.uuid})
+    resp = client.patch(
+        url,
+        {"tags": ["tdd-existing", "tdd-brandnew"]},
+        content_type="application/json",
+    )
+
+    assert resp.status_code == 200
+    assert sorted(resp.data["tags"]) == ["tdd-brandnew", "tdd-existing"]
+    assert sorted(t.name for t in blob.tags.all()) == ["tdd-brandnew", "tdd-existing"]
+    # New tag created for this user; existing tag reused, not duplicated.
+    assert Tag.objects.filter(name="tdd-brandnew", user=user).count() == 1
+    assert Tag.objects.filter(name="tdd-existing", user=user).count() == 1
+
+
 def test_sha1sum_viewset(authenticated_client, blob_image_factory):
 
     _, client = authenticated_client()
