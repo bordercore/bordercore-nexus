@@ -57,32 +57,38 @@ def test_collection_detail(authenticated_client, collection):
             "model": "collection.CollectionObject"
         }
     ]
+    # Silence this logger's output for the duration of the test only.
+    # propagate is process-global, so restore it afterwards to avoid
+    # suppressing these records in tests that run later in the same session.
     logger = logging.getLogger("bordercore.blob.models")
+    original_propagate = logger.propagate
     logger.propagate = False
+    try:
+        user, client = authenticated_client()
 
-    user, client = authenticated_client()
+        url = urls.reverse("collection:detail", kwargs={"uuid": collection[0].uuid})
+        resp = client.get(url)
 
-    url = urls.reverse("collection:detail", kwargs={"uuid": collection[0].uuid})
-    resp = client.get(url)
+        assert resp.status_code == 200
 
-    assert resp.status_code == 200
+        for so in CollectionObject.objects.filter(collection=collection[0]):
+            so.blob.delete()
 
-    for so in CollectionObject.objects.filter(collection=collection[0]):
-        so.blob.delete()
+        url = urls.reverse("collection:detail", kwargs={"uuid": collection[0].uuid})
+        resp = client.get(url)
 
-    url = urls.reverse("collection:detail", kwargs={"uuid": collection[0].uuid})
-    resp = client.get(url)
+        assert resp.status_code == 200
 
-    assert resp.status_code == 200
+        # Test collections with blobs with empty names
+        blob = BlobFactory(user=user, name="")
+        collection[0].add_object(blob)
 
-    # Test collections with blobs with empty names
-    blob = BlobFactory(user=user, name="")
-    collection[0].add_object(blob)
+        url = urls.reverse("collection:detail", kwargs={"uuid": collection[0].uuid})
+        resp = client.get(url)
 
-    url = urls.reverse("collection:detail", kwargs={"uuid": collection[0].uuid})
-    resp = client.get(url)
-
-    assert resp.status_code == 200
+        assert resp.status_code == 200
+    finally:
+        logger.propagate = original_propagate
 
 
 def test_sort_collection(authenticated_client, collection):

@@ -31,10 +31,15 @@ def test_get_current_feed_id(authenticated_client, feed):
 
     # Test for a non-existent current. This should
     #  return the first feed
-    # The test emits a warning we'd like to ignore
+    # The lookup emits a warning we'd like to keep out of the test output.
+    # logging.disable() is process-global, so restore it afterwards to avoid
+    # suppressing warnings in tests that run later in the same session.
     logging.disable(logging.WARNING)
-    session = {"current_feed": 666}
-    assert Feed.get_current_feed_id(user, session) == feed[2].id
+    try:
+        session = {"current_feed": 666}
+        assert Feed.get_current_feed_id(user, session) == feed[2].id
+    finally:
+        logging.disable(logging.NOTSET)
 
 
 def test_get_first_feed(authenticated_client, feed):
