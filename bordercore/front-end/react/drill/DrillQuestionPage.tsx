@@ -21,15 +21,15 @@ const prismLanguagesLoaded = Promise.all([
   import("prismjs/components/prism-markdown"),
 ]);
 
-import ObjectSelectModal from "../common/ObjectSelectModal";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faBookmark, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { PythonConsole, PythonConsoleHandle } from "../common/PythonConsole";
-import { RelatedObjectsHandle } from "../common/RelatedObjects";
+import { RelatedObjects, RelatedObjectsHandle } from "../common/relatedObjects/RelatedObjects";
 import axios from "axios";
 import { doPost, EventBus, getCsrfToken } from "../utils/reactUtils";
 
 import DrillTopbar from "./components/DrillTopbar";
 import ReviewStatePanel from "./components/ReviewStatePanel";
-import RelatedObjectsPanel from "./components/RelatedObjectsPanel";
 import TagProgressPanel from "./components/TagProgressPanel";
 import QuestionCard from "./components/QuestionCard";
 import { RatingKey } from "./components/RatingBar";
@@ -155,7 +155,6 @@ export function DrillQuestionPage({
   const [rephraseError, setRephraseError] = useState<string | null>(null);
 
   const relatedObjectsRef = useRef<RelatedObjectsHandle>(null);
-  const [objectSelectOpen, setObjectSelectOpen] = useState(false);
 
   const [showPythonConsole, setShowPythonConsole] = useState(false);
   const pythonConsoleRef = useRef<PythonConsoleHandle>(null);
@@ -230,7 +229,7 @@ export function DrillQuestionPage({
   }, [question.uuid]);
 
   const handleOpenObjectSelectModal = useCallback(() => {
-    setObjectSelectOpen(true);
+    relatedObjectsRef.current?.openAddModal();
   }, []);
 
   // Mounting <PythonConsole> auto-loads Pyodide via its own effect; we just
@@ -239,17 +238,6 @@ export function DrillQuestionPage({
   const handleOpenPythonConsole = useCallback(() => {
     setShowPythonConsole(true);
   }, []);
-
-  const handleObjectSelected = useCallback(
-    (selectedObject: { uuid: string; name: string }) => {
-      doPost(
-        urls.newObject,
-        { node_uuid: question.uuid, object_uuid: selectedObject.uuid, node_type: "drill" },
-        () => relatedObjectsRef.current?.refresh()
-      );
-    },
-    [urls.newObject, question.uuid]
-  );
 
   const handleRate = useCallback(
     (key: RatingKey) => {
@@ -425,16 +413,37 @@ export function DrillQuestionPage({
             needsReview={question.needsReview}
             created={question.created}
           />
-          <RelatedObjectsPanel
+          <RelatedObjects
             ref={relatedObjectsRef}
+            className="dpanel"
             objectUuid={question.uuid}
-            relatedObjectsUrl={urls.relatedObjects}
-            newObjectUrl={urls.newObject}
-            removeObjectUrl={urls.removeObject}
-            sortRelatedObjectsUrl={urls.sortRelatedObjects}
-            editRelatedObjectNoteUrl={urls.editRelatedObjectNote}
-            searchNamesUrl={urls.searchNames}
-            onOpenObjectSelectModal={handleOpenObjectSelectModal}
+            nodeType="drill"
+            urls={{
+              relatedObjects: urls.relatedObjects,
+              add: urls.newObject,
+              remove: urls.removeObject,
+              sort: urls.sortRelatedObjects,
+              editNote: urls.editRelatedObjectNote,
+              searchNames: urls.searchNames,
+            }}
+            header={({ openAddModal }) => (
+              <div className="dpanel-head">
+                <h3>
+                  <FontAwesomeIcon icon={faBookmark} />
+                  Related Objects
+                </h3>
+                <div className="tools">
+                  <button
+                    type="button"
+                    className="dpanel-tool"
+                    onClick={openAddModal}
+                    aria-label="Add related object"
+                  >
+                    <FontAwesomeIcon icon={faPlus} />
+                  </button>
+                </div>
+              </div>
+            )}
           />
           <TagProgressPanel tags={tagInfo} />
         </aside>
@@ -465,14 +474,6 @@ export function DrillQuestionPage({
           {showPythonConsole && <PythonConsole ref={pythonConsoleRef} height="40vh" />}
         </div>
       </div>
-
-      <ObjectSelectModal
-        open={objectSelectOpen}
-        onClose={() => setObjectSelectOpen(false)}
-        title="Select object"
-        searchObjectUrl={urls.searchNames}
-        onSelectObject={handleObjectSelected}
-      />
     </div>
   );
 }

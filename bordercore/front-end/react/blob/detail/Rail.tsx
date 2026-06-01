@@ -1,4 +1,6 @@
 import React from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPlus } from "@fortawesome/free-solid-svg-icons";
 
 import { ContentsSection } from "./sections/ContentsSection";
 import { PropertiesSection } from "./sections/PropertiesSection";
@@ -6,7 +8,7 @@ import { MetadataSection } from "./sections/MetadataSection";
 import { UrlsSection } from "./sections/UrlsSection";
 import { NodesSection } from "./sections/NodesSection";
 import { CollectionsSection } from "./sections/CollectionsSection";
-import { RelatedObjectsSection } from "./sections/RelatedObjectsSection";
+import { RelatedObjects } from "../../common/relatedObjects/RelatedObjects";
 import { BackrefsSection } from "./sections/BackrefsSection";
 import type {
   BlobDetail,
@@ -62,13 +64,33 @@ export function Rail({
         createCollectionUrl={urls.createCollection}
         onChanged={onCollectionsChanged}
       />
-      <RelatedObjectsSection
-        blobUuid={blob.uuid}
-        relatedObjectsUrl={urls.relatedObjects}
-        addRelatedObjectUrl={urls.addRelatedObject}
-        removeRelatedObjectUrl={urls.removeRelatedObject}
-        searchNamesUrl={urls.searchNames}
-        createBlobUrl={urls.create}
+      <RelatedObjects
+        objectUuid={blob.uuid}
+        nodeType="blob"
+        urls={{
+          relatedObjects: urls.relatedObjects,
+          add: urls.addRelatedObject,
+          remove: urls.removeRelatedObject,
+          sort: urls.sortRelatedObjects,
+          editNote: urls.editRelatedObjectNote,
+          searchNames: urls.searchNames,
+        }}
+        className={count => `bd-rail-section${count === 0 ? " is-empty" : ""}`}
+        header={({ openAddModal }) => (
+          <h3>
+            Related
+            <span className="bd-section-actions">
+              <button
+                type="button"
+                className="bd-section-act"
+                onClick={openAddModal}
+                aria-label="Add related object"
+              >
+                <FontAwesomeIcon icon={faPlus} />
+              </button>
+            </span>
+          </h3>
+        )}
       />
       <BackrefsSection
         blobUuid={blob.uuid}

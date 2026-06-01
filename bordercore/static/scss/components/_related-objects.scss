@@ -1,0 +1,197 @@
+// =============================================================================
+// Unified related-objects list (RelatedObjectsCard)
+// Shared across the drill question detail/edit pages and the blob detail rail.
+// Page-specific heading chrome (.dpanel-head, .bd-rail-section h3) stays in the
+// page partials; this file owns only the row list so it looks identical
+// everywhere. Uses global theme tokens so it retints under any theme.
+// =============================================================================
+
+// Optional shared heading row + add button. Pages with their own heading chrome
+// (drill detail's .dpanel-head, blob detail's .bd-rail-section h3) keep using it;
+// pages without one can compose .ro-head + .ro-add for a consistent control.
+.ro-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 8px;
+}
+
+.ro-add {
+  display: inline-grid;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--line-soft);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--fg-3);
+  cursor: pointer;
+  font-size: 11px;
+  place-items: center;
+  transition: all 0.12s ease;
+
+  &:hover {
+    border-color: color-mix(in oklch, var(--accent) 50%, transparent);
+    background: color-mix(in oklch, var(--accent) 10%, transparent);
+    color: var(--accent);
+  }
+}
+
+.ro-list {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.ro-row {
+  display: flex;
+  align-items: center;
+  padding: 6px;
+  border-radius: 8px;
+  cursor: grab;
+  gap: 10px;
+
+  // Drag transform/transition are written to CSS custom properties by the
+  // component (dnd-kit), keeping inline styles out of the JSX.
+  transform: var(--sortable-transform, none);
+  transition: var(--sortable-transition, background-color 0.15s ease);
+
+  &:hover {
+    background: color-mix(in oklch, var(--fg-0), transparent 94%);
+  }
+
+  &:active {
+    cursor: grabbing;
+  }
+
+  &.is-dragging {
+    z-index: 1000;
+    background: var(--bg-2);
+    box-shadow: 0 0 18px var(--accent-glow);
+    opacity: 0.95;
+  }
+}
+
+.ro-thumb {
+  display: flex;
+  overflow: hidden;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line-soft);
+  border-radius: 6px;
+  background: var(--bg-2);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.ro-thumb-fallback {
+  color: color-mix(in oklch, var(--accent), white 10%);
+  font-family: var(--font-mono, monospace);
+  font-size: 16px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.ro-body {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ro-name {
+  overflow: hidden;
+  color: var(--fg-1);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &:hover {
+    color: var(--accent);
+  }
+}
+
+.ro-note {
+  overflow: hidden;
+  color: var(--fg-3);
+  cursor: text;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ro-note-input {
+  width: 100%;
+  padding: 2px 6px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--bg-0);
+  color: var(--fg-1);
+  font-size: 11px;
+}
+
+.ro-actions {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  margin-left: auto;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+// Reveal actions on hover and keyboard focus; always show where there is no
+// hover (touch / coarse pointers) so the controls remain reachable.
+.ro-row:hover .ro-actions,
+.ro-row:focus-within .ro-actions {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .ro-actions {
+    opacity: 1;
+  }
+}
+
+.ro-act {
+  display: inline-grid;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--line-soft);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--fg-3);
+  cursor: pointer;
+  font-size: 11px;
+  place-items: center;
+  transition: all 0.12s ease;
+
+  &:hover {
+    border-color: color-mix(in oklch, var(--accent) 50%, transparent);
+    background: color-mix(in oklch, var(--accent) 10%, transparent);
+    color: var(--accent);
+  }
+
+  &.ro-act-danger:hover {
+    border-color: color-mix(in oklch, var(--danger) 50%, transparent);
+    background: color-mix(in oklch, var(--danger) 12%, transparent);
+    color: var(--danger);
+  }
+}
+
+.ro-empty,
+.ro-loading {
+  padding: 4px 2px;
+  color: var(--fg-3);
+  font-size: 12px;
+}

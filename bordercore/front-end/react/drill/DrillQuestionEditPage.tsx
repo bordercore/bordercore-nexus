@@ -1,14 +1,13 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCheck, faTimes, faTrashCan } from "@fortawesome/free-solid-svg-icons";
+import { faCheck, faPlus, faTimes, faTrashCan } from "@fortawesome/free-solid-svg-icons";
 
 import { TagsInput, TagsInputHandle } from "../common/TagsInput";
 import { ToggleSwitch } from "../common/ToggleSwitch";
 import { MarkdownEditor, MarkdownEditorHandle } from "../blob/MarkdownEditor";
-import RelatedObjects, { RelatedObjectsHandle } from "../common/RelatedObjects";
-import ObjectSelectModal from "../common/ObjectSelectModal";
-import { doPost, getCsrfToken } from "../utils/reactUtils";
+import { RelatedObjects } from "../common/relatedObjects/RelatedObjects";
+import { getCsrfToken } from "../utils/reactUtils";
 
 interface RecentTag {
   name: string;
@@ -61,14 +60,12 @@ export function DrillQuestionEditPage({
   returnUrl,
 }: DrillQuestionEditPageProps) {
   const [isReversible, setIsReversible] = useState(initialIsReversible);
-  const [objectSelectOpen, setObjectSelectOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   // Refs
   const questionEditorRef = useRef<MarkdownEditorHandle>(null);
   const answerEditorRef = useRef<MarkdownEditorHandle>(null);
   const tagsInputRef = useRef<TagsInputHandle>(null);
-  const relatedObjectsRef = useRef<RelatedObjectsHandle>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const cancelDeleteRef = useRef<HTMLButtonElement>(null);
 
@@ -95,31 +92,6 @@ export function DrillQuestionEditPage({
       tagsInputRef.current?.addTag(tagName);
     }
   }, []);
-
-  // Handle opening object select modal
-  const handleOpenObjectSelectModal = useCallback(() => {
-    setObjectSelectOpen(true);
-  }, []);
-
-  // Handle object selection from modal
-  const handleObjectSelected = useCallback(
-    (selectedObject: { uuid: string; name: string }) => {
-      if (!objectUuid) return;
-
-      doPost(
-        urls.newObject,
-        {
-          node_uuid: objectUuid,
-          object_uuid: selectedObject.uuid,
-          node_type: "drill",
-        },
-        () => {
-          relatedObjectsRef.current?.refresh();
-        }
-      );
-    },
-    [urls.newObject, objectUuid]
-  );
 
   // Sync the React-controlled editor/tag values into the hidden form fields,
   // refresh the CSRF token (the cookie may have rotated since page load),
@@ -190,17 +162,30 @@ export function DrillQuestionEditPage({
         <aside className="be-col-left">
           {objectUuid && (
             <RelatedObjects
-              ref={relatedObjectsRef}
+              className="be-section"
               objectUuid={objectUuid}
               nodeType="drill"
-              relatedObjectsUrl={urls.relatedObjects}
-              newObjectUrl={urls.newObject}
-              removeObjectUrl={urls.removeObject}
-              sortRelatedObjectsUrl={urls.sortRelatedObjects}
-              editRelatedObjectNoteUrl={urls.editRelatedObjectNote}
-              searchNamesUrl={urls.searchNames}
-              showEmptyList={true}
-              onOpenObjectSelectModal={handleOpenObjectSelectModal}
+              urls={{
+                relatedObjects: urls.relatedObjects,
+                add: urls.newObject,
+                remove: urls.removeObject,
+                sort: urls.sortRelatedObjects,
+                editNote: urls.editRelatedObjectNote,
+                searchNames: urls.searchNames,
+              }}
+              header={({ openAddModal }) => (
+                <div className="ro-head">
+                  <div className="be-section-title">Related Objects</div>
+                  <button
+                    type="button"
+                    className="ro-add"
+                    onClick={openAddModal}
+                    aria-label="Add related object"
+                  >
+                    <FontAwesomeIcon icon={faPlus} />
+                  </button>
+                </div>
+              )}
             />
           )}
 
@@ -296,17 +281,6 @@ export function DrillQuestionEditPage({
           </form>
         </section>
       </div>
-
-      {/* Object select modal (related-objects flow) */}
-      {objectUuid && (
-        <ObjectSelectModal
-          open={objectSelectOpen}
-          onClose={() => setObjectSelectOpen(false)}
-          title="Select object"
-          searchObjectUrl={urls.searchNames}
-          onSelectObject={handleObjectSelected}
-        />
-      )}
 
       {/* Delete-confirm modal */}
       {deleteOpen &&

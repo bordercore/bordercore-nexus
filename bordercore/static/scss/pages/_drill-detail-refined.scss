@@ -265,6 +265,27 @@
       display: flex;
       gap: 4px;
     }
+
+    .dpanel-tool {
+      display: grid;
+      width: 24px;
+      height: 24px;
+      padding: 0;
+      border: 1px solid var(--line-soft);
+      border-radius: var(--bc-radius-xs);
+      background: transparent;
+      color: var(--fg-3);
+      cursor: pointer;
+      font-size: 11px;
+      place-items: center;
+      transition: all var(--bc-t-fast) var(--bc-ease-out);
+
+      &:hover {
+        border-color: color-mix(in oklch, var(--accent) 50%, transparent);
+        background: color-mix(in oklch, var(--accent) 10%, transparent);
+        color: var(--accent);
+      }
+    }
   }
 
   // meta rows
