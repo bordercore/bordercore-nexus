@@ -24,7 +24,7 @@ const prismLanguagesLoaded = Promise.all([
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBookmark, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { PythonConsole, PythonConsoleHandle } from "../common/PythonConsole";
-import { RelatedObjects, RelatedObjectsHandle } from "../common/relatedObjects/RelatedObjects";
+import { RelatedObjects } from "../common/relatedObjects/RelatedObjects";
 import axios from "axios";
 import { doPost, EventBus, getCsrfToken } from "../utils/reactUtils";
 
@@ -154,8 +154,6 @@ export function DrillQuestionPage({
   const [rephraseLoading, setRephraseLoading] = useState(false);
   const [rephraseError, setRephraseError] = useState<string | null>(null);
 
-  const relatedObjectsRef = useRef<RelatedObjectsHandle>(null);
-
   const [showPythonConsole, setShowPythonConsole] = useState(false);
   const pythonConsoleRef = useRef<PythonConsoleHandle>(null);
 
@@ -227,10 +225,6 @@ export function DrillQuestionPage({
   const handleAskChatbot = useCallback(() => {
     EventBus.$emit("chat", { questionUuid: question.uuid });
   }, [question.uuid]);
-
-  const handleOpenObjectSelectModal = useCallback(() => {
-    relatedObjectsRef.current?.openAddModal();
-  }, []);
 
   // Mounting <PythonConsole> auto-loads Pyodide via its own effect; we just
   // flip the flag once and leave it mounted so subsequent clicks scroll back
@@ -393,7 +387,6 @@ export function DrillQuestionPage({
         isFavorite={isFavorite}
         onFavoriteToggle={handleFavoriteToggle}
         onAskChatbot={handleAskChatbot}
-        onOpenObjectSelectModal={handleOpenObjectSelectModal}
         onOpenPythonConsole={handleOpenPythonConsole}
         addQuestionUrl={addQuestionUrl}
         editUrl={editUrl}
@@ -415,7 +408,6 @@ export function DrillQuestionPage({
             created={question.created}
           />
           <RelatedObjects
-            ref={relatedObjectsRef}
             className="dpanel"
             objectUuid={question.uuid}
             nodeType="drill"

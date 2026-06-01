@@ -3,7 +3,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCircleNodes,
   faHeart,
-  faCube,
   faComment,
   faPenToSquare,
   faPlus,
@@ -14,7 +13,6 @@ interface DrillTopbarProps {
   isFavorite: boolean;
   onFavoriteToggle: () => void;
   onAskChatbot: () => void;
-  onOpenObjectSelectModal: () => void;
   onOpenPythonConsole: () => void;
   addQuestionUrl: string;
   editUrl: string;
@@ -26,7 +24,6 @@ export function DrillTopbar({
   isFavorite,
   onFavoriteToggle,
   onAskChatbot,
-  onOpenObjectSelectModal,
   onOpenPythonConsole,
   addQuestionUrl,
   editUrl,
@@ -73,15 +70,6 @@ export function DrillTopbar({
           type="button"
         >
           <FontAwesomeIcon icon={faHeart} />
-        </button>
-        <button
-          className="drill-icon-btn"
-          title="Related objects"
-          aria-label="Related objects"
-          onClick={onOpenObjectSelectModal}
-          type="button"
-        >
-          <FontAwesomeIcon icon={faCube} />
         </button>
         <button
           className="drill-icon-btn"
