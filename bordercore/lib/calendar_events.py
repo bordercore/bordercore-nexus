@@ -12,9 +12,8 @@ from datetime import timedelta
 from typing import Any, TypedDict, cast
 
 import dateutil.parser
-import httplib2
-from apiclient.discovery import build
-from oauth2client.client import OAuth2Credentials
+from google.oauth2.credentials import Credentials
+from googleapiclient.discovery import build
 from rfc3339 import datetimetostr
 from rfc3339 import now as now_rfc3339
 
@@ -69,17 +68,13 @@ class Calendar():
         self.calendar_email: str | None = user_profile.google_calendar_email
         cal_info = user_profile.google_calendar
         if cal_info:
-            self.credentials = OAuth2Credentials(
-                cal_info["access_token"],
-                cal_info["client_id"],
-                cal_info["client_secret"],
-                cal_info["refresh_token"],
-                cal_info["token_expiry"],
-                cal_info["token_uri"],
-                cal_info["user_agent"],
-                revoke_uri=cal_info["revoke_uri"],
-                id_token=cal_info["id_token"],
-                token_response=cal_info["token_response"],
+            self.credentials = Credentials(
+                token=cal_info["access_token"],
+                refresh_token=cal_info["refresh_token"],
+                token_uri=cal_info["token_uri"],
+                client_id=cal_info["client_id"],
+                client_secret=cal_info["client_secret"],
+                scopes=cal_info.get("scopes"),
             )
 
     def has_credentials(self) -> bool:
@@ -121,9 +116,8 @@ class Calendar():
             logger.warning("No Google Calendar email configured for user profile.")
             return []
 
-        http = httplib2.Http()
-        http = self.credentials.authorize(http)
-        service = build(serviceName="calendar", version="v3", http=http, cache_discovery=False)
+        service = build(serviceName="calendar", version="v3",
+                        credentials=self.credentials, cache_discovery=False)
         time_max = timezone.now() + timedelta(days=7)
 
         events = service.events().list(calendarId=self.calendar_email,

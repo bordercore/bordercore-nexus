@@ -7,12 +7,15 @@ and robots.txt.
 """
 
 import json
+import logging
 from datetime import date
 from uuid import UUID
 from typing import cast
 
 from botocore.errorfactory import ClientError
 from elasticsearch.exceptions import ConnectionError
+from google.auth.exceptions import GoogleAuthError
+from googleapiclient.errors import HttpError
 
 from django.conf import settings
 from django.contrib import messages
@@ -42,6 +45,8 @@ from habit.models import Habit
 from quote.models import Quote
 from reminder.models import Reminder
 from todo.models import Todo
+
+logger = logging.getLogger(f"bordercore.{__name__}")
 
 
 def json_for_html_attr(data: object) -> str:
@@ -235,10 +240,16 @@ def get_calendar_events(request: HttpRequest) -> JsonResponse:
     """
     user = cast(User, request.user)
     calendar = Calendar(user.userprofile)
+    events: list = []
     if calendar.has_credentials():
-        events = calendar.get_calendar_info()
-    else:
-        events = []
+        try:
+            events = calendar.get_calendar_info()
+        except (GoogleAuthError, HttpError):
+            # Expired/revoked credentials or a Google API error shouldn't take
+            # down the homepage; log it and return no events so the widget
+            # degrades gracefully.
+            logger.warning("Failed to fetch Google Calendar events for user %s",
+                           user.username, exc_info=True)
 
     return JsonResponse(events, safe=False)
 

@@ -202,7 +202,6 @@ dependencies = [
     { name = "mutagen" },
     { name = "networkx" },
     { name = "nh3" },
-    { name = "oauth2client" },
     { name = "openai" },
     { name = "pdf2image" },
     { name = "pillow" },
@@ -292,7 +291,6 @@ requires-dist = [
     { name = "mutagen", specifier = "==1.45.1" },
     { name = "networkx", specifier = "==3.4.2" },
     { name = "nh3", specifier = "==0.3.3" },
-    { name = "oauth2client", specifier = "==4.0.0" },
     { name = "openai", specifier = "==2.0.0" },
     { name = "pdf2image", specifier = "==0.1.14" },
     { name = "pillow", specifier = "==12.2.0" },
@@ -1764,22 +1762,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/26/da/663f551cdda166eaf75a564f64d022c6eb03c710ba83c3fb0f4ac664ebde/nplusone-1.0.0.tar.gz", hash = "sha256:1726c0a10c0aa7eabb04e24db2882ff97b6b7ee29d729a8d97dcbd12ef5a5651", size = 13501, upload-time = "2018-05-21T03:40:25.01Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/13/6b/9721ba7c68036316bd8aeb596b397253590c87d7045c9d6fc82b7364eff4/nplusone-1.0.0-py2.py3-none-any.whl", hash = "sha256:96b1e6e29e6af3e71b67d0cc012a5ec8c97c6a2f5399f4ba41a2bbe0e253a9ac", size = 15920, upload-time = "2018-05-21T03:40:23.69Z" },
-]
-
-[[package]]
-name = "oauth2client"
-version = "4.0.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "httplib2" },
-    { name = "pyasn1" },
-    { name = "pyasn1-modules" },
-    { name = "rsa" },
-    { name = "six" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/c2/ce/7aaf19d8b856191e2e1885201fe45f3dc57b97f5ec5bc98ef2cc15472918/oauth2client-4.0.0.tar.gz", hash = "sha256:80be5420889694634b8517b4acd3292ace881d9d1aa9d590d37ec52faec238c7", size = 72392, upload-time = "2016-10-14T17:55:18.683Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/c4/c0/cb81aae37893383b1ebc9d8aac1f1cc657141762e7ee3e5deda67af04a3b/oauth2client-4.0.0-py2.py3-none-any.whl", hash = "sha256:f8ff4ad855b8917cdf213a33719e874d0fab1c26d44b2f08c9dfd7a5781889f5", size = 184923, upload-time = "2016-10-14T17:55:15.866Z" },
 ]
 
 [[package]]
