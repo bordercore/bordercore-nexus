@@ -92,40 +92,44 @@ export function QuestionCard({
       />
 
       <div className="utility-row">
-        {canRephrase && (
+        {(canRephrase || sqlPlaygroundUrl) && (
           <div className="rephrase-group">
-            {rephraseError && (
-              <span className="qcard-rephrase-error" role="alert">
-                {rephraseError}
-              </span>
+            {canRephrase && (
+              <>
+                {rephraseError && (
+                  <span className="qcard-rephrase-error" role="alert">
+                    {rephraseError}
+                  </span>
+                )}
+                {isRephrased && !rephraseLoading && (
+                  <button type="button" className="ghost-btn" onClick={onShowOriginal}>
+                    show original
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="play-btn"
+                  onClick={onRephrase}
+                  disabled={rephraseLoading}
+                  title={isRephrased ? "Get another variant" : "Rephrase this question"}
+                >
+                  <FontAwesomeIcon icon={faShuffle} className="play-btn-icon" />
+                  {rephraseLoading ? "rephrasing…" : isRephrased ? "rephrase again" : "rephrase"}
+                </button>
+              </>
             )}
-            {isRephrased && !rephraseLoading && (
-              <button type="button" className="ghost-btn" onClick={onShowOriginal}>
-                show original
-              </button>
+            {sqlPlaygroundUrl && (
+              <a className="play-btn" href={sqlPlaygroundUrl} target="_blank" rel="noreferrer">
+                <FontAwesomeIcon icon={faTerminal} className="play-btn-icon" />
+                SQL Playground
+              </a>
             )}
-            <button
-              type="button"
-              className="play-btn"
-              onClick={onRephrase}
-              disabled={rephraseLoading}
-              title={isRephrased ? "Get another variant" : "Rephrase this question"}
-            >
-              <FontAwesomeIcon icon={faShuffle} className="play-btn-icon" />
-              {rephraseLoading ? "rephrasing…" : isRephrased ? "rephrase again" : "rephrase"}
-            </button>
           </div>
         )}
         <div className="right">
           <button type="button" className="ghost-btn" onClick={onSkip}>
             skip
           </button>
-          {sqlPlaygroundUrl && (
-            <a className="play-btn" href={sqlPlaygroundUrl} target="_blank" rel="noreferrer">
-              <FontAwesomeIcon icon={faTerminal} className="play-btn-icon" />
-              SQL Playground
-            </a>
-          )}
         </div>
       </div>
     </div>
