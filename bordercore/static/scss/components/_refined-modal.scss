@@ -83,9 +83,9 @@
   line-height: 1.55;
 }
 
-// Help modal — used by RefinedTopBar's "Help" menu item. The body just
-// surfaces whatever text the page placed in #help-text, so preserve newlines
-// rather than collapsing them into a single line.
+// Help modal — used by RefinedTopBar's "Help" menu item. The body renders the
+// markdown each page placed in #help-text (parsed by RefinedTopBar), so style
+// the resulting block elements rather than preserving raw whitespace.
 .refined-help-title-icon {
   margin-right: 10px;
   color: var(--fg-3);
@@ -95,7 +95,52 @@
   color: var(--fg-2);
   font: 400 14px/1.55 var(--font-ui);
   overflow-wrap: anywhere;
-  white-space: pre-wrap;
+
+  h1,
+  h2,
+  h3 {
+    margin: 0 0 10px;
+    color: var(--fg-1);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  p {
+    margin: 0 0 10px;
+  }
+
+  ul,
+  ol {
+    padding-left: 18px;
+    margin: 0 0 10px;
+  }
+
+  li {
+    margin-bottom: 4px;
+  }
+
+  strong {
+    color: var(--fg-1);
+    font-weight: 600;
+  }
+
+  code {
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: var(--bg-3);
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+
+  a {
+    color: var(--bc-accent-4);
+  }
+
+  > :last-child {
+    margin-bottom: 0;
+  }
 }
 
 .refined-field {

@@ -411,6 +411,7 @@ export function DrillQuestionPage({
             intervalCount={question.intervalCount}
             timesFailed={question.timesFailed}
             needsReview={question.needsReview}
+            isDisabled={question.isDisabled}
             created={question.created}
           />
           <RelatedObjects
@@ -453,8 +454,6 @@ export function DrillQuestionPage({
             questionHtml={questionHtml}
             answerHtml={answerHtml}
             tags={question.tags}
-            needsReview={question.needsReview}
-            isDisabled={question.isDisabled}
             intervals={intervals}
             currentIntervalDays={question.interval}
             currentIntervalIndex={question.intervalIndex}

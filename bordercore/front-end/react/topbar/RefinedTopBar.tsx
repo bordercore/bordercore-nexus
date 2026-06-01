@@ -1,5 +1,7 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import MarkdownIt from "markdown-it";
+import DOMPurify from "dompurify";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faChevronDown,
@@ -22,6 +24,11 @@ import { Popover } from "../common/Popover";
 import { resolveSection } from "./sectionMap";
 import TopBarBackground from "./TopBarBackground";
 import { useLiveChannel } from "../common/hooks/useLiveChannel";
+
+// Per-page help text is authored as markdown in each template's
+// {% block help %}. html:false keeps authored raw HTML inert; DOMPurify is a
+// second line of defense on the rendered output.
+const helpMd = new MarkdownIt({ html: false, linkify: true, typographer: true });
 
 interface BaseTemplateData {
   failedTestCount?: number;
@@ -178,6 +185,10 @@ export default function RefinedTopBar() {
   const [overdueOpen, setOverdueOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [helpText, setHelpText] = useState("");
+  const helpHtml = useMemo(
+    () => (helpText ? DOMPurify.sanitize(helpMd.render(helpText)) : ""),
+    [helpText]
+  );
   const [recentBlobs, setRecentBlobs] = useState<any>(null);
   const [recentlyViewed, setRecentlyViewed] = useState<any>(null);
   const [failedTestCount, setFailedTestCount] = useState(data.failedTestCount || 0);
@@ -427,9 +438,11 @@ export default function RefinedTopBar() {
                 <FontAwesomeIcon icon={faCircleQuestion} className="refined-help-title-icon" />
                 Help
               </h2>
-              <div className="refined-help-body">
-                {helpText || "No help available for this page."}
-              </div>
+              {helpHtml ? (
+                <div className="refined-help-body" dangerouslySetInnerHTML={{ __html: helpHtml }} />
+              ) : (
+                <div className="refined-help-body">No help available for this page.</div>
+              )}
             </div>
           </>,
           document.body

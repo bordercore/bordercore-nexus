@@ -10,6 +10,7 @@ interface ReviewStatePanelProps {
   intervalCount: number;
   timesFailed: number;
   needsReview: boolean;
+  isDisabled: boolean;
   created: string;
 }
 
@@ -28,6 +29,7 @@ export function ReviewStatePanel({
   intervalCount,
   timesFailed,
   needsReview,
+  isDisabled,
   created,
 }: ReviewStatePanelProps) {
   const statusClass = needsReview ? "warn" : "ok";
@@ -74,6 +76,10 @@ export function ReviewStatePanel({
       <div className="meta-row">
         <span className="k">needs review</span>
         <span className={`v ${needsReview ? "warn" : "ok"}`}>{needsReview ? "yes" : "no"}</span>
+      </div>
+      <div className="meta-row">
+        <span className="k">disabled</span>
+        <span className={`v ${isDisabled ? "danger" : "ok"}`}>{isDisabled ? "yes" : "no"}</span>
       </div>
       <div className="meta-row">
         <span className="k">created</span>

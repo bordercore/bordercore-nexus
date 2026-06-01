@@ -15,8 +15,6 @@ interface QuestionCardProps {
   questionHtml: string;
   answerHtml: string;
   tags: { name: string }[];
-  needsReview: boolean;
-  isDisabled: boolean;
   intervals: Record<string, IntervalEntry>;
   currentIntervalDays: number;
   currentIntervalIndex: number;
@@ -38,8 +36,6 @@ export function QuestionCard({
   questionHtml,
   answerHtml,
   tags,
-  needsReview,
-  isDisabled,
   intervals,
   currentIntervalDays,
   currentIntervalIndex,
@@ -58,38 +54,6 @@ export function QuestionCard({
 }: QuestionCardProps) {
   return (
     <div className="qcard">
-      <div className="qcard-toolbar">
-        <span className="dot dot-danger" />
-        <span className="dot dot-warn" />
-        <span className="dot dot-ok" />
-        {needsReview && <span className="due">● needs review</span>}
-        {isDisabled && <span className="due">● disabled</span>}
-        {canRephrase && (
-          <div className="qcard-toolbar-rephrase">
-            <button
-              type="button"
-              className="play-btn"
-              onClick={onRephrase}
-              disabled={rephraseLoading}
-              title={isRephrased ? "Get another variant" : "Rephrase this question"}
-            >
-              <FontAwesomeIcon icon={faShuffle} className="play-btn-icon" />
-              {rephraseLoading ? "rephrasing…" : isRephrased ? "rephrase again" : "rephrase"}
-            </button>
-            {isRephrased && !rephraseLoading && (
-              <button type="button" className="ghost-btn" onClick={onShowOriginal}>
-                show original
-              </button>
-            )}
-            {rephraseError && (
-              <span className="qcard-rephrase-error" role="alert">
-                {rephraseError}
-              </span>
-            )}
-          </div>
-        )}
-      </div>
-
       <div className="qcard-body">
         {/* Markdown rendered upstream from user-owned content; same pattern as the previous page. */}
         <div className="q-prompt" dangerouslySetInnerHTML={{ __html: questionHtml }} />
@@ -128,20 +92,30 @@ export function QuestionCard({
       />
 
       <div className="utility-row">
-        <div className="keys">
-          <span>
-            <kbd>space</kbd> reveal
-          </span>
-          <span>
-            <kbd>1</kbd>–<kbd>4</kbd> rate
-          </span>
-          <span>
-            <kbd>s</kbd> skip
-          </span>
-          <span>
-            <kbd>f</kbd> favorite
-          </span>
-        </div>
+        {canRephrase && (
+          <div className="rephrase-group">
+            {rephraseError && (
+              <span className="qcard-rephrase-error" role="alert">
+                {rephraseError}
+              </span>
+            )}
+            {isRephrased && !rephraseLoading && (
+              <button type="button" className="ghost-btn" onClick={onShowOriginal}>
+                show original
+              </button>
+            )}
+            <button
+              type="button"
+              className="play-btn"
+              onClick={onRephrase}
+              disabled={rephraseLoading}
+              title={isRephrased ? "Get another variant" : "Rephrase this question"}
+            >
+              <FontAwesomeIcon icon={faShuffle} className="play-btn-icon" />
+              {rephraseLoading ? "rephrasing…" : isRephrased ? "rephrase again" : "rephrase"}
+            </button>
+          </div>
+        )}
         <div className="right">
           <button type="button" className="ghost-btn" onClick={onSkip}>
             skip
