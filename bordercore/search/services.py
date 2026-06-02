@@ -370,57 +370,67 @@ def perform_search(
     }
     search_object["sort"] = {sort_field: {"order": "desc"}}
 
-    # Semantic search: replace scoring with cosine similarity
     if is_semantic:
+        # Native ES8 kNN over embeddings_vector (scores in [0, 1]). kNN is a
+        # top-level search param with its own filter, so the function_score
+        # skeleton and post_filter are dropped here; user/tag/doctype constraints
+        # move into knn.filter. `k` covers the requested page so pagination via
+        # from_/size still works.
         semantic_term = params.get("semantic_search", "")
         embeddings = len_safe_get_embedding(semantic_term)
+        knn_filter: list[dict[str, Any]] = [{"term": {"user_id": cast(int, user.id)}}]
+        for tag in params.getlist("tags"):
+            knn_filter.append({"term": {"tags.keyword": tag}})
+        if doctype:
+            knn_filter.append({"term": {"doctype": doctype}})
+
+        page_k = offset + RESULT_COUNT_PER_PAGE
+        search_object.pop("query", None)
+        search_object.pop("post_filter", None)
+        search_object["knn"] = {
+            "field": "embeddings_vector",
+            "query_vector": embeddings,
+            "k": page_k,
+            "num_candidates": max(200, page_k * 5),
+            "filter": knn_filter,
+        }
         search_object["sort"] = {"_score": {"order": "desc"}}
-        search_object["query"]["function_score"]["functions"] = [
-            {
-                "script_score": {
-                    "script": {
-                        "source": "doc['embeddings_vector'].size() == 0 ? 0 : cosineSimilarity(params.query_vector, 'embeddings_vector') + 1.0",
-                        "params": {"query_vector": embeddings},
+    else:
+        # Doctype post-filter
+        if doctype:
+            search_object["post_filter"] = {"term": {"doctype": doctype}}
+
+        # Tag filters
+        filter_tags = params.getlist("tags")
+        if filter_tags:
+            for tag in filter_tags:
+                search_object["query"]["function_score"]["query"]["bool"]["must"].append(
+                    {"term": {"tags.keyword": tag}}
+                )
+
+        # Text query
+        if search_term:
+            search_object["query"]["function_score"]["query"]["bool"]["must"].append(
+                {
+                    "multi_match": {
+                        "type": "phrase" if params.get("exact_match") == "Yes" else "best_fields",
+                        "query": search_term,
+                        "fields": [
+                            "answer",
+                            "metadata.*",
+                            "attachment.content",
+                            "contents",
+                            "description",
+                            "name",
+                            "question",
+                            "sha1sum",
+                            "title",
+                            "uuid",
+                        ],
+                        "operator": boolean_type,
                     }
                 }
-            }
-        ]
-
-    # Doctype post-filter
-    if doctype:
-        search_object["post_filter"] = {"term": {"doctype": doctype}}
-
-    # Tag filters
-    filter_tags = params.getlist("tags")
-    if filter_tags:
-        for tag in filter_tags:
-            search_object["query"]["function_score"]["query"]["bool"]["must"].append(
-                {"term": {"tags.keyword": tag}}
             )
-
-    # Text query (skip for semantic-only searches)
-    if search_term:
-        search_object["query"]["function_score"]["query"]["bool"]["must"].append(
-            {
-                "multi_match": {
-                    "type": "phrase" if params.get("exact_match") == "Yes" else "best_fields",
-                    "query": search_term,
-                    "fields": [
-                        "answer",
-                        "metadata.*",
-                        "attachment.content",
-                        "contents",
-                        "description",
-                        "name",
-                        "question",
-                        "sha1sum",
-                        "title",
-                        "uuid",
-                    ],
-                    "operator": boolean_type,
-                }
-            }
-        )
 
     try:
         es_results = execute_search(search_object, timeout=40)

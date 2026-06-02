@@ -366,10 +366,11 @@ class TestPerformSearch:
         result = perform_search(user, params, is_semantic=True)
 
         assert result["count"] == 1
-        # Verify cosine similarity scoring was configured
+        # Verify native kNN scoring was configured (replaces the old script_score)
         call_args = mock_execute.call_args[0][0]
-        functions = call_args["query"]["function_score"]["functions"]
-        assert "script_score" in functions[0]
+        assert "query" not in call_args
+        assert call_args["knn"]["field"] == "embeddings_vector"
+        assert call_args["knn"]["query_vector"] == [0.1] * 10
         assert call_args["sort"] == {"_score": {"order": "desc"}}
 
     @patch("search.services.execute_search")
@@ -464,3 +465,30 @@ def test_semantic_search_returns_knn_scores_in_unit_range(monkeypatch):
         assert 0.0 <= h["_score"] <= 1.0, h["_score"]
     assert hits[0]["_id"] == uuid_
     assert hits[0]["_score"] > 0.99
+
+
+@pytest.mark.data_quality
+def test_perform_search_semantic_uses_knn(monkeypatch):
+    """perform_search semantic mode returns native-kNN hits scored in [0, 1]."""
+    from types import SimpleNamespace
+
+    from django.conf import settings
+    from django.http import QueryDict
+
+    import search.services as svc
+    from lib.util import get_elasticsearch_connection
+
+    es = get_elasticsearch_connection()
+    uuid_, vec = _note_uuid_and_vector(es, settings.ELASTICSEARCH_INDEX)
+    monkeypatch.setattr(svc, "len_safe_get_embedding", lambda *a, **k: vec)
+
+    user = SimpleNamespace(id=1)
+    params = QueryDict("semantic_search=anything")
+    out = svc.perform_search(user, params, is_semantic=True)
+
+    # perform_search runs hits through _filter_results, which renames
+    # _score -> score and _source -> source.
+    assert out["results"], "expected results"
+    for h in out["results"]:
+        assert 0.0 <= h["score"] <= 1.0, h["score"]
+    assert any(h["_id"] == uuid_ for h in out["results"])
