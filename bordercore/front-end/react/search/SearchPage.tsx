@@ -391,318 +391,322 @@ export function SearchPage({
   };
 
   return (
-    <div className="search-page-layout">
-      <div className="search-viz">
-        <VisualizerSlot />
-      </div>
-      <h1 className="search-pagehead">
-        <span className="bc-page-title">Search</span>{" "}
-        <span className="dim">— across your knowledge base</span>
-      </h1>
-      <SearchSidebar
-        searchMode={searchMode}
-        onSearchModeChange={handleSearchModeChange}
-        aggregations={aggregations}
-        currentDoctype={currentDoctype}
-        onDoctypeSelect={handleDoctypeSelect}
-        exactMatchInitial={exactMatch}
-        sortByInitial={sortBy}
-        allTags={allTags}
-        activeTags={activeTagsState}
-        hasResults={hasResults}
-        filtersDisabled={!hasRequest}
-        onSortChange={handleSortChange}
-        onExactMatchChange={handleExactMatchChange}
-        onTagToggle={handleTagToggle}
-        onReset={handleReset}
-      />
-      <div className="search-main-content">
-        <SearchBar
-          ref={searchBarRef}
-          exactMatchInitial={exactMatch}
-          searchTermInitial={searchTermState}
-          searchSemanticInitial={searchSemanticState}
-          sortByInitial={sortBy}
-          tagSearchUrl={tagSearchUrl}
-          tagsChangedUrl={tagsChangedUrl}
-          termSearchUrl={termSearchUrl}
-          semanticSearchUrl={semanticSearchUrl}
+    <div className="search-app">
+      <div className="search-page-layout">
+        <div className="search-viz">
+          <VisualizerSlot />
+        </div>
+        <div className="search-pagehead">
+          <h1 className="search-title">
+            <span className="bc-page-title">Search</span>
+          </h1>
+          <p className="search-subhead">across your knowledge base</p>
+        </div>
+        <SearchSidebar
           searchMode={searchMode}
-          onSearch={handleSearch}
-          onSemanticSearch={handleSemanticSearch}
-          onImageSearch={handleImageSearch}
+          onSearchModeChange={handleSearchModeChange}
+          aggregations={aggregations}
+          currentDoctype={currentDoctype}
+          onDoctypeSelect={handleDoctypeSelect}
+          exactMatchInitial={exactMatch}
+          sortByInitial={sortBy}
+          allTags={allTags}
+          activeTags={activeTagsState}
+          hasResults={hasResults}
+          filtersDisabled={!hasRequest}
+          onSortChange={handleSortChange}
+          onExactMatchChange={handleExactMatchChange}
+          onTagToggle={handleTagToggle}
+          onReset={handleReset}
         />
-        <div className={`search-results-area ${isLoading ? "search-loading" : ""}`}>
-          {isLoading && (
-            <div className="search-loading-overlay">
-              <div className="search-loading-spinner" />
-            </div>
-          )}
-          {hasRequest && (
-            <>
-              {!hasResults && !isLoading ? (
-                <SearchNoResult />
-              ) : (
-                <>
-                  <div className="search-results-header">
-                    <div className="search-results-header-left">
-                      <h4 className="search-results-title">Search Results</h4>
-                      <span className="search-results-count">
-                        Showing {count} result{count !== 1 ? "s" : ""}
-                      </span>
-                    </div>
-                    <div className="search-view-toggles">
-                      <button
-                        className={`search-view-toggle ${viewMode === "list" ? "active" : ""}`}
-                        onClick={() => setViewMode("list")}
-                        title="List view"
-                      >
-                        <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
-                          <rect x="0" y="1" width="18" height="2" rx="1" />
-                          <rect x="0" y="5" width="18" height="2" rx="1" />
-                          <rect x="0" y="9" width="18" height="2" rx="1" />
-                          <rect x="0" y="13" width="18" height="2" rx="1" />
-                        </svg>
-                      </button>
-                      <button
-                        className={`search-view-toggle ${viewMode === "grid" ? "active" : ""}`}
-                        onClick={() => setViewMode("grid")}
-                        title="Grid view"
-                      >
-                        <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
-                          <rect x="0" y="0" width="7" height="7" rx="1.5" />
-                          <rect x="10" y="0" width="7" height="7" rx="1.5" />
-                          <rect x="0" y="10" width="7" height="7" rx="1.5" />
-                          <rect x="10" y="10" width="7" height="7" rx="1.5" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className={`search-results-${viewMode}`}>
-                    {resultsList.map((match, index) => {
-                      const tags: string[] = JSON.parse(match.tags_json || "[]") ?? [];
-                      const source = match.source;
-                      const isImportant = source.importance === 10;
-                      const showScore = searchMode === "image" && typeof match.score === "number";
-
-                      return (
-                        <div
-                          key={`${source.url}-${index}`}
-                          className={`search-result-card ${isImportant ? "important" : ""}`}
+        <div className="search-main-content">
+          <SearchBar
+            ref={searchBarRef}
+            exactMatchInitial={exactMatch}
+            searchTermInitial={searchTermState}
+            searchSemanticInitial={searchSemanticState}
+            sortByInitial={sortBy}
+            tagSearchUrl={tagSearchUrl}
+            tagsChangedUrl={tagsChangedUrl}
+            termSearchUrl={termSearchUrl}
+            semanticSearchUrl={semanticSearchUrl}
+            searchMode={searchMode}
+            onSearch={handleSearch}
+            onSemanticSearch={handleSemanticSearch}
+            onImageSearch={handleImageSearch}
+          />
+          <div className={`search-results-area ${isLoading ? "search-loading" : ""}`}>
+            {isLoading && (
+              <div className="search-loading-overlay">
+                <div className="search-loading-spinner" />
+              </div>
+            )}
+            {hasRequest && (
+              <>
+                {!hasResults && !isLoading ? (
+                  <SearchNoResult />
+                ) : (
+                  <>
+                    <div className="search-results-header">
+                      <div className="search-results-header-left">
+                        <h4 className="search-results-title">Search Results</h4>
+                        <span className="search-results-count">
+                          Showing {count} result{count !== 1 ? "s" : ""}
+                        </span>
+                      </div>
+                      <div className="search-view-toggles">
+                        <button
+                          className={`search-view-toggle ${viewMode === "list" ? "active" : ""}`}
+                          onClick={() => setViewMode("list")}
+                          title="List view"
                         >
-                          {showScore && (
-                            <span className="search-result-score-badge" title="Cosine similarity">
-                              {Math.round((match.score ?? 0) * 100)}%
-                            </span>
-                          )}
-                          {source.doctype === "drill" && (
-                            <SearchResult
-                              icon="graduation-cap"
-                              importance={source.importance || 1}
-                              title={source.question || ""}
-                              url={source.url}
-                              tags={tags}
-                              tagUrl={tagUrl}
-                              metadata={source.last_modified}
-                            />
-                          )}
+                          <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
+                            <rect x="0" y="1" width="18" height="2" rx="1" />
+                            <rect x="0" y="5" width="18" height="2" rx="1" />
+                            <rect x="0" y="9" width="18" height="2" rx="1" />
+                            <rect x="0" y="13" width="18" height="2" rx="1" />
+                          </svg>
+                        </button>
+                        <button
+                          className={`search-view-toggle ${viewMode === "grid" ? "active" : ""}`}
+                          onClick={() => setViewMode("grid")}
+                          title="Grid view"
+                        >
+                          <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
+                            <rect x="0" y="0" width="7" height="7" rx="1.5" />
+                            <rect x="10" y="0" width="7" height="7" rx="1.5" />
+                            <rect x="0" y="10" width="7" height="7" rx="1.5" />
+                            <rect x="10" y="10" width="7" height="7" rx="1.5" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
 
-                          {source.doctype === "todo" && (
-                            <SearchResult
-                              icon="tasks"
-                              importance={source.importance || 1}
-                              title={source.name || ""}
-                              url={source.url}
-                              tags={tags}
-                              tagUrl={tagUrl}
-                              metadata={source.last_modified}
-                            />
-                          )}
+                    <div className={`search-results-${viewMode}`}>
+                      {resultsList.map((match, index) => {
+                        const tags: string[] = JSON.parse(match.tags_json || "[]") ?? [];
+                        const source = match.source;
+                        const isImportant = source.importance === 10;
+                        const showScore = searchMode === "image" && typeof match.score === "number";
 
-                          {source.doctype === "bookmark" && (
-                            <SearchResult
-                              icon="bookmark"
-                              importance={source.importance || 1}
-                              title={source.name || ""}
-                              url={source.url}
-                              tags={tags}
-                              tagUrl={tagUrl}
-                              metadata={source.last_modified}
-                              metadataExtra={source.domain}
-                              extraSlot={
-                                <div className="flex items-center text-accent">
-                                  <img
-                                    src={`https://www.bordercore.com/favicons/${source.domain}.ico`}
-                                    width="20"
-                                    height="20"
-                                    alt=""
-                                  />
-                                  <div className="ms-2 search-result-domain">
-                                    {source.domain || ""}
+                        return (
+                          <div
+                            key={`${source.url}-${index}`}
+                            className={`search-result-card ${isImportant ? "important" : ""}`}
+                          >
+                            {showScore && (
+                              <span className="search-result-score-badge" title="Cosine similarity">
+                                {Math.round((match.score ?? 0) * 100)}%
+                              </span>
+                            )}
+                            {source.doctype === "drill" && (
+                              <SearchResult
+                                icon="graduation-cap"
+                                importance={source.importance || 1}
+                                title={source.question || ""}
+                                url={source.url}
+                                tags={tags}
+                                tagUrl={tagUrl}
+                                metadata={source.last_modified}
+                              />
+                            )}
+
+                            {source.doctype === "todo" && (
+                              <SearchResult
+                                icon="tasks"
+                                importance={source.importance || 1}
+                                title={source.name || ""}
+                                url={source.url}
+                                tags={tags}
+                                tagUrl={tagUrl}
+                                metadata={source.last_modified}
+                              />
+                            )}
+
+                            {source.doctype === "bookmark" && (
+                              <SearchResult
+                                icon="bookmark"
+                                importance={source.importance || 1}
+                                title={source.name || ""}
+                                url={source.url}
+                                tags={tags}
+                                tagUrl={tagUrl}
+                                metadata={source.last_modified}
+                                metadataExtra={source.domain}
+                                extraSlot={
+                                  <div className="flex items-center text-accent">
+                                    <img
+                                      src={`https://www.bordercore.com/favicons/${source.domain}.ico`}
+                                      width="20"
+                                      height="20"
+                                      alt=""
+                                    />
+                                    <div className="ms-2 search-result-domain">
+                                      {source.domain || ""}
+                                    </div>
                                   </div>
-                                </div>
-                              }
-                            />
-                          )}
+                                }
+                              />
+                            )}
 
-                          {source.doctype === "note" && (
-                            <SearchResult
-                              icon="sticky-note"
-                              importance={source.importance || 1}
-                              title={source.name || ""}
-                              url={source.url}
-                              tags={tags}
-                              tagUrl={tagUrl}
-                              metadata={source.last_modified}
-                              highlightHtml={match.highlight?.contents?.[0]}
-                            />
-                          )}
+                            {source.doctype === "note" && (
+                              <SearchResult
+                                icon="sticky-note"
+                                importance={source.importance || 1}
+                                title={source.name || ""}
+                                url={source.url}
+                                tags={tags}
+                                tagUrl={tagUrl}
+                                metadata={source.last_modified}
+                                highlightHtml={match.highlight?.contents?.[0]}
+                              />
+                            )}
 
-                          {source.doctype === "document" && (
-                            <SearchResult
-                              icon="copy"
-                              importance={source.importance || 1}
-                              title={source.name || ""}
-                              url={getPdfViewerUrl(source)}
-                              tags={tags}
-                              tagUrl={tagUrl}
-                              metadata={source.last_modified}
-                              metadataExtra={source.filename}
-                              highlightHtml={match.highlight?.contents?.[0]}
-                              extraSlot={
-                                source.creators ? (
-                                  <div className="search-result-creators">{source.creators}</div>
-                                ) : undefined
-                              }
-                            />
-                          )}
+                            {source.doctype === "document" && (
+                              <SearchResult
+                                icon="copy"
+                                importance={source.importance || 1}
+                                title={source.name || ""}
+                                url={getPdfViewerUrl(source)}
+                                tags={tags}
+                                tagUrl={tagUrl}
+                                metadata={source.last_modified}
+                                metadataExtra={source.filename}
+                                highlightHtml={match.highlight?.contents?.[0]}
+                                extraSlot={
+                                  source.creators ? (
+                                    <div className="search-result-creators">{source.creators}</div>
+                                  ) : undefined
+                                }
+                              />
+                            )}
 
-                          {source.doctype === "song" && (
-                            <SearchResult
-                              icon="music"
-                              importance={source.importance || 1}
-                              title={source.title || ""}
-                              url={source.url}
-                              tags={tags}
-                              tagUrl={tagUrl}
-                              metadata={source.last_modified}
-                              imageSlot={
-                                <img
-                                  src={`${imagesUrl}artist_images/${source.artist_uuid}`}
-                                  className="search-result-thumbnail"
-                                  alt=""
-                                />
-                              }
-                              extraSlot={
-                                <div className="search-result-description">
-                                  {source.artist || ""}
-                                </div>
-                              }
-                            />
-                          )}
-
-                          {source.doctype === "album" && (
-                            <SearchResult
-                              icon="music"
-                              importance={source.importance || 1}
-                              title={source.title || ""}
-                              url={source.url}
-                              tags={tags}
-                              tagUrl={tagUrl}
-                              metadata={source.last_modified}
-                              imageSlot={
-                                <img
-                                  src={`${imagesUrl}album_artwork/${source.uuid}`}
-                                  className="search-result-thumbnail"
-                                  alt=""
-                                />
-                              }
-                              extraSlot={
-                                <div className="search-result-description">
-                                  {source.artist || ""}
-                                </div>
-                              }
-                            />
-                          )}
-
-                          {source.doctype === "collection" && (
-                            <SearchResult
-                              icon="folder"
-                              importance={source.importance || 1}
-                              title={source.name || ""}
-                              url={source.url}
-                              tags={tags}
-                              tagUrl={tagUrl}
-                              metadata={source.last_modified}
-                              imageSlot={
-                                source.cover_url ? (
+                            {source.doctype === "song" && (
+                              <SearchResult
+                                icon="music"
+                                importance={source.importance || 1}
+                                title={source.title || ""}
+                                url={source.url}
+                                tags={tags}
+                                tagUrl={tagUrl}
+                                metadata={source.last_modified}
+                                imageSlot={
                                   <img
-                                    src={source.cover_url}
+                                    src={`${imagesUrl}artist_images/${source.artist_uuid}`}
                                     className="search-result-thumbnail"
                                     alt=""
                                   />
-                                ) : undefined
-                              }
-                              extraSlot={
-                                source.description ? (
-                                  <p className="search-result-description">
-                                    {truncateDescription(source.description)}
-                                  </p>
-                                ) : undefined
-                              }
-                            />
-                          )}
+                                }
+                                extraSlot={
+                                  <div className="search-result-description">
+                                    {source.artist || ""}
+                                  </div>
+                                }
+                              />
+                            )}
 
-                          {/* Default: book, blob, or unknown doctype */}
-                          {![
-                            "drill",
-                            "todo",
-                            "bookmark",
-                            "note",
-                            "document",
-                            "song",
-                            "album",
-                            "collection",
-                          ].includes(source.doctype) && (
-                            <SearchResult
-                              icon="book"
-                              importance={source.importance || 1}
-                              title={source.name || ""}
-                              url={getPdfViewerUrl(source)}
-                              tags={tags}
-                              tagUrl={tagUrl}
-                              metadata={source.last_modified}
-                              metadataExtra={source.filename}
-                              highlightHtml={match.highlight?.attachment_content?.[0]}
-                              imageSlot={
-                                source.cover_url ? (
+                            {source.doctype === "album" && (
+                              <SearchResult
+                                icon="music"
+                                importance={source.importance || 1}
+                                title={source.title || ""}
+                                url={source.url}
+                                tags={tags}
+                                tagUrl={tagUrl}
+                                metadata={source.last_modified}
+                                imageSlot={
                                   <img
-                                    src={source.cover_url}
+                                    src={`${imagesUrl}album_artwork/${source.uuid}`}
                                     className="search-result-thumbnail"
                                     alt=""
                                   />
-                                ) : undefined
-                              }
-                              extraSlot={
-                                source.creators ? (
-                                  <div className="search-result-creators">{source.creators}</div>
-                                ) : undefined
-                              }
-                            />
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
+                                }
+                                extraSlot={
+                                  <div className="search-result-description">
+                                    {source.artist || ""}
+                                  </div>
+                                }
+                              />
+                            )}
 
-                  <div className="flex justify-center">
-                    <Pagination paginator={paginator} onPageChange={handlePageChange} />
-                  </div>
-                </>
-              )}
-            </>
-          )}
+                            {source.doctype === "collection" && (
+                              <SearchResult
+                                icon="folder"
+                                importance={source.importance || 1}
+                                title={source.name || ""}
+                                url={source.url}
+                                tags={tags}
+                                tagUrl={tagUrl}
+                                metadata={source.last_modified}
+                                imageSlot={
+                                  source.cover_url ? (
+                                    <img
+                                      src={source.cover_url}
+                                      className="search-result-thumbnail"
+                                      alt=""
+                                    />
+                                  ) : undefined
+                                }
+                                extraSlot={
+                                  source.description ? (
+                                    <p className="search-result-description">
+                                      {truncateDescription(source.description)}
+                                    </p>
+                                  ) : undefined
+                                }
+                              />
+                            )}
+
+                            {/* Default: book, blob, or unknown doctype */}
+                            {![
+                              "drill",
+                              "todo",
+                              "bookmark",
+                              "note",
+                              "document",
+                              "song",
+                              "album",
+                              "collection",
+                            ].includes(source.doctype) && (
+                              <SearchResult
+                                icon="book"
+                                importance={source.importance || 1}
+                                title={source.name || ""}
+                                url={getPdfViewerUrl(source)}
+                                tags={tags}
+                                tagUrl={tagUrl}
+                                metadata={source.last_modified}
+                                metadataExtra={source.filename}
+                                highlightHtml={match.highlight?.attachment_content?.[0]}
+                                imageSlot={
+                                  source.cover_url ? (
+                                    <img
+                                      src={source.cover_url}
+                                      className="search-result-thumbnail"
+                                      alt=""
+                                    />
+                                  ) : undefined
+                                }
+                                extraSlot={
+                                  source.creators ? (
+                                    <div className="search-result-creators">{source.creators}</div>
+                                  ) : undefined
+                                }
+                              />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <div className="flex justify-center">
+                      <Pagination paginator={paginator} onPageChange={handlePageChange} />
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -86,18 +86,64 @@
 // SEARCH PAGE LAYOUT
 // =============================================================================
 
+// Outer app shell — mirrors .todo-app / .cl-app / .node-app: padding, ambient
+// gradient, typography, margin escape. The centered grid lives on the inner
+// .search-page-layout.
+.search-app {
+  position: relative;
+  min-height: 100vh;
+  padding: 16px 40px 80px 24px;
+  margin: -1rem -0.75rem 0 0;
+  color: var(--fg-1);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  letter-spacing: -0.005em;
+  line-height: 1.55;
+
+  &::before {
+    position: absolute;
+    z-index: 0;
+    background:
+      radial-gradient(
+        900px 600px at 10% 110%,
+        color-mix(in oklch, var(--accent), transparent 92%),
+        transparent 60%
+      );
+    content: "";
+    inset: 0;
+    pointer-events: none;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  @media (width < 992px) {
+    padding: 20px;
+  }
+}
+
+// Centered two-column grid (260px rail | 1fr main), matching .todo-shell etc.:
+// max-width 1240px, centered, 48px column gap.
 .search-page-layout {
+  position: relative;
+  z-index: 1;
   display: grid;
-  min-height: calc(100vh - 80px);
-  gap: 0;
-  grid-template-columns: 280px 1fr;
-  grid-template-rows: auto 1fr;
+  max-width: 1240px;
+  margin: 0 auto;
+  gap: 0 48px;
+  grid-template-columns: 260px 1fr;
+
+  @media (width < 992px) {
+    gap: 20px;
+    grid-template-columns: 1fr;
+  }
 }
 
 .search-viz {
   overflow: hidden;
   min-height: 96px;
-  padding: 1.5rem 1.25rem 24px;
+  padding-bottom: 24px;
   grid-column: 1;
   grid-row: 1;
 
@@ -106,17 +152,28 @@
   }
 }
 
+// Page head: gradient title + a count/tagline subhead, with the canonical
+// bordered divider down to the SearchBar below. Matches .todo-head etc.
 .search-pagehead {
-  padding: 1.5rem 2rem 1.25rem;
   margin: 0;
-  font: 600 24px/1.2 "Space Grotesk", var(--font-ui);
   grid-column: 2;
   grid-row: 1;
-  letter-spacing: -0.01em;
+
+  @include refined-page-head-bordered;
 
   @media (width < 992px) {
-    padding: 1rem 1rem 0.75rem;
+    grid-column: 1;
   }
+}
+
+// The gradient/size come from the inner <span class="bc-page-title">; this h1
+// wrapper only owns the 4px gap down to the subhead (matches .cl-pagehead-title).
+.search-title {
+  margin: 0 0 4px;
+}
+
+.search-subhead {
+  @include refined-page-sub($margin: 0);
 }
 
 // =============================================================================
@@ -301,18 +358,12 @@
 
 .search-main-content {
   min-width: 0;
-  padding: 0 2rem 1.5rem;
   grid-column: 2;
   grid-row: 2;
 
   @media (width < 992px) {
-    padding: 1rem;
+    grid-column: 1;
   }
-}
-
-.search-pagehead .dim {
-  color: var(--fg-3);
-  font-weight: 500;
 }
 
 // Search bar
@@ -332,13 +383,31 @@
 
 .search-bar-input-wrap {
   flex: 1;
+
+  // Scope the icon override to the page SearchBar (not the global #top-search,
+  // which also uses .has-search): match the shared search look — fg-3 glyph at
+  // a 14px inset, sized to 13px.
+  .search-icon {
+    left: 14px;
+    color: var(--fg-3);
+    font-size: 13px;
+  }
 }
 
-// Inherits surface from .form-control (applied via className); only the
-// search-specific icon padding is added here.
-.search-bar-input {
+// Adopt the canonical input surface used by the filter searches on the other
+// pages (border, --radius corners, --shadow-sm, accent focus ring, 13.5px text,
+// fg-3 placeholder), padded on the left to clear the 14px icon. Overrides the
+// .form-control surface applied via className.
+// Compound `.search-bar-input.form-control` selector (0,2,0) so these win over
+// the base `.form-control` (which otherwise overrides min-height/padding/
+// line-height via source order). Resolves the field to the shared 43px height.
+.search-bar-input.form-control {
   width: 100%;
-  padding-left: 2.5rem;
+  min-height: 0;
+  padding: 10px 14px 10px 38px;
+  line-height: 1.55;
+
+  @include refined-input-surface;
 }
 
 .search-bar-tag-input-wrap {
