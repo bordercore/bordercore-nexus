@@ -14,14 +14,29 @@
 
 .nl-app {
   position: relative;
-  min-height: calc(100vh - 64px);
-  padding: 0;
+  min-height: 100vh;
+  padding: 16px 40px 80px 24px;
   margin: -1rem -0.75rem 0 0;
   color: var(--fg-1);
   font-family: var(--font-ui);
   font-size: 14px;
   letter-spacing: -0.005em;
-  line-height: 1.5;
+  line-height: 1.55;
+
+  // Shared ambient accent glow (matches .todo-app / .cl-app / .node-app / etc.).
+  &::before {
+    position: absolute;
+    z-index: 0;
+    background:
+      radial-gradient(
+        900px 600px at 10% 110%,
+        color-mix(in oklch, var(--accent), transparent 92%),
+        transparent 60%
+      );
+    content: "";
+    inset: 0;
+    pointer-events: none;
+  }
 
   * { box-sizing: border-box; }
 
@@ -33,14 +48,14 @@
 // ============================================================================
 .nl-page-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-end;
   justify-content: space-between;
-  padding: 22px 28px 18px;
-  border-bottom: 1px solid var(--line);
-  margin-bottom: 24px;
   gap: 24px;
   grid-column: 2;
   grid-row: 1;
+
+  @include refined-page-head-bordered;
 }
 
 // Visualizer slot — col 1 / row 1, mirrors .nl-page-head's vertical rhythm.
@@ -71,18 +86,67 @@
   gap: 10px;
 }
 
+// Search input — shared refined-input-surface (border, --radius, --shadow-sm,
+// accent focus ring, 13.5px text, fg-3 icon/placeholder), matching the other
+// pages. Stays a fixed-width field in the head (it's a jump to /search/, not a
+// growing toolbar filter).
 .nl-app .nl-search {
-  @include refined-search-input;
+  display: flex;
+  width: 280px;
+  align-items: center;
+  padding: 10px 12px 10px 14px;
+  cursor: text;
+  gap: 11px;
+
+  @include refined-input-surface;
+
+  svg {
+    flex-shrink: 0;
+    color: var(--fg-3);
+    font-size: 13px;
+  }
+
+  input {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    min-height: 0;
+    flex: 1;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    color: var(--fg-1);
+    font-family: var(--font-ui);
+    font-size: 13.5px;
+    line-height: 1.55;
+
+    &:focus {
+      outline: none;
+    }
+
+    &::placeholder {
+      color: var(--fg-3);
+    }
+
+    // stylelint-disable-next-line property-no-vendor-prefix
+    &::-webkit-search-cancel-button {
+      appearance: none;
+    }
+  }
 }
 
 // ============================================================================
 // Layout shell
 // ============================================================================
 .nl-shell {
+  position: relative;
+  z-index: 1;
   display: grid;
-  min-height: calc(100vh - 64px);
-  grid-template-columns: 320px 1fr;
-  grid-template-rows: auto 1fr;
+  max-width: 1240px;
+  margin: 0 auto;
+  gap: 0 48px;
+  grid-template-columns: 260px 1fr;
 }
 
 // ============================================================================
@@ -233,7 +297,9 @@
 .nl-main {
   display: flex;
   flex-direction: column;
-  padding: 26px 28px 40px;
+
+  // No padding — the .nl-app outer padding + centered .nl-shell own the page
+  // insets (matches the other pages). gap owns the spacing between sections.
   gap: 32px;
   grid-column: 2;
   grid-row: 2;
@@ -571,13 +637,34 @@
 // Responsive collapse
 // ============================================================================
 @media (width <= 1100px) {
+  .nl-app {
+    padding: 20px;
+  }
+
   .nl-shell {
+    gap: 20px;
     grid-template-columns: 1fr;
+  }
+
+  .nl-viz {
+    display: none;
+  }
+
+  .nl-page-head {
+    grid-column: 1;
+    grid-row: 1;
   }
 
   .nl-pinned {
     border-right: 0;
     border-bottom: 1px solid var(--line);
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .nl-main {
+    grid-column: 1;
+    grid-row: 3;
   }
 
   .nl-featured-grid {

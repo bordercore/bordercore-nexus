@@ -55,7 +55,7 @@ export function NotesLandingPage({ data, urls }: NotesLandingPageProps) {
                 name="query"
                 value={query}
                 onChange={e => setQuery(e.target.value)}
-                placeholder="search notes…"
+                placeholder="Search notes…"
                 aria-label="Search notes"
               />
             </form>
