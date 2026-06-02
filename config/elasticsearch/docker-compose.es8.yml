@@ -1,0 +1,18 @@
+# Local ES8 for development/TDD only. Mirrors prod: security off, single node.
+services:
+  es8:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.17.1
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - xpack.security.http.ssl.enabled=false
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+      - http.max_content_length=250mb
+      # Allow _reindex to pull from the remote ES7 host (set ES7 host:port).
+      - reindex.remote.whitelist=${ES7_REINDEX_WHITELIST:-es7.example:9200}
+    ports:
+      - "9201:9200"   # 9201 on host to avoid clashing with a local ES7
+    volumes:
+      - es8data:/usr/share/elasticsearch/data
+volumes:
+  es8data:
