@@ -5,6 +5,7 @@ import { doGet, EventBus } from "../utils/reactUtils";
 import LibrarySidebar from "./LibrarySidebar";
 import StatStrip from "./StatStrip";
 import PageHead from "./PageHead";
+import MusicToolbar from "./MusicToolbar";
 import AlbumGridCard from "./AlbumGridCard";
 import SongTable from "./SongTable";
 import FeaturedAlbumCard from "./FeaturedAlbumCard";
@@ -216,129 +217,134 @@ export function MusicDashboardPage({
 
   return (
     <div className="music-library-os">
-      <div className="mlo-viz">
-        <VisualizerSlot />
-      </div>
+      <div className="mlo-shell">
+        <div className="mlo-viz">
+          <VisualizerSlot />
+        </div>
 
-      <PageHead
-        searchValue={search}
-        onSearchChange={setSearch}
-        onShuffleAll={handleShuffleAll}
-        createSongUrl={urls.createSong}
-        createAlbumUrl={urls.createAlbum}
-        onCreatePlaylist={() => setCreatePlaylistOpen(true)}
-        paletteSlot={
-          showPalette ? (
-            <SearchPalette
-              query={search}
-              searchUrl={urls.search}
-              songMediaUrl={urls.songMedia}
-              markListenedUrl={urls.markListened}
-              onSeeAllSongs={() => setSearchExpanded(true)}
-              onClose={closeSearch}
-            />
-          ) : null
-        }
-      />
+        <PageHead
+          onShuffleAll={handleShuffleAll}
+          createSongUrl={urls.createSong}
+          createAlbumUrl={urls.createAlbum}
+          onCreatePlaylist={() => setCreatePlaylistOpen(true)}
+        />
 
-      <LibrarySidebar
-        playlists={playlists as PlaylistSidebarItem[]}
-        activePlaylistId={activePlaylistId}
-        onSelectPlaylist={handleSelectPlaylist}
-        onPlayPlaylist={handlePlayPlaylist}
-        navUrls={{
-          albums: urls.albumList,
-          songs: "/music/",
-          artists: urls.artistList,
-          tags: urls.tagSearch,
-        }}
-        counts={libraryCounts}
-      />
+        <LibrarySidebar
+          playlists={playlists as PlaylistSidebarItem[]}
+          activePlaylistId={activePlaylistId}
+          onSelectPlaylist={handleSelectPlaylist}
+          onPlayPlaylist={handlePlayPlaylist}
+          navUrls={{
+            albums: urls.albumList,
+            songs: "/music/",
+            artists: urls.artistList,
+            tags: urls.tagSearch,
+          }}
+          counts={libraryCounts}
+        />
 
-      <main className="mlo-main">
-        <StatStrip stats={dashboardStats} />
+        <main className="mlo-main">
+          <MusicToolbar
+            searchValue={search}
+            onSearchChange={setSearch}
+            paletteSlot={
+              showPalette ? (
+                <SearchPalette
+                  query={search}
+                  searchUrl={urls.search}
+                  songMediaUrl={urls.songMedia}
+                  markListenedUrl={urls.markListened}
+                  onSeeAllSongs={() => setSearchExpanded(true)}
+                  onClose={closeSearch}
+                />
+              ) : null
+            }
+          />
 
-        <div className="mlo-body">
-          <div className="mlo-body-left">
-            {searchExpanded ? (
-              <SearchResultsView
-                query={search}
-                searchUrl={urls.search}
-                songMediaUrl={urls.songMedia}
-                markListenedUrl={urls.markListened}
-                currentUuid={currentUuid}
-                onBack={closeSearch}
-              />
-            ) : (
-              <>
-                {!activePlaylistId && (
+          <StatStrip stats={dashboardStats} />
+
+          <div className="mlo-body">
+            <div className="mlo-body-left">
+              {searchExpanded ? (
+                <SearchResultsView
+                  query={search}
+                  searchUrl={urls.search}
+                  songMediaUrl={urls.songMedia}
+                  markListenedUrl={urls.markListened}
+                  currentUuid={currentUuid}
+                  onBack={closeSearch}
+                />
+              ) : (
+                <>
+                  {!activePlaylistId && (
+                    <section className="mlo-section">
+                      <div className="mlo-section-head">
+                        Recently Added Albums
+                        <span className="mlo-section-head-hint mlo-recent-pager-info">
+                          page {paginator.page_number} of {totalAlbumPages}
+                        </span>
+                        <div className="mlo-recent-pager">
+                          <button
+                            type="button"
+                            className="mlo-recent-pager-btn"
+                            aria-label="Previous page"
+                            disabled={!paginator.has_previous || albumsLoading}
+                            onClick={() => handlePaginateAlbums("prev")}
+                          >
+                            <FontAwesomeIcon icon={faChevronLeft} />
+                          </button>
+                          <button
+                            type="button"
+                            className="mlo-recent-pager-btn"
+                            aria-label="Next page"
+                            disabled={!paginator.has_next || albumsLoading}
+                            onClick={() => handlePaginateAlbums("next")}
+                          >
+                            <FontAwesomeIcon icon={faChevronRight} />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="mlo-album-grid">
+                        {filteredAlbums.map(a => (
+                          <AlbumGridCard key={a.uuid} album={a} onPlay={handlePlayAlbum} />
+                        ))}
+                      </div>
+                    </section>
+                  )}
                   <section className="mlo-section">
                     <div className="mlo-section-head">
-                      Recently Added Albums
-                      <span className="mlo-section-head-hint mlo-recent-pager-info">
-                        page {paginator.page_number} of {totalAlbumPages}
-                      </span>
-                      <div className="mlo-recent-pager">
-                        <button
-                          type="button"
-                          className="mlo-recent-pager-btn"
-                          aria-label="Previous page"
-                          disabled={!paginator.has_previous || albumsLoading}
-                          onClick={() => handlePaginateAlbums("prev")}
-                        >
-                          <FontAwesomeIcon icon={faChevronLeft} />
-                        </button>
-                        <button
-                          type="button"
-                          className="mlo-recent-pager-btn"
-                          aria-label="Next page"
-                          disabled={!paginator.has_next || albumsLoading}
-                          onClick={() => handlePaginateAlbums("next")}
-                        >
-                          <FontAwesomeIcon icon={faChevronRight} />
-                        </button>
+                      {activePlaylist ? (
+                        <a className="mlo-playlist-link" href={activePlaylist.url}>
+                          {activePlaylist.name}
+                        </a>
+                      ) : (
+                        "Recently Added Songs"
+                      )}
+                    </div>
+                    {activePlaylistId && playlistSongs && (
+                      <div className="mlo-playlist-stats">
+                        {playlistSongs.length} {playlistSongs.length === 1 ? "song" : "songs"}
+                        {playlistTotalTime && <> · {playlistTotalTime}</>}
                       </div>
-                    </div>
-                    <div className="mlo-album-grid">
-                      {filteredAlbums.map(a => (
-                        <AlbumGridCard key={a.uuid} album={a} onPlay={handlePlayAlbum} />
-                      ))}
-                    </div>
-                  </section>
-                )}
-                <section className="mlo-section">
-                  <div className="mlo-section-head">
-                    {activePlaylist ? (
-                      <a className="mlo-playlist-link" href={activePlaylist.url}>
-                        {activePlaylist.name}
-                      </a>
-                    ) : (
-                      "Recently Added Songs"
                     )}
-                  </div>
-                  {activePlaylistId && playlistSongs && (
-                    <div className="mlo-playlist-stats">
-                      {playlistSongs.length} {playlistSongs.length === 1 ? "song" : "songs"}
-                      {playlistTotalTime && <> · {playlistTotalTime}</>}
-                    </div>
-                  )}
-                  <SongTable
-                    songs={filteredSongs}
-                    currentUuid={currentUuid}
-                    songMediaUrl={urls.songMedia}
-                    markListenedUrl={urls.markListened}
-                  />
-                </section>
-              </>
-            )}
-          </div>
+                    <SongTable
+                      songs={filteredSongs}
+                      currentUuid={currentUuid}
+                      songMediaUrl={urls.songMedia}
+                      markListenedUrl={urls.markListened}
+                    />
+                  </section>
+                </>
+              )}
+            </div>
 
-          <aside className="mlo-body-right">
-            {randomAlbum && <FeaturedAlbumCard album={randomAlbum} />}
-            {recentPlayedSongs.length > 0 && <RecentPlaysCard songs={recentPlayedSongs} />}
-          </aside>
-        </div>
-      </main>
+            <aside className="mlo-body-right">
+              {randomAlbum && <FeaturedAlbumCard album={randomAlbum} />}
+              {recentPlayedSongs.length > 0 && <RecentPlaysCard songs={recentPlayedSongs} />}
+            </aside>
+          </div>
+        </main>
+      </div>
 
       <CreatePlaylistModal
         open={createPlaylistOpen}

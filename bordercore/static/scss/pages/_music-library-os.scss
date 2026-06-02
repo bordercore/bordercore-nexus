@@ -15,28 +15,114 @@
   --mlo-warn: var(--warn, #f0b840);
   --mlo-ok: var(--ok, #3fd29c);
 
-  display: grid;
-
-  // Escape base.html's content padding so the sidebar sits flush with the
-  // viewport edge (left of the breadcrumb), matching .cl-shell and
-  // .todo-app's full-bleed convention.
+  // Outer app shell — mirrors .todo-app / .cl-app: padding, ambient gradient,
+  // typography, and the negative margin that escapes base.html's content
+  // padding. The centered two-column grid lives on the inner .mlo-shell.
+  position: relative;
+  min-height: 100vh;
+  padding: 16px 40px 80px 24px;
   margin: -1rem -0.75rem 0 0;
+  color: var(--fg-1);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  letter-spacing: -0.005em;
+  line-height: 1.55;
 
-  // Column gap between sidebar and main only — row spacing below the page
-  // head is owned by .mlo-pagehead's own margin-bottom, matching /collection/.
-  gap: 0 16px;
-  grid-template-columns: 240px 1fr;
+  &::before {
+    position: absolute;
+    z-index: 0;
+    background:
+      radial-gradient(
+        900px 600px at 10% 110%,
+        color-mix(in oklch, var(--accent), transparent 92%),
+        transparent 60%
+      );
+    content: "";
+    inset: 0;
+    pointer-events: none;
+  }
 
-  // Search input that sits inside .mlo-pagehead-actions (between the title
-  // and the shuffle/add buttons), mirroring /collection/'s page-head pattern.
-  // Width is wider than notes/collection because the placeholder is longer
-  // and the ⌘K hint chip lives inside.
+  * {
+    box-sizing: border-box;
+  }
+
+  // Centered two-column grid (260px rail | 1fr main), matching .todo-shell,
+  // .bookmark-shell, and .cl-shell: max-width 1240px, centered, 48px gap.
+  .mlo-shell {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    max-width: 1240px;
+    margin: 0 auto;
+    gap: 0 48px;
+    grid-template-columns: 260px 1fr;
+  }
+
+  // Search + ⌘K toolbar at the top of the main column. Mirrors .todo-toolbar /
+  // .bookmark-toolbar / .cl-toolbar: the search grows to fill the row.
+  .mlo-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 24px;
+    gap: 12px;
+  }
+
+  // Search input — identical surface to /todo/, /bookmark/, and /collection/:
+  // refined-input-surface (border, --radius corners, --shadow-sm, accent focus
+  // ring, 13.5px text), 14px left icon inset + 11px gap, fg-3 icon/placeholder.
+  // position: relative anchors the absolute .mlo-palette dropdown below it.
   .mlo-search {
-    @include refined-search-input($width: 320px);
+    position: relative;
+    display: flex;
+    flex: 1;
+    align-items: center;
+    padding: 10px 12px 10px 14px;
+    cursor: text;
+    gap: 11px;
 
-    // Page-specific: the small "⌘K" hint chip rendered after the input when
-    // the field is empty. The mixin's flex/gap on the wrapper takes care of
-    // spacing; here we just style the kbd glyphs inside the hint span.
+    @include refined-input-surface;
+
+    svg {
+      flex-shrink: 0;
+      color: var(--fg-3);
+      font-size: 13px;
+    }
+
+    input {
+      width: 100%;
+      min-width: 0;
+      height: auto;
+      min-height: 0;
+      flex: 1;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+      color: var(--fg-1);
+      font-family: var(--font-ui);
+      font-size: 13.5px;
+      line-height: 1.55;
+
+      &:focus {
+        outline: none;
+      }
+
+      &::placeholder {
+        color: var(--fg-3);
+      }
+
+      // stylelint-disable-next-line property-no-vendor-prefix
+      &::-webkit-search-cancel-button {
+        appearance: none;
+      }
+    }
+
+    // The "⌘K" hint chip rendered after the input when the field is empty.
+    .mlo-search-hint {
+      flex-shrink: 0;
+    }
+
     kbd {
       padding: 1px 5px;
       border: 1px solid var(--line);
@@ -234,9 +320,8 @@
     min-width: 0;
     flex-direction: column;
 
-    // No top padding — .mlo-pagehead's margin-bottom owns the gap between
-    // the page head and the first card (.mlo-stat-strip).
-    padding: 0 24px 40px;
+    // No padding — the .cl-app-style outer padding owns the page insets and the
+    // .mlo-pagehead margin-bottom owns the gap down to the first row.
     gap: 16px;
     grid-column: 2;
     grid-row: 2;
@@ -250,10 +335,10 @@
   // the canonical 18px below the title.
   .mlo-pagehead {
     display: flex;
+    flex-wrap: wrap;
     align-items: flex-end;
     justify-content: space-between;
-    padding: 32px 24px 0;
-    gap: 24px; // matches .cl-pagehead
+    gap: 20px;
     grid-column: 2;
     grid-row: 1;
 
@@ -1552,5 +1637,37 @@
   .playlist-toggle-field {
     align-self: end;
     padding-bottom: 4px;
+  }
+}
+
+// Collapse to a single column on narrow viewports, matching .todo-app / .cl-app:
+// the sidebar reflows below the head, above the main column (no drawer).
+@media (width <= 860px) {
+  .music-library-os {
+    padding: 20px;
+  }
+
+  .music-library-os .mlo-shell {
+    gap: 20px;
+    grid-template-columns: 1fr;
+  }
+
+  .music-library-os .mlo-viz {
+    display: none;
+  }
+
+  .music-library-os .mlo-pagehead {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .music-library-os .mlo-sidebar {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .music-library-os .mlo-main {
+    grid-column: 1;
+    grid-row: 3;
   }
 }

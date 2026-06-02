@@ -1,7 +1,6 @@
 import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faSearch,
   faShuffle,
   faPlus,
   faMusic,
@@ -9,40 +8,20 @@ import {
   faList,
 } from "@fortawesome/free-solid-svg-icons";
 import DropDownMenu from "../common/DropDownMenu";
-import { useFocusOnCtrlK } from "../common/hooks/useFocusOnCtrlK";
 
 interface Props {
-  searchValue: string;
-  onSearchChange: (value: string) => void;
   onShuffleAll: () => void;
   createSongUrl: string;
   createAlbumUrl: string;
   onCreatePlaylist: () => void;
-  paletteSlot?: React.ReactNode;
 }
 
 const PageHead: React.FC<Props> = ({
-  searchValue,
-  onSearchChange,
   onShuffleAll,
   createSongUrl,
   createAlbumUrl,
   onCreatePlaylist,
-  paletteSlot,
 }) => {
-  const inputRef = React.useRef<HTMLInputElement>(null);
-  const isMac = React.useMemo(() => {
-    if (typeof navigator === "undefined") return false;
-    const platform =
-      (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData
-        ?.platform ||
-      navigator.platform ||
-      navigator.userAgent;
-    return /Mac|iPhone|iPod|iPad/i.test(platform);
-  }, []);
-
-  useFocusOnCtrlK(inputRef);
-
   const addLinks = [
     {
       id: "new-song",
@@ -73,23 +52,6 @@ const PageHead: React.FC<Props> = ({
         </h1>
       </div>
       <div className="mlo-pagehead-actions">
-        <div className="mlo-search" role="search">
-          <FontAwesomeIcon icon={faSearch} />
-          <input
-            ref={inputRef}
-            type="search"
-            value={searchValue}
-            onChange={e => onSearchChange(e.target.value)}
-            placeholder="search artists, albums, songs…"
-          />
-          {!searchValue && (
-            <span className="mlo-search-hint">
-              <kbd>{isMac ? "⌘" : "Ctrl"}</kbd>
-              <kbd>K</kbd>
-            </span>
-          )}
-          {paletteSlot}
-        </div>
         <button type="button" className="refined-btn" onClick={onShuffleAll}>
           <FontAwesomeIcon icon={faShuffle} /> shuffle all
         </button>
