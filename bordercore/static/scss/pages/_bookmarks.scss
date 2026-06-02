@@ -39,24 +39,22 @@
   }
 }
 
-// Combined search bar with inline filter chips. Dimensions/look mirror the
-// canonical `refined-search-input` mixin used on /music/ and /collection/ so
-// the bookmark page's action row matches the rest of the app — fixed 32px
-// height, 12px horizontal padding, 13px text. The mixin assumes a fixed
-// width, so the relevant declarations are inlined here with `flex: 1` to let
+// Combined search bar with inline filter chips. Vertical metrics match the
+// /todo/ "Search tasks" input (.todo-search-input): 10px block padding + 13.5px
+// text at the page's 1.55 line-height, so the bar stands the same height as the
+// todo search field rather than the shorter 32px /music/ track. `flex: 1` lets
 // the bar grow into the action row's remaining space.
 .bookmark-search-bar {
   display: flex;
-  height: 32px;
   flex: 1;
   align-items: center;
-  padding: 0 12px;
+  padding: 10px 12px;
   border: 1px solid var(--line);
   border-radius: var(--bc-radius-sm, 6px);
   background: var(--bg-2);
   color: var(--fg-2);
   cursor: text;
-  font-size: 13px;
+  font-size: 13.5px;
   gap: 8px;
   transition: border-color var(--bc-t-fast) var(--bc-ease-out);
 
@@ -76,7 +74,7 @@
     flex: 1;
 
     // Reset the SelectValue wrapper styles inside the search bar so the
-    // input line-aligns with the 32px outer track instead of stretching it.
+    // input sits flush in the bar instead of stretching it.
     .select-value-wrapper {
       .form-control {
         width: 100%;
@@ -88,15 +86,12 @@
         box-shadow: none;
         color: var(--fg-1);
         font-family: var(--font-ui);
-        font-size: 13px;
+        font-size: 13.5px;
 
-        // Match the wrapper's line-height (32px / wrapper height) so Chrome
-        // renders the text caret at the wrapper's full height. Without this,
-        // .form-control's line-height: 1.5 caps the line-box at 19.5px and
-        // the caret ends up at the same visual height as the placeholder's
-        // letter stems, overlapping at the first glyph. /music/'s plain
-        // <input> has no .form-control class and picks up the 32px naturally.
-        line-height: 32px;
+        // Inherit the page's 1.55 line-height (matching .todo-search-input) so
+        // the input text and caret stand at the same height as the todo search
+        // field. The bar's own block padding sets the overall height.
+        line-height: 1.55;
 
         &:focus {
           box-shadow: none;
@@ -530,6 +525,14 @@
     gap: 12px;
   }
 
+  // The drawer toggle is only meaningful below 992px, where the sidebar
+  // becomes a slide-in drawer. Hidden on wider viewports (the rail is always
+  // visible there); shown in the responsive block below. This project doesn't
+  // bundle Bootstrap, so the old `d-lg-none` utility was inert.
+  .bookmark-tags-drawer-toggle {
+    display: none;
+  }
+
   // ==== Responsive ====
   // The sidebar becomes a fixed-position drawer below 992px, so the grid drops
   // to a single column at that same breakpoint (not 860px like /todo/) — an
@@ -558,6 +561,10 @@
 
     .bookmark-filter-title {
       font-size: 26px;
+    }
+
+    .bookmark-tags-drawer-toggle {
+      display: inline-flex;
     }
   }
 }
