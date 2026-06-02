@@ -405,3 +405,13 @@ def test_get_field(authenticated_client):
     assert get_field(data, "name") == "Alice"
     assert get_field(data, "tags") == []
     assert get_field(data, "missing") is None
+
+
+@pytest.mark.data_quality
+def test_get_elasticsearch_connection_pings_es8():
+    """The es8 client connects and reports an 8.x server."""
+    from lib.util import get_elasticsearch_connection
+
+    es = get_elasticsearch_connection()
+    info = es.info()
+    assert info["version"]["number"].startswith("8."), info["version"]["number"]

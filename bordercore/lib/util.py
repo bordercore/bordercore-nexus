@@ -49,17 +49,16 @@ def _get_elasticsearch_connection(host: str | None = None, timeout: int = ELASTI
     """
     # Isolate the import here so other functions from this module
     #  can be imported without requiring these dependencies.
-    from elasticsearch import RequestsHttpConnection
     from elasticsearch_dsl.connections import connections
 
     if not host:
-        host = os.environ.get("ELASTICSEARCH_ENDPOINT", "localhost")
+        host = os.environ.get("ELASTICSEARCH_ENDPOINT", "http://localhost:9200")
 
+    # es8 transport: no connection_class / use_ssl. TLS is implied by an
+    # https:// host. `request_timeout` replaces the old `timeout` kwarg.
     return connections.create_connection(
         hosts=[host],
-        use_ssl=False,
-        timeout=timeout,
-        connection_class=RequestsHttpConnection,
+        request_timeout=timeout,
     )
 
 
