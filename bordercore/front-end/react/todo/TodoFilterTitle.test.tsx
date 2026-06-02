@@ -5,7 +5,7 @@ import { TodoFilterTitle } from "./TodoFilterTitle";
 const h1Text = () => screen.getByRole("heading", { level: 1 }).textContent;
 
 describe("TodoFilterTitle", () => {
-  it("shows 'Todo' as the neutral root when unfiltered", () => {
+  it("renders 'Todo' when no filter is active", () => {
     render(<TodoFilterTitle filter={{ type: "all" }} />);
     expect(h1Text()).toBe("Todo");
   });

@@ -20,7 +20,7 @@ const KIND_LABEL: Record<Exclude<ActiveFilter["type"], "all">, string> = {
 
 /**
  * Page-title h1 for the todo list that surfaces the active filter
- * (e.g. `Tag / work`, `Priority / 1`). Despite the `.refined-breadcrumb-h1`
+ * (e.g. `Todo / Tag / work`, `Todo / Priority / 1`). Despite the `.refined-breadcrumb-h1`
  * styling, this is *not* a navigation breadcrumb — none of the spans link
  * anywhere. It's a dynamic title showing which subset of tasks is in view.
  */
