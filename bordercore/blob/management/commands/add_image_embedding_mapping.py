@@ -24,5 +24,5 @@ class Command(BaseCommand):
                 }
             }
         }
-        es.indices.put_mapping(index=settings.ELASTICSEARCH_INDEX, body=body)
+        es.indices.put_mapping(index=settings.ELASTICSEARCH_INDEX, properties=body["properties"])
         self.stdout.write(self.style.SUCCESS("image_embedding field added"))

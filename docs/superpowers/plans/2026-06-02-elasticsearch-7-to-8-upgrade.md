@@ -117,7 +117,7 @@ Then apply the `image_embedding` mapping (it lives in the management command, no
 dynamically mapped as plain `float` and kNN on them (Task 3.4) fails:
 ```bash
 ELASTICSEARCH_ENDPOINT=http://localhost:9201 ELASTICSEARCH_INDEX=bordercore_test \
-  script -qc '.venv/bin/python bordercore/manage.py add_image_embedding_mapping' /dev/null
+  script -qc '.venv/bin/python manage.py add_image_embedding_mapping' /dev/null
 ```
 Expected: `image_embedding` shows `"type": "dense_vector", "index": true`.
 (This command requires Task 1.5's es8 `put_mapping` fix; if running Phase 0 before Phase 1,
@@ -926,7 +926,7 @@ Expected: `"acknowledged": true`. (Confirm the pipeline name matches what `elast
 
 The `embeddings_vector` is in mappings.json; `image_embedding` is added separately. Run the management command against the new host:
 ```bash
-ELASTICSEARCH_ENDPOINT=$ES8_HOST script -qc '.venv/bin/python bordercore/manage.py add_image_embedding_mapping' /dev/null
+ELASTICSEARCH_ENDPOINT=$ES8_HOST script -qc '.venv/bin/python manage.py add_image_embedding_mapping' /dev/null
 ```
 Expected: success; verify `curl -s $ES8_HOST/bordercore/_mapping` shows both vector fields with `index: true`.
 
@@ -999,7 +999,7 @@ If `populate-embeddings` / `backfill_image_embeddings` accept a date or uuid fil
 otherwise re-save the affected blobs through the normal index path so the embedding Lambda
 fires. Confirm the command/flag by inspecting `bordercore/blob/management/commands/populate-embeddings.py`.
 ```bash
-ELASTICSEARCH_ENDPOINT=$ES8_HOST script -qc '.venv/bin/python bordercore/manage.py populate-embeddings --since "$REINDEX_START"' /dev/null
+ELASTICSEARCH_ENDPOINT=$ES8_HOST script -qc '.venv/bin/python manage.py populate-embeddings --since "$REINDEX_START"' /dev/null
 ```
 Expected: re-embeds only the changed docs. (If the command has no `--since`, the simplest
 safe fallback is to run the final reindex close to cutover so this slice is empty/trivial.)

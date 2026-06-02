@@ -362,7 +362,7 @@ def delete_metadata(uuid: str) -> None:
         }
     }
 
-    es.update_by_query(body=q, index=ELASTICSEARCH_INDEX)
+    es.update_by_query(index=ELASTICSEARCH_INDEX, query=q["query"], script=q["script"])
 
 
 def create_embeddings(uuid: str) -> None:

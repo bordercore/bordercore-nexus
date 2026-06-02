@@ -74,4 +74,4 @@ class Command(BaseCommand):
             }
         }
 
-        return self.es.update_by_query(index=settings.ELASTICSEARCH_INDEX, body=request_body)
+        return self.es.update_by_query(index=settings.ELASTICSEARCH_INDEX, query=request_body["query"], script=request_body["script"])

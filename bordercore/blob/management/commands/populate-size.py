@@ -157,4 +157,4 @@ class Command(BaseCommand):
             }
         }
 
-        return self.es.update_by_query(index=self.index_name, body=request_body)
+        return self.es.update_by_query(index=self.index_name, query=request_body["query"], script=request_body["script"])
