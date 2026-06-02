@@ -54,19 +54,13 @@
   // over a 13px icon = an 11px gap), so the leading icon and hint text line up
   // the same on both pages.
   padding: 10px 12px 10px 14px;
-  border: 1px solid var(--line);
-  border-radius: var(--bc-radius-sm, 6px);
-  background: var(--bg-2);
-  color: var(--fg-2);
   cursor: text;
-  font-size: 13.5px;
   gap: 11px;
-  transition: border-color var(--bc-t-fast) var(--bc-ease-out);
 
-  &:focus-within {
-    border-color: color-mix(in oklch, var(--accent), transparent 50%);
-    box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent), transparent 75%);
-  }
+  // Adopt the canonical input surface (border, --radius corners, --shadow-sm,
+  // and the accent focus ring + transition) so the bar matches /todo/'s
+  // .todo-search-input exactly rather than carrying its own chrome.
+  @include refined-input-surface;
 
   // Match the /todo/ search icon (.todo-search-wrap .icon): same fg-3 tone and
   // 13px size so the leading glyph reads identically across the two pages.
