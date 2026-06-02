@@ -402,3 +402,25 @@ class TestPerformSearch:
         call_args = mock_execute.call_args[0][0]
         must_clauses = call_args["query"]["function_score"]["query"]["bool"]["must"]
         assert not any("multi_match" in c for c in must_clauses)
+
+
+# ---------------------------------------------------------------------------
+# Real-cluster (es8) regression guards
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.data_quality
+def test_mget_uses_es8_kwargs():
+    """mget works with es8 keyword args (no deprecated body=), returning real docs."""
+    from django.conf import settings
+
+    from lib.util import get_elasticsearch_connection
+
+    es = get_elasticsearch_connection()
+    sample = es.search(index=settings.ELASTICSEARCH_INDEX, size=2, _source=False)
+    ids = [h["_id"] for h in sample["hits"]["hits"]]
+    assert ids, "index has no docs to test against"
+
+    resp = es.mget(index=settings.ELASTICSEARCH_INDEX, ids=ids)
+    assert [d["_id"] for d in resp["docs"]] == ids
+    assert all(d["found"] for d in resp["docs"])

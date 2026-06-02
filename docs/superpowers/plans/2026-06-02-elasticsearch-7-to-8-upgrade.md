@@ -324,7 +324,15 @@ git commit -m "Port Lambda ES connections to es8 client"
 
 ### Task 1.4: Remove deprecated `body=` from search/get/mget/delete calls
 
-es8 deprecates `body=`; pass the query parts as top-level keyword args. The `**search_object` spread in `execute_search` already works because the es8 `search()` accepts `query`, `size`, `from_`, `aggs`, `highlight`, `sort`, `post_filter`, `knn`, `_source` as keywords — but it does **not** accept `from_`? It does (`from_`). Verify and fix the explicit `body=` sites.
+es8 deprecates `body=`; pass the query parts as top-level keyword args. The `**search_object`
+spread in `execute_search` already works because the es8 `search()` accepts `query`, `size`,
+`from_`, `aggs`, `highlight`, `sort`, `post_filter`, `knn`, `_source` as keywords.
+
+**Execution note:** verified against the 8.17.1 client that `body=` still **works** (deprecated,
+emits a warning) — it is removed in es9, not es8. So these are forward-hygiene cleanups, not
+hard breaks; there is no red→green failing state on the old code. Converting now de-risks the
+eventual es9 bump. Also confirmed `es.search(index=..., **body)` works even when `body` carries
+an `_source` key (the es8 client accepts `_source=` as an alias).
 
 **Files:**
 - Modify: `bordercore/search/services.py:540` (`find_similar_images`, `es.search(... body=body)`)

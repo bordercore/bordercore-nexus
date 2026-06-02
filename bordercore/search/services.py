@@ -537,7 +537,7 @@ def find_similar_images(
         },
     }
 
-    response = es.search(index=index, body=body)
+    response = es.search(index=index, **body)
     out: list[tuple[str, float]] = []
     for hit in response["hits"]["hits"]:
         # ES script returns (1 + cosine) in [0, 2]; halve to get [0, 1].
@@ -591,7 +591,7 @@ def perform_image_search(
 
     es = get_elasticsearch_connection()
     index = settings.ELASTICSEARCH_INDEX
-    mget_response = es.mget(index=index, body={"ids": uuids})
+    mget_response = es.mget(index=index, ids=uuids)
 
     hits = []
     for doc in mget_response["docs"]:
