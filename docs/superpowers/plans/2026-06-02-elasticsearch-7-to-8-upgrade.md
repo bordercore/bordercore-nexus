@@ -289,11 +289,18 @@ In **each** of the four files, replace the import and constructor with the es8 f
 
 If a file uses `connections.create_connection` instead, use the dsl form from Task 1.2 Step 3. Preserve each file's existing function signature and docstring; only the import + constructor change.
 
-- [ ] **Step 3: Bump each Lambda's pinned client**
+- [ ] **Step 3: Bump the Lambda client pin** (only `index_blobs` actually uses ES)
 
-Each Lambda dir has its own `requirements.txt`. Run to find them:
-`grep -rl "elasticsearch==" bordercore/aws/*/requirements.txt`
-In each, change the `elasticsearch==7.*` pin to `elasticsearch==8.17.1` (these Lambdas use the bare client, not dsl).
+Reality check from execution: only `bordercore/aws/index_blobs/requirements.txt` pins
+`elasticsearch` (it was `7.0.5` + `elasticsearch-dsl==7.4.0`). The three thumbnail Lambdas
+(`create_bookmark_thumbnail`, `create_collection_thumbnail`, `create_thumbnail`) carry a
+copied `util.py` with a *lazy* ES-connection function that their handlers never call, and
+have **no** `elasticsearch` pin — so no requirements change is needed there. Bump only
+`index_blobs`:
+```
+elasticsearch==8.17.1
+elasticsearch-dsl==8.17.1
+```
 
 - [ ] **Step 4: Syntax-check all four**
 

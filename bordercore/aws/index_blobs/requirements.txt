@@ -1,7 +1,7 @@
 boto3==1.9.156
 certifi==2024.7.4
-elasticsearch==7.0.5
-elasticsearch-dsl==7.4.0
+elasticsearch==8.17.1
+elasticsearch-dsl==8.17.1
 PyMuPDF==1.20.2
 lxml==6.1.0
 python-magic==0.4.15
