@@ -374,8 +374,12 @@ $tag-colors: (
 
 .cl-density {
   display: flex;
-  height: 32px;
   align-items: center;
+
+  // Stretch to the toolbar row's height, which is set by the taller search
+  // input (.cl-search, ~43px) — so the density control matches it without
+  // hardcoding a pixel height that would drift if the search metrics change.
+  align-self: stretch;
   padding: 6px 10px 6px 12px;
   border: 1px solid var(--line);
   border-radius: var(--bc-radius-sm, 6px);
