@@ -63,10 +63,12 @@
     box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent), transparent 75%);
   }
 
+  // Match the /todo/ search icon (.todo-search-wrap .icon): same fg-3 tone and
+  // 13px size so the leading glyph reads identically across the two pages.
   .bookmark-search-bar-icon {
     flex-shrink: 0;
-    color: var(--fg-4);
-    font-size: 11px;
+    color: var(--fg-3);
+    font-size: 13px;
   }
 
   .bookmark-search-bar-form {
@@ -98,8 +100,10 @@
           outline: none;
         }
 
+        // fg-3 placeholder matches .todo-search-input's (via
+        // refined-input-surface), so the hint text reads at the same tone.
         &::placeholder {
-          color: var(--fg-4);
+          color: var(--fg-3);
         }
       }
 
