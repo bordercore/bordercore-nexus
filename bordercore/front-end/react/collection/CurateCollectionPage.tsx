@@ -382,18 +382,6 @@ export function CurateCollectionPage({
       />
 
       <div className="cd-curate">
-        <CurateHeader
-          collection={collection}
-          filteredCount={filteredCount}
-          columns={columns}
-          shuffled={shuffled}
-          onColumnsChange={handleColumnsChange}
-          onShuffle={handleShuffle}
-          onEdit={handleEdit}
-          onAdd={handleAdd}
-          onSlideshow={handleSlideshow}
-          onDelete={handleDelete}
-        />
         <div className={railOpen ? "cd-shell" : "cd-shell collapsed"}>
           <CurateRail
             objectTags={objectTags}
@@ -402,6 +390,19 @@ export function CurateCollectionPage({
             collapsed={!railOpen}
             onToggleCollapsed={handleToggleRail}
             onSelectTag={handleSelectTag}
+          />
+
+          <CurateHeader
+            collection={collection}
+            filteredCount={filteredCount}
+            columns={columns}
+            shuffled={shuffled}
+            onColumnsChange={handleColumnsChange}
+            onShuffle={handleShuffle}
+            onEdit={handleEdit}
+            onAdd={handleAdd}
+            onSlideshow={handleSlideshow}
+            onDelete={handleDelete}
           />
 
           <main className="cd-main">
