@@ -555,7 +555,7 @@ export function BookmarkListPage({
                   ref={selectValueRef}
                   id="bookmarkSearch"
                   searchUrl={`${urls.getTagsUsedByBookmarks}?query=`}
-                  placeHolder={tagIsSelected || searchTerm ? "" : "Filter by keyword or tag"}
+                  placeHolder={tagIsSelected || searchTerm ? "" : "Search by keyword or tag…"}
                   onSelect={selectTag}
                   onSearch={handleSearch}
                 />
