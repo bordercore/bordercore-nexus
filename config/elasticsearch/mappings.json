@@ -122,7 +122,10 @@
       "metadata": { "type":"object" },
       "embeddings_vector": {
         "type": "dense_vector",
-        "dims": 1536
+        "dims": 1536,
+        "index": true,
+        "similarity": "cosine",
+        "index_options": { "type": "int8_hnsw" }
       }
     }
   }
