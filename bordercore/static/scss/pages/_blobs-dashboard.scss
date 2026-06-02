@@ -12,14 +12,29 @@
 
 .rb-app {
   position: relative;
-  min-height: calc(100vh - 64px);
-  padding: 0;
+  min-height: 100vh;
+  padding: 16px 40px 80px 24px;
   margin: -1rem -0.75rem 0 0;
   color: var(--fg-1);
   font-family: var(--font-ui);
   font-size: 14px;
   letter-spacing: -0.005em;
-  line-height: 1.5;
+  line-height: 1.55;
+
+  // Shared ambient accent glow (matches .todo-app / .cl-app / .node-app / etc.).
+  &::before {
+    position: absolute;
+    z-index: 0;
+    background:
+      radial-gradient(
+        900px 600px at 10% 110%,
+        color-mix(in oklch, var(--accent), transparent 92%),
+        transparent 60%
+      );
+    content: "";
+    inset: 0;
+    pointer-events: none;
+  }
 
   * { box-sizing: border-box; }
 
@@ -27,10 +42,13 @@
 }
 
 .rb-shell {
+  position: relative;
+  z-index: 1;
   display: grid;
-  min-height: calc(100vh - 64px);
-  grid-template-columns: 240px 1fr;
-  grid-template-rows: auto 1fr;
+  max-width: 1240px;
+  margin: 0 auto;
+  gap: 0 48px;
+  grid-template-columns: 260px 1fr;
 }
 
 // ============================================================================
@@ -38,7 +56,6 @@
 // ============================================================================
 .rb-rail {
   display: flex;
-  height: 100%;
   flex-direction: column;
   padding: 22px 16px;
   border-right: 1px solid var(--line);
@@ -46,9 +63,6 @@
   gap: 22px;
   grid-column: 1;
   grid-row: 2;
-  overflow-y: auto;
-  scrollbar-color: var(--fg-3) transparent;
-  scrollbar-width: thin;
 }
 
 .rb-viz {
@@ -375,20 +389,16 @@
 // ============================================================================
 .rb-main {
   display: flex;
-  overflow: hidden auto;
   flex-direction: column;
-  padding: 0 32px 60px;
   grid-column: 2;
   grid-row: 2;
-  scrollbar-color: var(--fg-3) transparent;
-  scrollbar-width: thin;
 }
 
 .rb-page-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-end;
   justify-content: space-between;
-  padding: 28px 32px 0;
   gap: 24px;
   grid-column: 2;
   grid-row: 1;
@@ -793,12 +803,33 @@
 // Narrow viewports — collapse rail to a strip
 // ============================================================================
 @media (width <= 760px) {
-  .rb-shell { grid-template-columns: 1fr; }
+  .rb-app {
+    padding: 20px;
+  }
+
+  .rb-shell {
+    gap: 20px;
+    grid-template-columns: 1fr;
+  }
+
+  .rb-viz {
+    display: none;
+  }
+
+  .rb-page-head {
+    grid-column: 1;
+    grid-row: 1;
+  }
 
   .rb-rail {
-    height: auto;
     border-right: 0;
     border-bottom: 1px solid var(--line);
+    grid-column: 1;
+    grid-row: 2;
   }
-  .rb-main { padding: 20px; }
+
+  .rb-main {
+    grid-column: 1;
+    grid-row: 3;
+  }
 }
