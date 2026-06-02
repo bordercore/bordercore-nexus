@@ -48,14 +48,19 @@
   display: flex;
   flex: 1;
   align-items: center;
-  padding: 10px 12px;
+
+  // 14px left inset + 11px gap reproduce /todo/'s icon→placeholder spacing
+  // (.todo-search-wrap .icon at left:14px; .todo-search-input padding-left:38px
+  // over a 13px icon = an 11px gap), so the leading icon and hint text line up
+  // the same on both pages.
+  padding: 10px 12px 10px 14px;
   border: 1px solid var(--line);
   border-radius: var(--bc-radius-sm, 6px);
   background: var(--bg-2);
   color: var(--fg-2);
   cursor: text;
   font-size: 13.5px;
-  gap: 8px;
+  gap: 11px;
   transition: border-color var(--bc-t-fast) var(--bc-ease-out);
 
   &:focus-within {
