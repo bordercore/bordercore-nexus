@@ -17,7 +17,7 @@ export function BookmarkFilterTitle({ tag, search }: BookmarkFilterTitleProps) {
   if (search) {
     return (
       <h1 className="refined-breadcrumb-h1 bookmark-filter-title">
-        <span className="dim">Bookmarks</span>
+        <span className="root">Bookmarks</span>
         <span className="sep">/</span>
         <span className="dim">Search</span>
         <span className="sep">/</span>
@@ -29,7 +29,7 @@ export function BookmarkFilterTitle({ tag, search }: BookmarkFilterTitleProps) {
   if (tag && tag !== "Untagged") {
     return (
       <h1 className="refined-breadcrumb-h1 bookmark-filter-title">
-        <span className="dim">Bookmarks</span>
+        <span className="root">Bookmarks</span>
         <span className="sep">/</span>
         <span className="dim">Tag</span>
         <span className="sep">/</span>
@@ -41,7 +41,7 @@ export function BookmarkFilterTitle({ tag, search }: BookmarkFilterTitleProps) {
   if (tag === "Untagged") {
     return (
       <h1 className="refined-breadcrumb-h1 bookmark-filter-title">
-        <span className="dim">Bookmarks</span>
+        <span className="root">Bookmarks</span>
         <span className="sep">/</span>
         <span className="current">Untagged</span>
       </h1>
@@ -50,7 +50,7 @@ export function BookmarkFilterTitle({ tag, search }: BookmarkFilterTitleProps) {
 
   return (
     <h1 className="refined-breadcrumb-h1 bookmark-filter-title">
-      <span className="current neutral">Bookmarks</span>
+      <span className="root">Bookmarks</span>
     </h1>
   );
 }

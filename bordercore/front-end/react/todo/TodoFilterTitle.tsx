@@ -28,14 +28,14 @@ export function TodoFilterTitle({ filter }: TodoFilterTitleProps) {
   if (filter.type === "all") {
     return (
       <h1 className="refined-breadcrumb-h1 todo-filter-title">
-        <span className="current neutral">Todo</span>
+        <span className="root">Todo</span>
       </h1>
     );
   }
 
   return (
     <h1 className="refined-breadcrumb-h1 todo-filter-title">
-      <span className="dim">Todo</span>
+      <span className="root">Todo</span>
       <span className="sep">/</span>
       <span className="dim">{KIND_LABEL[filter.type]}</span>
       <span className="sep">/</span>

@@ -502,10 +502,18 @@
     flex: 1;
   }
 
+  // Segmented breadcrumb h1: the typography placeholder sizes the whole title,
+  // but the accent gradient lives only on the section-name root crumb (.root)
+  // so "Bookmarks" reads as the same gradient hero as /blob/notes/'s title
+  // while the kind/value segments keep their .dim/.current colors.
   .bookmark-filter-title {
     @extend %bc-page-title-typography;
 
     margin-bottom: 4px;
+
+    .root {
+      @extend %bc-page-title;
+    }
   }
 
   .bookmark-subhead {

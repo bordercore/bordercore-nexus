@@ -111,14 +111,20 @@
 
   // Adopt the canonical hero-title typography (Space Grotesk, 44px, etc.) so
   // the todo page's heading reads at the same scale as /blob/list and the
-  // other landing pages. We extend just the typography placeholder, not the
-  // full %bc-page-title, because this h1 is a segmented breadcrumb and a
-  // single gradient fill would clobber the per-segment coloring (.dim, .sep,
-  // .current.neutral) defined on .refined-breadcrumb-h1.
+  // other landing pages. The h1 extends just the typography placeholder (not
+  // the full %bc-page-title) because it's a segmented breadcrumb — a single
+  // gradient across the whole h1 would clobber the per-segment coloring
+  // (.dim, .sep, .current). Instead the gradient lives on the section-name
+  // root crumb (.root) only, so "Todo" reads as the same accent-gradient hero
+  // as /blob/notes/'s title while the kind/value segments keep their colors.
   .todo-filter-title {
     @extend %bc-page-title-typography;
 
     margin-bottom: 4px;
+
+    .root {
+      @extend %bc-page-title;
+    }
   }
 
   .todo-subhead {
