@@ -30,23 +30,87 @@ $tag-colors: (
   default: #7c7fff,
 );
 
-.cl-shell {
-  --cl-rail-w: 240px;
+// Outer app shell — mirrors .todo-app / #bookmark-list-page: padding, ambient
+// gradient, typography, and the negative margin that escapes the base layout's
+// card padding. The centered two-column grid lives on the inner .cl-shell. The
+// --cl-* tokens live here so every descendant (rail, grid, search) inherits them.
+.cl-app {
+  --cl-rail-w: 260px;
   --cl-topbar-h: 56px;
   --cl-font-display: "Space Grotesk", var(--font-ui);
   --cl-accent-25: color-mix(in oklch, var(--accent), transparent 75%);
   --cl-accent-15: color-mix(in oklch, var(--accent), transparent 85%);
   --cl-accent-50: color-mix(in oklch, var(--accent), transparent 50%);
 
-  display: grid;
-  min-height: calc(100vh - var(--cl-topbar-h));
+  position: relative;
+  min-height: 100vh;
+  padding: 16px 40px 80px 24px;
   margin: -1rem -0.75rem 0 0;
   color: var(--fg-1);
   font-family: var(--font-ui);
   font-size: 14px;
-  grid-template-columns: var(--cl-rail-w) 1fr;
   letter-spacing: -0.005em;
   line-height: 1.55;
+
+  &::before {
+    position: absolute;
+    z-index: 0;
+    background:
+      radial-gradient(
+        900px 600px at 10% 110%,
+        color-mix(in oklch, var(--accent), transparent 92%),
+        transparent 60%
+      );
+    content: "";
+    inset: 0;
+    pointer-events: none;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  // Collapse to a single column on narrow viewports, matching .todo-app: the
+  // rail reflows below the head and above the grid (no drawer).
+  @media (width <= 860px) {
+    padding: 20px;
+
+    .cl-shell {
+      gap: 20px;
+      grid-template-columns: 1fr;
+    }
+
+    .cl-viz {
+      display: none;
+    }
+
+    .cl-pagehead {
+      grid-column: 1;
+      grid-row: 1;
+    }
+
+    .cl-rail {
+      grid-column: 1;
+      grid-row: 2;
+    }
+
+    .cl-main {
+      grid-column: 1;
+      grid-row: 3;
+    }
+  }
+}
+
+// Centered two-column grid (260px rail | 1fr main), matching .todo-shell and
+// .bookmark-shell: max-width 1240px, centered, 48px column gap.
+.cl-shell {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  max-width: 1240px;
+  margin: 0 auto;
+  gap: 0 48px;
+  grid-template-columns: var(--cl-rail-w) 1fr;
 }
 
 // --- Tag rail -----------------------------------------------------------------
@@ -173,8 +237,7 @@ $tag-colors: (
 // --- Main column --------------------------------------------------------------
 
 .cl-main {
-  max-width: 1400px;
-  padding: 0 40px 80px;
+  min-width: 0;
   grid-column: 2;
   grid-row: 2;
 }
@@ -193,14 +256,21 @@ $tag-colors: (
 
 .cl-pagehead {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-end;
   justify-content: space-between;
-  padding: 32px 40px 0;
-  gap: 24px;
+  gap: 20px;
   grid-column: 2;
   grid-row: 1;
 
   @include refined-page-head-bordered;
+}
+
+// Title + count group on the left; the "new" button sits opposite it. Mirrors
+// .todo-head-text / .bookmark-head-text.
+.cl-pagehead-text {
+  min-width: 0;
+  flex: 1;
 }
 
 .cl-pagehead-title {
@@ -217,10 +287,20 @@ $tag-colors: (
 
 // --- Action cluster -----------------------------------------------------------
 
-.cl-actions {
+// Search + density toolbar at the top of the main column. Mirrors
+// .todo-toolbar / .bookmark-toolbar: flex row, 12px gap, 24px below; the search
+// grows to fill and the density control sits at the end.
+.cl-toolbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  margin-bottom: 24px;
+  gap: 12px;
+
+  .cl-search {
+    min-width: 240px;
+    flex: 1;
+  }
 }
 
 .cl-search {

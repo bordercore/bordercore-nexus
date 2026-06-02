@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import ActionCluster from "./ActionCluster";
 import CinemaCard from "./CinemaCard";
 import CompactRow from "./CompactRow";
@@ -35,51 +37,57 @@ export function CollectionListPage({ collections, tagCounts, urls }: CollectionL
 
   return (
     <>
-      <div className="cl-shell">
-        <div className="cl-viz">
-          <VisualizerSlot />
-        </div>
-
-        <header className="cl-pagehead">
-          <div>
-            <h1 className="cl-pagehead-title">
-              <span className="bc-page-title">Collections</span>
-            </h1>
-            <div className="cl-pagehead-meta">
-              <span className="count">{filtered.length}</span> collections
-            </div>
+      <div className="cl-app">
+        <div className="cl-shell">
+          <div className="cl-viz">
+            <VisualizerSlot />
           </div>
 
-          <ActionCluster
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            density={density}
-            filteredCount={filtered.length}
-            onDensityChange={setDensity}
-            onCreateClick={handleCreate}
-          />
-        </header>
-
-        <TagRail
-          totalCount={collections.length}
-          tagCounts={tagCounts}
-          activeTag={activeTag}
-          onTagSelect={setActiveTag}
-        />
-
-        <main className="cl-main">
-          {filtered.length === 0 ? (
-            <div className="cl-empty">No collections match the current filters.</div>
-          ) : (
-            <div className="cl-grid-v2" data-density={density}>
-              {filtered.map(c => {
-                if (density === "compact") return <CompactRow key={c.uuid} collection={c} />;
-                if (density === "cinema") return <CinemaCard key={c.uuid} collection={c} />;
-                return <GridCard key={c.uuid} collection={c} />;
-              })}
+          <header className="cl-pagehead">
+            <div className="cl-pagehead-text">
+              <h1 className="cl-pagehead-title">
+                <span className="bc-page-title">Collections</span>
+              </h1>
+              <div className="cl-pagehead-meta">
+                <span className="count">{filtered.length}</span> collections
+              </div>
             </div>
-          )}
-        </main>
+
+            <button type="button" className="refined-btn primary" onClick={handleCreate}>
+              <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" />
+              new
+            </button>
+          </header>
+
+          <TagRail
+            totalCount={collections.length}
+            tagCounts={tagCounts}
+            activeTag={activeTag}
+            onTagSelect={setActiveTag}
+          />
+
+          <main className="cl-main">
+            <ActionCluster
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              density={density}
+              filteredCount={filtered.length}
+              onDensityChange={setDensity}
+            />
+
+            {filtered.length === 0 ? (
+              <div className="cl-empty">No collections match the current filters.</div>
+            ) : (
+              <div className="cl-grid-v2" data-density={density}>
+                {filtered.map(c => {
+                  if (density === "compact") return <CompactRow key={c.uuid} collection={c} />;
+                  if (density === "cinema") return <CinemaCard key={c.uuid} collection={c} />;
+                  return <GridCard key={c.uuid} collection={c} />;
+                })}
+              </div>
+            )}
+          </main>
+        </div>
       </div>
 
       <CreateCollectionModal

@@ -1,6 +1,6 @@
 import React, { useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faSearch } from "@fortawesome/free-solid-svg-icons";
+import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import DensitySlider from "./DensitySlider";
 import type { Density } from "./density";
 import { useFocusOnCtrlK } from "../common/hooks/useFocusOnCtrlK";
@@ -11,21 +11,24 @@ interface ActionClusterProps {
   density: Density;
   filteredCount: number;
   onDensityChange: (d: Density) => void;
-  onCreateClick: () => void;
 }
 
+/**
+ * Main-column toolbar (search + density), mirroring /todo/'s TodoToolbar and
+ * the bookmark toolbar. The primary "new" button lives in the page head, not
+ * here, so the head holds only the title + count + create action.
+ */
 export function ActionCluster({
   searchQuery,
   onSearchChange,
   density,
   filteredCount,
   onDensityChange,
-  onCreateClick,
 }: ActionClusterProps) {
   const searchRef = useRef<HTMLInputElement>(null);
   useFocusOnCtrlK(searchRef);
   return (
-    <div className="cl-actions">
+    <div className="cl-toolbar">
       <div className="cl-search" role="search">
         <FontAwesomeIcon icon={faSearch} aria-hidden="true" />
         <input
@@ -49,11 +52,6 @@ export function ActionCluster({
       </div>
 
       <DensitySlider density={density} count={filteredCount} onChange={onDensityChange} />
-
-      <button type="button" className="refined-btn primary" onClick={onCreateClick}>
-        <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" />
-        new
-      </button>
     </div>
   );
 }
