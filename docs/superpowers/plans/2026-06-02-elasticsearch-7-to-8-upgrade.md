@@ -44,7 +44,8 @@ services:
       # Allow _reindex to pull from the remote ES7 host (set ES7 host:port).
       - reindex.remote.whitelist=${ES7_REINDEX_WHITELIST:-es7.example:9200}
     ports:
-      - "9201:9200"   # 9201 on host to avoid clashing with a local ES7
+      # Loopback-only: security is disabled, so never expose beyond the dev host.
+      - "127.0.0.1:9201:9200"   # 9201 avoids clashing with a local ES7
     volumes:
       - es8data:/usr/share/elasticsearch/data
 volumes:
@@ -925,12 +926,13 @@ Task 5.2 to find docs changed during/after the copy. (The index has a `last_modi
 
 - [ ] **Step 2: Kick off the remote reindex (async)**
 
-From the new ES8 host (whitelist set in Task 4.3), run:
+From the new ES8 host (whitelist set in Task 4.3), run. NOTE: remote reindex does **not**
+support `slices` (auto or >1) — it is single-threaded by design; do not add `slices`:
 ```bash
-curl -s -X POST "$ES8_HOST/_reindex?wait_for_completion=false&slices=auto" \
+curl -s -X POST "$ES8_HOST/_reindex?wait_for_completion=false" \
   -H 'Content-Type: application/json' -d '{
   "source": {
-    "remote": { "host": "http://<es7-host>:9200", "socket_timeout": "60s" },
+    "remote": { "host": "http://<es7-host>:9200", "socket_timeout": "120s" },
     "index": "bordercore",
     "size": 1000
   },

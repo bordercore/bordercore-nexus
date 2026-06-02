@@ -11,7 +11,9 @@ services:
       # Allow _reindex to pull from the remote ES7 host (set ES7 host:port).
       - reindex.remote.whitelist=${ES7_REINDEX_WHITELIST:-es7.example:9200}
     ports:
-      - "9201:9200"   # 9201 on host to avoid clashing with a local ES7
+      # Loopback-only: this cluster has security disabled, so it must never be
+      # reachable beyond the developer host. 9201 avoids clashing with a local ES7.
+      - "127.0.0.1:9201:9200"
     volumes:
       - es8data:/usr/share/elasticsearch/data
 volumes:
