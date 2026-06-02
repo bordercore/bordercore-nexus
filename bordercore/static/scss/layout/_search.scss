@@ -155,6 +155,9 @@
 // Page head: gradient title + a count/tagline subhead, with the canonical
 // bordered divider down to the SearchBar below. Matches .todo-head etc.
 .search-pagehead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
   margin: 0;
   grid-column: 2;
   grid-row: 1;
@@ -164,6 +167,14 @@
   @media (width < 992px) {
     grid-column: 1;
   }
+}
+
+// Title + subhead block, bottom-aligned within the head (like .todo-head-text /
+// .cl-pagehead-text) so the title lands at the same vertical position as the
+// other pages.
+.search-pagehead-text {
+  min-width: 0;
+  flex: 1;
 }
 
 // The gradient/size come from the inner <span class="bc-page-title">; this h1

@@ -397,10 +397,12 @@ export function SearchPage({
           <VisualizerSlot />
         </div>
         <div className="search-pagehead">
-          <h1 className="search-title">
-            <span className="bc-page-title">Search</span>
-          </h1>
-          <p className="search-subhead">across your knowledge base</p>
+          <div className="search-pagehead-text">
+            <h1 className="search-title">
+              <span className="bc-page-title">Search</span>
+            </h1>
+            <p className="search-subhead">across your knowledge base</p>
+          </div>
         </div>
         <SearchSidebar
           searchMode={searchMode}
