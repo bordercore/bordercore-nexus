@@ -417,10 +417,9 @@
   }
 }
 
-// Bookmark Grid - card-based layout (base styles in _tables.scss)
-// =============================================================================
-
-// Theme-aware custom properties scoped to bookmark page — matches .todo-row hover recipe.
+// Theme-aware row tokens + outer app shell. Mirrors .todo-app's
+// padding/gradient/typography so the bookmark page sits on the same refined
+// surface as /todo/; the two-column grid lives on the inner .bookmark-shell.
 #bookmark-list-page {
   --bookmark-row-bg: var(--bg-1);
   --bookmark-row-border: var(--line-soft);
@@ -435,39 +434,131 @@
     var(--shadow-md);
   --bookmark-icon-box-bg: var(--bg-2);
 
-  display: grid;
+  position: relative;
+  min-height: 100vh;
 
-  // ~25% sidebar / ~75% main, matching the previous .col-lg-3 / .col-lg-9 split.
-  grid-template-columns: 25% 1fr;
-  grid-template-rows: auto 1fr;
+  // Left inset matches the global topbar gutter so the rail lines up with the
+  // breadcrumb above it (same recipe as .todo-app).
+  padding: 32px 40px 80px 24px;
+  margin: -1rem -0.75rem 0 0;
+  color: var(--fg-1);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  letter-spacing: -0.005em;
+  line-height: 1.55;
 
-  // Below 992px the sidebar becomes a fixed-position drawer; collapse to a
-  // single column so pagehead and main span the viewport width.
-  @media (width < 992px) {
-    grid-template-columns: 1fr;
-
-    .bookmark-page-head,
-    .bookmark-main-col {
-      grid-column: 1;
-    }
+  &::before {
+    position: absolute;
+    z-index: 0;
+    background:
+      radial-gradient(
+        900px 600px at 10% 110%,
+        color-mix(in oklch, var(--accent), transparent 92%),
+        transparent 60%
+      );
+    content: "";
+    inset: 0;
+    pointer-events: none;
   }
 
+  * {
+    box-sizing: border-box;
+  }
+
+  // ==== Shell: 260 | 1fr, centered ====
+  .bookmark-shell {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    max-width: 1240px;
+    padding: 0;
+    margin: 0 auto;
+    gap: 0 48px;
+    grid-template-columns: 260px 1fr;
+  }
+
+  // ==== Visualizer (col 1 / row 1) ====
   .bookmark-viz {
     overflow: hidden;
     min-height: 96px;
     padding-bottom: 24px;
     grid-column: 1;
     grid-row: 1;
-
-    @media (width < 992px) {
-      display: none;
-    }
   }
 
-  .bookmark-main-col {
+  // ==== Head: title block + "new" (col 2 / row 1) ====
+  .bookmark-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    grid-column: 2;
+    grid-row: 1;
+
+    @include refined-page-head-bordered;
+  }
+
+  .bookmark-head-text {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .bookmark-filter-title {
+    @extend %bc-page-title-typography;
+
+    margin-bottom: 4px;
+  }
+
+  .bookmark-subhead {
+    @include refined-page-sub($margin: 0);
+  }
+
+  // ==== Main column (col 2 / row 2) ====
+  .bookmark-main {
     min-width: 0;
     grid-column: 2;
     grid-row: 2;
+  }
+
+  // ==== Toolbar: search + view toggle + pin (mirrors .todo-toolbar) ====
+  .bookmark-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 24px;
+    gap: 12px;
+  }
+
+  // ==== Responsive ====
+  // The sidebar becomes a fixed-position drawer below 992px, so the grid drops
+  // to a single column at that same breakpoint (not 860px like /todo/) — an
+  // empty 260px track would otherwise still offset the main column.
+  @media (width < 992px) {
+    padding: 20px;
+
+    .bookmark-shell {
+      gap: 20px;
+      grid-template-columns: 1fr;
+    }
+
+    .bookmark-viz {
+      display: none;
+    }
+
+    .bookmark-head {
+      grid-column: 1;
+      grid-row: 1;
+    }
+
+    .bookmark-main {
+      grid-column: 1;
+      grid-row: 3;
+    }
+
+    .bookmark-filter-title {
+      font-size: 26px;
+    }
   }
 }
 
@@ -777,105 +868,5 @@
   }
 }
 
-// =============================================================================
-// BOOKMARK PAGE HEAD
-// =============================================================================
-// Hero title for the bookmark overview page on the left, action cluster
-// (search bar, view-density toggle, dropdown) on the right. Uses the canonical
-// .bc-page-title gradient/halo treatment shared with Notes, Collections,
-// Drill, and Music.
 
-.bookmark-page-head {
-  display: flex;
-  align-items: center;
-  padding-top: 32px;
-  gap: 1.5rem;
-  grid-column: 2;
-  grid-row: 1;
-
-  // Adopts the canonical "section-cap" rhythm shared with .cl-pagehead,
-  // .mlo-pagehead, .todo-head, .rb-page-head, .drill-page-head: 18px below
-  // the title row, a 1px hairline divider, then 24px of breathing room to
-  // the first body element below (the stats cards).
-  @include refined-page-head-bordered;
-
-  // Title sits flush left and never gets squeezed by the action row.
-  .bc-page-title {
-    flex-shrink: 0;
-    margin: 0;
-  }
-
-  // Action cluster expands to fill the row; the search bar inside it
-  // takes the remaining flex space, view toggle and menu sit at the end.
-  .bookmark-page-actions {
-    min-width: 0;
-    flex: 1;
-    align-items: center;
-  }
-
-  // On narrow viewports stack the action row below the title so the
-  // search bar isn't crushed.
-  @media (width < 768px) {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.75rem;
-  }
-}
-
-// =============================================================================
-// BOOKMARK STATS STRIP
-// =============================================================================
-// Flat horizontal strip of label · value pairs separated by 1px hairlines.
-// No card chrome, no icons — the value's color carries the semantic weight
-// (warn for "Untagged", danger for "Broken", neutral for the rest).
-
-.bookmark-stats-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  margin-bottom: 1rem;
-  margin-left: 18px;
-
-  // No outer border/background — the strip sits flat on the page surface,
-  // with vertical hairlines between entries doing the structural work. The
-  // 18px left margin mirrors each .bookmark-stat's internal padding so the
-  // first stat's "TOTAL" reads as if there were a virtual entry to its left.
-}
-
-.bookmark-stat {
-  display: flex;
-  align-items: baseline;
-  padding: 0 18px;
-  border-left: 1px solid var(--line-soft);
-  gap: 10px;
-
-  &:first-child {
-    padding-left: 0;
-    border-left: 0;
-  }
-}
-
-.bookmark-stat-label {
-  color: var(--fg-3);
-  font: 500 10px/1.2 var(--font-mono);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.bookmark-stat-value {
-  overflow: hidden;
-  color: var(--fg-1);
-  font: 600 18px/1.1 "Space Grotesk", var(--font-ui);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-
-  // Tone modifiers — only the numeral changes color; label stays muted mono.
-  &--warn {
-    color: var(--warn);
-  }
-
-  &--danger {
-    color: var(--danger);
-  }
-}
 
