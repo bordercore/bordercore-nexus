@@ -16,8 +16,7 @@ def test_command_puts_dense_vector_mapping(mock_get_es):
 
     assert es.indices.put_mapping.called
     _, kwargs = es.indices.put_mapping.call_args
-    body = kwargs["body"]
-    prop = body["properties"]["image_embedding"]
+    prop = kwargs["properties"]["image_embedding"]
     assert prop["type"] == "dense_vector"
     assert prop["dims"] == 512
     assert prop["similarity"] == "cosine"

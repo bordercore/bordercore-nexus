@@ -22,7 +22,7 @@ def test_find_by_text_calls_lambda_then_script_score(mock_encode, mock_get_es):
     results = find_similar_images(user_id=42, text="sunset", threshold=0.5, limit=10)
 
     mock_encode.assert_called_once_with("sunset")
-    body = es.search.call_args.kwargs["body"]
+    body = es.search.call_args.kwargs
     # ES 7.x: script_score over a filtered base query
     script_score = body["query"]["script_score"]
     assert script_score["script"]["params"]["query_vector"] == [0.1] * 512
@@ -46,7 +46,7 @@ def test_find_by_blob_uuid_pulls_stored_vector(mock_get_es):
     results = find_similar_images(user_id=42, blob_uuid="abc", threshold=0, limit=5)
 
     es.get.assert_called_once()
-    body = es.search.call_args.kwargs["body"]
+    body = es.search.call_args.kwargs
     assert body["query"]["script_score"]["script"]["params"]["query_vector"] == [0.3] * 512
     # Score 2.0 (== 1 + 1) -> similarity 1.0
     assert results == [("uuid-x", 1.0)]

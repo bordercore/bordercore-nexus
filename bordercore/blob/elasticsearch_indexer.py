@@ -18,9 +18,10 @@ import re
 import subprocess
 import uuid
 from datetime import datetime
+from collections.abc import MutableMapping
 from io import BytesIO
 from pathlib import PurePath
-from typing import Any
+from typing import Any, cast
 
 import boto3
 import elasticsearch_dsl
@@ -53,11 +54,17 @@ log = logging.getLogger(__name__)
 
 
 def elasticsearch_merge(
-    data: dict[str, Any],
-    new_data: dict[str, Any],
+    data: Any,
+    new_data: Any,
     raise_on_conflict: bool = False,
 ) -> None:
     """Monkeypatched version of elasticsearch_dsl.utils.merge().
+
+    ``data``/``new_data`` are typed ``Any`` to stay assignment-compatible with
+    ``elasticsearch_dsl.utils.merge``'s own ``dict | AttrDict`` signature: dsl 8
+    types ``AttrDict`` with ``Any`` keys, which won't unify with a ``str``-keyed
+    mapping through the isinstance narrowing below. The lone mutation is cast to
+    ``MutableMapping`` since the runtime values are always dict/AttrDict.
 
     This function avoids an issue when indexing documents with date_range fields
     by skipping Range objects during merge operations.
@@ -93,7 +100,7 @@ def elasticsearch_merge(
         elif key in data and data[key] != value and raise_on_conflict:
             raise ValueError(f"Incompatible data for key {key!r}, cannot be merged.")
         else:
-            data[key] = value
+            cast("MutableMapping[str, Any]", data)[key] = value
 
 
 class ESBlob(Document_ES):
@@ -432,8 +439,6 @@ def index_blob(**kwargs: Any) -> None:
     article = ESBlob(**fields)
     article.meta.id = blob_info["uuid"]
 
-    pipeline_args = {}
-
     # If only the metadata has changed and not the file itself,
     #  don't bother re-indexing the file. Upsert the metadata.
     file_changed = kwargs.get("file_changed", True)
@@ -478,16 +483,16 @@ def index_blob(**kwargs: Any) -> None:
                 pass
 
         if is_ingestible_file(blob_info["file"]):
-            pipeline_args = {"pipeline": "attachment"}
             article.data = base64.b64encode(contents).decode("ascii")
-
-        article.save(**pipeline_args)
+            article.save(pipeline="attachment")
+        else:
+            article.save()
 
     else:
         if not kwargs.get("new_blob", True):
             # For existing blobs, remove any existing metadata first before updating,
             #  in case the user is deleting some of it.
-            delete_metadata(article.uuid)
+            delete_metadata(str(article.uuid))
 
         # Monkeypatch Elasticsearch DSL to avoid issue with date ranges
         elasticsearch_dsl.utils.merge = elasticsearch_merge
