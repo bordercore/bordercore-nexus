@@ -467,8 +467,8 @@ def find_similar_images(
 
     ``threshold`` is a cosine-similarity floor in [0, 1] (0.5 means
     "weakly similar"; 0.95 means "near-duplicate"). Returned similarity
-    values are in [0, 1] — ES 7.x's script_score emits
-    ``cosineSimilarity(...) + 1.0`` in [0, 2]; we halve that.
+    values are in [0, 1] — ES 8 native cosine kNN scores as
+    ``(1 + cosineSimilarity) / 2``.
 
     For ``blob_uuid`` mode, the query vector is pulled directly from the
     existing ES document — no Lambda call is needed. The source blob is
@@ -517,41 +517,26 @@ def find_similar_images(
         assert text is not None  # enforced by the provided-count check above
         vector = encode_text_query(text)
 
-    must_clauses = [{"exists": {"field": "image_embedding"}}]
+    # kNN only scores docs that have the vector, so no explicit exists clause.
     filter_clauses: list[dict] = [{"term": {"user_id": user_id}}]
     if blob_uuid is not None:
         filter_clauses.append(
             {"bool": {"must_not": {"term": {"uuid": blob_uuid}}}}
         )
 
-    body = {
-        "size": limit,
-        "_source": False,
-        "query": {
-            "script_score": {
-                "query": {
-                    "bool": {
-                        "must": must_clauses,
-                        "filter": filter_clauses,
-                    }
-                },
-                "script": {
-                    "source": (
-                        "doc['image_embedding'].size() == 0 ? 0 : "
-                        "cosineSimilarity(params.query_vector, "
-                        "'image_embedding') + 1.0"
-                    ),
-                    "params": {"query_vector": vector},
-                },
-            }
-        },
+    knn_query: dict[str, Any] = {
+        "field": "image_embedding",
+        "query_vector": vector,
+        "k": limit,
+        "num_candidates": max(limit * 10, 100),
+        "filter": filter_clauses,
     }
 
-    response = es.search(index=index, **body)
+    response = es.search(index=index, knn=knn_query, size=limit, source=False)
     out: list[tuple[str, float]] = []
     for hit in response["hits"]["hits"]:
-        # ES script returns (1 + cosine) in [0, 2]; halve to get [0, 1].
-        similarity = hit["_score"] / 2.0
+        # Native cosine kNN already returns (1 + cosine) / 2 in [0, 1].
+        similarity = hit["_score"]
         if similarity >= threshold:
             out.append((hit["_id"], similarity))
     return out

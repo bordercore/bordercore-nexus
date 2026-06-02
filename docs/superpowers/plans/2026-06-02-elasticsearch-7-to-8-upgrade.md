@@ -554,6 +554,13 @@ mapping edit — delete it, re-run Task 2.1, then re-run Task 0.2.
 
 ES8 kNN with cosine similarity returns a score of `(1 + cosine) / 2` in `[0, 1]` — **different normalization** from the old `cosineSimilarity(...) + 1.0` (range `[0, 2]`). The image path's "halve that" math (`_score / 2.0`) must be removed; the notes/semantic thresholds must be re-derived. Each conversion gets a data_quality test that asserts the score range.
 
+**Execution findings (CP3):**
+- `semantic_search`/`perform_search` semantic mode: the old function_score path produced scores >1 (perform_search's function_score even multiplied query score × the +1.0 script → ~4.3), so the range tests gave a clean red→green.
+- `find_similar_images`: the old code **already** divided `_score/2.0`, and es8 cosine kNN returns exactly `(1+cos)/2` — so similarity *values are unchanged*; this conversion is value-equivalent. The red→green driver is the mocked tests asserting the script_score body (rewritten to assert `knn`). The mocked-test `_score` fixtures moved from the `[0,2]` range to native `[0,1]`.
+- `perform_search` returns hits via `_filter_results`, which renames `_score`→`score` and `_source`→`source` — assert on `score` (not `_score`) in tests of that path.
+- `perform_search` semantic kNN sizes `k = offset + RESULT_COUNT_PER_PAGE` so pagination via `from_`/`size` keeps working (improvement over the plan's flat `k`).
+- `es.get(..., _source_includes=[...])` still works on the es8 client (alias) — no change needed in `find_similar_images` blob_uuid mode.
+
 ### Task 3.2: Convert `semantic_search()` (Notes RAG) to kNN
 
 **Files:**

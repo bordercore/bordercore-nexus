@@ -6,29 +6,27 @@ import pytest
 
 @patch("search.services.get_elasticsearch_connection")
 @patch("search.services.encode_text_query")
-def test_find_by_text_calls_lambda_then_script_score(mock_encode, mock_get_es):
-    """Text mode encodes via Lambda, runs a script_score query, and converts ES scores to similarity."""
+def test_find_by_text_calls_lambda_then_knn(mock_encode, mock_get_es):
+    """Text mode encodes via Lambda, runs a native kNN query, and returns similarities."""
     from search.services import find_similar_images
 
     mock_encode.return_value = [0.1] * 512
     es = mock_get_es.return_value
     es.search.return_value = {
         "hits": {"hits": [
-            {"_id": "uuid-1", "_score": 1.95},
-            {"_id": "uuid-2", "_score": 1.83},
+            {"_id": "uuid-1", "_score": 0.975},
+            {"_id": "uuid-2", "_score": 0.915},
         ]}
     }
 
     results = find_similar_images(user_id=42, text="sunset", threshold=0.5, limit=10)
 
     mock_encode.assert_called_once_with("sunset")
-    body = es.search.call_args.kwargs
-    # ES 7.x: script_score over a filtered base query
-    script_score = body["query"]["script_score"]
-    assert script_score["script"]["params"]["query_vector"] == [0.1] * 512
-    assert "image_embedding" in script_score["script"]["source"]
-    assert body["size"] == 10
-    # Results converted from ES (1 + cos) range [0, 2] to similarity [0, 1]
+    knn = es.search.call_args.kwargs["knn"]
+    assert knn["field"] == "image_embedding"
+    assert knn["query_vector"] == [0.1] * 512
+    assert es.search.call_args.kwargs["size"] == 10
+    # Native cosine kNN scores are already in [0, 1]; passed through unchanged.
     assert results == [("uuid-1", 0.975), ("uuid-2", 0.915)]
 
 
@@ -40,15 +38,17 @@ def test_find_by_blob_uuid_pulls_stored_vector(mock_get_es):
     es = mock_get_es.return_value
     es.get.return_value = {"_source": {"image_embedding": [0.3] * 512}}
     es.search.return_value = {
-        "hits": {"hits": [{"_id": "uuid-x", "_score": 2.0}]}
+        "hits": {"hits": [{"_id": "uuid-x", "_score": 1.0}]}
     }
 
     results = find_similar_images(user_id=42, blob_uuid="abc", threshold=0, limit=5)
 
     es.get.assert_called_once()
-    body = es.search.call_args.kwargs
-    assert body["query"]["script_score"]["script"]["params"]["query_vector"] == [0.3] * 512
-    # Score 2.0 (== 1 + 1) -> similarity 1.0
+    knn = es.search.call_args.kwargs["knn"]
+    assert knn["query_vector"] == [0.3] * 512
+    # blob_uuid mode excludes the source blob from results
+    assert any("must_not" in str(clause) for clause in knn["filter"])
+    # Native kNN cosine score 1.0 -> similarity 1.0
     assert results == [("uuid-x", 1.0)]
 
 
@@ -76,8 +76,8 @@ def test_threshold_filters_below_floor(mock_encode, mock_get_es):
     mock_encode.return_value = [0.5] * 512
     mock_get_es.return_value.search.return_value = {
         "hits": {"hits": [
-            {"_id": "high", "_score": 1.90},   # sim 0.95
-            {"_id": "low",  "_score": 1.20},   # sim 0.60
+            {"_id": "high", "_score": 0.95},   # native kNN cosine similarity
+            {"_id": "low",  "_score": 0.60},
         ]}
     }
 
@@ -95,3 +95,29 @@ def test_requires_exactly_one_input():
         find_similar_images(user_id=42, threshold=0.5, limit=10)
     with pytest.raises(ValueError):
         find_similar_images(user_id=42, text="x", blob_uuid="y", threshold=0.5, limit=10)
+
+
+@pytest.mark.data_quality
+def test_find_similar_images_knn_unit_range():
+    """Real-cluster: find_similar_images uses native kNN, similarities in [0, 1],
+    and the source blob is excluded from its own results."""
+    from django.conf import settings
+
+    from lib.util import get_elasticsearch_connection
+    from search.services import find_similar_images
+
+    es = get_elasticsearch_connection()
+    resp = es.search(
+        index=settings.ELASTICSEARCH_INDEX, size=1, source=["uuid"],
+        query={"bool": {"must": [
+            {"term": {"user_id": 1}},
+            {"exists": {"field": "image_embedding"}},
+        ]}},
+    )
+    src_uuid = resp["hits"]["hits"][0]["_id"]
+
+    results = find_similar_images(user_id=1, blob_uuid=src_uuid, threshold=0.0, limit=5)
+    assert results, "expected similar-image hits"
+    for uuid_, sim in results:
+        assert 0.0 <= sim <= 1.0, sim
+        assert uuid_ != src_uuid
