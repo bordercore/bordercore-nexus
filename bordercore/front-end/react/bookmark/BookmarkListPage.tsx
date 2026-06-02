@@ -498,7 +498,7 @@ export function BookmarkListPage({
         </div>
 
         <main className="bookmark-main">
-          <div id="bookmark-search-form" className="bookmark-toolbar">
+          <div className="bookmark-toolbar">
             {/* Tags/Filters button for mobile */}
             <button
               type="button"
