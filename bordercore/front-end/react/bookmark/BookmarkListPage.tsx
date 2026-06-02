@@ -12,8 +12,7 @@ import {
 import hotkeys from "hotkeys-js";
 import { SelectValue, SelectValueHandle } from "../common/SelectValue";
 import { tagStyle } from "../utils/tagColors";
-import { doGet, doDelete, doPost, getCsrfToken } from "../utils/reactUtils";
-import { EventBus } from "../utils/reactUtils";
+import { doGet, doDelete, doPost, getCsrfToken, EventBus } from "../utils/reactUtils";
 import BookmarkPinnedTags from "./BookmarkPinnedTags";
 import BookmarkPinnedBookmarks from "./BookmarkPinnedBookmarks";
 import BookmarkFilterTitle from "./BookmarkFilterTitle";
@@ -456,7 +455,7 @@ export function BookmarkListPage({
   }, [isPinned, selectedTagName, urls]);
 
   return (
-    <div id="bookmark-list-page" className="bookmark-app">
+    <div id="bookmark-list-page">
       {/* Tags drawer overlay (for mobile) */}
       {drawerOpen && <div className="bookmark-tags-drawer-overlay" onClick={toggleDrawer} />}
 
@@ -465,7 +464,7 @@ export function BookmarkListPage({
           <VisualizerSlot />
         </div>
 
-        <header className="bookmark-head">
+        <div className="bookmark-head">
           <div className="bookmark-head-text">
             <BookmarkFilterTitle tag={selectedTagName} search={searchTerm} />
             <p className="bookmark-subhead">
@@ -482,7 +481,7 @@ export function BookmarkListPage({
             <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" />
             new
           </button>
-        </header>
+        </div>
 
         <div className={`bookmark-tags-sidebar flex flex-col ${drawerOpen ? "drawer-open" : ""}`}>
           <BookmarkPinnedTags
