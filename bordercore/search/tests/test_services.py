@@ -424,3 +424,43 @@ def test_mget_uses_es8_kwargs():
     resp = es.mget(index=settings.ELASTICSEARCH_INDEX, ids=ids)
     assert [d["_id"] for d in resp["docs"]] == ids
     assert all(d["found"] for d in resp["docs"])
+
+
+def _note_uuid_and_vector(es, index, user_id=1):
+    """Return (uuid, embeddings_vector) for one real note in the index."""
+    resp = es.search(
+        index=index, size=1, source=["uuid"],
+        query={"bool": {"must": [
+            {"term": {"doctype": "note"}},
+            {"term": {"user_id": user_id}},
+            {"exists": {"field": "embeddings_vector"}},
+        ]}},
+    )
+    hit = resp["hits"]["hits"][0]
+    doc = es.get(index=index, id=hit["_id"], source=["embeddings_vector"])
+    return hit["_id"], doc["_source"]["embeddings_vector"]
+
+
+@pytest.mark.data_quality
+def test_semantic_search_returns_knn_scores_in_unit_range(monkeypatch):
+    """semantic_search uses native kNN: scores land in [0, 1] and a note's own
+    vector self-matches as the top hit at ~1.0."""
+    from types import SimpleNamespace
+
+    from django.conf import settings
+
+    import search.services as svc
+    from lib.util import get_elasticsearch_connection
+
+    es = get_elasticsearch_connection()
+    uuid_, vec = _note_uuid_and_vector(es, settings.ELASTICSEARCH_INDEX)
+    monkeypatch.setattr(svc, "len_safe_get_embedding", lambda *a, **k: vec)
+
+    request = SimpleNamespace(user=SimpleNamespace(id=1))
+    out = svc.semantic_search(request, "anything", size=5)
+    hits = out["hits"]["hits"]
+    assert hits, "expected note hits"
+    for h in hits:
+        assert 0.0 <= h["_score"] <= 1.0, h["_score"]
+    assert hits[0]["_id"] == uuid_
+    assert hits[0]["_score"] > 0.99

@@ -652,37 +652,28 @@ def semantic_search(
 
     embeddings = len_safe_get_embedding(search)
 
-    search_object = build_base_query(
-        cast(int, request.user.id),
-        additional_must=[{"term": {"doctype": "note"}}],
-        size=size,
-        source_fields=[
-            "date",
-            "contents",
-            "doctype",
-            "name",
-            "title",
-            "url",
-            "uuid"
+    # Native ES8 kNN over the indexed embeddings_vector. kNN is a top-level
+    # search parameter with its own filter, so we bypass the function_score
+    # skeleton. Cosine scores land in [0, 1] (vs the old script_score's [0, 2]).
+    knn_search: dict[str, Any] = {
+        "knn": {
+            "field": "embeddings_vector",
+            "query_vector": embeddings,
+            "k": size,
+            "num_candidates": max(size * 10, 100),
+            "filter": [
+                {"term": {"user_id": cast(int, request.user.id)}},
+                {"term": {"doctype": "note"}},
+            ],
+        },
+        "size": size,
+        "_source": [
+            "date", "contents", "doctype", "name", "title", "url", "uuid",
         ],
-    )
-
-    search_object["query"]["function_score"]["functions"] = [
-        {
-            "script_score": {
-                "script": {
-                    "source": "doc['embeddings_vector'].size() == 0 ? 0 : cosineSimilarity(params.query_vector, 'embeddings_vector') + 1.0",
-                    "params": {
-                        "query_vector": embeddings
-                    }
-                }
-            }
-        }
-    ]
-    search_object["sort"] = {"_score": {"order": "desc"}}
+    }
 
     try:
-        return execute_search(search_object)
+        return execute_search(knn_search)
     except RequestError as e:
         error_info = cast(dict[str, Any], e.info)
         messages.add_message(request, messages.ERROR, f"Request Error: {e.status_code} {error_info.get('error')}")
