@@ -39,7 +39,7 @@ describe("NodeToolbar", () => {
   it("fires setQ for each keystroke in the search input", async () => {
     const user = userEvent.setup();
     const { setQ } = renderToolbar();
-    await user.type(screen.getByPlaceholderText(/filter nodes/i), "abc");
+    await user.type(screen.getByPlaceholderText(/search nodes/i), "abc");
     expect(setQ).toHaveBeenCalledTimes(3);
     expect(setQ).toHaveBeenNthCalledWith(1, "a");
     expect(setQ).toHaveBeenNthCalledWith(2, "b");

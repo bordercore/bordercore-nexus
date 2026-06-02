@@ -37,7 +37,7 @@ export function NodeToolbar({
         <FontAwesomeIcon icon={faSearch} aria-hidden="true" />
         <input
           type="text"
-          placeholder="filter nodes · fuzzy match name"
+          placeholder="Search nodes…"
           value={q}
           onChange={e => setQ(e.target.value)}
         />

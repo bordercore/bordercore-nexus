@@ -52,20 +52,27 @@
   position: relative;
   z-index: 0;
   min-height: 100vh;
-  padding: 0;
+  padding: 16px 40px 80px 24px;
   margin: -1rem -0.75rem 0 0;
   color: var(--fg-1);
   font-family: var(--font-ui);
   font-size: 14px;
-  line-height: 1.5;
+  letter-spacing: -0.005em;
+  line-height: 1.55;
 
   * { box-sizing: border-box; }
 
-  // Subtle ambient aurora, matching prototype body::before
+  // Subtle ambient accent glow — the same radial gradient shared by .todo-app,
+  // .cl-app, .bookmark-app, and the music shell.
   &::before {
     position: absolute;
     z-index: 0;
-    background: none;
+    background:
+      radial-gradient(
+        900px 600px at 10% 110%,
+        color-mix(in oklch, var(--accent), transparent 92%),
+        transparent 60%
+      );
     content: "";
     inset: 0;
     pointer-events: none;
@@ -81,8 +88,10 @@
     position: relative;
     z-index: 1;
     display: grid;
-    min-height: 100vh;
-    grid-template-columns: 240px 1fr;
+    max-width: 1240px;
+    margin: 0 auto;
+    gap: 0 48px;
+    grid-template-columns: 260px 1fr;
   }
 
   // ==== Sidebar ====
@@ -206,9 +215,7 @@
 
   // ==== Main column ====
   .nl-main {
-    width: 100%;
-    max-width: 1280px;
-    padding: 0 40px 120px;
+    min-width: 0;
     grid-column: 2;
     grid-row: 2;
   }
@@ -223,63 +230,34 @@
   }
 
   // ==== Page head ====
+  // Title + count subhead on the left, "new" button opposite — matches
+  // .todo-head / .cl-pagehead / .bookmark-head, with the canonical bordered
+  // divider down to the toolbar below.
   .nl-head {
-    display: grid;
-    align-items: end;
-    padding: 28px 40px 0;
-
-    // Tight gap from the title/description block down to the toolbar
-    // (search + sort + view + count) — matches the 8px rhythm used by
-    // /reminder/'s .rm-page-head.
-    margin-bottom: 8px;
-    gap: 32px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
     grid-column: 2;
     grid-row: 1;
-    grid-template-columns: 1fr auto;
+
+    @include refined-page-head-bordered;
+  }
+
+  .nl-head-text {
+    min-width: 0;
+    flex: 1;
 
     h1 {
       @extend %bc-page-title;
 
-      margin: 0;
-    }
-
-    p {
-      max-width: 620px;
-      margin: 10px 0 0;
-      color: var(--fg-2);
-      font-size: 14px;
-      line-height: 1.55;
+      margin: 0 0 4px;
     }
   }
 
-  .nl-head-meta {
-    display: flex;
-    align-items: center;
-    padding: 10px 4px 10px 14px;
-    border-left: 1px solid var(--hairline);
-    gap: 6px;
-  }
-
-  .nl-head-stat {
-    display: flex;
-    min-width: 78px;
-    flex-direction: column;
-    padding: 6px 16px;
-    gap: 2px;
-
-    .v {
-      color: var(--fg-1);
-      font: 600 28px/1 var(--font-ui);
-      letter-spacing: -0.01em;
-    }
-
-    .k {
-      margin-top: 2px;
-      color: var(--fg-4);
-      font-family: var(--font-mono);
-      font-size: 11px;
-      text-transform: lowercase;
-    }
+  .nl-subhead {
+    @include refined-page-sub($margin: 0);
   }
 
   // ==== Buttons ====
@@ -380,21 +358,21 @@
     }
   }
 
-  // ==== Toolbar ====
+  // ==== Toolbar ==== (search + sort + view + count). A plain flex row mirroring
+  // .todo-toolbar; the page-head's bordered divider sits above it.
   .nl-toolbar {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-
-    // No padding-top: .nl-head's 8px margin-bottom owns the gap from
-    // the title block down to the search input. Bottom padding + hairline
-    // remain so the toolbar still caps off the page-header region.
-    padding: 0 0 18px;
-    border-bottom: 1px solid var(--hairline);
     margin-bottom: 24px;
-    gap: 14px;
+    gap: 12px;
   }
 
+  // Search input — same surface as /todo/'s .todo-search-input: an absolutely
+  // positioned icon at 14px and an input carrying the canonical
+  // refined-input-surface (border, --radius corners, --shadow-sm, accent focus
+  // ring, 13.5px text, fg-3 placeholder), padded to clear the icon. Renders at
+  // the same 43px height as the other four pages.
   .nl-search {
     position: relative;
     display: flex;
@@ -404,32 +382,18 @@
 
     > svg {
       position: absolute;
-      left: 12px;
-      color: var(--fg-4);
-      font-size: 12px;
+      left: 14px;
+      color: var(--fg-3);
+      font-size: 13px;
       pointer-events: none;
     }
 
     input {
       width: 100%;
-      padding: 9px 34px;
-      border: 1px solid var(--line-soft);
+      padding: 10px 36px 10px 38px;
+      font-size: 13.5px;
 
-      // Canonical search-input radius — matches refined-search-input mixin
-      // adopted by /collection/, /music/, /blob/notes/.
-      border-radius: var(--bc-radius-sm, 6px);
-      background: var(--bg-1);
-      color: var(--fg-1);
-      font: 400 13px/1.3 var(--font-ui);
-      outline: none;
-      transition: border-color var(--nl-t-fast), box-shadow var(--nl-t-fast);
-
-      &::placeholder { color: var(--fg-4); }
-
-      &:focus {
-        border-color: color-mix(in oklch, var(--accent), transparent 50%);
-        box-shadow: 0 0 0 3px var(--accent-glow);
-      }
+      @include refined-input-surface;
     }
   }
 
@@ -914,29 +878,24 @@
 
   // ==== Responsive ====
   @media (width <= 1020px) {
-    .nl-shell { grid-template-columns: 1fr; }
+    padding: 20px;
+
+    .nl-shell {
+      gap: 20px;
+      grid-template-columns: 1fr;
+    }
+
     .nl-viz { display: none; }
     .nl-sidebar { display: none; }
 
     .nl-head {
       grid-column: 1;
       grid-row: 1;
-      grid-template-columns: 1fr;
     }
 
     .nl-main {
       grid-column: 1;
       grid-row: 2;
     }
-
-    .nl-head-meta {
-      padding-left: 0;
-      border-top: 1px solid var(--hairline);
-      border-left: none;
-    }
-  }
-
-  @media (width <= 640px) {
-    .nl-main { padding: 20px; }
   }
 }

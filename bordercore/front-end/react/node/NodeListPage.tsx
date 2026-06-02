@@ -128,31 +128,16 @@ export default function NodeListPage({
         </div>
 
         <div className="nl-head">
-          <div>
+          <div className="nl-head-text">
             <h1>Nodes</h1>
-            <p>
-              every topic is a node. attach collections, notes, todos, images, and nested nodes.
-              they surface in the homepage and drill queue when you revisit them.
+            <p className="nl-subhead">
+              <span className="count">{nodes.length}</span> nodes
             </p>
           </div>
-          <div className="nl-head-meta">
-            <div className="nl-head-stat">
-              <span className="v">{nodes.length}</span>
-              <span className="k">nodes</span>
-            </div>
-            <div className="nl-head-stat">
-              <span className="v">{totalColl}</span>
-              <span className="k">collections</span>
-            </div>
-            <div className="nl-head-stat">
-              <span className="v">{totalTodo}</span>
-              <span className="k">todos</span>
-            </div>
-            <button type="button" className="refined-btn primary" onClick={() => setNewOpen(true)}>
-              <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" />
-              new
-            </button>
-          </div>
+          <button type="button" className="refined-btn primary" onClick={() => setNewOpen(true)}>
+            <FontAwesomeIcon icon={faPlus} className="refined-btn-icon" />
+            new
+          </button>
         </div>
 
         <NodeSidebar
