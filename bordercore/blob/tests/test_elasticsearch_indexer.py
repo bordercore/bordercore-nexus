@@ -82,3 +82,36 @@ def test_get_range_from_date():
 def test_get_num_pages(blob_pdf_factory):
 
     assert get_num_pages(blob_pdf_factory[0].file.read()) == 2
+
+
+@pytest.mark.data_quality
+def test_esblob_save_update_roundtrip():
+    """ESBlob.save + upsert + get work on elasticsearch-dsl 8 against ES8.
+
+    Mirrors the indexer's real pattern: each write uses a *freshly constructed*
+    ESBlob with an explicit meta.id (never a doc fetched via .get()). A fetched
+    doc carries _seq_no/_primary_term, which dsl 8 turns into an optimistic-
+    concurrency check that ES rejects when combined with doc_as_upsert.
+    """
+    import os
+
+    from elasticsearch_dsl.connections import connections
+
+    from blob.elasticsearch_indexer import ESBlob
+
+    connections.create_connection(hosts=[os.environ["ELASTICSEARCH_ENDPOINT"]])
+    test_id = "dsl8-roundtrip-test"
+    try:
+        # new-blob path: fresh instance + save
+        doc = ESBlob(name="dsl8 roundtrip", user_id=1)
+        doc.meta.id = test_id
+        doc.save()
+        assert ESBlob.get(id=test_id).name == "dsl8 roundtrip"
+
+        # existing-blob path: fresh instance + doc_as_upsert (as the indexer does)
+        upsert = ESBlob(name="dsl8 updated", user_id=1)
+        upsert.meta.id = test_id
+        upsert.update(doc_as_upsert=True, name="dsl8 updated")
+        assert ESBlob.get(id=test_id).name == "dsl8 updated"
+    finally:
+        ESBlob(meta={"id": test_id}).delete()

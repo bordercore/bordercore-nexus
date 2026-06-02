@@ -433,6 +433,15 @@ git commit -m "Convert remaining es8 update_by_query/put_mapping calls off body=
 
 `ESBlob(Document)` uses `.save(**pipeline_args)` and `.update(doc_as_upsert=True, **fields)`. dsl 8 keeps these but the connection alias and `Index` meta may need a touch.
 
+**Execution finding (dsl 8 gotcha):** calling `.update(doc_as_upsert=True, ...)` on a doc that
+was fetched via `ESBlob.get()` FAILS with `"compare and write operations can not be used with
+upsert"` — dsl 8 auto-sends `if_seq_no`/`if_primary_term` from the fetched doc, and ES rejects
+optimistic concurrency combined with upsert. The **indexer is unaffected** because it always
+constructs `article = ESBlob(**fields)` fresh and sets `article.meta.id` (no seq_no attached) —
+verified at `blob/elasticsearch_indexer.py:432`. The data_quality test must mirror that fresh-
+construct pattern, not fetch-then-update, or it produces a false failure. Verified PASS on
+dsl 8.17.1.
+
 **Files:**
 - Modify (if needed): `bordercore/blob/elasticsearch_indexer.py` (ESBlob class + save/update sites ~:484, :495)
 - Modify (if needed): `bordercore/aws/index_blobs/lib/elasticsearch_indexer.py:422,582`
