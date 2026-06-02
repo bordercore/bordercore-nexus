@@ -303,15 +303,64 @@ $tag-colors: (
   }
 }
 
+// Search input — identical surface to /todo/'s .todo-search-input and
+// /bookmark/'s .bookmark-search-bar: the canonical refined-input-surface
+// (border, --radius corners, --shadow-sm, accent focus ring, 13.5px text), a
+// 14px left icon inset + 11px icon→text gap, and fg-3 icon/placeholder, so the
+// field reads the same across all three pages. The toolbar rule above lets it
+// grow to fill the row.
 .cl-search {
-  @include refined-search-input($width: 280px);
+  display: flex;
+  align-items: center;
+  padding: 10px 12px 10px 14px;
+  cursor: text;
+  gap: 11px;
+
+  @include refined-input-surface;
+
+  svg {
+    flex-shrink: 0;
+    color: var(--fg-3);
+    font-size: 13px;
+  }
+
+  input {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    min-height: 0;
+    flex: 1;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    color: var(--fg-1);
+    font-family: var(--font-ui);
+    font-size: 13.5px;
+    line-height: 1.55;
+
+    &:focus {
+      outline: none;
+    }
+
+    &::placeholder {
+      color: var(--fg-3);
+    }
+
+    // Suppress WebKit's built-in clear "x" on <input type="search"> so the
+    // custom .cl-search-clear owns that affordance.
+    // stylelint-disable-next-line property-no-vendor-prefix
+    &::-webkit-search-cancel-button {
+      appearance: none;
+    }
+  }
 
   // Page-specific: a tiny "×" pill that clears the query when text is present.
-  // Sits as a flex sibling after the <input>; mixin handles everything else.
   .cl-search-clear {
     display: inline-flex;
     width: 18px;
     height: 18px;
+    flex-shrink: 0;
     align-items: center;
     justify-content: center;
     border: 0;
