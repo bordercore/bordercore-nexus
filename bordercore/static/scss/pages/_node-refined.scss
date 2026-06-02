@@ -216,6 +216,12 @@
   // ==== Main column ====
   .nl-main {
     min-width: 0;
+
+    // Reset padding explicitly: the notes-landing page defines a *global*
+    // `.nl-main` (padding 26px 28px 40px) and node reuses the same class name,
+    // so without this the toolbar inherits a 26px top / 28px left inset. The
+    // .node-app outer padding + .nl-shell own the page insets here.
+    padding: 0;
     grid-column: 2;
     grid-row: 2;
   }
