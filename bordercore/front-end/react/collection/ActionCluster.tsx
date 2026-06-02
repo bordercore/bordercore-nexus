@@ -34,7 +34,7 @@ export function ActionCluster({
         <input
           ref={searchRef}
           type="search"
-          placeholder="search collections"
+          placeholder="Search collections…"
           value={searchQuery}
           onChange={e => onSearchChange(e.target.value)}
           aria-label="Search collections"
