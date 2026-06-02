@@ -13,6 +13,7 @@ import type {
 import CurateRail from "./CurateRail";
 import CurateHeader from "./CurateHeader";
 import CurateGrid from "./CurateGrid";
+import VisualizerSlot from "../visualizers/VisualizerSlot";
 import { Spinner } from "../common/Spinner";
 import ImageViewModal from "./ImageViewModal";
 import EditCollectionModal from "./EditCollectionModal";
@@ -383,6 +384,10 @@ export function CurateCollectionPage({
 
       <div className="cd-curate">
         <div className={railOpen ? "cd-shell" : "cd-shell collapsed"}>
+          <div className="cd-viz">
+            <VisualizerSlot />
+          </div>
+
           <CurateRail
             objectTags={objectTags}
             totalCount={collection.object_count}

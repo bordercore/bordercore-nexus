@@ -101,8 +101,19 @@
     background: color-mix(in oklch, var(--bg-1), transparent 60%);
     gap: 12px;
     grid-column: 1;
-    grid-row: 1 / span 2;
+    grid-row: 2;
     overflow-y: auto;
+  }
+
+  // Visualizer slot — col 1 / row 1, above the rail, matching the list pages.
+  // Its height drives the head row, so the (bottom-aligned) title lands at the
+  // same vertical position as the other pages.
+  .cd-viz {
+    overflow: hidden;
+    min-height: 96px;
+    padding-bottom: 24px;
+    grid-column: 1;
+    grid-row: 1;
   }
 
   .cd-rail-head {
@@ -237,7 +248,7 @@
   .cd-header {
     display: flex;
     flex-wrap: wrap;
-    align-items: flex-start;
+    align-items: flex-end;
     justify-content: space-between;
     gap: 24px;
     grid-column: 2;
