@@ -256,15 +256,23 @@ git add bordercore/lib/util.py bordercore/lib/tests/test_util.py
 git commit -m "Port main ES connection factory to es8 client"
 ```
 
-### Task 1.3: Rewrite the 4 Lambda connection copies
+### Task 1.3: Lambda connections — already covered by Task 1.2 + requirements pin
 
-Each Lambda has its own `lib/util.py` with the same removed `RequestsHttpConnection` pattern. They construct the client directly (not via dsl). Apply the same fix to all four.
+**Discovery during execution:** the per-Lambda `lib/util.py` files are **gitignored build
+artifacts**, not source. `control.sh`/`deploy.sh` in each Lambda dir do
+`cp ../../lib/util.py ./lib/`, which resolves to the canonical `bordercore/lib/util.py`
+already es8-ported in Task 1.2. The committed copies on disk are stale (≈10 KB vs the current
+17 KB source) and get **refreshed at deploy** (Phase 6.2). So there is nothing to commit for
+the four `lib/util.py` copies (git ignores them). The only tracked change here is the
+`index_blobs` requirements pin (Step 3). Hand-edits to the gitignored copies are harmless but
+unnecessary — the deploy `cp` overwrites them.
+
+Also note: the three thumbnail Lambdas never call the ES connection at runtime (their handlers
+use it only as dead shared boilerplate), so only `index_blobs` truly needs the es8 client.
 
 **Files:**
-- Modify: `bordercore/aws/index_blobs/lib/util.py:39-62`
-- Modify: `bordercore/aws/create_bookmark_thumbnail/lib/util.py:39-62`
-- Modify: `bordercore/aws/create_collection_thumbnail/lib/util.py:52-62`
-- Modify: `bordercore/aws/create_thumbnail/lib/util.py:52-62`
+- (No tracked code change — `bordercore/lib/util.py` from Task 1.2 is the source of truth.)
+- Modify: `bordercore/aws/index_blobs/requirements.txt` (ES pin, Step 3)
 
 - [ ] **Step 1: Inspect one to confirm the shared shape**
 
