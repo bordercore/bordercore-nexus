@@ -4,6 +4,8 @@ This module provides utility functions for Elasticsearch connections, file type
 detection, string manipulation, URL parsing, and other common operations used
 across the application.
 """
+from __future__ import annotations
+
 import hashlib
 import os
 import string
