@@ -56,6 +56,15 @@ def _get_elasticsearch_connection(host: str | None = None, timeout: int = ELASTI
     if not host:
         host = os.environ.get("ELASTICSEARCH_ENDPOINT", "http://localhost:9200")
 
+    # The es8 client requires a full URL with scheme + host + PORT; the es7
+    # client used to default the port to 9200. Endpoints are commonly configured
+    # without a scheme and/or port, so normalize before connecting.
+    if "://" not in host:
+        host = f"http://{host}"
+    parsed = urlparse(host)
+    if parsed.port is None:
+        host = f"{parsed.scheme}://{parsed.hostname}:9200"
+
     # es8 transport: no connection_class / use_ssl. TLS is implied by an
     # https:// host. `request_timeout` replaces the old `timeout` kwarg.
     return connections.create_connection(
