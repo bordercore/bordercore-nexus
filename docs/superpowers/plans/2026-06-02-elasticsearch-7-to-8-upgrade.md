@@ -965,20 +965,28 @@ Task 5.2 to find docs changed during/after the copy. (The index has a `last_modi
 
 - [ ] **Step 2: Kick off the remote reindex (async)**
 
-From the new ES8 host (whitelist set in Task 4.3), run. NOTE: remote reindex does **not**
-support `slices` (auto or >1) — it is single-threaded by design; do not add `slices`:
+From the new ES8 host (whitelist set in Task 4.3), run. Two execution-critical notes:
+- Remote reindex does **not** support `slices` (auto or >1) — single-threaded by design.
+- **Use a SMALL batch `size` (50).** Bordercore docs carry large `attachment.content` (extracted
+  PDF text) plus 1536-d + 512-d float vectors → ~790 KB/doc average. The remote-reindex response
+  buffer is capped at 100 MB, so `size:1000` (≈158 MB/batch) fails with
+  `"Remote responded with a chunk that was too large... content_too_long_exception"`. `size:200`
+  also fails (158 MB); `size:50` (~40 MB/batch) succeeds with margin. Run it through the ES8 host
+  (it reads ES7 over the VPC private IP):
 ```bash
 curl -s -X POST "$ES8_HOST/_reindex?wait_for_completion=false" \
   -H 'Content-Type: application/json' -d '{
   "source": {
-    "remote": { "host": "http://<es7-host>:9200", "socket_timeout": "120s" },
+    "remote": { "host": "http://<es7-private-ip>:9200", "socket_timeout": "180s" },
     "index": "bordercore",
-    "size": 1000
+    "size": 50
   },
   "dest": { "index": "bordercore" }
 }'
 ```
-Expected: returns a `"task"` id (e.g. `node:12345`).
+Expected: returns a `"task"` id. NOTE: the task's `status.total` stays 0 for the first several
+seconds while the initial remote scroll is established — poll `completed`, don't trust an early
+`total=0`.
 
 - [ ] **Step 3: Poll the task to completion**
 
