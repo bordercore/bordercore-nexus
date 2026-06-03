@@ -1,4 +1,0 @@
-[program:elasticsearch]
-command=/home/ubuntu/elasticsearch-7.0.1/bin/elasticsearch
-user=ubuntu
-; minfds=65536
