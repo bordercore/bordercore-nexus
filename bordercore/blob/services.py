@@ -1374,8 +1374,9 @@ def import_newyorktimes(user: User, url: str) -> Blob:
     return blob
 
 
-# Notes RAG: ES script_score uses cosineSimilarity + 1.0, so raw similarity 0.3 → score 1.3.
-NOTES_RAG_MIN_SCORE = 1.3
+# Notes RAG: ES8 cosine kNN scores as (1 + cosineSimilarity) / 2 in [0, 1], so raw
+# similarity 0.3 → score 0.65.
+NOTES_RAG_MIN_SCORE = 0.65
 NOTES_RAG_MAX_SOURCES = 3
 NOTES_RAG_EXCERPT_CHARS = 1500
 
@@ -1412,8 +1413,9 @@ def _filter_notes_hits(
 ) -> list[dict[str, Any]]:
     """Drop semantic-search hits below the minimum similarity threshold.
 
-    Elasticsearch scores note matches with ``cosineSimilarity + 1.0``, so a
-    ``min_score`` of 1.3 corresponds to roughly 0.3 raw cosine similarity.
+    ES8 native cosine kNN scores note matches as ``(1 + cosineSimilarity) / 2``
+    in ``[0, 1]``, so a ``min_score`` of 0.65 corresponds to roughly 0.3 raw
+    cosine similarity.
 
     Args:
         hits: Elasticsearch hit dicts from :func:`search.services.semantic_search`.

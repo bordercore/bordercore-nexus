@@ -439,10 +439,11 @@ def _make_note_hit(name: str, contents: str, score: float, note_uuid: str | None
 
 def test_filter_notes_hits_drops_low_scores():
     """_filter_notes_hits keeps hits at or above NOTES_RAG_MIN_SCORE."""
+    # ES8 cosine kNN scores are in [0, 1]; NOTES_RAG_MIN_SCORE is 0.65.
     hits = [
-        _make_note_hit("Good", "content", 1.8),
-        _make_note_hit("Weak", "content", 1.1),
-        _make_note_hit("Borderline", "content", 1.3),
+        _make_note_hit("Good", "content", 0.90),
+        _make_note_hit("Weak", "content", 0.50),
+        _make_note_hit("Borderline", "content", 0.65),
     ]
 
     filtered = _filter_notes_hits(hits)
