@@ -5,5 +5,29 @@
 # Force git to use PWD when pulling changes
 unset GIT_DIR
 
-cd /var/www/django/bordercore
+cd /var/www/django/bordercore || exit 1
+
+before=$(git rev-parse HEAD)
 git pull origin master
+after=$(git rev-parse HEAD)
+
+# Nothing changed -> leave the running services alone
+[ "$before" = "$after" ] && exit 0
+
+# Gracefully reload gunicorn (WSGI). Its master runs as www-data, the same user
+# as this hook, so no sudo is needed. With no --preload, a HUP forks fresh
+# workers that import the new code, then drains the old ones: zero dropped
+# requests. The oldest matching pid is the master; workers recycle to higher
+# pids via --max-requests. Note: a HUP does not re-run bin/gunicorn_start, so it
+# picks up code changes only -- run a full restart for dependency changes.
+gunicorn_master=$(pgrep -f 'gunicorn config.wsgi:application' | sort -n | head -1)
+[ -n "$gunicorn_master" ] && kill -HUP "$gunicorn_master"
+
+# Restart daphne (ASGI / WebSockets). Daphne has no graceful in-place reload, so
+# it must be restarted to run new code. INT makes it exit cleanly; supervisor
+# (autorestart=true) respawns it via bin/daphne_start. Open WebSocket
+# connections briefly drop and clients reconnect.
+daphne_proc=$(pgrep -f 'daphne.*config.asgi:application' | sort -n | head -1)
+[ -n "$daphne_proc" ] && kill -INT "$daphne_proc"
+
+exit 0

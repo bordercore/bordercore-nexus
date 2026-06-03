@@ -31,6 +31,11 @@ vite_ec2: vite_build check-env
 	# Also copy to fallback location for compatibility
 	scp ./static/vite/.vite/manifest.json $(EC2_HOST):$(EC2_PATH)../bordercore/bordercore/static/vite/manifest.json
 
+# Full deploy: push Vite assets, then push code (the server's post-receive hook
+# pulls and reloads gunicorn/daphne). Equivalent to `make vite && git push`.
+deploy: vite
+	git push bordercore master
+
 admin_ec2:
 	set -e
 	ADMIN_SRC=$$($(PYTHON) -c "import django.contrib.admin, os; print(os.path.join(os.path.dirname(django.contrib.admin.__file__), 'static', 'admin'))")
