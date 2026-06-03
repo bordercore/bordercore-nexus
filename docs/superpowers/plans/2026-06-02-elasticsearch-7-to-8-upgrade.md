@@ -1074,14 +1074,23 @@ Index one PDF blob through the normal path against `$ES8_HOST` and confirm `atta
 > | `CreateImageEmbedding` | raw HTTP `/_update/{id}` | ✅ already | none |
 > | `CreateThumbnail`/`CreateBookmarkThumbnail`/`CreateCollectionThumbnail` | none | ✅ | none |
 
-### Task 6.0: (Optional) final delta reindex right before cutover
+### Task 6.0: Final delta reindex + delete reconciliation right before cutover
 
-Data may change between the Phase-5 reindex and cutover day. Re-run the remote reindex (it
-upserts by `_id`, so it's incremental and safe) so the new box is current. The temporary ES7
-SG rule (172.31.14.49/32 on 9200, tagged `es8-reindex-temp`) supports this.
+Data may change between the Phase-5 reindex and cutover. Re-run the remote reindex (upserts by
+`_id`, incremental and safe). The temporary ES7 SG rule (172.31.14.49/32 on 9200, tagged
+`es8-reindex-temp`) supports this.
 ```bash
 # on the new box; size:50 per the buffer limit
 ssh -i ~/JerrellSchiversAWS.pem ubuntu@<new-box> 'curl -s -X POST "localhost:9200/_reindex?wait_for_completion=false" -H "Content-Type: application/json" -d "{\"source\":{\"remote\":{\"host\":\"http://172.31.14.43:9200\",\"socket_timeout\":\"180s\"},\"index\":\"bordercore\",\"size\":50},\"dest\":{\"index\":\"bordercore\"}}"'
+```
+
+**CRITICAL: remote `_reindex` does NOT propagate deletions.** A doc deleted in ES7 after the
+copy stays in ES8 (observed in execution: a delete+add in ES7 left ES8 at 22,104 vs ES7's
+22,103). After the final delta reindex, reconcile by id-diff and delete stragglers from ES8,
+then confirm `_count` parity — do this BEFORE the EIP move:
+```
+# page all _id from both clusters via {"sort":["_doc"],"size":5000,"search_after":...}
+# DELETE /bordercore/_doc/{id} on ES8 for every id in (es8_ids - es7_ids)
 ```
 
 ### Task 6.1: Deploy the es8 app + IndexBlob (operator tooling) — BEFORE the EIP move
