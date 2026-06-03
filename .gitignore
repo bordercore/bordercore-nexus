@@ -71,3 +71,5 @@ docs/superpowers/specs/
 # CLIP ONNX models — exported via manage.py export_clip_onnx
 bordercore/aws/create_image_embedding/models/
 /docs/superpowers/plans/2026-06-02-elasticsearch-7-to-8-upgrade.md
+/docs/superpowers/notes/es8-infra.md
+/docs/superpowers/notes/es8-knn-relevance-check.md
