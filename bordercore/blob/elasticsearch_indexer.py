@@ -405,6 +405,12 @@ def index_blob(**kwargs: Any) -> None:
             - "new_blob": If True (default), treat as new blob. If False,
               remove existing metadata before update.
     """
+    # Register the elasticsearch-dsl "default" connection so ESBlob.save()/
+    # .update() can resolve it. In the Django app this is set up at startup;
+    # in the index-blob Lambda this call is the only place it gets registered
+    # (the new-blob path skips delete_metadata, which is the other caller).
+    get_elasticsearch_connection()
+
     blob_info = get_blob_info(**kwargs)
 
     extra_fields = kwargs.get("extra_fields", {})
