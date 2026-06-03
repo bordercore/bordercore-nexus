@@ -1054,73 +1054,97 @@ Index one PDF blob through the normal path against `$ES8_HOST` and confirm `atta
 
 ---
 
-## Phase 6: Cutover
+## Phase 6: Cutover — RUNBOOK (deferred to operator)
 
-### Task 6.1: Flip the application endpoint
+> **Status: not executed.** Phases 0–5 are done and validated; the new box
+> `i-015129f445f20eec0` (private 172.31.14.49) holds a verified full copy. Cutover is a
+> short coordinated live op gated on the operator's app-deploy + Docker/ECR tooling.
+>
+> **Key insight from execution:** every ES consumer addresses ES via the **Elastic IP
+> hostname** `ec2-35-170-131-84.compute-1.amazonaws.com` (= EIP `35.170.131.84`,
+> `eipalloc-0567a50494f3e314a`). So the cutover is essentially **reassociate the EIP to the
+> new box** — no endpoint/env edits anywhere — once the es8 code is deployed.
+>
+> **Accurate ES-consumer inventory** (corrects the Phase-1 "4 Lambdas" assumption):
+> | Consumer | ES access | es8-ready? | Cutover action |
+> |---|---|---|---|
+> | Django app | es Python client | ✅ in this branch | deploy this branch |
+> | `IndexBlob` (container Lambda, ECR `index-blob-lambda`) | es Python client (es7.0.5) | ❌ | rebuild image + push + redeploy |
+> | `CreateEmbeddings` | raw HTTP `/_update/{id}` | ✅ already | none |
+> | `CreateImageEmbedding` | raw HTTP `/_update/{id}` | ✅ already | none |
+> | `CreateThumbnail`/`CreateBookmarkThumbnail`/`CreateCollectionThumbnail` | none | ✅ | none |
 
-- [ ] **Step 1: Update `ELASTICSEARCH_ENDPOINT` in the app's runtime env**
+### Task 6.0: (Optional) final delta reindex right before cutover
 
-Set the production env var (wherever the Django app reads it — systemd unit / `.env` / process manager) from `$ES7_HOST` to `$ES8_HOST`. Restart the app.
-
-- [ ] **Step 2: Smoke-test live search**
-
-Run a normal keyword search, a semantic search, an image-similarity search, and a Notes-chip chatbot query through the live UI. Expected: results return, no 500s, semantic results look sane.
-
-### Task 6.2: Redeploy the 4 Lambdas
-
-The thumbnail/index Lambdas carry their own ES client + endpoint and were updated in Task 1.3.
-
-- [ ] **Step 1: Set each Lambda's `ELASTICSEARCH_ENDPOINT` to `$ES8_HOST`**
-
-For each of `index_blobs`, `create_bookmark_thumbnail`, `create_collection_thumbnail`, `create_thumbnail`:
+Data may change between the Phase-5 reindex and cutover day. Re-run the remote reindex (it
+upserts by `_id`, so it's incremental and safe) so the new box is current. The temporary ES7
+SG rule (172.31.14.49/32 on 9200, tagged `es8-reindex-temp`) supports this.
 ```bash
-aws lambda update-function-configuration --function-name <fn> --environment "Variables={ELASTICSEARCH_ENDPOINT=$ES8_HOST,...keep-existing...}"
+# on the new box; size:50 per the buffer limit
+ssh -i ~/JerrellSchiversAWS.pem ubuntu@<new-box> 'curl -s -X POST "localhost:9200/_reindex?wait_for_completion=false" -H "Content-Type: application/json" -d "{\"source\":{\"remote\":{\"host\":\"http://172.31.14.43:9200\",\"socket_timeout\":\"180s\"},\"index\":\"bordercore\",\"size\":50},\"dest\":{\"index\":\"bordercore\"}}"'
 ```
-(First read existing env with `aws lambda get-function-configuration` so you don't drop other vars.)
 
-- [ ] **Step 2: Rebuild and deploy each Lambda with the es8 client**
+### Task 6.1: Deploy the es8 app + IndexBlob (operator tooling) — BEFORE the EIP move
 
-Repackage each Lambda (es8 `requirements.txt` from Task 1.3) and deploy via the project's existing Lambda build/deploy mechanism (zip + `aws lambda update-function-code`, or the Dockerfile/Makefile if one exists under `bordercore/aws/`).
+- [ ] **Step 1: Merge this branch and deploy the Django app** via your normal app deploy, so
+  the running app uses the es8 client (`elasticsearch==8.17.1`). Until both this *and* Step 2
+  are done, do NOT move the EIP — old es7-client app/IndexBlob would hit es8 and break.
+- [ ] **Step 2: Rebuild + redeploy `IndexBlob`** with the es8 client:
+  ```bash
+  cd bordercore/aws/index_blobs && ./control.sh -b && ./control.sh -p && ./control.sh -u   # build, push, update (confirm flags in control.sh)
+  ```
+  This bakes the current `bordercore/lib/util.py` (es8) + the bumped `requirements.txt` into the image.
 
-- [ ] **Step 3: Verify a Lambda end-to-end**
+### Task 6.2: Move the Elastic IP (one AWS call — instant cutover)
 
-Trigger one (e.g. upload a blob to fire `index_blobs`, or create a bookmark to fire `create_bookmark_thumbnail`) and confirm the doc/thumbnail lands in the new ES8 index and CloudWatch shows no connection errors.
+- [ ] **Step 1: Reassociate the EIP from ES7 to the new box**
+  ```bash
+  aws ec2 associate-address --allocation-id eipalloc-0567a50494f3e314a --instance-id i-015129f445f20eec0 --allow-reassociation
+  ```
+  The hostname `ec2-35-170-131-84.compute-1.amazonaws.com` now resolves to the new box for
+  the app and all Lambdas — no env changes needed. (CreateEmbeddings/CreateImageEmbedding keep
+  working via raw HTTP.)
+- [ ] **Step 2: Restart the app** if it pools long-lived ES connections, so it reconnects.
 
-### Task 6.3: Soak
+### Task 6.3: Smoke-test + soak
 
-- [ ] **Step 1: Watch for 24–48h**
-
-Monitor app logs, Lambda CloudWatch logs, and ES8 `_cluster/health` + JVM heap (`curl -s $ES8_HOST/_nodes/stats/jvm`). Confirm no OOM/circuit-breaker errors on the 2 GB heap. If heap pressure appears, the int8_hnsw quantization + 2 GB heap is the lever already pulled; the fallback within the no-upsize constraint is reducing `num_candidates` or `index.knn` segment merges — note but do not upsize.
+- [ ] **Step 1:** Through the live UI: keyword search, semantic search, image-similarity, Notes-chip
+  chatbot. Create a blob (fires `IndexBlob` + `CreateEmbeddings`) and an image blob (fires
+  `CreateImageEmbedding`); confirm the doc + vectors land in the new index and CloudWatch is clean.
+- [ ] **Step 2:** Watch 24–48 h: app logs, Lambda CloudWatch, ES8 `_cluster/health` + JVM heap
+  (`curl -s localhost:9200/_nodes/stats/jvm`). On heap pressure (2 GB): int8_hnsw is already
+  applied; reduce `num_candidates` rather than upsizing (cost constraint).
 
 ---
 
 ## Phase 7: Decommission ES7
 
-### Task 7.1: Stop, then later terminate the old instance
+### Task 7.1: After a clean soak
 
-- [ ] **Step 1: Stop (don't terminate) the ES7 instance after a clean soak**
-
-Run: `aws ec2 stop-instances --instance-ids i-029f4cd137a6dac2b`
-Keep it stopped for a rollback window (e.g. 1–2 weeks). Its data EBS volumes have `DeleteOnTermination: false`, so they survive even a later terminate.
-
-- [ ] **Step 2: Update repo config/docs to reflect ES8**
-
-Update `config/elasticsearch/Dockerfile` base image `7.16.2` → `8.17.1`, fix the stale `elasticsearch.conf.supervisord` (or remove it in favor of the systemd note), and update any README/host references. Commit:
-```bash
-git add config/elasticsearch/Dockerfile config/elasticsearch/elasticsearch.conf.supervisord
-git commit -m "Update ES infra config to 8.17.1 / systemd"
-```
-
-- [ ] **Step 3: Terminate after the rollback window**
-
-Run (only once fully confident): `aws ec2 terminate-instances --instance-ids i-029f4cd137a6dac2b`
-Decide separately whether to delete or snapshot the freed data volumes.
+- [ ] **Step 1: Remove the temporary reindex rule from ES7's SG**
+  ```bash
+  aws ec2 revoke-security-group-ingress --group-id sg-0af074ec5a6fd9892 \
+    --ip-permissions 'IpProtocol=tcp,FromPort=9200,ToPort=9200,IpRanges=[{CidrIp=172.31.14.49/32}]'
+  ```
+- [ ] **Step 2: Stop (don't terminate) ES7** for a 1–2 week rollback window:
+  `aws ec2 stop-instances --instance-ids i-029f4cd137a6dac2b`
+  (Its data EBS volumes are `DeleteOnTermination: false`.)
+- [ ] **Step 3: Update repo infra config** — `config/elasticsearch/Dockerfile` base
+  `7.16.2`→`8.17.1`, remove/replace the stale `elasticsearch.conf.supervisord` (systemd now),
+  update host references. Commit.
+- [ ] **Step 4: Terminate** once fully confident:
+  `aws ec2 terminate-instances --instance-ids i-029f4cd137a6dac2b`
 
 ---
 
 ## Rollback
 
-At any point before Task 7.1 Step 3, revert by setting `ELASTICSEARCH_ENDPOINT` back to `$ES7_HOST` for the app and the 4 Lambdas and restarting; ES7 is never mutated during the migration. Code changes (es8 client) are forward-compatible only with ES8 — if rolling back the *server*, also `git revert` the client-bump commits, since the es8 client cannot talk to ES7.
+- **Before the EIP move:** nothing to undo — ES7 still serves the app.
+- **After the EIP move:** reassociate the EIP back to ES7 (`associate-address --allocation-id
+  eipalloc-0567a50494f3e314a --instance-id i-029f4cd137a6dac2b --allow-reassociation`) and
+  redeploy the previous app/IndexBlob build. ES7 was never mutated (read-only reindex source),
+  so its data is intact. Note the es8 client cannot talk to ES7, so a server rollback also means
+  reverting the app/IndexBlob to the es7-client build.
 
 ---
 

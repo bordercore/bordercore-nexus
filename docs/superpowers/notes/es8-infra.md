@@ -20,3 +20,15 @@
 
 ## VPC
 - vpc-2f389e55, public subnet subnet-2ff16448 (us-east-1c)
+
+## Cutover facts (Phase 6 — deferred to operator)
+- **All ES consumers address ES via the Elastic IP hostname** `ec2-35-170-131-84.compute-1.amazonaws.com`
+  = EIP `35.170.131.84`, alloc `eipalloc-0567a50494f3e314a` (currently on ES7).
+  → Cutover = `aws ec2 associate-address --allocation-id eipalloc-0567a50494f3e314a --instance-id i-015129f445f20eec0 --allow-reassociation` (no env edits).
+- **ES consumers inventory:**
+  - Django app — es Python client; deploy this branch before EIP move.
+  - `IndexBlob` — container Lambda (ECR `index-blob-lambda`), es Python client (es7.0.5) → rebuild+redeploy with es8 (`bordercore/aws/index_blobs/control.sh`).
+  - `CreateEmbeddings`, `CreateImageEmbedding` — raw HTTP `/_update/{id}` (Painless), es8-compatible, no change.
+  - `CreateThumbnail`/`CreateBookmarkThumbnail`/`CreateCollectionThumbnail` — no ES.
+- **Temporary ES7 SG rule added for reindex:** 172.31.14.49/32 → 9200 on `sg-0af074ec5a6fd9892` (tagged es8-reindex-temp); remove at decommission.
+- **Reindex done** 2026-06-03: 22,103 docs, embeddings carried over, counts match ES7. Re-run (size:50, upsert) just before cutover to capture any drift.
