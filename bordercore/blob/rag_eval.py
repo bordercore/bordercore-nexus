@@ -14,6 +14,18 @@ member present at that stage):
 - MRR               mean reciprocal rank of the first expected uuid in the raw
                      ranking.
 - dropped-by-filter raw-hit but not effective-hit (removed by the score filter or the top-N cap).
+
+Scope and interpretation:
+
+- This covers standalone-question retrieval only. It calls ``semantic_search``
+  directly and does NOT exercise the multi-turn query rewrite
+  (``_rewrite_notes_search_query``), which only fires on chat follow-ups, so a
+  rewrite regression won't show up here.
+- When reading a report, ``effective recall@3`` and ``dropped-by-filter`` are
+  the retrieval-regression signals (the threshold-bug class). A uniform raw miss
+  across every case usually means an Elasticsearch infra problem, not a
+  retrieval regression — ``semantic_search`` swallows ``RequestError`` and
+  returns no hits.
 """
 
 from __future__ import annotations
