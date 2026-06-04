@@ -18,8 +18,10 @@ member present at that stage):
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any, Callable
 
 from blob.services import NOTES_RAG_MAX_SOURCES, _filter_notes_hits
@@ -73,11 +75,46 @@ class CaseResult:
         return self.raw_hit8 and not self.effective_hit3
 
 
+def _mean(values: list[float]) -> float:
+    """Arithmetic mean, returning 0.0 for an empty sequence."""
+    return sum(values) / len(values) if values else 0.0
+
+
 @dataclass
 class EvalReport:
-    """Aggregate metrics over scored cases. Implemented in Task 2."""
+    """Aggregate metrics over a list of scored cases."""
 
     cases: list[CaseResult]
+
+    @property
+    def case_count(self) -> int:
+        """Total number of scored cases in this report."""
+        return len(self.cases)
+
+    @property
+    def raw_recall_at_8(self) -> float:
+        """Fraction of cases whose expected note appeared in the raw top-k."""
+        return _mean([1.0 if c.raw_hit8 else 0.0 for c in self.cases])
+
+    @property
+    def effective_recall_at_3(self) -> float:
+        """Fraction of cases whose expected note survived the filter + top-3 cap."""
+        return _mean([1.0 if c.effective_hit3 else 0.0 for c in self.cases])
+
+    @property
+    def hit_at_1(self) -> float:
+        """Fraction of cases whose #1 effective result is an expected note."""
+        return _mean([1.0 if c.hit1 else 0.0 for c in self.cases])
+
+    @property
+    def mrr(self) -> float:
+        """Mean reciprocal rank of the first expected uuid in the raw ranking."""
+        return _mean([c.rr for c in self.cases])
+
+    @property
+    def dropped_count(self) -> int:
+        """Number of cases that were retrieved raw but lost to the filter/cap."""
+        return sum(1 for c in self.cases if c.dropped_by_filter)
 
 
 def _first_expected_rank(
@@ -117,5 +154,46 @@ def evaluate_notes_retrieval(
     raw_k: int = 8,
     search_fn: Callable[..., dict[str, Any]] = semantic_search,
 ) -> EvalReport:
-    """Run each case through the retrieval pipeline. Implemented in Task 2."""
-    raise NotImplementedError
+    """Run each case through the real retrieval pipeline and score it.
+
+    Args:
+        dataset: Cases to evaluate.
+        user_id: Owner whose notes are searched (notes' owner defaults to 1).
+        raw_k: Number of raw hits to request from ``semantic_search`` (the
+            ``size`` argument); raw recall is measured against this top-k.
+        search_fn: The retrieval function, injectable for testing. Defaults to
+            the production :func:`search.services.semantic_search`.
+
+    Returns:
+        An :class:`EvalReport` aggregating every case result.
+    """
+    request = SimpleNamespace(user=SimpleNamespace(id=user_id))
+    results: list[CaseResult] = []
+    for case in dataset:
+        response = search_fn(request, case.question, size=raw_k)
+        raw_hits = (response.get("hits") or {}).get("hits") or []
+        results.append(score_case(case, raw_hits))
+    return EvalReport(cases=results)
+
+
+def load_dataset(path: Path = DEFAULT_DATASET_PATH) -> list[EvalCase]:
+    """Load eval cases from a JSON file.
+
+    The file is a JSON list of objects with ``question`` (str),
+    ``expected_uuids`` (list of str), and an optional ``note_name`` (str).
+
+    Raises:
+        FileNotFoundError: If ``path`` does not exist.
+        json.JSONDecodeError: If the file is not valid JSON.
+        KeyError: If a record is missing a required field (``question`` or
+            ``expected_uuids``).
+    """
+    data = json.loads(Path(path).read_text())
+    return [
+        EvalCase(
+            question=item["question"],
+            expected_uuids=item["expected_uuids"],
+            note_name=item.get("note_name", ""),
+        )
+        for item in data
+    ]

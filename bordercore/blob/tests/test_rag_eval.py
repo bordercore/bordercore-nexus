@@ -82,3 +82,71 @@ class TestScoreCase:
         assert result.raw_hit8 is False
         assert result.dropped_by_filter is False
         assert result.rr == 0.0
+
+
+class TestEvalReport:
+    def _result(self, *, raw_rank, effective_rank, rr):
+        return CaseResult(
+            case=EvalCase(question="q", expected_uuids=["a"]),
+            raw_rank=raw_rank,
+            effective_rank=effective_rank,
+            rr=rr,
+        )
+
+    def test_aggregates_over_mixed_results(self):
+        report = EvalReport(cases=[
+            self._result(raw_rank=1, effective_rank=1, rr=1.0),    # raw+eff+hit1
+            self._result(raw_rank=2, effective_rank=2, rr=0.5),    # raw+eff
+            self._result(raw_rank=1, effective_rank=None, rr=1.0),  # dropped-by-filter
+            self._result(raw_rank=None, effective_rank=None, rr=0.0),  # miss
+        ])
+        assert report.raw_recall_at_8 == pytest.approx(0.75)   # 3/4
+        assert report.effective_recall_at_3 == pytest.approx(0.5)  # 2/4
+        assert report.hit_at_1 == pytest.approx(0.25)          # 1/4
+        assert report.mrr == pytest.approx((1.0 + 0.5 + 1.0 + 0.0) / 4)
+        assert report.dropped_count == 1
+        assert report.case_count == 4
+
+    def test_empty_report_is_all_zero(self):
+        report = EvalReport(cases=[])
+        assert report.raw_recall_at_8 == 0.0
+        assert report.effective_recall_at_3 == 0.0
+        assert report.hit_at_1 == 0.0
+        assert report.mrr == 0.0
+        assert report.dropped_count == 0
+        assert report.case_count == 0
+
+
+class TestEvaluateNotesRetrieval:
+    def test_drives_pipeline_with_injected_search_fn(self):
+        dataset = [
+            EvalCase(question="where are the taxes", expected_uuids=["tax"]),
+            EvalCase(question="nothing matches", expected_uuids=["zzz"]),
+        ]
+
+        def fake_search(request, query, *, size):
+            assert request.user.id == 7
+            assert size == 8
+            if "taxes" in query:
+                return {"hits": {"hits": [{"_score": 0.9, "_source": {"uuid": "tax"}}]}}
+            return {"hits": {"hits": [{"_score": 0.9, "_source": {"uuid": "other"}}]}}
+
+        report = evaluate_notes_retrieval(dataset, user_id=7, search_fn=fake_search)
+        assert report.case_count == 2
+        assert report.raw_recall_at_8 == pytest.approx(0.5)
+        assert report.cases[0].effective_rank == 1
+        assert report.cases[1].raw_rank is None
+
+    def test_passes_raw_k_through_as_size(self):
+        seen = {}
+
+        def fake_search(request, query, *, size):
+            seen["size"] = size
+            return {"hits": {"hits": []}}
+
+        evaluate_notes_retrieval(
+            [EvalCase(question="q", expected_uuids=["a"])],
+            raw_k=20,
+            search_fn=fake_search,
+        )
+        assert seen["size"] == 20
