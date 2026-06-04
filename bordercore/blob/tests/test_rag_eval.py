@@ -4,10 +4,12 @@ import pytest
 
 from blob.rag_eval import (
     CaseResult,
+    DEFAULT_DATASET_PATH,
     EvalCase,
     EvalReport,
     _first_expected_rank,
     evaluate_notes_retrieval,
+    load_dataset,
     score_case,
 )
 
@@ -150,3 +152,42 @@ class TestEvaluateNotesRetrieval:
             search_fn=fake_search,
         )
         assert seen["size"] == 20
+
+
+# Calibrated AFTER the first real run on the curated dataset: run
+# `manage.py eval_notes_rag`, observe effective recall@3, and set this to a
+# round value just below it (e.g. observed 0.85 → 0.75). Raise it when a
+# deliberate retrieval improvement is shipped and you want to lock in the gain;
+# do not raise it reactively after a single high run.
+NOTES_RAG_EVAL_BASELINE = 0.75
+
+# Minimum cases before the guard asserts; below this, recall estimates are
+# too noisy to be a reliable regression gate.
+MIN_GUARD_CASES = 10
+
+
+@pytest.mark.data_quality
+def test_notes_rag_effective_recall_meets_baseline():
+    """Real-ES regression guard: curated dataset must retrieve well enough.
+
+    Skips until a curated dataset of at least MIN_GUARD_CASES exists, so a fresh
+    clone or pre-curation state does not hard-fail. Once populated, it asserts
+    effective recall@3 stays at or above the calibrated baseline — this is what
+    would have caught the NOTES_RAG_MIN_SCORE threshold regression.
+    """
+    if not DEFAULT_DATASET_PATH.exists():
+        pytest.skip("No curated Notes RAG eval dataset present.")
+
+    dataset = load_dataset(DEFAULT_DATASET_PATH)
+    if len(dataset) < MIN_GUARD_CASES:
+        pytest.skip(
+            f"Curated dataset has {len(dataset)} cases (<{MIN_GUARD_CASES}); "
+            "not enough to guard yet."
+        )
+
+    report = evaluate_notes_retrieval(dataset)
+    assert report.effective_recall_at_3 >= NOTES_RAG_EVAL_BASELINE, (
+        f"effective recall@3 {report.effective_recall_at_3:.3f} fell below "
+        f"baseline {NOTES_RAG_EVAL_BASELINE}; {report.dropped_count} cases "
+        "dropped by the score filter/cap."
+    )
