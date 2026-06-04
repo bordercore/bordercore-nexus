@@ -38,7 +38,6 @@ bordercore/aws/create_thumbnail/lib/*
 bordercore/aws/index_blobs/ffmpeg-6.0-amd64-static/*
 bordercore/aws/index_blobs/ffmpeg-release-amd64-static.tar.xz
 bordercore/aws/index_blobs/lib/*
-!bordercore/aws/index_blobs/lib/elasticsearch_indexer.py
 bordercore/aws/create_bookmark_thumbnail/lib/*
 bordercore/aws/create_collection_thumbnail/lib/*
 **/.aws-sam/*

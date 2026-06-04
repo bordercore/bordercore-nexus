@@ -389,6 +389,21 @@ def create_embeddings(uuid: str) -> None:
     )
 
 
+def is_image_blob(content_type: str | None) -> bool:
+    """Return True if the blob is an image we should embed with CLIP."""
+    return content_type is not None and content_type.startswith("image/")
+
+
+def create_image_embedding(uuid: str) -> None:
+    """Invoke the CreateImageEmbedding Lambda asynchronously for this blob."""
+    lambda_client = boto3.client("lambda")
+    lambda_client.invoke(
+        FunctionName="CreateImageEmbedding",
+        InvocationType="Event",
+        Payload=json.dumps({"mode": "index", "uuid": uuid}),
+    )
+
+
 def index_blob(**kwargs: Any) -> None:
     """Index a blob document in Elasticsearch.
 
@@ -507,3 +522,6 @@ def index_blob(**kwargs: Any) -> None:
 
     if "content" in blob_info:
         create_embeddings(blob_info["uuid"])
+
+    if is_image_blob(getattr(article, "content_type", None)):
+        create_image_embedding(blob_info["uuid"])
