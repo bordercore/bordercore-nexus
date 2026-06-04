@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Disable the AWS CLI v2 pager so `aws` never blocks on `less` under a TTY
+# (e.g. when run via `script -qc`); otherwise control.sh can hang after the call.
+export AWS_PAGER=""
+
 IMAGE_REPO=192218769908.dkr.ecr.us-east-1.amazonaws.com/create-bookmark-thumbnail-lambda
 FUNCTION=CreateBookmarkThumbnail
 LAMBDA=create-bookmark-thumbnail-lambda
