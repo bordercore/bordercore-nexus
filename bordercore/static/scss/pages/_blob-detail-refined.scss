@@ -930,6 +930,13 @@
   .bd-content li { margin: 6px 0; }
   .bd-content li::marker { color: var(--fg-4); }
 
+  // Opt out of the global bare `li:hover { background }` rule from
+  // _navigation.scss so rendered list items don't highlight on hover.
+  .bd-content li:hover,
+  .bd-note li:hover {
+    background-color: transparent;
+  }
+
   .bd-content code {
     padding: 1px 6px;
     border: 1px solid color-mix(in oklch, var(--accent-3) 18%, transparent);
