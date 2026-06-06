@@ -23,6 +23,12 @@ def test_favicon():
 
 
 def test_unescape_em():
-    """Test that the unescape_em filter converts escaped em tags back to HTML."""
+    """The filter unescapes ES <em> highlights while escaping other markup."""
 
-    assert unescape_em("&lt;em&gt;Match&lt;/em&gt;") == "<em>Match</em>"
+    # Real Elasticsearch highlight fragments contain literal <em> tags.
+    assert unescape_em("<em>Match</em>") == "<em>Match</em>"
+    assert unescape_em("a <em>hit</em> here") == "a <em>hit</em> here"
+
+    # All other markup stays escaped (XSS protection).
+    assert unescape_em("<script>alert(1)</script>") == "&lt;script&gt;alert(1)&lt;/script&gt;"
+    assert unescape_em("<em>x</em><img src=y>") == "<em>x</em>&lt;img src=y&gt;"

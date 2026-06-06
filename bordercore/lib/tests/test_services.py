@@ -5,6 +5,8 @@ import requests
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
+from lib.util import UnsafeURLError
+
 pytestmark = [pytest.mark.django_db]
 
 
@@ -41,28 +43,28 @@ def test_missing_url_parameter(client):
     assert response.json() == {"error": "URL parameter is required"}
 
 
-@patch("lib.services.requests.get")
+@patch("lib.services.fetch_url_safely")
 @patch("lib.services.trafilatura.extract")
-def test_successful_extraction(mock_extract, mock_requests_get, client):
+def test_successful_extraction(mock_extract, mock_fetch, client):
     """Test that extract_text returns 200 with extracted text on success."""
     mock_response = MagicMock()
     mock_response.text = "Sample HTML content"
-    mock_requests_get.return_value = mock_response
+    mock_fetch.return_value = mock_response
     mock_extract.return_value = "Extracted text"
 
     response = client.get("/api/extract_text", {"url": "http://example.com"})
     assert response.status_code == 200
     assert response.json() == {"text": "Extracted text"}
-    mock_requests_get.assert_called_once_with("http://example.com", timeout=10)
+    mock_fetch.assert_called_once_with("http://example.com", timeout=10)
 
 
-@patch("lib.services.requests.get")
+@patch("lib.services.fetch_url_safely")
 @patch("lib.services.trafilatura.extract")
-def test_no_text_extracted(mock_extract, mock_requests_get, client):
+def test_no_text_extracted(mock_extract, mock_fetch, client):
     """Test that extract_text returns 422 when no text can be extracted from the URL."""
     mock_response = MagicMock()
     mock_response.text = "Sample HTML content"
-    mock_requests_get.return_value = mock_response
+    mock_fetch.return_value = mock_response
     mock_extract.return_value = None
 
     response = client.get("/api/extract_text", {"url": "http://example.com"})
@@ -70,25 +72,36 @@ def test_no_text_extracted(mock_extract, mock_requests_get, client):
     assert response.json() == {"error": "No text could be extracted from the given URL"}
 
 
-@patch("lib.services.requests.get")
-def test_request_exception(mock_requests_get, client):
+@patch("lib.services.fetch_url_safely")
+def test_request_exception(mock_fetch, client):
     """Test that extract_text returns 500 when a request exception occurs."""
-    mock_requests_get.side_effect = requests.RequestException("Connection error")
+    mock_fetch.side_effect = requests.RequestException("Connection error")
 
     response = client.get("/api/extract_text", {"url": "http://example.com"})
     assert response.status_code == 500
     assert response.json() == {"error": "Error fetching URL: Connection error"}
 
 
-@patch("lib.services.requests.get")
+@patch("lib.services.fetch_url_safely")
 @patch("lib.services.trafilatura.extract")
-def test_unexpected_exception(mock_extract, mock_requests_get, client):
+def test_unexpected_exception(mock_extract, mock_fetch, client):
     """Test that extract_text returns 500 when an unexpected exception occurs."""
     mock_response = MagicMock()
     mock_response.text = "Sample HTML content"
-    mock_requests_get.return_value = mock_response
+    mock_fetch.return_value = mock_response
     mock_extract.side_effect = Exception("Unexpected error")
 
     response = client.get("/api/extract_text", {"url": "http://example.com"})
     assert response.status_code == 500
     assert response.json() == {"error": "An unexpected error occurred: Unexpected error"}
+
+
+@patch("lib.services.fetch_url_safely")
+def test_extract_text_rejects_unsafe_url(mock_fetch, client):
+    """A URL the SSRF guard rejects returns 400 rather than fetching it."""
+    mock_fetch.side_effect = UnsafeURLError("Access to private/internal addresses is not allowed")
+
+    response = client.get("/api/extract_text", {"url": "http://169.254.169.254/"})
+
+    assert response.status_code == 400
+    assert "private" in response.json()["error"].lower()

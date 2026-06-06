@@ -3,8 +3,6 @@
 This module contains API views for site statistics and text extraction
 functionality.
 """
-import ipaddress
-import socket
 from http import HTTPStatus
 from urllib.parse import urlparse
 
@@ -18,6 +16,7 @@ from django.http import JsonResponse
 
 from bookmark.models import Bookmark
 from drill.models import Question
+from lib.util import UnsafeURLError, fetch_url_safely
 
 
 @api_view(["GET"])
@@ -78,28 +77,10 @@ def extract_text(request: Request) -> JsonResponse:
     if parsed.scheme not in {"http", "https"}:
         return JsonResponse({"error": "Invalid URL scheme"}, status=HTTPStatus.BAD_REQUEST)
 
-    # Security: Block private/internal IPs to prevent SSRF attacks against
-    # internal services (localhost, private networks, etc.)
-    # Note: This check is not fully resistant to DNS rebinding attacks —
-    # the hostname is resolved here for validation, but requests.get()
-    # resolves it again independently. A sophisticated attacker could
-    # return a public IP on the first lookup and 127.0.0.1 on the second.
-    hostname = parsed.hostname
-    if hostname:
-        try:
-            # Resolve hostname to IP address
-            ip = socket.gethostbyname(hostname)
-            ip_obj = ipaddress.ip_address(ip)
-            # Check if IP is private, loopback, link-local, or reserved
-            if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local or ip_obj.is_reserved:
-                return JsonResponse({"error": "Access to private/internal IPs is not allowed"}, status=HTTPStatus.BAD_REQUEST)
-        except (socket.gaierror, ValueError):
-            # If hostname resolution fails or IP parsing fails, allow the request
-            # to proceed and let requests library handle the error
-            pass
-
+    # SSRF protection (validates every resolved IP, fails closed on resolution
+    # errors, and re-checks each redirect hop) lives in fetch_url_safely.
     try:
-        response = requests.get(url, timeout=10)
+        response = fetch_url_safely(url, timeout=10)
         response.raise_for_status()
 
         # Configure trafilatura
@@ -113,6 +94,8 @@ def extract_text(request: Request) -> JsonResponse:
             return JsonResponse({"text": extracted_text})
         return JsonResponse({"error": "No text could be extracted from the given URL"}, status=HTTPStatus.UNPROCESSABLE_ENTITY)
 
+    except UnsafeURLError as e:
+        return JsonResponse({"error": str(e)}, status=HTTPStatus.BAD_REQUEST)
     except requests.RequestException as e:
         return JsonResponse({"error": f"Error fetching URL: {str(e)}"}, status=HTTPStatus.INTERNAL_SERVER_ERROR)
     except Exception as e:

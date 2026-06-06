@@ -193,10 +193,10 @@ def get_overdue_tasks(request: HttpRequest) -> dict[str, list[dict[str, Any]]]:
         for x in overdue_qs
     ]
 
-    # Once retrieved, clear the due dates so they don't reappear as overdue
-    if tasks:
-        overdue_qs.update(due_date=None)
-
+    # Read-only: a context processor runs on every render, so it must not write.
+    # Overdue tasks remain visible in the topbar until the user snoozes or
+    # deletes them (todo:snooze_task / delete), rather than being silently
+    # cleared on first view.
     return {
         "overdue_tasks": tasks
     }

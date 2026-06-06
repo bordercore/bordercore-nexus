@@ -28,5 +28,8 @@ def unescape_em(text: str) -> str:
         SafeString with only <em> tags unescaped, safe for HTML rendering.
     """
     escaped = escape(text)
-    result = escaped.replace("&amp;lt;em&amp;gt;", "<em>").replace("&amp;lt;/em&amp;gt;", "</em>")
+    # escape() turns the literal <em>/<\/em> tags that Elasticsearch emits into
+    # &lt;em&gt;/&lt;/em&gt;; unescape only those so highlights render while all
+    # other markup stays escaped (XSS-safe).
+    result = escaped.replace("&lt;em&gt;", "<em>").replace("&lt;/em&gt;", "</em>")
     return mark_safe(result)
