@@ -123,6 +123,17 @@ def test_unpin_note(auto_login_user, blob_text_factory):
     assert resp.status_code == 204
 
 
+def test_pin_note_remove_false_pins(authenticated_client, blob_image_factory):
+    # A falsey-looking string must not be treated as truthy and trigger an unpin.
+    _, client = authenticated_client()
+    url = urls.reverse("accounts:pin_note")
+    resp = client.post(url, {
+        "uuid": blob_image_factory[0].uuid,
+        "remove": "false"
+    })
+    assert resp.status_code == 201
+
+
 # ── Store in session ─────────────────────────────────────────────────────
 
 

@@ -339,7 +339,7 @@ def pin_note(request: HttpRequest) -> Response:
             - message: Error message if status is "ERROR"
     """
     uuid = request.POST["uuid"]
-    remove = request.POST.get("remove", False)
+    remove = request.POST.get("remove", "").lower() in ("true", "1", "on")
 
     user = cast(User, request.user)
     note = get_user_object_or_404(user, Blob, uuid=uuid)

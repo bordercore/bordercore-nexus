@@ -68,7 +68,7 @@ class UserProfile(models.Model):
     theme preferences, and various third-party service integrations.
     """
 
-    uuid = models.UUIDField(default=uuid.uuid4, editable=False)
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     user = models.OneToOneField(User, on_delete=models.PROTECT)
     pinned_tags: models.ManyToManyField = models.ManyToManyField(Tag, through="UserTag")
     pinned_notes: models.ManyToManyField = models.ManyToManyField(Blob, through="UserNote")
