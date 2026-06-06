@@ -172,8 +172,7 @@ def test_notes_rag_effective_recall_meets_baseline():
 
     Skips until a curated dataset of at least MIN_GUARD_CASES exists, so a fresh
     clone or pre-curation state does not hard-fail. Once populated, it asserts
-    effective recall@3 stays at or above the calibrated baseline — this is what
-    would have caught the NOTES_RAG_MIN_SCORE threshold regression.
+    effective recall@3 stays at or above the calibrated baseline.
     """
     if not DEFAULT_DATASET_PATH.exists():
         pytest.skip("No curated Notes RAG eval dataset present.")

@@ -12,7 +12,7 @@ from instaloader.instaloader import Instaloader
 pytestmark = [pytest.mark.django_db]
 
 from blob.models import Blob
-from blob.services import (_build_notes_rag_messages, _filter_notes_hits,
+from blob.services import (_build_notes_rag_messages,
                            _rewrite_notes_search_query, chatbot, chatbot_followups,
                            get_authors, get_blob_naturalsize, get_dashboard_blobs,
                            get_recent_blobs, get_recent_media, import_artstation,
@@ -437,20 +437,6 @@ def _make_note_hit(name: str, contents: str, score: float, note_uuid: str | None
     }
 
 
-def test_filter_notes_hits_drops_low_scores():
-    """_filter_notes_hits keeps hits at or above NOTES_RAG_MIN_SCORE."""
-    # ES8 cosine kNN scores are in [0, 1]; NOTES_RAG_MIN_SCORE is 0.65.
-    hits = [
-        _make_note_hit("Good", "content", 0.90),
-        _make_note_hit("Weak", "content", 0.50),
-        _make_note_hit("Borderline", "content", 0.65),
-    ]
-
-    filtered = _filter_notes_hits(hits)
-
-    assert [h["_source"]["name"] for h in filtered] == ["Good", "Borderline"]
-
-
 def test_build_notes_rag_messages_truncates_and_lists_sources():
     """_build_notes_rag_messages truncates long notes and builds a sources footer."""
     long_body = "x" * 2000
@@ -531,26 +517,6 @@ def test_chatbot_notes_no_hits_returns_message(mock_semantic_search, mock_openai
     request = MagicMock()
     request.user = user
     mock_semantic_search.return_value = {"hits": {"hits": []}}
-
-    output = "".join(chatbot(request, {
-        "mode": "notes",
-        "chat_history": json.dumps([{"role": "user", "content": "kitchen remodel"}]),
-    }))
-
-    assert "couldn't find any relevant notes" in output
-    mock_openai_cls.assert_not_called()
-
-
-@patch("blob.services.OpenAI")
-@patch("blob.services.semantic_search")
-def test_chatbot_notes_low_score_returns_message(mock_semantic_search, mock_openai_cls, authenticated_client):
-    """Notes mode treats sub-threshold hits as no match and does not call OpenAI."""
-    user, _ = authenticated_client()
-    request = MagicMock()
-    request.user = user
-    mock_semantic_search.return_value = {
-        "hits": {"hits": [_make_note_hit("Weak match", "content", 0.5)]},
-    }
 
     output = "".join(chatbot(request, {
         "mode": "notes",

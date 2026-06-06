@@ -1374,9 +1374,6 @@ def import_newyorktimes(user: User, url: str) -> Blob:
     return blob
 
 
-# Notes RAG: ES8 cosine kNN scores as (1 + cosineSimilarity) / 2 in [0, 1], so raw
-# similarity 0.3 → score 0.65.
-NOTES_RAG_MIN_SCORE = 0.65
 NOTES_RAG_MAX_SOURCES = 3
 NOTES_RAG_EXCERPT_CHARS = 1500
 
@@ -1405,26 +1402,6 @@ NOTES_RAG_REWRITE_SYSTEM_PROMPT = (
     "earlier turns. Use keywords likely to appear in notes. Output only the query, "
     "no quotes, explanation, or punctuation beyond what the query needs."
 )
-
-
-def _filter_notes_hits(
-    hits: list[dict[str, Any]],
-    min_score: float = NOTES_RAG_MIN_SCORE,
-) -> list[dict[str, Any]]:
-    """Drop semantic-search hits below the minimum similarity threshold.
-
-    ES8 native cosine kNN scores note matches as ``(1 + cosineSimilarity) / 2``
-    in ``[0, 1]``, so a ``min_score`` of 0.65 corresponds to roughly 0.3 raw
-    cosine similarity.
-
-    Args:
-        hits: Elasticsearch hit dicts from :func:`search.services.semantic_search`.
-        min_score: Minimum ``_score`` required to keep a hit.
-
-    Returns:
-        Hits at or above ``min_score``, preserving their original order.
-    """
-    return [hit for hit in hits if hit.get("_score", 0) >= min_score]
 
 
 def _note_display_title(source: dict[str, Any]) -> str:
@@ -1507,7 +1484,7 @@ def _build_notes_rag_messages(
 
     Args:
         prompt: The user's question from chat history.
-        hits: Ranked Elasticsearch hits that passed :func:`_filter_notes_hits`.
+        hits: Ranked Elasticsearch hits from :func:`search.services.semantic_search`.
 
     Returns:
         A tuple of ``(messages, sources_footer)`` where ``messages`` is a
@@ -1609,7 +1586,10 @@ def chatbot(request: HttpRequest, args: dict[str, Any]) -> Generator[str, None, 
         prompt = user_messages[-1]["content"] if user_messages else chat_history[-1]["content"]
         search_query = _rewrite_notes_search_query(chat_history)
         es_response = semantic_search(request, search_query)
-        hits = _filter_notes_hits(es_response.get("hits", {}).get("hits", []))
+        hits = (es_response.get("hits") or {}).get("hits") or []
+        # Cap before the empty check so we abstain (and skip the OpenAI call)
+        # on the same set _build_notes_rag_messages would actually use.
+        hits = hits[:NOTES_RAG_MAX_SOURCES]
         if not hits:
             yield (
                 "I couldn't find any relevant notes to answer that question. "
