@@ -135,6 +135,7 @@ class DrillManager(models.Manager):
         todo = Question.objects.filter(
             Q(user=user),
             Q(is_favorite=True),
+            Q(is_disabled=False),
             Q(interval__lte=timezone.now() - F("last_reviewed"))  # type: ignore[operator]
             | Q(last_reviewed__isnull=True)
         ).count()

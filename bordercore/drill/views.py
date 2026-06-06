@@ -38,6 +38,7 @@ from blob.models import Blob
 from bookmark.models import Bookmark
 from drill.forms import QuestionForm
 from drill.services import rephrase_question
+from lib.decorators import validate_post_data
 from lib.mixins import FormRequestMixin, UserScopedQuerysetMixin, get_user_object_or_404
 from lib.util import parse_title_from_url
 from tag.models import Tag
@@ -636,13 +637,26 @@ def start_study_session(request: HttpRequest) -> HttpResponseRedirect:
         messages.add_message(request, messages.WARNING, "Study method is required")
         return redirect("drill:list")
 
+    study_params = {k: v for k, v in request.GET.items() if k in ["count", "interval", "keyword", "tags"]}
+
+    # count/interval are coerced to int downstream; reject non-numeric input
+    # with a warning redirect rather than letting it surface as a 500.
+    for numeric_param in ("count", "interval"):
+        raw_value = request.GET.get(numeric_param)
+        if raw_value is not None:
+            try:
+                int(raw_value)
+            except ValueError:
+                messages.add_message(request, messages.WARNING, f"Invalid {numeric_param}: must be a number")
+                return redirect("drill:list")
+
     user = cast(User, request.user)
     first_question = Question.start_study_session(
         user,
         request.session,
         study_method,
         request.GET.get("filter", "review"),
-        {k: v for k, v in request.GET.items() if k in ["count", "interval", "keyword", "tags"]}
+        study_params
     )
 
     if first_question:
@@ -762,6 +776,7 @@ def get_disabled_tags(request: HttpRequest) -> Response:
 
 
 @api_view(["POST"])
+@validate_post_data("tag")
 def pin_tag(request: HttpRequest) -> Response:
     """Pin a tag for the current user.
 
@@ -799,6 +814,7 @@ def pin_tag(request: HttpRequest) -> Response:
 
 
 @api_view(["POST"])
+@validate_post_data("tag")
 def unpin_tag(request: HttpRequest) -> Response:
     """Unpin a tag for the current user.
 
@@ -835,6 +851,7 @@ def unpin_tag(request: HttpRequest) -> Response:
 
 
 @api_view(["POST"])
+@validate_post_data("tag_name", "new_position")
 def sort_pinned_tags(request: HttpRequest) -> Response:
     """Reorder a pinned tag to a new position.
 
@@ -850,7 +867,10 @@ def sort_pinned_tags(request: HttpRequest) -> Response:
     """
 
     tag_name = request.POST["tag_name"]
-    new_position = int(request.POST["new_position"])
+    try:
+        new_position = int(request.POST["new_position"])
+    except ValueError:
+        return Response({"detail": "new_position must be an integer"}, status=400)
 
     user = cast(User, request.user)
     so = get_object_or_404(DrillTag, tag__name=tag_name, userprofile=user.userprofile)
@@ -860,6 +880,7 @@ def sort_pinned_tags(request: HttpRequest) -> Response:
 
 
 @api_view(["POST"])
+@validate_post_data("tag")
 def disable_tag(request: HttpRequest) -> Response:
     """Disable all questions with a given tag.
 
@@ -891,6 +912,7 @@ def disable_tag(request: HttpRequest) -> Response:
 
 
 @api_view(["POST"])
+@validate_post_data("tag")
 def enable_tag(request: HttpRequest) -> Response:
     """Enable all questions with a given tag.
 
@@ -923,6 +945,7 @@ def enable_tag(request: HttpRequest) -> Response:
 
 
 @api_view(["POST"])
+@validate_post_data("question_uuid", "mutation")
 def is_favorite_mutate(request: HttpRequest) -> Response:
     """Add or remove a question from favorites.
 
@@ -951,6 +974,10 @@ def is_favorite_mutate(request: HttpRequest) -> Response:
 
     question.is_favorite = mutation == "add"
     question.save()
+
+    # The Elasticsearch 'importance' field derives from is_favorite, so re-index
+    # to keep search ranking in sync (matching the create/update views).
+    question.index_question()
 
     return Response()
 

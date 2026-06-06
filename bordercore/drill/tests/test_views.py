@@ -135,6 +135,17 @@ def test_drill_start_study_session(authenticated_client, question):
     assert resp.status_code == 302
 
 
+def test_start_study_session_invalid_interval(authenticated_client, question):
+    """A non-numeric interval redirects with a warning instead of 500-ing."""
+    _, client = authenticated_client()
+
+    url = urls.reverse("drill:start_study_session")
+    resp = client.get(url + "?study_method=recent&interval=abc")
+
+    assert resp.status_code == 302
+    assert resp.url == urls.reverse("drill:list")
+
+
 def test_drill_study(authenticated_client, question):
 
     _, client = authenticated_client()
@@ -295,6 +306,26 @@ def test_sort_pinned_tags(authenticated_client, question, tag):
     })
 
     assert resp.status_code == 200
+
+
+def test_sort_pinned_tags_missing_field_returns_400(authenticated_client):
+    """A missing required POST field returns 400, not a 500."""
+    _, client = authenticated_client()
+
+    url = urls.reverse("drill:sort_pinned_tags")
+    resp = client.post(url, {"tag_name": "linux"})  # new_position omitted
+
+    assert resp.status_code == 400
+
+
+def test_sort_pinned_tags_non_numeric_position_returns_400(authenticated_client, tag):
+    """A non-numeric new_position returns 400, not a 500."""
+    _, client = authenticated_client()
+
+    url = urls.reverse("drill:sort_pinned_tags")
+    resp = client.post(url, {"tag_name": tag[0].name, "new_position": "abc"})
+
+    assert resp.status_code == 400
 
 
 def test_drill_get_disabled_tags(authenticated_client, tag):

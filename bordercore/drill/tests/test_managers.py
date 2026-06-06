@@ -90,6 +90,20 @@ def test_favorite_questions_progress(authenticated_client):
     assert tag_progress["percentage"] == 50.0
 
 
+def test_favorite_questions_progress_excludes_disabled(authenticated_client):
+    """A disabled favorite is not counted as needing review."""
+    user, _ = authenticated_client()
+
+    QuestionFactory(is_favorite=True)                      # due, enabled -> todo
+    QuestionFactory(is_favorite=True, is_disabled=True)    # disabled -> not todo
+
+    progress = Question.objects.favorite_questions_progress(user)
+
+    assert progress["count"] == 2  # both favorites count in the denominator
+    # Only the enabled favorite is "todo": 100 - 1/2 * 100 == 50
+    assert progress["percentage"] == 50.0
+
+
 def test_get_random_tag(authenticated_client):
 
     user, _ = authenticated_client()
