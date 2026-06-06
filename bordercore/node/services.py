@@ -66,7 +66,7 @@ def delete_note_from_nodes(user: Any, note_uuid: UUID | str) -> None:
     with transaction.atomic():
         for node in Node.objects.filter(user=user):
             changed = False
-            layout = node.layout
+            layout = node.layout or []
             for i, col in enumerate(layout):
                 temp_layout = [x for x in col if "uuid" not in x or x["uuid"] != str(note_uuid)]
                 if layout[i] != temp_layout:

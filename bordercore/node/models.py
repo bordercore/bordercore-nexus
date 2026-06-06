@@ -18,6 +18,7 @@ from django.db import models, transaction
 from django.db.models import Count, JSONField
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
+from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
 
@@ -100,8 +101,9 @@ class Node(TimeStampedModel):
             The collection that was added to the layout.
         """
         if uuid and uuid != "":
-            # If a uuid is given, use an existing collection
-            collection = Collection.objects.get(uuid=uuid)
+            # If a uuid is given, use an existing collection (scoped to the
+            # node owner so another user's collection can't be attached).
+            collection = get_object_or_404(Collection, uuid=uuid, user=self.user)
             collection_type = "permanent"
         else:
             collection = Collection.objects.create(name=name, user=self.user)
@@ -158,7 +160,9 @@ class Node(TimeStampedModel):
             collection_type: Type of collection ("ad-hoc" collections are deleted).
         """
         if collection_type == "ad-hoc":
-            collection = Collection.objects.get(uuid=collection_uuid)
+            # Scope to the node owner so a client can't delete another user's
+            # collection by supplying its uuid + collection_type=ad-hoc.
+            collection = get_object_or_404(Collection, uuid=collection_uuid, user=self.user)
             collection.delete()
 
         layout = self.layout or []
@@ -210,7 +214,8 @@ class Node(TimeStampedModel):
         Args:
             note_uuid: UUID of the note to delete.
         """
-        note = Blob.objects.get(uuid=note_uuid)
+        # Scope to the node owner so a client can't delete another user's blob.
+        note = get_object_or_404(Blob, uuid=note_uuid, user=self.user)
         note.delete()
 
         layout = self.layout or []
@@ -340,15 +345,21 @@ class Node(TimeStampedModel):
         self.save()
 
     def delete_todo_list(self) -> None:
-        """Remove all todo list components and associated todos from the node."""
+        """Remove all todo-list components from the node and detach its todos.
+
+        The todos themselves are left intact (only the node associations are
+        removed), since they may be referenced from other apps.
+        """
         layout = self.layout or []
         for i, col in enumerate(layout):
             layout[i] = [x for x in col if x.get("type") != "todo"]
         self.layout = layout
         self.save()
 
-        for so in NodeTodo.objects.filter(node=self):
-            so.todo.delete()
+        # Detach the todos from this node (delete the join rows) rather than
+        # deleting the underlying Todo objects, which may be referenced
+        # elsewhere. Mirrors remove_todo's behaviour.
+        NodeTodo.objects.filter(node=self).delete()
 
     def get_todo_list(self) -> list[dict[str, Any]]:
         """Get all todos associated with this node.

@@ -252,6 +252,82 @@ def test_delete_note(monkeypatch_blob, authenticated_client, node):
     ]
 
 
+def test_add_collection_other_user(authenticated_client, node):
+    """A collection owned by another user cannot be attached to a node."""
+    from accounts.tests.factories import UserFactory
+    from collection.tests.factories import CollectionFactory
+
+    other_user = UserFactory(username="otheruser")
+    other_collection = CollectionFactory(user=other_user)
+
+    _, client = authenticated_client()
+    url = urls.reverse("node:add_collection")
+    resp = client.post(url, {
+        "node_uuid": node.uuid,
+        "collection_uuid": str(other_collection.uuid),
+        "display": "list",
+    })
+
+    assert resp.status_code == 404
+    updated_node = Node.objects.get(uuid=node.uuid)
+    assert str(other_collection.uuid) not in [
+        val.get("uuid")
+        for sublist in (updated_node.layout or [])
+        for val in sublist
+    ]
+
+
+def test_delete_collection_other_user(authenticated_client, node):
+    """A user cannot delete another user's collection via delete_collection."""
+    from accounts.tests.factories import UserFactory
+    from collection.tests.factories import CollectionFactory
+
+    other_user = UserFactory(username="otheruser")
+    other_collection = CollectionFactory(user=other_user)
+
+    _, client = authenticated_client()
+    url = urls.reverse("node:delete_collection")
+    resp = client.post(url, {
+        "node_uuid": node.uuid,
+        "collection_uuid": str(other_collection.uuid),
+        "collection_type": "ad-hoc",
+    })
+
+    assert resp.status_code == 404
+    assert Collection.objects.filter(uuid=other_collection.uuid).exists()
+
+
+def test_delete_note_other_user(monkeypatch_blob, authenticated_client, node):
+    """A user cannot delete another user's blob via delete_note."""
+    from accounts.tests.factories import UserFactory
+    from blob.tests.factories import BlobFactory
+
+    other_user = UserFactory(username="otheruser")
+    other_note = BlobFactory(user=other_user)
+
+    _, client = authenticated_client()
+    url = urls.reverse("node:delete_note")
+    resp = client.post(url, {
+        "node_uuid": node.uuid,
+        "note_uuid": str(other_note.uuid),
+    })
+
+    assert resp.status_code == 404
+    assert Blob.objects.filter(uuid=other_note.uuid).exists()
+
+
+def test_add_quote_invalid_options_returns_400(authenticated_client, node):
+    """Malformed JSON in the options field returns 400 rather than 500."""
+    _, client = authenticated_client()
+    url = urls.reverse("node:add_quote")
+    resp = client.post(url, {
+        "node_uuid": node.uuid,
+        "options": "{not valid json",
+    })
+
+    assert resp.status_code == 400
+
+
 def test_node_set_note_color(monkeypatch_blob, authenticated_client, node):
 
     _, client = authenticated_client()

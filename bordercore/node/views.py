@@ -577,7 +577,10 @@ def add_quote(request: HttpRequest) -> Response:
         JSON response with refreshed ``layout`` and status.
     """
     node_uuid = request.POST.get("node_uuid", "").strip()
-    options = json.loads(request.POST.get("options", "{}").strip())
+    try:
+        options = json.loads(request.POST.get("options", "{}").strip())
+    except json.JSONDecodeError:
+        return Response({"detail": "Invalid JSON in options"}, status=400)
     user = cast(User, request.user)
 
     node = get_user_object_or_404(user, Node, uuid=node_uuid)
@@ -607,7 +610,10 @@ def update_quote(request: HttpRequest) -> Response:
     """
     node_uuid = request.POST.get("node_uuid", "").strip()
     uuid = request.POST.get("uuid", "").strip()
-    options = json.loads(request.POST.get("options", "").strip())
+    try:
+        options = json.loads(request.POST.get("options", "").strip())
+    except json.JSONDecodeError:
+        return Response({"detail": "Invalid JSON in options"}, status=400)
     options["favorites_only"] = str(options.get("favorites_only", "false")).strip().lower() == "true"
     user = cast(User, request.user)
 
@@ -713,7 +719,10 @@ def add_node(request: HttpRequest) -> Response:
     """
     parent_node_uuid = request.POST.get("parent_node_uuid", "").strip()
     node_uuid = request.POST.get("node_uuid", "").strip()
-    options = json.loads(request.POST.get("options", "{}").strip())
+    try:
+        options = json.loads(request.POST.get("options", "{}").strip())
+    except json.JSONDecodeError:
+        return Response({"detail": "Invalid JSON in options"}, status=400)
     user = cast(User, request.user)
 
     with transaction.atomic():
@@ -738,7 +747,10 @@ def update_node(request: HttpRequest) -> Response:
     """
     parent_node_uuid = request.POST.get("parent_node_uuid", "").strip()
     uuid = request.POST.get("uuid", "").strip()
-    options = json.loads(request.POST.get("options", "").strip())
+    try:
+        options = json.loads(request.POST.get("options", "").strip())
+    except json.JSONDecodeError:
+        return Response({"detail": "Invalid JSON in options"}, status=400)
     user = cast(User, request.user)
 
     with transaction.atomic():
@@ -789,12 +801,12 @@ def node_preview(request: HttpRequest, uuid: str) -> Response:
     try:
         random_note = random.choice(preview["notes"])
     except IndexError:
-        random_note = []
+        random_note = None
 
     try:
         random_todo = random.choice(preview["todos"])
     except IndexError:
-        random_todo = []
+        random_todo = None
 
     response = {
         "info": {

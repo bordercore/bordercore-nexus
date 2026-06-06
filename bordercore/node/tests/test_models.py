@@ -269,6 +269,22 @@ def test_node_delete_todo_list(node):
     ]
 
 
+def test_node_delete_todo_list_detaches_todos(node):
+    """delete_todo_list removes the node associations but keeps the Todos."""
+    from node.models import NodeTodo
+    from todo.models import Todo
+    from todo.tests.factories import TodoFactory
+
+    todo = TodoFactory(user=node.user)
+    NodeTodo.objects.create(node=node, todo=todo)
+    node.add_todo_list()
+
+    node.delete_todo_list()
+
+    assert not NodeTodo.objects.filter(node=node).exists()
+    assert Todo.objects.filter(uuid=todo.uuid).exists()
+
+
 def test_node_add_node(authenticated_client, node):
 
     user, client = authenticated_client()
