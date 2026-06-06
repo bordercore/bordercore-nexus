@@ -58,3 +58,33 @@ def test_tags_changed_multiple_tags():
     habit.tags.remove(tag1)
     assert TagHabit.objects.filter(habit=habit).count() == 1
     assert TagHabit.objects.filter(tag=tag2, habit=habit).exists()
+
+
+def test_tags_changed_post_clear_deletes_tag_habits():
+    """Clearing a habit's tags removes all its TagHabit rows."""
+    user = UserFactory()
+    habit = HabitFactory(user=user, start_date=date.today())
+    tag1 = Tag.objects.create(name="morning", user=user)
+    tag2 = Tag.objects.create(name="health", user=user)
+
+    habit.tags.add(tag1, tag2)
+    assert TagHabit.objects.filter(habit=habit).count() == 2
+
+    habit.tags.clear()
+    assert TagHabit.objects.filter(habit=habit).count() == 0
+
+
+def test_tags_changed_set_replaces_tag_habits():
+    """tags.set() (which clears then adds) keeps TagHabit in sync."""
+    user = UserFactory()
+    habit = HabitFactory(user=user, start_date=date.today())
+    tag1 = Tag.objects.create(name="morning", user=user)
+    tag2 = Tag.objects.create(name="health", user=user)
+
+    habit.tags.add(tag1)
+    assert TagHabit.objects.filter(habit=habit).count() == 1
+
+    habit.tags.set([tag2])
+    assert TagHabit.objects.filter(habit=habit).count() == 1
+    assert TagHabit.objects.filter(tag=tag2, habit=habit).exists()
+    assert not TagHabit.objects.filter(tag=tag1, habit=habit).exists()

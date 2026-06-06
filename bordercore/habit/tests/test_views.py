@@ -134,3 +134,38 @@ def test_log_habit_invalid_date(authenticated_client):
     })
 
     assert resp.status_code == 400
+
+
+@pytest.mark.parametrize("bad_value", ["-1", "NaN", "Infinity", "-Infinity", "1e400"])
+def test_log_habit_rejects_invalid_value(authenticated_client, bad_value):
+    """Negative, non-finite, and out-of-range values are rejected with 400."""
+    user, client = authenticated_client()
+    habit = HabitFactory(user=user, start_date=date.today())
+
+    url = urls.reverse("habit:log")
+    resp = client.post(url, {
+        "habit_uuid": str(habit.uuid),
+        "date": "2025-06-17",
+        "completed": "true",
+        "value": bad_value,
+    })
+
+    assert resp.status_code == 400
+    assert not HabitLog.objects.filter(habit=habit, date="2025-06-17").exists()
+
+
+def test_log_habit_accepts_valid_value(authenticated_client):
+    """A normal non-negative value is stored."""
+    user, client = authenticated_client()
+    habit = HabitFactory(user=user, start_date=date.today())
+
+    url = urls.reverse("habit:log")
+    resp = client.post(url, {
+        "habit_uuid": str(habit.uuid),
+        "date": "2025-06-18",
+        "completed": "true",
+        "value": "12.50",
+    })
+
+    assert resp.status_code == 201
+    assert resp.json()["log"]["value"] == "12.50"

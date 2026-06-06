@@ -124,7 +124,7 @@ class HabitLog(TimeStampedModel):
 def tags_changed(sender: type[Habit], **kwargs: Any) -> None:
     """Handle m2m 'tags' changes by adding/removing TagHabit relations.
 
-    Triggered on post_add and post_remove of Habit.tags.
+    Triggered on post_add, post_remove, and post_clear of Habit.tags.
 
     Args:
         sender: The model class sending the signal.
@@ -142,6 +142,11 @@ def tags_changed(sender: type[Habit], **kwargs: Any) -> None:
 
         for tag_id in kwargs["pk_set"]:
             TagHabit.objects.filter(tag_id=tag_id, habit=habit).delete()
+
+    elif kwargs["action"] == "post_clear":
+        # clear()/set() fire post_clear with pk_set=None; remove all TagHabit
+        # rows for the habit so they don't become orphaned.
+        TagHabit.objects.filter(habit=kwargs["instance"]).delete()
 
 
 m2m_changed.connect(tags_changed, sender=Habit.tags.through)

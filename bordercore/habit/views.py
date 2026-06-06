@@ -149,6 +149,16 @@ def log_habit(request: Request) -> Response:
                 {"detail": "Invalid numeric value."},
                 status=400,
             )
+        # update_or_create bypasses model validation, so enforce the field's
+        # constraints here. Decimal("NaN"/"Infinity"/"1e400") parse without
+        # raising InvalidOperation; check is_finite() first so a NaN comparison
+        # doesn't itself raise. value field is DecimalField(max_digits=10,
+        # decimal_places=2) with MinValueValidator(0), i.e. 0 <= value < 1e8.
+        if not value.is_finite() or value < 0 or value >= Decimal(10) ** 8:
+            return Response(
+                {"detail": "Value must be a non-negative number less than 100,000,000."},
+                status=400,
+            )
 
     note = request.POST.get("note", "")
 
@@ -178,7 +188,11 @@ def log_habit(request: Request) -> Response:
 @api_view(["POST"])
 @validate_post_data("habit_uuid")
 def set_habit_inactive(request: Request) -> Response:
-    """Deactivate a habit by setting its end_date to today.
+    """Deactivate a habit by setting its end_date to yesterday.
+
+    end_date is set to yesterday (not today) because the is_active property
+    treats end_date >= today as still active, so yesterday deactivates it
+    immediately. See services.deactivate_habit.
 
     Expects POST parameters:
       - 'habit_uuid': UUID of the habit to deactivate.
