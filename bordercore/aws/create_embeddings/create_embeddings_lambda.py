@@ -13,7 +13,7 @@ from uuid import UUID
 
 import requests
 
-from lib.embeddings import build_blob_embedding_text, len_safe_get_embedding
+from lib.embeddings import build_blob_embedding_text, build_note_chunks, len_safe_get_embedding
 
 logging.getLogger().setLevel(logging.INFO)
 log = logging.getLogger(__name__)
@@ -37,29 +37,29 @@ def _elasticsearch_update_url(uuid: str | UUID) -> str:
     return f"{base}:9200/{ELASTICSEARCH_INDEX}/_update/{uuid}"
 
 
-def store_in_elasticsearch(uuid: str | UUID, embeddings: list[float]) -> None:
-    """Store embeddings vector in Elasticsearch for a blob.
-
-    Updates the Elasticsearch document for the given UUID with the embeddings
-    vector using a Painless script update operation.
+def store_in_elasticsearch(
+    uuid: str | UUID,
+    embeddings: list[float],
+    *,
+    chunks: list[dict[str, Any]] | None = None,
+) -> None:
+    """Store the averaged embeddings vector (and, for notes, the chunk array).
 
     Args:
-        uuid: UUID string or UUID object identifying the blob.
-        embeddings: List of float values representing the embedding vector.
+        uuid: UUID identifying the blob.
+        embeddings: The note/blob's averaged embedding vector.
+        chunks: Optional nested ``chunks`` array ([{text, vector}, ...]) for notes.
     """
-
     url = _elasticsearch_update_url(uuid)
     headers = {"Content-Type": "application/json"}
 
-    data = {
-        "script": {
-            "source": "ctx._source.embeddings_vector = params.value",
-            "lang": "painless",
-            "params": {
-                "value": embeddings
-            }
-        }
-    }
+    source = "ctx._source.embeddings_vector = params.value"
+    params: dict[str, Any] = {"value": embeddings}
+    if chunks is not None:
+        source += "; ctx._source.chunks = params.chunks"
+        params["chunks"] = chunks
+
+    data = {"script": {"source": source, "lang": "painless", "params": params}}
 
     response = requests.post(url, headers=headers, data=json.dumps(data), timeout=10)
 
@@ -96,23 +96,6 @@ def get_blob_payload(uuid: str | UUID) -> dict[str, Any]:
     return r.json()
 
 
-def get_blob_embedding_text(uuid: str | UUID) -> str:
-    """Build the text payload embedded for a blob.
-
-    Args:
-        uuid: UUID string or UUID object identifying the blob.
-
-    Returns:
-        Title, tags, and content formatted for embedding.
-    """
-    payload = get_blob_payload(uuid=uuid)
-    return build_blob_embedding_text(
-        payload.get("content") or "",
-        name=payload.get("name") or "",
-        tags=payload.get("tags") or [],
-    )
-
-
 def handler(event: dict[str, Any], context: Any) -> str | None:
     """AWS Lambda handler for creating embeddings.
 
@@ -133,11 +116,18 @@ def handler(event: dict[str, Any], context: Any) -> str | None:
             uuid = event["uuid"]
 
             log.info(f"Creating embeddings for uuid={uuid}")
-            blob_text = get_blob_embedding_text(uuid=uuid)
+            payload = get_blob_payload(uuid=uuid)
+            content = payload.get("content") or ""
+            blob_text = build_blob_embedding_text(
+                content,
+                name=payload.get("name") or "",
+                tags=payload.get("tags") or [],
+            )
             embeddings = len_safe_get_embedding(blob_text)
+            chunks = build_note_chunks(content) if (payload.get("is_note") and content) else None
 
-            if embeddings is not None:
-                store_in_elasticsearch(uuid, embeddings)
+            if embeddings:
+                store_in_elasticsearch(uuid, embeddings, chunks=chunks)
         elif "text" in event:
             return json.dumps(len_safe_get_embedding(event["text"]))
 
