@@ -1,1 +1,212 @@
-[]
+[
+  {
+    "question": "What should be preferred for naming HTML attributes in Django?",
+    "expected_uuids": [
+      "e9fdcf40-c349-4b41-b3e7-b1ca565427de"
+    ],
+    "note_name": "Bordercore"
+  },
+  {
+    "question": "What command lists the last commit of all remote branches in Git?",
+    "expected_uuids": [
+      "4c6239b6-9233-4d44-9cee-8db441f0cd46"
+    ],
+    "note_name": "Misc Notes"
+  },
+  {
+    "question": "What option needs to be selected when configuring the kernel to avoid the machine freezing after booting?",
+    "expected_uuids": [
+      "39d8e2f5-c2ce-4b9c-9f41-2129ebf341a9"
+    ],
+    "note_name": ""
+  },
+  {
+    "question": "What are the signs of teeth grinding?",
+    "expected_uuids": [
+      "0b8daff1-bcdf-44ed-86d7-8a37329fe9de"
+    ],
+    "note_name": ""
+  },
+  {
+    "question": "What did the Sears Auto Center find regarding the coolant level in the Jeep?",
+    "expected_uuids": [
+      "0b7c16dc-19d9-4a73-9132-7aafac7e3c10"
+    ],
+    "note_name": "Jeep Maintenance"
+  },
+  {
+    "question": "Where is the php.ini config file located?",
+    "expected_uuids": [
+      "0c1e10c5-4113-4a4a-91b3-3472bcf7d5d6"
+    ],
+    "note_name": ""
+  },
+  {
+    "question": "How can you find out which display you are using in a Linux system?",
+    "expected_uuids": [
+      "0c5a06f7-dd40-4dec-9fab-4fa14dbee712"
+    ],
+    "note_name": "How to restart Gnome Shell from the console"
+  },
+  {
+    "question": "How do you convert an analog audio tape into digital format using Audacity on Mac OS X?",
+    "expected_uuids": [
+      "0bf29ec7-95e1-42a7-ad1b-2a9106c82825"
+    ],
+    "note_name": "Digitizing Audio Cassettes with Audacity"
+  },
+  {
+    "question": "What type of retainer was installed behind the lower front teeth?",
+    "expected_uuids": [
+      "0b8a7d1f-de6f-475c-b66d-55cbc0e4e7e5"
+    ],
+    "note_name": "Appt with Dr. Korn"
+  },
+  {
+    "question": "Where are backups stored by iTunes?",
+    "expected_uuids": [
+      "0bae94d3-eece-4ef5-a9f0-d89442e31f5b"
+    ],
+    "note_name": "iPad/iPhone Backups in iTunes"
+  },
+  {
+    "question": "What is the location of the file where the current Emacs mode line is stored?",
+    "expected_uuids": [
+      "397d4d99-754a-4965-9748-c654ccca43af"
+    ],
+    "note_name": "Emacs mode line"
+  },
+  {
+    "question": "What was my top genre in Spotify Wrapped 2020?",
+    "expected_uuids": [
+      "0cc5bb28-d636-482c-92c6-c5a3278705cd"
+    ],
+    "note_name": "Spotify: Your 2020, Wrapped"
+  },
+  {
+    "question": "What is the recommended method for deployment instead of using `git pull`?",
+    "expected_uuids": [
+      "0cdcc9d2-c81d-4069-8a3c-b230d0b33423"
+    ],
+    "note_name": "Git at Black Duck"
+  },
+  {
+    "question": "Which Perl modules were installed from sources other than the Ubuntu repository?",
+    "expected_uuids": [
+      "00209f41-47a6-4112-a14f-821b9f4cebcd"
+    ],
+    "note_name": ""
+  },
+  {
+    "question": "How can I suppress AppArmor log entries for the transmission-gtk application?",
+    "expected_uuids": [
+      "0036dc77-5e30-4256-a8ee-1f1ba3acea23"
+    ],
+    "note_name": "AppArmor"
+  },
+  {
+    "question": "How can forward head posture affect lower back pain?",
+    "expected_uuids": [
+      "004dbc05-cfe5-41af-88fb-7bef67189e51"
+    ],
+    "note_name": "Physical Therapy with Karen"
+  },
+  {
+    "question": "What was the total cost for the transmission's output shaft speed sensor replacement?",
+    "expected_uuids": [
+      "005c5437-d023-4e79-8268-e68f53c1d5ca"
+    ],
+    "note_name": "Jeep Maintenance"
+  },
+  {
+    "question": "How can each headline in an org-mode file be exported to a separate markdown file?",
+    "expected_uuids": [
+      "00a04444-1f0e-4e28-804f-309d52816a8c"
+    ],
+    "note_name": "Auto Exporting Org-mode files to Markdown"
+  },
+  {
+    "question": "What are some affordable boutique hotels in New York City?",
+    "expected_uuids": [
+      "00cb4fdb-6067-4bb2-a79d-2f440f7ade34"
+    ],
+    "note_name": "NYC Hotels"
+  },
+  {
+    "question": "How can you verify if an ISO was successfully burned to a CD?",
+    "expected_uuids": [
+      "00efe8be-93f3-4673-9288-70de6d9b4573"
+    ],
+    "note_name": "Calculating the MD5 Sum of a CD"
+  },
+  {
+    "question": "How can you disable auto-updates for a Snap package?",
+    "expected_uuids": [
+      "0184a631-4874-4bd0-926b-bbdabfd9b56c"
+    ],
+    "note_name": "Snap Packages"
+  },
+  {
+    "question": "What is the name of the menu editor in Ubuntu that was formerly known as `smeg`?",
+    "expected_uuids": [
+      "01b67dd6-d442-400e-bd00-0bd77359a9e6"
+    ],
+    "note_name": ""
+  },
+  {
+    "question": "What time did wumpus die?",
+    "expected_uuids": [
+      "01c7814f-736c-4642-a506-c4958863ff9e"
+    ],
+    "note_name": ""
+  },
+  {
+    "question": "What is the solution for escaping quotes in an XPath expression?",
+    "expected_uuids": [
+      "025fb471-3012-43b8-80c9-a5fc94f605c5"
+    ],
+    "note_name": "Escaping Quotes Using XPaths"
+  },
+  {
+    "question": "What is the command to run the mailgrep indexer manually?",
+    "expected_uuids": [
+      "0285066d-41fb-4074-b3b6-e9039fcb92ca"
+    ],
+    "note_name": "Mail Dashboard and Indexer"
+  },
+  {
+    "question": "What is recommended for massaging the quads and IT-band?",
+    "expected_uuids": [
+      "029680c3-67ff-46f4-9da3-b7a98ed4c5b6"
+    ],
+    "note_name": "Physical Therapy with Karen"
+  },
+  {
+    "question": "How do I use a second Y axis with different scales in Grafana?",
+    "expected_uuids": [
+      "02aee41d-5a4f-40c7-918b-d2caa72a211a"
+    ],
+    "note_name": "Grafana"
+  },
+  {
+    "question": "What is the best temperature range for keeping Lucky Bamboo alive?",
+    "expected_uuids": [
+      "02c068c7-45b3-4a84-ac87-067e39638f37"
+    ],
+    "note_name": "Lucky Bamboo Instructions"
+  },
+  {
+    "question": "What command was used to migrate mail from monet to dickens?",
+    "expected_uuids": [
+      "02c1d543-c70b-43a4-a342-c86e53f48a6e"
+    ],
+    "note_name": ""
+  },
+  {
+    "question": "How do I find out which process is listening to a specific port?",
+    "expected_uuids": [
+      "953a826a-4cda-4006-9774-fd86e7c8a1ae"
+    ],
+    "note_name": ""
+  }
+]
