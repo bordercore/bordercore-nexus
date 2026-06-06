@@ -8,12 +8,11 @@ Metric definitions (per case, "expected" = at least one ``expected_uuids``
 member present at that stage):
 
 - raw recall@k      expected present in ``semantic_search`` top-k hits.
-- effective recall@3 expected present after the ``NOTES_RAG_MIN_SCORE`` filter
-                     and the ``NOTES_RAG_MAX_SOURCES`` cap.
+- effective recall@3 expected present after the ``NOTES_RAG_MAX_SOURCES`` cap.
 - hit@1             the #1 effective result is an expected note.
 - MRR               mean reciprocal rank of the first expected uuid in the raw
                      ranking.
-- dropped-by-filter raw-hit but not effective-hit (removed by the score filter or the top-N cap).
+- dropped-by-filter raw-hit but not effective-hit (removed by the top-N cap).
 
 Scope and interpretation:
 
@@ -22,10 +21,9 @@ Scope and interpretation:
   (``_rewrite_notes_search_query``), which only fires on chat follow-ups, so a
   rewrite regression won't show up here.
 - When reading a report, ``effective recall@3`` and ``dropped-by-filter`` are
-  the retrieval-regression signals (the threshold-bug class). A uniform raw miss
-  across every case usually means an Elasticsearch infra problem, not a
-  retrieval regression — ``semantic_search`` swallows ``RequestError`` and
-  returns no hits.
+  the primary retrieval-regression signals. A uniform raw miss across every case
+  usually means an Elasticsearch infra problem, not a retrieval regression —
+  ``semantic_search`` swallows ``RequestError`` and returns no hits.
 """
 
 from __future__ import annotations
@@ -36,7 +34,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Callable
 
-from blob.services import NOTES_RAG_MAX_SOURCES, _filter_notes_hits
+from blob.services import NOTES_RAG_MAX_SOURCES
 from search.services import semantic_search
 
 DEFAULT_DATASET_PATH = Path(__file__).resolve().parent / "rag_eval_data" / "notes_rag_eval.json"
@@ -67,7 +65,7 @@ class CaseResult:
 
     @property
     def effective_hit3(self) -> bool:
-        """Whether an expected note survived the score filter and top-3 cap."""
+        """Whether an expected note survived the top-3 cap."""
         return self.effective_rank is not None
 
     @property
@@ -79,10 +77,9 @@ class CaseResult:
     def dropped_by_filter(self) -> bool:
         """Raw-hit that didn't reach the effective set.
 
-        True when an expected note was retrieved in the raw ranking but was
-        removed by the score filter or the top-N cap (the threshold-bug
-        signature). "Filter" here means the whole effective-set construction,
-        not only the score threshold.
+        True when an expected note was retrieved in the raw ranking but fell
+        outside the top-``NOTES_RAG_MAX_SOURCES`` cap. (The name is retained for
+        the report/tests; under hybrid RRF the only drop cause is the cap.)
         """
         return self.raw_hit8 and not self.effective_hit3
 
@@ -110,7 +107,7 @@ class EvalReport:
 
     @property
     def effective_recall_at_3(self) -> float:
-        """Fraction of cases whose expected note survived the filter + top-3 cap."""
+        """Fraction of cases whose expected note survived the top-3 cap."""
         return _mean([1.0 if c.effective_hit3 else 0.0 for c in self.cases])
 
     @property
@@ -125,7 +122,7 @@ class EvalReport:
 
     @property
     def dropped_count(self) -> int:
-        """Number of cases that were retrieved raw but lost to the filter/cap."""
+        """Number of cases that were retrieved raw but lost to the top-N cap."""
         return sum(1 for c in self.cases if c.dropped_by_filter)
 
 
@@ -144,10 +141,11 @@ def _first_expected_rank(
 def score_case(case: EvalCase, raw_hits: list[dict[str, Any]]) -> CaseResult:
     """Score a single case from its raw ``semantic_search`` hits.
 
-    Pure: takes the raw hit list and applies the same filter + cap the
-    production RAG flow uses, then computes ranks and reciprocal rank.
+    Pure: applies the same top-``NOTES_RAG_MAX_SOURCES`` cap the production RAG
+    flow uses (there is no score filter under hybrid RRF), then computes ranks
+    and reciprocal rank.
     """
-    effective_hits = _filter_notes_hits(raw_hits)[:NOTES_RAG_MAX_SOURCES]
+    effective_hits = raw_hits[:NOTES_RAG_MAX_SOURCES]
     raw_rank = _first_expected_rank(raw_hits, case.expected_uuids)
     effective_rank = _first_expected_rank(effective_hits, case.expected_uuids)
     rr = (1.0 / raw_rank) if raw_rank is not None else 0.0
