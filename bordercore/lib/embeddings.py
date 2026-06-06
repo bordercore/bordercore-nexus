@@ -9,6 +9,7 @@ import math
 import os
 from collections.abc import Generator, Iterable, Sequence
 from itertools import islice
+from typing import Any
 
 import tiktoken
 from openai import OpenAI
@@ -16,6 +17,8 @@ from openai import OpenAI
 EMBEDDING_MODEL = "text-embedding-3-small"
 EMBEDDING_CTX_LENGTH = 8191
 EMBEDDING_ENCODING = "cl100k_base"
+NOTE_CHUNK_TOKENS = 400
+NOTE_CHUNK_OVERLAP = 60
 
 
 def build_blob_embedding_text(
@@ -181,3 +184,76 @@ def len_safe_get_embedding(
     averaged = weighted_average(chunk_embeddings, chunk_lens)
     normalized = normalize(averaged)
     return normalized
+
+
+def _window_tokens(
+    tokens: list[int],
+    chunk_tokens: int,
+    overlap_tokens: int,
+) -> list[list[int]]:
+    """Split a token list into overlapping windows.
+
+    Each window holds ``chunk_tokens`` tokens; consecutive windows overlap by
+    ``overlap_tokens`` (so a fact straddling a boundary lands whole in one
+    window). The final window always reaches the last token.
+
+    Args:
+        tokens: Token ID list to partition.
+        chunk_tokens: Maximum number of tokens per window.
+        overlap_tokens: Number of tokens shared between consecutive windows.
+
+    Returns:
+        List of token-ID sublists.
+    """
+    if overlap_tokens >= chunk_tokens:
+        raise ValueError(
+            f"overlap_tokens ({overlap_tokens}) must be less than chunk_tokens ({chunk_tokens})"
+        )
+    if not tokens:
+        return []
+    if len(tokens) <= chunk_tokens:
+        return [tokens]
+    step = chunk_tokens - overlap_tokens
+    windows: list[list[int]] = []
+    for start in range(0, len(tokens), step):
+        windows.append(tokens[start:start + chunk_tokens])
+        if start + chunk_tokens >= len(tokens):
+            break
+    return windows
+
+
+def chunk_text(
+    text: str,
+    *,
+    chunk_tokens: int = NOTE_CHUNK_TOKENS,
+    overlap_tokens: int = NOTE_CHUNK_OVERLAP,
+    encoding_name: str = EMBEDDING_ENCODING,
+) -> list[str]:
+    """Split text into overlapping ~``chunk_tokens``-token passages.
+
+    Returns an empty list for empty text and a single chunk (the original text)
+    when it fits in one window.
+    """
+    if not text:
+        return []
+    encoding = tiktoken.get_encoding(encoding_name)
+    tokens = encoding.encode(text)
+    windows = _window_tokens(tokens, chunk_tokens, overlap_tokens)
+    # Single-window: return original text to avoid a decode round-trip.
+    if windows == [tokens]:
+        return [text]
+    return [encoding.decode(w) for w in windows]
+
+
+def build_note_chunks(
+    text: str,
+    *,
+    model: str = EMBEDDING_MODEL,
+    chunk_tokens: int = NOTE_CHUNK_TOKENS,
+    overlap_tokens: int = NOTE_CHUNK_OVERLAP,
+) -> list[dict[str, Any]]:
+    """Build the nested ``chunks`` array for a note: one {text, vector} per chunk."""
+    return [
+        {"text": chunk, "vector": get_embedding(chunk, model=model)}
+        for chunk in chunk_text(text, chunk_tokens=chunk_tokens, overlap_tokens=overlap_tokens)
+    ]
