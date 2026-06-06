@@ -17,6 +17,15 @@
 
 // stylelint-disable no-descending-specificity, color-function-notation, selector-class-pattern, scss/comment-no-empty
 
+// The shared #react-root wrapper sets overflow: hidden, which makes it the
+// scroll container for any descendant position: sticky and so traps the
+// rail's sticky behavior (it scrolls away instead of pinning). Scope an
+// override to this page only — bd-page manages its own background bleed and
+// introduces no horizontal overflow, so freeing overflow here is safe.
+#react-root:has(> .bd-page) {
+  overflow: visible;
+}
+
 .bd-page {
   // --- Page-local tokens (genuine page identity, not theme-controlled) -------
   --bd-radius-xs: 4px;
@@ -55,13 +64,22 @@
   }
 
   // ---- left rail ----
+  // Sticks to the top of the viewport while .bd-main scrolls. align-self:
+  // start keeps the grid from stretching the rail to the full row height
+  // (which would leave sticky nothing to do); max-height + overflow let the
+  // rail scroll internally when its own content is taller than the viewport.
   .bd-rail-left {
+    position: sticky;
+    top: 0;
     display: flex;
+    max-height: 100vh;
     flex-direction: column;
+    align-self: start;
     padding: 28px 18px 60px;
     border-right: 1px solid var(--line-soft);
     background: color-mix(in oklch, var(--bg-1) 40%, transparent);
     gap: 22px;
+    overflow-y: auto;
   }
 
   .bd-rail-left::-webkit-scrollbar { width: 8px; }
