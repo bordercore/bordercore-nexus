@@ -152,3 +152,23 @@ def _parse_summary(line: str) -> dict[str, Any]:
     if m:
         out["duration_pretty"] = m.group(1)
     return out
+
+
+def safe_int(value: Any, default: int = 0) -> int:
+    """Coerce a value from free-form metric JSON to int, returning default on failure.
+
+    MetricData.value is written by external tooling, so a non-numeric or
+    missing value must not raise (and 500 the live metrics endpoints).
+    """
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default
+
+
+def safe_float(value: Any, default: float = 0.0) -> float:
+    """Coerce a value from free-form metric JSON to float, returning default on failure."""
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        return default

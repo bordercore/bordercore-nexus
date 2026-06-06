@@ -17,7 +17,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from .models import Metric
-from .services import parse_pytest_output
+from .services import parse_pytest_output, safe_float
 
 
 @api_view(["GET"])
@@ -110,7 +110,7 @@ class MetricListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
                 if test_type:
                     context[test_type] = metric
                 if metric.name == Metric.COVERAGE_METRIC_NAME:
-                    metric.coverage_line_rate_pct = int(round(float(metric.latest_result["line_rate"]) * 100, 0))  # type: ignore[attr-defined]
+                    metric.coverage_line_rate_pct = int(round(safe_float(metric.latest_result.get("line_rate")) * 100, 0))  # type: ignore[attr-defined]
 
         # Build JSON data for React component
         test_results = self._build_test_results_json(context)

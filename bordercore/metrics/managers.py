@@ -15,6 +15,8 @@ from django.db import models
 from django.db.models import OuterRef, QuerySet, Subquery
 from django.utils import timezone
 
+from metrics.services import safe_float, safe_int
+
 if TYPE_CHECKING:
     from metrics.models import Metric
 
@@ -91,16 +93,16 @@ class MetricsManager(models.Manager):
                 failed_test_count += 1
 
             if "test_errors" in latest_result:
-                failed_test_count += int(latest_result["test_errors"])
+                failed_test_count += safe_int(latest_result["test_errors"])
 
             if "test_failures" in latest_result:
-                failed_test_count += int(latest_result["test_failures"])
+                failed_test_count += safe_int(latest_result["test_failures"])
 
             if (
                 metric["name"] == Metric.COVERAGE_METRIC_NAME
                 and "line_rate" in latest_result
             ):
-                line_rate = round(float(latest_result["line_rate"]) * 100)
+                line_rate = round(safe_float(latest_result["line_rate"]) * 100)
                 if line_rate < Metric.COVERAGE_MINIMUM:
                     failed_test_count += 1
 
