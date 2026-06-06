@@ -186,6 +186,7 @@ def get_cover_url(
 NOTES_RRF_RANK_CONSTANT = 60
 NOTES_RRF_RANK_WINDOW = 50
 NOTES_BM25_FIELDS = ["name^2", "contents"]
+NOTES_PASSAGE_FALLBACK_CHARS = 1500
 
 RESULT_COUNT_PER_PAGE = 10
 
@@ -659,6 +660,23 @@ def _rrf_fuse(
     return fused
 
 
+def _knn_chunk_passage(hit: dict[str, Any]) -> str | None:
+    """Return the matched nested chunk text from a kNN hit's inner_hits, if any."""
+    try:
+        inner = hit["inner_hits"]["chunks"]["hits"]["hits"]
+    except (KeyError, TypeError):
+        return None
+    if not inner:
+        return None
+    return inner[0].get("_source", {}).get("text")
+
+
+def _bm25_highlight_passage(hit: dict[str, Any]) -> str | None:
+    """Return the first highlight fragment on ``contents`` from a BM25 hit, if any."""
+    fragments = hit.get("highlight", {}).get("contents")
+    return fragments[0] if fragments else None
+
+
 def semantic_search(
     request: HttpRequest,
     search: str,
@@ -680,11 +698,15 @@ def semantic_search(
     Returns:
         An Elasticsearch-style result dict with ``hits.hits`` (list of hit
         dicts) and ``hits.total.value`` (count of unique docs fused across
-        both retrieval windows). The ``_score`` on each hit is an RRF fused
-        value, not a cosine similarity, so callers must not apply a cosine
-        threshold to the results. On a ``RequestError``, an error message is
-        added to the request and the function returns
-        ``{"hits": {"hits": [], "total": {"value": 0}}}``, an empty result set.
+        both retrieval windows). Each hit carries a ``_passage`` key — the
+        best available generation passage: the matched nested chunk text (from
+        kNN inner_hits), the first BM25 highlight fragment, or the first
+        ``NOTES_PASSAGE_FALLBACK_CHARS`` characters of ``contents``. The
+        ``_score`` on each hit is an RRF fused value, not a cosine similarity,
+        so callers must not apply a cosine threshold to the results. On a
+        ``RequestError``, an error message is added to the request and the
+        function returns ``{"hits": {"hits": [], "total": {"value": 0}}}``,
+        an empty result set.
     """
 
     embeddings = len_safe_get_embedding(search)
@@ -697,7 +719,8 @@ def semantic_search(
     ]
     source_fields = ["date", "contents", "doctype", "name", "title", "url", "uuid"]
 
-    # BM25 (lexical / exact-term) over name + body.
+    # BM25 (lexical / exact-term) over name + body, with a highlight fragment
+    # used as the generation passage for lexically-matched notes.
     bm25_search: dict[str, Any] = {
         "query": {
             "bool": {
@@ -709,15 +732,20 @@ def semantic_search(
         },
         "size": NOTES_RRF_RANK_WINDOW,
         "_source": source_fields,
+        "highlight": {
+            "fields": {"contents": {"fragment_size": 600, "number_of_fragments": 1}}
+        },
     }
-    # kNN (semantic) over the indexed embeddings.
+    # kNN (semantic) over the nested per-chunk vectors; inner_hits returns the
+    # best-matching chunk so its text can be the generation passage.
     knn_search: dict[str, Any] = {
         "knn": {
-            "field": "embeddings_vector",
+            "field": "chunks.vector",
             "query_vector": embeddings,
             "k": NOTES_RRF_RANK_WINDOW,
             "num_candidates": max(NOTES_RRF_RANK_WINDOW * 2, 100),
             "filter": note_filter,
+            "inner_hits": {"name": "chunks", "size": 1, "_source": ["text"]},
         },
         "size": NOTES_RRF_RANK_WINDOW,
         "_source": source_fields,
@@ -731,8 +759,25 @@ def semantic_search(
         messages.add_message(request, messages.ERROR, f"Request Error: {e.status_code} {error_info.get('error')}")
         return {"hits": {"hits": [], "total": {"value": 0}}}
 
+    # Best passage per note: matched chunk (kNN) > highlight fragment (BM25).
+    passage_by_id: dict[str, str] = {}
+    for hit in knn_hits:
+        chunk = _knn_chunk_passage(hit)
+        if chunk:
+            passage_by_id[hit["_id"]] = chunk
+    for hit in bm25_hits:
+        if hit["_id"] not in passage_by_id:
+            fragment = _bm25_highlight_passage(hit)
+            if fragment:
+                passage_by_id[hit["_id"]] = fragment
+
     fused = _rrf_fuse([bm25_hits, knn_hits])
     top = fused[:size]
+    for hit in top:
+        passage = passage_by_id.get(hit["_id"])
+        if not passage:
+            passage = (hit.get("_source", {}).get("contents") or "")[:NOTES_PASSAGE_FALLBACK_CHARS]
+        hit["_passage"] = passage
     # total = count of unique docs fused across both windows, not a corpus match count.
     return {"hits": {"hits": top, "total": {"value": len(fused)}}}
 

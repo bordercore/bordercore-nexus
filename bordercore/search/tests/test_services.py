@@ -490,7 +490,7 @@ def test_semantic_search_fuses_bm25_and_knn(mock_execute, mock_embedding):
     assert bm25_body["query"]["bool"]["filter"] == note_filter
     assert "knn" not in bm25_body
 
-    assert knn_body["knn"]["field"] == "embeddings_vector"
+    assert knn_body["knn"]["field"] == "chunks.vector"
     assert knn_body["knn"]["query_vector"] == [0.1] * 10
     assert knn_body["knn"]["filter"] == note_filter
 
@@ -522,9 +522,8 @@ def test_semantic_search_empty_results(mock_execute, mock_embedding):
 
 @pytest.mark.data_quality
 def test_semantic_search_hybrid_retrieves_its_note(monkeypatch):
-    """semantic_search (hybrid BM25 + kNN, Python-side RRF) surfaces a note when
-    queried by its own vector + name. Fused scores are RRF values, not cosine, so
-    we assert retrieval, not a score range."""
+    """Hybrid retrieval (nested-chunk kNN + BM25) surfaces a note when queried
+    by one of its own chunk vectors + its name."""
     from types import SimpleNamespace
 
     from django.conf import settings
@@ -533,9 +532,16 @@ def test_semantic_search_hybrid_retrieves_its_note(monkeypatch):
     from lib.util import get_elasticsearch_connection
 
     es = get_elasticsearch_connection()
-    uuid_, vec = _note_uuid_and_vector(es, settings.ELASTICSEARCH_INDEX)
-    doc = es.get(index=settings.ELASTICSEARCH_INDEX, id=uuid_, source=["name"])
-    name = doc["_source"].get("name") or "note"
+    idx = settings.ELASTICSEARCH_INDEX
+    resp = es.search(index=idx, size=1, _source=["uuid", "name", "chunks"],
+        query={"bool": {"filter": [
+            {"term": {"doctype": "note"}},
+            {"nested": {"path": "chunks", "query": {"exists": {"field": "chunks.vector"}}}},
+        ]}})
+    hit = resp["hits"]["hits"][0]
+    uuid_ = hit["_id"]
+    vec = hit["_source"]["chunks"][0]["vector"]
+    name = hit["_source"].get("name") or "note"
     monkeypatch.setattr(svc, "len_safe_get_embedding", lambda *a, **k: vec)
 
     request = SimpleNamespace(user=SimpleNamespace(id=1))
@@ -543,6 +549,61 @@ def test_semantic_search_hybrid_retrieves_its_note(monkeypatch):
     hits = out["hits"]["hits"]
     assert hits, "expected note hits"
     assert any(h["_id"] == uuid_ for h in hits), "self note should be retrieved"
+
+
+@patch("search.services.len_safe_get_embedding")
+@patch("search.services.execute_search")
+def test_semantic_search_uses_nested_chunks_and_passages(mock_execute, mock_embedding):
+    """kNN runs over nested chunks with inner_hits; BM25 adds a highlight; each
+    returned note carries a _passage (chunk > highlight > contents fallback)."""
+    from types import SimpleNamespace
+
+    import search.services as svc
+
+    mock_embedding.return_value = [0.1] * 10
+    bm25_resp = {"hits": {"hits": [
+        {"_id": "B", "_score": 4.0, "_source": {"uuid": "B", "contents": "B body"},
+         "highlight": {"contents": ["...B highlight fragment..."]}},
+    ]}}
+    knn_resp = {"hits": {"hits": [
+        {"_id": "A", "_score": 0.9, "_source": {"uuid": "A", "contents": "A body"},
+         "inner_hits": {"chunks": {"hits": {"hits": [
+             {"_source": {"text": "A matched chunk"}}]}}}},
+    ]}}
+    mock_execute.side_effect = [bm25_resp, knn_resp]
+
+    request = SimpleNamespace(user=SimpleNamespace(id=1))
+    out = svc.semantic_search(request, "q", size=10)
+
+    knn_body = mock_execute.call_args_list[1][0][0]
+    assert knn_body["knn"]["field"] == "chunks.vector"
+    assert "inner_hits" in knn_body["knn"]
+    bm25_body = mock_execute.call_args_list[0][0][0]
+    assert "highlight" in bm25_body and "contents" in bm25_body["highlight"]["fields"]
+
+    passages = {h["_id"]: h["_passage"] for h in out["hits"]["hits"]}
+    assert passages["A"] == "A matched chunk"
+    assert passages["B"] == "...B highlight fragment..."
+
+
+@patch("search.services.len_safe_get_embedding")
+@patch("search.services.execute_search")
+def test_semantic_search_passage_falls_back_to_contents(mock_execute, mock_embedding):
+    """A note with neither a chunk nor a highlight falls back to contents[:1500]."""
+    from types import SimpleNamespace
+
+    import search.services as svc
+
+    mock_embedding.return_value = [0.1] * 10
+    bm25_resp = {"hits": {"hits": [
+        {"_id": "C", "_score": 4.0, "_source": {"uuid": "C", "contents": "C" * 5000}},
+    ]}}
+    knn_resp = {"hits": {"hits": []}}
+    mock_execute.side_effect = [bm25_resp, knn_resp]
+
+    request = SimpleNamespace(user=SimpleNamespace(id=1))
+    out = svc.semantic_search(request, "q", size=10)
+    assert out["hits"]["hits"][0]["_passage"] == "C" * 1500
 
 
 @pytest.mark.data_quality
