@@ -1603,7 +1603,7 @@ def chatbot(request: HttpRequest, args: dict[str, Any]) -> Generator[str, None, 
                 "content": f"Tell me about the strength training exercise '{exercise.name}'. Include a description and talk about proper form and which muscles are targeted."
             }
         ]
-    elif args["mode"] == "notes":
+    elif args.get("mode") == "notes":
         chat_history = json.loads(args["chat_history"])
         user_messages = [m for m in chat_history if m.get("role") == "user"]
         prompt = user_messages[-1]["content"] if user_messages else chat_history[-1]["content"]

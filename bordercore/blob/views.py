@@ -622,7 +622,7 @@ def rename_blob(request: Request, uuid: str) -> Response:
     return Response({"name": blob.name})
 
 
-class BlobUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView, FormValidMixin):
+class BlobUpdateView(LoginRequiredMixin, UserScopedQuerysetMixin, FormRequestMixin, UpdateView, FormValidMixin):
     """View for updating an existing blob.
 
     Handles editing of blobs, including updating metadata, tags, and
@@ -908,7 +908,9 @@ def update_cover_image(request: HttpRequest) -> Response:
         JSON response with status.
     """
     blob_uuid = request.POST["blob_uuid"]
-    image_file = cast(UploadedFile, request.FILES["image"])
+    image_file = cast("UploadedFile | None", request.FILES.get("image"))
+    if image_file is None:
+        return Response({"detail": "image file is required"}, status=status.HTTP_400_BAD_REQUEST)
     image = image_file.read()
 
     user = cast(User, request.user)

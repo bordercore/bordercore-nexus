@@ -236,6 +236,24 @@ def test_blob_update(monkeypatch_blob, authenticated_client, blob_text_factory, 
     assert f"{key_root}/{filename_new}" in objects
 
 
+def test_blob_update_other_user(authenticated_client):
+    """A user cannot edit (or hijack ownership of) another user's blob."""
+
+    from accounts.tests.factories import UserFactory
+
+    other_user = UserFactory(username="otheruser")
+    blob = BlobFactory.create(user=other_user)
+
+    _, client = authenticated_client()
+
+    url = urls.reverse("blob:update", kwargs={"uuid": blob.uuid})
+    resp = client.post(url, {"filename": "hijacked.txt", "tags": ""})
+
+    assert resp.status_code == 404
+    blob.refresh_from_db()
+    assert blob.user == other_user
+
+
 # Dynamically resolve the actual fixture named in the parametrize list (replaces lazy_fixture)
 @pytest.fixture
 def resolved_blob(request):
