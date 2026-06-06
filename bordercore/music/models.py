@@ -353,7 +353,9 @@ class Song(ElasticsearchMixin, TimeStampedModel):
         """
         # If an album was specified, check if we have the album
         if song_info["album_name"]:
-            album_artist = song_info["album_artist"] if song_info["compilation"] else song_info["artist"]
+            # SongForm.cleaned_data has no "album_artist" key, so fall back to
+            # the song's artist for compilation albums rather than KeyError-ing.
+            album_artist = song_info.get("album_artist") or song_info["artist"]
             album_info = None
             try:
                 album_info = Album.objects.get(user=user,

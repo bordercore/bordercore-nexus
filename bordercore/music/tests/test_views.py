@@ -124,6 +124,25 @@ def test_music_album_update(authenticated_client, song):
     assert "django" in [x.name for x in updated_album.tags.all()]
 
 
+def test_music_album_update_other_user(authenticated_client):
+    """A user cannot edit another user's album (owner-scoped)."""
+    other_user = UserFactory(username="otheruser")
+    album = AlbumFactory(user=other_user)
+    original_title = album.title
+
+    _, client = authenticated_client()
+    url = urls.reverse("music:album_update", kwargs={"uuid": album.uuid})
+    resp = client.post(url, {
+        "title": "Hijacked",
+        "artist": "X",
+        "year": "2020",
+    })
+
+    assert resp.status_code == 404
+    album.refresh_from_db()
+    assert album.title == original_title
+
+
 def test_music_artist_detail(authenticated_client, song):
     """Test the artist detail page renders successfully."""
     _, client = authenticated_client()

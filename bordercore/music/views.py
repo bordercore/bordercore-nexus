@@ -485,7 +485,7 @@ class AlbumDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, FormRequestMi
         return super().get_queryset().prefetch_related("tags")
 
 
-class AlbumUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView):
+class AlbumUpdateView(LoginRequiredMixin, UserScopedQuerysetMixin, FormRequestMixin, UpdateView):
     """Handle updating album information and cover images."""
 
     model = Album
@@ -892,7 +892,7 @@ def music_search(request: Request) -> Response:
         try:
             return max(0, int(request.GET.get(name, default)))
         except (TypeError, ValueError):
-            return default
+            return max(0, default)
 
     song_limit = min(_int("song_limit", 8), 100)
     album_limit = min(_int("album_limit", 8), 100)

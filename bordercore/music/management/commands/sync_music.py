@@ -373,7 +373,7 @@ class Command(BaseCommand):
         except Song.DoesNotExist as e:
             raise MusicSyncError(f"Song with UUID {uuid} not found in database") from e
 
-        if song.album:
+        if song.album and song.track is not None:
             track_number = self._normalize_track_number(str(song.track))
             filename = f"{track_number} - {song.title}.mp3"
         else:

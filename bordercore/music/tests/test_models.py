@@ -45,6 +45,24 @@ def test_music_playtime():
     assert album.playtime == "50 minutes"
 
 
+def test_get_or_create_album_compilation_without_album_artist(authenticated_client):
+    """compilation=True with no album_artist key falls back to the song artist."""
+    user, _ = authenticated_client()
+    artist = Artist.objects.create(name="Compilation Artist", user=user)
+
+    album = Song.get_or_create_album(user, {
+        "album_name": "Greatest Hits",
+        "artist": artist,
+        "compilation": True,
+        "year": 2000,
+    })
+
+    assert album is not None
+    assert album.compilation is True
+    assert album.title == "Greatest Hits"
+    assert album.artist.name == artist.name
+
+
 def test_music_song_url():
     """Test that song URL returns album page or artist page as appropriate."""
     # Test url for a song that's part of an album
