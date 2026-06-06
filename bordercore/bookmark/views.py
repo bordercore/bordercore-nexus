@@ -5,9 +5,7 @@ editing, deleting, importing, and organizing bookmarks with tags.
 """
 import datetime
 import html
-import ipaddress
 import re
-import socket
 from typing import TYPE_CHECKING, Any, cast
 from urllib.parse import unquote, urlparse
 
@@ -43,7 +41,8 @@ from bookmark.models import Bookmark, FAVICON_URL_RE
 from lib.decorators import validate_post_data
 from lib.exceptions import BookmarkSearchDeleteError
 from lib.mixins import FormRequestMixin, UserScopedQuerysetMixin, get_user_object_or_404
-from lib.util import favicon_img_url, get_pagination_range, parse_title_from_url
+from lib.util import (UnsafeURLError, favicon_img_url, get_pagination_range,
+                      parse_title_from_url)
 from tag.models import Tag, TagBookmark
 
 
@@ -89,10 +88,12 @@ def click(request: HttpRequest, bookmark_uuid: str | None = None) -> HttpRespons
     if not bookmark_uuid:
         raise Http404("Bookmark UUID is required")
     b = get_user_object_or_404(user, Bookmark, uuid=bookmark_uuid)
-    if b.daily is None:
-        b.daily = {}
-    b.daily["viewed"] = "true"
-    b.save()
+    # Only record the view on bookmarks already opted into daily tracking.
+    # Writing daily JSON to a non-daily bookmark would silently flip it into a
+    # daily-tracked one (BookmarkForm treats a non-null daily field as enabled).
+    if b.daily is not None:
+        b.daily["viewed"] = "true"
+        b.save()
     return redirect(b.url)
 
 
@@ -756,12 +757,18 @@ def add_note(request: HttpRequest) -> Response:
     note = request.POST["note"]
 
     user = cast(User, request.user)
-    TagBookmark.objects.filter(
+    updated = TagBookmark.objects.filter(
         tag__name=tag_name,
         tag__user=user,
         bookmark__uuid=bookmark_uuid,
         bookmark__user=user
     ).update(note=note)
+
+    if not updated:
+        return Response(
+            {"detail": "No matching tag/bookmark association to update."},
+            status=404,
+        )
 
     return Response()
 
@@ -818,17 +825,12 @@ def get_title_from_url(request: HttpRequest) -> Response:
     if parsed.scheme not in {"http", "https"}:
         return Response({"detail": "Invalid URL scheme"}, status=400)
 
-    hostname = parsed.hostname
-    if hostname:
-        try:
-            ip = socket.gethostbyname(hostname)
-            ip_obj = ipaddress.ip_address(ip)
-            if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local or ip_obj.is_reserved:
-                return Response({"detail": "Access to private/internal IPs is not allowed"}, status=400)
-        except (socket.gaierror, ValueError):
-            pass
-
-    title = parse_title_from_url(url)
+    # SSRF protection (resolved-IP validation, redirect-hop checks, fail-closed)
+    # lives in fetch_url_safely, called by parse_title_from_url.
+    try:
+        title = parse_title_from_url(url)
+    except UnsafeURLError as e:
+        return Response({"detail": str(e)}, status=400)
 
     return Response(
         {

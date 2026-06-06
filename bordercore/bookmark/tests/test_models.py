@@ -52,6 +52,17 @@ def test_get_favicon_img_tag(monkeypatch_bookmark):
     assert url == ""
 
 
+def test_get_favicon_img_tag_escapes_domain(monkeypatch_bookmark):
+    """A double-quote in the URL authority is escaped, preventing attribute breakout."""
+    bookmark = BookmarkFactory(url='https://evil"onerror=alert(1).com')
+
+    tag = bookmark.get_favicon_img_tag()
+
+    # The raw quote must not survive into the rendered <img> attribute.
+    assert '"onerror=' not in tag
+    assert "&quot;onerror=" in tag
+
+
 def test_related_nodes(monkeypatch_bookmark, node):
     """Related nodes returns nodes containing collections with this bookmark."""
     bookmark = BookmarkFactory(user=node.user)

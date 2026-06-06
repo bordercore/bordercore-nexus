@@ -7,15 +7,93 @@ across the application.
 from __future__ import annotations
 
 import hashlib
+import ipaddress
 import os
+import socket
 import string
 from pathlib import PurePath
 from typing import Any
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 
 import requests
 
 ELASTICSEARCH_TIMEOUT = 20
+
+
+class UnsafeURLError(Exception):
+    """Raised when a URL targets a non-public address (SSRF guard)."""
+
+
+def _assert_public_host(hostname: str | None) -> None:
+    """Reject hosts that resolve to any non-public address.
+
+    Checks every address the hostname resolves to (not just the first) and
+    fails closed: a resolution failure is treated as unsafe rather than
+    silently allowed.
+
+    Raises:
+        UnsafeURLError: If the host is missing, unresolvable, or any resolved
+            address is private/loopback/link-local/reserved/multicast.
+    """
+    if not hostname:
+        raise UnsafeURLError("URL has no host")
+    try:
+        addrinfo = socket.getaddrinfo(hostname, None)
+    except socket.gaierror as exc:
+        raise UnsafeURLError(f"Could not resolve host: {hostname}") from exc
+    for info in addrinfo:
+        ip = ipaddress.ip_address(info[4][0])
+        if (
+            ip.is_private
+            or ip.is_loopback
+            or ip.is_link_local
+            or ip.is_reserved
+            or ip.is_multicast
+            or ip.is_unspecified
+        ):
+            raise UnsafeURLError("Access to private/internal addresses is not allowed")
+
+
+def fetch_url_safely(
+    url: str,
+    *,
+    headers: dict[str, str] | None = None,
+    timeout: int = 10,
+    max_redirects: int = 5,
+) -> requests.Response:
+    """GET a URL while guarding against SSRF.
+
+    Validates the resolved IP of every hop (the initial request and each
+    redirect target) against private/internal ranges before connecting, and
+    rejects non-http(s) schemes. Redirects are followed manually so each hop
+    is re-validated rather than trusting requests' automatic redirect handling.
+
+    This does not fully eliminate a determined DNS-rebinding attack, since
+    requests re-resolves the host at connect time; closing that fully would
+    require pinning the validated IP at the socket level.
+
+    Raises:
+        UnsafeURLError: If any hop targets a non-public address, uses a
+            disallowed scheme, or the redirect chain is too long.
+    """
+    session = requests.Session()
+    current = url
+    for _ in range(max_redirects + 1):
+        parsed = urlparse(current)
+        if parsed.scheme not in ("http", "https"):
+            raise UnsafeURLError("Only http and https URLs are allowed")
+        _assert_public_host(parsed.hostname)
+        response = session.get(
+            current, headers=headers, timeout=timeout, allow_redirects=False
+        )
+        if response.is_redirect or response.is_permanent_redirect:
+            location = response.headers.get("Location")
+            if not location:
+                return response
+            current = urljoin(current, location)
+            continue
+        return response
+    raise UnsafeURLError("Too many redirects")
 
 
 def get_elasticsearch_connection(host: str | None = None, timeout: int = ELASTICSEARCH_TIMEOUT) -> Any:
@@ -356,7 +434,7 @@ def parse_title_from_url(url: str) -> tuple[str, str]:
     from lxml import html
 
     headers = {"user-agent": "Bordercore/1.0"}
-    r = requests.get(url, headers=headers, timeout=10)
+    r = fetch_url_safely(url, headers=headers, timeout=10)
     http_content = r.text.encode("utf-8")
 
     # http://stackoverflow.com/questions/15830421/xml-unicode-strings-with-encoding-declaration-are-not-supported

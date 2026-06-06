@@ -1,7 +1,8 @@
 import json
+import socket
 from datetime import timedelta
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 import responses
@@ -409,19 +410,24 @@ def test_get_title_from_url(authenticated_client, bookmark):
 
     url = urls.reverse("drill:get_title_from_url")
 
-    # Test existing bookmark
-    resp = client.get(f"{url}?url={bookmark[0].url}")
-    content = json.loads(resp.content)
-    assert resp.status_code == 200
-    assert content["bookmarkUuid"] == str(bookmark[0].uuid)
-    assert content["title"] == bookmark[0].name
+    # Resolve to a public IP so the SSRF guard in fetch_url_safely passes
+    # without a real DNS lookup, keeping the test hermetic.
+    public_ip = [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 0))]
 
-    # Test new bookmark
-    resp = client.get(f"{url}?url=https://www.bordercore.com/bookmarks/")
-    content = json.loads(resp.content)
-    assert resp.status_code == 200
-    assert content["bookmarkUuid"] is None
-    assert content["title"] == "Bordercore Bookmarks"
+    with patch("lib.util.socket.getaddrinfo", return_value=public_ip):
+        # Test existing bookmark
+        resp = client.get(f"{url}?url={bookmark[0].url}")
+        content = json.loads(resp.content)
+        assert resp.status_code == 200
+        assert content["bookmarkUuid"] == str(bookmark[0].uuid)
+        assert content["title"] == bookmark[0].name
+
+        # Test new bookmark
+        resp = client.get(f"{url}?url=https://www.bordercore.com/bookmarks/")
+        content = json.loads(resp.content)
+        assert resp.status_code == 200
+        assert content["bookmarkUuid"] is None
+        assert content["title"] == "Bordercore Bookmarks"
 
 
 def test_drill_get_related_objects(authenticated_client, question, blob_note):

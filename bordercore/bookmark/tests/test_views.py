@@ -1,5 +1,6 @@
 import datetime
 import json
+import socket
 from unittest.mock import patch
 from urllib.parse import quote
 
@@ -25,6 +26,36 @@ def test_bookmark_click(authenticated_client, bookmark):
     resp = client.get(url)
 
     assert resp.status_code == 302
+
+
+def test_bookmark_click_records_view_on_daily(authenticated_client, bookmark):
+    """Clicking a daily-tracked bookmark records the view."""
+    _, client = authenticated_client()
+
+    daily = bookmark[0]
+    assert daily.daily is not None
+
+    url = urls.reverse("bookmark:click", kwargs={"bookmark_uuid": daily.uuid})
+    resp = client.get(url)
+
+    assert resp.status_code == 302
+    daily.refresh_from_db()
+    assert daily.daily["viewed"] == "true"
+
+
+def test_bookmark_click_does_not_flip_non_daily(authenticated_client, bookmark):
+    """Clicking a non-daily bookmark must not turn it into a daily-tracked one."""
+    _, client = authenticated_client()
+
+    non_daily = bookmark[1]
+    assert non_daily.daily is None
+
+    url = urls.reverse("bookmark:click", kwargs={"bookmark_uuid": non_daily.uuid})
+    resp = client.get(url)
+
+    assert resp.status_code == 302
+    non_daily.refresh_from_db()
+    assert non_daily.daily is None
 
 
 def test_bookmark_update(monkeypatch_bookmark, authenticated_client, bookmark):
@@ -329,6 +360,20 @@ def test_bookmark_add_note(authenticated_client, tag, bookmark):
     assert resp.status_code == 200
 
 
+def test_bookmark_add_note_no_match_returns_404(authenticated_client, tag, bookmark):
+    """Adding a note for a tag/bookmark pair with no association returns 404."""
+    _, client = authenticated_client()
+
+    url = urls.reverse("bookmark:add_note")
+    resp = client.post(url, {
+        "tag": tag[0].name,
+        "bookmark_uuid": bookmark[3].uuid,  # bookmark_4 is not tagged with tag[0]
+        "note": "Sample Note"
+    })
+
+    assert resp.status_code == 404
+
+
 def test_bookmark_get_new_bookmarks_count(authenticated_client, bookmark):
     """New bookmarks count returns correct count."""
     _, client = authenticated_client()
@@ -353,12 +398,13 @@ def test_bookmark_get_title_from_url(authenticated_client, bookmark):
 
 
 def test_get_title_from_url_private_ip(authenticated_client):
-    """SSRF protection blocks requests to private IPs."""
+    """SSRF protection blocks requests resolving to private/internal IPs."""
     _, client = authenticated_client()
 
     url = urls.reverse("bookmark:get_title_from_url")
 
-    with patch("bookmark.views.socket.gethostbyname", return_value="127.0.0.1"):
+    loopback = [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("127.0.0.1", 0))]
+    with patch("lib.util.socket.getaddrinfo", return_value=loopback):
         resp = client.get(f"{url}?url=http%3A%2F%2Flocalhost%2Ftest")
 
     assert resp.status_code == 400

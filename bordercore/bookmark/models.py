@@ -24,6 +24,7 @@ from django.core.cache import cache
 from django.db import models, transaction
 from django.db.models import JSONField
 from django.db.models.signals import m2m_changed
+from django.utils.html import format_html
 
 from lib.mixins import ElasticsearchMixin, TimeStampedModel
 from lib.time_utils import convert_seconds
@@ -396,7 +397,11 @@ class Bookmark(ElasticsearchMixin, TimeStampedModel):
         """
         favicon_url = Bookmark.get_favicon_url_static(url)
         if favicon_url:
-            return f'<img src="{favicon_url}" width="{size}" height="{size}" />'
+            # Escape the domain-derived URL: it comes from the user-controlled
+            # bookmark URL and is injected into the page via innerHTML.
+            return format_html(
+                '<img src="{}" width="{}" height="{}" />', favicon_url, size, size
+            )
         return ""
 
     def related_nodes(self) -> list[dict[str, str]]:
