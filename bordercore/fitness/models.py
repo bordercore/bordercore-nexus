@@ -152,7 +152,9 @@ class Exercise(models.Model):
             .order_by("-date")
         )
 
-        page = Paginator(raw_data, count).page(page_number)
+        # get_page() never raises: an out-of-range page falls back to the last
+        # page (and an invalid one to the first), avoiding an EmptyPage 500.
+        page = Paginator(raw_data, count).get_page(page_number)
         page_data = list(reversed(page.object_list))
 
         initial_plot_type = "reps"
@@ -177,7 +179,7 @@ class Exercise(models.Model):
             "notes": notes,
             "initial_plot_type": initial_plot_type,
             "paginator": {
-                "page_number": page_number,
+                "page_number": page.number,
                 "has_previous": page.has_next(),
                 "has_next": page.has_previous(),
                 "previous_page_number": page.next_page_number() if page.has_next() else None,

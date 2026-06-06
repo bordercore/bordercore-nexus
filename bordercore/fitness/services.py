@@ -66,8 +66,8 @@ def get_fitness_summary(
 
     active_exercises = []
     inactive_exercises = []
-    current_weekday = datetime.date.today().weekday()
     now_date = timezone.localdate()
+    current_weekday = now_date.weekday()
 
     for e in exercises:
         last_active = getattr(e, "last_active", None)

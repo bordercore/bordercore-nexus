@@ -92,6 +92,18 @@ def test_get_plot_data(authenticated_client, fitness):
     assert paginator["next_page_number"] == 1
 
 
+def test_get_plot_data_out_of_range_page(authenticated_client, fitness):
+    """An out-of-range page falls back to the last page instead of raising EmptyPage."""
+    user, _ = authenticated_client()
+
+    # 11 workouts at 4/page -> 3 pages; page 99 clamps to the last page.
+    plot_data = fitness[0].get_plot_info(user=user, count=4, page_number=99)
+    paginator = plot_data["paginator"]
+
+    assert paginator["page_number"] == 3
+    assert len(plot_data["labels"]) == 3
+
+
 def test_get_related_exercises(fitness):
 
     exercise = Exercise.objects.get(name="Push Ups")
