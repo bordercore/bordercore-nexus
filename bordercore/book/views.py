@@ -31,8 +31,9 @@ class BookListView(LoginRequiredMixin, UserScopedQuerysetMixin, ListView):
         Returns:
             QuerySet of Book objects filtered by starting letter and user.
         """
-        if self.args:
-            self.selected_letter = self.args[0]
+        letter = (self.args[0] if self.args else "")[:1].upper()
+        if letter and letter in string.ascii_uppercase:
+            self.selected_letter = letter
 
         return super().get_queryset().filter(
             title__istartswith=self.selected_letter,

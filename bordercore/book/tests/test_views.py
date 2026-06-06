@@ -130,6 +130,38 @@ def test_get_queryset_case_insensitive(authenticated_client):
     assert qs.count() == 1
 
 
+def test_get_queryset_invalid_letter_defaults_to_a(authenticated_client):
+    """A non-letter URL segment falls back to the default letter 'A'."""
+    user, _ = authenticated_client()
+
+    author = AuthorFactory()
+    BookFactory(title="Algorithms", user=user, author=[author])
+    BookFactory(title="Zoology", user=user, author=[author])
+
+    view = _setup_view(user, "123")
+    qs = view.get_queryset()
+    assert view.selected_letter == "A"
+    titles = [b.title for b in qs]
+    assert "Algorithms" in titles
+    assert "Zoology" not in titles
+
+
+def test_book_list_url_reverse_and_resolve():
+    """The book_list route reverses and resolves (path() regex bug regression)."""
+    from django.urls import resolve, reverse
+
+    # The template renders {% url 'book_list' '' %} for the base URL.
+    assert reverse("book_list", args=[""]) == "/books/"
+    assert reverse("book_list", args=["B"]) == "/books/B"
+
+    base = resolve("/books/")
+    assert base.view_name == "book_list"
+
+    letter = resolve("/books/B")
+    assert letter.view_name == "book_list"
+    assert letter.args == ("B",)
+
+
 def test_author_str():
     """Test Author __str__ returns name."""
     author = AuthorFactory(name="Tolkien")

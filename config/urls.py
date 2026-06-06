@@ -24,7 +24,7 @@ urlpatterns = [
 
     path("robots.txt", robots_txt),
     path("__admin/", admin.site.urls),
-    path(r"books/(\w+)?", BookListView.as_view(), name="book_list"),
+    re_path(r"^books/([A-Za-z]?)$", BookListView.as_view(), name="book_list"),
 
 ]
 
