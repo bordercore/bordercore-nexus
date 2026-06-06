@@ -155,10 +155,13 @@ class TestEvaluateNotesRetrieval:
 
 # Calibrated AFTER the first real run on the curated dataset: run
 # `manage.py eval_notes_rag`, observe effective recall@3, and set this to a
-# round value just below it. First calibration (2026-06-06, 30 cases): observed
-# 0.867 effective recall@3, gate set to 0.80 to absorb ~2 cases of embedding
-# noise. Raise it when a deliberate retrieval improvement is shipped and you
-# want to lock in the gain; do not raise it reactively after a single high run.
+# round value just below it. Calibrated 2026-06-06 (30 cases): pure-kNN, hybrid
+# BM25+kNN, and chunk-level indexing all measured effective recall@3 = 0.867;
+# gate stays 0.80 to absorb ~2 cases of embedding noise. (Chunking lifted raw
+# recall@8/MRR and generation grounding, but the buried-fact cases rank in the
+# candidate pool just outside the top-3 cap — reranking is the next lever.)
+# Raise it when a deliberate retrieval improvement clears the top-3 cap; do not
+# raise it reactively after a single high run.
 NOTES_RAG_EVAL_BASELINE = 0.80
 
 # Minimum cases before the guard asserts; below this, recall estimates are
