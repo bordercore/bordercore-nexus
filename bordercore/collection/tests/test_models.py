@@ -1,10 +1,28 @@
+import uuid as uuid_lib
+from unittest.mock import patch
+
 import pytest
 
 from blob.tests.factories import BlobFactory
-from collection.models import CollectionObject
+from collection.models import Collection, CollectionObject
 from lib.exceptions import DuplicateObjectError
 
 pytestmark = [pytest.mark.django_db]
+
+
+def test_create_collection_thumbnail_deferred_until_commit(django_capture_on_commit_callbacks):
+    """The SNS publish is deferred to transaction commit, not fired inline."""
+    coll = Collection(uuid=uuid_lib.uuid4())
+
+    with patch("collection.models.publish_create_collection_thumbnail") as mock_publish:
+        with django_capture_on_commit_callbacks(execute=False) as callbacks:
+            coll.create_collection_thumbnail()
+            # Nothing published yet: a rollback here would send no SNS message.
+            mock_publish.assert_not_called()
+
+        assert len(callbacks) == 1
+        callbacks[0]()
+        mock_publish.assert_called_once_with(str(coll.uuid))
 
 
 def test_sort_collection(collection, blob_image_factory, blob_pdf_factory):

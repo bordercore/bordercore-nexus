@@ -401,8 +401,13 @@ class Collection(ElasticsearchMixin, TimeStampedModel):
         which triggers an AWS Lambda function to generate a fresh cover image
         based on the collection's current contents.
         """
-        # Generate a fresh cover image for the collection
-        publish_create_collection_thumbnail(str(self.uuid))
+        # Defer the SNS publish until the surrounding transaction commits so a
+        # rollback (e.g. collection.views.create_blob wraps add_object in
+        # transaction.atomic) doesn't trigger thumbnail generation for a
+        # blob/membership that no longer exists. Outside an atomic block,
+        # on_commit runs the callback immediately.
+        uuid = str(self.uuid)
+        transaction.on_commit(lambda: publish_create_collection_thumbnail(uuid))
 
 
 class CollectionObject(SortOrderMixin):
