@@ -1497,7 +1497,7 @@ def _build_notes_rag_messages(
     for index, hit in enumerate(hits[:NOTES_RAG_MAX_SOURCES], start=1):
         source = hit["_source"]
         title = _note_display_title(source)
-        excerpt = (source.get("contents") or "")[:NOTES_RAG_EXCERPT_CHARS]
+        excerpt = hit.get("_passage") or (source.get("contents") or "")[:NOTES_RAG_EXCERPT_CHARS]
         detail_url = reverse("blob:detail", kwargs={"uuid": source["uuid"]})
         context_parts.append(
             f"Source {index}: [{title}]({detail_url})\n{excerpt}"

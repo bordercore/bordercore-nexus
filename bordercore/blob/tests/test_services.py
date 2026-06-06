@@ -461,6 +461,31 @@ def test_build_notes_rag_messages_truncates_and_lists_sources():
     assert "2. [Beta]" in footer
 
 
+def test_build_notes_rag_messages_uses_passage():
+    from blob.services import _build_notes_rag_messages
+
+    hits = [{
+        "_source": {"uuid": "11111111-1111-1111-1111-111111111111", "name": "Note One",
+                    "contents": "FULL NOTE BODY THAT SHOULD NOT BE USED"},
+        "_passage": "the precise matched passage",
+    }]
+    messages, footer = _build_notes_rag_messages("my question", hits)
+    user_content = messages[1]["content"]
+    assert "the precise matched passage" in user_content
+    assert "FULL NOTE BODY THAT SHOULD NOT BE USED" not in user_content
+
+
+def test_build_notes_rag_messages_passage_falls_back_to_contents():
+    from blob.services import _build_notes_rag_messages
+
+    hits = [{
+        "_source": {"uuid": "11111111-1111-1111-1111-111111111111", "name": "Note One",
+                    "contents": "fallback body"},
+    }]
+    messages, _ = _build_notes_rag_messages("q", hits)
+    assert "fallback body" in messages[1]["content"]
+
+
 @patch("blob.services.OpenAI")
 def test_rewrite_notes_search_query_skips_rewrite_on_first_turn(mock_openai_cls):
     """_rewrite_notes_search_query returns the user message without calling OpenAI."""
