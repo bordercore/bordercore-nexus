@@ -442,10 +442,89 @@ def _note_uuid_and_vector(es, index, user_id=1):
     return hit["_id"], doc["_source"]["embeddings_vector"]
 
 
+def test_rrf_fuse_combines_ranks():
+    """_rrf_fuse merges ranked hit lists; a doc in both lists outranks singles."""
+    from search.services import _rrf_fuse
+
+    list_a = [{"_id": "x", "_source": {"uuid": "x"}}, {"_id": "y", "_source": {"uuid": "y"}}]
+    list_b = [{"_id": "y", "_source": {"uuid": "y"}}, {"_id": "z", "_source": {"uuid": "z"}}]
+    fused = _rrf_fuse([list_a, list_b], rank_constant=60)
+    ids = [h["_id"] for h in fused]
+    assert ids[0] == "y"               # appears in both lists → highest fused score
+    assert set(ids) == {"x", "y", "z"}
+    assert fused[0]["_score"] == pytest.approx(1 / 61 + 1 / 62)
+    assert _rrf_fuse([[], []]) == []
+
+
+@patch("search.services.len_safe_get_embedding")
+@patch("search.services.execute_search")
+def test_semantic_search_fuses_bm25_and_knn(mock_execute, mock_embedding):
+    """semantic_search runs separate BM25 + kNN queries (both user/doctype
+    filtered) and fuses them with Python-side RRF."""
+    from types import SimpleNamespace
+
+    import search.services as svc
+
+    mock_embedding.return_value = [0.1] * 10
+    bm25_resp = {"hits": {"hits": [
+        {"_id": "A", "_score": 5.0, "_source": {"uuid": "A"}},
+        {"_id": "B", "_score": 4.0, "_source": {"uuid": "B"}},
+    ]}}
+    knn_resp = {"hits": {"hits": [
+        {"_id": "B", "_score": 0.9, "_source": {"uuid": "B"}},
+        {"_id": "C", "_score": 0.8, "_source": {"uuid": "C"}},
+    ]}}
+    mock_execute.side_effect = [bm25_resp, knn_resp]
+
+    request = SimpleNamespace(user=SimpleNamespace(id=1))
+    out = svc.semantic_search(request, "meaning of life", size=10)
+
+    assert mock_execute.call_count == 2
+    bm25_body = mock_execute.call_args_list[0][0][0]
+    knn_body = mock_execute.call_args_list[1][0][0]
+
+    note_filter = [{"term": {"user_id": 1}}, {"term": {"doctype": "note"}}]
+    multi_match = bm25_body["query"]["bool"]["must"][0]["multi_match"]
+    assert multi_match["query"] == "meaning of life"
+    assert multi_match["fields"] == ["name^2", "contents"]
+    assert bm25_body["query"]["bool"]["filter"] == note_filter
+    assert "knn" not in bm25_body
+
+    assert knn_body["knn"]["field"] == "embeddings_vector"
+    assert knn_body["knn"]["query_vector"] == [0.1] * 10
+    assert knn_body["knn"]["filter"] == note_filter
+
+    hits = out["hits"]["hits"]
+    ids = [h["_id"] for h in hits]
+    assert ids[0] == "B"               # in both lists → top
+    assert set(ids) == {"A", "B", "C"}
+    assert hits[0]["_score"] == pytest.approx(1 / 61 + 1 / 62)
+
+
+@patch("search.services.len_safe_get_embedding")
+@patch("search.services.execute_search")
+def test_semantic_search_empty_results(mock_execute, mock_embedding):
+    """When both sub-queries return nothing, semantic_search returns an empty
+    result set (which drives the chatbot's abstention path)."""
+    from types import SimpleNamespace
+
+    import search.services as svc
+
+    mock_embedding.return_value = [0.1] * 10
+    mock_execute.side_effect = [{"hits": {"hits": []}}, {"hits": {"hits": []}}]
+
+    request = SimpleNamespace(user=SimpleNamespace(id=1))
+    out = svc.semantic_search(request, "no matches here", size=8)
+
+    assert out["hits"]["hits"] == []
+    assert out["hits"]["total"]["value"] == 0
+
+
 @pytest.mark.data_quality
-def test_semantic_search_returns_knn_scores_in_unit_range(monkeypatch):
-    """semantic_search uses native kNN: scores land in [0, 1] and a note's own
-    vector self-matches as the top hit at ~1.0."""
+def test_semantic_search_hybrid_retrieves_its_note(monkeypatch):
+    """semantic_search (hybrid BM25 + kNN, Python-side RRF) surfaces a note when
+    queried by its own vector + name. Fused scores are RRF values, not cosine, so
+    we assert retrieval, not a score range."""
     from types import SimpleNamespace
 
     from django.conf import settings
@@ -455,16 +534,15 @@ def test_semantic_search_returns_knn_scores_in_unit_range(monkeypatch):
 
     es = get_elasticsearch_connection()
     uuid_, vec = _note_uuid_and_vector(es, settings.ELASTICSEARCH_INDEX)
+    doc = es.get(index=settings.ELASTICSEARCH_INDEX, id=uuid_, source=["name"])
+    name = doc["_source"].get("name") or "note"
     monkeypatch.setattr(svc, "len_safe_get_embedding", lambda *a, **k: vec)
 
     request = SimpleNamespace(user=SimpleNamespace(id=1))
-    out = svc.semantic_search(request, "anything", size=5)
+    out = svc.semantic_search(request, name, size=10)
     hits = out["hits"]["hits"]
     assert hits, "expected note hits"
-    for h in hits:
-        assert 0.0 <= h["_score"] <= 1.0, h["_score"]
-    assert hits[0]["_id"] == uuid_
-    assert hits[0]["_score"] > 0.99
+    assert any(h["_id"] == uuid_ for h in hits), "self note should be retrieved"
 
 
 @pytest.mark.data_quality

@@ -180,6 +180,13 @@ def get_cover_url(
     return None
 
 
+# Notes RAG hybrid retrieval: BM25 + kNN fused with Python-side Reciprocal Rank
+# Fusion (the native ES rrf retriever requires a Platinum license; the cluster
+# is basic). Each doc's fused score is sum(1 / (rank_constant + rank)).
+NOTES_RRF_RANK_CONSTANT = 60
+NOTES_RRF_RANK_WINDOW = 50
+NOTES_BM25_FIELDS = ["name^2", "contents"]
+
 RESULT_COUNT_PER_PAGE = 10
 
 SOURCE_FIELDS = [
@@ -621,58 +628,113 @@ def perform_image_search(
     }
 
 
+def _rrf_fuse(
+    hit_lists: list[list[dict[str, Any]]],
+    *,
+    rank_constant: int = NOTES_RRF_RANK_CONSTANT,
+) -> list[dict[str, Any]]:
+    """Fuse multiple ranked Elasticsearch hit lists via Reciprocal Rank Fusion.
+
+    Each document's fused score is the sum over the input lists of
+    ``1 / (rank_constant + rank)`` (1-based rank within each list). Documents are
+    keyed by ``_id``; the returned hit dicts are the first-seen copy for each id
+    with ``_score`` replaced by the fused score, sorted by fused score descending.
+    On equal fused scores, documents keep first-seen insertion order (i.e. the
+    order the input lists were passed — earlier lists take precedence), because
+    Python's ``sorted`` is stable over the underlying dict insertion order.
+    """
+    fused_scores: dict[str, float] = {}
+    hit_by_id: dict[str, dict[str, Any]] = {}
+    for hits in hit_lists:
+        for rank, hit in enumerate(hits, start=1):
+            doc_id = hit["_id"]
+            fused_scores[doc_id] = fused_scores.get(doc_id, 0.0) + 1.0 / (rank_constant + rank)
+            hit_by_id.setdefault(doc_id, hit)
+    ranked_ids = sorted(fused_scores, key=lambda d: fused_scores[d], reverse=True)
+    fused: list[dict[str, Any]] = []
+    for doc_id in ranked_ids:
+        hit = dict(hit_by_id[doc_id])
+        hit["_score"] = fused_scores[doc_id]
+        fused.append(hit)
+    return fused
+
+
 def semantic_search(
     request: HttpRequest,
     search: str,
     *,
     size: int = 8,
 ) -> dict[str, Any]:
-    """Perform semantic search using embeddings and Elasticsearch.
+    """Perform hybrid BM25 + kNN search over the user's notes, fused with Python-side Reciprocal Rank Fusion.
 
-    Searches for notes using cosine similarity between the query embedding
-    and document embeddings. Results are filtered by user and limited to
-    note document types.
+    Runs a BM25 multi_match query and a kNN semantic query separately, then
+    merges their rankings using Python-side RRF. Both sub-queries are filtered
+    to the requesting user's notes. The native ES RRF retriever is not used
+    because it requires a Platinum license; the cluster runs a basic license.
 
     Args:
         request: The HTTP request object containing the authenticated user.
         search: The search query string to generate embeddings from.
-        size: Maximum number of note hits to return, ordered by similarity.
+        size: Maximum number of note hits to return, ranked by fused RRF score.
 
     Returns:
-        A dictionary containing Elasticsearch search results with hits,
-        aggregations, and metadata, or an empty list if a RequestError occurs.
-        If a RequestError occurs, an error message is added to the request
-        and an empty list is returned (the exception is caught and handled).
+        An Elasticsearch-style result dict with ``hits.hits`` (list of hit
+        dicts) and ``hits.total.value`` (count of unique docs fused across
+        both retrieval windows). The ``_score`` on each hit is an RRF fused
+        value, not a cosine similarity, so callers must not apply a cosine
+        threshold to the results. On a ``RequestError``, an error message is
+        added to the request and the function returns
+        ``{"hits": {"hits": [], "total": {"value": 0}}}``, an empty result set.
     """
 
     embeddings = len_safe_get_embedding(search)
+    user_id = cast(int, request.user.id)
 
-    # Native ES8 kNN over the indexed embeddings_vector. kNN is a top-level
-    # search parameter with its own filter, so we bypass the function_score
-    # skeleton. Cosine scores land in [0, 1] (vs the old script_score's [0, 2]).
+    # Both sub-queries are scoped to the user's notes.
+    note_filter = [
+        {"term": {"user_id": user_id}},
+        {"term": {"doctype": "note"}},
+    ]
+    source_fields = ["date", "contents", "doctype", "name", "title", "url", "uuid"]
+
+    # BM25 (lexical / exact-term) over name + body.
+    bm25_search: dict[str, Any] = {
+        "query": {
+            "bool": {
+                "must": [
+                    {"multi_match": {"query": search, "fields": NOTES_BM25_FIELDS}}
+                ],
+                "filter": note_filter,
+            }
+        },
+        "size": NOTES_RRF_RANK_WINDOW,
+        "_source": source_fields,
+    }
+    # kNN (semantic) over the indexed embeddings.
     knn_search: dict[str, Any] = {
         "knn": {
             "field": "embeddings_vector",
             "query_vector": embeddings,
-            "k": size,
-            "num_candidates": max(size * 10, 100),
-            "filter": [
-                {"term": {"user_id": cast(int, request.user.id)}},
-                {"term": {"doctype": "note"}},
-            ],
+            "k": NOTES_RRF_RANK_WINDOW,
+            "num_candidates": max(NOTES_RRF_RANK_WINDOW * 2, 100),
+            "filter": note_filter,
         },
-        "size": size,
-        "_source": [
-            "date", "contents", "doctype", "name", "title", "url", "uuid",
-        ],
+        "size": NOTES_RRF_RANK_WINDOW,
+        "_source": source_fields,
     }
 
     try:
-        return execute_search(knn_search)
+        bm25_hits = execute_search(bm25_search)["hits"]["hits"]
+        knn_hits = execute_search(knn_search)["hits"]["hits"]
     except RequestError as e:
         error_info = cast(dict[str, Any], e.info)
         messages.add_message(request, messages.ERROR, f"Request Error: {e.status_code} {error_info.get('error')}")
         return {"hits": {"hits": [], "total": {"value": 0}}}
+
+    fused = _rrf_fuse([bm25_hits, knn_hits])
+    top = fused[:size]
+    # total = count of unique docs fused across both windows, not a corpus match count.
+    return {"hits": {"hits": top, "total": {"value": len(fused)}}}
 
 
 def index_document(doc: dict[str, Any]) -> None:
