@@ -59,3 +59,25 @@ def test_graph_api_ignores_unknown_layer_tokens(authenticated_client):
     resp = client.get(url, {"layers": "direct,bogus"})
 
     assert resp.status_code == 200
+
+
+def test_graph_api_cache_key_includes_top_k(authenticated_client):
+    """The cache key must include top_k so a future non-default top_k can't
+    collide with the default on the same user/layers."""
+    from unittest.mock import patch
+
+    from visualize.services import DEFAULT_TOP_K
+
+    user, client = authenticated_client()
+    url = urls.reverse("visualize:graph_api")
+
+    with patch("visualize.views.cache") as mock_cache:
+        mock_cache.get.return_value = None
+        resp = client.get(url, {"layers": "direct,tags"})
+
+    assert resp.status_code == 200
+
+    expected_key = f"viz:graph:{user.pk}:{DEFAULT_TOP_K}:direct,tags"
+    assert mock_cache.get.call_args.args[0] == expected_key
+    mock_cache.set.assert_called_once()
+    assert mock_cache.set.call_args.args[0] == expected_key

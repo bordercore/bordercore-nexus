@@ -15,7 +15,7 @@ from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.views.generic import TemplateView
 
-from .services import build_graph
+from .services import DEFAULT_TOP_K, build_graph
 
 GRAPH_CACHE_TTL_SECONDS = 60
 ALLOWED_LAYERS = ("direct", "tags", "collections")
@@ -45,10 +45,15 @@ def graph_api(request: Request) -> Response:
     # Direct is always implicit.
     layers.add("direct")
 
-    cache_key = f"viz:graph:{user.pk}:{','.join(sorted(layers))}"
+    # top_k materially changes the edge set, so it must be part of the cache key.
+    # It is fixed at the default today; keying on it keeps the cache correct if a
+    # future caller ever varies it.
+    top_k = DEFAULT_TOP_K
+
+    cache_key = f"viz:graph:{user.pk}:{top_k}:{','.join(sorted(layers))}"
     payload = cache.get(cache_key)
     if payload is None:
-        payload = build_graph(user=user, layers=layers)
+        payload = build_graph(user=user, layers=layers, top_k=top_k)
         cache.set(cache_key, payload, GRAPH_CACHE_TTL_SECONDS)
 
     return Response(payload)
