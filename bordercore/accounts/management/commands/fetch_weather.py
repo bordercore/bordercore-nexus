@@ -83,12 +83,26 @@ class Command(BaseCommand):
         # Get or create user profile
         user_profile, created = UserProfile.objects.get_or_create(user=user)
 
-        # Build API URL
-        url = f"https://api.weatherapi.com/v1/forecast.json?key={api_key}&q=02138&days=1&aqi=yes&alerts=yes"
-        
+        location = (user_profile.weather_location or "").strip()
+        if not location:
+            raise CommandError(f"User '{username}' has no weather_location set")
+
+        # Pass the key and location via params rather than interpolating them
+        # into the URL, so the secret is not built into a string we control/log.
+        # (WeatherAPI only accepts the key as a query param, so it still reaches
+        # WeatherAPI's own logs — that exposure is upstream and unavoidable.)
+        url = "https://api.weatherapi.com/v1/forecast.json"
+        params = {
+            "key": api_key,
+            "q": location,
+            "days": "1",
+            "aqi": "yes",
+            "alerts": "yes",
+        }
+
         # Make API request
         try:
-            response = requests.get(url, timeout=10)
+            response = requests.get(url, params=params, timeout=10)
             response.raise_for_status()
             weather_data = response.json()
         except requests.exceptions.RequestException as e:

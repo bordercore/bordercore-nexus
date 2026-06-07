@@ -68,3 +68,36 @@ def test_fetch_weather_uses_https(mock_get, authenticated_client):
 
     called_url = mock_get.call_args[0][0]
     assert called_url.startswith("https://")
+
+
+@patch.dict("os.environ", {"WEATHER_API_KEY": "test-key"})
+@patch("accounts.management.commands.fetch_weather.requests.get")
+def test_fetch_weather_uses_user_location_and_params(mock_get, authenticated_client):
+    """The user's weather_location drives the query, and the key/location go
+    through params= rather than being interpolated into the URL."""
+    user, _ = authenticated_client()
+    user.userprofile.weather_location = "90210"
+    user.userprofile.save()
+
+    mock_response = MagicMock()
+    mock_response.json.return_value = {"current": {"temp_f": 72}}
+    mock_response.raise_for_status = MagicMock()
+    mock_get.return_value = mock_response
+
+    call_command("fetch_weather", TEST_USERNAME)
+
+    params = mock_get.call_args.kwargs["params"]
+    assert params["q"] == "90210"
+    assert params["key"] == "test-key"
+    # The key must not be baked into the URL string.
+    assert "test-key" not in mock_get.call_args[0][0]
+
+
+@patch.dict("os.environ", {"WEATHER_API_KEY": "test-key"})
+def test_fetch_weather_no_location_raises(authenticated_client):
+    user, _ = authenticated_client()
+    user.userprofile.weather_location = ""
+    user.userprofile.save()
+
+    with pytest.raises(CommandError, match="no weather_location"):
+        call_command("fetch_weather", TEST_USERNAME)

@@ -58,6 +58,7 @@ interface FieldState {
   instagramUsername: string;
   instagramPassword: string;
   nytimesApiKey: string;
+  weatherLocation: string;
   googleCalendar: string;
   googleCalendarEmail: string;
 }
@@ -193,6 +194,7 @@ export function PreferencesPage(props: PreferencesPageProps) {
       instagramUsername,
       instagramPassword,
       nytimesApiKey: getField(formFields, "nytimes_api_key")?.value || "",
+      weatherLocation: getField(formFields, "weather_location")?.value || "",
       googleCalendar: getField(formFields, "google_calendar")?.value || "",
       googleCalendarEmail: getField(formFields, "google_calendar_email")?.value || "",
     };
@@ -267,6 +269,7 @@ export function PreferencesPage(props: PreferencesPageProps) {
     );
     form.append("drill_tags_muted", state.drillMutedTags.join(","));
     form.append("nytimes_api_key", state.nytimesApiKey);
+    form.append("weather_location", state.weatherLocation);
     form.append("google_calendar", state.googleCalendar);
     form.append("google_calendar_email", state.googleCalendarEmail);
     form.append("instagram_username", state.instagramUsername);
@@ -519,6 +522,19 @@ export function PreferencesPage(props: PreferencesPageProps) {
             errors={fieldErrors.nytimes_api_key}
           >
             <SecretField value={state.nytimesApiKey} onChange={upd("nytimesApiKey")} />
+          </Row>
+          <Row
+            label="Weather location"
+            hint="ZIP, city, or lat,lon for the weather widget"
+            errors={fieldErrors.weather_location}
+          >
+            <input
+              className="prefs-input"
+              value={state.weatherLocation}
+              onChange={e => upd("weatherLocation")(e.target.value)}
+              placeholder="02138"
+              autoComplete="off"
+            />
           </Row>
           <Row
             label="Google Calendar"

@@ -106,6 +106,7 @@ class UserProfileForm(ModelForm):
             "drill_intervals",
             "drill_tags_muted",
             "nytimes_api_key",
+            "weather_location",
             "google_calendar",
             "google_calendar_email",
             "eye_candy",
@@ -117,5 +118,6 @@ class UserProfileForm(ModelForm):
             "google_calendar": Textarea(attrs={"class": "form-control"}),
             "google_calendar_email": TextInput(attrs={"class": "form-control"}),
             "nytimes_api_key": TextInput(attrs={"class": "form-control"}),
+            "weather_location": TextInput(attrs={"class": "form-control"}),
             "theme": Select(attrs={"class": "form-control form-select"})
         }

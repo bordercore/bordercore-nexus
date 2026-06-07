@@ -268,6 +268,7 @@ def _valid_prefs_post(**overrides):
         "drill_intervals": "1,3,7,14",
         "drill_tags_muted": "",
         "nytimes_api_key": "",
+        "weather_location": "02138",
         "google_calendar": "",
         "google_calendar_email": "",
         "bookmarks_per_page": "50",
@@ -308,6 +309,19 @@ def test_prefs_clears_instagram_credentials_when_blank(authenticated_client):
     assert resp.status_code == 200
     user.userprofile.refresh_from_db()
     assert user.userprofile.instagram_credentials is None
+
+
+def test_prefs_sets_weather_location(authenticated_client):
+    user, client = authenticated_client()
+    url = urls.reverse("accounts:prefs")
+    resp = client.post(
+        url,
+        _valid_prefs_post(weather_location="90210"),
+        HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+    )
+    assert resp.status_code == 200
+    user.userprofile.refresh_from_db()
+    assert user.userprofile.weather_location == "90210"
 
 
 # ── update_sidebar_order ─────────────────────────────────────────────────
