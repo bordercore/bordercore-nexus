@@ -37,15 +37,26 @@ export const GlobalAudioPlayer: React.FC = () => {
 
       try {
         const url = config.markListenedToUrl.replace(/00000000-0000-0000-0000-000000000000/, uuid);
-        await fetch(url, {
+        const response = await fetch(url, {
           method: "POST",
           headers: {
             "X-CSRFToken": getCsrfToken(),
           },
           credentials: "include",
         });
+        // fetch only rejects on network errors, so a failed HTTP status
+        // (e.g. a 500 from the server) must be detected explicitly.
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
       } catch (error) {
         console.error("Error marking song as listened:", error);
+        EventBus.$emit("toast", {
+          title: "Error!",
+          body: "Failed to record this play — your listen count may be off.",
+          variant: "danger",
+          autoHide: true,
+        });
       }
     },
     [config]
