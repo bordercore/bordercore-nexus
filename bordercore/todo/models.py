@@ -173,7 +173,7 @@ class Todo(ElasticsearchMixin, TimeStampedModel):
                 "priority": self.priority,
                 "doctype": "todo",
                 "date": {"gte": self.created.strftime("%Y-%m-%d %H:%M:%S"), "lte": self.created.strftime("%Y-%m-%d %H:%M:%S")},
-                "date_unixtime": self.created.strftime("%s"),
+                "date_unixtime": str(int(self.created.timestamp())),
                 "user_id": self.user_id,
                 **settings.ELASTICSEARCH_EXTRA_FIELDS
             }

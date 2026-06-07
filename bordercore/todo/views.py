@@ -14,6 +14,7 @@ from datetime import timedelta
 from typing import Any, Iterable, cast
 
 from rest_framework.decorators import api_view
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -141,6 +142,20 @@ class TodoListView(LoginRequiredMixin, ListView):
 class TodoTaskList(APIView):
     """Provide a JSON endpoint listing todos filtered by priority, time, tag, or search."""
 
+    @staticmethod
+    def _parse_int_param(value: str | None, label: str) -> int | None:
+        """Coerce a query param to int, returning None when absent/empty.
+
+        Raises a DRF ValidationError (rendered as a 400) on non-integer input,
+        mirroring the integer validation in sort_todo.
+        """
+        if not value:
+            return None
+        try:
+            return int(value)
+        except (ValueError, TypeError):
+            raise ValidationError(f"'{label}' must be a valid integer")
+
     def get_queryset(self, request: Request) -> QuerySet[Todo]:
         """Build a queryset of Todo objects based on GET parameters and session state.
 
@@ -154,10 +169,16 @@ class TodoTaskList(APIView):
             QuerySet of filtered and ordered Todo instances.
         """
         priority = request.query_params.get("priority", None)
+        time = request.query_params.get("time", None)
+
+        # Validate the numeric params before persisting them to the session, so
+        # malformed client input (e.g. ?priority=abc) returns a 400 instead of a
+        # 500 and never pollutes the session with an unusable value.
+        priority_value = self._parse_int_param(priority, "priority")
+        time_value = self._parse_int_param(time, "time")
+
         if priority is not None:
             request.session["todo_filter_priority"] = priority
-
-        time = request.query_params.get("time", None)
         if time is not None:
             request.session["todo_filter_time"] = time
 
@@ -167,14 +188,14 @@ class TodoTaskList(APIView):
 
         user = cast(User, request.user)
 
-        if priority or time:
+        if priority_value is not None or time_value is not None:
 
             queryset = Todo.objects.filter(user=user)
 
-            if priority:
-                queryset = queryset.filter(priority=int(priority))
-            if time:
-                queryset = queryset.filter(created__gt=(timezone.now() - timedelta(days=int(time))))
+            if priority_value is not None:
+                queryset = queryset.filter(priority=priority_value)
+            if time_value is not None:
+                queryset = queryset.filter(created__gt=(timezone.now() - timedelta(days=time_value)))
             if tag_name:
                 queryset = queryset.filter(tag__name=tag_name)
 

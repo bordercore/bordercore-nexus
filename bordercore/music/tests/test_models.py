@@ -45,6 +45,22 @@ def test_music_playtime():
     assert album.playtime == "50 minutes"
 
 
+def test_album_elasticsearch_document_date_unixtime_is_utc_correct():
+    """date_unixtime is a portable, UTC-correct epoch string.
+
+    The previous strftime("%s") was non-portable and interpreted the aware
+    datetime in the server's local timezone, producing an offset epoch.
+    """
+    from datetime import datetime
+    from datetime import timezone as dt_timezone
+
+    album = AlbumFactory()
+    album.created = datetime(2021, 1, 1, 0, 0, 0, tzinfo=dt_timezone.utc)
+    doc = album.elasticsearch_document
+
+    assert doc["_source"]["date_unixtime"] == "1609459200"
+
+
 def test_get_or_create_album_compilation_without_album_artist(authenticated_client):
     """compilation=True with no album_artist key falls back to the song artist."""
     user, _ = authenticated_client()

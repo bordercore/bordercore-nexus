@@ -141,7 +141,7 @@ class Album(ElasticsearchMixin, TimeStampedModel):
                     "gte": self.created.strftime("%Y-%m-%d %H:%M:%S"),
                     "lte": self.created.strftime("%Y-%m-%d %H:%M:%S")
                 },
-                "date_unixtime": self.created.strftime("%s"),
+                "date_unixtime": str(int(self.created.timestamp())),
                 "user_id": self.user.id,
                 **settings.ELASTICSEARCH_EXTRA_FIELDS
             }
@@ -300,7 +300,7 @@ class Song(ElasticsearchMixin, TimeStampedModel):
                     "gte": self.created.strftime("%Y-%m-%d %H:%M:%S"),
                     "lte": self.created.strftime("%Y-%m-%d %H:%M:%S")
                 },
-                "date_unixtime": self.created.strftime("%s"),
+                "date_unixtime": str(int(self.created.timestamp())),
                 "user_id": self.user.id,
                 **settings.ELASTICSEARCH_EXTRA_FIELDS
             }

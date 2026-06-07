@@ -13,6 +13,21 @@ def test_get_tags(todo):
     assert todo.get_tags() == "tag_0, tag_1"
 
 
+def test_elasticsearch_document_date_unixtime_is_utc_correct(todo):
+    """date_unixtime is a portable, UTC-correct epoch string.
+
+    The previous strftime("%s") was non-portable and interpreted the aware
+    datetime in the server's local timezone, producing an offset epoch.
+    """
+    from datetime import datetime
+    from datetime import timezone as dt_timezone
+
+    todo.created = datetime(2021, 1, 1, 0, 0, 0, tzinfo=dt_timezone.utc)
+    doc = todo.elasticsearch_document
+
+    assert doc["_source"]["date_unixtime"] == "1609459200"
+
+
 def test_get_priority_name():
 
     assert Todo.get_priority_name(1) == "High"

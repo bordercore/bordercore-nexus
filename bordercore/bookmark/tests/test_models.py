@@ -15,6 +15,21 @@ def test_get_tags(bookmark):
     assert tags == "django"
 
 
+def test_elasticsearch_document_date_unixtime_is_utc_correct(bookmark):
+    """date_unixtime is a portable, UTC-correct epoch string.
+
+    The previous strftime("%s") was non-portable and interpreted the aware
+    datetime in the server's local timezone, producing an offset epoch.
+    """
+    from datetime import datetime
+    from datetime import timezone as dt_timezone
+
+    bookmark[0].created = datetime(2021, 1, 1, 0, 0, 0, tzinfo=dt_timezone.utc)
+    doc = bookmark[0].elasticsearch_document
+
+    assert doc["_source"]["date_unixtime"] == "1609459200"
+
+
 def test_bookmark_delete_tag(bookmark):
     """Deleting a tag removes it from the bookmark."""
     bookmark[0].delete_tag(bookmark[0].tags.first())

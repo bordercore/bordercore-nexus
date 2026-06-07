@@ -31,6 +31,37 @@ def test_todo_list(authenticated_client, todo):
     assert resp.status_code == 200
 
 
+def test_todo_get_tasks_valid_priority_filter(authenticated_client, todo):
+    _, client = authenticated_client()
+
+    url = urls.reverse("todo:get_tasks")
+    resp = client.get(url, {"priority": "1"})
+
+    assert resp.status_code == 200
+
+
+def test_todo_get_tasks_invalid_priority_returns_400(authenticated_client, todo):
+    """A non-integer priority returns 400 and is not persisted to the session."""
+    _, client = authenticated_client()
+
+    url = urls.reverse("todo:get_tasks")
+    resp = client.get(url, {"priority": "abc"})
+
+    assert resp.status_code == 400
+    assert "todo_filter_priority" not in client.session
+
+
+def test_todo_get_tasks_invalid_time_returns_400(authenticated_client, todo):
+    """A non-integer time returns 400 and is not persisted to the session."""
+    _, client = authenticated_client()
+
+    url = urls.reverse("todo:get_tasks")
+    resp = client.get(url, {"time": "foo"})
+
+    assert resp.status_code == 400
+    assert "todo_filter_time" not in client.session
+
+
 @factory.django.mute_signals(signals.post_save)
 def test_todo_create(authenticated_client, todo):
 
