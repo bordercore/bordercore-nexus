@@ -4,6 +4,11 @@ from __future__ import absolute_import
 import os
 
 from .base import *
+from .base import require_setting
+
+# Fail fast if SECRET_KEY is unset rather than booting prod with an empty
+# signing key (which silently weakens sessions, CSRF, and signed cookies).
+SECRET_KEY = require_setting(SECRET_KEY, "SECRET_KEY")
 
 CSRF_TRUSTED_ORIGINS = ["https://www.bordercore.com"]
 

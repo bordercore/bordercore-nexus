@@ -6,6 +6,20 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from django.core.exceptions import ImproperlyConfigured
+
+
+def require_setting(value: str, name: str) -> str:
+    """Return ``value`` unchanged, or raise if it is empty.
+
+    Used by the production settings to fail fast at startup rather than booting
+    with a missing secret (e.g. an unset SECRET_KEY, which would silently weaken
+    every signing operation).
+    """
+    if not value:
+        raise ImproperlyConfigured(f"{name} environment variable must be set")
+    return value
+
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 PROJECT_DIR = BASE_DIR / "bordercore"
