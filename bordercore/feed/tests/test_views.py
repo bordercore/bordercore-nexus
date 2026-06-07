@@ -135,7 +135,56 @@ def test_update_feed_list(authenticated_client, feed):
     assert resp.status_code == 200
     # rss.xml has 4 entries but two share a link, so the upsert dedupes
     # them down to 3 unique items.
+    assert resp.json()["ok"] is True
     assert resp.json()["updated_count"] == 3
+
+
+@responses.activate
+def test_update_feed_list_upstream_403(authenticated_client, feed):
+    """A remote feed returning 403 yields 200/ok=False, not a 5xx.
+
+    The endpoint must not return a 5xx for an upstream fetch failure, because
+    django.request would email an admin alert on every blocked/transient feed.
+    """
+    _, client = authenticated_client()
+
+    responses.add(responses.GET, feed[0].url, status=403)
+
+    url = f"/api/feeds/update_feed_list/{feed[0].uuid}/"
+    resp = client.post(url)
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["ok"] is False
+    assert "detail" in body
+
+
+def test_update_feed_list_upstream_timeout(authenticated_client, feed):
+    """A network timeout fetching the feed yields 200/ok=False, not a 5xx."""
+    _, client = authenticated_client()
+
+    url = f"/api/feeds/update_feed_list/{feed[0].uuid}/"
+    with patch("feed.models.requests.get", side_effect=requests.Timeout("timed out")):
+        resp = client.post(url)
+
+    assert resp.status_code == 200
+    assert resp.json()["ok"] is False
+
+
+def test_update_feed_list_server_error_propagates(authenticated_client, feed):
+    """A non-network error (e.g. a DB failure) is not swallowed.
+
+    Only upstream fetch failures are downgraded; genuine server errors must
+    still surface as a 5xx so real problems remain visible.
+    """
+    _, client = authenticated_client()
+    client.raise_request_exception = False
+
+    url = f"/api/feeds/update_feed_list/{feed[0].uuid}/"
+    with patch("feed.models.Feed.update", side_effect=ValueError("boom")):
+        resp = client.post(url)
+
+    assert resp.status_code == 500
 
 
 def test_fetch_item_summary(authenticated_client, feed):

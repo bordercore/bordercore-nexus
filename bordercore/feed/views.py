@@ -7,6 +7,7 @@ from __future__ import annotations
 import http.client
 import ipaddress
 import json
+import logging
 import socket
 from http import HTTPStatus
 from typing import Any, TypedDict, cast
@@ -31,6 +32,8 @@ from django.views.generic.list import ListView
 
 from accounts.models import UserFeed
 from lib.decorators import validate_post_data
+
+log = logging.getLogger(f"bordercore.{__name__}")
 
 
 class FeedItemPayload(TypedDict):
@@ -179,7 +182,8 @@ def update_feed_list(request: HttpRequest, feed_uuid: str) -> Response:
         feed_uuid: The UUID of the feed to refresh.
 
     Returns:
-        JSON response with updated count and status.
+        JSON response with the updated count on success, or ``ok: False`` with
+        a detail message if the remote feed could not be fetched.
     """
     # We do not need to filter the feed by a user because this endpoint
     #  is only called by an AWS Lambda function using a service account.
@@ -187,10 +191,20 @@ def update_feed_list(request: HttpRequest, feed_uuid: str) -> Response:
 
     try:
         updated_count = feed.update()
-    except Exception as e:
-        return Response({"detail": str(e)}, status=HTTPStatus.SERVICE_UNAVAILABLE)
+    except requests.RequestException as e:
+        # A remote feed being unreachable, timing out, or returning a non-200
+        # (e.g. a publisher blocking automated fetches with 403, or rate
+        # limiting with 429) is an upstream condition, not a fault on our side.
+        # Respond 200 with ok=False rather than a 5xx: a 5xx trips
+        # django.request's mail_admins handler and emails an alert on every
+        # transient feed hiccup. The failure is still recorded on the feed
+        # (last_response_code / last_check, set in Feed.update) and logged here.
+        # Genuine server errors (e.g. a database failure) are intentionally not
+        # caught here so they still surface as 500s.
+        log.warning("feed_uuid=%s update failed: %s", feed_uuid, e)
+        return Response({"ok": False, "detail": str(e)})
 
-    return Response({"updated_count": updated_count})
+    return Response({"ok": True, "updated_count": updated_count})
 
 
 @api_view(["GET"])
