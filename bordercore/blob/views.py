@@ -466,13 +466,15 @@ class BlobDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView):
 
         try:
             context["elasticsearch_info"] = self.object.get_elasticsearch_info()
-        except IndexError:
-            # Give Elasticsearch up to a minute to index the blob
-            if int(timezone.now().timestamp()) - int(self.object.created.timestamp()) > 60:
-                messages.add_message(self.request, messages.ERROR, "Blob not found in Elasticsearch")
         except Exception as e:
             log.warning("Failed to fetch ES info for blob %s: %s", self.object.uuid, e, exc_info=True)
             context["elasticsearch_info"] = None
+        else:
+            # get_elasticsearch_info returns {} when the blob isn't indexed yet.
+            # Give Elasticsearch up to a minute to index the blob.
+            if not context["elasticsearch_info"]:
+                if int(timezone.now().timestamp()) - int(self.object.created.timestamp()) > 60:
+                    messages.add_message(self.request, messages.ERROR, "Blob not found in Elasticsearch")
 
         context["back_references"] = Blob.back_references(self.object.uuid)
         collections = self.object.collections
@@ -480,9 +482,10 @@ class BlobDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView):
         context["node_list"] = self.object.get_nodes()
         context["title"] = str(self.object)
 
+        tree_nodes, annotated_content = self.object.get_tree()
         context["tree"] = {
             "label": "Root",
-            "nodes": self.object.get_tree()
+            "nodes": tree_nodes,
         }
 
         context["name"] = self.object.get_name(remove_edition_string=True)
@@ -503,7 +506,9 @@ class BlobDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView):
             "author": context["metadata"].get("Author", ""),
             "date": context["date"] or "",
             "note": self.object.note or "",
-            "content": self.object.content or "",
+            # Anchor-annotated content (see get_tree); the React detail page
+            # consumes the %#@!N!@#% markers to jump to headings.
+            "content": annotated_content or self.object.content or "",
             "sha1sum": self.object.sha1sum or "",
             "isNote": self.object.is_note,
             "isVideo": self.object.is_video,
@@ -835,7 +840,7 @@ def handle_linked_collection(blob: Blob, request: HttpRequest) -> None:
 
 
 @api_view(["GET"])
-def metadata_name_search(request: HttpRequest) -> Response:
+def metadata_name_search(request: Request) -> Response:
     """Search for metadata names matching a query.
 
     Returns a list of distinct metadata names that contain the query string,
@@ -889,12 +894,12 @@ def parse_date(request: HttpRequest, input_date: str) -> Response:
         error = str(e)
 
     return Response({"output_date": response,
-                     "message": error})
+                     "error": error})
 
 
 @api_view(["POST"])
 @validate_post_data("blob_uuid")
-def update_cover_image(request: HttpRequest) -> Response:
+def update_cover_image(request: Request) -> Response:
     """Update the blob's cover image.
 
     Updates the cover image for a blob from uploaded image data.
@@ -921,7 +926,7 @@ def update_cover_image(request: HttpRequest) -> Response:
 
 
 @api_view(["GET"])
-def get_elasticsearch_info(request: HttpRequest, uuid: str) -> Response:
+def get_elasticsearch_info(request: Request, uuid: str) -> Response:
     """Get the Elasticsearch entry for a blob.
 
     Retrieves Elasticsearch document information for a blob. Returns an
@@ -939,10 +944,8 @@ def get_elasticsearch_info(request: HttpRequest, uuid: str) -> Response:
     user = cast(User, request.user)
     blob = get_user_object_or_404(user, Blob, uuid=uuid)
 
-    try:
-        info = blob.get_elasticsearch_info()
-    except IndexError:
-        info = {}
+    # get_elasticsearch_info returns {} when the blob isn't indexed.
+    info = blob.get_elasticsearch_info()
 
     response = {
         "info": info,
@@ -952,7 +955,7 @@ def get_elasticsearch_info(request: HttpRequest, uuid: str) -> Response:
 
 
 @api_view(["GET"])
-def get_related_objects(request: HttpRequest, uuid: str) -> Response:
+def get_related_objects(request: Request, uuid: str) -> Response:
     """Get all related objects to a given blob.
 
     Retrieves all objects (blobs, bookmarks, etc.) that are related
@@ -979,7 +982,7 @@ def get_related_objects(request: HttpRequest, uuid: str) -> Response:
 
 @api_view(["POST"])
 @validate_post_data("node_uuid", "object_uuid")
-def add_related_object(request: HttpRequest) -> Response:
+def add_related_object(request: Request) -> Response:
     """Link a node (Blob or Question) to a Blob or Bookmark by its UUID.
 
     Called during new question creation, not during question update.
@@ -1015,7 +1018,7 @@ def add_related_object(request: HttpRequest) -> Response:
 
 @api_view(["POST"])
 @validate_post_data("node_uuid", "object_uuid")
-def remove_related_object(request: HttpRequest) -> Response:
+def remove_related_object(request: Request) -> Response:
     """Remove a relationship between a node and another object.
 
     Deletes the relationship between a node (Blob or Question) and a
@@ -1046,7 +1049,7 @@ def remove_related_object(request: HttpRequest) -> Response:
 
 @api_view(["POST"])
 @validate_post_data("node_uuid", "object_uuid", "new_position")
-def sort_related_objects(request: HttpRequest) -> Response:
+def sort_related_objects(request: Request) -> Response:
     """Change the sort order of a node and a related object.
 
     Updates the position of a related object within a node's list of
@@ -1080,7 +1083,7 @@ def sort_related_objects(request: HttpRequest) -> Response:
 
 @api_view(["POST"])
 @validate_post_data("node_uuid", "object_uuid", "note")
-def update_related_object_note(request: HttpRequest) -> Response:
+def update_related_object_note(request: Request) -> Response:
     """Update the note for a related object.
 
     Updates the note field on a relationship between a node and a
@@ -1115,7 +1118,7 @@ def update_related_object_note(request: HttpRequest) -> Response:
 
 @api_view(["POST"])
 @validate_post_data("blob_uuid", "page_number")
-def update_page_number(request: HttpRequest) -> Response:
+def update_page_number(request: Request) -> Response:
     """Update the page number for a PDF that represents its cover image.
 
     Sets the page number of a PDF blob to use as its cover image.
@@ -1209,7 +1212,7 @@ def blob_file_serve(request: HttpRequest, uuid: str) -> HttpResponse | Streaming
 
 
 @api_view(["GET"])
-def get_template(request: HttpRequest) -> Response:
+def get_template(request: Request) -> Response:
     """Get a blob template by UUID.
 
     Retrieves a blob template for the current user and returns its

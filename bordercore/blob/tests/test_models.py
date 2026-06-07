@@ -316,13 +316,13 @@ def test_parse_nodes(blob_text_factory):
     """Test markdown heading parsing into hierarchical tree structure."""
 
     blob_text_factory[0].content = ""
-    tree = blob_text_factory[0].get_tree()
+    tree, _ = blob_text_factory[0].get_tree()
     assert count_nodes(tree) == 0
 
     blob_text_factory[0].content = """
     # Node 1
     """
-    tree = blob_text_factory[0].get_tree()
+    tree, _ = blob_text_factory[0].get_tree()
     assert count_nodes(tree) == 1
     assert tree[0]["id"] == 1
     assert tree[0]["label"] == "Node 1"
@@ -336,7 +336,7 @@ def test_parse_nodes(blob_text_factory):
     ### Node 2
     """
 
-    tree = blob_text_factory[0].get_tree()
+    tree, _ = blob_text_factory[0].get_tree()
     assert count_nodes(tree) == 3
     assert tree[0]["id"] == 1
     assert tree[0]["label"] == "Node 1"
@@ -358,7 +358,7 @@ def test_parse_nodes(blob_text_factory):
     ### Subnode 3a
     """
 
-    tree = blob_text_factory[0].get_tree()
+    tree, _ = blob_text_factory[0].get_tree()
     assert count_nodes(tree) == 8
     assert tree[0]["id"] == 1
     assert tree[0]["label"] == "Node 1"
@@ -382,6 +382,22 @@ def test_parse_nodes(blob_text_factory):
     assert tree[2]["nodes"][0]["id"] == 8
     assert tree[2]["nodes"][0]["label"] == "Subnode 3a"
     assert tree[2]["nodes"][0]["nodes"] == []
+
+
+def test_get_tree_does_not_mutate_content(blob_text_factory):
+    """get_tree returns annotated content without mutating self.content."""
+    blob = blob_text_factory[0]
+    blob.content = "# Heading\nbody\n"
+    original = blob.content
+
+    tree, annotated = blob.get_tree()
+
+    # self.content is left untouched.
+    assert blob.content == original
+    # The returned content carries the anchor marker the React page consumes.
+    assert "%#@!1!@#%" in annotated
+    assert "%#@!" not in blob.content
+    assert tree[0]["label"] == "Heading"
 
 
 def test_recently_viewed_blob_add(authenticated_client):

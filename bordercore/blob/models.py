@@ -1005,17 +1005,23 @@ class Blob(TimeStampedModel):
         from blob.services import publish_index_blob
         publish_index_blob(str(self.uuid), file_changed, new_blob)
 
-    def get_tree(self) -> list[dict[str, Any]]:
+    def get_tree(self) -> tuple[list[dict[str, Any]], str]:
         """Parse markdown headings from content and build a hierarchical tree structure.
 
         Scans the blob's content for markdown headings (#, ##, etc.) and builds
-        a nested tree structure. Headings are numbered with IDs and inserted
-        into the content with markers. Code blocks are skipped to avoid
+        a nested tree structure. Each heading is also numbered and annotated in a
+        copy of the content with ``%#@!N!@#%`` anchor markers that the detail-page
+        React code uses to jump to headings. Code blocks are skipped to avoid
         parsing comment-style headings.
 
+        This does NOT mutate ``self.content``; the annotated content is returned
+        alongside the tree so callers opt in explicitly.
+
         Returns:
-            List of tree nodes, each containing id, label, and nested nodes.
-            Returns empty list if content is empty.
+            A ``(nodes, annotated_content)`` tuple, where ``nodes`` is the list
+            of tree nodes (each with id, label, and nested nodes) and
+            ``annotated_content`` is the content with anchor markers inserted.
+            Returns ``([], "")`` if content is empty.
         """
         def tree() -> Any:
             """Return a recursive defaultdict factory for building tree structures.
@@ -1026,7 +1032,7 @@ class Blob(TimeStampedModel):
             return defaultdict(tree)
 
         if not self.content:
-            return []
+            return [], ""
 
         content_out = ""
 
@@ -1115,9 +1121,7 @@ class Blob(TimeStampedModel):
             else:
                 content_out = f"{content_out}{line}\n"
 
-        self.content = content_out
-
-        return nodes["nodes"]
+        return nodes["nodes"], content_out
 
     def delete(self, using: Any | None = None, keep_parents: bool = False) -> tuple[int, dict[str, int]]:
         """Delete the blob and clean up associated resources.
