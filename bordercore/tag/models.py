@@ -247,3 +247,17 @@ class TagAlias(models.Model):
 
     class Meta:
         verbose_name_plural = "Tag Aliases"
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        """Normalize the alias name and enforce the tag/alias name invariant.
+
+        The name is lowercased to match Tag.name (forced lowercase by a
+        CheckConstraint) so aliases stay discoverable via the case-sensitive
+        search lookups. Saving is also blocked when a Tag with the same name
+        already exists for this user — the inverse of the guard in Tag.save() —
+        so the invariant holds regardless of entry point (view, shell, admin).
+        """
+        self.name = self.name.lower()
+        if Tag.objects.filter(name=self.name, user=self.user).exists():
+            raise ValidationError(f"A tag with this same name already exists: {self}")
+        super().save(*args, **kwargs)

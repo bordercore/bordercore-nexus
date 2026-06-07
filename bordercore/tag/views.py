@@ -14,6 +14,8 @@ from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+from django.db import IntegrityError, transaction
 from django.db.models import QuerySet
 from django.http import HttpRequest, HttpResponse, HttpResponseNotFound
 from django.shortcuts import redirect
@@ -138,7 +140,9 @@ def add_alias(request: HttpRequest) -> Response:
     """
     user = cast(User, request.user)
     tag_name = request.POST["tag_name"]
-    alias_name = request.POST["alias_name"]
+    # Normalize to lowercase to match Tag.name and keep the alias discoverable
+    # via the case-sensitive search lookups.
+    alias_name = request.POST["alias_name"].lower()
 
     # Check that the alias doesn't already exist for this user
     if TagAlias.objects.filter(name=alias_name, user=user).exists():
@@ -153,8 +157,28 @@ def add_alias(request: HttpRequest) -> Response:
         )
 
     tag = get_user_object_or_404(user, Tag, name=tag_name)
+
+    # A tag may have at most one alias (TagAlias.tag is a OneToOneField).
+    if TagAlias.objects.filter(tag=tag).exists():
+        return Response(
+            {"detail": "This tag already has an alias"},
+            status=400,
+        )
+
     tag_alias = TagAlias(name=alias_name, tag=tag, user=user)
-    tag_alias.save()
+    try:
+        # Wrap in a savepoint so an IntegrityError rolls back cleanly without
+        # poisoning the surrounding transaction.
+        with transaction.atomic():
+            tag_alias.save()
+    except (IntegrityError, ValidationError):
+        # TagAlias.name is globally unique, so the name may be taken by another
+        # user; the save guard also rejects a tag-name collision. Either way,
+        # return a clean 400 rather than letting it surface as a 500.
+        return Response(
+            {"detail": "Alias already exists"},
+            status=400,
+        )
 
     return Response({"uuid": str(tag_alias.uuid)}, status=status.HTTP_201_CREATED)
 

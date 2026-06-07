@@ -82,6 +82,50 @@ def test_tag_add_alias(authenticated_client, tag):
     assert resp.json()["detail"] == f"A tag with the name '{tag[0]}' already exists"
 
 
+def test_tag_add_alias_lowercases_name(authenticated_client, tag):
+    user, client = authenticated_client()
+
+    url = urls.reverse("tag:add_alias")
+    resp = client.post(url, {
+        "tag_name": tag[0].name,
+        "alias_name": "MixedCase Alias",
+    })
+
+    assert resp.status_code == 201
+    assert TagAlias.objects.filter(name="mixedcase alias", user=user).exists()
+
+
+def test_tag_add_alias_second_alias_for_tag_returns_400(authenticated_client, tag):
+    """A tag may have only one alias (OneToOne); a second returns 400, not 500."""
+    user, client = authenticated_client()
+
+    url = urls.reverse("tag:add_alias")
+    resp = client.post(url, {"tag_name": tag[0].name, "alias_name": "first alias"})
+    assert resp.status_code == 201
+
+    resp = client.post(url, {"tag_name": tag[0].name, "alias_name": "second alias"})
+    assert resp.status_code == 400
+    assert resp.json()["detail"] == "This tag already has an alias"
+
+
+def test_tag_add_alias_cross_user_name_collision_returns_400(authenticated_client, tag):
+    """A globally-unique alias name owned by another user returns 400, not 500."""
+    from accounts.tests.factories import UserFactory
+    from tag.tests.factories import TagFactory
+
+    other_user = UserFactory(username="otheruser")
+    other_tag = TagFactory(user=other_user, name="othertag")
+    TagAlias.objects.create(user=other_user, tag=other_tag, name="shared alias")
+
+    user, client = authenticated_client()
+
+    url = urls.reverse("tag:add_alias")
+    resp = client.post(url, {"tag_name": tag[0].name, "alias_name": "shared alias"})
+
+    assert resp.status_code == 400
+    assert resp.json()["detail"] == "Alias already exists"
+
+
 def test_tag_todo_counts(authenticated_client, tag):
 
     user, client = authenticated_client()

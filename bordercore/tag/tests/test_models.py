@@ -264,6 +264,32 @@ def test_tag_alias_str(authenticated_client):
     assert str(alias) == "my alias"
 
 
+def test_tag_alias_save_lowercases_name(authenticated_client):
+    """TagAlias.name is normalized to lowercase so search lookups can match it."""
+    user, _ = authenticated_client()
+
+    tag = TagFactory(user=user, name="lower-alias-test")
+    alias = TagAlias.objects.create(user=user, tag=tag, name="MixedCase Alias")
+
+    alias.refresh_from_db()
+    assert alias.name == "mixedcase alias"
+
+
+def test_tag_alias_save_blocks_existing_tag_name(authenticated_client):
+    """Creating an alias whose name matches an existing tag is blocked everywhere.
+
+    The inverse guard already exists in Tag.save(); this enforces the same
+    invariant for alias creation paths that bypass the view.
+    """
+    user, _ = authenticated_client()
+
+    TagFactory(user=user, name="existing-tag")
+    other_tag = TagFactory(user=user, name="other-tag")
+
+    with pytest.raises(ValidationError):
+        TagAlias.objects.create(user=user, tag=other_tag, name="existing-tag")
+
+
 def test_is_pinned_for_returns_false_when_not_pinned(authenticated_client, tag):
     user, _ = authenticated_client()
     assert tag[0].is_pinned_for(user) is False
