@@ -2,7 +2,7 @@ import uuid
 
 import pytest
 
-from search.helpers import get_creators, get_link
+from search.helpers import get_creators, get_link, sort_results
 
 pytestmark = [pytest.mark.django_db]
 
@@ -93,3 +93,29 @@ def test_get_link_collection():
 
 def test_get_link_unknown():
     assert get_link("unknown_type", {"uuid": str(uuid.uuid4())}) == ""
+
+
+def test_sort_results_unknown_doctype_does_not_raise():
+    """A doctype not in the hard-coded category list degrades gracefully.
+
+    Previously an unrecognized doctype (e.g. a newly indexed object type)
+    raised KeyError and 500-ed the autocomplete endpoint.
+    """
+    result = sort_results([{"doctype": "Webmention", "name": "Some Result"}])
+
+    # The unknown-type match survives (grouped after the known types) rather
+    # than raising.
+    assert any(r.get("doctype") == "Webmention" for r in result)
+
+
+def test_sort_results_orders_known_types():
+    """Known doctypes are emitted in the fixed importance order with splitters."""
+    matches = [
+        {"doctype": "Collection", "name": "C"},
+        {"doctype": "Tag", "name": "T"},
+    ]
+    result = sort_results(matches)
+
+    splitters = [r["id"] for r in result if r.get("splitter")]
+    # Tag is ordered before Collection.
+    assert splitters.index("__Tag") < splitters.index("__Collection")

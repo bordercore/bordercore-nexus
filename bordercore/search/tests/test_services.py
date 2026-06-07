@@ -205,6 +205,23 @@ class TestFilterResults:
         _filter_results([hit], None)
         assert "cover_url" in hit["source"]
 
+    def test_missing_last_modified_does_not_raise(self):
+        """A document missing last_modified must not 500 the search."""
+        hit = _make_hit()
+        del hit["_source"]["last_modified"]
+        _filter_results([hit], None)
+        # get_relative_date(None) still yields a string; no KeyError raised.
+        assert isinstance(hit["source"]["last_modified"], str)
+
+    def test_missing_doctype_does_not_raise(self):
+        """A document missing doctype must not 500 the search."""
+        hit = _make_hit()
+        del hit["_source"]["doctype"]
+        _filter_results([hit], None)
+        # Unknown doctype yields no link and no cover, but processing succeeds.
+        assert hit["source"]["url"] == ""
+        assert "cover_url" not in hit["source"]
+
 
 # ---------------------------------------------------------------------------
 # perform_search

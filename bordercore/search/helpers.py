@@ -77,7 +77,10 @@ def sort_results(matches: list[dict[str, Any]]) -> list[dict[str, Any]]:
     }
 
     for match in matches:
-        types[match["doctype"]].append(match)
+        # setdefault rather than direct subscripting: a newly indexed doctype
+        # not listed above degrades gracefully (grouped after the known types)
+        # instead of raising KeyError and 500-ing the autocomplete endpoint.
+        types.setdefault(match["doctype"], []).append(match)
 
     # Remove empty categories
     result = {key: value for (key, value) in types.items() if len(value) > 0}

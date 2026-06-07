@@ -148,6 +148,24 @@ def test_search_names_with_media_doctype(mock_execute, authenticated_client):
 
 
 @patch("search.api.execute_search")
+def test_search_names_es_does_not_mutate_doctypes(mock_execute, authenticated_client):
+    """search_names_es must not strip "image"/"media" from the caller's list.
+
+    search_tags_and_names passes the same list on to search_tags_es, which
+    must see the doctypes the request actually asked for.
+    """
+    from search.api import search_names_es
+
+    user, _ = authenticated_client()
+    mock_execute.return_value = _mock_es_search_return(hits=[])
+
+    doctypes = ["image", "media", "note"]
+    search_names_es(user, "test", doctypes)
+
+    assert doctypes == ["image", "media", "note"]
+
+
+@patch("search.api.execute_search")
 def test_search_names_with_date(mock_execute, authenticated_client):
     _, client = authenticated_client()
 

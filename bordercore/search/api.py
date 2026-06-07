@@ -218,6 +218,11 @@ def search_names_es(user: User, search_term: str, doctypes: list[str]) -> list[d
             - type: Optional type indicator ("blob" or "bookmark")
     """
 
+    # Operate on a copy: the "image"/"media" handling below removes entries,
+    # and the caller (search_tags_and_names) passes the same list on to
+    # search_tags_es, which must see the doctypes the request actually asked for.
+    doctypes = list(doctypes)
+
     search_object = build_base_query(
         user.id,
         additional_must=[

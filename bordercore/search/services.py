@@ -146,7 +146,7 @@ def execute_search(
 
 
 def get_cover_url(
-    doctype: str,
+    doctype: str | None,
     uuid: str,
     filename: str = "",
     url: str = "",
@@ -170,7 +170,7 @@ def get_cover_url(
     from blob.models import Blob
     from bookmark.models import Bookmark
 
-    dt = doctype.lower()
+    dt = (doctype or "").lower()
     if dt in ("blob", "book", "document"):
         return Blob.get_cover_url_static(UUID(uuid), filename, size="small")
     if dt == "bookmark":
@@ -282,13 +282,17 @@ def _filter_results(results: list[dict[str, Any]], search_term: str | None) -> N
         match["source"] = match.pop("_source")
         match["score"] = match.pop("_score")
 
+        # last_modified and doctype may be absent from a document (ES omits
+        # fields that aren't set), so read them with .get() to avoid a KeyError
+        # that would surface as a 500 on the search endpoint.
+        doctype = match["source"].get("doctype")
         match["source"]["creators"] = get_creators(match["source"])
         match["source"]["date"] = get_date_from_pattern(match["source"].get("date", None))
-        match["source"]["last_modified"] = get_relative_date(match["source"]["last_modified"])
-        match["source"]["url"] = get_link(match["source"]["doctype"], match["source"])
+        match["source"]["last_modified"] = get_relative_date(match["source"].get("last_modified"))
+        match["source"]["url"] = get_link(doctype, match["source"])
 
         cover_url = get_cover_url(
-            match["source"]["doctype"],
+            doctype,
             match["source"].get("uuid", ""),
             match["source"].get("filename", ""),
         )
@@ -307,9 +311,9 @@ def _filter_results(results: list[dict[str, Any]], search_term: str | None) -> N
         if search_term and "contents" in match["source"]:
             match["source"]["contents"] = match["source"]["contents"].replace(search_term, f"*{search_term}*")
 
-        if match["source"]["doctype"] == "drill":
+        if doctype == "drill":
             match["source"]["question"] = nh3.clean(markdown.markdown(match["source"]["question"]))
-        if match["source"]["doctype"] == "todo":
+        if doctype == "todo":
             match["source"]["name"] = nh3.clean(markdown.markdown(match["source"]["name"]))
 
 
