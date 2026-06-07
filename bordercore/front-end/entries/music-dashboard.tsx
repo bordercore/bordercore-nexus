@@ -1,7 +1,6 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import MusicDashboardPage from "../react/music/MusicDashboardPage";
-import GlobalAudioPlayer from "../react/music/GlobalAudioPlayer";
 import type {
   FeaturedAlbum,
   PlaylistSidebarItem,
@@ -58,22 +57,22 @@ if (container) {
 
   if (collectionIsNotEmpty) {
     const root = createRoot(container);
+    // The audio player is mounted globally by base-react into #global-audio-player,
+    // so the dashboard must not render its own — a second instance would double-
+    // subscribe to the "play-track" event and play every song on two streams.
     root.render(
-      <>
-        <MusicDashboardPage
-          randomAlbum={randomAlbum}
-          playlists={playlists}
-          recentPlayedSongs={recentPlayedSongs}
-          initialRecentAlbums={initialRecentAlbums}
-          initialPaginator={initialPaginator}
-          collectionIsNotEmpty={collectionIsNotEmpty}
-          urls={urls}
-          imagesUrl={imagesUrl}
-          dashboardStats={dashboardStats}
-          libraryCounts={libraryCounts}
-        />
-        <GlobalAudioPlayer />
-      </>
+      <MusicDashboardPage
+        randomAlbum={randomAlbum}
+        playlists={playlists}
+        recentPlayedSongs={recentPlayedSongs}
+        initialRecentAlbums={initialRecentAlbums}
+        initialPaginator={initialPaginator}
+        collectionIsNotEmpty={collectionIsNotEmpty}
+        urls={urls}
+        imagesUrl={imagesUrl}
+        dashboardStats={dashboardStats}
+        libraryCounts={libraryCounts}
+      />
     );
   }
 }

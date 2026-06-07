@@ -70,7 +70,7 @@ urlpatterns = [
         name="search"
     ),
     path(
-        route="mark_song_as_listened_to/<uuid:uuid>",
+        route="mark_song_as_listened_to/<uuid:song_uuid>",
         view=views.mark_song_as_listened_to,
         name="mark_song_as_listened_to"
     ),
