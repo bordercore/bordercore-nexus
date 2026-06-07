@@ -17,6 +17,33 @@ def _base_form_data():
     }
 
 
+def test_partial_post_preserves_stored_days_when_input_absent():
+    """A POST that omits days_of_week_input must not wipe stored days_of_week.
+
+    days_of_week is populated only via clean()'s side effect, so an edit that
+    submits no days_of_week_input key (e.g. switching to a daily schedule)
+    should leave the persisted value untouched rather than clobbering it.
+    """
+    instance = Reminder(days_of_week=[0, 2], days_of_month=[5, 20])
+    data = _base_form_data()  # daily schedule, no *_input keys
+    form = ReminderForm(data=data, instance=instance)
+
+    assert form.is_valid(), form.errors
+    assert form.instance.days_of_week == [0, 2]
+    assert form.instance.days_of_month == [5, 20]
+
+
+def test_empty_input_present_clears_stored_days():
+    """An explicitly submitted empty days_of_week_input does clear stored days."""
+    instance = Reminder(days_of_week=[0, 2])
+    data = _base_form_data()
+    data["days_of_week_input"] = ""
+    form = ReminderForm(data=data, instance=instance)
+
+    assert form.is_valid(), form.errors
+    assert form.instance.days_of_week == []
+
+
 def test_clean_days_of_week_input_empty():
     """clean_days_of_week_input: empty string returns [] and sets on instance."""
     data = _base_form_data()

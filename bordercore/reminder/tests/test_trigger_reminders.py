@@ -9,6 +9,8 @@ from django.core.management import call_command
 from django.utils import timezone
 
 from accounts.tests.factories import UserFactory
+from reminder.management.commands.trigger_reminders import Command
+from reminder.models import Reminder
 from reminder.tests.factories import ReminderFactory
 from todo.models import Todo
 
@@ -245,6 +247,68 @@ def test_trigger_succeeds_even_if_todo_creation_raises():
     assert reminder.last_triggered_at is not None
     assert reminder.last_triggered_at != last_before
     assert reminder.next_trigger_at != next_before
+
+
+def test_already_advanced_reminder_is_not_resent():
+    """The per-reminder re-lock skips a row a concurrent run already advanced.
+
+    Two overlapping cron runs can both select the same due reminder. The first
+    run claims and advances next_trigger_at; when the second run re-locks and
+    re-checks the row, next_trigger_at is no longer <= now, so it must bail
+    without re-sending the email.
+    """
+    user = UserFactory(username="user_concurrent", email="concurrent@example.com")
+    now = timezone.now()
+    reminder = ReminderFactory(
+        user=user,
+        name="Race",
+        is_active=True,
+        next_trigger_at=now - timedelta(minutes=1),
+    )
+
+    # Simulate a concurrent run that already claimed and advanced the row.
+    Reminder.objects.filter(pk=reminder.pk).update(
+        next_trigger_at=now + timedelta(days=1),
+    )
+
+    command = Command()
+    command.dry_run = False
+
+    with patch("reminder.management.commands.trigger_reminders.send_mail") as mock_send_mail:
+        # `reminder` still holds the stale (past) next_trigger_at in memory.
+        command.trigger_reminder(reminder, now, verbosity=0)
+
+    mock_send_mail.assert_not_called()
+    assert command.reminders_sent == 0
+
+
+def test_unknown_schedule_deactivates_instead_of_nulling_next_trigger():
+    """A None next-trigger (unknown schedule) deactivates the reminder.
+
+    Nulling next_trigger_at would make the reminder permanently un-triggerable;
+    leaving it in the past would re-fire every run. Instead it is deactivated
+    and flagged so it stops firing without silently vanishing.
+    """
+    user = UserFactory(username="user_none_sched", email="none@example.com")
+    now = timezone.now()
+    reminder = ReminderFactory(
+        user=user,
+        name="Bad Schedule",
+        is_active=True,
+        next_trigger_at=now - timedelta(minutes=1),
+    )
+    next_before = reminder.next_trigger_at
+
+    with patch("reminder.management.commands.trigger_reminders.send_mail") as mock_send_mail, \
+         patch.object(Reminder, "calculate_next_trigger_at", return_value=None):
+        call_command("trigger_reminders", verbosity=0)
+
+    mock_send_mail.assert_called_once()
+    reminder.refresh_from_db()
+    assert reminder.is_active is False
+    assert reminder.last_triggered_at is not None
+    # next_trigger_at is left untouched rather than nulled.
+    assert reminder.next_trigger_at == next_before
 
 
 def test_trigger_succeeds_even_if_notify_raises():

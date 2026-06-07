@@ -89,15 +89,17 @@ class Command(BaseCommand):
         """
         now = timezone.now()
 
-        # Query for active reminders that are due, locking rows to prevent
-        # double-triggers from overlapping cron runs
-        with transaction.atomic():
-            due_reminders = list(
-                Reminder.objects.select_for_update(skip_locked=True).filter(
-                    is_active=True,
-                    next_trigger_at__lte=now,
-                )
+        # Scan for due reminders. The scan itself does not lock: each row is
+        # re-locked and re-checked individually in trigger_reminder, where the
+        # lock is held across the email send and timestamp advance (a lock
+        # released here, before any work happens, would not prevent
+        # double-triggers from overlapping cron runs).
+        due_reminders = list(
+            Reminder.objects.filter(
+                is_active=True,
+                next_trigger_at__lte=now,
             )
+        )
 
         self.reminders_due = len(due_reminders)
 
@@ -119,19 +121,53 @@ class Command(BaseCommand):
             verbosity: Output verbosity level.
         """
         try:
-            # Send the notification (email for now)
-            self.send_reminder_notification(reminder)
+            if self.dry_run:
+                # Send the notification (email for now) without persisting.
+                self.send_reminder_notification(reminder)
+            else:
+                # Hold the row lock across the email send and the timestamp
+                # advance so two overlapping cron runs cannot both send the
+                # same reminder. skip_locked plus the next_trigger_at__lte=now
+                # re-check means that if a concurrent run already claimed and
+                # advanced this row, we get nothing back and bail without
+                # re-sending.
+                with transaction.atomic():
+                    locked = (
+                        Reminder.objects.select_for_update(skip_locked=True)
+                        .filter(pk=reminder.pk, is_active=True, next_trigger_at__lte=now)
+                        .first()
+                    )
+                    if locked is None:
+                        # Already triggered by a concurrent run, or no longer due.
+                        return
 
-            if not self.dry_run:
-                # Advance timestamps as soon as the email is out. The email is
-                # the durable side effect; if we delay this update behind any
-                # downstream write (Todo creation, channel-layer fan-out) and
-                # that write fails, the next cron tick will re-select this
-                # reminder and re-send the email.
-                reminder.last_triggered_at = now
-                reminder.next_trigger_at = reminder.calculate_next_trigger_at(from_datetime=now)
-                reminder.save(update_fields=["last_triggered_at", "next_trigger_at"])
+                    self.send_reminder_notification(locked)
 
+                    # The email is the durable side effect, so advance the
+                    # timestamps within the same transaction that holds the lock.
+                    locked.last_triggered_at = now
+                    next_trigger_at = locked.calculate_next_trigger_at(from_datetime=now)
+                    if next_trigger_at is None:
+                        # An unknown/None schedule would null next_trigger_at and
+                        # leave the reminder either permanently un-triggerable or
+                        # re-firing every run. Deactivate and surface it instead.
+                        logger.warning(
+                            "calculate_next_trigger_at returned None for reminder "
+                            "%s (schedule_type=%r); deactivating it",
+                            locked.uuid, locked.schedule_type,
+                        )
+                        locked.is_active = False
+                        locked.save(update_fields=["last_triggered_at", "is_active"])
+                    else:
+                        locked.next_trigger_at = next_trigger_at
+                        locked.save(update_fields=["last_triggered_at", "next_trigger_at"])
+
+                # Use the locked instance for the success message and downstream work.
+                reminder = locked
+
+                # Downstream side effects run AFTER the transaction commits so a
+                # failure here cannot roll back the advance above (which would
+                # re-send the email on the next cron tick).
                 if reminder.create_todo:
                     try:
                         self.create_todo_from_reminder(reminder)

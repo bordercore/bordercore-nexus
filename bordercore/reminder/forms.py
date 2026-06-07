@@ -154,11 +154,16 @@ class ReminderForm(ModelForm):
 
         schedule_type = cleaned_data.get("schedule_type")
 
-        # Copy parsed days from custom input fields to model instance
+        # Copy parsed days from the custom input fields onto the model instance.
+        # days_of_week / days_of_month are not in Meta.fields, so this clean()
+        # side effect is the only path that populates them on save. Only
+        # overwrite when the corresponding input was actually submitted, so a
+        # partial POST that omits a field does not silently wipe the stored days.
         days_of_week = cleaned_data.get("days_of_week_input", [])
         days_of_month = cleaned_data.get("days_of_month_input", [])
-        if self.instance:
+        if "days_of_week_input" in self.data:
             self.instance.days_of_week = days_of_week
+        if "days_of_month_input" in self.data:
             self.instance.days_of_month = days_of_month
 
         # Validate based on schedule type
