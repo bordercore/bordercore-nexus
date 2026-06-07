@@ -302,8 +302,6 @@ export function PreferencesPage(props: PreferencesPageProps) {
       form.append("sidebar_image", initial.sidebar.name || "");
     }
 
-    form.append("instagram_credentials", "");
-
     setSaving(true);
     try {
       await axios.post(formAction, form, {

@@ -116,11 +116,18 @@ class UserProfileUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView):
 
         instance = form.save(commit=False)
 
-        if self.request.POST.get("instagram_username", None) and self.request.POST.get("instagram_password", None):
+        # instagram_credentials is managed solely here (it is not a form field),
+        # via the dedicated instagram_username/instagram_password POST keys: set
+        # them both to store credentials, blank them both to clear.
+        instagram_username = self.request.POST.get("instagram_username", "")
+        instagram_password = self.request.POST.get("instagram_password", "")
+        if instagram_username and instagram_password:
             instance.instagram_credentials = {
-                "username": self.request.POST["instagram_username"],
-                "password": self.request.POST["instagram_password"]
+                "username": instagram_username,
+                "password": instagram_password,
             }
+        else:
+            instance.instagram_credentials = None
 
         instance.save()
 
@@ -131,7 +138,7 @@ class UserProfileUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView):
             return JsonResponse({"status": "ok"})
 
         messages.success(self.request, "Preferences edited")
-        return redirect("accounts:prefs")  # or whatever route
+        return redirect("accounts:prefs")
 
     def form_invalid(self, form: BaseModelForm) -> HttpResponse:
         """Render form errors as JSON for XHR submissions."""

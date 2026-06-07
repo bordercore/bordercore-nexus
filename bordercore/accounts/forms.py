@@ -106,7 +106,6 @@ class UserProfileForm(ModelForm):
             "drill_intervals",
             "drill_tags_muted",
             "nytimes_api_key",
-            "instagram_credentials",
             "google_calendar",
             "google_calendar_email",
             "eye_candy",
