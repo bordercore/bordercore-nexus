@@ -39,6 +39,23 @@ def _test_one_interval(intervals, gi, gii, ei, eii, hi, hii, ri, rii):
     assert intervals["reset"]["interval_index"] == rii
 
 
+def test_elasticsearch_document_date_unixtime_is_utc_correct():
+    """date_unixtime and last_reviewed are portable, UTC-correct epoch strings.
+
+    The previous strftime("%s") was non-portable and interpreted the aware
+    datetime in the server's local timezone, producing an offset epoch.
+    """
+    from datetime import timezone as dt_timezone
+
+    question = QuestionFactory()
+    question.created = datetime.datetime(2021, 1, 1, 0, 0, 0, tzinfo=dt_timezone.utc)
+    question.last_reviewed = datetime.datetime(2021, 1, 2, 0, 0, 0, tzinfo=dt_timezone.utc)
+    doc = question.elasticsearch_document
+
+    assert doc["_source"]["date_unixtime"] == "1609459200"
+    assert doc["_source"]["last_reviewed"] == "1609545600"
+
+
 def test_get_intervals():
 
     question = QuestionFactory()

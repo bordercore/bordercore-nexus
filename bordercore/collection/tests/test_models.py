@@ -25,6 +25,21 @@ def test_create_collection_thumbnail_deferred_until_commit(django_capture_on_com
         mock_publish.assert_called_once_with(str(coll.uuid))
 
 
+def test_elasticsearch_document_date_unixtime_is_utc_correct(collection):
+    """date_unixtime is a portable, UTC-correct epoch string.
+
+    The previous strftime("%s") was non-portable and interpreted the aware
+    datetime in the server's local timezone, producing an offset epoch.
+    """
+    from datetime import datetime
+    from datetime import timezone as dt_timezone
+
+    collection[0].created = datetime(2021, 1, 1, 0, 0, 0, tzinfo=dt_timezone.utc)
+    doc = collection[0].elasticsearch_document
+
+    assert doc["_source"]["date_unixtime"] == "1609459200"
+
+
 def test_sort_collection(collection, blob_image_factory, blob_pdf_factory):
 
     # Move the first blob to the second position
