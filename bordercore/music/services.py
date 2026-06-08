@@ -287,7 +287,7 @@ def search(user: User, artist_name: str) -> list[dict[str, str]]:
         "_source": [""]
     }
 
-    results: dict[str, Any] = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
+    results = es.search(index=settings.ELASTICSEARCH_INDEX, **search_object)
 
     return [
         {
