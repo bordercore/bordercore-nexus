@@ -30,6 +30,23 @@ if git diff --cached --no-color --unified=0 \
   exit 1
 fi
 
+ROOT="$(git rev-parse --show-toplevel)"
+
 # Format/lint staged files via lint-staged. Hooks run from git root but
 # the JS workspace lives in the bordercore/ subdirectory.
-cd "$(git rev-parse --show-toplevel)/bordercore" && npx lint-staged
+( cd "$ROOT/bordercore" && npx lint-staged ) || exit 1
+
+# Type-check the Django project with mypy (matches CI) when Python files
+# are staged. Use the venv's mypy directly so it sees installed stubs and
+# to avoid the snap-confined `uv run` failing in non-tty contexts.
+if git diff --cached --name-only | grep -qE '\.py$'; then
+  if [ -x "$ROOT/.venv/bin/mypy" ]; then
+    MYPY="$ROOT/.venv/bin/mypy"
+  else
+    MYPY="mypy"
+  fi
+  ( cd "$ROOT" && "$MYPY" --config-file pyproject.toml bordercore/ ) || {
+    echo "Error: mypy type checking failed"
+    exit 1
+  }
+fi
