@@ -1,7 +1,6 @@
 """Views for the Book app.
 
-Provides a paginated, alphabetically-filterable list view of the user's
-book library.
+Provides an alphabetically-filterable list view of the user's book library.
 """
 
 import json
@@ -59,7 +58,6 @@ class BookListView(LoginRequiredMixin, UserScopedQuerysetMixin, ListView):
                 "year": book.year,
             })
 
-        context["alphabet"] = list(string.ascii_uppercase)
         context["alphabet_json"] = json.dumps(list(string.ascii_uppercase))
         context["selected_letter"] = self.selected_letter
         context["cols"] = ["title", "author", "year"]

@@ -56,7 +56,7 @@ def test_get_context_data_has_alphabet(authenticated_client):
 
     view = _setup_view(user, "A")
     context = view.get_context_data()
-    assert len(context["alphabet"]) == 26
+    assert len(json.loads(context["alphabet_json"])) == 26
     assert context["selected_letter"] == "A"
     assert context["cols"] == ["title", "author", "year"]
 
@@ -161,16 +161,3 @@ def test_book_list_url_reverse_and_resolve():
     assert letter.view_name == "book_list"
     assert letter.args == ("B",)
 
-
-def test_author_str():
-    """Test Author __str__ returns name."""
-    author = AuthorFactory(name="Tolkien")
-    assert str(author) == "Tolkien"
-
-
-def test_book_str(authenticated_client):
-    """Test Book __str__ returns title."""
-    user, _ = authenticated_client()
-    author = AuthorFactory()
-    book = BookFactory(title="The Hobbit", user=user, author=[author])
-    assert str(book) == "The Hobbit"

@@ -8,6 +8,7 @@ to authors.
 """
 
 from django.contrib.auth.models import User
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 from lib.mixins import TimeStampedModel
@@ -37,9 +38,14 @@ class Book(TimeStampedModel):
     title = models.TextField()
     author = models.ManyToManyField(Author)
     subtitle = models.TextField(blank=True, default="")
-    isbn = models.TextField(blank=True, default="")
-    asin = models.TextField(blank=True, default="")
-    year = models.IntegerField(null=True)
+    # Fixed-width bibliographic identifiers: bounded length, generous enough
+    # to cover hyphenated ISBN-13 and any existing values.
+    isbn = models.CharField(max_length=32, blank=True, default="")
+    asin = models.CharField(max_length=16, blank=True, default="")
+    year = models.IntegerField(
+        null=True,
+        validators=[MinValueValidator(1), MaxValueValidator(2100)],
+    )
     publisher = models.TextField(blank=True, default="")
     notes = models.TextField(blank=True, default="")
     own = models.BooleanField(default=True)
