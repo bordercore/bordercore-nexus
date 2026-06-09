@@ -237,7 +237,6 @@ class TodoTaskList(APIView):
 
         Returns:
             Response containing:
-              - 'status': always "OK"
               - 'priority_counts': list of (priority, count) tuples
               - 'created_counts': list of (date, count) tuples
               - 'todo_list': list of dicts with fields for each todo
@@ -274,7 +273,7 @@ def _reorder_todo(user: User, tag_name: str, todo_uuid: str, new_position: int) 
         new_position: New integer position (must be >= 1).
 
     Returns:
-        Dict with status and new_position.
+        Dict with the todo's new position: ``{"new_position": <int>}``.
     """
     with transaction.atomic():
         tag_todo = get_object_or_404(
@@ -303,7 +302,7 @@ def sort_todo(request: Request) -> Response:
         request: The HTTP request with POST data.
 
     Returns:
-        Response with {"status": "OK"}.
+        Response with {"new_position": <int>}.
     """
     tag_name = request.POST.get("tag", "").strip()
     todo_uuid = request.POST.get("todo_uuid", "").strip()
@@ -334,7 +333,7 @@ def move_to_top(request: Request) -> Response:
         request: The HTTP request.
 
     Returns:
-        Response indicating success.
+        Response with {"new_position": 1}.
     """
     tag_name = request.POST.get("tag", "").strip()
     todo_uuid = request.POST.get("todo_uuid", "").strip()
@@ -355,7 +354,7 @@ def snooze_task(request: Request) -> Response:
         request: The HTTP request with POST data.
 
     Returns:
-        Response with {"status": "OK"}.
+        An empty Response (HTTP 200) on success.
     """
     todo_uuid = request.POST.get("todo_uuid", "").strip()
 
