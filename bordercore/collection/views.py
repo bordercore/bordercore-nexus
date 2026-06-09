@@ -9,8 +9,7 @@ from typing import Any, cast
 import humanize
 
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from django.conf import settings
@@ -20,7 +19,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.uploadedfile import UploadedFile
-from django.db.models import Count, Exists, OuterRef, Q, QuerySet
+from django.db.models import Count, Exists, OuterRef, Prefetch, Q, QuerySet
 from django.forms import BaseModelForm
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
@@ -63,7 +62,19 @@ class CollectionListView(LoginRequiredMixin, FormRequestMixin, FormMixin, ListVi
             query = query.filter(name__icontains=self.request.GET["query"])
 
         query = query.annotate(num_blobs=Count("collectionobject"))
-        query = query.prefetch_related("tags")
+        query = query.prefetch_related(
+            "tags",
+            # Cover tiles use up to 4 of the most recent blob members per
+            # collection; prefetch them once for the whole page rather than
+            # issuing a separate query per collection in _build_cover_tiles.
+            Prefetch(
+                "collectionobject_set",
+                queryset=CollectionObject.objects.filter(blob__isnull=False)
+                .select_related("blob")
+                .order_by("-blob__created"),
+                to_attr="recent_blob_objects",
+            ),
+        )
         query = query.order_by("-modified")
 
         return query
@@ -102,11 +113,13 @@ class CollectionListView(LoginRequiredMixin, FormRequestMixin, FormMixin, ListVi
 def _build_cover_tiles(collection: Collection) -> list[str | None]:
     """Build a 4-element list of recent-image URLs for a collection.
 
-    Returns up to 4 small-thumbnail blob URLs, right-padded with None.
+    Returns up to 4 small-thumbnail blob URLs, right-padded with None. Expects
+    the collection's recent blob members to have been prefetched into
+    ``recent_blob_objects`` (see CollectionListView.get_queryset).
     """
     tiles: list[str | None] = []
-    for image in collection.get_recent_images(limit=4):
-        tiles.append(Blob.get_cover_url_static(image["uuid"], image["file"], size="small"))
+    for co in getattr(collection, "recent_blob_objects", [])[:4]:
+        tiles.append(Blob.get_cover_url_static(co.blob.uuid, co.blob.file.name, size="small"))
     while len(tiles) < 4:
         tiles.append(None)
     return tiles
@@ -286,7 +299,7 @@ def get_blob(request: HttpRequest, collection_uuid: str) -> Response:
 
     Args:
         request: The HTTP request containing:
-            - direction: Direction to navigate ("next" or "prev", default: "next")
+            - direction: Direction to navigate ("next" or "previous", default: "next")
             - position: Current blob position (default: 0)
             - tag: Optional tag name to filter by
             - randomize: Whether to randomize selection (default: false)
@@ -309,7 +322,6 @@ def get_blob(request: HttpRequest, collection_uuid: str) -> Response:
 
 
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])
 def get_images(request: HttpRequest, collection_uuid: str) -> Response:
     """Get four recent images from a collection.
 
@@ -370,11 +382,11 @@ def search(request: HttpRequest) -> Response:
         query = query.filter(name__icontains=request.GET["query"])
 
     if "blob_uuid" in request.GET:
-        query = query.filter(collectionobject__blob__uuid__in=[request.GET.get("blob_uuid")])
+        query = query.filter(collectionobject__blob__uuid=request.GET["blob_uuid"])
 
     if "exclude_blob_uuid" in request.GET:
         contains_blob = Collection.objects.filter(uuid=OuterRef("uuid")) \
-                                          .filter(collectionobject__blob__uuid__in=[request.GET.get("exclude_blob_uuid")])
+                                          .filter(collectionobject__blob__uuid=request.GET["exclude_blob_uuid"])
         query = query.annotate(contains_blob=Exists(contains_blob))
 
     collection_list = query.order_by("-modified")

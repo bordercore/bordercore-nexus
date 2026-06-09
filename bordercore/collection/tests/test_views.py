@@ -48,6 +48,32 @@ def test_collection_list(authenticated_client, collection):
     assert isinstance(resp.context_data["tag_counts"], dict)
 
 
+def test_collection_list_cover_tiles_use_prefetched_blobs(authenticated_client, collection):
+    """Cover tiles are built from prefetched blob members.
+
+    Each collection exposes four slots (right-padded with None), and every blob
+    member yields one small-cover URL, proving the prefetched recent_blob_objects
+    path produces the same data the per-collection query used to.
+    """
+    _, client = authenticated_client()
+
+    url = urls.reverse("collection:list")
+    resp = client.get(url)
+    assert resp.status_code == 200
+
+    tiles_by_uuid = {c["uuid"]: c["cover_tiles"] for c in resp.context_data["collection_list"]}
+
+    for tiles in tiles_by_uuid.values():
+        assert len(tiles) == 4
+
+    # The fixture's two favorite collections hold 2 and 1 blob members.
+    non_none = [t for tiles in tiles_by_uuid.values() for t in tiles if t is not None]
+    assert len(non_none) == 3
+    for url_str in non_none:
+        assert url_str.startswith(settings.COVER_URL)
+        assert url_str.endswith("/cover.jpg")
+
+
 def test_collection_detail(authenticated_client, collection):
 
     # Quiet spurious output
