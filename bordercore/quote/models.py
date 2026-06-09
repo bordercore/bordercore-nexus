@@ -21,7 +21,7 @@ class Quote(TimeStampedModel):
     flagged as a favorite for filtering and quick access.
     """
 
-    uuid = models.UUIDField(default=uuid.uuid4, editable=False)
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     quote = models.TextField()
     source = models.TextField()
     is_favorite = models.BooleanField(default=False)

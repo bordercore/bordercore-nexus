@@ -45,8 +45,8 @@ def test_quote_user_protect():
         quote.user.delete()
 
 
-def test_quote_factory_unique_values():
-    """Test that factory generates different values for each instance."""
+def test_quote_uuid_is_unique():
+    """The uuid column enforces uniqueness at the database level."""
     q1 = QuoteFactory()
-    q2 = QuoteFactory()
-    assert q1.quote != q2.quote or q1.source != q2.source
+    with pytest.raises(IntegrityError):
+        QuoteFactory(uuid=q1.uuid)
