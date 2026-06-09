@@ -1,8 +1,4 @@
 """Production settings and globals."""
-from __future__ import absolute_import
-
-import os
-
 from .base import *
 from .base import require_setting
 
