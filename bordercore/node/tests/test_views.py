@@ -5,8 +5,11 @@ from faker import Factory as FakerFactory
 
 from django import urls
 
+from accounts.tests.factories import UserFactory
 from blob.models import Blob
+from blob.tests.factories import BlobFactory
 from collection.models import Collection
+from collection.tests.factories import CollectionFactory
 from node.models import Node, NodeTodo
 from node.tests.factories import NodeFactory
 from todo.tests.factories import TodoFactory
@@ -200,6 +203,54 @@ def test_delete_collection(authenticated_client, node):
         for val in sublist
         if "uuid" in val
     ]
+
+
+def test_add_collection_other_users_node_returns_404(authenticated_client):
+    """Adding a collection to another user's node is rejected with 404."""
+    _, client = authenticated_client()
+    other = UserFactory(username="otheruser")
+    other_node = NodeFactory.create(user=other)
+
+    url = urls.reverse("node:add_collection")
+    resp = client.post(url, {
+        "node_uuid": other_node.uuid,
+        "collection_name": "Sneaky",
+    })
+
+    assert resp.status_code == 404
+
+
+def test_delete_collection_other_users_collection_not_deleted(authenticated_client, node):
+    """A user cannot delete another user's collection via their own node."""
+    _, client = authenticated_client()
+    other = UserFactory(username="otheruser")
+    other_collection = CollectionFactory(user=other)
+
+    url = urls.reverse("node:delete_collection")
+    resp = client.post(url, {
+        "node_uuid": node.uuid,
+        "collection_uuid": other_collection.uuid,
+        "collection_type": "ad-hoc",
+    })
+
+    assert resp.status_code == 404
+    assert Collection.objects.filter(uuid=other_collection.uuid).exists()
+
+
+def test_delete_note_other_users_blob_not_deleted(monkeypatch_blob, authenticated_client, node):
+    """A user cannot delete another user's note blob via their own node."""
+    _, client = authenticated_client()
+    other = UserFactory(username="otheruser")
+    other_note = BlobFactory(user=other, is_note=True)
+
+    url = urls.reverse("node:delete_note")
+    resp = client.post(url, {
+        "node_uuid": node.uuid,
+        "note_uuid": other_note.uuid,
+    })
+
+    assert resp.status_code == 404
+    assert Blob.objects.filter(uuid=other_note.uuid).exists()
 
 
 def test_add_note(monkeypatch_blob, authenticated_client, node):
@@ -581,18 +632,20 @@ def test_node_remove_node(authenticated_client, node):
     user, client = authenticated_client()
 
     added_node = NodeFactory.create(user=user)
-    node.add_component("node", added_node)
+    # add_component stores the node under a freshly generated component uuid,
+    # which is what remove_component matches on (not the nested node's uuid).
+    component_uuid = node.add_component("node", added_node)
 
     url = urls.reverse("node:remove_component")
     resp = client.post(url, {
         "node_uuid": node.uuid,
-        "uuid": added_node.uuid
+        "uuid": component_uuid,
     })
 
     assert resp.status_code == 200
 
-    # Verify that the node has been removed from the node's layout
-    updated_node = Node.objects.get(uuid=added_node.uuid)
+    # Verify that the component has been removed from the parent node's layout.
+    updated_node = Node.objects.get(uuid=node.uuid)
     assert "node" not in [
         val["type"]
         for sublist in updated_node.layout

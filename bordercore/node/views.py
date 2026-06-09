@@ -345,7 +345,9 @@ def add_collection(request: HttpRequest) -> Response:
     node_uuid = request.POST.get("node_uuid", "").strip()
     collection_name = request.POST.get("collection_name", "").strip()
     collection_uuid = request.POST.get("collection_uuid", "").strip()
-    display = request.POST.get("display", "").strip()
+    # Fall back to the model's "list" default when the client omits display,
+    # rather than storing an empty string in the layout entry.
+    display = request.POST.get("display", "").strip() or "list"
     random_order = request.POST.get("random_order", "").strip() == "true"
     rotate_raw = (request.POST.get("rotate") or "-1").strip()
     try:
