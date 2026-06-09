@@ -3,16 +3,15 @@
 This module contains API views for site statistics and text extraction
 functionality.
 """
-from http import HTTPStatus
 from urllib.parse import urlparse
 
 import requests
 import trafilatura
+from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
-
-from django.http import JsonResponse
+from rest_framework.response import Response
 
 from bookmark.models import Bookmark
 from drill.models import Question
@@ -21,7 +20,7 @@ from lib.util import UnsafeURLError, fetch_url_safely
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
-def site_stats(request: Request) -> JsonResponse:
+def site_stats(request: Request) -> Response:
     """Get site statistics for the current user.
 
     Returns counts of untagged bookmarks, total bookmarks, and drill
@@ -36,7 +35,7 @@ def site_stats(request: Request) -> JsonResponse:
             - bookmarks_total: Total count of bookmarks
             - drill_needing_review: Count of drill questions needing review
     """
-    return JsonResponse(
+    return Response(
         {
             "untagged_bookmarks": Bookmark.objects.bare_bookmarks_count(
                 user=request.user
@@ -51,7 +50,7 @@ def site_stats(request: Request) -> JsonResponse:
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
-def extract_text(request: Request) -> JsonResponse:
+def extract_text(request: Request) -> Response:
     """Extract text content from a URL.
 
     Fetches content from the provided URL and extracts clean text using
@@ -69,13 +68,13 @@ def extract_text(request: Request) -> JsonResponse:
     url = request.query_params.get("url")
 
     if not url:
-        return JsonResponse({"error": "URL parameter is required"}, status=HTTPStatus.BAD_REQUEST)
+        return Response({"error": "URL parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
 
     parsed = urlparse(url)
     # Security: Restrict URL schemes to http/https only to prevent SSRF attacks
     # and access to local files (file://) or other dangerous schemes
     if parsed.scheme not in {"http", "https"}:
-        return JsonResponse({"error": "Invalid URL scheme"}, status=HTTPStatus.BAD_REQUEST)
+        return Response({"error": "Invalid URL scheme"}, status=status.HTTP_400_BAD_REQUEST)
 
     # SSRF protection (validates every resolved IP, fails closed on resolution
     # errors, and re-checks each redirect hop) lives in fetch_url_safely.
@@ -91,12 +90,12 @@ def extract_text(request: Request) -> JsonResponse:
         extracted_text = trafilatura.extract(response.text, config=config, include_comments=False, include_tables=False)
 
         if extracted_text:
-            return JsonResponse({"text": extracted_text})
-        return JsonResponse({"error": "No text could be extracted from the given URL"}, status=HTTPStatus.UNPROCESSABLE_ENTITY)
+            return Response({"text": extracted_text})
+        return Response({"error": "No text could be extracted from the given URL"}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
     except UnsafeURLError as e:
-        return JsonResponse({"error": str(e)}, status=HTTPStatus.BAD_REQUEST)
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     except requests.RequestException as e:
-        return JsonResponse({"error": f"Error fetching URL: {str(e)}"}, status=HTTPStatus.INTERNAL_SERVER_ERROR)
+        return Response({"error": f"Error fetching URL: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     except Exception as e:
-        return JsonResponse({"error": f"An unexpected error occurred: {str(e)}"}, status=HTTPStatus.INTERNAL_SERVER_ERROR)
+        return Response({"error": f"An unexpected error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

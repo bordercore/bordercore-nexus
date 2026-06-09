@@ -258,3 +258,32 @@ def lambda_invoke_async(function_name: str, payload: dict[str, Any]) -> None:
         InvocationType="Event",
         Payload=json.dumps(payload),
     )
+
+
+def lambda_invoke_sync(function_name: str, payload: dict[str, Any]) -> Any:
+    """Invoke a Lambda function synchronously and return its parsed JSON response.
+
+    Uses the ``RequestResponse`` invocation type and decodes the function's
+    response payload as JSON.
+
+    Args:
+        function_name: The name of the Lambda function to invoke.
+        payload: Dictionary payload that will be JSON-serialised and sent to
+            the function.
+
+    Returns:
+        The function's response payload, parsed from JSON.
+
+    Raises:
+        RuntimeError: If the Lambda reports a function error; the decoded error
+            body is included in the message.
+    """
+    response = _get_lambda_client().invoke(
+        FunctionName=function_name,
+        InvocationType="RequestResponse",
+        Payload=json.dumps(payload),
+    )
+    body = json.loads(response["Payload"].read())
+    if response.get("FunctionError"):
+        raise RuntimeError(f"{function_name} Lambda crashed: {body}")
+    return body

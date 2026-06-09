@@ -39,3 +39,11 @@ def test_field_with_value_zero_is_treated_as_present(rf):
     response = dummy_view(request)
     assert response.status_code == 200
     assert response.content == b"OK"
+
+
+def test_field_with_empty_string_passes_validation(rf):
+    """A field present with an empty string is treated as present (presence-only)."""
+    request = rf.post("/fake-url/", data={"field1": "value1", "field2": ""})
+    response = dummy_view(request)
+    assert response.status_code == 200
+    assert response.content == b"OK"

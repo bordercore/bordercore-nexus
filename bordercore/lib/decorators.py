@@ -25,8 +25,9 @@ def validate_post_data(*required_fields: str) -> Callable[
 
     Args:
         *required_fields: Variable number of field names (strings) that must be
-            present in request.POST. Each field is checked for existence and
-            non-empty string values.
+            present in request.POST. Only presence is checked; a field present
+            with an empty string passes validation (so callers can accept
+            empty values, e.g. clearing a note).
 
     Returns:
         A decorator function that wraps the original view function. The wrapped

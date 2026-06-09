@@ -6,10 +6,9 @@ the resulting 512-dim CLIP vector. Bordercore's k-NN search uses these
 vectors to find similar image blobs in Elasticsearch.
 """
 import base64
-import json
 from typing import List
 
-import boto3
+from lib.aws import lambda_invoke_sync
 
 _FUNCTION_NAME = "CreateImageEmbedding"
 
@@ -28,15 +27,7 @@ def _invoke(payload: dict) -> List[float]:
         RuntimeError: If the Lambda reports a function error or returns an
             ``"error"`` key in the response body.
     """
-    client = boto3.client("lambda")
-    response = client.invoke(
-        FunctionName=_FUNCTION_NAME,
-        InvocationType="RequestResponse",
-        Payload=json.dumps(payload),
-    )
-    body = json.loads(response["Payload"].read())
-    if response.get("FunctionError"):
-        raise RuntimeError(f"CreateImageEmbedding Lambda crashed: {body}")
+    body = lambda_invoke_sync(_FUNCTION_NAME, payload)
     if "error" in body:
         raise RuntimeError(f"CreateImageEmbedding returned error: {body['error']}")
     return body["vector"]

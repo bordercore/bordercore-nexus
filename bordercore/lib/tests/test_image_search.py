@@ -4,8 +4,8 @@ import json
 from unittest.mock import MagicMock, patch
 
 
-@patch("lib.image_search.boto3")
-def test_encode_image_invokes_lambda_with_base64(mock_boto3):
+@patch("lib.aws._get_lambda_client")
+def test_encode_image_invokes_lambda_with_base64(mock_get_client):
     """encode_image_query base64-encodes the bytes and invokes the Lambda in query_image mode."""
     from lib.image_search import encode_image_query
 
@@ -13,7 +13,7 @@ def test_encode_image_invokes_lambda_with_base64(mock_boto3):
     payload = MagicMock()
     payload.read.return_value = json.dumps({"vector": [0.1] * 512}).encode()
     client.invoke.return_value = {"Payload": payload}
-    mock_boto3.client.return_value = client
+    mock_get_client.return_value = client
 
     result = encode_image_query(b"PNGDATA")
 
@@ -26,8 +26,8 @@ def test_encode_image_invokes_lambda_with_base64(mock_boto3):
     assert base64.b64decode(body["image_b64"]) == b"PNGDATA"
 
 
-@patch("lib.image_search.boto3")
-def test_encode_text_invokes_lambda_with_text(mock_boto3):
+@patch("lib.aws._get_lambda_client")
+def test_encode_text_invokes_lambda_with_text(mock_get_client):
     """encode_text_query sends the text string to the Lambda in query_text mode."""
     from lib.image_search import encode_text_query
 
@@ -35,7 +35,7 @@ def test_encode_text_invokes_lambda_with_text(mock_boto3):
     payload = MagicMock()
     payload.read.return_value = json.dumps({"vector": [0.2] * 512}).encode()
     client.invoke.return_value = {"Payload": payload}
-    mock_boto3.client.return_value = client
+    mock_get_client.return_value = client
 
     result = encode_text_query("sunset over water")
 
@@ -44,8 +44,8 @@ def test_encode_text_invokes_lambda_with_text(mock_boto3):
     assert body == {"mode": "query_text", "text": "sunset over water"}
 
 
-@patch("lib.image_search.boto3")
-def test_lambda_error_response_raises(mock_boto3):
+@patch("lib.aws._get_lambda_client")
+def test_lambda_error_response_raises(mock_get_client):
     """If the Lambda returns an error JSON, the invoker should raise."""
     from lib.image_search import encode_text_query
 
@@ -53,7 +53,7 @@ def test_lambda_error_response_raises(mock_boto3):
     payload = MagicMock()
     payload.read.return_value = json.dumps({"error": "oh no"}).encode()
     client.invoke.return_value = {"Payload": payload}
-    mock_boto3.client.return_value = client
+    mock_get_client.return_value = client
 
     try:
         encode_text_query("anything")
@@ -63,8 +63,8 @@ def test_lambda_error_response_raises(mock_boto3):
         raise AssertionError("expected RuntimeError")
 
 
-@patch("lib.image_search.boto3")
-def test_lambda_function_error_raises(mock_boto3):
+@patch("lib.aws._get_lambda_client")
+def test_lambda_function_error_raises(mock_get_client):
     """A Lambda runtime crash (FunctionError header) raises RuntimeError with the body."""
     from lib.image_search import encode_text_query
 
@@ -77,7 +77,7 @@ def test_lambda_function_error_raises(mock_boto3):
     }
     payload.read.return_value = json.dumps(crash_body).encode()
     client.invoke.return_value = {"Payload": payload, "FunctionError": "Unhandled"}
-    mock_boto3.client.return_value = client
+    mock_get_client.return_value = client
 
     try:
         encode_text_query("anything")
