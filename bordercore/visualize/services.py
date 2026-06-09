@@ -96,7 +96,7 @@ def build_graph(user: User, layers: set[str], top_k: int = DEFAULT_TOP_K) -> dic
         edges.extend(
             _similarity_edges(
                 kind="tag",
-                pair_counts=_tag_pair_counts(members_by_tag, nodes_by_uuid),
+                pair_counts=_tag_pair_counts(members_by_tag),
                 top_k=top_k,
                 skip_pairs=direct_pairs,
             )
@@ -325,10 +325,9 @@ def _collect_nodes(user: User) -> tuple[set[str], list[dict[str, Any]]]:
     return uuids, records
 
 
-def _question_label(question: Any) -> str:
+def _question_label(question: Question) -> str:
     """Best-effort short label for a question."""
-    text = getattr(question, "question", "") or ""
-    return text[:120]
+    return (question.question or "")[:120]
 
 
 def _direct_edges(
@@ -394,16 +393,13 @@ def _members_by_tag(
 
 
 def _tag_pair_counts(
-    members_by_tag: dict[int, list[str]], node_uuids: set[str]
+    members_by_tag: dict[int, list[str]]
 ) -> dict[frozenset[str], int]:
     """For every pair of nodes that share a tag, count how many tags they share.
 
-    ``node_uuids`` is accepted for symmetry with the collection-counts
-    helper; ``members_by_tag`` is already scoped to the graph in
-    ``_members_by_tag``, so the parameter is currently unused but kept
-    in the signature so callers stay parallel.
+    ``members_by_tag`` is already scoped to the graph in ``_members_by_tag``,
+    so no separate node-uuid scoping is needed here.
     """
-    del node_uuids  # kept for signature parity; see docstring.
     counts: dict[frozenset[str], int] = defaultdict(int)
     for members in members_by_tag.values():
         for i, a in enumerate(members):
@@ -415,6 +411,7 @@ def _tag_pair_counts(
 
 
 def _members_by_tag_for_blobs(user: User) -> dict[int, list[str]]:
+    """Return ``tag_id -> [blob uuid]`` for the user's tagged blobs."""
     members: dict[int, list[str]] = defaultdict(list)
     rows = (
         Blob.tags.through.objects.filter(blob__user=user)
@@ -426,6 +423,7 @@ def _members_by_tag_for_blobs(user: User) -> dict[int, list[str]]:
 
 
 def _members_by_tag_for_bookmarks(user: User) -> dict[int, list[str]]:
+    """Return ``tag_id -> [bookmark uuid]`` for the user's tagged bookmarks."""
     members: dict[int, list[str]] = defaultdict(list)
     rows = (
         Bookmark.tags.through.objects.filter(bookmark__user=user)
@@ -437,6 +435,7 @@ def _members_by_tag_for_bookmarks(user: User) -> dict[int, list[str]]:
 
 
 def _members_by_tag_for_questions(user: User) -> dict[int, list[str]]:
+    """Return ``tag_id -> [question uuid]`` for the user's tagged questions."""
     members: dict[int, list[str]] = defaultdict(list)
     rows = (
         Question.tags.through.objects.filter(question__user=user)
