@@ -172,12 +172,15 @@ def get_habit_list(user: User) -> list[dict[str, Any]]:
     return result
 
 
-def get_habit_detail(habit: Habit, user: User, days: int = 30) -> dict[str, Any]:
+def get_habit_detail(habit: Habit, days: int = 30) -> dict[str, Any]:
     """Return serialized habit data with recent log entries and streak stats.
+
+    Ownership is enforced by the caller (HabitDetailView scopes the habit to
+    the request user via UserScopedQuerysetMixin), so this function takes only
+    the already-authorized habit.
 
     Args:
         habit: The Habit instance to serialize.
-        user: The requesting user (for authorization context).
         days: Maximum number of recent log entries to include.  The dashboard
             detail page passes ``days=365`` so the year-long heatmap has
             enough data to render.

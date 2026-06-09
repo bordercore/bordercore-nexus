@@ -76,10 +76,9 @@ class HabitDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView):
             Context dict for rendering the template.
         """
         context = super().get_context_data(**kwargs)
-        user = cast(User, self.request.user)
         # The dashboard detail page renders a year-long heatmap, so we ship
         # 365 days of logs in the initial payload.
-        detail_data = get_habit_detail(self.object, user, days=365)
+        detail_data = get_habit_detail(self.object, days=365)
 
         return {
             **context,

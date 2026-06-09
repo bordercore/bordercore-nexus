@@ -65,7 +65,7 @@ def test_get_habit_detail_returns_data():
     habit = HabitFactory(user=user, start_date=date.today())
     HabitLog.objects.create(habit=habit, date=date.today(), completed=True)
 
-    result = get_habit_detail(habit, user)
+    result = get_habit_detail(habit)
 
     assert result["uuid"] == str(habit.uuid)
     assert result["name"] == habit.name
@@ -83,7 +83,7 @@ def test_get_habit_detail_limits_logs():
             habit=habit, date=date.today() - timedelta(days=i), completed=True,
         )
 
-    result = get_habit_detail(habit, user)
+    result = get_habit_detail(habit)
 
     assert len(result["logs"]) == 30
 
@@ -245,7 +245,7 @@ def test_get_habit_detail_accepts_days_parameter():
             habit=habit, date=date.today() - timedelta(days=i), completed=True,
         )
 
-    result = get_habit_detail(habit, user, days=365)
+    result = get_habit_detail(habit, days=365)
 
     assert len(result["logs"]) == 365
 
@@ -260,7 +260,7 @@ def test_get_habit_detail_includes_unit_and_streaks():
             habit=habit, date=date.today() - timedelta(days=i), completed=True,
         )
 
-    result = get_habit_detail(habit, user)
+    result = get_habit_detail(habit)
 
     assert result["unit"] == "IU"
     assert result["current_streak"] == 3
@@ -277,7 +277,7 @@ def test_get_habit_detail_longest_streak_tracks_historical_max():
         )
     HabitLog.objects.create(habit=habit, date=date.today(), completed=True)
 
-    result = get_habit_detail(habit, user)
+    result = get_habit_detail(habit)
 
     assert result["current_streak"] == 1
     assert result["longest_streak"] == 5
