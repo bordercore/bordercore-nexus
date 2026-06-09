@@ -250,6 +250,31 @@ def test_music_playlist_detail(authenticated_client, playlist):
     assert resp.status_code == 200
 
 
+def test_extract_playlist_parameters_shared_shape():
+    """Create and Update share this helper, so sort_by survives and
+    exclude_albums is a boolean (regression: update used to drop sort_by)."""
+    from django.http import QueryDict
+
+    from music.views import _extract_playlist_parameters
+
+    post = QueryDict(mutable=True)
+    post.update({
+        "tag": "ambient",
+        "start_year": "1990",
+        "sort_by": "rating",
+        "rating": "",  # empty values are dropped
+        "exclude_albums": "true",
+    })
+
+    params = _extract_playlist_parameters(post)
+
+    assert params["tag"] == "ambient"
+    assert params["start_year"] == "1990"
+    assert params["sort_by"] == "rating"
+    assert "rating" not in params
+    assert params["exclude_albums"] is True
+
+
 def test_music_playlist_create(authenticated_client, song):
     """Test creating a new playlist."""
     _, client = authenticated_client()

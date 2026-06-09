@@ -431,8 +431,8 @@ def get_albums_by_letter(user: User, letter: str) -> list[dict[str, Any]]:
     if letter == "other":
         queryset = queryset.exclude(
             Q(*[
-                ("title__istartswith", l)
-                for l in string.ascii_lowercase
+                ("title__istartswith", letter)
+                for letter in string.ascii_lowercase
             ], _connector=Q.OR)
         )
     else:
@@ -538,6 +538,13 @@ def create_album_from_zipfile(
             }
         )
 
+        # The tag set is identical for every track in the upload, so resolve it
+        # once here instead of re-running get_or_create per song in the loop.
+        tag_objs = [
+            Tag.objects.get_or_create(name=t.strip(), user=user)[0]
+            for t in tags.split(",") if t.strip()
+        ] if tags else []
+
         for index, song_info in enumerate(info["song_info"], start=1):
             song = Song(
                 artist=artist,
@@ -559,11 +566,7 @@ def create_album_from_zipfile(
                 song.title = title_edited
             song.save()
 
-            if tags:
-                tag_objs = [
-                    Tag.objects.get_or_create(name=t.strip(), user=user)[0]
-                    for t in tags.split(",") if t.strip()
-                ]
+            if tag_objs:
                 song.tags.set(tag_objs)
 
             # Upload the song and its artwork to S3

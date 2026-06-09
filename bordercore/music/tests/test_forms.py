@@ -26,6 +26,17 @@ def song_source_obj():
     return source
 
 
+def test_song_form_handles_missing_session_source(request_factory):
+    """A stale session song_source must not raise SongSource.DoesNotExist."""
+    request_factory.session = {"song_source": "NoSuchSource"}
+
+    # No SongSource row matches the session value; the form must still build
+    # and simply leave the source field without an initial value.
+    form = SongForm(request=request_factory)
+
+    assert not form.fields["source"].initial
+
+
 def test_clean_album_name_year_mismatch(request_factory, song_source_obj):
     """Test validation error when album exists with a different year."""
     user = request_factory.user

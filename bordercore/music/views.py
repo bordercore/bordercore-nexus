@@ -1079,6 +1079,33 @@ class PlaylistDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView
         }
 
 
+# String-valued smart-playlist parameters read from the submitted form.
+# exclude_albums is handled separately (it is coerced to a boolean).
+SMART_PLAYLIST_PARAM_KEYS = ("tag", "start_year", "end_year", "exclude_recent", "rating", "sort_by")
+
+
+def _extract_playlist_parameters(post: Any) -> dict[str, Any]:
+    """Build a smart playlist's parameters dict from POST data.
+
+    Shared by the create and update views so they stay in sync (e.g. both
+    preserve ``sort_by`` and store ``exclude_albums`` as a boolean).
+
+    Args:
+        post: The request's POST QueryDict.
+
+    Returns:
+        The parameters dict: non-empty string params plus a boolean
+        ``exclude_albums``.
+    """
+    params: dict[str, Any] = {
+        key: post[key]
+        for key in SMART_PLAYLIST_PARAM_KEYS
+        if post.get(key, "") != ""
+    }
+    params["exclude_albums"] = post.get("exclude_albums", "") == "true"
+    return params
+
+
 class CreatePlaylistView(LoginRequiredMixin, FormRequestMixin, CreateView):
     """Handle creation of new playlists."""
 
@@ -1109,13 +1136,7 @@ class CreatePlaylistView(LoginRequiredMixin, FormRequestMixin, CreateView):
         playlist = form.save(commit=False)
         playlist.user = self.request.user
 
-        playlist.parameters = {
-            x: self.request.POST[x]
-            for x in
-            ["tag", "start_year", "end_year", "exclude_recent", "rating", "sort_by"]
-            if x in self.request.POST and self.request.POST[x] != ""
-        }
-        playlist.parameters["exclude_albums"] = self.request.POST.get("exclude_albums", "") == "true"
+        playlist.parameters = _extract_playlist_parameters(self.request.POST)
         playlist.save()
 
         if playlist.type != "manual":
@@ -1143,13 +1164,7 @@ class UpdatePlaylistView(LoginRequiredMixin, UserScopedQuerysetMixin, FormReques
         """
         playlist = form.save()
 
-        params_to_extract = ["end_year", "exclude_albums", "exclude_recent", "rating", "start_year", "tag"]
-        filtered_params = {
-            key: self.request.POST[key]
-            for key in params_to_extract
-            if key in self.request.POST
-            and self.request.POST[key] != ""
-        }
+        filtered_params = _extract_playlist_parameters(self.request.POST)
 
         if playlist.type != "manual" and \
            (
@@ -1514,9 +1529,13 @@ def dupe_song_checker(request: HttpRequest) -> Response:
 
 @login_required
 def missing_artist_images(request: HttpRequest) -> HttpResponse:
-    """Temporary view to find and redirect to an artist without an image in S3.
+    """Redirect to the first artist that has no image uploaded to S3.
 
-    This is a utility function to help identify artists that need images uploaded.
+    A personal maintenance utility for finding artists that still need an
+    image. Note that it lists every ``artist_images/`` key in S3 on each call,
+    so the cost grows with the size of the artist-image bucket. Artists are
+    scanned in name order so repeated calls walk the list deterministically
+    rather than jumping to a random artist.
 
     Args:
         request: The HTTP request object.
@@ -1537,7 +1556,7 @@ def missing_artist_images(request: HttpRequest) -> HttpResponse:
         album__artist__name="Various"
     ).exclude(
         album__artist__name="Various Artists"
-    ).order_by("?")
+    ).order_by("name")
 
     for artist in artists:
         if str(artist.uuid) not in unique_uuids:

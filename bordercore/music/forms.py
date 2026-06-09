@@ -80,7 +80,13 @@ class SongForm(ModelForm):
         # Use the song source stored in the user's session
         if self.request and self.request.session:
             song_source: str = self.request.session.get("song_source", SongSource.DEFAULT)
-            self.fields["source"].initial = SongSource.objects.get(name=song_source).id
+            try:
+                self.fields["source"].initial = SongSource.objects.get(name=song_source).id
+            except SongSource.DoesNotExist:
+                # The session's stored source may no longer match a row (renamed
+                # or deleted); leave the field without an initial, mirroring the
+                # defensive handling in SongCreateView.get_context_data.
+                pass
 
         # If this form has a model attached, get the tags and display them separated by commas
         if self.instance.id:
