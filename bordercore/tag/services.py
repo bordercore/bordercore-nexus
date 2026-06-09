@@ -15,7 +15,7 @@ Core capabilities include:
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, TypedDict
 from urllib.parse import unquote
 
 from django.conf import settings
@@ -230,7 +230,19 @@ def get_alias_library(user: User) -> list[dict]:
     ]
 
 
-def find_related_tags(tag_name: str, user: User, doc_type: str | None) -> list[dict[str, str | int]]:
+class RelatedTag(TypedDict):
+    """A co-occurring tag and the number of documents it appears in.
+
+    Attributes:
+        tag_name: The related tag's name.
+        count: The Elasticsearch doc_count for that tag.
+    """
+
+    tag_name: str
+    count: int
+
+
+def find_related_tags(tag_name: str, user: User, doc_type: str | None) -> list[RelatedTag]:
     """
     Find tags that frequently co-occur with the given tag for a specific document type.
 
@@ -240,7 +252,7 @@ def find_related_tags(tag_name: str, user: User, doc_type: str | None) -> list[d
         doc_type: Optional document type to filter on.
 
     Returns:
-        A list of dictionaries containing tag names and their counts.
+        A list of RelatedTag dicts, each with the related tag name and its count.
     """
     es = get_elasticsearch_connection(host=settings.ELASTICSEARCH_ENDPOINT)
 
@@ -292,7 +304,7 @@ def find_related_tags(tag_name: str, user: User, doc_type: str | None) -> list[d
         .get("buckets", [])
     )
 
-    matches = []
+    matches: list[RelatedTag] = []
     for tag_result in buckets:
         if tag_result["key"] != tag_name:
             matches.append(

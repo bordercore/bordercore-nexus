@@ -241,6 +241,27 @@ def get_related_tags(request: HttpRequest) -> Response:
 
 
 def _tag_snapshot(tag: Tag, user: User) -> dict:
+    """Assemble the per-tag snapshot rendered by the Tag Curator page.
+
+    Gathers the tag's per-doctype object counts, its aliases, and the tags
+    that co-occur with it (via Elasticsearch). Backs both TagDetailView's
+    initial bootstrap and the snapshot API hit on each active-tag switch.
+
+    Args:
+        tag: The tag to summarize.
+        user: The owner whose aliases and related-tag results are scoped to.
+
+    Returns:
+        A dict with keys:
+            - "name": The tag name.
+            - "created": ISO date the tag was created.
+            - "user": The owner's username.
+            - "pinned": Whether the tag is pinned for this user.
+            - "meta": Whether the tag is a meta tag.
+            - "counts": Per-doctype dicts of {"label", "icon", "count"}.
+            - "aliases": List of {"uuid", "name"} alias dicts, name-sorted.
+            - "related": Related tags with their co-occurrence counts.
+    """
     counts = tag.get_related_counts().first() or {}
     aliases = [
         {"uuid": str(a.uuid), "name": a.name}

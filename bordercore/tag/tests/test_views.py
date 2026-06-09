@@ -73,8 +73,9 @@ def test_tag_add_alias(authenticated_client, tag):
     assert resp.status_code == 400
     assert resp.json()["detail"] == "Alias already exists"
 
+    # Adding an alias whose name collides with an existing tag is rejected.
     resp = client.post(url, {
-        "tag_name": tag_alias,
+        "tag_name": tag[0].name,
         "alias_name": tag[0].name
     })
 

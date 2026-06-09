@@ -29,8 +29,8 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             "--username",
-            help="Username to filter by (defaults to 'jerrell')",
-            default="jerrell"
+            required=True,
+            help="Username to filter by"
         )
         parser.add_argument(
             "--verbose",
