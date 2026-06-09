@@ -144,6 +144,27 @@ def test_detail_ajax_returns_json_with_expected_fields(reminder_client):
     assert "delete_url" in data
 
 
+def test_detail_ajax_formats_timestamps_compactly(reminder_client):
+    """Timestamps render as '8pm' (no minutes/space, no 'a.m.' periods)."""
+    import datetime
+
+    from django.utils import timezone as dj_tz
+
+    user, client = reminder_client
+    start = dj_tz.make_aware(
+        datetime.datetime(2026, 6, 9, 20, 0), dj_tz.get_current_timezone()
+    )
+    reminder = ReminderFactory(user=user, start_at=start)
+
+    url = reverse("reminder:detail-ajax", kwargs={"uuid": reminder.uuid})
+    resp = client.get(url)
+
+    assert resp.status_code == 200
+    start_str = resp.json()["start_at"]
+    assert start_str.endswith("8pm")
+    assert "a.m." not in start_str and "p.m." not in start_str
+
+
 def test_detail_ajax_other_user_returns_404(reminder_client):
     """GET detail-ajax for another user's reminder returns 404."""
     _, client = reminder_client

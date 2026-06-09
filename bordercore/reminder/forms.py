@@ -98,18 +98,18 @@ class ReminderForm(ModelForm):
                 days = json.loads(value)
             else:
                 days = [int(d.strip()) for d in value.split(",") if d.strip()]
-
-            # Validate each day is in valid range
-            valid_days = []
-            for day in days:
-                if isinstance(day, int) and 0 <= day <= 6:
-                    valid_days.append(day)
-                else:
-                    raise ValidationError(f"Invalid day of week: {day}")
-
-            return sorted(set(valid_days))
         except (json.JSONDecodeError, ValueError) as e:
             raise ValidationError(f"Invalid days of week format: {e}")
+
+        # Validate each day is in valid range
+        valid_days = []
+        for day in days:
+            if isinstance(day, int) and 0 <= day <= 6:
+                valid_days.append(day)
+            else:
+                raise ValidationError(f"Invalid day of week: {day}")
+
+        return sorted(set(valid_days))
 
     def clean_days_of_month_input(self) -> list[int]:
         """Parse and validate days_of_month_input field.
@@ -127,18 +127,18 @@ class ReminderForm(ModelForm):
                 days = json.loads(value)
             else:
                 days = [int(d.strip()) for d in value.split(",") if d.strip()]
-
-            # Validate each day is in valid range
-            valid_days = []
-            for day in days:
-                if isinstance(day, int) and 1 <= day <= 31:
-                    valid_days.append(day)
-                else:
-                    raise ValidationError(f"Invalid day of month: {day}")
-
-            return sorted(set(valid_days))
         except (json.JSONDecodeError, ValueError) as e:
-            raise ValidationError(f"Invalid days of month format: {e}"                )
+            raise ValidationError(f"Invalid days of month format: {e}")
+
+        # Validate each day is in valid range
+        valid_days = []
+        for day in days:
+            if isinstance(day, int) and 1 <= day <= 31:
+                valid_days.append(day)
+            else:
+                raise ValidationError(f"Invalid day of month: {day}")
+
+        return sorted(set(valid_days))
 
     def clean(self) -> dict[str, Any]:
         """Validate the form based on schedule_type.

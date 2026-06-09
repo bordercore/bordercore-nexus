@@ -81,6 +81,16 @@ class ReminderDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView
         return context
 
 
+def _get_user_reminder(request: Request, uuid: str) -> Reminder:
+    """Return the request user's reminder by uuid, or raise 404.
+
+    Shared owner-scoped lookup for the reminder AJAX views so the scoping
+    stays consistent across them.
+    """
+    user = cast(User, request.user)
+    return get_object_or_404(Reminder, uuid=uuid, user=user)
+
+
 class ReminderDetailAjaxView(APIView):
     """Serve reminder detail as JSON for AJAX requests.
 
@@ -98,17 +108,23 @@ class ReminderDetailAjaxView(APIView):
         Returns:
             Response containing reminder data.
         """
-        user = cast(User, request.user)
-        reminder = get_object_or_404(Reminder, uuid=uuid, user=user)
+        reminder = _get_user_reminder(request, uuid)
 
         def format_time_with_ampm(dt: datetime | None) -> str | None:
-            """Format datetime as 'M d, Y 8pm' or 'M d, Y 3:30am'."""
+            """Format datetime as 'M d, Y 8pm' or 'M d, Y 3:30am'.
+
+            The minutes are dropped when zero, and the meridiem is lowercase
+            with no separating space.
+            """
             if not dt:
                 return None
             local_dt = timezone.localtime(dt)
-            formatted = dateformat.format(local_dt, "M d, Y g:i a")
-            formatted = formatted.replace(" :00 ", " ").replace(" :00", "").replace(" am", "am").replace(" pm", "pm")
-            return formatted
+            date_part = dateformat.format(local_dt, "M d, Y")
+            hour12 = local_dt.hour % 12 or 12
+            meridiem = "am" if local_dt.hour < 12 else "pm"
+            if local_dt.minute == 0:
+                return f"{date_part} {hour12}{meridiem}"
+            return f"{date_part} {hour12}:{local_dt.minute:02d}{meridiem}"
 
         data = {
             "uuid": str(reminder.uuid),
@@ -157,8 +173,7 @@ class ReminderFormAjaxView(APIView):
         Returns:
             Response containing reminder form data.
         """
-        user = cast(User, request.user)
-        reminder = get_object_or_404(Reminder, uuid=uuid, user=user)
+        reminder = _get_user_reminder(request, uuid)
         # Format start_at for datetime-local input (ISO format)
         start_at_iso = reminder.start_at.isoformat() if reminder.start_at else None
         # Format trigger_time for time input (HH:MM format)
@@ -237,8 +252,7 @@ class ReminderUpdateAjaxView(APIView):
             success, or HTTP 400 with ``{"errors": {...}}`` on validation
             failure.
         """
-        user = cast(User, request.user)
-        reminder = get_object_or_404(Reminder, uuid=uuid, user=user)
+        reminder = _get_user_reminder(request, uuid)
         form = ReminderForm(request.POST, instance=reminder)
         if not form.is_valid():
             errors: dict[str, Any] = {
@@ -269,8 +283,7 @@ class ReminderDeleteAjaxView(APIView):
             Response with ``{"success": True, "redirect_url": ...}`` on
             success.
         """
-        user = cast(User, request.user)
-        reminder = get_object_or_404(Reminder, uuid=uuid, user=user)
+        reminder = _get_user_reminder(request, uuid)
         reminder.delete()
         return Response({"success": True, "redirect_url": reverse("reminder:app")})
 
