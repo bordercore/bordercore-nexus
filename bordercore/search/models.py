@@ -47,14 +47,15 @@ class RecentSearch(TimeStampedModel):
         return self.search_text or ""
 
     @classmethod
-    def renumber_for_user(cls, user: User) -> None:
+    def renumber_for_user(cls, user: User | int) -> None:
         """Renumber sort_order values for a user to be sequential from 1 to count.
 
         This method ensures that all RecentSearch entries for a given user have
         sequential sort_order values starting from 1, with no gaps.
 
         Args:
-            user: The user whose RecentSearch entries should be renumbered.
+            user: The user (or user id) whose RecentSearch entries should be
+                renumbered.
         """
         searches = list(
             cls.objects.filter(user=user)
@@ -73,8 +74,9 @@ class RecentSearch(TimeStampedModel):
         """
         user_ids = cls.objects.values_list("user", flat=True).distinct()
         for user_id in user_ids:
-            user = User.objects.get(id=user_id)
-            cls.renumber_for_user(user)
+            # filter(user=...) accepts a pk, so renumber by id without fetching
+            # each User.
+            cls.renumber_for_user(user_id)
 
     @classmethod
     def add(cls, user: User, search_text: str) -> None:

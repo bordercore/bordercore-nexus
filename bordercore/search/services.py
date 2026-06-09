@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import math
+import re
 from typing import Any, cast
 from uuid import UUID
 
@@ -309,7 +310,15 @@ def _filter_results(results: list[dict[str, Any]], search_term: str | None) -> N
             match["highlight"]["attachment_content"] = match["highlight"].pop("attachment.content")
 
         if search_term and "contents" in match["source"]:
-            match["source"]["contents"] = match["source"]["contents"].replace(search_term, f"*{search_term}*")
+            # Highlight matches case-insensitively and on word boundaries so we
+            # don't miss differently-cased hits or italicize a fragment inside a
+            # larger word. The matched text's original case is preserved.
+            # (ES highlight fragments would handle tokenized/multi-term queries
+            # more precisely, but this avoids corrupting the displayed content.)
+            pattern = re.compile(rf"\b{re.escape(search_term)}\b", re.IGNORECASE)
+            match["source"]["contents"] = pattern.sub(
+                lambda m: f"*{m.group(0)}*", match["source"]["contents"]
+            )
 
         if doctype == "drill":
             match["source"]["question"] = nh3.clean(markdown.markdown(match["source"]["question"]))

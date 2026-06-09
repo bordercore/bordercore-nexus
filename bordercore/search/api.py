@@ -18,7 +18,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from django.contrib.auth.models import User
-from django.http import HttpRequest, JsonResponse
+from django.http import HttpRequest
 
 from music.models import Album
 from tag.services import get_tag_aliases, get_tag_link
@@ -390,7 +390,7 @@ def search_names_es(user: User, search_term: str, doctypes: list[str]) -> list[d
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
-def search_music(request: Request) -> JsonResponse:
+def search_music(request: Request) -> Response:
     """API endpoint for searching music (songs, artists, albums).
 
     Performs music-specific searches with support for filtering by artist,
@@ -494,7 +494,7 @@ def search_music(request: Request) -> JsonResponse:
 
     results = execute_search(search_object)
 
-    return JsonResponse(
+    return Response(
         [
             {
                 "artist": x["_source"]["artist"],
@@ -503,8 +503,7 @@ def search_music(request: Request) -> JsonResponse:
                 "track": x["_source"].get("track", None)
             }
             for x in results["hits"]["hits"]
-        ],
-        safe=False
+        ]
     )
 
 

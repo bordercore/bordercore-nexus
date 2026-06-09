@@ -9,13 +9,9 @@ and autocomplete functionality.
 from __future__ import annotations
 
 import json
-import math
 import operator
 from typing import Any, cast
 from urllib.parse import urlparse
-
-import markdown
-import nh3
 
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -24,8 +20,8 @@ from django.urls import reverse
 from django.views.generic.list import ListView
 
 from blob.models import Blob
-from lib.time_utils import get_date_from_pattern, get_relative_date
-from lib.util import favicon_url, get_pagination_range, truncate
+from lib.time_utils import get_date_from_pattern
+from lib.util import favicon_url, truncate
 from tag.models import Tag
 
 from .api import (search_music, search_names, search_names_es,
@@ -64,123 +60,6 @@ class SearchListView(LoginRequiredMixin, ListView):
     # Top-bar breadcrumb leaf shown once a search has been performed.
     # Subclasses override (e.g. "semantic") to label their mode.
     mode_leaf = "term"
-
-    def build_pagination_dict(self, page: int, num_results: int) -> dict[str, Any]:
-        """Build pagination data dictionary for search results.
-
-        Args:
-            page: The current page number (1-indexed).
-            num_results: Total number of search results.
-
-        Returns:
-            A dictionary containing pagination information:
-                - page_number: Current page number
-                - num_pages: Total number of pages
-                - total_results: Total number of results
-                - range: List of page numbers to display
-                - has_previous: Whether there is a previous page
-                - has_next: Whether there is a next page
-                - previous_page_number: Previous page number
-                - next_page_number: Next page number
-            Returns empty dict if num_results is 0.
-        """
-
-        if num_results == 0:
-            return {}
-
-        num_pages = int(math.ceil(num_results / self.RESULT_COUNT_PER_PAGE))
-        pagination_window = 2
-
-        paginator = {
-            "page_number": page,
-            "num_pages": num_pages,
-            "total_results": num_results,
-            "range": get_pagination_range(
-                page,
-                num_pages,
-                pagination_window
-            )
-        }
-
-        paginator["has_previous"] = page != 1
-        paginator["has_next"] = page != paginator["num_pages"]
-
-        paginator["previous_page_number"] = page - 1
-        paginator["next_page_number"] = page + 1
-
-        return paginator
-
-    def get_aggregations(self, object_list_dict: dict[str, Any], aggregation: str) -> list[dict[str, Any]]:
-        """Extract aggregation data from Elasticsearch results.
-
-        Args:
-            object_list_dict: Dictionary containing Elasticsearch search results
-                with an "aggregations" key containing aggregation data.
-            aggregation: The name of the aggregation to extract from the
-                aggregations dictionary.
-
-        Returns:
-            A list of dictionaries, each containing:
-                - doctype: The aggregation bucket key (typically a document type name)
-                - count: The document count for that bucket (doc_count)
-        """
-        aggregations = []
-        for x in object_list_dict["aggregations"][aggregation]["buckets"]:
-            aggregations.append({"doctype": x["key"], "count": x["doc_count"]})
-        return aggregations
-
-    def filter_results(self, results: list[dict[str, Any]], search_term: str | None) -> None:
-        """Process and filter search results for display.
-
-        This method modifies the results in-place, adding computed fields
-        like URLs, cover images, formatted dates, and markdown rendering
-        for certain document types.
-
-        Args:
-            results: List of search result dictionaries from Elasticsearch.
-            search_term: The search query string, or None if no text search
-                was performed.
-        """
-
-        for match in results:
-            # Django templates don't support variables with underscores or dots, so
-            #  we need to rename a couple of fields
-            match["source"] = match.pop("_source")
-            match["score"] = match.pop("_score")
-
-            # last_modified and doctype may be absent from a document (ES omits
-            # fields that aren't set), so read them with .get() to avoid a
-            # KeyError that would surface as a 500 on the search endpoint.
-            doctype = match["source"].get("doctype")
-            match["source"]["creators"] = get_creators(match["source"])
-            match["source"]["date"] = get_date_from_pattern(match["source"].get("date", None))
-            match["source"]["last_modified"] = get_relative_date(match["source"].get("last_modified"))
-            match["source"]["url"] = get_link(doctype, match["source"])
-
-            cover_url = get_cover_url(
-                doctype,
-                match["source"].get("uuid", ""),
-                match["source"].get("filename", ""),
-            )
-            if cover_url:
-                match["source"]["cover_url"] = cover_url
-
-            match["tags_json"] = json.dumps(match["source"]["tags"]) \
-                if "tags" in match["source"] \
-                   else "[]"
-
-            if "highlight" in match and "attachment.content" in match["highlight"]:
-                match["highlight"]["attachment_content"] = match["highlight"].pop("attachment.content")
-
-            # Highlight matched terms using markdown italicized text when searching
-            if search_term and "contents" in match["source"]:
-                match["source"]["contents"] = match["source"]["contents"].replace(search_term, f"*{search_term}*")
-
-            # Display markdown for drill questions and todo items
-            if doctype == "drill":
-                match["source"]["question"] = nh3.clean(markdown.markdown(match["source"]["question"]))
-            if doctype == "todo":
-                match["source"]["name"] = nh3.clean(markdown.markdown(match["source"]["name"]))
 
     def get_queryset(self) -> Any:
         """Build and execute the Elasticsearch query via perform_search().

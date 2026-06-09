@@ -190,6 +190,18 @@ class TestFilterResults:
         _filter_results([hit], "world")
         assert "*world*" in hit["source"]["contents"]
 
+    def test_search_term_highlight_is_case_insensitive(self):
+        hit = _make_hit(contents="Hello World")
+        _filter_results([hit], "world")
+        # Matches case-insensitively while preserving the matched text's case.
+        assert "*World*" in hit["source"]["contents"]
+
+    def test_search_term_highlight_is_word_bounded(self):
+        hit = _make_hit(contents="category")
+        _filter_results([hit], "cat")
+        # "cat" inside "category" must not be italicized.
+        assert "*" not in hit["source"]["contents"]
+
     def test_drill_question_rendered_as_markdown(self):
         hit = _make_hit(doctype="drill", question="**bold**")
         _filter_results([hit], None)
