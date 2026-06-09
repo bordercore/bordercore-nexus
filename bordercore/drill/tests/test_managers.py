@@ -208,6 +208,31 @@ def test_batch_tag_progress_includes_todo_and_dt():
     assert "progress" in row and "url" in row and "last_reviewed" in row
 
 
+def test_batch_tag_progress_excludes_disabled_by_default():
+    """Disabled questions are left out of count/todo unless include_disabled."""
+    user = UserFactory()
+    tag = TagFactory(user=user, name="mixed")
+    # One enabled-and-due question and one disabled-and-due question.
+    QuestionFactory(
+        user=user, last_reviewed=timezone.now() - timedelta(days=400)
+    ).tags.add(tag)
+    QuestionFactory(
+        user=user,
+        last_reviewed=timezone.now() - timedelta(days=400),
+        is_disabled=True,
+    ).tags.add(tag)
+
+    default_row = Question.objects._batch_tag_progress(user, ["mixed"])[0]
+    assert default_row["count"] == 1
+    assert default_row["todo"] == 1
+
+    all_row = Question.objects._batch_tag_progress(
+        user, ["mixed"], include_disabled=True
+    )[0]
+    assert all_row["count"] == 2
+    assert all_row["todo"] == 2
+
+
 def test_responses_by_kind_counts_each_response():
     user = UserFactory()
     q = QuestionFactory(user=user)

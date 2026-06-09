@@ -58,9 +58,9 @@ class DrillManager(models.Manager):
         excluded. Results are sorted by the most recent review date ascending
         (oldest-recent-review first), so tags overdue the longest appear first.
 
-        Note: progress/count numbers in each row come from
-        ``_batch_tag_progress`` and currently include disabled questions in
-        their counts (matching the rest of the manager's behaviour).
+        Progress/count numbers in each row come from ``_batch_tag_progress``
+        and exclude disabled questions, so they reflect only the study-eligible
+        cards.
 
         Args:
             user: The user whose tags to inspect.
@@ -199,7 +199,8 @@ class DrillManager(models.Manager):
         tag_names = list(
             Tag.objects.filter(id__in=tag_ids).distinct().values_list("name", flat=True)
         )
-        return self._batch_tag_progress(user, tag_names)
+        # Disabled tags are defined by their disabled questions, so count those.
+        return self._batch_tag_progress(user, tag_names, include_disabled=True)
 
     def recent_tags(self, user: User) -> Any:
         """Get the tags most recently attached to questions.
@@ -443,13 +444,17 @@ class DrillManager(models.Manager):
         return counts
 
     def _batch_tag_progress(
-        self, user: User, tag_names: list[str]
+        self, user: User, tag_names: list[str], include_disabled: bool = False
     ) -> list[dict[str, Any]]:
         """Compute progress for multiple tags in bulk.
 
         Args:
             user: The user whose questions to inspect.
             tag_names: List of tag names to compute progress for.
+            include_disabled: When False (the default), disabled questions are
+                excluded from the count/todo/last-reviewed numbers so progress
+                reflects only the study-eligible set. Pass True to count every
+                question (used by ``get_disabled_tags``).
 
         Returns:
             List of tag progress dicts in the same order as tag_names.
@@ -464,20 +469,24 @@ class DrillManager(models.Manager):
             question__interval__lte=now - F("question__last_reviewed")  # type: ignore[operator]
         ) | Q(question__last_reviewed__isnull=True)
 
+        base_filter = Q(question__user=user)
+        if not include_disabled:
+            base_filter &= Q(question__is_disabled=False)
+
         stats = (
             Tag.objects.filter(user=user, name__in=tag_names)
             .annotate(
                 q_count=Count(
                     "question",
-                    filter=Q(question__user=user),
+                    filter=base_filter,
                 ),
                 q_todo=Count(
                     "question",
-                    filter=Q(question__user=user) & due_filter,
+                    filter=base_filter & due_filter,
                 ),
                 q_last_reviewed=Max(
                     "question__last_reviewed",
-                    filter=Q(question__user=user),
+                    filter=base_filter,
                 ),
             )
         )

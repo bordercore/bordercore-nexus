@@ -335,9 +335,9 @@ class Question(ElasticsearchMixin, TimeStampedModel):
             object_uuid: The UUID (as a string) of either a Blob or Bookmark.
 
         Returns:
-            A dict with:
-            - "status": "OK" on success, "ERROR" otherwise.
-            - "message": Present only on error (e.g. already related, not found).
+            An empty dict on success. On failure, a dict with a single
+            "detail" key describing the reason (the related object was not
+            found, or it is already related).
         """
         blob_instance: Blob | None = Blob.objects.filter(
             uuid=object_uuid

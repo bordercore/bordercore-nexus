@@ -514,9 +514,10 @@ class QuestionUpdateView(LoginRequiredMixin, UserScopedQuerysetMixin, FormReques
         Returns:
             HTTP redirect to the success URL.
         """
-        question = form.instance
-        question.tags.set(form.cleaned_data["tags"])
+        # 'tags' is in QuestionForm.Meta.fields, so form.save() persists the
+        # tag m2m via save_m2m() (mirroring QuestionCreateView).
         self.object = form.save()
+        question = self.object
 
         # Index the question and answer in Elasticsearch
         question.index_question()

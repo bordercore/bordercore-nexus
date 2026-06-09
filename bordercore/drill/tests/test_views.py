@@ -124,6 +124,31 @@ def test_drill_update(authenticated_client, question):
 
     assert resp.status_code == 302
 
+    # form.save() must persist the tag m2m on its own (no explicit tags.set()).
+    updated = Question.objects.get(uuid=question[0].uuid)
+    assert updated.question == "Sample Question Changed"
+    assert list(updated.tags.values_list("name", flat=True)) == ["django"]
+
+
+def test_question_form_rejects_tag_with_slash(authenticated_client):
+    """A tag name containing '/' (reserved for hierarchy) fails validation."""
+    from django.test import RequestFactory
+
+    from drill.forms import QuestionForm
+
+    user, _ = authenticated_client()
+    TagFactory(user=user, name="foo/bar")
+
+    request = RequestFactory().post("/")
+    request.user = user
+    form = QuestionForm(
+        {"question": "Q", "answer": "A", "tags": "foo/bar"},
+        request=request,
+    )
+
+    assert not form.is_valid()
+    assert "tags" in form.errors
+
 
 def test_drill_start_study_session(authenticated_client, question):
 
