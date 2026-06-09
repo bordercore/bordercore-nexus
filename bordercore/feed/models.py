@@ -94,6 +94,11 @@ class Feed(TimeStampedModel):
                 try:
                     title_raw = getattr(entry, "title", "") or "No Title"
                     link_raw = getattr(entry, "link", "") or ""
+                    # Unescape twice on purpose: some feeds double-encode HTML
+                    # entities in titles (e.g. WordPress emits "&amp;amp;"), and
+                    # feedparser only resolves one layer, so a single pass would
+                    # leave a literal "&amp;" in the title. A second pass is a
+                    # harmless no-op for normally-encoded titles.
                     title_clean = html.unescape(html.unescape(title_raw.replace("\n", "")))
                     link_clean = html.unescape(link_raw)
                     if link_clean in seen_links:

@@ -119,6 +119,34 @@ def test_update_preserves_existing_items_and_user_state(authenticated_client, fe
     assert UserFeedItemState.objects.filter(user=user, feed_item_id=first_pass_ids[0]).exists()
 
 
+@responses.activate
+def test_update_decodes_double_encoded_title(authenticated_client, feed):
+    """Titles from feeds that double-encode entities are fully decoded.
+
+    The XML source carries a triple-escaped ampersand; the XML parser resolves
+    one layer, leaving feedparser with "&amp;amp;". The two html.unescape passes
+    in Feed.update() must collapse that to a single literal "&" (a single pass
+    would leave a visible "&amp;").
+    """
+    user, _ = authenticated_client()
+
+    feed[0].feeditem_set.all().delete()
+
+    xml = (
+        '<?xml version="1.0"?>'
+        '<rss version="2.0"><channel><title>t</title>'
+        "<item><title>Tom &amp;amp;amp; Jerry</title>"
+        "<link>http://example.com/double-encoded</link></item>"
+        "</channel></rss>"
+    )
+    responses.add(responses.GET, feed[0].url, body=xml)
+
+    feed[0].update()
+
+    item = FeedItem.objects.get(feed=feed[0], link="http://example.com/double-encoded")
+    assert item.title == "Tom & Jerry"
+
+
 def test_feeditem_unique_together(authenticated_client, feed):
     """A second FeedItem with the same (feed, link) raises IntegrityError."""
     authenticated_client()
