@@ -101,12 +101,31 @@ class BookmarkManager(models.Manager["Bookmark"]):
         return result["hostname"] if result else None
 
     class TagCoverage(TypedDict):
+        """Summary of how many of a user's bookmarks carry tags.
+
+        Attributes:
+            total: Total number of bookmarks owned by the user.
+            tagged: Number of bookmarks that have at least one tag.
+            untagged: Number of "bare" bookmarks with no tags, blobs, or collections.
+            percentage: Tagged bookmarks as a whole-number percentage of total
+                (0 when the user has no bookmarks).
+        """
+
         total: int
         tagged: int
         untagged: int
         percentage: int
 
     def tag_coverage(self, user: User) -> "BookmarkManager.TagCoverage":
+        """Return tag-coverage statistics for a user's bookmarks.
+
+        Args:
+            user: The user whose bookmarks to summarize.
+
+        Returns:
+            A TagCoverage dict with total/tagged/untagged counts and the tagged
+            percentage. The percentage is 0 when the user has no bookmarks.
+        """
         total = self.filter(user=user).count()
         untagged = self._bare_bookmarks_qs(user=user, sort=False).count()
         tagged = total - untagged

@@ -11,7 +11,13 @@ from django import urls
 
 from bookmark.models import Bookmark
 from bookmark.tests.factories import BookmarkFactory
+from tag.models import TagBookmark
 from tag.tests.factories import TagFactory
+
+_LIST_FIELDS = (
+    "uuid", "created", "createdYear", "url", "name", "last_response_code",
+    "note", "favicon_url", "is_pinned", "tags", "thumbnail_url", "video_duration",
+)
 
 pytestmark = [pytest.mark.django_db]
 
@@ -114,6 +120,47 @@ def test_bookmark_create(monkeypatch_bookmark, authenticated_client, bookmark):
     assert resp.status_code == 302
 
 
+def test_create_bookmark_api(monkeypatch_bookmark, authenticated_client):
+    """The JSON create API saves a bookmark with its tags and returns its ids."""
+    user, client = authenticated_client()
+    tag = TagFactory(user=user)
+
+    url = urls.reverse("bookmark:api-create")
+    resp = client.post(url, {
+        "url": "https://www.bordercore.com/api-bookmark",
+        "name": "API Bookmark",
+        "tags": tag.name,
+        "importance": "1",
+    })
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["name"] == "API Bookmark"
+
+    created = Bookmark.objects.get(uuid=body["uuid"])
+    assert created.user == user
+    assert list(created.tags.values_list("name", flat=True)) == [tag.name]
+    # The shared save path keeps the TagBookmark tracking row in sync.
+    assert TagBookmark.objects.filter(bookmark=created, tag=tag).count() == 1
+
+
+def test_create_bookmark_api_duplicate_url(monkeypatch_bookmark, authenticated_client):
+    """Posting a duplicate URL to the create API returns a 400 with a detail."""
+    user, client = authenticated_client()
+    BookmarkFactory(user=user, url="https://www.bordercore.com/dupe")
+
+    url = urls.reverse("bookmark:api-create")
+    resp = client.post(url, {
+        "url": "https://www.bordercore.com/dupe",
+        "name": "Dupe",
+        "tags": "",
+        "importance": "1",
+    })
+
+    assert resp.status_code == 400
+    assert "detail" in resp.json()
+
+
 def test_bookmark_delete(monkeypatch_bookmark, authenticated_client, bookmark):
     """Deleting a bookmark redirects to the overview."""
     _, client = authenticated_client()
@@ -137,6 +184,20 @@ def test_bookmark_list(authenticated_client, bookmark):
     resp = client.get(url)
 
     assert resp.status_code == 200
+
+
+def test_bookmark_list_serializes_expected_fields(authenticated_client, bookmark):
+    """Each bookmark in the list response carries the full field set."""
+    _, client = authenticated_client()
+
+    url = urls.reverse("bookmark:get_bookmarks_by_page", kwargs={"page_number": 1})
+    resp = client.get(url)
+
+    assert resp.status_code == 200
+    items = resp.json()["bookmarks"]
+    assert items
+    for key in _LIST_FIELDS:
+        assert key in items[0]
 
 
 def test_bookmark_snarf_link(monkeypatch_bookmark, authenticated_client, bookmark):
@@ -290,6 +351,20 @@ def test_bookmark_get_bookmarks_by_tag(authenticated_client, bookmark):
     resp = client.get(url)
 
     assert resp.status_code == 200
+
+
+def test_bookmark_list_by_tag_serializes_expected_fields(authenticated_client, bookmark):
+    """The tag-filtered list response carries the same field set as the main list."""
+    _, client = authenticated_client()
+
+    url = urls.reverse("bookmark:get_bookmarks_by_tag", kwargs={"tag_filter": "django"})
+    resp = client.get(url)
+
+    assert resp.status_code == 200
+    items = resp.json()["bookmarks"]
+    assert items
+    for key in _LIST_FIELDS:
+        assert key in items[0]
 
 
 def test_bookmark_sort_pinned_tags(authenticated_client, sort_order_user_tag, tag):

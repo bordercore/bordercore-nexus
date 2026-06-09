@@ -245,7 +245,10 @@ class Bookmark(ElasticsearchMixin, TimeStampedModel):
                     self.data["video_duration"] = duration_secs
                 else:
                     self.data = {"video_duration": duration_secs}
-                self.save()
+                # Persist only the duration. A bare save() here would re-run the
+                # full save() body (and its cache invalidation) for one logical
+                # create; update_fields scopes this to a single-column UPDATE.
+                self.save(update_fields=["data"])
             except KeyError as e:
                 log.warning("Can't parse duration: %s", e)
 

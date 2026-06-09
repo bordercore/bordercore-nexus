@@ -1,9 +1,48 @@
+from unittest.mock import patch
+
 import pytest
 
 from bookmark.models import Bookmark
 from bookmark.tests.factories import BookmarkFactory
 
 pytestmark = [pytest.mark.django_db]
+
+
+class _FakeResponse:
+    """Minimal stand-in for a requests.Response in YouTube cover tests."""
+
+    def __init__(self, data=None, content=b""):
+        self._data = data
+        self.content = content
+
+    def json(self):
+        return self._data
+
+
+def test_generate_youtube_cover_image_persists_duration(monkeypatch_bookmark, authenticated_client):
+    """The YouTube cover path stores the video duration via a targeted save.
+
+    generate_youtube_cover_image() calls save(update_fields=["data"]) to persist
+    the duration without re-running the full save() body during a single create.
+    """
+    user, _ = authenticated_client()
+    bookmark = BookmarkFactory(user=user, url="https://www.youtube.com/watch?v=abc123")
+
+    video_payload = {
+        "items": [{
+            "contentDetails": {"duration": "PT5M23S"},
+            "snippet": {"thumbnails": {"medium": {"url": "https://img.example/thumb.jpg"}}},
+        }]
+    }
+    responses = [_FakeResponse(data=video_payload), _FakeResponse(content=b"imgbytes")]
+
+    with patch("bookmark.models.requests.get", side_effect=responses), \
+         patch("bookmark.services.upload_youtube_thumbnail") as mock_upload:
+        bookmark.generate_youtube_cover_image()
+
+    bookmark.refresh_from_db()
+    assert bookmark.data["video_duration"] == 323
+    mock_upload.assert_called_once()
 
 
 def test_get_tags(bookmark):

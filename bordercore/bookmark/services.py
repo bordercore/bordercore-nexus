@@ -5,16 +5,45 @@ This module provides service functions for handling bookmark-related operations
 with caching support and AWS interactions.
 """
 
+from collections.abc import Iterable
 from typing import Any
 
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.cache import cache
+from django.db import transaction
 from django.urls import reverse
 
 from bookmark.models import Bookmark
 from lib.aws import lambda_invoke_async, s3_delete_object, s3_put_object, sns_publish
 from lib.constants import S3_CACHE_MAX_AGE_SECONDS
+from tag.models import Tag, TagBookmark
+
+
+def save_bookmark_with_tags(bookmark: Bookmark, tags: Iterable[Tag]) -> None:
+    """Persist a bookmark, replace its tags, then index it and fetch its favicon.
+
+    This is the shared post-validation save path for the bookmark create/update
+    form views and the JSON create API, keeping their behaviour from drifting.
+    Within a single transaction it saves the bookmark, removes any existing tag
+    associations (including the TagBookmark tracking rows, which the m2m_changed
+    signal does not clean up on removal), and re-adds the supplied tags. After
+    the transaction commits the bookmark is reindexed in Elasticsearch and an
+    asynchronous favicon fetch is triggered.
+
+    Args:
+        bookmark: The Bookmark to save. Its ``user`` must already be set.
+        tags: The tags to associate with the bookmark, replacing any existing ones.
+    """
+    with transaction.atomic():
+        bookmark.save()
+        TagBookmark.objects.filter(bookmark=bookmark).delete()
+        bookmark.tags.clear()
+        for tag in tags:
+            bookmark.tags.add(tag)
+
+    bookmark.index_bookmark()
+    bookmark.snarf_favicon()
 
 
 def get_recent_bookmarks(user: User, limit: int = 10) -> list[dict[str, Any]]:

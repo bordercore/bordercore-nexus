@@ -22,7 +22,6 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.core.paginator import Paginator
-from django.db import transaction
 from django.db.models import Count, QuerySet
 from django.forms import BaseModelForm
 from django.http import (Http404, HttpRequest, HttpResponse,
@@ -38,6 +37,7 @@ from accounts.models import UserTag
 from blob.models import Blob
 from bookmark.forms import BookmarkForm
 from bookmark.models import Bookmark, FAVICON_URL_RE
+from bookmark.services import save_bookmark_with_tags
 from lib.decorators import validate_post_data
 from lib.exceptions import BookmarkSearchDeleteError
 from lib.mixins import FormRequestMixin, UserScopedQuerysetMixin, get_user_object_or_404
@@ -68,6 +68,37 @@ def _favicon_url_if_exists(url: str) -> str | None:
     return f"https://www.bordercore.com/favicons/{domain}.ico"
 
 BOOKMARKS_PER_PAGE = 50
+
+
+def _serialize_bookmark(bookmark: Bookmark, tags: list[str], note: str | None) -> dict[str, Any]:
+    """Build the JSON dict for a single bookmark in list responses.
+
+    Shared by ``BookmarkListView`` (plain Bookmark rows) and
+    ``BookmarkListTagView`` (TagBookmark rows), which differ only in where the
+    tag list and the displayed note come from.
+
+    Args:
+        bookmark: The Bookmark instance to serialize.
+        tags: The tag names to attach to the serialized bookmark.
+        note: The note to display (the per-tag note for tag-filtered lists).
+
+    Returns:
+        A dict of bookmark fields ready for the JSON response.
+    """
+    return {
+        "uuid": bookmark.uuid,
+        "created": bookmark.created.strftime("%B %d, %Y"),
+        "createdYear": bookmark.created.strftime("%Y"),
+        "url": bookmark.url,
+        "name": re.sub("[\n\r]", "", bookmark.name),
+        "last_response_code": bookmark.last_response_code,
+        "note": note,
+        "favicon_url": bookmark.get_favicon_img_tag(size=16),
+        "is_pinned": bookmark.is_pinned,
+        "tags": tags,
+        "thumbnail_url": bookmark.thumbnail_url,
+        "video_duration": bookmark.video_duration,
+    }
 
 
 @login_required
@@ -125,22 +156,7 @@ class BookmarkFormValidMixin(ModelFormMixin):
 
         new_object = bookmark.pk is None
 
-        with transaction.atomic():
-            bookmark.save()
-
-            for tag in bookmark.tags.all():
-                s = get_object_or_404(TagBookmark, tag=tag, bookmark=bookmark)
-                s.delete()
-
-            # Delete all existing tags
-            bookmark.tags.clear()
-
-            # Then add the tags specified in the form
-            for tag in form.cleaned_data["tags"]:
-                bookmark.tags.add(tag)
-
-        bookmark.index_bookmark()
-        bookmark.snarf_favicon()
+        save_bookmark_with_tags(bookmark, form.cleaned_data["tags"])
 
         message = "Bookmark Created" if new_object else "Bookmark Edited"
         messages.add_message(self.request, messages.INFO, message, extra_tags="noAutoHide")
@@ -222,9 +238,10 @@ def create_bookmark(request: HttpRequest) -> Response:
     """Create a bookmark via JSON API.
 
     Reuses ``BookmarkForm`` for validation (duplicate-URL check, tag handling)
-    and the same post-save logic as ``BookmarkFormValidMixin`` (clear/add tags,
-    index, fetch favicon). Returns the new bookmark's identifying fields so
-    the caller can update list state without a page reload.
+    and the shared ``save_bookmark_with_tags`` save path (clear/add tags, index,
+    fetch favicon), the same one ``BookmarkFormValidMixin`` uses. Returns the new
+    bookmark's identifying fields so the caller can update list state without a
+    page reload.
 
     POST fields:
         - url: bookmark URL
@@ -255,16 +272,9 @@ def create_bookmark(request: HttpRequest) -> Response:
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    with transaction.atomic():
-        bookmark = form.save(commit=False)
-        bookmark.user = user
-        bookmark.save()
-        bookmark.tags.clear()
-        for tag in form.cleaned_data["tags"]:
-            bookmark.tags.add(tag)
-
-    bookmark.index_bookmark()
-    bookmark.snarf_favicon()
+    bookmark = form.save(commit=False)
+    bookmark.user = user
+    save_bookmark_with_tags(bookmark, form.cleaned_data["tags"])
 
     return Response({
         "uuid": str(bookmark.uuid),
@@ -514,25 +524,10 @@ class BookmarkListView(APIView):
             if queryset.has_previous():
                 pagination["previous_page_number"] = queryset.previous_page_number()
 
-        bookmarks = []
-
-        for x in queryset:
-            bookmarks.append(
-                {
-                    "uuid": x.uuid,
-                    "created": x.created.strftime("%B %d, %Y"),
-                    "createdYear": x.created.strftime("%Y"),
-                    "url": x.url,
-                    "name": re.sub("[\n\r]", "", x.name),
-                    "last_response_code": x.last_response_code,
-                    "note": x.note,
-                    "favicon_url": x.get_favicon_img_tag(size=16),
-                    "is_pinned": x.is_pinned,
-                    "tags": [tag.name for tag in x.tags.all()],
-                    "thumbnail_url": x.thumbnail_url,
-                    "video_duration": x.video_duration
-                }
-            )
+        bookmarks = [
+            _serialize_bookmark(x, [tag.name for tag in x.tags.all()], x.note)
+            for x in queryset
+        ]
 
         return Response(
             {
@@ -571,25 +566,11 @@ class BookmarkListTagView(BookmarkListView):
             "num_pages": 1
         }
 
-        bookmarks = []
-
-        for x in queryset:
-            bookmarks.append(
-                {
-                    "uuid": x.bookmark.uuid,
-                    "created": x.bookmark.created.strftime("%B %d, %Y"),
-                    "createdYear": x.bookmark.created.strftime("%Y"),
-                    "url": x.bookmark.url,
-                    "name": re.sub("[\n\r]", "", x.bookmark.name),
-                    "last_response_code": x.bookmark.last_response_code,
-                    "note": x.note,
-                    "favicon_url": x.bookmark.get_favicon_img_tag(size=16),
-                    "is_pinned": x.bookmark.is_pinned,
-                    "tags": getattr(x, "tags", []),  # tags is an annotated field from ArrayAgg
-                    "thumbnail_url": x.bookmark.thumbnail_url,
-                    "video_duration": x.bookmark.video_duration
-                }
-            )
+        # ``tags`` is an annotated field from ArrayAgg on the TagBookmark row.
+        bookmarks = [
+            _serialize_bookmark(x.bookmark, getattr(x, "tags", []), x.note)
+            for x in queryset
+        ]
 
         return Response(
             {
@@ -775,11 +756,12 @@ def add_note(request: HttpRequest) -> Response:
 
 @api_view(["GET"])
 def get_new_bookmarks_count(request: HttpRequest, timestamp: int) -> Response:
-    """Get a count of bookmarks created after the specified timestamp.
+    """Get a count of bookmarks created at or after the specified timestamp.
 
-    Counts all bookmarks for the current user that were created after
-    the provided timestamp. The timestamp is expected to be in milliseconds
-    and is converted to a datetime in US/Eastern timezone.
+    Counts all bookmarks for the current user whose creation time is greater
+    than or equal to the provided timestamp (a bookmark created exactly at the
+    timestamp is included). The timestamp is expected to be in milliseconds and
+    is converted to a datetime in US/Eastern timezone.
 
     Args:
         request: The HTTP request.
@@ -787,8 +769,7 @@ def get_new_bookmarks_count(request: HttpRequest, timestamp: int) -> Response:
 
     Returns:
         JSON response containing:
-            - status: "OK"
-            - count: Number of bookmarks created after the timestamp
+            - count: Number of bookmarks created at or after the timestamp
     """
     user = cast(User, request.user)
     time = datetime.datetime.fromtimestamp(timestamp / 1000, pytz.timezone("US/Eastern"))
