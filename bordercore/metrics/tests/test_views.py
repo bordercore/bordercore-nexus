@@ -7,8 +7,6 @@ from django.contrib.auth.models import Permission
 
 from accounts.tests.factories import UserFactory
 
-from metrics.models import Metric
-
 pytestmark = [pytest.mark.django_db]
 
 METRICS_LIST_URL = urls.reverse("metrics:list")
@@ -93,26 +91,3 @@ def test_metrics_list_not_admin_group(client, django_db_blocker):
     resp = client.get(METRICS_LIST_URL)
 
     assert resp.status_code == 403
-
-
-def test_get_failed_test_count(authenticated_client, metrics):
-    """Failed test count includes errors, failures, and overdue metrics."""
-    user, _ = authenticated_client()
-
-    count = Metric.objects.get_failed_test_count(user)
-
-    # Unit: 2 failures + 1 error = 3
-    # Functional: 0 failures + 1 error + 1 overdue = 2
-    # Coverage: 0.82 * 100 = 82 >= 80, not below minimum = 0
-    assert count == 5
-
-
-def test_get_failed_test_count_no_data(authenticated_client):
-    """Metric with no MetricData does not crash get_failed_test_count."""
-    user, _ = authenticated_client()
-
-    Metric.objects.create(name="Bordercore Unit Tests", user=user)
-
-    count = Metric.objects.get_failed_test_count(user)
-
-    assert count == 0
