@@ -110,7 +110,10 @@ class Exercise(models.Model):
                 "latest_weight": [],
             }
 
-        recent_data = list(workout.data_set.all())  # realize for indexing below
+        # Order by id so the sets come back in the order they were logged;
+        # data_set.all() has no Meta.ordering, so without this the reps/weight/
+        # duration lists (and the delta below) would depend on DB row order.
+        recent_data = list(workout.data_set.order_by("id"))
 
         if not recent_data:
             return {
@@ -124,7 +127,9 @@ class Exercise(models.Model):
             "latest_reps": [x.reps or 0 for x in recent_data],
             "latest_weight": [x.weight or 0 for x in recent_data],
             "latest_duration": [x.duration or 0 for x in recent_data],
-            "delta_days": (timezone.now() - recent_data[0].date).days,
+            # Days since the most recent set, computed explicitly rather than
+            # relying on the unspecified ordering of data_set.all().
+            "delta_days": (timezone.now() - max(d.date for d in recent_data)).days,
         }
         return info
 

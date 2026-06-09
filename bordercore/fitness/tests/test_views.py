@@ -104,6 +104,17 @@ def test_edit_note(authenticated_client, fitness):
     assert updated_exercise.note == note
 
 
+def test_edit_note_without_enrollment_returns_404(authenticated_client, fitness):
+    """Editing the note of an exercise the user isn't enrolled in returns 404."""
+    _, client = authenticated_client()
+
+    # fitness[3] (Push Ups) has no ExerciseUser row for this user.
+    url = urls.reverse("fitness:edit_note")
+    resp = client.post(url, {"uuid": fitness[3].uuid, "note": "x"})
+
+    assert resp.status_code == 404
+
+
 def test_fitness_get_workout_data(authenticated_client, fitness):
 
     _, client = authenticated_client()

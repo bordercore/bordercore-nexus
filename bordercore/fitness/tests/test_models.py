@@ -42,6 +42,29 @@ def test_last_workout(authenticated_client, fitness):
     assert workout["delta_days"] == 0
 
 
+def test_last_workout_delta_days_uses_most_recent_set(authenticated_client, fitness):
+    """delta_days reflects the newest set's date regardless of row order."""
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from fitness.models import Data, Workout
+
+    user, _ = authenticated_client()
+    exercise = fitness[3]  # Push Ups: no workouts in the fixture
+
+    workout = Workout.objects.create(user=user, exercise=exercise)
+    # Insert the older set first, so the unordered data_set.all()[0] would be
+    # the stale one; the newest set is 2 days old.
+    older = Data.objects.create(workout=workout, weight=100, reps=5)
+    Data.objects.filter(pk=older.pk).update(date=timezone.now() - timedelta(days=10))
+    newer = Data.objects.create(workout=workout, weight=100, reps=5)
+    Data.objects.filter(pk=newer.pk).update(date=timezone.now() - timedelta(days=2))
+
+    info = exercise.last_workout(user)
+    assert info["delta_days"] == 2
+
+
 def test_get_plot_data(authenticated_client, fitness):
 
     user, _ = authenticated_client()

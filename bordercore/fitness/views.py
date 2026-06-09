@@ -343,7 +343,8 @@ def change_active_status(request: HttpRequest) -> Response:
     Expects a POST with:
         - ``uuid`` (required): Exercise UUID.
         - ``remove`` (optional): If ``"true"``, deletes the :class:`ExerciseUser`
-          record; otherwise creates/updates it and returns the activity info.
+          record; otherwise gets or creates it (an existing row is left
+          unchanged) and returns the activity info.
 
     Args:
         request: The HTTP request object.
@@ -447,9 +448,13 @@ def edit_note(request: HttpRequest) -> Response:
     note = request.POST["note"]
 
     user = cast(User, request.user)
-    get_user_object_or_404(user, ExerciseUser, exercise__uuid=exercise_uuid)
+    # The ExerciseUser row enforces ownership; pull its exercise in the same
+    # query rather than looking the Exercise up a second time.
+    eu = get_user_object_or_404(
+        user, ExerciseUser.objects.select_related("exercise"), exercise__uuid=exercise_uuid
+    )
 
-    exercise = get_object_or_404(Exercise, uuid=exercise_uuid)
+    exercise = eu.exercise
     exercise.note = note
     exercise.save()
 
@@ -518,13 +523,11 @@ def update_schedule(request: HttpRequest) -> Response:
 
     user = cast(User, request.user)
     exercise = get_object_or_404(Exercise, uuid=uuid)
-    eu, _ = ExerciseUser.objects.get_or_create(
+    eu, _ = ExerciseUser.objects.update_or_create(
         user=user,
         exercise=exercise,
         defaults={"schedule": boolean_values},
     )
-    eu.schedule = boolean_values
-    eu.save()
 
     info = eu.activity_info()
     info["rest_period"] = eu.rest_period
