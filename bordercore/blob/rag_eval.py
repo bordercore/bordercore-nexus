@@ -29,7 +29,7 @@ Scope and interpretation:
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Callable
@@ -47,6 +47,7 @@ class EvalCase:
     question: str
     expected_uuids: list[str]
     note_name: str = ""
+    answer_phrases: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -216,6 +217,7 @@ def load_dataset(path: Path = DEFAULT_DATASET_PATH) -> list[EvalCase]:
             question=item["question"],
             expected_uuids=item["expected_uuids"],
             note_name=item.get("note_name", ""),
+            answer_phrases=item.get("answer_phrases", []),
         )
         for item in data
     ]

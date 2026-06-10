@@ -214,3 +214,24 @@ class TestPassageContains:
 
     def test_false_on_none_passage(self):
         assert _passage_contains(None, ["1536"]) is False
+
+
+class TestEvalCaseAnswerPhrases:
+    def test_defaults_to_empty_list(self):
+        case = EvalCase(question="q", expected_uuids=["a"])
+        assert case.answer_phrases == []
+
+    def test_accepts_phrases(self):
+        case = EvalCase(question="q", expected_uuids=["a"], answer_phrases=["1536"])
+        assert case.answer_phrases == ["1536"]
+
+    def test_load_dataset_reads_answer_phrases(self, tmp_path):
+        import json
+        path = tmp_path / "ds.json"
+        path.write_text(json.dumps([
+            {"question": "q1", "expected_uuids": ["a"], "answer_phrases": ["1536"]},
+            {"question": "q2", "expected_uuids": ["b"]},
+        ]))
+        cases = load_dataset(path)
+        assert cases[0].answer_phrases == ["1536"]
+        assert cases[1].answer_phrases == []
