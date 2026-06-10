@@ -56,13 +56,20 @@ class Command(BaseCommand):
         self.stdout.write(f"hit@1:              {report.hit_at_1:.3f}")
         self.stdout.write(f"MRR:                {report.mrr:.3f}")
         self.stdout.write(f"dropped-by-filter:  {report.dropped_count}")
+        self.stdout.write(f"grounded@3:         {report.grounded_at_3:.3f}")
+        self.stdout.write(f"grounded | hit@3:   {report.grounded_given_hit3:.3f}")
+        self.stdout.write(f"measurable:         {report.measurable_count}/{report.case_count}")
         self.stdout.write("")
 
+        grounded_label = {True: "yes", False: "no", None: "-"}
         for result in report.cases:
             status = "PASS" if result.effective_hit3 else "FAIL"
             marker = "  ⚠ dropped-by-filter" if result.dropped_by_filter else ""
+            if result.effective_hit3 and result.passage_grounded is False:
+                marker += "  ⚠ passage-not-grounded"
             label = result.case.note_name or ", ".join(result.case.expected_uuids)
+            grounded = grounded_label[result.passage_grounded]
             self.stdout.write(
                 f"[{status}] raw={result.raw_rank} eff={result.effective_rank} "
-                f"{result.case.question!r} → {label}{marker}"
+                f"grounded={grounded} {result.case.question!r} → {label}{marker}"
             )

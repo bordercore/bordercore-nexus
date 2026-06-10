@@ -312,3 +312,37 @@ class TestEvalReportGroundedness:
         assert report.measurable_count == 0
         assert report.grounded_at_3 == 0.0
         assert report.grounded_given_hit3 == 0.0
+
+
+class TestEvalNotesRagCommandOutput:
+    def test_prints_groundedness_metrics_and_markers(self, monkeypatch):
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        import blob.management.commands.eval_notes_rag as cmd
+
+        grounded = EvalCase(question="q1", expected_uuids=["a"],
+                            note_name="Grounded Note", answer_phrases=["1536"])
+        ungrounded = EvalCase(question="q2", expected_uuids=["b"],
+                              note_name="Ungrounded Note", answer_phrases=["xyz"])
+        report = EvalReport(cases=[
+            CaseResult(case=grounded, raw_rank=1, effective_rank=1, rr=1.0,
+                       passage_grounded=True),
+            # effective-hit but passage lacks the phrase -> Defect-B signal
+            CaseResult(case=ungrounded, raw_rank=1, effective_rank=1, rr=1.0,
+                       passage_grounded=False),
+        ])
+        monkeypatch.setattr(cmd, "load_dataset", lambda path: [grounded, ungrounded])
+        monkeypatch.setattr(cmd, "evaluate_notes_retrieval",
+                            lambda dataset, **kw: report)
+
+        out = StringIO()
+        call_command("eval_notes_rag", stdout=out)
+        text = out.getvalue()
+
+        assert "grounded@3:" in text
+        assert "grounded | hit@3:" in text
+        assert "measurable:" in text
+        assert "2/2" in text  # both cases measurable
+        assert "passage-not-grounded" in text  # marker on the ungrounded effective-hit
