@@ -235,3 +235,35 @@ class TestEvalCaseAnswerPhrases:
         cases = load_dataset(path)
         assert cases[0].answer_phrases == ["1536"]
         assert cases[1].answer_phrases == []
+
+
+def _phit(uuid, score, passage):
+    """A hit carrying the generation _passage that semantic_search attaches."""
+    return {"_score": score, "_source": {"uuid": uuid, "name": uuid}, "_passage": passage}
+
+
+class TestScoreCaseGroundedness:
+    def test_none_when_no_answer_phrases(self):
+        case = EvalCase(question="q", expected_uuids=["a"])
+        raw = [_phit("a", 0.9, "the answer is 1536")]
+        assert score_case(case, raw).passage_grounded is None
+
+    def test_true_when_top3_passage_contains_phrase(self):
+        case = EvalCase(question="q", expected_uuids=["a"], answer_phrases=["1536"])
+        raw = [_phit("a", 0.9, "indexed with a 1536-dim vector")]
+        assert score_case(case, raw).passage_grounded is True
+
+    def test_false_when_top3_passage_lacks_phrase(self):
+        case = EvalCase(question="q", expected_uuids=["a"], answer_phrases=["1536"])
+        raw = [_phit("a", 0.9, "an overview paragraph with no dimensions")]
+        assert score_case(case, raw).passage_grounded is False
+
+    def test_false_when_expected_note_outside_top3(self):
+        # "a" is rank 4 (beyond NOTES_RAG_MAX_SOURCES=3): its passage never
+        # reaches the LLM, so it is not grounded even though the text matches.
+        case = EvalCase(question="q", expected_uuids=["a"], answer_phrases=["1536"])
+        raw = [
+            _phit("x", 0.9, "no"), _phit("y", 0.8, "no"), _phit("z", 0.7, "no"),
+            _phit("a", 0.6, "the 1536 answer"),
+        ]
+        assert score_case(case, raw).passage_grounded is False

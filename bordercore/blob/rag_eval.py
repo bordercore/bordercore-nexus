@@ -58,6 +58,7 @@ class CaseResult:
     raw_rank: int | None
     effective_rank: int | None
     rr: float
+    passage_grounded: bool | None = None
 
     @property
     def raw_hit8(self) -> bool:
@@ -151,22 +152,45 @@ def _passage_contains(passage: str | None, phrases: list[str]) -> bool:
     return any(phrase.lower() in haystack for phrase in phrases)
 
 
+def _first_expected_passage(
+    hits: list[dict[str, Any]],
+    expected_uuids: list[str],
+) -> str | None:
+    """Return the ``_passage`` of the first expected uuid in ``hits``, else None."""
+    expected = set(expected_uuids)
+    for hit in hits:
+        if hit.get("_source", {}).get("uuid") in expected:
+            return hit.get("_passage")
+    return None
+
+
 def score_case(case: EvalCase, raw_hits: list[dict[str, Any]]) -> CaseResult:
     """Score a single case from its raw ``semantic_search`` hits.
 
     Pure: applies the same top-``NOTES_RAG_MAX_SOURCES`` cap the production RAG
-    flow uses (there is no score filter under hybrid RRF), then computes ranks
-    and reciprocal rank.
+    flow uses (there is no score filter under hybrid RRF), then computes ranks,
+    reciprocal rank, and passage groundedness.
+
+    ``passage_grounded`` is None when the case has no ``answer_phrases``
+    (unmeasurable). Otherwise it is True iff the first expected note within the
+    effective top-N carries a ``_passage`` containing one of those phrases — i.e.
+    the answer text actually reached the model.
     """
     effective_hits = raw_hits[:NOTES_RAG_MAX_SOURCES]
     raw_rank = _first_expected_rank(raw_hits, case.expected_uuids)
     effective_rank = _first_expected_rank(effective_hits, case.expected_uuids)
     rr = (1.0 / raw_rank) if raw_rank is not None else 0.0
+    if not case.answer_phrases:
+        passage_grounded: bool | None = None
+    else:
+        passage = _first_expected_passage(effective_hits, case.expected_uuids)
+        passage_grounded = _passage_contains(passage, case.answer_phrases)
     return CaseResult(
         case=case,
         raw_rank=raw_rank,
         effective_rank=effective_rank,
         rr=rr,
+        passage_grounded=passage_grounded,
     )
 
 
