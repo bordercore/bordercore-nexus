@@ -50,14 +50,13 @@ class Command(BaseCommand):
         )
 
     def _note_contents(self, es, uuid):
-        """Fetch a note's contents + name from Elasticsearch by uuid (= _id)."""
+        """Fetch a note's contents from Elasticsearch by uuid (= _id), stripped."""
         try:
             doc = es.get(index=settings.ELASTICSEARCH_INDEX, id=uuid,
-                         _source=["contents", "name"])
+                         _source=["contents"])
         except Exception:  # noqa: BLE001 — missing/deleted note: skip it
-            return None, None
-        source = doc.get("_source", {})
-        return source.get("contents"), source.get("name")
+            return None
+        return (doc.get("_source", {}).get("contents") or "").strip()
 
     def handle(self, *args, **options):
         out_path = Path(options["out"])
@@ -88,7 +87,7 @@ class Command(BaseCommand):
                 out_cases.append(record)
                 continue
 
-            contents, name = self._note_contents(es, case.expected_uuids[0])
+            contents = self._note_contents(es, case.expected_uuids[0])
             if not contents:
                 self.stderr.write(f"Skipped (no contents): {case.expected_uuids[0]}")
                 out_cases.append(record)
@@ -128,6 +127,7 @@ class Command(BaseCommand):
             f"Drafted {drafted} phrases ({flagged} flagged _needs_review) → {out_path}"
         )
         self.stdout.write(
-            "Curate this file (verify/trim phrases, drop _needs_review keys), "
-            "then merge into notes_rag_eval.json."
+            "Curate this file (verify/trim phrases; for each _needs_review entry "
+            "either confirm the phrase is verbatim or drop the case, then remove "
+            "the _needs_review key), then merge into notes_rag_eval.json."
         )
