@@ -186,7 +186,11 @@ def _first_expected_passage(
     hits: list[dict[str, Any]],
     expected_uuids: list[str],
 ) -> str | None:
-    """Return the ``_passage`` of the first expected uuid in ``hits``, else None."""
+    """Return the ``_passage`` of the first expected uuid in ``hits``.
+
+    Returns None if no expected uuid is found, or if the matching hit carries no
+    ``_passage``; both cases score as ungrounded downstream.
+    """
     expected = set(expected_uuids)
     for hit in hits:
         if hit.get("_source", {}).get("uuid") in expected:
@@ -257,7 +261,9 @@ def load_dataset(path: Path = DEFAULT_DATASET_PATH) -> list[EvalCase]:
     """Load eval cases from a JSON file.
 
     The file is a JSON list of objects with ``question`` (str),
-    ``expected_uuids`` (list of str), and an optional ``note_name`` (str).
+    ``expected_uuids`` (list of str), an optional ``note_name`` (str), and an
+    optional ``answer_phrases`` (list of str) gold-answer phrases used to score
+    passage groundedness.
 
     Raises:
         FileNotFoundError: If ``path`` does not exist.
