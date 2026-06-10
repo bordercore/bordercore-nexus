@@ -267,3 +267,48 @@ class TestScoreCaseGroundedness:
             _phit("a", 0.6, "the 1536 answer"),
         ]
         assert score_case(case, raw).passage_grounded is False
+
+
+class TestEvalReportGroundedness:
+    def _cr(self, *, effective_rank, grounded):
+        case = EvalCase(question="q", expected_uuids=["a"])
+        return CaseResult(
+            case=case,
+            raw_rank=effective_rank,
+            effective_rank=effective_rank,
+            rr=1.0 / effective_rank if effective_rank else 0.0,
+            passage_grounded=grounded,
+        )
+
+    def test_measurable_count_excludes_none(self):
+        report = EvalReport(cases=[
+            self._cr(effective_rank=1, grounded=True),
+            self._cr(effective_rank=1, grounded=False),
+            self._cr(effective_rank=None, grounded=None),  # no gold phrase
+        ])
+        assert report.measurable_count == 2
+
+    def test_grounded_at_3_is_fraction_of_measurable(self):
+        report = EvalReport(cases=[
+            self._cr(effective_rank=1, grounded=True),
+            self._cr(effective_rank=1, grounded=False),
+            self._cr(effective_rank=None, grounded=None),
+        ])
+        assert report.grounded_at_3 == 0.5
+
+    def test_grounded_given_hit3_excludes_retrieval_misses(self):
+        # Three measurable cases; one is not an effective-hit (retrieval miss)
+        # and must be excluded from the conditional. Of the two effective-hits,
+        # one is grounded -> 0.5.
+        report = EvalReport(cases=[
+            self._cr(effective_rank=1, grounded=True),
+            self._cr(effective_rank=2, grounded=False),
+            self._cr(effective_rank=None, grounded=False),  # note not in top-3
+        ])
+        assert report.grounded_given_hit3 == 0.5
+
+    def test_zero_when_no_measurable_cases(self):
+        report = EvalReport(cases=[self._cr(effective_rank=1, grounded=None)])
+        assert report.measurable_count == 0
+        assert report.grounded_at_3 == 0.0
+        assert report.grounded_given_hit3 == 0.0

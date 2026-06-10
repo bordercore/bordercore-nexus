@@ -127,6 +127,36 @@ class EvalReport:
         """Number of cases that were retrieved raw but lost to the top-N cap."""
         return sum(1 for c in self.cases if c.dropped_by_filter)
 
+    @property
+    def measurable_cases(self) -> list[CaseResult]:
+        """Cases that carry a gold phrase, so groundedness is measurable."""
+        return [c for c in self.cases if c.passage_grounded is not None]
+
+    @property
+    def measurable_count(self) -> int:
+        """Number of cases with a gold phrase (groundedness denominator)."""
+        return len(self.measurable_cases)
+
+    @property
+    def grounded_at_3(self) -> float:
+        """Of measurable cases, fraction whose answer text reached the LLM.
+
+        Moves with both retrieval and passage quality; read alongside
+        ``measurable_count``.
+        """
+        return _mean([1.0 if c.passage_grounded else 0.0 for c in self.measurable_cases])
+
+    @property
+    def grounded_given_hit3(self) -> float:
+        """Of measurable cases whose expected note survived the top-N cap, the
+        fraction whose passage contained the answer.
+
+        Isolates passage quality from retrieval — this is the number that moves
+        when the single-chunk passage limitation (Defect B) is addressed.
+        """
+        eligible = [c for c in self.measurable_cases if c.effective_hit3]
+        return _mean([1.0 if c.passage_grounded else 0.0 for c in eligible])
+
 
 def _first_expected_rank(
     hits: list[dict[str, Any]],
