@@ -201,6 +201,29 @@ def test_start_study_session(question, tag):
     assert len(session["drill_study_session"]["list"]) >= 1
 
 
+def test_start_study_session_muted_tag_only_in_explicit_drill(question, tag):
+    """A muted tag is hidden from general sessions but surfaces in an explicit
+    tag drill of that tag."""
+    user = question[0].user
+    tagged = [q for q in question if tag[0] in q.tags.all()]
+    assert tagged  # sanity: the fixture carries the tag on at least one question
+
+    user.userprofile.drill_tags_muted.add(tag[0])
+    session: dict = {}
+
+    # General (non-tag) session excludes questions carrying the muted tag.
+    Question.start_study_session(user, session, "learning", "review")
+    general_list = session["drill_study_session"]["list"]
+    for q in tagged:
+        assert str(q.uuid) not in general_list
+
+    # An explicit drill of the muted tag still surfaces those questions.
+    Question.start_study_session(user, session, "tag", "review", {"tags": tag[0].name})
+    tag_list = session["drill_study_session"]["list"]
+    for q in tagged:
+        assert str(q.uuid) in tag_list
+
+
 def test_get_tag_progress(question, tag):
 
     tags_info = Question.get_tag_progress(question[0].user, tag[0])
@@ -232,32 +255,32 @@ def test_get_tag_progress(question, tag):
     assert tags_info["count"] == 0
 
 
-def test_drill_get_disabled_tags(authenticated_client, tag):
+def test_drill_get_muted_tags(authenticated_client, tag):
 
     user, client = authenticated_client()
 
     QuestionFactory(user=user)
-    question_1 = QuestionFactory(user=user, is_disabled=True)
+    question_1 = QuestionFactory(user=user)
     question_1.tags.add(tag[0])
+    user.userprofile.drill_tags_muted.add(tag[0])
 
-    questions = Question.objects.get_disabled_tags(user)
+    questions = Question.objects.get_muted_tags(user)
 
     assert len(questions) == 1
     assert tag[0].name in [x["name"] for x in questions]
 
 
-def test_drill_get_disabled_tags_excludes_other_users(authenticated_client, tag):
-    """Disabled tags from other users should not appear."""
+def test_drill_get_muted_tags_excludes_other_users(authenticated_client, tag):
+    """Muted tags belonging to other users should not appear."""
     from accounts.tests.factories import UserFactory
 
     user, _ = authenticated_client()
 
-    # Create a disabled question owned by a different user
+    # Mute a tag on a different user's profile
     other_user = UserFactory(username="other_user")
-    other_question = QuestionFactory(user=other_user, is_disabled=True)
-    other_question.tags.add(tag[0])
+    other_user.userprofile.drill_tags_muted.add(tag[0])
 
-    questions = Question.objects.get_disabled_tags(user)
+    questions = Question.objects.get_muted_tags(user)
     assert len(questions) == 0
 
 

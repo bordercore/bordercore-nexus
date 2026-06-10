@@ -469,8 +469,13 @@ class Question(ElasticsearchMixin, TimeStampedModel):
                 | Q(last_reviewed__isnull=True)
             )
 
-        drill_tags_muted = user.userprofile.drill_tags_muted.all()
-        questions = questions.exclude(tags__in=drill_tags_muted)
+        # Muted tags are hidden from GENERAL study sessions, but an explicit
+        # tag drill deliberately surfaces them, so only apply the mute filter
+        # when the user did not specifically choose to drill by tag. Per-question
+        # ``is_disabled`` (filtered above) is never bypassed, even for a tag drill.
+        if study_type != "tag":
+            drill_tags_muted = user.userprofile.drill_tags_muted.all()
+            questions = questions.exclude(tags__in=drill_tags_muted)
 
         uuid_rows_raw = questions.order_by("?").values("uuid")
 

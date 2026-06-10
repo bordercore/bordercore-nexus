@@ -60,7 +60,6 @@ class UserProfileUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView):
                 - groups: Comma-separated list of user group names
                 - nav: Navigation identifier ("prefs")
                 - title: Page title
-                - drill_tags_muted: List of muted drill tag names
                 - instagram_username: Instagram username if credentials exist
                 - instagram_password: Instagram password if credentials exist
         """
@@ -69,7 +68,6 @@ class UserProfileUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView):
         context["groups"] = ", ".join([x.name for x in user.groups.all()])
         context["nav"] = "prefs"
         context["title"] = "Preferences"
-        context["drill_tags_muted"] = [x.name for x in self.object.drill_tags_muted.all()]
         if user.userprofile.instagram_credentials:
             context["instagram_username"] = user.userprofile.instagram_credentials.get("username", "")
             context["instagram_password"] = user.userprofile.instagram_credentials.get("password", "")
@@ -131,7 +129,7 @@ class UserProfileUpdateView(LoginRequiredMixin, FormRequestMixin, UpdateView):
 
         instance.save()
 
-        # Save the drill_tags_muted field
+        # Persist any many-to-many relations declared on the form.
         form.save_m2m()
 
         if self._is_ajax():

@@ -12,7 +12,7 @@ import DropDownMenu from "../common/DropDownMenu";
 import SelectValue, { SelectValueHandle } from "../common/SelectValue";
 import { doGet, doPost } from "../utils/reactUtils";
 
-interface DisabledTag {
+interface MutedTag {
   name: string;
   url: string;
   progress: number;
@@ -20,35 +20,35 @@ interface DisabledTag {
   last_reviewed: string;
 }
 
-interface DrillDisabledTagsProps {
-  getDisabledTagsUrl: string;
-  disableTagUrl: string;
-  enableTagUrl: string;
+interface DrillMutedTagsProps {
+  getMutedTagsUrl: string;
+  muteTagUrl: string;
+  unmuteTagUrl: string;
   tagSearchUrl: string;
 }
 
-export function DrillDisabledTags({
-  getDisabledTagsUrl,
-  disableTagUrl,
-  enableTagUrl,
+export function DrillMutedTags({
+  getMutedTagsUrl,
+  muteTagUrl,
+  unmuteTagUrl,
   tagSearchUrl,
-}: DrillDisabledTagsProps) {
+}: DrillMutedTagsProps) {
   const [dataLoading, setDataLoading] = useState(true);
-  const [tagList, setTagList] = useState<DisabledTag[]>([]);
+  const [tagList, setTagList] = useState<MutedTag[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const selectValueRef = useRef<SelectValueHandle>(null);
 
   const getTagList = useCallback(() => {
     doGet(
-      getDisabledTagsUrl,
+      getMutedTagsUrl,
       (response: any) => {
         setTagList(response.data.tag_list);
         setDataLoading(false);
       },
-      "Error getting disabled tags"
+      "Error getting muted tags"
     );
-  }, [getDisabledTagsUrl]);
+  }, [getMutedTagsUrl]);
 
   useEffect(() => {
     getTagList();
@@ -77,29 +77,29 @@ export function DrillDisabledTags({
     return () => window.removeEventListener("keydown", handler);
   }, [isModalOpen, closeModal]);
 
-  const handleTagDisable = useCallback(
+  const handleTagMute = useCallback(
     (tag: string) => {
-      doPost(disableTagUrl, { tag }, () => {
+      doPost(muteTagUrl, { tag }, () => {
         getTagList();
       });
     },
-    [disableTagUrl, getTagList]
+    [muteTagUrl, getTagList]
   );
 
-  const handleTagEnable = useCallback(
+  const handleTagUnmute = useCallback(
     (tagName: string) => {
-      doPost(enableTagUrl, { tag: tagName }, () => {
+      doPost(unmuteTagUrl, { tag: tagName }, () => {
         getTagList();
       });
     },
-    [enableTagUrl, getTagList]
+    [unmuteTagUrl, getTagList]
   );
 
   const handleTagSelect = useCallback(
     (selection: any) => {
-      handleTagDisable(selection.label || selection.name);
+      handleTagMute(selection.label || selection.name);
     },
-    [handleTagDisable]
+    [handleTagMute]
   );
 
   const openModal = useCallback(() => {
@@ -108,7 +108,7 @@ export function DrillDisabledTags({
 
   const titleSlot = (
     <div className="card-title flex items-center">
-      <div>Disabled Tags</div>
+      <div>Muted Tags</div>
       <div className="ms-auto">
         <DropDownMenu
           iconSlot={<FontAwesomeIcon icon={faEllipsisV} />}
@@ -142,7 +142,7 @@ export function DrillDisabledTags({
         createPortal(
           <>
             <div className="refined-modal-scrim" onClick={closeModal} />
-            <div className="refined-modal" role="dialog" aria-label="manage disabled tags">
+            <div className="refined-modal" role="dialog" aria-label="manage muted tags">
               <button
                 type="button"
                 className="refined-modal-close"
@@ -152,10 +152,10 @@ export function DrillDisabledTags({
                 <FontAwesomeIcon icon={faTimes} />
               </button>
 
-              <h2 className="refined-modal-title">Disabled tags</h2>
+              <h2 className="refined-modal-title">Muted tags</h2>
 
               <div className="refined-field">
-                <label htmlFor="drill-disabled-tag-search">add tag</label>
+                <label htmlFor="drill-muted-tag-search">add tag</label>
                 <SelectValue
                   ref={selectValueRef}
                   searchUrl={`${tagSearchUrl}?doctype=drill&query=`}
@@ -165,19 +165,17 @@ export function DrillDisabledTags({
               </div>
 
               <div className="refined-field">
-                <label>currently disabled</label>
-                <ul className="disabled-tag-list">
-                  {tagList.length === 0 && (
-                    <li className="disabled-tag-empty">No disabled tags.</li>
-                  )}
+                <label>currently muted</label>
+                <ul className="muted-tag-list">
+                  {tagList.length === 0 && <li className="muted-tag-empty">No muted tags.</li>}
                   {tagList.map(tag => (
-                    <li key={tag.name} className="disabled-tag-item">
-                      <span className="disabled-tag-name">{tag.name}</span>
+                    <li key={tag.name} className="muted-tag-item">
+                      <span className="muted-tag-name">{tag.name}</span>
                       <FontAwesomeIcon
                         icon={faTimesCircle}
-                        className="disabled-tag-remove cursor-pointer"
-                        onClick={() => handleTagEnable(tag.name)}
-                        aria-label={`Re-enable ${tag.name}`}
+                        className="muted-tag-remove cursor-pointer"
+                        onClick={() => handleTagUnmute(tag.name)}
+                        aria-label={`Unmute ${tag.name}`}
                       />
                     </li>
                   ))}
@@ -233,4 +231,4 @@ export function DrillDisabledTags({
   );
 }
 
-export default DrillDisabledTags;
+export default DrillMutedTags;

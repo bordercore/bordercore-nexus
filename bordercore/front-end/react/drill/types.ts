@@ -7,9 +7,9 @@ export interface DrillUrls {
   pinTag: string;
   unpinTag: string;
   sortPinnedTags: string;
-  getDisabledTags: string;
-  disableTag: string;
-  enableTag: string;
+  getMutedTags: string;
+  muteTag: string;
+  unmuteTag: string;
   tagSearch: string;
   featuredTagInfo: string;
 }
@@ -67,7 +67,7 @@ export interface PinnedTag {
   url: string;
 }
 
-export interface DisabledTag {
+export interface MutedTag {
   name: string;
   progress: number;
   count: number;
@@ -102,7 +102,7 @@ export interface DrillPayload {
   schedule: ScheduleDay[];
   tagsNeedingReview: TagProgressRow[];
   pinned: PinnedTag[];
-  disabled: DisabledTag[];
+  muted: MutedTag[];
   featured: FeaturedTag | null;
   streak: number;
   nextDue: string | null;

@@ -10,8 +10,6 @@ from django.forms import (ModelChoiceField, ModelForm, Select, Textarea,
 
 from accounts.models import UserProfile
 from collection.models import Collection
-from lib.fields import ModelCommaSeparatedChoiceField
-from tag.models import Tag
 
 BOOKMARKS_PER_PAGE_CHOICES = [
     (25, "25"),
@@ -61,12 +59,6 @@ class UserProfileForm(ModelForm):
             required=True,
         )
 
-        self.fields["drill_tags_muted"] = ModelCommaSeparatedChoiceField(
-            request=self.request,
-            required=False,
-            queryset=Tag.objects.filter(user=self.request.user),
-            to_field_name="name")
-
         collections_list = Collection.objects.filter(user=self.request.user).exclude(name="")
         if collections_list.exists():
             self.fields["homepage_default_collection"] = ModelChoiceField(
@@ -104,7 +96,6 @@ class UserProfileForm(ModelForm):
             "homepage_default_collection",
             "homepage_image_collection",
             "drill_intervals",
-            "drill_tags_muted",
             "nytimes_api_key",
             "weather_location",
             "google_calendar",

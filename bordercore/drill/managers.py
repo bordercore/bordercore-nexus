@@ -182,25 +182,23 @@ class DrillManager(models.Manager):
         tag_names = [t.name for t in tags]
         return self._batch_tag_progress(user, tag_names)
 
-    def get_disabled_tags(self, user: User) -> list[dict[str, str | int]]:
-        """Get the user's disabled tags.
+    def get_muted_tags(self, user: User) -> list[dict[str, str | int]]:
+        """Get the user's muted tags.
+
+        Muted tags are hidden from general study sessions but remain drillable
+        when explicitly chosen. Progress numbers reflect the study-eligible
+        (non-disabled) questions, so the rows match what an explicit drill sees.
 
         Args:
-            user: The user to get disabled tags for.
+            user: The user to get muted tags for.
 
         Returns:
-            List of tag progress information dictionaries for disabled tags.
+            List of tag progress information dictionaries for muted tags.
         """
-        Question = apps.get_model("drill", "Question")
-
-        tag_ids = Question.objects.filter(
-            is_disabled=True, user=user
-        ).values_list("tags", flat=True)
         tag_names = list(
-            Tag.objects.filter(id__in=tag_ids).distinct().values_list("name", flat=True)
+            user.userprofile.drill_tags_muted.values_list("name", flat=True)
         )
-        # Disabled tags are defined by their disabled questions, so count those.
-        return self._batch_tag_progress(user, tag_names, include_disabled=True)
+        return self._batch_tag_progress(user, tag_names)
 
     def recent_tags(self, user: User) -> Any:
         """Get the tags most recently attached to questions.
@@ -454,7 +452,7 @@ class DrillManager(models.Manager):
             include_disabled: When False (the default), disabled questions are
                 excluded from the count/todo/last-reviewed numbers so progress
                 reflects only the study-eligible set. Pass True to count every
-                question (used by ``get_disabled_tags``).
+                question regardless of its per-question disabled flag.
 
         Returns:
             List of tag progress dicts in the same order as tag_names.

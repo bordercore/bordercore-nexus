@@ -436,7 +436,7 @@
 // promotes to a stronger border + bg-1.
 // =============================================================================
 
-.disabled-tag-list {
+.muted-tag-list {
   display: flex;
   flex-direction: column;
   padding: 0;
@@ -445,7 +445,7 @@
   list-style: none;
 }
 
-.disabled-tag-item {
+.muted-tag-item {
   display: flex;
   align-items: center;
   padding: 8px 12px;
@@ -461,14 +461,14 @@
   }
 }
 
-.disabled-tag-name {
+.muted-tag-name {
   min-width: 0;
   flex: 1;
   color: var(--fg-1);
   font: 400 13.5px/1.4 var(--font-ui);
 }
 
-.disabled-tag-remove {
+.muted-tag-remove {
   flex: 0 0 auto;
   color: var(--fg-3);
   transition: color 120ms;
@@ -478,7 +478,7 @@
   }
 }
 
-.disabled-tag-empty {
+.muted-tag-empty {
   padding: 12px;
   border: 1px dashed var(--line-soft);
   border-radius: 8px;

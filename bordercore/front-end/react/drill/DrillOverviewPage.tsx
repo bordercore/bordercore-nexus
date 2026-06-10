@@ -7,7 +7,7 @@ import ScheduleStrip from "./components/ScheduleStrip";
 import TagsNeedingReview from "./components/TagsNeedingReview";
 import PinnedTagsCard from "./components/PinnedTagsCard";
 import FeaturedTagCard from "./components/FeaturedTagCard";
-import DisabledTagsCard from "./components/DisabledTagsCard";
+import MutedTagsCard from "./components/MutedTagsCard";
 import StudyModal from "./components/StudyModal";
 import type { DrillPayload } from "./types";
 import { pluralize } from "./utils";
@@ -113,7 +113,7 @@ export default function DrillOverviewPage({ payload }: Props) {
                 featuredTagInfoUrl={payload.urls.featuredTagInfo}
               />
             )}
-            <DisabledTagsCard urls={payload.urls} />
+            <MutedTagsCard urls={payload.urls} />
           </div>
         </div>
       </main>

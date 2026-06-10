@@ -353,16 +353,17 @@ def test_sort_pinned_tags_non_numeric_position_returns_400(authenticated_client,
     assert resp.status_code == 400
 
 
-def test_drill_get_disabled_tags(authenticated_client, tag):
+def test_drill_get_muted_tags(authenticated_client, tag):
 
     user, client = authenticated_client()
 
     QuestionFactory(user=user)
-    question_1 = QuestionFactory(user=user, is_disabled=True)
+    question_1 = QuestionFactory(user=user)
     question_1.tags.add(tag[0])
+    user.userprofile.drill_tags_muted.add(tag[0])
 
     url = urls.reverse(
-        "drill:get_disabled_tags"
+        "drill:get_muted_tags"
     )
     resp = client.get(url)
 
@@ -371,25 +372,23 @@ def test_drill_get_disabled_tags(authenticated_client, tag):
     assert tag[0].name in [x["name"] for x in resp.json()["tag_list"]]
 
 
-def test_drill_disable_tag(authenticated_client, tag):
+def test_drill_mute_tag(authenticated_client, tag):
 
     user, client = authenticated_client()
 
     question_0 = QuestionFactory(user=user)
     question_0.tags.add(tag[0])
 
-    url = urls.reverse("drill:disable_tag")
+    url = urls.reverse("drill:mute_tag")
     resp = client.post(url, {
         "tag": tag[0].name
     })
 
-    assert resp.status_code == 200
+    assert resp.status_code == 201
+    assert user.userprofile.drill_tags_muted.filter(name=tag[0].name).exists()
 
-    question_modified = Question.objects.get(pk=question_0.pk)
-    assert question_modified.is_disabled is True
-
-    # If we try to disable the tag again, we should get an error
-    url = urls.reverse("drill:disable_tag")
+    # If we try to mute the tag again, we should get an error
+    url = urls.reverse("drill:mute_tag")
     resp = client.post(url, {
         "tag": tag[0].name
     })
@@ -398,25 +397,22 @@ def test_drill_disable_tag(authenticated_client, tag):
     assert "detail" in json.loads(resp.content)
 
 
-def test_drill_enable_tag(authenticated_client, tag):
+def test_drill_unmute_tag(authenticated_client, tag):
 
     user, client = authenticated_client()
 
-    question_0 = QuestionFactory(user=user, is_disabled=True)
-    question_0.tags.add(tag[0])
+    user.userprofile.drill_tags_muted.add(tag[0])
 
-    url = urls.reverse("drill:enable_tag")
+    url = urls.reverse("drill:unmute_tag")
     resp = client.post(url, {
         "tag": tag[0].name
     })
 
-    assert resp.status_code == 200
+    assert resp.status_code == 204
+    assert not user.userprofile.drill_tags_muted.filter(name=tag[0].name).exists()
 
-    question_modified = Question.objects.get(pk=question_0.pk)
-    assert question_modified.is_disabled is False
-
-    # If we try to enable the tag again, we should get an error
-    url = urls.reverse("drill:enable_tag")
+    # If we try to unmute the tag again, we should get an error
+    url = urls.reverse("drill:unmute_tag")
     resp = client.post(url, {
         "tag": tag[0].name
     })
@@ -591,7 +587,7 @@ def test_drill_list_view_payload_has_all_keys(client):
     for key in [
         "title", "urls", "session", "studyScope", "intervals",
         "responsesByKind", "totalProgress", "favoritesProgress",
-        "schedule", "tagsNeedingReview", "pinned", "disabled",
+        "schedule", "tagsNeedingReview", "pinned", "muted",
         "featured", "streak", "nextDue", "activity28d", "recentResponses",
     ]:
         assert key in payload, f"missing payload key: {key}"

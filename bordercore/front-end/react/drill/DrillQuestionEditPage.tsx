@@ -19,6 +19,7 @@ interface DrillQuestionEditPageProps {
   initialAnswer: string;
   initialTags: string[];
   initialIsReversible: boolean;
+  initialIsDisabled: boolean;
   // Object being edited (if any)
   objectUuid?: string;
   // Action type
@@ -52,6 +53,7 @@ export function DrillQuestionEditPage({
   initialAnswer,
   initialTags,
   initialIsReversible,
+  initialIsDisabled,
   objectUuid,
   action,
   recentTags,
@@ -60,6 +62,7 @@ export function DrillQuestionEditPage({
   returnUrl,
 }: DrillQuestionEditPageProps) {
   const [isReversible, setIsReversible] = useState(initialIsReversible);
+  const [isDisabled, setIsDisabled] = useState(initialIsDisabled);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   // Refs
@@ -263,6 +266,22 @@ export function DrillQuestionEditPage({
                 onChange={setIsReversible}
               />
             </div>
+
+            {action === "Edit" && (
+              <div>
+                <div className="be-label">disabled</div>
+                <ToggleSwitch
+                  id="is_disabled"
+                  name="is_disabled"
+                  checked={isDisabled}
+                  onChange={setIsDisabled}
+                />
+                <div className="dim">
+                  Retires this individual card — excluded from every study session, including an
+                  explicit drill of its tag.
+                </div>
+              </div>
+            )}
 
             <div className="be-save-bar">
               {objectUuid && urls.delete && (

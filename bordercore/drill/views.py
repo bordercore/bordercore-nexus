@@ -121,8 +121,8 @@ class DrillListView(LoginRequiredMixin, ListView):
         pinned_rows = qs.get_pinned_tags(user)
         for r in pinned_rows:
             r.pop("last_reviewed_dt", None)
-        disabled_rows = qs.get_disabled_tags(user)
-        for r in disabled_rows:
+        muted_rows = qs.get_muted_tags(user)
+        for r in muted_rows:
             r.pop("last_reviewed_dt", None)
 
         featured_raw = qs.get_random_tag(user)
@@ -166,9 +166,9 @@ class DrillListView(LoginRequiredMixin, ListView):
                 "pinTag": reverse("drill:pin_tag"),
                 "unpinTag": reverse("drill:unpin_tag"),
                 "sortPinnedTags": reverse("drill:sort_pinned_tags"),
-                "getDisabledTags": reverse("drill:get_disabled_tags"),
-                "disableTag": reverse("drill:disable_tag"),
-                "enableTag": reverse("drill:enable_tag"),
+                "getMutedTags": reverse("drill:get_muted_tags"),
+                "muteTag": reverse("drill:mute_tag"),
+                "unmuteTag": reverse("drill:unmute_tag"),
                 "tagSearch": reverse("tag:search"),
                 "featuredTagInfo": reverse("drill:featured_tag_info"),
             },
@@ -201,7 +201,7 @@ class DrillListView(LoginRequiredMixin, ListView):
             "schedule": qs.schedule(user, span_days=3),
             "tagsNeedingReview": tags_needing,
             "pinned": pinned_rows,
-            "disabled": disabled_rows,
+            "muted": muted_rows,
             "featured": featured,
             "streak": qs.study_streak(user),
             "nextDue": next_due,
@@ -661,6 +661,21 @@ def start_study_session(request: HttpRequest) -> HttpResponseRedirect:
     )
 
     if first_question:
+        # An explicit tag drill includes muted tags (which are otherwise hidden
+        # from general sessions); warn the user so the inclusion isn't a surprise.
+        if study_method == "tag":
+            selected = [t.strip() for t in str(study_params.get("tags", "")).split(",") if t.strip()]
+            muted = set(user.userprofile.drill_tags_muted.values_list("name", flat=True))
+            muted_selected = [t for t in selected if t in muted]
+            if muted_selected:
+                messages.add_message(
+                    request,
+                    messages.WARNING,
+                    f"Heads up: {', '.join(muted_selected)} "
+                    f"{'is' if len(muted_selected) == 1 else 'are'} muted "
+                    "(hidden from general sessions) — drilling explicitly.",
+                    extra_tags="noAutoHide",
+                )
         return redirect("drill:detail", uuid=first_question)
 
     messages.add_message(
@@ -755,19 +770,19 @@ def get_pinned_tags(request: HttpRequest) -> Response:
 
 
 @api_view(["GET"])
-def get_disabled_tags(request: HttpRequest) -> Response:
-    """Get a list of disabled tags for the current user.
+def get_muted_tags(request: HttpRequest) -> Response:
+    """Get a list of muted tags for the current user.
 
     Args:
         request: The HTTP request.
 
     Returns:
         JSON response containing:
-            - status: "OK"
-            - tag_list: List of disabled tags
+            - tag_list: List of muted tags (hidden from general sessions,
+              drillable when explicitly chosen)
     """
     user = cast(User, request.user)
-    tags = Question.objects.get_disabled_tags(user)
+    tags = Question.objects.get_muted_tags(user)
 
     response = {
         "tag_list": tags
@@ -882,67 +897,65 @@ def sort_pinned_tags(request: HttpRequest) -> Response:
 
 @api_view(["POST"])
 @validate_post_data("tag")
-def disable_tag(request: HttpRequest) -> Response:
-    """Disable all questions with a given tag.
+def mute_tag(request: HttpRequest) -> Response:
+    """Mute a tag for the current user.
 
-    Marks all questions with the specified tag as disabled. Returns an
-    error if questions with that tag are already disabled.
+    Adds the tag to the user's muted set, hiding its questions from general
+    study sessions while leaving them drillable when the tag is chosen
+    explicitly. Returns an error if the tag is already muted.
 
     Args:
         request: The HTTP request containing:
-            - tag: The name of the tag to disable
+            - tag: The name of the tag to mute
 
     Returns:
-        JSON response containing:
-            - status: "OK" on success, "ERROR" on failure
-            - message: Error message if status is "ERROR"
+        JSON response with operation status.
     """
     tag_name = request.POST["tag"]
 
     user = cast(User, request.user)
-    if tag_name in {x["name"] for x in Question.objects.get_disabled_tags(user)}:
+    if user.userprofile.drill_tags_muted.filter(name=tag_name).exists():
         return Response(
             {
-                "detail": "Questions with that tag are already disabled."
+                "detail": "That tag is already muted."
             },
             status=400
         )
     else:
-        Question.objects.filter(tags__name=tag_name, user=user).update(is_disabled=True)
-        return Response()
+        tag = get_user_object_or_404(user, Tag, name=tag_name)
+        user.userprofile.drill_tags_muted.add(tag)
+        return Response(status=status.HTTP_201_CREATED)
 
 
 @api_view(["POST"])
 @validate_post_data("tag")
-def enable_tag(request: HttpRequest) -> Response:
-    """Enable all questions with a given tag.
+def unmute_tag(request: HttpRequest) -> Response:
+    """Unmute a tag for the current user.
 
-    Marks all questions with the specified tag as enabled. Returns an
-    error if no questions with that tag are currently disabled.
+    Removes the tag from the user's muted set so its questions reappear in
+    general study sessions. Returns an error if the tag is not muted.
 
     Args:
         request: The HTTP request containing:
-            - tag: The name of the tag to enable
+            - tag: The name of the tag to unmute
 
     Returns:
-        JSON response containing:
-            - status: "OK" on success, "ERROR" on failure
-            - message: Error message if status is "ERROR"
+        JSON response with operation status.
     """
     tag_name = request.POST["tag"]
 
     user = cast(User, request.user)
-    if tag_name not in {x["name"] for x in Question.objects.get_disabled_tags(user)}:
+    if not user.userprofile.drill_tags_muted.filter(name=tag_name).exists():
         return Response(
             {
-                "detail": "No question with that tag is disabled."
+                "detail": "That tag is not muted."
             },
             status=400
         )
     else:
-        Question.objects.filter(tags__name=tag_name, user=user).update(is_disabled=False)
-
-        return Response()
+        tag = get_user_object_or_404(user, Tag, name=tag_name)
+        user.userprofile.drill_tags_muted.remove(tag)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @api_view(["POST"])

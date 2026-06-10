@@ -8,7 +8,6 @@ import SaveBar from "./components/SaveBar";
 import SecretField from "./components/SecretField";
 import Select from "./components/Select";
 import SectionCard from "./components/SectionCard";
-import TagInput from "./components/TagInput";
 import ThemePicker, { ThemeOption } from "./components/ThemePicker";
 import Toggle from "./components/Toggle";
 import VisualizerPicker from "./components/VisualizerPicker";
@@ -26,7 +25,6 @@ interface FormField {
 
 export interface PreferencesPageProps {
   formAction: string;
-  tagSearchUrl: string;
   passwordUrl: string;
   prefsUrl: string;
   authToken: string;
@@ -37,7 +35,6 @@ export interface PreferencesPageProps {
   backgroundImageUrl: string;
   backgroundImageName: string;
   eyeCandy: boolean;
-  initialTags: string[];
   instagramUsername: string;
   instagramPassword: string;
   formFields: FormField[];
@@ -50,7 +47,6 @@ interface FieldState {
   visualizer: string;
   background: FileDropValue;
   sidebar: FileDropValue;
-  drillMutedTags: string[];
   drillIntervals: number[];
   defaultCollection: string;
   imageCollection: string;
@@ -115,7 +111,6 @@ function basename(url: string): string {
 export function PreferencesPage(props: PreferencesPageProps) {
   const {
     formAction,
-    tagSearchUrl,
     passwordUrl,
     prefsUrl,
     authToken,
@@ -126,7 +121,6 @@ export function PreferencesPage(props: PreferencesPageProps) {
     backgroundImageUrl,
     backgroundImageName,
     eyeCandy,
-    initialTags,
     instagramUsername,
     instagramPassword,
     formFields,
@@ -186,7 +180,6 @@ export function PreferencesPage(props: PreferencesPageProps) {
         url: sidebarImageUrl || "",
         name: sidebarImageUrl ? sidebarImageName || basename(sidebarImageUrl) : "",
       },
-      drillMutedTags: initialTags.map(t => t.toLowerCase()),
       drillIntervals: parseDrillIntervals(drillField?.value || ""),
       defaultCollection: defaultCollectionField?.value || "",
       imageCollection: imageCollectionField?.value || "",
@@ -267,7 +260,6 @@ export function PreferencesPage(props: PreferencesPageProps) {
       "drill_intervals",
       state.drillIntervals.length ? state.drillIntervals.join(",") : ""
     );
-    form.append("drill_tags_muted", state.drillMutedTags.join(","));
     form.append("nytimes_api_key", state.nytimesApiKey);
     form.append("weather_location", state.weatherLocation);
     form.append("google_calendar", state.googleCalendar);
@@ -448,13 +440,6 @@ export function PreferencesPage(props: PreferencesPageProps) {
         </SectionCard>
 
         <SectionCard title="Drills" meta="spaced-repetition config">
-          <Row label="Muted drill tags" hint="skip flashcards with these tags">
-            <TagInput
-              tags={state.drillMutedTags}
-              onChange={upd("drillMutedTags")}
-              searchUrl={tagSearchUrl}
-            />
-          </Row>
           <Row
             label="Drill intervals"
             hint="days between review passes"

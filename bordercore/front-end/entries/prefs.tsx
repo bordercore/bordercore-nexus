@@ -16,7 +16,6 @@ interface FormField {
 const container = document.getElementById("react-root");
 if (container) {
   const formAction = container.getAttribute("data-form-action") || "";
-  const tagSearchUrl = container.getAttribute("data-tag-search-url") || "";
   const passwordUrl = container.getAttribute("data-password-url") || "";
   const prefsUrl = container.getAttribute("data-prefs-url") || formAction;
   const authToken = container.getAttribute("data-auth-token") || "";
@@ -29,16 +28,6 @@ if (container) {
   const eyeCandy = container.getAttribute("data-eye-candy") === "true";
   const instagramUsername = container.getAttribute("data-instagram-username") || "";
   const instagramPassword = container.getAttribute("data-instagram-password") || "";
-
-  let initialTags: string[] = [];
-  const tagsScript = document.getElementById("initial-tags");
-  if (tagsScript) {
-    try {
-      initialTags = JSON.parse(tagsScript.textContent || "[]");
-    } catch (e) {
-      console.error("Error parsing initial tags:", e);
-    }
-  }
 
   let formFields: FormField[] = [];
   const fieldsScript = document.getElementById("formFields");
@@ -54,7 +43,6 @@ if (container) {
   root.render(
     <PreferencesPage
       formAction={formAction}
-      tagSearchUrl={tagSearchUrl}
       passwordUrl={passwordUrl}
       prefsUrl={prefsUrl}
       authToken={authToken}
@@ -65,7 +53,6 @@ if (container) {
       backgroundImageUrl={backgroundImageUrl}
       backgroundImageName={backgroundImageName}
       eyeCandy={eyeCandy}
-      initialTags={initialTags}
       instagramUsername={instagramUsername}
       instagramPassword={instagramPassword}
       formFields={formFields}

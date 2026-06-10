@@ -90,19 +90,19 @@ urlpatterns = [
         name="sort_pinned_tags"
     ),
     path(
-        route="get_disabled_tags",
-        view=views.get_disabled_tags,
-        name="get_disabled_tags"
+        route="get_muted_tags",
+        view=views.get_muted_tags,
+        name="get_muted_tags"
     ),
     path(
-        route="disable_tag",
-        view=views.disable_tag,
-        name="disable_tag"
+        route="mute_tag",
+        view=views.mute_tag,
+        name="mute_tag"
     ),
     path(
-        route="enable_tag",
-        view=views.enable_tag,
-        name="enable_tag"
+        route="unmute_tag",
+        view=views.unmute_tag,
+        name="unmute_tag"
     ),
     path(
         route="get_title_from_url",

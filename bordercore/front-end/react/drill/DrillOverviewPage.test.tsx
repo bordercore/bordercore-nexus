@@ -4,7 +4,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import DrillOverviewPage from "./DrillOverviewPage";
 import type { DrillPayload } from "./types";
 
-// DrillPinnedTags and DrillDisabledTags fetch on mount via axios (doGet).
+// DrillPinnedTags and DrillMutedTags fetch on mount via axios (doGet).
 // Mock axios at the module level so those calls resolve silently.
 vi.mock("axios", () => {
   const resolved = { data: { tag_list: [] } };
@@ -26,9 +26,9 @@ const payload: DrillPayload = {
     pinTag: "/drill/pin_tag",
     unpinTag: "/drill/unpin_tag",
     sortPinnedTags: "/drill/sort_pinned_tags",
-    getDisabledTags: "/drill/get_disabled_tags",
-    disableTag: "/drill/disable_tag",
-    enableTag: "/drill/enable_tag",
+    getMutedTags: "/drill/get_muted_tags",
+    muteTag: "/drill/mute_tag",
+    unmuteTag: "/drill/unmute_tag",
     tagSearch: "/tag/search",
     featuredTagInfo: "/drill/featured_tag_info",
   },
@@ -71,7 +71,7 @@ const payload: DrillPayload = {
     },
   ],
   pinned: [],
-  disabled: [],
+  muted: [],
   featured: null,
   streak: 17,
   nextDue: "in 02h 14m",
@@ -81,7 +81,7 @@ const payload: DrillPayload = {
 
 describe("DrillOverviewPage", () => {
   it("renders the page head, hero, schedule, sidebar, and tags table", () => {
-    // Wrapped `DrillPinnedTags` / `DrillDisabledTags` fetch on mount.
+    // Wrapped `DrillPinnedTags` / `DrillMutedTags` fetch on mount.
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ tag_list: [] }),

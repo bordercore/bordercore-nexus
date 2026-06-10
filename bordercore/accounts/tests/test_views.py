@@ -266,7 +266,6 @@ def _valid_prefs_post(**overrides):
         "visualizer": "torus",
         "eye_candy": "false",
         "drill_intervals": "1,3,7,14",
-        "drill_tags_muted": "",
         "nytimes_api_key": "",
         "weather_location": "02138",
         "google_calendar": "",
