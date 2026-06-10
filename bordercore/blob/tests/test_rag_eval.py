@@ -8,6 +8,7 @@ from blob.rag_eval import (
     EvalCase,
     EvalReport,
     _first_expected_rank,
+    _passage_contains,
     evaluate_notes_retrieval,
     load_dataset,
     score_case,
@@ -193,3 +194,23 @@ def test_notes_rag_effective_recall_meets_baseline():
         f"baseline {NOTES_RAG_EVAL_BASELINE}; {report.dropped_count} cases "
         "dropped by the top-N cap."
     )
+
+
+class TestPassageContains:
+    def test_true_when_any_phrase_present(self):
+        assert _passage_contains("the vector is 1536 dims", ["1536"]) is True
+
+    def test_case_insensitive(self):
+        assert _passage_contains("Indexed with EMBEDDINGS_VECTOR", ["embeddings_vector"]) is True
+
+    def test_any_of_matches_second_phrase(self):
+        assert _passage_contains("size is 1,536", ["1536", "1,536"]) is True
+
+    def test_false_when_no_phrase_present(self):
+        assert _passage_contains("nothing relevant here", ["1536"]) is False
+
+    def test_false_on_empty_phrases(self):
+        assert _passage_contains("anything", []) is False
+
+    def test_false_on_none_passage(self):
+        assert _passage_contains(None, ["1536"]) is False

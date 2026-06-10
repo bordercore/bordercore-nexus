@@ -138,6 +138,18 @@ def _first_expected_rank(
     return None
 
 
+def _passage_contains(passage: str | None, phrases: list[str]) -> bool:
+    """Case-insensitive any-of substring test.
+
+    True iff ``passage`` contains at least one of ``phrases``. Empty phrases or a
+    missing passage return False.
+    """
+    if not passage or not phrases:
+        return False
+    haystack = passage.lower()
+    return any(phrase.lower() in haystack for phrase in phrases)
+
+
 def score_case(case: EvalCase, raw_hits: list[dict[str, Any]]) -> CaseResult:
     """Score a single case from its raw ``semantic_search`` hits.
 
