@@ -92,6 +92,11 @@ class Command(BaseCommand):
                 self.stderr.write(f"Skipped (no contents): {case.expected_uuids[0]}")
                 out_cases.append(record)
                 continue
+            if len(contents) > EXCERPT_CHARS:
+                self.stderr.write(
+                    f"Note {case.expected_uuids[0]} truncated to {EXCERPT_CHARS} "
+                    "chars; an answer past that point will be flagged _needs_review."
+                )
 
             try:
                 response = client.chat.completions.create(
@@ -127,7 +132,7 @@ class Command(BaseCommand):
             f"Drafted {drafted} phrases ({flagged} flagged _needs_review) → {out_path}"
         )
         self.stdout.write(
-            "Curate this file (verify/trim phrases; for each _needs_review entry "
-            "either confirm the phrase is verbatim or drop the case, then remove "
-            "the _needs_review key), then merge into notes_rag_eval.json."
+            "Curate this file: for each _needs_review entry, confirm the phrase is "
+            "verbatim, trim it to the nearest verbatim span, or drop the case; then "
+            "remove the _needs_review key. Merge the result into notes_rag_eval.json."
         )
