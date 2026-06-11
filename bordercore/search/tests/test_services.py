@@ -637,7 +637,7 @@ def test_semantic_search_passage_falls_back_to_contents(mock_execute, mock_embed
 
 @pytest.mark.data_quality
 def test_perform_search_semantic_uses_knn(monkeypatch):
-    """perform_search semantic mode returns native-kNN hits scored in [0, 1]."""
+    """perform_search semantic mode returns native-kNN cosine-scored hits."""
     from types import SimpleNamespace
 
     from django.conf import settings
@@ -657,6 +657,9 @@ def test_perform_search_semantic_uses_knn(monkeypatch):
     # perform_search runs hits through _filter_results, which renames
     # _score -> score and _source -> source.
     assert out["results"], "expected results"
+    # Cosine kNN scores are (1 + cosine) / 2, nominally in [0, 1], but the
+    # index quantizes vectors (int8_hnsw) and scores against the quantized
+    # copies, so a self-match can land slightly above 1.0.
     for h in out["results"]:
-        assert 0.0 <= h["score"] <= 1.0, h["score"]
+        assert 0.0 <= h["score"] <= 1.0 + 1e-2, h["score"]
     assert any(h["_id"] == uuid_ for h in out["results"])

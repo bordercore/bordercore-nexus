@@ -392,7 +392,9 @@ def perform_search(
     search_object["sort"] = {sort_field: {"order": "desc"}}
 
     if is_semantic:
-        # Native ES8 kNN over embeddings_vector (scores in [0, 1]). kNN is a
+        # Native ES8 kNN over embeddings_vector. Cosine scores are nominally
+        # in [0, 1], but int8_hnsw quantization can push them slightly above
+        # 1.0. kNN is a
         # top-level search param with its own filter, so the function_score
         # skeleton and post_filter are dropped here; user/tag/doctype constraints
         # move into knn.filter. `k` covers the requested page so pagination via
