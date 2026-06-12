@@ -20,7 +20,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import markdownit from "markdown-it";
+import { createMarkdown } from "../common/markdown";
 import { DropDownMenu } from "../common/DropDownMenu";
 import { doPost } from "../utils/reactUtils";
 import { tagStyle } from "../utils/tagColors";
@@ -72,7 +72,7 @@ function SortableBookmarkRow({
   dragDisabled,
 }: SortableBookmarkRowProps) {
   const [showYtDuration, setShowYtDuration] = useState(false);
-  const markdown = useMemo(() => markdownit(), []);
+  const markdown = useMemo(() => createMarkdown(), []);
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: bookmark.uuid,

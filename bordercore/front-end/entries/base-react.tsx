@@ -6,11 +6,11 @@ import RefinedTopBar from "../react/topbar/RefinedTopBar";
 import ChatBot, { ChatBotHandle } from "../react/chatbot/ChatBot";
 import SidebarMenu from "../react/common/SidebarMenu";
 import GlobalAudioPlayer from "../react/music/GlobalAudioPlayer";
-import MarkdownIt from "markdown-it";
+import { createMarkdown } from "../react/common/markdown";
 import { EventBus, doGet, doPost } from "../react/utils/reactUtils";
 
 // Initialize markdown-it renderer
-const markdown = MarkdownIt({
+const markdown = createMarkdown({
   html: true,
   linkify: true,
   typographer: true,

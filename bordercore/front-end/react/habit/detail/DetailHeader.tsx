@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import MarkdownIt from "markdown-it";
+import { createMarkdown } from "../../common/markdown";
 
 interface DetailHeaderProps {
   purpose: string;
@@ -17,7 +17,7 @@ export function DetailHeader({ purpose, tags, isActive, endDate }: DetailHeaderP
   // markdown-it with default rules: HTML disabled, so user-owned `purpose`
   // text renders to safe markup.  Mirrors the prior HabitDetailPage pattern
   // so existing markdown content keeps its formatting.
-  const md = useMemo(() => new MarkdownIt(), []);
+  const md = useMemo(() => createMarkdown(), []);
   const purposeHtml = useMemo(() => (purpose ? md.render(purpose) : ""), [md, purpose]);
 
   return (

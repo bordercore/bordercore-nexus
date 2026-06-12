@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import hotkeys from "hotkeys-js";
-import MarkdownIt from "markdown-it";
+import { createMarkdown } from "../common/markdown";
 import Prism from "prismjs";
 
 (globalThis as any).Prism = Prism;
@@ -164,7 +164,7 @@ export function DrillQuestionPage({
     const inferredLang =
       question.tags.map(t => t.name.toLowerCase()).find(name => KNOWN_PRISM_LANGS.has(name)) ??
       null;
-    return new MarkdownIt({
+    return createMarkdown({
       html: true,
       linkify: true,
       typographer: true,

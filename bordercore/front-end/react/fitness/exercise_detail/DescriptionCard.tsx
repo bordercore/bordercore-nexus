@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faComment, faPencilAlt, faTrashAlt } from "@fortawesome/free-solid-svg-icons";
-import MarkdownIt from "markdown-it";
+import { createMarkdown } from "../../common/markdown";
 import { EventBus, doPost } from "../../utils/reactUtils";
 
 interface DescriptionCardProps {
@@ -11,7 +11,7 @@ interface DescriptionCardProps {
   editNoteUrl: string;
 }
 
-const markdown = new MarkdownIt();
+const markdown = createMarkdown();
 
 export function DescriptionCard({
   description,

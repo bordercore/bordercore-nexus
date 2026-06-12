@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import MarkdownIt from "markdown-it";
+import { createMarkdown } from "../common/markdown";
 import DOMPurify from "dompurify";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -28,7 +28,7 @@ import { useLiveChannel } from "../common/hooks/useLiveChannel";
 // Per-page help text is authored as markdown in each template's
 // {% block help %}. html:false keeps authored raw HTML inert; DOMPurify is a
 // second line of defense on the rendered output.
-const helpMd = new MarkdownIt({ html: false, linkify: true, typographer: true });
+const helpMd = createMarkdown({ html: false, linkify: true, typographer: true });
 
 interface BaseTemplateData {
   failedTestCount?: number;

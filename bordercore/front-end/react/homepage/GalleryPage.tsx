@@ -3,9 +3,9 @@ import { Card } from "../common/Card";
 import { SearchNoResult } from "../search/SearchNoResult";
 import { EventBus } from "../utils/reactUtils";
 import hljs from "highlight.js";
-import MarkdownIt from "markdown-it";
+import { createMarkdown } from "../common/markdown";
 
-const markdown = new MarkdownIt({
+const markdown = createMarkdown({
   highlight: function (str: string) {
     try {
       return hljs.highlightAuto(str).value;

@@ -1,5 +1,6 @@
-import MarkdownIt from "markdown-it";
+import type MarkdownIt from "markdown-it";
 import DOMPurify from "dompurify";
+import { createMarkdown } from "../common/markdown";
 import hljs from "highlight.js/lib/core";
 
 import python from "highlight.js/lib/languages/python";
@@ -55,7 +56,7 @@ function escapeHtml(str: string): string {
     .replace(/'/g, "&#39;");
 }
 
-const md: MarkdownIt = MarkdownIt({
+const md: MarkdownIt = createMarkdown({
   html: true,
   linkify: true,
   typographer: true,

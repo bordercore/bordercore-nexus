@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faQuestion, faCopy } from "@fortawesome/free-solid-svg-icons";
-import markdownit from "markdown-it";
+import { createMarkdown } from "./markdown";
 import { Card } from "./Card";
 import { tagStyle } from "../utils/tagColors";
 
@@ -20,7 +20,7 @@ interface BackReferencesProps {
 }
 
 export function BackReferences({ backReferences }: BackReferencesProps) {
-  const markdown = useMemo(() => markdownit(), []);
+  const markdown = useMemo(() => createMarkdown(), []);
 
   const getMarkdown = (content: string): string => {
     return markdown.render(content);

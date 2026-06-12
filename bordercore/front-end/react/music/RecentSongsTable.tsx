@@ -1,9 +1,9 @@
 import React from "react";
-import MarkdownIt from "markdown-it";
+import { createMarkdown } from "../common/markdown";
 import type { RecentAddedSong } from "./types";
 
 // markdown-it sanitizes HTML by default, providing XSS protection
-const markdown = new MarkdownIt({
+const markdown = createMarkdown({
   html: true,
   linkify: true,
   typographer: true,

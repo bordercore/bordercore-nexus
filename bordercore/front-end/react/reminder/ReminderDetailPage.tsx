@@ -2,11 +2,11 @@ import React from "react";
 import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
-import MarkdownIt from "markdown-it";
+import { createMarkdown } from "../common/markdown";
 import { Spinner } from "../common/Spinner";
 
 // Initialize markdown-it renderer
-const markdown = MarkdownIt({
+const markdown = createMarkdown({
   html: true,
   linkify: true,
   typographer: true,

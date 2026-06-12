@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import markdownit from "markdown-it";
+import { createMarkdown } from "../../common/markdown";
 import DOMPurify from "dompurify";
 import Prism from "prismjs";
 import "prismjs/components/prism-python";
@@ -88,7 +88,7 @@ export function BlobDetailPage({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isImageLightboxOpen, setIsImageLightboxOpen] = useState(false);
 
-  const markdown = useMemo(() => markdownit(), []);
+  const markdown = useMemo(() => createMarkdown(), []);
 
   // Wait up to ~10s for Elasticsearch to index the blob, retry-with-backoff.
   useEffect(() => {

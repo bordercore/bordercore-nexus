@@ -1,8 +1,8 @@
 import React from "react";
-import MarkdownIt from "markdown-it";
 import type Token from "markdown-it/lib/token";
+import { createMarkdown } from "../common/markdown";
 
-const md = MarkdownIt({
+const md = createMarkdown({
   html: false,
   linkify: true,
   typographer: true,
@@ -47,6 +47,7 @@ function walk(tokens: Token[], keyBase = ""): React.ReactNode[] {
       if (t.tag === "em") out.push(<em key={key}>{inner}</em>);
       else if (t.tag === "strong") out.push(<strong key={key}>{inner}</strong>);
       else if (t.tag === "s") out.push(<s key={key}>{inner}</s>);
+      else if (t.tag === "sup") out.push(<sup key={key}>{inner}</sup>);
       else if (t.tag === "a") {
         const href = attr(t, "href") ?? "";
         out.push(
