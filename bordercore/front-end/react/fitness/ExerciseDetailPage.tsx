@@ -41,6 +41,7 @@ interface ExerciseDetailPageProps {
   };
   exercise: {
     hasWeight: boolean;
+    hasReps: boolean;
     hasDuration: boolean;
   };
 }
@@ -106,6 +107,7 @@ export function ExerciseDetailPage({
           <LastWorkoutCard
             date={lastWorkout.date}
             hasWeight={exercise.hasWeight}
+            hasReps={exercise.hasReps}
             hasDuration={exercise.hasDuration}
             latestWeight={lastWorkout.latestWeight}
             latestReps={lastWorkout.latestReps}
@@ -136,6 +138,7 @@ export function ExerciseDetailPage({
           />
           <LogSetCard
             hasWeight={exercise.hasWeight}
+            hasReps={exercise.hasReps}
             hasDuration={exercise.hasDuration}
             logSetUrl={urls.logSet}
             deleteSetUrl={urls.deleteSet}

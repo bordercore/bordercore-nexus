@@ -62,6 +62,9 @@ class Exercise(models.Model):
     note = models.TextField(blank=True)
     has_duration = models.BooleanField(default=True)
     has_weight = models.BooleanField(default=True)
+    # False for exercises measured purely by time/load (e.g. a dead hang),
+    # where a per-set rep count is meaningless; sets store reps=0.
+    has_reps = models.BooleanField(default=True)
 
     def __str__(self) -> str:
         """Return string representation of the exercise."""

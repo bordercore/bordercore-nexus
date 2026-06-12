@@ -13,6 +13,7 @@ interface SetGroup {
 interface LastWorkoutCardProps {
   date: string;
   hasWeight: boolean;
+  hasReps: boolean;
   hasDuration: boolean;
   latestWeight: number[];
   latestReps: number[];
@@ -64,6 +65,7 @@ function formatDisplayDate(iso: string): string {
 export function LastWorkoutCard({
   date,
   hasWeight,
+  hasReps,
   hasDuration,
   latestWeight,
   latestReps,
@@ -82,7 +84,7 @@ export function LastWorkoutCard({
       sumLabel: `total ${sum(latestWeight)}lb`,
     });
   }
-  if (latestReps.length > 0) {
+  if (hasReps && latestReps.length > 0) {
     groups.push({
       label: "reps",
       unit: "reps",

@@ -20,6 +20,14 @@ def test_fitness_str(authenticated_client, fitness):
     )) == "ExerciseMuscle: Bench Press, Pectoralis Major"
 
 
+def test_exercise_has_reps_defaults_true():
+
+    exercise = Exercise.objects.create(name="Plank")
+    exercise.refresh_from_db()
+
+    assert exercise.has_reps is True
+
+
 def test_get_targeted_muscles(fitness):
 
     muscles = fitness[0].get_targeted_muscles()

@@ -30,6 +30,26 @@ def test_fitness_exercise_detail(authenticated_client, fitness):
     assert resp.status_code == 200
 
 
+def test_fitness_exercise_detail_exposes_has_reps(authenticated_client, fitness):
+
+    _, client = authenticated_client()
+    exercise = fitness[4]  # Dead Hang
+    Exercise.objects.filter(pk=exercise.pk).update(has_reps=False)
+
+    url = urls.reverse("fitness:exercise_detail", kwargs={"uuid": exercise.uuid})
+    resp = client.get(url)
+
+    assert resp.status_code == 200
+    assert b'data-has-reps="false"' in resp.content
+
+    # A reps-based exercise advertises has_reps=true
+    url = urls.reverse("fitness:exercise_detail", kwargs={"uuid": fitness[0].uuid})
+    resp = client.get(url)
+
+    assert resp.status_code == 200
+    assert b'data-has-reps="true"' in resp.content
+
+
 def test_fitness_add(authenticated_client, fitness):
 
     _, client = authenticated_client()
@@ -212,6 +232,26 @@ def test_log_set_appends_to_existing_today_workout(authenticated_client, fitness
     data_second = Data.objects.get(pk=second["id"])
     assert data_first.workout_id == data_second.workout_id
     assert Workout.objects.filter(user=user, exercise=exercise).count() == 1
+
+
+def test_log_set_accepts_zero_reps_for_repless_exercise(authenticated_client, fitness):
+
+    user, client = authenticated_client()
+    exercise = fitness[4]  # Dead Hang
+    Exercise.objects.filter(pk=exercise.pk).update(has_reps=False)
+
+    url = urls.reverse("fitness:log_set", kwargs={"exercise_uuid": exercise.uuid})
+    resp = client.post(url, {"weight": "25", "reps": "0", "duration": "90"})
+
+    assert resp.status_code == 200
+    payload = resp.json()["set"]
+    assert payload["reps"] == 0
+    assert payload["duration"] == 90
+    assert payload["weight"] == 25
+
+    datum = Data.objects.get(pk=payload["id"])
+    assert datum.reps == 0
+    assert datum.duration == 90
 
 
 def test_log_set_requires_reps(authenticated_client, fitness):

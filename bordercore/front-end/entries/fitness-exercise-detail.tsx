@@ -20,6 +20,8 @@ if (container) {
   const exerciseName = container.getAttribute("data-exercise-name") || "";
   const hasWeight = container.getAttribute("data-has-weight") === "true";
   const hasDuration = container.getAttribute("data-has-duration") === "true";
+  // Missing attribute (older markup) defaults to reps being available.
+  const hasReps = container.getAttribute("data-has-reps") !== "false";
 
   const activityInfo = readJson<ActivityInfo>(container, "data-activity-info", {
     schedule: [false, false, false, false, false, false, false],
@@ -78,6 +80,7 @@ if (container) {
       }}
       exercise={{
         hasWeight,
+        hasReps,
         hasDuration,
       }}
     />

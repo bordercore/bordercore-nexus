@@ -22,8 +22,8 @@ class MuscleAdmin(admin.ModelAdmin):
 
 @admin.register(Exercise)
 class ExerciseAdmin(admin.ModelAdmin):
-    list_display = ("name", "has_duration", "has_weight")
-    list_filter = ("has_duration", "has_weight")
+    list_display = ("name", "has_duration", "has_weight", "has_reps")
+    list_filter = ("has_duration", "has_weight", "has_reps")
     search_fields = ("name",)
 
 

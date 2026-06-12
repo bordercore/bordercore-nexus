@@ -2,8 +2,31 @@ import React, { useState } from "react";
 import { doPost } from "../../utils/reactUtils";
 import type { LoggedSet } from "../types";
 
+type LogMetric = "weight" | "reps" | "duration";
+
+function metricCell(s: LoggedSet, metric: LogMetric) {
+  if (metric === "weight") {
+    return (
+      <>
+        {s.weight}
+        <span className="u">lb</span>
+      </>
+    );
+  }
+  if (metric === "duration") {
+    return (
+      <>
+        {s.duration}
+        <span className="u">s</span>
+      </>
+    );
+  }
+  return <>{s.reps}</>;
+}
+
 interface LogSetCardProps {
   hasWeight: boolean;
+  hasReps: boolean;
   hasDuration: boolean;
   logSetUrl: string;
   deleteSetUrl: string;
@@ -14,6 +37,7 @@ interface LogSetCardProps {
 
 export function LogSetCard({
   hasWeight,
+  hasReps,
   hasDuration,
   logSetUrl,
   deleteSetUrl,
@@ -28,6 +52,15 @@ export function LogSetCard({
   const [sets, setSets] = useState<LoggedSet[]>([]);
   const [submitting, setSubmitting] = useState<boolean>(false);
 
+  // Log-table columns: the primary load metric first (weight, else duration),
+  // then reps — or duration for rep-less exercises where reps is meaningless.
+  const firstColumn: LogMetric = hasWeight ? "weight" : "duration";
+  const secondColumn: LogMetric | null = hasReps
+    ? "reps"
+    : firstColumn !== "duration" && hasDuration
+      ? "duration"
+      : null;
+
   function resetFields() {
     setWeight(defaultWeight);
     setReps(defaultReps);
@@ -36,8 +69,17 @@ export function LogSetCard({
   }
 
   function submit() {
-    const repsInt = parseInt(reps, 10);
-    if (!Number.isFinite(repsInt) || repsInt <= 0) return;
+    let repsInt = 0;
+    if (hasReps) {
+      repsInt = parseInt(reps, 10);
+      if (!Number.isFinite(repsInt) || repsInt <= 0) return;
+    } else {
+      // Rep-less exercises (e.g. a timed dead hang) are stored with reps=0;
+      // require at least one positive metric so empty sets can't be logged.
+      const weightNum = hasWeight ? parseFloat(weight) : 0;
+      const durationNum = hasDuration ? parseInt(duration, 10) : 0;
+      if (!(weightNum > 0) && !(durationNum > 0)) return;
+    }
     if (submitting) return;
     setSubmitting(true);
     doPost(
@@ -103,17 +145,19 @@ export function LogSetCard({
               />
             </div>
           )}
-          <div>
-            <label htmlFor="log-reps">reps</label>
-            <input
-              id="log-reps"
-              type="text"
-              inputMode="numeric"
-              autoComplete="off"
-              value={reps}
-              onChange={e => setReps(e.target.value)}
-            />
-          </div>
+          {hasReps && (
+            <div>
+              <label htmlFor="log-reps">reps</label>
+              <input
+                id="log-reps"
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
+                value={reps}
+                onChange={e => setReps(e.target.value)}
+              />
+            </div>
+          )}
           {hasDuration && (
             <div>
               <label htmlFor="log-duration">duration · sec</label>
@@ -151,8 +195,8 @@ export function LogSetCard({
       <div className="ex-log-table">
         <div className="ex-log-head">
           <span>#</span>
-          <span>{hasWeight ? "weight" : "duration"}</span>
-          <span>reps</span>
+          <span>{firstColumn}</span>
+          <span>{secondColumn ?? ""}</span>
           <span aria-hidden />
         </div>
         {sets.length === 0 ? (
@@ -162,20 +206,8 @@ export function LogSetCard({
             {sets.map((s, i) => (
               <div key={s.id} className={`ex-log-row ${s.new ? "new" : ""}`}>
                 <span className="n">{String(i + 1).padStart(2, "0")}</span>
-                <span className="w">
-                  {hasWeight ? (
-                    <>
-                      {s.weight}
-                      <span className="u">lb</span>
-                    </>
-                  ) : (
-                    <>
-                      {s.duration}
-                      <span className="u">s</span>
-                    </>
-                  )}
-                </span>
-                <span className="r">{s.reps}</span>
+                <span className="w">{metricCell(s, firstColumn)}</span>
+                <span className="r">{secondColumn && metricCell(s, secondColumn)}</span>
                 <button
                   type="button"
                   className="ex-log-x"
