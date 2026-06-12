@@ -12,6 +12,7 @@ final class AuthManager: ObservableObject {
 
     private let keychainService = "com.bordercore.app"
     private let tokenKey = "auth_token"
+    private let keychainAccessGroup = "\(Bundle.main.object(forInfoDictionaryKey: "AppIdentifierPrefix") as? String ?? "")com.bordercore.app"
 
     private init() {
         // Check for existing token on init
@@ -45,12 +46,26 @@ final class AuthManager: ObservableObject {
     // MARK: - Keychain Operations
 
     func getToken() -> String? {
-        let query: [String: Any] = [
+        if let token = readToken(usesAccessGroup: true) {
+            return token
+        }
+        if let legacyToken = readToken(usesAccessGroup: false) {
+            saveToken(legacyToken)
+            return legacyToken
+        }
+        return nil
+    }
+
+    private func readToken(usesAccessGroup: Bool) -> String? {
+        var query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: keychainService,
             kSecAttrAccount as String: tokenKey,
             kSecReturnData as String: true
         ]
+        if usesAccessGroup {
+            query[kSecAttrAccessGroup as String] = keychainAccessGroup
+        }
 
         var result: AnyObject?
         let status = SecItemCopyMatching(query as CFDictionary, &result)
@@ -70,24 +85,33 @@ final class AuthManager: ObservableObject {
 
         guard let data = token.data(using: .utf8) else { return }
 
-        let query: [String: Any] = [
+        var query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: keychainService,
             kSecAttrAccount as String: tokenKey,
             kSecValueData as String: data,
             kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly
         ]
+        query[kSecAttrAccessGroup as String] = keychainAccessGroup
 
         SecItemAdd(query as CFDictionary, nil)
     }
 
     private func deleteToken() {
-        let query: [String: Any] = [
+        var query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: keychainService,
             kSecAttrAccount as String: tokenKey
         ]
+        query[kSecAttrAccessGroup as String] = keychainAccessGroup
 
         SecItemDelete(query as CFDictionary)
+
+        let legacyQuery: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: keychainService,
+            kSecAttrAccount as String: tokenKey
+        ]
+        SecItemDelete(legacyQuery as CFDictionary)
     }
 }
