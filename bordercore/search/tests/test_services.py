@@ -580,6 +580,53 @@ def test_semantic_search_hybrid_retrieves_its_note(monkeypatch):
     assert any(h["_id"] == uuid_ for h in hits), "self note should be retrieved"
 
 
+@pytest.mark.data_quality
+def test_semantic_search_passage_is_matched_chunk_text(monkeypatch):
+    """A kNN-retrieved note's generation passage is its matched nested-chunk
+    text, not a BM25 highlight or truncated contents.
+
+    Guards the nested ``inner_hits`` ``_source`` field path: it must be
+    root-relative (``chunks.text``). A relative path (``text``) makes
+    Elasticsearch return an empty inner-hit ``_source``, which silently drops
+    every chunk passage and degrades generation to BM25 highlights.
+    """
+    from types import SimpleNamespace
+
+    from django.conf import settings
+
+    import search.services as svc
+    from lib.util import get_elasticsearch_connection
+
+    es = get_elasticsearch_connection()
+    idx = settings.ELASTICSEARCH_INDEX
+    resp = es.search(index=idx, size=50, _source=["uuid", "name", "chunks"],
+        query={"bool": {"filter": [
+            {"term": {"doctype": "note"}},
+            {"term": {"user_id": 1}},
+            {"nested": {"path": "chunks", "query": {"exists": {"field": "chunks.vector"}}}},
+        ]}})
+    # A multi-chunk note whose LAST chunk is a mid/tail slice — distinct from
+    # both the contents-prefix fallback and a name-based BM25 highlight (which
+    # both land on the note's head), so the assertion only holds if the matched
+    # chunk text genuinely reaches the LLM passage.
+    multi = [h for h in resp["hits"]["hits"] if len(h["_source"].get("chunks", [])) >= 3]
+    if not multi:
+        pytest.skip("no multi-chunk note available to exercise chunk-passage extraction")
+    hit = multi[0]
+    uuid_ = hit["_id"]
+    chunk = hit["_source"]["chunks"][-1]
+    name = hit["_source"].get("name") or "note"
+    # Query by that chunk's own vector: it is its own nearest neighbour
+    # (cosine 1.0), so inner_hits must surface exactly that chunk.
+    monkeypatch.setattr(svc, "len_safe_get_embedding", lambda *a, **k: chunk["vector"])
+
+    request = SimpleNamespace(user=SimpleNamespace(id=1))
+    out = svc.semantic_search(request, name, size=10)
+    note_hit = next((h for h in out["hits"]["hits"] if h["_id"] == uuid_), None)
+    assert note_hit is not None, "self note should be retrieved"
+    assert note_hit["_passage"] == chunk["text"]
+
+
 @patch("search.services.len_safe_get_embedding")
 @patch("search.services.execute_search")
 def test_semantic_search_uses_nested_chunks_and_passages(mock_execute, mock_embedding):

@@ -760,7 +760,9 @@ def semantic_search(
             "k": NOTES_RRF_RANK_WINDOW,
             "num_candidates": max(NOTES_RRF_RANK_WINDOW * 2, 100),
             "filter": note_filter,
-            "inner_hits": {"name": "chunks", "size": 1, "_source": ["text"]},
+            # Nested inner_hits _source uses the root-relative field path
+            # ("chunks.text"); a relative path ("text") returns an empty source.
+            "inner_hits": {"name": "chunks", "size": 1, "_source": ["chunks.text"]},
         },
         "size": NOTES_RRF_RANK_WINDOW,
         "_source": source_fields,
