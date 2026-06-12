@@ -582,13 +582,15 @@ def test_semantic_search_hybrid_retrieves_its_note(monkeypatch):
 
 @pytest.mark.data_quality
 def test_semantic_search_passage_is_matched_chunk_text(monkeypatch):
-    """A kNN-retrieved note's generation passage is its matched nested-chunk
-    text, not a BM25 highlight or truncated contents.
+    """A kNN-retrieved note's generation passage contains its matched
+    nested-chunk text, not a BM25 highlight or truncated contents.
 
     Guards the nested ``inner_hits`` ``_source`` field path: it must be
     root-relative (``chunks.text``). A relative path (``text``) makes
     Elasticsearch return an empty inner-hit ``_source``, which silently drops
-    every chunk passage and degrades generation to BM25 highlights.
+    every chunk passage and degrades generation to BM25 highlights. (The passage
+    also includes the matched chunk's neighbors, so this checks containment, not
+    equality.)
     """
     from types import SimpleNamespace
 
@@ -624,7 +626,8 @@ def test_semantic_search_passage_is_matched_chunk_text(monkeypatch):
     out = svc.semantic_search(request, name, size=10)
     note_hit = next((h for h in out["hits"]["hits"] if h["_id"] == uuid_), None)
     assert note_hit is not None, "self note should be retrieved"
-    assert note_hit["_passage"] == chunk["text"]
+    assert chunk["text"] in note_hit["_passage"]
+    assert "<em>" not in note_hit["_passage"], "passage is chunk text, not a BM25 highlight"
 
 
 @patch("search.services.len_safe_get_embedding")
@@ -680,6 +683,103 @@ def test_semantic_search_passage_falls_back_to_contents(mock_execute, mock_embed
     request = SimpleNamespace(user=SimpleNamespace(id=1))
     out = svc.semantic_search(request, "q", size=10)
     assert out["hits"]["hits"][0]["_passage"] == "C" * 1500
+
+
+def _knn_window_hit(uuid, chunk_texts, matched_offset):
+    """A kNN parent hit carrying its ordered chunk texts plus one matched inner
+    chunk at ``matched_offset`` (with the ``_nested.offset`` ES attaches)."""
+    return {
+        "_id": uuid,
+        "_score": 0.9,
+        "_source": {"uuid": uuid, "chunks": [{"text": t} for t in chunk_texts]},
+        "inner_hits": {"chunks": {"hits": {"hits": [
+            {"_nested": {"field": "chunks", "offset": matched_offset},
+             "_source": {"text": chunk_texts[matched_offset]}}]}}},
+    }
+
+
+class TestKnnWindowPassage:
+    def test_middle_offset_includes_both_neighbors(self):
+        from search.services import _knn_window_passage
+        hit = _knn_window_hit("A", ["c0", "c1", "c2", "c3"], 2)
+        assert _knn_window_passage(hit, 1) == "c1\n\nc2\n\nc3"
+
+    def test_offset_zero_clamps_low(self):
+        from search.services import _knn_window_passage
+        hit = _knn_window_hit("A", ["c0", "c1", "c2"], 0)
+        assert _knn_window_passage(hit, 1) == "c0\n\nc1"
+
+    def test_last_offset_clamps_high(self):
+        from search.services import _knn_window_passage
+        hit = _knn_window_hit("A", ["c0", "c1", "c2"], 2)
+        assert _knn_window_passage(hit, 1) == "c1\n\nc2"
+
+    def test_window_zero_returns_only_matched_chunk(self):
+        from search.services import _knn_window_passage
+        hit = _knn_window_hit("A", ["c0", "c1", "c2"], 1)
+        assert _knn_window_passage(hit, 0) == "c1"
+
+    def test_no_inner_hits_returns_none(self):
+        from search.services import _knn_window_passage
+        hit = {"_id": "A", "_source": {"uuid": "A", "chunks": [{"text": "c0"}]},
+               "inner_hits": {"chunks": {"hits": {"hits": []}}}}
+        assert _knn_window_passage(hit, 1) is None
+
+    def test_missing_parent_chunks_falls_back_to_matched_text(self):
+        from search.services import _knn_window_passage
+        hit = {"_id": "A", "_source": {"uuid": "A"},
+               "inner_hits": {"chunks": {"hits": {"hits": [
+                   {"_nested": {"field": "chunks", "offset": 3},
+                    "_source": {"text": "matched only"}}]}}}}
+        assert _knn_window_passage(hit, 1) == "matched only"
+
+    def test_missing_nested_offset_falls_back_to_matched_text(self):
+        from search.services import _knn_window_passage
+        hit = {"_id": "A",
+               "_source": {"uuid": "A", "chunks": [{"text": "c0"}, {"text": "c1"}]},
+               "inner_hits": {"chunks": {"hits": {"hits": [
+                   {"_source": {"text": "matched"}}]}}}}
+        assert _knn_window_passage(hit, 1) == "matched"
+
+
+@pytest.mark.data_quality
+def test_semantic_search_passage_includes_chunk_neighbors(monkeypatch):
+    """A kNN-matched note's passage carries the matched chunk's positional
+    neighbors (offset-1 and offset+1), not just the matched chunk itself."""
+    from types import SimpleNamespace
+
+    from django.conf import settings
+
+    import search.services as svc
+    from lib.util import get_elasticsearch_connection
+
+    es = get_elasticsearch_connection()
+    idx = settings.ELASTICSEARCH_INDEX
+    resp = es.search(index=idx, size=50, _source=["uuid", "name", "chunks"],
+        query={"bool": {"filter": [
+            {"term": {"doctype": "note"}},
+            {"term": {"user_id": 1}},
+            {"nested": {"path": "chunks", "query": {"exists": {"field": "chunks.vector"}}}},
+        ]}})
+    multi = [h for h in resp["hits"]["hits"] if len(h["_source"].get("chunks", [])) >= 3]
+    if not multi:
+        pytest.skip("no note with >=3 chunks available")
+    hit = multi[0]
+    uuid_ = hit["_id"]
+    chunks = hit["_source"]["chunks"]
+    mid = len(chunks) // 2  # a middle offset, so both neighbors exist
+    # Query by the middle chunk's own vector: it is its own nearest neighbour,
+    # so inner_hits surfaces exactly that chunk at offset `mid`.
+    monkeypatch.setattr(svc, "len_safe_get_embedding", lambda *a, **k: chunks[mid]["vector"])
+
+    request = SimpleNamespace(user=SimpleNamespace(id=1))
+    out = svc.semantic_search(request, hit["_source"].get("name") or "note", size=10)
+    note_hit = next((h for h in out["hits"]["hits"] if h["_id"] == uuid_), None)
+    assert note_hit is not None, "self note should be retrieved"
+    passage = note_hit["_passage"]
+    assert chunks[mid]["text"] in passage, "matched chunk present"
+    assert chunks[mid - 1]["text"] in passage, "previous neighbour present"
+    assert chunks[mid + 1]["text"] in passage, "next neighbour present"
 
 
 @pytest.mark.data_quality

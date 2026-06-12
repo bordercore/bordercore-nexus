@@ -188,6 +188,10 @@ NOTES_RRF_RANK_CONSTANT = 60
 NOTES_RRF_RANK_WINDOW = 50
 NOTES_BM25_FIELDS = ["name^2", "contents"]
 NOTES_PASSAGE_FALLBACK_CHARS = 1500
+# Generation passage = the matched chunk plus this many positional neighbors on
+# each side, so an answer in a chunk adjacent to the query-similar one still
+# reaches the LLM.
+NOTES_PASSAGE_NEIGHBOR_WINDOW = 1
 
 RESULT_COUNT_PER_PAGE = 10
 
@@ -675,15 +679,36 @@ def _rrf_fuse(
     return fused
 
 
-def _knn_chunk_passage(hit: dict[str, Any]) -> str | None:
-    """Return the matched nested chunk text from a kNN hit's inner_hits, if any."""
+def _knn_window_passage(hit: dict[str, Any], window: int) -> str | None:
+    """Return the matched nested chunk plus its ``window`` positional neighbors.
+
+    The matched chunk is the top kNN ``inner_hits`` chunk; its array index comes
+    from the ``_nested.offset`` Elasticsearch attaches. The passage is the note's
+    chunk texts in document order over ``[offset - window, offset + window]``,
+    clamped to the array bounds and joined with blank lines.
+
+    Degrades gracefully: returns the matched chunk's own text when the note's
+    chunk array or the matched offset is unavailable, and ``None`` when there is
+    no matched chunk at all (so the caller falls through to the BM25 highlight or
+    contents fallback).
+
+    Adjacent chunks overlap by ~``NOTE_CHUNK_OVERLAP`` tokens, so a window repeats
+    a little boundary text; this is harmless to the LLM and not de-duplicated.
+    """
     try:
         inner = hit["inner_hits"]["chunks"]["hits"]["hits"]
     except (KeyError, TypeError):
         return None
     if not inner:
         return None
-    return inner[0].get("_source", {}).get("text")
+    matched = inner[0]
+    matched_text = matched.get("_source", {}).get("text")
+    offset = matched.get("_nested", {}).get("offset")
+    chunks = hit.get("_source", {}).get("chunks")
+    if offset is None or not chunks:
+        return matched_text
+    texts = [c.get("text", "") for c in chunks]
+    return "\n\n".join(texts[max(0, offset - window): offset + window + 1])
 
 
 def _bm25_highlight_passage(hit: dict[str, Any]) -> str | None:
@@ -765,7 +790,9 @@ def semantic_search(
             "inner_hits": {"name": "chunks", "size": 1, "_source": ["chunks.text"]},
         },
         "size": NOTES_RRF_RANK_WINDOW,
-        "_source": source_fields,
+        # chunks.text lets the passage builder slice neighbors of the matched
+        # chunk; the matched chunk's index comes from inner_hits' _nested.offset.
+        "_source": source_fields + ["chunks.text"],
     }
 
     try:
@@ -779,7 +806,7 @@ def semantic_search(
     # Best passage per note: matched chunk (kNN) > highlight fragment (BM25).
     passage_by_id: dict[str, str] = {}
     for hit in knn_hits:
-        chunk = _knn_chunk_passage(hit)
+        chunk = _knn_window_passage(hit, NOTES_PASSAGE_NEIGHBOR_WINDOW)
         if chunk:
             passage_by_id[hit["_id"]] = chunk
     for hit in bm25_hits:
