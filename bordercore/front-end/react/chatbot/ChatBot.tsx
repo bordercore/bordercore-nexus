@@ -9,6 +9,7 @@ import React, {
 import { ChatBotShell } from "./ChatBotShell";
 import { ChatBotHeader } from "./ChatBotHeader";
 import { ModeChips } from "./ModeChips";
+import { DiscussBar } from "./DiscussBar";
 import { MessageList } from "./MessageList";
 import { ChatInput } from "./ChatInput";
 import { loadUiState, saveUiState } from "./storage";
@@ -42,6 +43,9 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
   const [pinned, setPinned] = useState(initialUi.pinned);
   const [pinnedWidth, setPinnedWidth] = useState(initialUi.pinnedWidth);
   const [mode, setMode] = useState<ChatMode>("chat");
+  // When set, the chat is grounded in a drill question ("Discuss"): every turn
+  // is sent with this question_uuid as context.
+  const [questionUuid, setQuestionUuid] = useState("");
   const [history, setHistory] = useState<ChatMessage[]>([SYSTEM_MESSAGE]);
   const [draft, setDraft] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
@@ -74,16 +78,28 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
       let nextHistory = startingHistory;
       let nextMode = mode;
 
-      const isDjango = mode === "django" && !opts.questionUuid && !opts.exerciseUuid;
+      const isQuestion = mode === "question" && !!questionUuid && !opts.exerciseUuid;
+      const isDjango = mode === "django" && !opts.exerciseUuid && !isQuestion;
 
-      if (opts.questionUuid) {
-        nextHistory = [SYSTEM_MESSAGE];
-        nextMode = "question";
-        payload = { question_uuid: opts.questionUuid };
-      } else if (opts.exerciseUuid) {
+      if (opts.exerciseUuid) {
         nextHistory = [SYSTEM_MESSAGE];
         nextMode = "exercise";
         payload = { exercise_uuid: opts.exerciseUuid };
+      } else if (isQuestion) {
+        // Drill "Discuss": ground every turn in the flashcard (question_uuid)
+        // while answering the user's own message. The "Answer this question"
+        // chip injects an explicit answer request; free-form text flows the
+        // same way. The server attaches the question + tags as system context.
+        const userMsg: ChatMessage = {
+          id: startingHistory.length + 1,
+          content,
+          role: "user",
+        };
+        nextHistory = [...startingHistory, userMsg];
+        payload = {
+          question_uuid: questionUuid,
+          chat_history: JSON.stringify(nextHistory.filter(m => m.role !== "system")),
+        };
       } else if (mode === "blob") {
         nextHistory = [SYSTEM_MESSAGE];
         payload = { content, blob_uuid: blobUuid };
@@ -212,7 +228,7 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
         abortRef.current = null;
       }
     },
-    [history, mode, blobUuid, chatUrl, followupsUrl, djangoChatUrl]
+    [history, mode, questionUuid, blobUuid, chatUrl, followupsUrl, djangoChatUrl]
   );
 
   // Listen to EventBus for Alt-C and external triggers.
@@ -230,6 +246,16 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
         return;
       }
       setShow(true);
+      if (payload.questionUuid) {
+        // Open the Discuss panel grounded in this flashcard, but send nothing
+        // until the user types or taps "Answer this question".
+        setQuestionUuid(payload.questionUuid);
+        setMode("question");
+        setHistory([SYSTEM_MESSAGE]);
+        setFollowups([]);
+        setDraft("");
+        return;
+      }
       sendMessage(payload.content || "", payload);
     };
     bus.$on("chat", handler);
@@ -241,6 +267,11 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
     if (!text || isStreaming) return;
     sendMessage(text);
   }, [draft, isStreaming, sendMessage]);
+
+  const handleAnswerQuestion = useCallback(() => {
+    if (isStreaming) return;
+    sendMessage("Answer this question.");
+  }, [isStreaming, sendMessage]);
 
   const handleStop = useCallback(() => {
     abortRef.current?.abort();
@@ -282,6 +313,13 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
         showDjango={!!djangoChatUrl}
         onChange={setMode}
       />
+      {mode === "question" && questionUuid && (
+        <DiscussBar
+          onAnswer={handleAnswerQuestion}
+          disabled={isStreaming}
+          showHint={history.filter(m => m.role !== "system").length === 0}
+        />
+      )}
       <MessageList
         messages={history}
         isStreaming={isStreaming}

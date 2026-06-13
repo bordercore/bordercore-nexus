@@ -82,8 +82,8 @@ export function DrillTopbar({
         </button>
         <button
           className="drill-icon-btn"
-          title="Discuss"
-          aria-label="Discuss"
+          title="Ask AI"
+          aria-label="Ask AI"
           onClick={onAskChatbot}
           type="button"
         >

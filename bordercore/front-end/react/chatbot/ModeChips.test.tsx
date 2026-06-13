@@ -28,12 +28,12 @@ describe("ModeChips", () => {
     expect(onChange).toHaveBeenCalledWith("notes");
   });
 
-  it("renders a non-clickable indicator chip for question mode", () => {
-    render(
+  it("renders nothing for question mode (the discuss bar is the indicator)", () => {
+    const { container } = render(
       <ModeChips mode="question" hasBlobContext={false} showDjango={false} onChange={vi.fn()} />
     );
-    const chip = screen.getByText("question");
-    expect(chip.tagName).toBe("SPAN");
+    expect(screen.queryByText("question")).not.toBeInTheDocument();
+    expect(container).toBeEmptyDOMElement();
   });
 
   it("renders a non-clickable indicator chip for exercise mode", () => {

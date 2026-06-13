@@ -1520,6 +1520,49 @@ def _build_notes_rag_messages(
     return messages, sources_footer
 
 
+def _build_question_chat_messages(
+    question_text: str,
+    tags: str,
+    chat_history: list[dict[str, Any]],
+) -> list[dict[str, str]]:
+    """Build the OpenAI messages for a drill-question "Discuss" chat.
+
+    The flashcard's question and tags are supplied as a system context message
+    so the model can either answer the card directly (when the user asks) or
+    answer the user's own follow-up questions grounded in that context. The
+    visible conversation follows as user/assistant turns; the client-side
+    placeholder system message and per-message ``id`` keys are stripped.
+
+    Args:
+        question_text: The flashcard question.
+        tags: Comma-joined tag names for the question.
+        chat_history: The conversation so far, as role/content dicts.
+
+    Returns:
+        A messages list suitable for the OpenAI chat completions API.
+    """
+    system = {
+        "role": "system",
+        "content": (
+            "You are helping the user study a flashcard. "
+            f"The flashcard's question is: {question_text}\n"
+            f"It is tagged with: {tags}\n"
+            "If the user asks you to answer the flashcard, answer it directly. "
+            "Otherwise answer the user's own question, using the flashcard as context."
+        ),
+    }
+    turns = [
+        {k: v for k, v in message.items() if k != "id"}
+        for message in chat_history
+        if message.get("role") != "system"
+    ]
+    if not turns:
+        # No conversation yet (e.g. the "Answer this question" chip with an
+        # empty history) — give the model an explicit instruction to act on.
+        turns = [{"role": "user", "content": "Please answer this question."}]
+    return [system, *turns]
+
+
 def chatbot(request: HttpRequest, args: dict[str, Any]) -> Generator[str, None, None]:
     """Generate a chatbot response using OpenAI.
 
@@ -1566,12 +1609,8 @@ def chatbot(request: HttpRequest, args: dict[str, Any]) -> Generator[str, None, 
     elif "question_uuid" in args:
         question = Question.objects.get(uuid=args["question_uuid"], user=user)
         tags = ",".join([x.name for x in question.tags.all()])
-        messages = [
-            {
-                "role": "user",
-                "content": f"Assume the following question is tagged with {tags}. Please answer it: {question.question}"
-            }
-        ]
+        chat_history = json.loads(args.get("chat_history", "[]"))
+        messages = _build_question_chat_messages(question.question, tags, chat_history)
     elif "exercise_uuid" in args:
         exercise = Exercise.objects.get(uuid=args["exercise_uuid"], exerciseuser__user=user)
         messages = [

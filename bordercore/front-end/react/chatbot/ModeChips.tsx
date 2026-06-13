@@ -12,12 +12,16 @@ const SELECTABLE_MODES: ChatMode[] = ["chat", "notes", "blob", "django"];
 
 export function ModeChips({ mode, hasBlobContext, showDjango, onChange }: ModeChipsProps) {
   // question / exercise are set by event payload, never user-selectable.
-  // Render as a non-clickable indicator when active.
-  if (mode === "question" || mode === "exercise") {
+  // Question mode shows its own DiscussBar as the context indicator, so no
+  // chip is needed here; exercise mode still renders a non-clickable indicator.
+  if (mode === "question") {
+    return null;
+  }
+  if (mode === "exercise") {
     return (
       <div className="chatbot-mode-chips">
         <span className="chatbot-mode-chip chatbot-mode-chip--active chatbot-mode-chip--readonly">
-          {mode}
+          exercise
         </span>
       </div>
     );

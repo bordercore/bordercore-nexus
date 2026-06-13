@@ -144,6 +144,45 @@
 }
 
 // -----------------------------------------------------------------------------
+// Discuss bar (drill-question grounding: chip + one-line hint)
+// -----------------------------------------------------------------------------
+.chatbot-discuss-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 8px;
+}
+
+.chatbot-discuss-chip {
+  padding: 5px 12px;
+  border: 1px solid var(--accent);
+  border-radius: 99px;
+  background: color-mix(in oklch, var(--accent), transparent 88%);
+  color: var(--accent);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  transition: all 120ms;
+  white-space: nowrap;
+}
+
+.chatbot-discuss-chip:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.chatbot-discuss-chip:hover:not(:disabled) {
+  background: color-mix(in oklch, var(--accent), transparent 78%);
+}
+
+.chatbot-discuss-hint {
+  color: var(--fg-3);
+  font-family: var(--font-ui);
+  font-size: 11px;
+}
+
+// -----------------------------------------------------------------------------
 // Message list
 // -----------------------------------------------------------------------------
 .chatbot-message-list {

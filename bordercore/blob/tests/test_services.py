@@ -13,6 +13,7 @@ pytestmark = [pytest.mark.django_db]
 
 from blob.models import Blob
 from blob.services import (_build_notes_rag_messages,
+                           _build_question_chat_messages,
                            _rewrite_notes_search_query, chatbot, chatbot_followups,
                            get_authors, get_blob_naturalsize, get_dashboard_blobs,
                            get_recent_blobs, get_recent_media, import_artstation,
@@ -351,6 +352,45 @@ def test_get_recent_blobs_does_not_n_plus_one_on_metadata(
     with django_assert_num_queries(3) as ctx_6:
         blobs2, doctypes2 = get_recent_blobs(user)
     assert len(blobs2) == 6
+
+
+def test_build_question_chat_messages_grounds_in_question_and_tags():
+    """The system message carries the flashcard question text and its tags."""
+    messages = _build_question_chat_messages(
+        "What is IDF?",
+        "tf-idf,search",
+        [{"role": "user", "content": "Why the log?"}],
+    )
+    assert messages[0]["role"] == "system"
+    assert "What is IDF?" in messages[0]["content"]
+    assert "tf-idf,search" in messages[0]["content"]
+
+
+def test_build_question_chat_messages_appends_history_without_id_or_system():
+    """User/assistant turns follow the system message; client ids and system turns are dropped."""
+    messages = _build_question_chat_messages(
+        "What is IDF?",
+        "search",
+        [
+            {"id": 1, "role": "system", "content": "You are a helpful assistant."},
+            {"id": 2, "role": "user", "content": "Why the log?"},
+            {"id": 3, "role": "assistant", "content": "To dampen frequent terms."},
+            {"id": 4, "role": "user", "content": "Give an example."},
+        ],
+    )
+    assert [m["role"] for m in messages] == ["system", "user", "assistant", "user"]
+    assert all("id" not in m for m in messages)
+    assert messages[1]["content"] == "Why the log?"
+    assert messages[-1]["content"] == "Give an example."
+
+
+def test_build_question_chat_messages_falls_back_when_history_empty():
+    """With no conversation yet, a default 'answer this question' turn is added so the
+    model has something to act on and answers the flashcard directly."""
+    messages = _build_question_chat_messages("What is IDF?", "search", [])
+    assert messages[0]["role"] == "system"
+    assert messages[-1]["role"] == "user"
+    assert "answer" in messages[-1]["content"].lower()
 
 
 @patch("blob.services.OpenAI")
