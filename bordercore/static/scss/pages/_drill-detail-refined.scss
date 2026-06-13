@@ -658,12 +658,12 @@
       border-radius: 3px;
       margin-left: auto;
       background: var(--bg-1);
-      color: var(--fg-3);
+      color: var(--fg-1);
       font: 500 10px/1.4 var(--font-mono);
     }
 
     .rate-sub {
-      color: var(--fg-3);
+      color: var(--fg-1);
       font-family: var(--font-mono);
       font-size: 11px;
 
@@ -675,7 +675,7 @@
 
     .rate-arrow {
       margin-top: 4px;
-      color: var(--fg-4);
+      color: var(--fg-1);
       font-family: var(--font-mono);
       font-size: 11px;
 
@@ -721,7 +721,7 @@
 
   .rate-btn .rate-arrow .rate-arrow-phrase {
     margin-left: 6px;
-    color: var(--fg-4);
+    color: var(--fg-2);
   }
 
   // utility row at bottom of card
