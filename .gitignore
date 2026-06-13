@@ -61,8 +61,10 @@ bordercore/static/blobs
 bordercore/static/fonts/*zip
 
 # Superpowers brainstorming artifacts
+.claude/
 .superpowers/
 docs/superpowers/specs/
+/docs/superpowers/plans/
 
 # Git worktrees
 .worktrees/
