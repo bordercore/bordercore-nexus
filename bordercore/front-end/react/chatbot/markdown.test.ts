@@ -20,9 +20,27 @@ describe("chatbot markdown", () => {
     expect(html).toContain("language-javascript");
   });
 
-  it("falls back to plaintext for unknown languages", () => {
-    const html = renderMarkdown("```rust\nfn main() {}\n```");
-    expect(html).toContain("<pre");
+  it("highlights languages beyond the original allowlist (e.g. java)", () => {
+    const html = renderMarkdown("```java\npublic class A { int x = 1; }\n```");
+    expect(html).toContain("language-java");
+    expect(html).toContain("hljs-keyword");
+  });
+
+  it("highlights languages beyond the original allowlist (e.g. go)", () => {
+    const html = renderMarkdown("```go\nfunc main() { x := 1 }\n```");
+    expect(html).toContain("language-go");
+    expect(html).toMatch(/hljs-\w+/);
+  });
+
+  it("auto-highlights fenced code that has no language label", () => {
+    const html = renderMarkdown('```\ndef greet(name):\n    return f"hi {name}"\n```');
+    expect(html).toContain("hljs");
+    expect(html).toMatch(/hljs-\w+/);
+  });
+
+  it("still wraps code in a pre.hljs block", () => {
+    const html = renderMarkdown("```java\nint x = 1;\n```");
+    expect(html).toContain('<pre class="hljs">');
     expect(html).toContain("<code");
   });
 

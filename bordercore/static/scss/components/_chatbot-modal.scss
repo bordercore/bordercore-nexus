@@ -333,6 +333,35 @@
   color: color-mix(in oklch, var(--accent), white 30%);
 }
 
+.chatbot-message-text .hljs-type,
+.chatbot-message-text .hljs-class .hljs-title,
+.chatbot-message-text .hljs-title.class_ {
+  color: color-mix(in oklch, var(--accent), white 20%);
+}
+
+.chatbot-message-text .hljs-meta,
+.chatbot-message-text .hljs-symbol,
+.chatbot-message-text .hljs-tag,
+.chatbot-message-text .hljs-name {
+  color: color-mix(in oklch, var(--accent), white 10%);
+}
+
+.chatbot-message-text .hljs-variable,
+.chatbot-message-text .hljs-template-variable,
+.chatbot-message-text .hljs-attribute,
+.chatbot-message-text .hljs-property,
+.chatbot-message-text .hljs-params {
+  color: var(--fg-1);
+}
+
+.chatbot-message-text .hljs-addition {
+  color: var(--ok);
+}
+
+.chatbot-message-text .hljs-deletion {
+  color: var(--danger);
+}
+
 // -----------------------------------------------------------------------------
 // Per-message actions
 // -----------------------------------------------------------------------------
