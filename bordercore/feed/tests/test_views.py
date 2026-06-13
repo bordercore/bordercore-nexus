@@ -87,6 +87,10 @@ def test_check_url_valid_feed(authenticated_client):
 
     assert resp.status_code == 200
     assert resp.json()["entry_count"] == 4
+    # The preview fetch must use the Reddit-compliant feed User-Agent so that
+    # validating a reddit.com URL is consistent with the actual refresh.
+    assert responses.calls[0].request.headers["user-agent"] == \
+        "python:com.bordercore.feedreader:v1.0 (by jerrell@bordercore.com)"
 
 
 def test_check_url_network_error(authenticated_client):

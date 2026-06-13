@@ -20,7 +20,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from lib.constants import USER_AGENT
+from lib.constants import FEED_USER_AGENT
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
@@ -207,7 +207,7 @@ def check_url(request: HttpRequest, url: str) -> Response:
             pass
 
     try:
-        headers: dict[str, str] = {"user-agent": USER_AGENT}
+        headers: dict[str, str] = {"user-agent": FEED_USER_AGENT}
         r = requests.get(url, headers=headers, timeout=10)
     except requests.RequestException as e:
         return Response({"detail": str(e)}, status=400)
