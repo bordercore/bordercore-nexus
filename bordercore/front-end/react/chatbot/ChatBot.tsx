@@ -273,6 +273,15 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
     sendMessage("Answer this question.");
   }, [isStreaming, sendMessage]);
 
+  const handleExplainConcepts = useCallback(() => {
+    if (isStreaming) return;
+    sendMessage(
+      "Explain the key concepts and terms behind this question — give a short " +
+        "definition and the intuition for each, and how they relate. Focus on " +
+        "helping me understand the surrounding topic, not just stating the answer."
+    );
+  }, [isStreaming, sendMessage]);
+
   const handleStop = useCallback(() => {
     abortRef.current?.abort();
   }, []);
@@ -316,6 +325,7 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
       {mode === "question" && questionUuid && (
         <DiscussBar
           onAnswer={handleAnswerQuestion}
+          onExplain={handleExplainConcepts}
           disabled={isStreaming}
           showHint={history.filter(m => m.role !== "system").length === 0}
         />
