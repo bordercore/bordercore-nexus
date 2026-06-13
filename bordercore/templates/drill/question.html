@@ -6,6 +6,20 @@
 {% block crumb_leaf %}question{% endblock %}
 
 {% block extra_head %}
+    <script>
+        // Configure MathJax before the loader runs. The config object must
+        // exist first, because once the async script initializes it replaces
+        // window.MathJax with the live instance — reassigning it afterward
+        // would destroy typesetPromise.
+        window.MathJax = {
+            tex: {
+                inlineMath: [["\\(", "\\)"], ["$$", "$$"]],
+                displayMath: [["\\[", "\\]"]],
+                processEscapes: true,
+                processEnvironments: true,
+            },
+        };
+    </script>
     <script type="text/javascript" id="MathJax-script" async
         src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
     </script>

@@ -44,4 +44,49 @@ describe("chatbot markdown", () => {
       expect(html).not.toContain(handler);
     }
   });
+
+  it("preserves \\[...\\] display-math delimiters for MathJax", () => {
+    const html = renderMarkdown(
+      "Formula:\n\n\\[ \\text{IDF}(t) = \\log\\left(\\frac{N}{\\text{DF}(t)} + 1\\right) \\]"
+    );
+    expect(html).toContain("\\[");
+    expect(html).toContain("\\]");
+    expect(html).toContain("\\frac{N}{\\text{DF}(t)}");
+  });
+
+  it("preserves \\(...\\) inline-math delimiters for MathJax", () => {
+    const html = renderMarkdown("The term \\( x_1 \\) is the first.");
+    expect(html).toContain("\\(");
+    expect(html).toContain("\\)");
+    expect(html).toContain("x_1");
+  });
+
+  it("preserves $$...$$ inline-math delimiters for MathJax", () => {
+    const html = renderMarkdown("Energy is $$ _x_ + y^2^ $$ here.");
+    expect(html).toContain("$$ _x_ + y^2^ $$");
+    expect(html).not.toContain("<em>");
+    expect(html).not.toContain("<sup>");
+  });
+
+  it("shields math interior from markdown emphasis and superscript", () => {
+    const html = renderMarkdown("\\( a_b a^c^ \\)");
+    expect(html).not.toContain("<em>");
+    expect(html).not.toContain("<sup>");
+    expect(html).toContain("a_b a^c^");
+  });
+
+  it("HTML-escapes special characters inside math", () => {
+    const html = renderMarkdown("\\( a < b & c \\)");
+    expect(html).toContain("\\(");
+    expect(html).toContain("\\)");
+    expect(html).toContain("&lt;");
+    expect(html).toContain("&amp;");
+    expect(html).not.toMatch(/<\s*b\b/); // "< b" must not become a tag
+  });
+
+  it("does not treat single-dollar amounts as math", () => {
+    const html = renderMarkdown("It costs $5 and then $10 total.");
+    expect(html).toContain("$5");
+    expect(html).toContain("$10");
+  });
 });

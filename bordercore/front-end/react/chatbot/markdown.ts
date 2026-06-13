@@ -1,6 +1,7 @@
 import type MarkdownIt from "markdown-it";
 import DOMPurify from "dompurify";
 import { createMarkdown } from "../common/markdown";
+import { mathProtect } from "./mathProtect";
 import hljs from "highlight.js/lib/core";
 
 import python from "highlight.js/lib/languages/python";
@@ -74,6 +75,8 @@ const md: MarkdownIt = createMarkdown({
     return `<pre class="hljs"><code>${escapeHtml(str)}</code></pre>`;
   },
 });
+
+mathProtect(md);
 
 // DOMPurify defaults already strip all on* event handlers and javascript:
 // hrefs. We add a few belt-and-suspenders FORBID_TAGS for clarity (script

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import type { ChatMessage } from "./types";
 import { Message } from "./Message";
+import { typesetMath } from "./typesetMath";
 
 interface MessageListProps {
   messages: ChatMessage[];
@@ -24,6 +25,13 @@ export function MessageList({
     if (!el) return;
     el.scrollTop = el.scrollHeight;
   }, [messages]);
+
+  // Typeset LaTeX once a reply has fully landed. Skipping mid-stream avoids
+  // MathJax choking on half-written delimiters and flickering on every chunk.
+  useEffect(() => {
+    if (isStreaming) return;
+    typesetMath(ref.current);
+  }, [messages, isStreaming]);
 
   const visible = messages.filter(m => m.role !== "system");
   const lastAssistantIdx = (() => {

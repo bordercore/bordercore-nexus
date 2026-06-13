@@ -355,23 +355,19 @@ export function DrillQuestionPage({
     return () => hotkeys.unbind("space,1,2,3,4,s,f");
   }, [revealed, handleReveal, handleRate, handleSkip, handleFavoriteToggle]);
 
-  // Initial Prism + MathJax for the question prompt
+  // Prism + MathJax for the question prompt. MathJax is configured and loaded
+  // by drill/question.html; we must NOT reassign window.MathJax here (that
+  // would clobber the live instance and drop typesetPromise). We only trigger
+  // a typeset once it has finished initializing — the CDN script loads async,
+  // and the React-rendered question isn't in the DOM during MathJax's own
+  // startup typeset.
   useEffect(() => {
-    if (!(window as any).MathJax?.tex) {
-      (window as any).MathJax = {
-        tex: {
-          inlineMath: [
-            ["\\(", "\\)"],
-            ["$$", "$$"],
-          ],
-          displayMath: [["\\[", "\\]"]],
-          processEscapes: true,
-          processEnvironments: true,
-        },
-      };
-    }
-    if (typeof (window as any).MathJax?.typeset === "function") {
-      (window as any).MathJax.typeset();
+    const mj = (window as any).MathJax;
+    if (mj) {
+      const ready = mj.startup?.promise ?? Promise.resolve();
+      Promise.resolve(ready)
+        .then(() => (mj.typesetPromise ? mj.typesetPromise() : mj.typeset?.()))
+        .catch((err: unknown) => console.error("MathJax typeset failed:", err));
     }
     prismLanguagesLoaded.then(() => Prism.highlightAll());
   }, []);
