@@ -1,5 +1,7 @@
 import logging
+import requests
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 import responses
@@ -166,3 +168,74 @@ def test_user_feed_item_state_unique(authenticated_client, feed):
 
     with pytest.raises(IntegrityError):
         UserFeedItemState.objects.create(user=user, feed_item=item)
+
+
+@responses.activate
+def test_update_retries_then_succeeds(authenticated_client, feed):
+    """A 429 is retried; a subsequent 200 succeeds and items are upserted."""
+    user, _ = authenticated_client()
+    feed[0].feeditem_set.all().delete()
+
+    with open(Path(__file__).parent / "resources/rss.xml") as f:
+        xml = f.read()
+
+    # First response 429, second 200.
+    responses.add(responses.GET, feed[0].url, status=429, headers={"Retry-After": "1"})
+    responses.add(responses.GET, feed[0].url, body=xml, status=200)
+
+    with patch("feed.models.time.sleep") as mock_sleep:
+        feed[0].update()
+
+    mock_sleep.assert_called_once_with(1.0)  # honored Retry-After
+    assert feed[0].last_response_code == 200
+    assert FeedItem.objects.filter(feed=feed[0]).count() == 3
+
+
+@responses.activate
+def test_update_exhausts_retries_records_429(authenticated_client, feed):
+    """When 429s never clear, last_response_code is 429 and nothing is upserted."""
+    user, _ = authenticated_client()
+    feed[0].feeditem_set.all().delete()
+
+    # MAX_RETRIES + 1 attempts, all 429.
+    for _ in range(4):
+        responses.add(responses.GET, feed[0].url, status=429, headers={"Retry-After": "1"})
+
+    with patch("feed.models.time.sleep"):
+        with pytest.raises(requests.HTTPError):
+            feed[0].update()
+
+    assert feed[0].last_response_code == 429
+    assert FeedItem.objects.filter(feed=feed[0]).count() == 0
+
+
+@responses.activate
+def test_update_records_403_and_raises(authenticated_client, feed):
+    """A non-retryable non-200 (403) records the code and raises HTTPError.
+
+    Graceful handling of upstream failures now lives in feed.services, not on
+    the model; the model surfaces the error.
+    """
+    user, _ = authenticated_client()
+    responses.add(responses.GET, feed[0].url, status=403)
+
+    with pytest.raises(requests.HTTPError):
+        feed[0].update()
+
+    assert feed[0].last_response_code == 403
+
+
+@responses.activate
+def test_update_sends_feed_user_agent(authenticated_client, feed):
+    """Feed.update sends the Reddit-compliant FEED_USER_AGENT, not USER_AGENT."""
+    user, _ = authenticated_client()
+    feed[0].feeditem_set.all().delete()
+
+    with open(Path(__file__).parent / "resources/rss.xml") as f:
+        xml = f.read()
+    responses.add(responses.GET, feed[0].url, body=xml, status=200)
+
+    feed[0].update()
+
+    sent_ua = responses.calls[0].request.headers["user-agent"]
+    assert sent_ua == "python:com.bordercore.feedreader:v1.0 (by jerrell@bordercore.com)"

@@ -11,6 +11,8 @@ from __future__ import annotations
 import calendar
 import html
 import logging
+import random
+import time
 import uuid
 from datetime import datetime, timezone as dt_timezone
 from typing import Any, MutableMapping, TypedDict
@@ -24,7 +26,12 @@ from django.db import models, transaction
 from django.utils import timezone
 from django.utils.html import strip_tags
 
-from lib.constants import USER_AGENT
+from lib.constants import (
+    FEED_FETCH_BACKOFF_BASE_SECONDS,
+    FEED_FETCH_BACKOFF_CAP_SECONDS,
+    FEED_FETCH_MAX_RETRIES,
+    FEED_USER_AGENT,
+)
 from lib.mixins import TimeStampedModel
 
 log: logging.Logger = logging.getLogger(f"bordercore.{__name__}")
@@ -82,8 +89,21 @@ class Feed(TimeStampedModel):
         seen_links: set[str] = set()
 
         try:
-            headers: dict[str, str] = {"user-agent": USER_AGENT}
-            r = requests.get(self.url, headers=headers, verify=self.verify_ssl_certificate, timeout=10)
+            headers: dict[str, str] = {"user-agent": FEED_USER_AGENT}
+            for attempt in range(FEED_FETCH_MAX_RETRIES + 1):
+                r = requests.get(self.url, headers=headers, verify=self.verify_ssl_certificate, timeout=10)
+                if r.status_code in RETRYABLE_STATUS and attempt < FEED_FETCH_MAX_RETRIES:
+                    delay = _retry_delay(r, attempt)
+                    log.warning(
+                        "feed_uuid=%s got HTTP %s; retrying in %.1fs (attempt %d/%d)",
+                        self.uuid, r.status_code, delay, attempt + 1, FEED_FETCH_MAX_RETRIES,
+                    )
+                    time.sleep(delay)
+                    continue
+                break
+            # FEED_FETCH_MAX_RETRIES + 1 >= 1, so the loop always executes at
+            # least once; r is always assigned before this point.
+            assert r is not None
 
             if r.status_code != 200:
                 r.raise_for_status()
@@ -229,6 +249,23 @@ class UserFeedItemState(TimeStampedModel):
     class Meta(TimeStampedModel.Meta):
         unique_together = [("user", "feed_item")]
         indexes = [models.Index(fields=["user", "read_at"])]
+
+
+RETRYABLE_STATUS: tuple[int, ...] = (429, 503)
+
+
+def _retry_delay(response: requests.Response, attempt: int) -> float:
+    """Seconds to wait before retrying a rate-limited/unavailable response.
+
+    Honors an integer ``Retry-After`` header (the form Reddit sends) when
+    present; otherwise uses exponential backoff with jitter. Always capped so a
+    hostile or huge header value cannot stall the run.
+    """
+    retry_after = response.headers.get("Retry-After", "").strip()
+    if retry_after.isdigit():
+        return min(float(retry_after), FEED_FETCH_BACKOFF_CAP_SECONDS)
+    backoff = min(FEED_FETCH_BACKOFF_BASE_SECONDS * (2 ** attempt), FEED_FETCH_BACKOFF_CAP_SECONDS)
+    return backoff + random.uniform(0, 1)
 
 
 def _entry_pub_date(entry: Any) -> datetime:
