@@ -7,6 +7,18 @@ import { DropDownMenu } from "../common/DropDownMenu";
 import { doGet, doPost, doPut } from "../utils/reactUtils";
 import type { NoteLayoutItem, Note, NodeColor } from "./types";
 
+// Note content is fetched per card on mount. Dragging a card to another column in
+// edit-layout mode remounts it (it moves to a different React parent), which would
+// otherwise re-fetch and blank the card on every move. Caching content by uuid lets a
+// remount render instantly from memory and issue no request. Lives for the page's
+// lifetime; a fresh page load starts empty.
+const noteContentCache = new Map<string, Note>();
+
+/** Test-only: clears the module-level note content cache between renders. */
+export function __clearNoteContentCache() {
+  noteContentCache.clear();
+}
+
 interface NodeNoteProps {
   nodeUuid: string;
   noteInitial: NoteLayoutItem;
@@ -32,9 +44,10 @@ export default function NodeNote({
   onEditLayout,
 }: NodeNoteProps) {
   const markdown = createMarkdown();
+  const cachedNote = noteContentCache.get(noteInitial.uuid) ?? null;
   const [nodeNote, setNodeNote] = useState<NoteLayoutItem>(noteInitial);
-  const [note, setNote] = useState<Note | null>(null);
-  const [noteContents, setNoteContents] = useState("");
+  const [note, setNote] = useState<Note | null>(cachedNote);
+  const [noteContents, setNoteContents] = useState(cachedNote?.content ?? "");
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingContent, setIsEditingContent] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -42,7 +55,9 @@ export default function NodeNote({
   const nameCacheRef = useRef<string | null>(null);
 
   useEffect(() => {
-    getNote();
+    if (!noteContentCache.has(noteInitial.uuid)) {
+      getNote();
+    }
   }, []);
 
   useEffect(() => {
@@ -61,6 +76,7 @@ export default function NodeNote({
     doGet(
       noteUrl,
       response => {
+        noteContentCache.set(noteInitial.uuid, response.data);
         setNote(response.data);
         setNoteContents(response.data.content || "");
       },
@@ -69,6 +85,11 @@ export default function NodeNote({
   };
 
   const editNoteContents = () => {
+    noteContentCache.set(nodeNote.uuid, {
+      uuid: nodeNote.uuid,
+      name: nodeNote.name,
+      content: noteContents,
+    });
     doPut(
       noteUrl,
       {

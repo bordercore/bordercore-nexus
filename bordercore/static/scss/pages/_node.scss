@@ -147,7 +147,10 @@
 
     &.dragging {
       z-index: 1;
-      opacity: 1;
+
+      // Hide the original card while dragging; the DragOverlay clone is the
+      // visible dragged element, so leaving this visible shows a duplicate.
+      opacity: 0;
     }
   }
 }

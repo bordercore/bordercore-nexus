@@ -19,7 +19,8 @@ import {
 import cloneDeep from "lodash/cloneDeep";
 import {
   DndContext,
-  closestCenter,
+  pointerWithin,
+  rectIntersection,
   KeyboardSensor,
   PointerSensor,
   useSensor,
@@ -29,6 +30,7 @@ import {
   DragOverlay,
   DragStartEvent,
   useDroppable,
+  type CollisionDetection,
 } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -200,6 +202,17 @@ export default function NodeDetailPage({
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
+
+  // Drag-over relocates the active card between columns to preview the drop. A
+  // distance-based strategy (e.g. closestCenter) measures against that card's own
+  // rect, so each relocation shifts the rect and flips the result back, oscillating
+  // near column boundaries. Pointer position is unaffected by the relocation, so
+  // pointerWithin is stable; rectIntersection covers keyboard drags (no pointer) and
+  // pointers dragged outside every column.
+  const collisionDetection = useCallback<CollisionDetection>(args => {
+    const pointerCollisions = pointerWithin(args);
+    return pointerCollisions.length > 0 ? pointerCollisions : rectIntersection(args);
+  }, []);
 
   // Modal states
   const [imageModalState, setImageModalState] = useState({ isOpen: false, imageUrl: "" });
@@ -969,7 +982,7 @@ export default function NodeDetailPage({
 
         <DndContext
           sensors={sensors}
-          collisionDetection={closestCenter}
+          collisionDetection={collisionDetection}
           onDragStart={handleLayoutDragStart}
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}

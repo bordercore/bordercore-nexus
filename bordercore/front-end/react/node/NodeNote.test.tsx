@@ -10,7 +10,7 @@ vi.mock("../utils/reactUtils", () => ({
 }));
 
 import { doGet, doPost, doPut } from "../utils/reactUtils";
-import NodeNote from "./NodeNote";
+import NodeNote, { __clearNoteContentCache } from "./NodeNote";
 import type { NoteLayoutItem } from "./types";
 
 const noteInitial: NoteLayoutItem = {
@@ -38,6 +38,7 @@ function renderWithContent(content: string | null = "Hello **world**") {
 }
 
 beforeEach(() => {
+  __clearNoteContentCache();
   (doGet as Mock).mockReset();
   (doPost as Mock).mockReset();
   (doPut as Mock).mockReset();
@@ -48,6 +49,23 @@ describe("NodeNote", () => {
     renderWithContent();
     expect(doGet).toHaveBeenCalledTimes(1);
     expect((doGet as Mock).mock.calls[0][0]).toBe("/api/note/note-uuid/");
+  });
+
+  it("does not refetch on remount with the same uuid, rendering cached content at once", () => {
+    // First mount fetches and populates the cache.
+    const first = renderWithContent("Cached body");
+    expect(doGet).toHaveBeenCalledTimes(1);
+    first.unmount();
+
+    // A cross-column drag in edit-layout mode unmounts and remounts the card. Any
+    // further fetch would blank the card and spam the API, so make it fail the test.
+    (doGet as Mock).mockImplementation(() => {
+      throw new Error("should not refetch a cached note on remount");
+    });
+    const { container } = render(<NodeNote {...baseProps} />);
+
+    expect(doGet).toHaveBeenCalledTimes(1);
+    expect(container.querySelector(".node-note")?.textContent).toContain("Cached body");
   });
 
   it("renders the note name in the title slot", () => {
