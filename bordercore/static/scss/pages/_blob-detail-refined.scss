@@ -1005,6 +1005,63 @@
     line-height: 1.55;
   }
 
+  // ---- markdown tables ----
+  // overflow:hidden + border-collapse:separate lets the outer border-radius
+  // clip the corner cells cleanly; width:100% spreads cramped columns.
+  .bd-content table,
+  .bd-note table {
+    overflow: hidden;
+    width: 100%;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    margin: 16px 0;
+    border-collapse: separate;
+    border-spacing: 0;
+    color: var(--fg-2);
+    font-size: 0.95em;
+  }
+
+  .bd-content thead,
+  .bd-note thead {
+    background: var(--bg-2);
+  }
+
+  .bd-content th,
+  .bd-note th {
+    padding: 9px 14px;
+    border-bottom: 2px solid color-mix(in oklch, var(--accent) 55%, var(--line-soft));
+    color: var(--fg-3);
+    font-size: 0.8em;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-align: left;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .bd-content td,
+  .bd-note td {
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--hairline);
+    color: var(--fg-2);
+  }
+
+  // zebra striping for scan-ability
+  .bd-content tbody tr:nth-child(even),
+  .bd-note tbody tr:nth-child(even) {
+    background: color-mix(in oklch, var(--bg-2) 45%, transparent);
+  }
+
+  .bd-content tbody tr:hover,
+  .bd-note tbody tr:hover {
+    background: color-mix(in oklch, var(--accent) 8%, transparent);
+  }
+
+  .bd-content tbody tr:last-child td,
+  .bd-note tbody tr:last-child td {
+    border-bottom: none;
+  }
+
   .bd-cover {
     margin: 0 0 18px;
   }
