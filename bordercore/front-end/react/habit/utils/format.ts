@@ -65,6 +65,12 @@ export function shortDate(iso: string): string {
   return `${SHORT_WEEKDAYS[d.getDay()]}, ${SHORT_MONTHS[d.getMonth()]} ${d.getDate()}`;
 }
 
+/** "Mar 21, 2026" — includes the year, for habit start / end dates. */
+export function longDate(iso: string): string {
+  const d = parseIsoDate(iso);
+  return `${SHORT_MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+}
+
 /** "TUE, MAY 5" — uppercase, used in eyebrows. */
 export function eyebrowDate(iso: string): string {
   const d = parseIsoDate(iso);

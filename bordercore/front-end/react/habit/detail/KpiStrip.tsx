@@ -4,6 +4,8 @@ import { daysBetween, todayIso } from "../utils/format";
 
 interface KpiStripProps {
   startDate: string;
+  endDate: string | null;
+  isActive: boolean;
   currentStreak: number;
   longestStreak: number;
   logs: HabitLogEntry[];
@@ -14,9 +16,19 @@ interface KpiStripProps {
  * 30-day rate / All-time.  Pure presentational; everything is derived from
  * `logs` plus the two server-computed streak values.
  */
-export function KpiStrip({ startDate, currentStreak, longestStreak, logs }: KpiStripProps) {
+export function KpiStrip({
+  startDate,
+  endDate,
+  isActive,
+  currentStreak,
+  longestStreak,
+  logs,
+}: KpiStripProps) {
   const today = todayIso();
-  const trackingFor = Math.max(0, daysBetween(startDate, today));
+  // For an ended habit the tracking window closes at end_date, not today, so
+  // the duration reflects the actual span the habit was active.
+  const trackingEnd = endDate ?? today;
+  const trackingFor = Math.max(0, daysBetween(startDate, trackingEnd));
 
   const { rate30, rateRatio, allTimeCompleted, allTimeTotal } = useMemo(() => {
     const cutoff = new Date(today + "T00:00:00");
@@ -47,7 +59,7 @@ export function KpiStrip({ startDate, currentStreak, longestStreak, logs }: KpiS
   return (
     <section className="hb-kpis">
       <div className="hb-kpi-card">
-        <div className="hb-kpi-label">Tracking for</div>
+        <div className="hb-kpi-label">{isActive ? "Tracking for" : "Tracked for"}</div>
         <div className="hb-kpi-value">
           {trackingFor}
           <small>{trackingFor === 1 ? "day" : "days"}</small>

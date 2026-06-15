@@ -1,10 +1,12 @@
 import React, { useMemo } from "react";
 import { createMarkdown } from "../../common/markdown";
+import { longDate } from "../utils/format";
 
 interface DetailHeaderProps {
   purpose: string;
   tags: string[];
   isActive: boolean;
+  startDate: string;
   endDate: string | null;
 }
 
@@ -13,7 +15,7 @@ interface DetailHeaderProps {
  * itself lives in the breadcrumb (TopBar) so this component no longer owns
  * an `<h1>`.
  */
-export function DetailHeader({ purpose, tags, isActive, endDate }: DetailHeaderProps) {
+export function DetailHeader({ purpose, tags, isActive, startDate, endDate }: DetailHeaderProps) {
   // markdown-it with default rules: HTML disabled, so user-owned `purpose`
   // text renders to safe markup.  Mirrors the prior HabitDetailPage pattern
   // so existing markdown content keeps its formatting.
@@ -31,7 +33,17 @@ export function DetailHeader({ purpose, tags, isActive, endDate }: DetailHeaderP
         {isActive ? (
           <span className="hb-status-pill is-active">● Active</span>
         ) : (
-          <span className="hb-status-pill is-ended">Ended{endDate ? ` ${endDate}` : ""}</span>
+          <span className="hb-status-pill is-ended">Ended</span>
+        )}
+      </div>
+      <div className="hb-detail-dates">
+        <span>
+          <strong>Started</strong> {longDate(startDate)}
+        </span>
+        {endDate && (
+          <span>
+            <strong>Ended</strong> {longDate(endDate)}
+          </span>
         )}
       </div>
       {purpose && (

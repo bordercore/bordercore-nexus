@@ -116,6 +116,7 @@ export default function HabitDetailPage({ habit, logUrl, setInactiveUrl }: Habit
         purpose={habit.purpose}
         tags={habit.tags}
         isActive={isActive}
+        startDate={habit.start_date}
         endDate={endDate}
       />
 
@@ -132,6 +133,8 @@ export default function HabitDetailPage({ habit, logUrl, setInactiveUrl }: Habit
 
       <KpiStrip
         startDate={habit.start_date}
+        endDate={endDate}
+        isActive={isActive}
         currentStreak={currentStreak}
         longestStreak={longestStreak}
         logs={logs}
