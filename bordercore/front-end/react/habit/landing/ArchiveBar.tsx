@@ -10,9 +10,10 @@ interface ArchiveBarProps {
 }
 
 /**
- * Collapsed archive row at the bottom of the landing page.  Default state
- * shows just the count + comma-separated names.  Clicking "Show ▾" expands
- * the bar to a sortable Name / Start / End / Completed table.
+ * Collapsed archive disclosure at the bottom of the landing page.  Default
+ * state shows just the count and a chevron; the whole header is clickable.
+ * Expanding reveals a sortable Name / Start / End / Completed table of the
+ * previous habits.
  */
 export function ArchiveBar({ inactiveHabits, detailUrlFor }: ArchiveBarProps) {
   const [expanded, setExpanded] = useState(false);
@@ -47,21 +48,21 @@ export function ArchiveBar({ inactiveHabits, detailUrlFor }: ArchiveBarProps) {
     return sortDirection === "asc" ? " ↑" : " ↓";
   }
 
-  const namesPreview = inactiveHabits.map(h => h.name).join(", ");
-
   return (
     <section className="hb-archive">
-      <div className="hb-archive-summary">
-        <div>
-          <div className="hb-archive-title">
-            Archive · {inactiveHabits.length} {inactiveHabits.length === 1 ? "habit" : "habits"}
-          </div>
-          {!expanded && <div className="hb-archive-names">{namesPreview}</div>}
-        </div>
-        <button type="button" className="hb-archive-toggle" onClick={() => setExpanded(v => !v)}>
-          {expanded ? "Hide ▴" : "Show ▾"}
-        </button>
-      </div>
+      <button
+        type="button"
+        className="hb-archive-summary"
+        onClick={() => setExpanded(v => !v)}
+        aria-expanded={expanded}
+      >
+        <span className="hb-archive-title">
+          Archive · {inactiveHabits.length} {inactiveHabits.length === 1 ? "habit" : "habits"}
+        </span>
+        <span className="hb-archive-chevron" aria-hidden="true">
+          {expanded ? "▴" : "▾"}
+        </span>
+      </button>
 
       {expanded && (
         <table className="hb-archive-table">
