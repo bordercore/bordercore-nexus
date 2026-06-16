@@ -142,6 +142,48 @@ def test_blob_create(monkeypatch_blob, authenticated_client, blob_text_factory):
     assert f"{key_root}/{file_path.name}" in objects
 
 
+@factory.django.mute_signals(signals.post_save)
+def test_blob_create_duplicate_file(monkeypatch_blob, authenticated_client):
+    """Re-uploading an identical file returns a 400 with a string `detail`.
+
+    The duplicate-file check in BlobForm.clean_file rejects the second
+    upload. The error response must carry a human-readable string under
+    `detail` (DRF convention) so the front-end can display it.
+    """
+
+    _, client = authenticated_client()
+
+    file_path = Path(__file__).parent / "resources/test_blob.jpg"
+    with open(file_path, "rb") as f:
+        file_blob = f.read()
+
+    url = urls.reverse("blob:create")
+
+    # The first upload succeeds.
+    resp = client.post(url, {
+        "importance": 1,
+        "file": SimpleUploadedFile(file_path.name, file_blob),
+        "filename": file_path.name,
+        "name": "Original",
+        "tags": "django",
+    })
+    assert resp.status_code == 200
+
+    # Re-uploading the identical file is rejected as a duplicate.
+    resp = client.post(url, {
+        "importance": 1,
+        "file": SimpleUploadedFile(file_path.name, file_blob),
+        "filename": file_path.name,
+        "name": "Duplicate",
+        "tags": "django",
+    })
+
+    assert resp.status_code == 400
+    detail = resp.json()["detail"]
+    assert isinstance(detail, str)
+    assert "already exists" in detail
+
+
 @factory.django.mute_signals(signals.pre_delete)
 def test_blob_delete(monkeypatch_blob, authenticated_client, blob_text_factory):
     """Test that deleting a blob removes it from the database."""

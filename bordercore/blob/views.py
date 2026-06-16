@@ -192,13 +192,22 @@ class FormValidMixin(ModelFormMixin):
     def form_invalid(self, form: BaseModelForm) -> JsonResponse:
         """Handle an invalid form submission.
 
+        Flattens the form's field errors into a single human-readable
+        string under ``detail`` (DRF convention), matching the rest of
+        the API's error responses.
+
         Args:
             form: The invalid form.
 
         Returns:
-            JSON response with form errors and 400 status code.
+            JSON response with a string ``detail`` and 400 status code.
         """
-        return JsonResponse({"detail": form.errors}, status=400)
+        detail = " ".join(
+            str(error)
+            for field_errors in form.errors.values()
+            for error in field_errors
+        )
+        return JsonResponse({"detail": detail}, status=400)
 
 
 class BlobListView(LoginRequiredMixin, ListView):

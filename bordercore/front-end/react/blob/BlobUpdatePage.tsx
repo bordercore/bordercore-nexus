@@ -210,14 +210,8 @@ export function BlobUpdatePage({
       })
       .catch(error => {
         setTimeout(() => setSubmitting(false), 500);
-        const errors: string[] = [];
-        if (error.response?.data) {
-          for (const key in error.response.data) {
-            errors.push(error.response.data[key][0]);
-          }
-        }
         EventBus.$emit("toast", {
-          body: errors.join("<br />"),
+          body: error.response?.data?.detail || error.message,
           variant: "danger",
           autoHide: false,
         });
