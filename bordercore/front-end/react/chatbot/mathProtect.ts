@@ -1,5 +1,4 @@
 import type MarkdownIt from "markdown-it";
-import type StateInline from "markdown-it/lib/rules_inline/state_inline";
 
 // markdown-it strips the backslashes from MathJax delimiters (`\[`, `\]`,
 // `\(`, `\)`) because it treats them as escaped punctuation, and it mangles
@@ -26,7 +25,7 @@ const DELIMITERS: MathDelimiter[] = [
 ];
 
 export function mathProtect(md: MarkdownIt): void {
-  const mathRule = (state: StateInline, silent: boolean): boolean => {
+  const mathRule = (state: MarkdownIt.StateInline, silent: boolean): boolean => {
     const { src, pos } = state;
 
     for (const { open, close } of DELIMITERS) {

@@ -1,6 +1,8 @@
 import React from "react";
-import type Token from "markdown-it/lib/token";
+import type MarkdownIt from "markdown-it";
 import { createMarkdown } from "../common/markdown";
+
+type Token = MarkdownIt.Token;
 
 const md = createMarkdown({
   html: false,
