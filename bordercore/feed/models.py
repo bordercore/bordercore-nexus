@@ -175,6 +175,10 @@ class Feed(TimeStampedModel):
         try:
             items, status_code = fetch_reddit_items(self, reddit_client)
             self._upsert_items(items)
+        except requests.HTTPError as e:
+            if e.response is not None:
+                status_code = e.response.status_code
+            raise
         finally:
             self._record_check(status_code)
 

@@ -292,3 +292,20 @@ def test_update_reddit_without_client_or_creds_raises(authenticated_client, feed
 
     with pytest.raises(RedditAuthError):
         feed[0].update(reddit_client=None)
+
+    feed[0].refresh_from_db()
+    assert feed[0].last_check is None
+
+
+def test_update_reddit_records_failing_status(authenticated_client, feed):
+    """A failed reddit fetch records the HTTP error status on last_response_code."""
+    authenticated_client()
+    feed[0].url = "https://www.reddit.com/r/Python/.rss"
+    feed[0].save()
+
+    client = _StubRedditClient({}, status=503)
+    with pytest.raises(requests.HTTPError):
+        feed[0].update(reddit_client=client)
+
+    feed[0].refresh_from_db()
+    assert feed[0].last_response_code == 503

@@ -91,8 +91,6 @@ def test_get_retries_on_429_then_succeeds():
 
 from feed.reddit import _listing_path, fetch_reddit_items
 
-pytestmark_db = pytest.mark.django_db
-
 
 class _FakeResponse:
     def __init__(self, payload, status=200):
