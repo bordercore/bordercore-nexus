@@ -15,11 +15,16 @@ import random
 import time
 import uuid
 from datetime import datetime, timezone as dt_timezone
-from typing import Any, MutableMapping, TypedDict
+from typing import TYPE_CHECKING, Any, MutableMapping, TypedDict
+from urllib.parse import urlparse
+
+if TYPE_CHECKING:
+    from feed.reddit import RedditClient
 
 import feedparser
 import requests
 
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.sessions.backends.base import SessionBase
 from django.db import models, transaction
@@ -70,20 +75,31 @@ class Feed(TimeStampedModel):
         """
         return self.name
 
-    def update(self) -> int:
-        """Fetch the feed from the network and upsert its items.
+    def update(self, *, reddit_client: "RedditClient | None" = None) -> int:
+        """Fetch the feed and upsert its items.
 
-        This method performs an HTTP GET to retrieve the feed XML, parses it
-        via `feedparser`, and upserts items by `(feed, link)`. Existing items
-        keep their identity (and any associated per-user read state) so unread
-        flags survive refreshes.
+        Reddit feeds are fetched via the OAuth JSON API (``oauth.reddit.com``)
+        to avoid the per-IP rate limiting that throttles the unauthenticated
+        ``.rss`` endpoint; all other feeds use the ``requests`` + ``feedparser``
+        path. Both paths share item upsert and last-check bookkeeping.
+
+        Args:
+            reddit_client: Shared OAuth client for reddit feeds. When omitted,
+                one is built from settings if credentials are configured.
 
         Returns:
             The number of unique entries upserted.
 
         Raises:
-            requests.HTTPError: If the HTTP response status is not 200.
+            requests.HTTPError: If a fetch returns a non-200 status.
+            RedditAuthError: If a reddit feed cannot authenticate.
         """
+        if _is_reddit_url(self.url):
+            return self._update_reddit(reddit_client)
+        return self._update_rss()
+
+    def _update_rss(self) -> int:
+        """Fetch via HTTP + feedparser and upsert items (non-reddit feeds)."""
         r: requests.Response | None = None
         items_to_upsert: list[FeedItem] = []
         seen_links: set[str] = set()
@@ -138,22 +154,49 @@ class Feed(TimeStampedModel):
                 except AttributeError as e:
                     log.error("feed_uuid=%s Missing data in feed item: %s", self.uuid, e)
 
-            with transaction.atomic():
-                FeedItem.objects.bulk_create(
-                    items_to_upsert,
-                    batch_size=500,
-                    update_conflicts=True,
-                    unique_fields=["feed", "link"],
-                    update_fields=["title", "pub_date", "summary", "thumbnail_url"],
-                )
+            self._upsert_items(items_to_upsert)
 
         finally:
-            if r is not None:
-                self.last_response_code = r.status_code
-            self.last_check = timezone.now()
-            self.save()
+            self._record_check(r.status_code if r is not None else None)
 
         return len(items_to_upsert)
+
+    def _update_reddit(self, reddit_client: "RedditClient | None") -> int:
+        """Fetch via Reddit OAuth JSON API and upsert items."""
+        from feed.reddit import RedditAuthError, RedditClient, fetch_reddit_items
+
+        if reddit_client is None:
+            if not (settings.REDDIT_CLIENT_ID and settings.REDDIT_CLIENT_SECRET):  # type: ignore[misc]
+                raise RedditAuthError("Reddit OAuth credentials not configured")
+            reddit_client = RedditClient(settings.REDDIT_CLIENT_ID, settings.REDDIT_CLIENT_SECRET)  # type: ignore[misc]
+
+        items: list[FeedItem] = []
+        status_code: int | None = None
+        try:
+            items, status_code = fetch_reddit_items(self, reddit_client)
+            self._upsert_items(items)
+        finally:
+            self._record_check(status_code)
+
+        return len(items)
+
+    def _upsert_items(self, items: list["FeedItem"]) -> None:
+        """Upsert items by (feed, link), preserving identity and read state."""
+        with transaction.atomic():
+            FeedItem.objects.bulk_create(
+                items,
+                batch_size=500,
+                update_conflicts=True,
+                unique_fields=["feed", "link"],
+                update_fields=["title", "pub_date", "summary", "thumbnail_url"],
+            )
+
+    def _record_check(self, status_code: int | None) -> None:
+        """Stamp last_check (and last_response_code when known), then save."""
+        if status_code is not None:
+            self.last_response_code = status_code
+        self.last_check = timezone.now()
+        self.save()
 
     @staticmethod
     def get_current_feed_id(user: User, session: SessionBase | MutableMapping[str, Any]) -> int:
@@ -252,6 +295,12 @@ class UserFeedItemState(TimeStampedModel):
 
 
 RETRYABLE_STATUS: tuple[int, ...] = (429, 503)
+
+
+def _is_reddit_url(url: str) -> bool:
+    """True when ``url``'s host is reddit.com or a reddit.com subdomain."""
+    host = urlparse(url).netloc.lower()
+    return host == "reddit.com" or host.endswith(".reddit.com")
 
 
 def _retry_delay(response: requests.Response, attempt: int) -> float:

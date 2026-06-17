@@ -239,3 +239,56 @@ def test_update_sends_feed_user_agent(authenticated_client, feed):
 
     sent_ua = responses.calls[0].request.headers["user-agent"]
     assert sent_ua == "python:com.bordercore.feedreader:v1.0 (by jerrell@bordercore.com)"
+
+
+class _StubResponse:
+    def __init__(self, payload, status=200):
+        self._payload = payload
+        self.status_code = status
+
+    def json(self):
+        return self._payload
+
+    def raise_for_status(self):
+        if self.status_code != 200:
+            raise requests.HTTPError(response=self)
+
+
+class _StubRedditClient:
+    def __init__(self, payload, status=200):
+        self._resp = _StubResponse(payload, status)
+
+    def get(self, path):
+        return self._resp
+
+
+def test_update_dispatches_reddit_url_to_oauth_client(authenticated_client, feed):
+    """A reddit.com feed uses the injected RedditClient, not the .rss path."""
+    authenticated_client()
+    feed[0].url = "https://www.reddit.com/r/Python/.rss"
+    feed[0].save()
+    feed[0].feeditem_set.all().delete()
+
+    payload = {"data": {"children": [
+        {"data": {"title": "Post", "permalink": "/r/Python/comments/1/p/", "created_utc": 1700000000}},
+    ]}}
+
+    feed[0].update(reddit_client=_StubRedditClient(payload))
+
+    assert feed[0].last_response_code == 200
+    assert FeedItem.objects.filter(feed=feed[0]).count() == 1
+    assert FeedItem.objects.get(feed=feed[0]).link == "https://www.reddit.com/r/Python/comments/1/p/"
+
+
+def test_update_reddit_without_client_or_creds_raises(authenticated_client, feed, settings):
+    """With no client and no configured creds, the reddit path fails cleanly."""
+    from feed.reddit import RedditAuthError
+
+    authenticated_client()
+    settings.REDDIT_CLIENT_ID = ""
+    settings.REDDIT_CLIENT_SECRET = ""
+    feed[0].url = "https://www.reddit.com/r/Python/.rss"
+    feed[0].save()
+
+    with pytest.raises(RedditAuthError):
+        feed[0].update(reddit_client=None)
