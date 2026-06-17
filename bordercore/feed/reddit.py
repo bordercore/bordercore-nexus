@@ -9,14 +9,21 @@ from JSON listings rather than parsed with feedparser.
 """
 from __future__ import annotations
 
+import html
+import re
 import time
 from collections.abc import Callable
+from datetime import datetime, timezone as dt_timezone
+from typing import TYPE_CHECKING
+from urllib.parse import urlparse
 
 import requests
+from django.utils import timezone
 
 from lib.constants import (
     FEED_FETCH_MAX_RETRIES,
     FEED_USER_AGENT,
+    REDDIT_LISTING_LIMIT,
     REDDIT_OAUTH_API_BASE,
     REDDIT_OAUTH_TOKEN_URL,
 )
@@ -24,7 +31,10 @@ from lib.constants import (
 # Imported at module level (not method level) because this module is itself
 # imported lazily by feed.models, so feed.models is fully initialized by the
 # time this runs — no circular-import risk in this direction.
-from feed.models import RETRYABLE_STATUS, _retry_delay
+from feed.models import FeedItem, RETRYABLE_STATUS, _retry_delay
+
+if TYPE_CHECKING:
+    from feed.models import Feed
 
 
 class RedditAuthError(requests.RequestException):
@@ -96,3 +106,80 @@ class RedditClient:
             break
         assert response is not None  # loop runs at least once
         return response
+
+
+_SUBREDDIT_RE = re.compile(r"^/r/(?P<sub>[^/]+)/")
+
+
+def _listing_path(url: str) -> str:
+    """Map a stored ``/r/<sub>/.rss`` URL to the OAuth ``/new`` listing path."""
+    match = _SUBREDDIT_RE.match(urlparse(url).path)
+    if not match:
+        raise ValueError(f"not a subreddit feed url: {url}")
+    return f"/r/{match.group('sub')}/new?limit={REDDIT_LISTING_LIMIT}"
+
+
+def fetch_reddit_items(feed: Feed, client: RedditClient) -> tuple[list[FeedItem], int]:
+    """Fetch a subreddit's ``/new`` listing and map it to unsaved FeedItems.
+
+    Returns the items and the HTTP status. Raises ``requests.HTTPError`` if the
+    listing response is not 200 so the caller records the failure and skips.
+    """
+    response = client.get(_listing_path(feed.url))
+    status_code = response.status_code
+    if status_code != 200:
+        response.raise_for_status()
+    return _parse_reddit_listing(feed, response.json()), status_code
+
+
+def _parse_reddit_listing(feed: Feed, payload: dict) -> list[FeedItem]:
+    """Build deduped, unsaved FeedItems from a Reddit listing payload."""
+    items: list[FeedItem] = []
+    seen_links: set[str] = set()
+    children = payload.get("data", {}).get("children", [])
+    for child in children:
+        data = child.get("data", {})
+        permalink = data.get("permalink", "")
+        if not permalink:
+            continue
+        link = f"https://www.reddit.com{permalink}"
+        if link in seen_links:
+            continue
+        seen_links.add(link)
+        items.append(FeedItem(
+            feed=feed,
+            title=html.unescape(data.get("title", "") or "No Title"),
+            link=link,
+            pub_date=_reddit_pub_date(data),
+            summary=_reddit_summary(data),
+            thumbnail_url=_reddit_thumbnail(data),
+        ))
+    return items
+
+
+def _reddit_pub_date(data: dict) -> datetime:
+    """Convert a post's ``created_utc`` (unix seconds) to a tz-aware datetime."""
+    created = data.get("created_utc")
+    if created is None:
+        return timezone.now()
+    return datetime.fromtimestamp(float(created), tz=dt_timezone.utc)
+
+
+def _reddit_summary(data: dict) -> str:
+    """Return the self-post body as collapsed plain text (empty for link posts)."""
+    raw = data.get("selftext", "") or ""
+    return " ".join(html.unescape(raw).split())
+
+
+def _reddit_thumbnail(data: dict) -> str:
+    """Return a thumbnail URL: the ``thumbnail`` field if it is a real URL,
+    else the first preview image's source, else an empty string."""
+    thumb = data.get("thumbnail", "") or ""
+    if thumb.startswith("http"):
+        return thumb
+    images = (data.get("preview", {}) or {}).get("images", [])
+    if images:
+        src = images[0].get("source", {}).get("url", "")
+        if src:
+            return html.unescape(src)
+    return ""
