@@ -19,3 +19,10 @@ FEED_FETCH_BACKOFF_CAP_SECONDS: float = 30.0
 # whole feed list (spaces out the many reddit.com feeds).
 FEED_DOMAIN_MIN_INTERVAL_SECONDS: float = 3.0
 
+# Reddit application-only OAuth: the token endpoint lives on www.reddit.com,
+# authenticated API calls go to oauth.reddit.com (which raises the per-IP rate
+# ceiling that throttles the unauthenticated .rss endpoint).
+REDDIT_OAUTH_TOKEN_URL: str = "https://www.reddit.com/api/v1/access_token"
+REDDIT_OAUTH_API_BASE: str = "https://oauth.reddit.com"
+REDDIT_LISTING_LIMIT: int = 25
+
