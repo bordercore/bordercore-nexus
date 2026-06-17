@@ -86,6 +86,8 @@ FILE_UPLOAD_PERMISSIONS = 0o664
 SECRET_KEY = os.environ.get("SECRET_KEY", "")
 
 GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "")
+REDDIT_CLIENT_ID = os.environ.get("REDDIT_CLIENT_ID", "")
+REDDIT_CLIENT_SECRET = os.environ.get("REDDIT_CLIENT_SECRET", "")
 
 USE_S3 = True
 AWS_STORAGE_BUCKET_NAME = "bordercore-blobs"

@@ -53,3 +53,54 @@ def test_refresh_feeds_swallows_fetch_errors(authenticated_client, feed):
         refresh_feeds(throttle=throttle)
 
     assert mock_update.call_count == len(feed)
+
+
+def test_refresh_feeds_builds_and_shares_one_reddit_client(authenticated_client, feed, settings):
+    """One RedditClient is constructed per run and passed to every feed."""
+    authenticated_client()
+    settings.REDDIT_CLIENT_ID = "id"
+    settings.REDDIT_CLIENT_SECRET = "secret"
+    throttle = RecordingThrottle()
+    captured = []
+
+    def fake_update(self, *, reddit_client=None):
+        captured.append(reddit_client)
+        return 0
+
+    with patch("feed.models.Feed.update", autospec=True, side_effect=fake_update):
+        refresh_feeds(throttle=throttle)
+
+    assert len(captured) == len(feed)
+    assert captured[0] is not None
+    assert all(c is captured[0] for c in captured)
+
+
+def test_refresh_feeds_passes_none_client_when_creds_missing(authenticated_client, feed, settings):
+    """With no creds, refresh passes None so reddit feeds fail cleanly per-feed."""
+    authenticated_client()
+    settings.REDDIT_CLIENT_ID = ""
+    settings.REDDIT_CLIENT_SECRET = ""
+    captured = []
+
+    def fake_update(self, *, reddit_client=None):
+        captured.append(reddit_client)
+        return 0
+
+    with patch("feed.models.Feed.update", autospec=True, side_effect=fake_update):
+        refresh_feeds(throttle=RecordingThrottle())
+
+    assert captured and all(c is None for c in captured)
+
+
+def test_refresh_feeds_swallows_reddit_auth_error(authenticated_client, feed, settings):
+    """A RedditAuthError (a RequestException subclass) does not abort the run."""
+    from feed.reddit import RedditAuthError
+
+    authenticated_client()
+    settings.REDDIT_CLIENT_ID = "id"
+    settings.REDDIT_CLIENT_SECRET = "secret"
+
+    with patch("feed.models.Feed.update", side_effect=RedditAuthError("boom")) as mock_update:
+        refresh_feeds(throttle=RecordingThrottle())
+
+    assert mock_update.call_count == len(feed)

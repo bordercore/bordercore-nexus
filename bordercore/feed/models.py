@@ -166,9 +166,9 @@ class Feed(TimeStampedModel):
         from feed.reddit import RedditAuthError, RedditClient, fetch_reddit_items
 
         if reddit_client is None:
-            if not (settings.REDDIT_CLIENT_ID and settings.REDDIT_CLIENT_SECRET):  # type: ignore[misc]
+            if not (settings.REDDIT_CLIENT_ID and settings.REDDIT_CLIENT_SECRET):
                 raise RedditAuthError("Reddit OAuth credentials not configured")
-            reddit_client = RedditClient(settings.REDDIT_CLIENT_ID, settings.REDDIT_CLIENT_SECRET)  # type: ignore[misc]
+            reddit_client = RedditClient(settings.REDDIT_CLIENT_ID, settings.REDDIT_CLIENT_SECRET)
 
         items: list[FeedItem] = []
         status_code: int | None = None
