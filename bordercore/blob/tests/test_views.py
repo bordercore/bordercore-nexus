@@ -64,7 +64,7 @@ def test_blob_list(authenticated_client, blob_text_factory):
 
 
 @factory.django.mute_signals(signals.post_save)
-def test_blob_create(monkeypatch_blob, authenticated_client, blob_text_factory):
+def test_blob_create(monkeypatch_blob, s3_resource, s3_bucket, authenticated_client, blob_text_factory):
     """Test blob creation via form submission, linked blobs, and file upload."""
 
     _, client = authenticated_client()
@@ -143,7 +143,7 @@ def test_blob_create(monkeypatch_blob, authenticated_client, blob_text_factory):
 
 
 @factory.django.mute_signals(signals.post_save)
-def test_blob_create_duplicate_file(monkeypatch_blob, authenticated_client):
+def test_blob_create_duplicate_file(monkeypatch_blob, s3_resource, s3_bucket, authenticated_client):
     """Re-uploading an identical file returns a 400 with a string `detail`.
 
     The duplicate-file check in BlobForm.clean_file rejects the second
