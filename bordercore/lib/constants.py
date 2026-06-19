@@ -19,6 +19,15 @@ FEED_FETCH_BACKOFF_CAP_SECONDS: float = 30.0
 # whole feed list (spaces out the many reddit.com feeds).
 FEED_DOMAIN_MIN_INTERVAL_SECONDS: float = 3.0
 
+# Reddit-specific pacing: wider than the shared interval above because Reddit
+# rate-limits unauthenticated .rss requests from datacenter IPs aggressively.
+FEED_REDDIT_MIN_INTERVAL_SECONDS: float = 12.0
+
+# Per run, refresh only the N stalest reddit feeds (the rest wait for a later
+# run). Caps the reddit request rate under Reddit's per-IP ceiling; trades
+# freshness for a higher success rate. Tune from the observed 200-vs-429 mix.
+FEED_REDDIT_MAX_PER_RUN: int = 10
+
 # Reddit application-only OAuth: the token endpoint lives on www.reddit.com,
 # authenticated API calls go to oauth.reddit.com (which raises the per-IP rate
 # ceiling that throttles the unauthenticated .rss endpoint).

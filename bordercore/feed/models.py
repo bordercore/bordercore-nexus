@@ -24,7 +24,6 @@ if TYPE_CHECKING:
 import feedparser
 import requests
 
-from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.sessions.backends.base import SessionBase
 from django.db import models, transaction
@@ -85,16 +84,15 @@ class Feed(TimeStampedModel):
 
         Args:
             reddit_client: Shared OAuth client for reddit feeds. When omitted,
-                one is built from settings if credentials are configured.
+                reddit feeds fall back to the .rss path.
 
         Returns:
             The number of unique entries upserted.
 
         Raises:
             requests.HTTPError: If a fetch returns a non-200 status.
-            RedditAuthError: If a reddit feed cannot authenticate.
         """
-        if _is_reddit_url(self.url):
+        if reddit_client is not None and _is_reddit_url(self.url):
             return self._update_reddit(reddit_client)
         return self._update_rss()
 
@@ -161,14 +159,13 @@ class Feed(TimeStampedModel):
 
         return len(items_to_upsert)
 
-    def _update_reddit(self, reddit_client: "RedditClient | None") -> int:
-        """Fetch via Reddit OAuth JSON API and upsert items."""
-        from feed.reddit import RedditAuthError, RedditClient, fetch_reddit_items
+    def _update_reddit(self, reddit_client: "RedditClient") -> int:
+        """Fetch via Reddit OAuth JSON API and upsert items.
 
-        if reddit_client is None:
-            if not (settings.REDDIT_CLIENT_ID and settings.REDDIT_CLIENT_SECRET):
-                raise RedditAuthError("Reddit OAuth credentials not configured")
-            reddit_client = RedditClient(settings.REDDIT_CLIENT_ID, settings.REDDIT_CLIENT_SECRET)
+        Only reached with a non-None client: ``update`` gates on it, and the
+        client is built once per run by ``feed.services._build_reddit_client``.
+        """
+        from feed.reddit import fetch_reddit_items
 
         items: list[FeedItem] = []
         status_code: int | None = None

@@ -9,7 +9,7 @@ import responses
 from django.db import IntegrityError
 
 from feed.models import Feed, FeedItem, UserFeedItemState
-from feed.tests.factories import FeedItemFactory
+from feed.tests.factories import FeedFactory, FeedItemFactory
 
 pytestmark = [pytest.mark.django_db]
 
@@ -280,21 +280,23 @@ def test_update_dispatches_reddit_url_to_oauth_client(authenticated_client, feed
     assert FeedItem.objects.get(feed=feed[0]).link == "https://www.reddit.com/r/Python/comments/1/p/"
 
 
-def test_update_reddit_without_client_or_creds_raises(authenticated_client, feed, settings):
-    """With no client and no configured creds, the reddit path fails cleanly."""
-    from feed.reddit import RedditAuthError
-
+@responses.activate
+def test_update_reddit_without_client_falls_back_to_rss(authenticated_client, feed):
+    """With no client, a reddit feed falls back to the .rss path, even without creds."""
     authenticated_client()
-    settings.REDDIT_CLIENT_ID = ""
-    settings.REDDIT_CLIENT_SECRET = ""
     feed[0].url = "https://www.reddit.com/r/Python/.rss"
     feed[0].save()
+    feed[0].feeditem_set.all().delete()
 
-    with pytest.raises(RedditAuthError):
-        feed[0].update(reddit_client=None)
+    with open(Path(__file__).parent / "resources/rss.xml") as f:
+        xml = f.read()
+
+    responses.add(responses.GET, feed[0].url, body=xml)
+    feed[0].update(reddit_client=None)
 
     feed[0].refresh_from_db()
-    assert feed[0].last_check is None
+    assert feed[0].last_check is not None
+    assert feed[0].last_response_code == 200
 
 
 def test_update_reddit_records_failing_status(authenticated_client, feed):
@@ -309,3 +311,24 @@ def test_update_reddit_records_failing_status(authenticated_client, feed):
 
     feed[0].refresh_from_db()
     assert feed[0].last_response_code == 503
+
+
+def test_update_reddit_without_client_uses_rss():
+    """With no OAuth client, a reddit feed falls through to the .rss path."""
+    feed = FeedFactory(url="https://www.reddit.com/r/python/.rss")
+    with patch.object(Feed, "_update_rss", return_value=0) as rss, \
+         patch.object(Feed, "_update_reddit") as oauth:
+        feed.update(reddit_client=None)
+    rss.assert_called_once_with()
+    oauth.assert_not_called()
+
+
+def test_update_reddit_with_client_uses_oauth():
+    """With an OAuth client, a reddit feed uses the OAuth path."""
+    feed = FeedFactory(url="https://www.reddit.com/r/python/.rss")
+    client = object()
+    with patch.object(Feed, "_update_reddit", return_value=0) as oauth, \
+         patch.object(Feed, "_update_rss") as rss:
+        feed.update(reddit_client=client)
+    oauth.assert_called_once_with(client)
+    rss.assert_not_called()
