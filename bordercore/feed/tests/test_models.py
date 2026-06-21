@@ -7,6 +7,7 @@ import pytest
 import responses
 
 from django.db import IntegrityError
+from django.db.models import Max
 
 from feed.models import Feed, FeedItem, UserFeedItemState
 from feed.tests.factories import FeedFactory, FeedItemFactory
@@ -33,12 +34,17 @@ def test_get_current_feed_id(authenticated_client, feed):
 
     # Test for a non-existent current. This should
     #  return the first feed
+    # Compute an id guaranteed not to exist rather than hardcoding one: the
+    # lookup in get_current_feed_id is global, and the reused test DB's id
+    # sequence climbs across runs, so any literal eventually collides with a
+    # real feed.
     # The lookup emits a warning we'd like to keep out of the test output.
     # logging.disable() is process-global, so restore it afterwards to avoid
     # suppressing warnings in tests that run later in the same session.
+    nonexistent_feed_id = (Feed.objects.aggregate(max_id=Max("id"))["max_id"] or 0) + 1
     logging.disable(logging.WARNING)
     try:
-        session = {"current_feed": 666}
+        session = {"current_feed": nonexistent_feed_id}
         assert Feed.get_current_feed_id(user, session) == feed[2].id
     finally:
         logging.disable(logging.NOTSET)
