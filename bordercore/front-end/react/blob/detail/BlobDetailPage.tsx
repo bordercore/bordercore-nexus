@@ -19,6 +19,7 @@ import hotkeys from "hotkeys-js";
 
 import { doGet, doPost, EventBus } from "../../utils/reactUtils";
 import { Hero } from "./Hero";
+import { CoverImage } from "./CoverImage";
 import { Rail } from "./Rail";
 import { FullscreenReader } from "./FullscreenReader";
 import { ImageLightbox } from "./ImageLightbox";
@@ -225,9 +226,11 @@ export function BlobDetailPage({
 
           {(blob.isImage || blob.isPdf) && blob.coverUrl && (
             <div className={`bd-cover${blob.isImage ? " is-clickable" : ""}`}>
-              <img
+              <CoverImage
                 src={blob.coverUrl}
                 alt={blob.name}
+                pending={blob.isPdf}
+                isClickable={blob.isImage}
                 onClick={blob.isImage ? () => setIsImageLightboxOpen(true) : undefined}
               />
             </div>

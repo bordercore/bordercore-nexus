@@ -1076,6 +1076,55 @@
     cursor: zoom-in;
   }
 
+  // Keep the <img> mounted (so its load/error events fire) but out of view
+  // while we wait for the cover to be generated.
+  .bd-cover-img.is-hidden {
+    display: none;
+  }
+
+  // Placeholder shown while a PDF cover is still being rendered by the Lambda.
+  .bd-cover-skeleton {
+    position: relative;
+    display: flex;
+    overflow: hidden;
+    width: 100%;
+    align-items: flex-end;
+    justify-content: center;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    aspect-ratio: 8.5 / 11;
+    background: var(--bg-3);
+  }
+
+  .bd-cover-skeleton-shine {
+    position: absolute;
+    animation: bd-shimmer 1.4s ease-in-out infinite;
+    background: linear-gradient(
+      100deg,
+      transparent 30%,
+      color-mix(in oklch, var(--fg-4) 14%, transparent) 50%,
+      transparent 70%
+    );
+    background-size: 220% 100%;
+    inset: 0;
+  }
+
+  .bd-cover-skeleton-caption {
+    position: relative;
+    padding: 6px 12px;
+    border-radius: var(--radius);
+    margin-bottom: 16px;
+    background: color-mix(in oklch, var(--bg-1) 70%, transparent);
+    color: var(--fg-3);
+    font-size: 0.85rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bd-cover-skeleton-shine {
+      animation: none;
+    }
+  }
+
   .bd-video {
     width: 100%;
     border-radius: var(--radius);
@@ -1332,6 +1381,16 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes bd-shimmer {
+  from {
+    background-position: 180% 0;
+  }
+
+  to {
+    background-position: -80% 0;
   }
 }
 
