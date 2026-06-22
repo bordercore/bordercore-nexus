@@ -138,11 +138,34 @@
     display: none;
   }
 
+  /* Re-flow the card from absolute to static. !important overrides the
+     inline positioning styles set on LoginCard in LoginPage.tsx, which
+     would otherwise win on specificity. */
   .bc-login-card {
-    position: static;
-    width: auto;
+    position: static !important;
+    right: auto !important;
+    top: auto !important;
+    width: auto !important;
+    max-width: 100% !important;
     margin: 80px 24px 24px;
-    transform: none;
+    transform: none !important;
+  }
+
+  /* Allow the page to scroll so a tall card or an on-screen keyboard is
+     not clipped by the root's fixed + overflow:hidden. overflow-x:hidden is
+     a hard backstop so nothing can spill past the right edge at any viewport
+     width — e.g. when iOS Display Zoom reports a narrower-than-physical
+     viewport. */
+  .bc-login-root {
+    position: absolute !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+
+  /* Prevent iOS Safari from auto-zooming on input focus, which it does
+     when the font-size is below 16px. Overrides the inline 14px. */
+  .bc-login-card input {
+    font-size: 16px !important;
   }
 
   .bc-login-brandbar {
