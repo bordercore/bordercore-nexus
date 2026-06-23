@@ -117,6 +117,16 @@ export const SelectValue = forwardRef<SelectValueHandle, SelectValueProps>(funct
     setSearch(query);
     onSearchChange?.(query);
 
+    // With no search endpoint there are no suggestions to fetch: skip the
+    // request and keep the dropdown closed. Enter still submits via onSearch,
+    // which lets callers run the input as a plain (non-autocompleted) query.
+    if (!searchUrl) {
+      setOptions([]);
+      setIsOpen(false);
+      setHighlightedIndex(-1);
+      return;
+    }
+
     if (query.length < minLength) {
       // Cancel any pending request
       if (abortControllerRef.current) {

@@ -53,6 +53,8 @@ if (container) {
   );
   const initialViewType = (container.getAttribute("data-view-type") ||
     "normal") as ViewType;
+  const initialSearchMode = (container.getAttribute("data-search-mode") ||
+    "terms") as "tags" | "terms";
 
   // Parse pinned tags from JSON script tag
   let initialPinnedTags: PinnedTag[] = [];
@@ -103,6 +105,7 @@ if (container) {
       initialPinnedBookmarks={initialPinnedBookmarks}
       untaggedCount={untaggedCount}
       initialViewType={initialViewType}
+      initialSearchMode={initialSearchMode}
       stats={stats}
       urls={{
         getBookmarksByPage: getBookmarksByPageUrl,

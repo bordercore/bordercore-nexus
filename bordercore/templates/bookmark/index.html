@@ -9,6 +9,7 @@
         data-initial-tag="{{ tag|default:'' }}"
         data-untagged-count="{{ untagged_count }}"
         data-view-type="{{ request.session.bookmark_view_type|default:'normal' }}"
+        data-search-mode="{{ request.session.bookmark_search_mode|default:'terms' }}"
         data-get-bookmarks-by-page-url="{% url 'bookmark:get_bookmarks_by_page' 666 %}"
         data-get-bookmarks-by-tag-url="{% url 'bookmark:get_bookmarks_by_tag' '666' %}"
         data-get-bookmarks-by-keyword-url="{% url 'bookmark:get_bookmarks_by_keyword' '666' %}"

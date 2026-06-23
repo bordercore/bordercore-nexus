@@ -45,6 +45,7 @@
 // todo search field rather than the shorter 32px /music/ track. `flex: 1` lets
 // the bar grow into the action row's remaining space.
 .bookmark-search-bar {
+  position: relative;
   display: flex;
   flex: 1;
   align-items: center;
@@ -53,7 +54,15 @@
   // (.todo-search-wrap .icon at left:14px; .todo-search-input padding-left:38px
   // over a 13px icon = an 11px gap), so the leading icon and hint text line up
   // the same on both pages.
-  padding: 10px 12px 10px 14px;
+  // Only 4px of the 10px block inset lives on the bar; the remaining 6px is
+  // padding on the inner input (below). /todo/'s caret room comes from the
+  // input itself carrying the full 10px block padding, so its box is taller
+  // than the line box. Splitting the inset the same way keeps the input's box
+  // taller than its 20.92px line box here too, so the caret isn't pinned
+  // edge-to-edge against a collapsed box (which made it look clipped behind
+  // the placeholder). Bar height is unchanged: 4px + (6px + line box + 6px) +
+  // 4px == the original 10px + line box + 10px.
+  padding: 4px 12px 4px 14px;
   cursor: text;
   gap: 11px;
 
@@ -77,15 +86,41 @@
     // Reset the SelectValue wrapper styles inside the search bar so the
     // input sits flush in the bar instead of stretching it.
     .select-value-wrapper {
+      // Drop the wrapper's own positioning context so the suggestion dropdown
+      // anchors to the whole .bookmark-search-bar instead of just the input,
+      // letting it span the bar's full width.
+      position: static;
+
+      // Float the tag-suggestion dropdown over the page rather than letting it
+      // sit in flow (which would push the bookmark list down). It hangs just
+      // below the search bar, spanning its full width.
+      .select-value-dropdown {
+        position: absolute;
+        z-index: 50;
+        top: calc(100% + 6px);
+        left: 0;
+        width: 100%;
+      }
+
       .form-control {
         width: 100%;
         height: auto;
         min-height: 0;
-        padding: 0;
+
+        // 6px block padding (paired with the bar's reduced 4px) gives the
+        // input box room above and below the line box, matching /todo/'s
+        // input so the caret renders with breathing room instead of pinned
+        // to a collapsed box. No inline padding: the bar's flex gap handles
+        // horizontal spacing.
+        padding: 6px 0;
         border: 0;
         background: transparent;
         box-shadow: none;
-        color: var(--fg-1);
+
+        // Match /todo/'s .todo-search-input text/caret tone (fg-0, via
+        // refined-input-surface). At fg-1 the caret was dimmer than the field's
+        // surface and read as obscured behind the fg-3 placeholder.
+        color: var(--fg-0);
         font-family: var(--font-ui);
         font-size: 13.5px;
 
@@ -101,8 +136,10 @@
 
         // fg-3 placeholder matches .todo-search-input's (via
         // refined-input-surface), so the hint text reads at the same tone.
+        // opacity: 1 mirrors the mixin so Firefox doesn't dim the placeholder.
         &::placeholder {
           color: var(--fg-3);
+          opacity: 1;
         }
       }
 
@@ -534,6 +571,30 @@
     align-items: center;
     margin-bottom: 24px;
     gap: 12px;
+  }
+
+  // Tags ↔ Terms search-mode switch, sitting right of the search bar. The two
+  // text labels flank the ToggleSwitch; the side matching the active mode is
+  // emphasized (fg-0) while the other reads in the muted fg-3 tone, matching
+  // the inactive-button color used by the adjacent .refined-seg control.
+  .bookmark-search-mode {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 8px;
+
+    .bookmark-search-mode-label {
+      color: var(--fg-3);
+      cursor: default;
+      font-family: var(--font-ui);
+      font-size: 13px;
+      transition: color 0.15s;
+      user-select: none;
+
+      &.active {
+        color: var(--fg-0);
+      }
+    }
   }
 
   // The drawer toggle is only meaningful below 992px, where the sidebar

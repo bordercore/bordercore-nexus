@@ -151,6 +151,14 @@ def test_store_in_session_allowed_key(authenticated_client):
     assert client.session["todo_sort"] == '{"field":"sort_order","direction":"asc"}'
 
 
+def test_store_in_session_bookmark_search_mode(authenticated_client):
+    _, client = authenticated_client()
+    url = urls.reverse("accounts:store_in_session")
+    resp = client.post(url, {"bookmark_search_mode": "tags"})
+    assert resp.status_code == 200
+    assert client.session["bookmark_search_mode"] == "tags"
+
+
 def test_store_in_session_rejects_disallowed_key(authenticated_client):
     _, client = authenticated_client()
     url = urls.reverse("accounts:store_in_session")

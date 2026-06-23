@@ -19,6 +19,7 @@ import BookmarkFilterTitle from "./BookmarkFilterTitle";
 import BookmarkList from "./BookmarkList";
 import BookmarkPagination from "./BookmarkPagination";
 import NewBookmarkModal from "./NewBookmarkModal";
+import ToggleSwitch from "../common/ToggleSwitch";
 import VisualizerSlot from "../visualizers/VisualizerSlot";
 import type {
   Bookmark,
@@ -29,12 +30,15 @@ import type {
   ViewType,
 } from "./types";
 
+type SearchMode = "tags" | "terms";
+
 interface BookmarkListPageProps {
   initialTag: string | null;
   initialPinnedTags: PinnedTag[];
   initialPinnedBookmarks: PinnedBookmark[];
   untaggedCount: number;
   initialViewType: ViewType;
+  initialSearchMode: SearchMode;
   stats: BookmarkStats;
   urls: {
     getBookmarksByPage: string;
@@ -65,6 +69,7 @@ export function BookmarkListPage({
   initialPinnedBookmarks,
   untaggedCount,
   initialViewType,
+  initialSearchMode,
   stats,
   urls,
 }: BookmarkListPageProps) {
@@ -81,6 +86,7 @@ export function BookmarkListPage({
   });
   const [selectedBookmarkUuid, setSelectedBookmarkUuid] = useState<string | null>(null);
   const [viewType, setViewType] = useState<ViewType>(initialViewType);
+  const [searchMode, setSearchMode] = useState<SearchMode>(initialSearchMode);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [newBookmarkOpen, setNewBookmarkOpen] = useState(false);
   const [pinnedTags, setPinnedTags] = useState<PinnedTag[]>(() => {
@@ -285,15 +291,31 @@ export function BookmarkListPage({
 
   const handleSearch = useCallback(
     (query: string | { label?: string }) => {
-      const searchTermParam = typeof query === "string" ? query : query.label || "";
-      if (searchTermParam) {
-        getBookmarkList({ searchTermParam: searchTermParam });
-        selectValueRef.current?.clear();
-      } else {
+      const term = typeof query === "string" ? query : query.label || "";
+      if (!term) {
         getBookmarkList({ pageNumber: 1 });
+        return;
       }
+      // In Tags mode the typed text is treated as a tag name; in Terms mode
+      // it is a keyword matched against the bookmark name.
+      if (searchMode === "tags") {
+        getBookmarkList({ searchTag: term });
+      } else {
+        getBookmarkList({ searchTermParam: term });
+      }
+      selectValueRef.current?.clear();
     },
-    [getBookmarkList]
+    [getBookmarkList, searchMode]
+  );
+
+  const handleSearchModeChange = useCallback(
+    (tagsOn: boolean) => {
+      const mode: SearchMode = tagsOn ? "tags" : "terms";
+      setSearchMode(mode);
+      doPost(urls.storeInSession, { bookmark_search_mode: mode }, () => {});
+      selectValueRef.current?.clear();
+    },
+    [urls]
   );
 
   const selectTag = useCallback(
@@ -554,12 +576,36 @@ export function BookmarkListPage({
                 <SelectValue
                   ref={selectValueRef}
                   id="bookmarkSearch"
-                  searchUrl={`${urls.getTagsUsedByBookmarks}?query=`}
-                  placeHolder={tagIsSelected || searchTerm ? "" : "Search by keyword or tag…"}
+                  searchUrl={searchMode === "tags" ? `${urls.getTagsUsedByBookmarks}?query=` : ""}
+                  placeHolder={
+                    tagIsSelected || searchTerm
+                      ? ""
+                      : searchMode === "tags"
+                        ? "Search by tag…"
+                        : "Search by keyword…"
+                  }
                   onSelect={selectTag}
                   onSearch={handleSearch}
                 />
               </form>
+            </div>
+            <div className="bookmark-search-mode" role="group" aria-label="Search mode">
+              <span
+                className={`bookmark-search-mode-label ${searchMode === "terms" ? "active" : ""}`}
+              >
+                Terms
+              </span>
+              <ToggleSwitch
+                name="bookmark_search_mode"
+                id="bookmarkSearchMode"
+                checked={searchMode === "tags"}
+                onChange={handleSearchModeChange}
+              />
+              <span
+                className={`bookmark-search-mode-label ${searchMode === "tags" ? "active" : ""}`}
+              >
+                Tags
+              </span>
             </div>
             <div className="refined-seg" role="group" aria-label="View density">
               <button

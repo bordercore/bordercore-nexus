@@ -362,6 +362,7 @@ def pin_note(request: HttpRequest) -> Response:
 
 
 ALLOWED_SESSION_KEYS = frozenset({
+    "bookmark_search_mode",
     "bookmark_view_type",
     "current_feed",
     "search_tag_detail_current_tab",
