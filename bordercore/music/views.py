@@ -13,6 +13,7 @@ from datetime import timedelta
 from typing import Any, Iterator, cast
 
 import humanize
+import requests
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -43,10 +44,11 @@ from django.views.generic.list import ListView
 from lib.decorators import validate_post_data
 from lib.mixins import FormRequestMixin, UserScopedQuerysetMixin, get_user_object_or_404
 from lib.time_utils import convert_seconds
+from lib.util import UnsafeURLError
 from music.services import (create_album_from_zipfile, get_id3_info,
                             get_song_tags, list_artist_image_keys,
                             scan_zipfile, upload_album_artwork,
-                            upload_artist_image)
+                            upload_artist_image, upload_artist_image_from_url)
 from music.services import search as search_service
 
 from .forms import AlbumForm, PlaylistForm, SongForm
@@ -1478,14 +1480,24 @@ def update_artist_image(request: HttpRequest) -> Response:
 
     get_user_object_or_404(request.user, Artist, uuid=artist_uuid)
 
-    if "image" not in request.FILES:
-        return Response({"detail": "No image provided"}, status=400)
+    if "image" in request.FILES:
+        image = cast(UploadedFile, request.FILES["image"])
+        upload_artist_image(artist_uuid, image.file)
+        return Response()
 
-    image = cast(UploadedFile, request.FILES["image"])
+    # An image dragged from another browser tab arrives as a URL, which the
+    # server fetches (SSRF-guarded) and stores.
+    image_url = request.POST.get("image_url", "").strip()
+    if image_url:
+        try:
+            upload_artist_image_from_url(artist_uuid, image_url)
+        except UnsafeURLError:
+            return Response({"detail": "That image URL is not allowed"}, status=400)
+        except (requests.RequestException, ValueError):
+            return Response({"detail": "Could not fetch an image from that URL"}, status=400)
+        return Response()
 
-    upload_artist_image(artist_uuid, image.file)
-
-    return Response()
+    return Response({"detail": "No image provided"}, status=400)
 
 
 @api_view(["GET"])

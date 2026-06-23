@@ -172,3 +172,75 @@ def test_get_recent_albums_aggregates_correctly_with_listens(authenticated_clien
     assert a["playtime"] == "6:00", "playtime must be 360s, not inflated by listens"
     assert a["rating"] == 3, "rating must be true mean (3), not play-weighted (3.2)"
     assert a["plays"] == 5
+
+
+def _fake_image_response(content=b"\xff\xd8\xff\xe0jpegbytes", content_type="image/jpeg"):
+    """Build a stand-in requests.Response for a fetched image URL."""
+    from unittest.mock import MagicMock
+
+    resp = MagicMock()
+    resp.content = content
+    resp.headers = {"Content-Type": content_type}
+    resp.raise_for_status = MagicMock()
+    return resp
+
+
+def test_upload_artist_image_from_url_uploads_fetched_bytes(monkeypatch):
+    """A safe image URL is fetched and its bytes handed to the S3 upload."""
+    import music.services as music_services
+
+    captured = {}
+    monkeypatch.setattr(
+        music_services,
+        "fetch_url_safely",
+        lambda url, **kwargs: _fake_image_response(content=b"PNGDATA", content_type="image/png"),
+    )
+    monkeypatch.setattr(
+        music_services,
+        "upload_artist_image",
+        lambda uuid, fileobj: captured.update(uuid=uuid, data=fileobj.read()),
+    )
+
+    music_services.upload_artist_image_from_url("artist-uuid", "https://example.com/a.png")
+
+    assert captured["uuid"] == "artist-uuid"
+    assert captured["data"] == b"PNGDATA"
+
+
+def test_upload_artist_image_from_url_rejects_non_image(monkeypatch):
+    """A URL whose response is not an image is rejected before upload."""
+    import music.services as music_services
+
+    monkeypatch.setattr(
+        music_services,
+        "fetch_url_safely",
+        lambda url, **kwargs: _fake_image_response(content=b"<html>", content_type="text/html"),
+    )
+    monkeypatch.setattr(
+        music_services,
+        "upload_artist_image",
+        lambda *a, **k: pytest.fail("non-image must not be uploaded"),
+    )
+
+    with pytest.raises(ValueError):
+        music_services.upload_artist_image_from_url("artist-uuid", "https://example.com/a.html")
+
+
+def test_upload_artist_image_from_url_rejects_oversize(monkeypatch):
+    """A response larger than the size cap is rejected before upload."""
+    import music.services as music_services
+
+    big = b"x" * (music_services.MAX_ARTIST_IMAGE_BYTES + 1)
+    monkeypatch.setattr(
+        music_services,
+        "fetch_url_safely",
+        lambda url, **kwargs: _fake_image_response(content=big, content_type="image/jpeg"),
+    )
+    monkeypatch.setattr(
+        music_services,
+        "upload_artist_image",
+        lambda *a, **k: pytest.fail("oversize image must not be uploaded"),
+    )
+
+    with pytest.raises(ValueError):
+        music_services.upload_artist_image_from_url("artist-uuid", "https://example.com/big.jpg")

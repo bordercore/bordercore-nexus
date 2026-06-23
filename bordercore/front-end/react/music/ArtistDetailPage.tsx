@@ -29,6 +29,41 @@ interface ArtistDetailPageProps {
   hasArtistImage: boolean;
 }
 
+/**
+ * Pull an image URL out of a drop's DataTransfer.
+ *
+ * An image dragged from another browser tab is delivered as a URL (in
+ * `text/uri-list`, an `<img>` in `text/html`, or `text/plain`) rather than as
+ * a File, so the drop handler falls back to this when no file is present.
+ */
+export function extractImageUrl(dataTransfer: DataTransfer): string | null {
+  const uriList = dataTransfer.getData("text/uri-list");
+  if (uriList) {
+    const url = uriList
+      .split("\n")
+      .map(line => line.trim())
+      .find(line => line && !line.startsWith("#"));
+    if (url) {
+      return url;
+    }
+  }
+
+  const html = dataTransfer.getData("text/html");
+  if (html) {
+    const match = html.match(/<img[^>]+\bsrc\s*=\s*["']([^"']+)["']/i);
+    if (match) {
+      return match[1];
+    }
+  }
+
+  const text = dataTransfer.getData("text/plain").trim();
+  if (/^https?:\/\//i.test(text)) {
+    return text;
+  }
+
+  return null;
+}
+
 export function ArtistDetailPage({
   artist,
   albums,
@@ -163,6 +198,22 @@ export function ArtistDetailPage({
     }
   };
 
+  const uploadArtistImageFromUrl = async (imageUrl: string) => {
+    try {
+      const formData = new FormData();
+      formData.append("artist_uuid", artist.uuid);
+      formData.append("image_url", imageUrl);
+
+      await axios.post(urls.updateArtistImage, formData, {
+        withCredentials: true,
+      });
+
+      handleImageUpdated();
+    } catch (error) {
+      console.error("Error uploading artist image from URL:", error);
+    }
+  };
+
   const handleImageDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragOver(false);
@@ -170,6 +221,13 @@ export function ArtistDetailPage({
     const file = e.dataTransfer.files[0];
     if (file && file.type.startsWith("image/")) {
       uploadArtistImage(file);
+      return;
+    }
+
+    // An image dragged from another browser tab arrives as a URL, not a file.
+    const imageUrl = extractImageUrl(e.dataTransfer);
+    if (imageUrl) {
+      uploadArtistImageFromUrl(imageUrl);
     }
   };
 

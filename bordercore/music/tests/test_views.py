@@ -692,3 +692,56 @@ def test_music_list_playlists_have_type_and_parameters(authenticated_client):
     assert smart is not None
     assert smart["type"] == "smart"
     assert smart["parameters"] == {"tag": "ambient"}
+
+
+def test_update_artist_image_from_url(authenticated_client, song, monkeypatch):
+    """Posting an image_url delegates to the URL-fetch service and returns 200."""
+    _, client = authenticated_client()
+    artist = song[1].artist
+
+    captured = {}
+    monkeypatch.setattr(
+        "music.views.upload_artist_image_from_url",
+        lambda uuid, url: captured.update(uuid=uuid, url=url),
+    )
+
+    url = urls.reverse("music:update_artist_image")
+    resp = client.post(url, {
+        "artist_uuid": str(artist.uuid),
+        "image_url": "https://example.com/pic.jpg",
+    })
+
+    assert resp.status_code == 200
+    assert captured == {"uuid": str(artist.uuid), "url": "https://example.com/pic.jpg"}
+
+
+def test_update_artist_image_from_url_rejects_unsafe(authenticated_client, song, monkeypatch):
+    """An unsafe URL (SSRF guard tripped) returns a 400 rather than 500."""
+    from lib.util import UnsafeURLError
+
+    _, client = authenticated_client()
+    artist = song[1].artist
+
+    def raise_unsafe(uuid, url):
+        raise UnsafeURLError("blocked")
+
+    monkeypatch.setattr("music.views.upload_artist_image_from_url", raise_unsafe)
+
+    url = urls.reverse("music:update_artist_image")
+    resp = client.post(url, {
+        "artist_uuid": str(artist.uuid),
+        "image_url": "http://169.254.169.254/latest/meta-data/",
+    })
+
+    assert resp.status_code == 400
+
+
+def test_update_artist_image_requires_image_or_url(authenticated_client, song):
+    """Posting neither a file nor a URL returns a 400."""
+    _, client = authenticated_client()
+    artist = song[1].artist
+
+    url = urls.reverse("music:update_artist_image")
+    resp = client.post(url, {"artist_uuid": str(artist.uuid)})
+
+    assert resp.status_code == 400

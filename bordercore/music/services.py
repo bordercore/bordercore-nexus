@@ -31,7 +31,7 @@ from django.utils import timezone
 
 from lib.aws import s3_delete_object, s3_list_objects, s3_upload_fileobj
 from lib.time_utils import convert_seconds
-from lib.util import get_elasticsearch_connection
+from lib.util import fetch_url_safely, get_elasticsearch_connection
 from tag.models import Tag
 
 from .models import Album, Artist, Listen, Playlist, PlaylistItem, Song, SongSource
@@ -720,6 +720,48 @@ def upload_artist_image(uuid: str, fileobj: Any) -> None:
         f"artist_images/{uuid}",
         content_type="image/jpeg",
     )
+
+
+# Upper bound on the size of an artist image fetched from a remote URL. The
+# whole body is read into memory before being stored, so this caps memory use
+# and rejects obviously-wrong targets.
+MAX_ARTIST_IMAGE_BYTES = 15 * 1024 * 1024
+
+# Some image hosts reject requests without a browser-like User-Agent.
+_ARTIST_IMAGE_USER_AGENT = (
+    "Mozilla/5.0 (compatible; Bordercore/1.0; +https://www.bordercore.com)"
+)
+
+
+def upload_artist_image_from_url(uuid: str, url: str) -> None:
+    """Fetch an image from a remote URL and store it as the artist image.
+
+    Supports dragging an image from another browser tab, which drops a URL
+    rather than a file. The URL is retrieved through :func:`fetch_url_safely`,
+    which guards against SSRF by rejecting non-public hosts and non-http(s)
+    schemes. The response must be an image and within the size limit.
+
+    Args:
+        uuid: The artist's UUID string.
+        url: The remote image URL.
+
+    Raises:
+        UnsafeURLError: If the URL targets a disallowed host or scheme.
+        requests.RequestException: If the download fails.
+        ValueError: If the response is not an image or exceeds the size limit.
+    """
+    response = fetch_url_safely(url, headers={"User-Agent": _ARTIST_IMAGE_USER_AGENT})
+    response.raise_for_status()
+
+    content_type = response.headers.get("Content-Type", "")
+    if not content_type.startswith("image/"):
+        raise ValueError(f"URL did not return an image (Content-Type: {content_type!r})")
+
+    content = response.content
+    if len(content) > MAX_ARTIST_IMAGE_BYTES:
+        raise ValueError("Fetched image exceeds the maximum allowed size")
+
+    upload_artist_image(uuid, BytesIO(content))
 
 
 def list_artist_image_keys(prefix: str = "artist_images/") -> set[str]:
