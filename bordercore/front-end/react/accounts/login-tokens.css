@@ -162,9 +162,21 @@
     overflow-y: auto !important;
   }
 
+  /* The card is display:flex (accent bar + content wrapper). The content
+     wrapper is a flex child, so its default min-width:auto keeps it from
+     shrinking below its min-content width — which exceeds the narrowed card
+     and pushes the form (and its inputs) past the card's right edge. This is
+     the actual cause of the overflow; min-width:0 lets the wrapper shrink to
+     the card. (The 4px accent bar, the other child, is unaffected.) */
+  .bc-login-card > div {
+    min-width: 0;
+  }
+
   /* Prevent iOS Safari from auto-zooming on input focus, which it does
-     when the font-size is below 16px. Overrides the inline 14px. */
+     when the font-size is below 16px. Overrides the inline 14px. min-width:0
+     likewise lets the input (a flex:1 child) shrink within its field row. */
   .bc-login-card input {
+    min-width: 0;
     font-size: 16px !important;
   }
 
