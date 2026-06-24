@@ -45,11 +45,15 @@ module.exports = defineConfig({
   // Root is where vite.config.js is located (bordercore directory)
   root: __dirname,
   server: {
+    // Defaults to binding localhost only. Pass `--host` (e.g. from the Zellij
+    // "center" layout) to expose the dev server on the LAN for phone testing.
     port: vitePort,
     strictPort: true,
     cors: true,
     hmr: {
-      host: "localhost",
+      // host omitted on purpose: the HMR client infers it from the browser's
+      // location, so live reload works whether the page was loaded via
+      // localhost or a LAN IP — no per-host pinning required.
       port: vitePort,
     },
   },

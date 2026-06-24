@@ -153,7 +153,7 @@ CHANNEL_LAYERS = {
     },
 }
 
-ALLOWED_HOSTS = ("localhost", "127.0.0.1", "www.bordercore.com", "bordercore.com", "10.3.2.3", "10.3.2.60", "10.0.0.81")
+ALLOWED_HOSTS = ("localhost", "127.0.0.1", "www.bordercore.com", "bordercore.com", "10.3.2.3", "10.3.2.60", "10.0.0.81", "10.0.0.2")
 
 INSTALLED_APPS = (
 

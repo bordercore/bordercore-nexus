@@ -20,7 +20,25 @@ logger = logging.getLogger(__name__)
 _MANIFEST_CACHE: dict[str, dict[str, Any]] | None = None
 _MANIFEST_MTIME: float = 0.0
 _VITE_PORT = os.environ.get("VITE_PORT", "5174")
-_VITE_DEV_SERVER = f"http://localhost:{_VITE_PORT}"
+# Optional hard override; normally the host is derived from the request so the
+# dev-server URL matches whatever host the browser used (localhost or a LAN IP).
+_VITE_HOST_OVERRIDE = os.environ.get("VITE_HOST")
+
+
+def _dev_server_url(context: dict[str, Any]) -> str:
+    """Base URL of the Vite dev server for the current request.
+
+    The host is taken from the host the browser used to reach Django, so a page
+    loaded via ``localhost:8000`` references ``localhost:5174`` while one loaded
+    via a LAN IP references that same IP — both served by one dev server. The
+    ``VITE_HOST`` env var overrides this when set.
+    """
+    host = _VITE_HOST_OVERRIDE
+    if not host:
+        request = context.get("request")
+        if request is not None:
+            host = request.get_host().split(":")[0]
+    return f"http://{host or 'localhost'}:{_VITE_PORT}"
 
 def _manifest_path() -> str | None:
     """Locate the Vite manifest.json file on disk.
@@ -118,8 +136,8 @@ def _get_source_path(entry_name: str) -> str:
     return entry_name
 
 
-@register.simple_tag
-def vite_asset(entry_name: str) -> SafeString | str:
+@register.simple_tag(takes_context=True)
+def vite_asset(context: Any, entry_name: str) -> SafeString | str:
     """Return HTML tags (link/script) for a Vite-built entry from manifest.json.
 
     Usage: {% vite_asset "dist/js/javascript" %}
@@ -137,17 +155,19 @@ def vite_asset(entry_name: str) -> SafeString | str:
     # In DEBUG mode, serve from Vite dev server (unless tests request manifest)
     use_manifest = getattr(settings, "VITE_USE_MANIFEST", False)
     if settings.DEBUG and not use_manifest:
+        dev_server = _dev_server_url(context)
+
         # Derive source path from entry name using naming conventions
         source_path = _get_source_path(entry_name)
 
         # Add Vite client for HMR
-        parts.append(f'<script type="module" src="{_VITE_DEV_SERVER}/@vite/client"></script>')
+        parts.append(f'<script type="module" src="{dev_server}/@vite/client"></script>')
 
         # Add React Refresh preamble (required by @vitejs/plugin-react)
         # This must be added before any React components are loaded
         if "react" in entry_name or "react" in source_path or source_path.endswith(".tsx") or source_path.endswith(".jsx"):
             parts.append(f'''<script type="module">
-  import {{ injectIntoGlobalHook }} from "{_VITE_DEV_SERVER}/@react-refresh"
+  import {{ injectIntoGlobalHook }} from "{dev_server}/@react-refresh"
   injectIntoGlobalHook(window)
   window.$RefreshReg$ = () => {{}}
   window.$RefreshSig$ = () => (type) => type
@@ -155,7 +175,7 @@ def vite_asset(entry_name: str) -> SafeString | str:
 </script>''')
 
         # Add the entry point
-        parts.append(f'<script type="module" src="{_VITE_DEV_SERVER}/{source_path}"></script>')
+        parts.append(f'<script type="module" src="{dev_server}/{source_path}"></script>')
 
         return mark_safe("\n".join(parts))
 
