@@ -282,6 +282,16 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
     );
   }, [isStreaming, sendMessage]);
 
+  const handleRelatedQuestion = useCallback(() => {
+    if (isStreaming) return;
+    sendMessage(
+      "Generate a new study question that is related to this one — it should " +
+        "test a similar or adjacent concept, but be a genuinely distinct " +
+        "question, not a rephrasing of this one. Then give its answer. Format " +
+        "it clearly as the question first, followed by the answer."
+    );
+  }, [isStreaming, sendMessage]);
+
   const handleStop = useCallback(() => {
     abortRef.current?.abort();
   }, []);
@@ -326,6 +336,7 @@ export const ChatBot = forwardRef<ChatBotHandle, ChatBotProps>(function ChatBot(
         <DiscussBar
           onAnswer={handleAnswerQuestion}
           onExplain={handleExplainConcepts}
+          onRelated={handleRelatedQuestion}
           disabled={isStreaming}
           showHint={history.filter(m => m.role !== "system").length === 0}
         />
