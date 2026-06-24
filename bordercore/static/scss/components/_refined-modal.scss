@@ -518,6 +518,27 @@
 }
 
 // =============================================================================
+// Tag-manage variant — modals with a SelectValue search field at the top that
+// adds to a managed list rendered below it (DrillMutedTags, DrillPinnedTags).
+// The shared SelectValue dropdown defaults to in-flow (see _forms.scss), so it
+// would push the list and actions row down and grow the modal to fit the
+// results. Float it over the content beneath instead — matching the /bookmark/
+// tag search. Scoped to this variant so it doesn't affect modals whose search
+// field is the only field (e.g. ObjectSelectModal), where the in-flow dropdown
+// is what reveals the results. The .select-value-wrapper is already
+// position: relative (from _forms.scss), so this hangs just below the input.
+// =============================================================================
+
+.refined-modal.refined-modal--tag-manage {
+  .select-value-wrapper .dropdown-menu.select-value-dropdown {
+    position: absolute;
+    z-index: 5;
+    top: calc(100% + 6px);
+    left: 0;
+  }
+}
+
+// =============================================================================
 // Wide variant — for modals whose body needs more horizontal room than the
 // default 520px (e.g. preformatted test output, log dumps). Keeps the chrome,
 // padding, and animation of the default modal; only widens the surface.

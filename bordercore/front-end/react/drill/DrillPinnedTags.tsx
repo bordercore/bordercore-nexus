@@ -195,7 +195,11 @@ export function DrillPinnedTags({
         createPortal(
           <>
             <div className="refined-modal-scrim" onClick={closeModal} />
-            <div className="refined-modal" role="dialog" aria-label="manage pinned tags">
+            <div
+              className="refined-modal refined-modal--tag-manage"
+              role="dialog"
+              aria-label="manage pinned tags"
+            >
               <button
                 type="button"
                 className="refined-modal-close"
