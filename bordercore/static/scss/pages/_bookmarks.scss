@@ -947,5 +947,160 @@
   }
 }
 
+// Each bookmark row wraps its cells in .bookmark-row-inner. On desktop the
+// wrapper is transparent (display: contents) so the cells remain direct grid
+// items of the row and the table layout is unchanged. Below 640px the wrapper
+// becomes the sliding "foreground" of the swipe-to-reveal card (see the phone
+// block below).
+.bookmark-row-inner {
+  display: contents;
+}
+
+// =============================================================================
+// Phone reflow: swipe-to-reveal bookmark cards
+// =============================================================================
+// The desktop row is a 5-column data grid (drag | content | tags | date |
+// actions). At phone width those tracks squish — the 160×90 thumbnail gets
+// clipped and the columns fight over ~100px. Below 640px each row becomes a
+// compact card: thumbnail-left with the title/hostname filling the width, tags
+// and date on a second line that collapses when empty. The per-row dropdown is
+// replaced by a swipe-to-reveal action tray — swipe a card left to expose
+// Pin / Edit / Delete — so no actions gutter eats into the card. Tablets
+// (641–991px) keep the table; the main column is wide enough for it there. Scoped
+// under #bookmark-list-page so these rules outrank the higher-specificity
+// `.bookmark-grid-row.compact` and `.bookmark-grid.hide-tags ...` templates that
+// would otherwise keep their desktop column counts at this width.
+@media (width <= 640px) {
+  #bookmark-list-page {
+    // The table header is desktop chrome; the cards are self-describing.
+    .bookmark-grid-header {
+      display: none;
+    }
+
+    // The row becomes a clip frame: it keeps the card's border/radius (from
+    // refined-row-card) and clips the sliding foreground to that rounded shape.
+    // The grid layout itself moves onto .bookmark-row-inner below.
+    .bookmark-grid-row {
+      display: block;
+      overflow: hidden;
+      padding: 0;
+    }
+
+    // Action tray, pinned to the right edge and sitting behind the foreground.
+    .bookmark-swipe-tray {
+      position: absolute;
+      z-index: 0;
+      display: flex;
+      align-items: stretch;
+      inset: 0 0 0 auto;
+    }
+
+    .bookmark-swipe-action {
+      display: flex;
+      width: 72px;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 0;
+      background: var(--bg-3);
+      color: var(--fg-1);
+      cursor: pointer;
+      font-size: 11px;
+      gap: 4px;
+
+      &.delete {
+        background: var(--danger);
+        color: #fff;
+      }
+
+      svg {
+        font-size: 15px;
+      }
+    }
+
+    // Sliding foreground: carries the card surface (opaque, so the tray stays
+    // hidden when closed), the inner padding, and the card's grid layout.
+    .bookmark-row-inner {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      align-items: start;
+      padding: 12px 18px;
+      background: var(--bg-1);
+      gap: 6px 10px;
+      grid-template-areas:
+        "content content"
+        "tags    date";
+      grid-template-columns: 1fr auto;
+      transition: transform 0.22s ease;
+      will-change: transform;
+
+      // No tags (e.g. the Untagged view) → collapse to a single row (title only)
+      // and drop the now-orphaned date so the card carries no empty band.
+      &:has(.bookmark-col-tags:empty) {
+        grid-template-areas: "content content";
+
+        .bookmark-col-tags,
+        .bookmark-col-date {
+          display: none;
+        }
+      }
+    }
+
+    // Each grid cell carries 16px of padding (a data-grid default that's
+    // invisible behind the tall desktop thumbnail). On the compact card it
+    // inflates every row by ~32px vertically and steals title width, so zero it
+    // — the foreground's own 12px/18px padding provides the card's breathing room.
+    .bookmark-row-inner [role="cell"] {
+      padding: 0;
+    }
+
+    // Drag handle and the desktop dropdown are both dropped on the card: drag is
+    // awkward on touch, and the dropdown is replaced by the swipe tray.
+    .bookmark-col-drag,
+    .bookmark-col-actions {
+      display: none;
+    }
+
+    .bookmark-col-content {
+      min-width: 0;
+      grid-area: content;
+    }
+
+    // Let the title/hostname block grow to fill the space beside the thumbnail
+    // instead of shrinking to its own content — that under-sizing was clamping
+    // titles to a narrow column. (The icon box is always present, so the
+    // immediately-following div is the text block.)
+    .bookmark-col-content .bookmark-icon-box + div {
+      min-width: 0;
+      flex: 1;
+    }
+
+    /* stylelint-disable-next-line no-descending-specificity */
+    .bookmark-col-tags {
+      display: flex;
+      flex-wrap: wrap;
+      align-content: flex-start;
+      gap: 0.25rem;
+      grid-area: tags;
+    }
+
+    /* stylelint-disable-next-line no-descending-specificity */
+    .bookmark-col-date {
+      grid-area: date;
+      place-self: center end;
+      white-space: nowrap;
+    }
+
+    // Shrink the thumbnail (normal view only) so it no longer overflows or gets
+    // clipped; the title/hostname beside it take the remaining width. Compact
+    // view keeps its 36px favicon box.
+    .bookmark-grid-row:not(.compact) .bookmark-icon-box {
+      width: 72px;
+      height: 48px;
+    }
+  }
+}
+
 
 
