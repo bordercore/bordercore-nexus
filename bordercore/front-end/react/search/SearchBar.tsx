@@ -189,7 +189,11 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(function Se
                 className="search-bar-input form-control"
               />
             </div>
-            <button className="search-bar-submit" type="submit" disabled={termSearchDisabled}>
+            <button
+              className="btn btn-primary search-bar-submit"
+              type="submit"
+              disabled={termSearchDisabled}
+            >
               Search
             </button>
           </div>
@@ -222,7 +226,7 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(function Se
               </select>
             )}
             <button
-              className="search-bar-submit"
+              className="btn btn-primary search-bar-submit"
               type="submit"
               name="Go"
               disabled={
@@ -257,7 +261,11 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(function Se
                 className="search-bar-input form-control"
               />
             </div>
-            <button className="search-bar-submit" type="submit" disabled={semanticSearchDisabled}>
+            <button
+              className="btn btn-primary search-bar-submit"
+              type="submit"
+              disabled={semanticSearchDisabled}
+            >
               Search
             </button>
           </div>
@@ -283,7 +291,11 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(function Se
                 disabled={!!imageFile}
               />
             </div>
-            <button className="search-bar-submit" type="submit" disabled={imageSearchDisabled}>
+            <button
+              className="btn btn-primary search-bar-submit"
+              type="submit"
+              disabled={imageSearchDisabled}
+            >
               Search
             </button>
           </div>

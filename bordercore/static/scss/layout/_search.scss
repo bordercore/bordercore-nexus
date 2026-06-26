@@ -437,27 +437,19 @@
   flex: 0 1 auto;
 }
 
+// Visual styling (accent gradient, border, radius, shadow, hover/focus,
+// disabled) comes from the shared `.btn.btn-primary` classes so the Search
+// button matches the primary action buttons on every other page. This rule
+// only carries the search-bar layout: stretch to the input height and use the
+// bar's wider horizontal padding and slightly smaller label.
 .search-bar-submit {
+  display: inline-flex;
+  align-items: center;
   align-self: stretch;
+  justify-content: center;
   padding: 0 1.5rem;
-  border: none;
-  border-radius: 0.5rem;
-  background: var(--fg-2);
-  color: var(--bg-0);
-  cursor: pointer;
   font-size: 0.9rem;
-  font-weight: 500;
-  transition: opacity 0.15s ease;
   white-space: nowrap;
-
-  &:hover {
-    opacity: 0.9;
-  }
-
-  &:disabled {
-    cursor: not-allowed;
-    opacity: 0.4;
-  }
 }
 
 // =============================================================================
