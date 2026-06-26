@@ -139,3 +139,17 @@ def test_store_image_embedding_posts_painless_update(mock_requests):
         "ctx._source.image_embedding = params.value"
     )
     assert body["script"]["params"]["value"] == vec.tolist()
+
+
+@patch("lib.elasticsearch_writer.requests")
+def test_store_image_embedding_strips_scheme_from_host(mock_requests):
+    """A scheme-prefixed endpoint is normalized, not doubled into the URL."""
+    from lib.elasticsearch_writer import store_image_embedding
+
+    mock_requests.post.return_value.ok = True
+    store_image_embedding(
+        "abc-123-uuid", [0.1, 0.2], host="http://es.example", index="bordercore"
+    )
+
+    url = mock_requests.post.call_args[0][0]
+    assert url == "http://es.example:9200/bordercore/_update/abc-123-uuid"

@@ -1,8 +1,21 @@
 """Write image embeddings to the bordercore Elasticsearch index."""
 from typing import Sequence
+from urllib.parse import urlparse
 
 import numpy as np
 import requests
+
+
+def _normalize_host(host: str) -> str:
+    """Return a bare hostname, tolerating a scheme-prefixed endpoint.
+
+    The deploy passes ELASTICSEARCH_ENDPOINT straight through, and it may be a
+    bare hostname or an ``http(s)://host`` URL depending on its source. Strip
+    any scheme so the request URL isn't built as ``http://http://host``.
+    """
+    if "://" in host:
+        return urlparse(host).hostname or host
+    return host
 
 
 def store_image_embedding(
@@ -33,7 +46,7 @@ def store_image_embedding(
     else:
         value = list(embedding)
 
-    url = f"http://{host}:9200/{index}/_update/{uuid}"
+    url = f"http://{_normalize_host(host)}:9200/{index}/_update/{uuid}"
     body = {
         "script": {
             "source": "ctx._source.image_embedding = params.value",
