@@ -31,6 +31,12 @@ def test_get_creators_no_matching_fields():
     assert get_creators({"metadata": {"editor": ["Someone"]}}) == ""
 
 
+def test_get_creators_metadata_none():
+    # A blob document can have "metadata" present but set to None in
+    # Elasticsearch; that must be treated like missing metadata, not crash.
+    assert get_creators({"metadata": None}) == ""
+
+
 def test_get_link_bookmark():
     assert get_link("bookmark", {"url": "https://example.com"}) == "https://example.com"
 

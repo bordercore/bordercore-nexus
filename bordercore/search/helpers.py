@@ -28,13 +28,16 @@ def get_creators(matches: dict[str, Any]) -> str:
         no metadata or creators are found.
     """
 
-    if "metadata" not in matches:
+    metadata = matches.get("metadata")
+    # A document can have "metadata" present but set to None in Elasticsearch;
+    # treat that like missing metadata rather than crashing on .keys().
+    if not metadata:
         return ""
 
     creators = [
-        matches["metadata"][x][0]
+        metadata[x][0]
         for x
-        in matches["metadata"].keys()
+        in metadata.keys()
         if x in ["author", "artist", "photographer"]
     ]
 
