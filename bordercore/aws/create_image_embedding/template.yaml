@@ -42,6 +42,12 @@ Resources:
             Timeout: 60
             MemorySize: 2048
             Role: !GetAtt CreateImageEmbeddingLambdaRole.Arn
+            # index mode is invoked asynchronously and now raises on failure.
+            # Async invocations retry automatically; once retries are exhausted
+            # the event is delivered here instead of being silently lost.
+            DeadLetterQueue:
+                Type: SQS
+                TargetArn: !GetAtt CreateImageEmbeddingDLQ.Arn
             VpcConfig:
                 SecurityGroupIds:
                     - !Ref SecurityGroupParameter
@@ -62,6 +68,14 @@ Resources:
         Properties:
             RetentionInDays: 90
             LogGroupName: !Join ["", ["/aws/lambda/", !Ref CreateImageEmbeddingFunction]]
+
+    CreateImageEmbeddingDLQ:
+        Type: AWS::SQS::Queue
+        Properties:
+            QueueName: CreateImageEmbeddingDLQ
+            # Retain failed events for 14 days (the SQS maximum) so they can be
+            # inspected and re-driven.
+            MessageRetentionPeriod: 1209600
 
     CreateImageEmbeddingLambdaRole:
         Type: AWS::IAM::Role
@@ -95,6 +109,21 @@ Resources:
                         Action:
                             - s3:GetObject
                         Resource: !Sub "arn:aws:s3:::${StorageBucketNameParameter}/*"
+                      # ListBucket is needed to find a blob's original upload
+                      # when its cover thumbnail isn't ready yet. It also makes
+                      # a missing object return a clean 404 instead of S3
+                      # masking it as AccessDenied.
+                      - Effect: Allow
+                        Action:
+                            - s3:ListBucket
+                        Resource: !Sub "arn:aws:s3:::${StorageBucketNameParameter}"
+            - PolicyName: LambdaSendToDLQ
+              PolicyDocument:
+                  Statement:
+                      - Effect: Allow
+                        Action:
+                            - sqs:SendMessage
+                        Resource: !GetAtt CreateImageEmbeddingDLQ.Arn
             ManagedPolicyArns:
             - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
 
@@ -104,3 +133,7 @@ Outputs:
     CreateImageEmbeddingFunction:
       Description: "Create Image Embeddings"
       Value: !GetAtt CreateImageEmbeddingFunction.Arn
+
+    CreateImageEmbeddingDLQ:
+      Description: "Dead-letter queue for failed index-mode invocations"
+      Value: !GetAtt CreateImageEmbeddingDLQ.Arn

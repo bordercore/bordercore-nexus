@@ -5,6 +5,7 @@ from types import ModuleType
 from unittest.mock import patch
 
 import numpy as np
+import pytest
 
 # Stub out boto3 so lib.thumbnail_fetcher can be imported without the real SDK.
 sys.modules.setdefault("boto3", ModuleType("boto3"))
@@ -12,7 +13,7 @@ sys.modules.setdefault("boto3", ModuleType("boto3"))
 
 @patch("create_image_embedding_lambda.store_image_embedding")
 @patch("create_image_embedding_lambda.encode_image")
-@patch("create_image_embedding_lambda.fetch_thumbnail")
+@patch("create_image_embedding_lambda.fetch_image_bytes")
 def test_index_mode_fetches_encodes_stores(mock_fetch, mock_encode, mock_store):
     """index mode calls fetch, encode, and store in sequence and returns None."""
     from create_image_embedding_lambda import handler
@@ -26,6 +27,27 @@ def test_index_mode_fetches_encodes_stores(mock_fetch, mock_encode, mock_store):
     mock_encode.assert_called_once_with(b"PNGDATA")
     mock_store.assert_called_once()
     assert result is None
+
+
+@patch("create_image_embedding_lambda.store_image_embedding")
+@patch("create_image_embedding_lambda.encode_image")
+@patch("create_image_embedding_lambda.fetch_image_bytes")
+def test_index_mode_propagates_failures(mock_fetch, mock_encode, mock_store):
+    """index mode lets failures raise so async retries and the DLQ engage.
+
+    A swallowed error would silently drop the embedding (the original bug);
+    the asynchronous caller relies on an unhandled exception to retry and
+    eventually dead-letter the event.
+    """
+    from create_image_embedding_lambda import handler
+
+    mock_fetch.side_effect = RuntimeError("S3 unavailable")
+
+    with pytest.raises(RuntimeError, match="S3 unavailable"):
+        handler({"mode": "index", "uuid": "abc-uuid"}, None)
+
+    mock_encode.assert_not_called()
+    mock_store.assert_not_called()
 
 
 @patch("create_image_embedding_lambda.encode_image")

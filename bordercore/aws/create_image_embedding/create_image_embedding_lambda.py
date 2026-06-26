@@ -13,7 +13,7 @@ from typing import Any
 
 from lib.clip_onnx import encode_image, encode_text
 from lib.elasticsearch_writer import store_image_embedding
-from lib.thumbnail_fetcher import fetch_thumbnail
+from lib.thumbnail_fetcher import fetch_image_bytes
 
 logging.getLogger().setLevel(logging.INFO)
 log = logging.getLogger(__name__)
@@ -40,6 +40,12 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any] | None:
 
     Any unrecognised mode returns ``{"error": "unknown mode: ..."}``.
 
+    ``index`` mode deliberately lets exceptions propagate. It is invoked
+    asynchronously (fire-and-forget), so an unhandled error triggers Lambda's
+    automatic async retries and, once exhausted, delivery to the dead-letter
+    queue — instead of silently dropping the embedding. The synchronous query
+    modes keep returning an ``{"error": ...}`` dict for their callers to read.
+
     Args:
         event: Lambda event dict.  Must contain a ``"mode"`` key; required
             additional keys depend on the mode (``"uuid"``, ``"image_b64"``,
@@ -48,20 +54,25 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any] | None:
 
     Returns:
         A dict with a ``"vector"`` key for query modes, ``None`` for ``"index"``
-        mode, or a dict with an ``"error"`` key on failure.
+        mode, or a dict with an ``"error"`` key for an unknown or failed query.
+
+    Raises:
+        Exception: Any failure during ``index`` mode is propagated so the
+            asynchronous invocation retries and ultimately dead-letters.
     """
     mode = event.get("mode")
-    try:
-        if mode == "index":
-            uuid = event["uuid"]
-            log.info("Indexing image embedding for %s", uuid)
-            data = fetch_thumbnail(uuid, bucket=S3_BUCKET)
-            vec = encode_image(data)
-            store_image_embedding(
-                uuid, vec, host=ELASTICSEARCH_ENDPOINT, index=ELASTICSEARCH_INDEX
-            )
-            return None
 
+    if mode == "index":
+        uuid = event["uuid"]
+        log.info("Indexing image embedding for %s", uuid)
+        data = fetch_image_bytes(uuid, bucket=S3_BUCKET)
+        vec = encode_image(data)
+        store_image_embedding(
+            uuid, vec, host=ELASTICSEARCH_ENDPOINT, index=ELASTICSEARCH_INDEX
+        )
+        return None
+
+    try:
         if mode == "query_image":
             data = base64.b64decode(event["image_b64"])
             vec = encode_image(data)

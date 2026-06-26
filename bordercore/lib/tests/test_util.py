@@ -222,6 +222,9 @@ def test_util_is_image():
     file = "file.png"
     assert is_image(file) is True
 
+    file = "path/to/file.webp"
+    assert is_image(file) is True
+
     file = "path/to/file.pdf"
     assert is_image(file) is False
 

@@ -306,7 +306,7 @@ def is_image(file_path_or_obj: str | Any) -> bool:
     Returns:
         True if the file extension indicates an image format, False otherwise.
     """
-    return _has_extension(file_path_or_obj, {"bmp", "gif", "jpg", "jpeg", "png", "tiff"})
+    return _has_extension(file_path_or_obj, {"bmp", "gif", "jpg", "jpeg", "png", "tiff", "webp"})
 
 
 def is_pdf(file_path_or_obj: str | Any) -> bool:
