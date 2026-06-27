@@ -20,6 +20,7 @@ dependencies = [
     "faker-file==0.15.1",
     "feedparser==6.0.12",
     "google-api-python-client==2.184.0",
+    "google-genai>=1.14.0",
     "httplib2>=0.31.2",
     "humanize==4.13.0",
     "instaloader==4.9.5",
