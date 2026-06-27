@@ -87,7 +87,7 @@ def _serialize_bookmark(bookmark: Bookmark, tags: list[str], note: str | None) -
     """
     return {
         "uuid": bookmark.uuid,
-        "created": bookmark.created.strftime("%B %d, %Y"),
+        "created": bookmark.created.strftime("%b %-d, %Y"),
         "createdYear": bookmark.created.strftime("%Y"),
         "url": bookmark.url,
         "name": re.sub("[\n\r]", "", bookmark.name),

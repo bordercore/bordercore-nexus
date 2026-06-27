@@ -647,19 +647,43 @@
   }
 }
 
-// Grid columns: drag | content | tags | date | actions
+// Grid columns: drag | content | tags | date | actions.
+// The date and actions are terminal columns holding a single date string and a
+// lone dropdown trigger, so they take fixed tracks sized to their content (84px
+// fits the widest abbreviated date, "May 28, 2026" ≈ 78px; 40px fits the trigger).
+// The date was previously minmax(120px, auto) — the `auto` max let every row's date
+// column grow to fit its text *plus* the 1rem cell padding, so the track ranged
+// 120–151px per row: ragged across rows and stealing up to ~30px from the title.
+// The fixed tracks (paired with the zeroed date/actions cell padding below) keep
+// the columns aligned and hand that width back to the content column.
 .bookmark-grid-header,
 .bookmark-grid-row {
   display: grid;
   align-items: center;
-  gap: 0 16px;
-  grid-template-columns: 30px minmax(0, 5fr) minmax(0, 2fr) minmax(120px, auto) 50px;
+  gap: 0 12px;
+  grid-template-columns: 30px minmax(0, 5fr) minmax(0, 2fr) 84px 40px;
 }
 
 // Compact view: drop tags column entirely (4 columns)
 .bookmark-grid-header.compact,
 .bookmark-grid-row.compact {
-  grid-template-columns: 30px minmax(0, 5fr) minmax(120px, auto) 50px;
+  grid-template-columns: 30px minmax(0, 5fr) 84px 40px;
+}
+
+// The date / actions cells (and their headers) carry the 1rem data-table cell
+// padding by default, which on these now-tight tracks would clip the date and
+// off-center the trigger. Zero their horizontal padding so the fixed track is all
+// content; the date stays left-aligned under its header, the trigger centers.
+.bookmark-grid-header .bookmark-date-col,
+.bookmark-grid-row .bookmark-col-date,
+.bookmark-grid-header .bookmark-actions-col,
+.bookmark-grid-row .bookmark-col-actions {
+  padding-right: 0;
+  padding-left: 0;
+}
+
+.bookmark-grid-row .bookmark-col-actions {
+  justify-content: center;
 }
 
 .bookmark-grid-container {
@@ -698,7 +722,7 @@
   // Untagged view: hide tags column (same 4-column layout)
   .bookmark-grid.hide-tags .bookmark-grid-header,
   .bookmark-grid.hide-tags .bookmark-grid-row {
-    grid-template-columns: 30px minmax(0, 5fr) minmax(120px, auto) 50px;
+    grid-template-columns: 30px minmax(0, 5fr) 84px 40px;
   }
 
   .bookmark-grid.hide-tags .bookmark-tags-col,
@@ -930,7 +954,7 @@
 
   // Compact drag overlay
   &.compact {
-    grid-template-columns: 30px minmax(0, 5fr) minmax(120px, auto) 50px;
+    grid-template-columns: 30px minmax(0, 5fr) 84px 40px;
 
     .tags-cell {
       display: none;

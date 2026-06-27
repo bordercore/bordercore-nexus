@@ -553,8 +553,10 @@ export function BookmarkList({
             <div role="columnheader" className="bookmark-tags-col">
               {viewType !== "compact" ? "Tags" : ""}
             </div>
-            <div role="columnheader">Date</div>
-            <div role="columnheader"></div>
+            <div role="columnheader" className="bookmark-date-col">
+              Date
+            </div>
+            <div role="columnheader" className="bookmark-actions-col"></div>
           </div>
           <div className="data-grid-body bookmark-grid-body" role="rowgroup">
             <SortableContext
