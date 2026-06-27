@@ -1,6 +1,6 @@
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { TodoListPage } from "./TodoListPage";
 
 // Capture the latest onMessage callback so tests can fire pings.
@@ -69,6 +69,21 @@ describe("TodoListPage", () => {
   it("renders the new-todo button", async () => {
     render(<TodoListPage {...baseProps()} />);
     expect(screen.getByRole("button", { name: /new/i })).toBeInTheDocument();
+  });
+});
+
+describe("TodoListPage filter drawer", () => {
+  it("opens the sidebar drawer from the Filters button and closes on select", () => {
+    const { container } = render(<TodoListPage {...baseProps()} />);
+    const sidebar = container.querySelector(".todo-sidebar")!;
+    expect(sidebar.className).not.toContain("drawer-open");
+
+    fireEvent.click(screen.getByRole("button", { name: /filters/i }));
+    expect(sidebar.className).toContain("drawer-open");
+
+    // Choosing a filter dismisses the drawer.
+    fireEvent.click(screen.getByText("All Tasks"));
+    expect(sidebar.className).not.toContain("drawer-open");
   });
 });
 

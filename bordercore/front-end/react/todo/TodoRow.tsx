@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faGripVertical,
@@ -79,6 +79,9 @@ interface TodoRowProps {
   onEdit: (todo: Todo) => void;
   onDelete: (todo: Todo) => void;
   onMoveToTop: (todo: Todo) => void;
+  isMobile: boolean;
+  isSwipeOpen: boolean;
+  onSwipeOpenChange: (uuid: string | null) => void;
 }
 
 export function TodoRow({
@@ -90,6 +93,9 @@ export function TodoRow({
   onEdit,
   onDelete,
   onMoveToTop,
+  isMobile,
+  isSwipeOpen,
+  onSwipeOpenChange,
 }: TodoRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: todo.uuid,
@@ -101,6 +107,121 @@ export function TodoRow({
   // (custom content), bypassing the built-in close-on-click for `links`.
   const dropdownRef = useRef<DropDownMenuHandle>(null);
   const closeDropdown = () => dropdownRef.current?.close();
+
+  // --- Mobile swipe-to-reveal (the action tray replaces the dropdown < 640px) ---
+  const foreRef = useRef<HTMLDivElement | null>(null);
+  const trayWidthRef = useRef(0);
+  const startXRef = useRef(0);
+  const startYRef = useRef(0);
+  const startTxRef = useRef(0);
+  const lastTxRef = useRef(0);
+  // null = gesture direction undecided, true = horizontal (we own it), false = vertical scroll
+  const lockedRef = useRef<boolean | null>(null);
+  // true once a horizontal swipe happened, so the trailing click is suppressed
+  const swipedRef = useRef(false);
+  // current open state read inside imperative touch handlers without re-binding
+  const isOpenRef = useRef(isSwipeOpen);
+  isOpenRef.current = isSwipeOpen;
+
+  const setForeTransform = (tx: number, animate: boolean) => {
+    const el = foreRef.current;
+    if (!el) return;
+    el.style.transition = animate ? "" : "none";
+    el.style.transform = `translateX(${tx}px)`;
+  };
+
+  // Keep the resting position in sync with the open state — covers another row
+  // opening, a scroll closing this one, and the initial mount.
+  useEffect(() => {
+    if (!isMobile) return;
+    const el = foreRef.current;
+    if (!el) return;
+    const tray = el.previousElementSibling as HTMLElement | null;
+    trayWidthRef.current = tray ? tray.offsetWidth : 0;
+    setForeTransform(isSwipeOpen ? -trayWidthRef.current : 0, true);
+  }, [isSwipeOpen, isMobile]);
+
+  // Touch handlers are attached imperatively so touchmove is non-passive and can
+  // call preventDefault() to claim a horizontal swipe from the page scroll.
+  useEffect(() => {
+    if (!isMobile) return;
+    const el = foreRef.current;
+    if (!el) return;
+
+    const onStart = (e: TouchEvent) => {
+      const tray = el.previousElementSibling as HTMLElement | null;
+      trayWidthRef.current = tray ? tray.offsetWidth : 0;
+      const t = e.touches[0];
+      startXRef.current = t.clientX;
+      startYRef.current = t.clientY;
+      startTxRef.current = isOpenRef.current ? -trayWidthRef.current : 0;
+      lastTxRef.current = startTxRef.current;
+      lockedRef.current = null;
+      swipedRef.current = false;
+    };
+
+    const onMove = (e: TouchEvent) => {
+      const t = e.touches[0];
+      const dx = t.clientX - startXRef.current;
+      const dy = t.clientY - startYRef.current;
+      if (lockedRef.current === null) {
+        if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+        lockedRef.current = Math.abs(dx) > Math.abs(dy);
+      }
+      if (!lockedRef.current) return;
+      e.preventDefault();
+      swipedRef.current = true;
+      let tx = startTxRef.current + dx;
+      tx = Math.max(-trayWidthRef.current, Math.min(0, tx));
+      lastTxRef.current = tx;
+      setForeTransform(tx, false);
+    };
+
+    const onEnd = () => {
+      if (lockedRef.current) {
+        const open = lastTxRef.current < -trayWidthRef.current * 0.4;
+        setForeTransform(open ? -trayWidthRef.current : 0, true);
+        onSwipeOpenChange(open ? todo.uuid : null);
+      }
+      lockedRef.current = null;
+    };
+
+    el.addEventListener("touchstart", onStart, { passive: true });
+    el.addEventListener("touchmove", onMove, { passive: false });
+    el.addEventListener("touchend", onEnd);
+    el.addEventListener("touchcancel", onEnd);
+    return () => {
+      el.removeEventListener("touchstart", onStart);
+      el.removeEventListener("touchmove", onMove);
+      el.removeEventListener("touchend", onEnd);
+      el.removeEventListener("touchcancel", onEnd);
+    };
+  }, [isMobile, todo.uuid, onSwipeOpenChange]);
+
+  const handleRowClick = () => {
+    if (swipedRef.current) return;
+    if (isMobile && isSwipeOpen) {
+      onSwipeOpenChange(null);
+      return;
+    }
+    onEdit(todo);
+  };
+
+  // Swallow the click that fires after a horizontal swipe so it doesn't open the
+  // edit modal.
+  const handleForeClickCapture = (e: React.MouseEvent) => {
+    if (swipedRef.current) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  };
+
+  const runSwipeAction = (fn: () => void) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    fn();
+    onSwipeOpenChange(null);
+  };
 
   // Apply dnd-kit's transform/transition inline so the dragged row follows
   // the cursor and non-dragged rows shift smoothly to make room. Use
@@ -121,113 +242,145 @@ export function TodoRow({
       style={style}
       role="listitem"
       className={`todo-row sortable-row ${isDragging ? "dragging" : ""}`}
-      onClick={() => onEdit(todo)}
+      onClick={handleRowClick}
     >
-      <div
-        className={`todo-row-drag${canDrag ? "" : " disabled"}`}
-        aria-label={canDrag ? "Drag to reorder" : undefined}
-        aria-hidden={canDrag ? undefined : true}
-        {...(canDrag ? attributes : {})}
-        {...(canDrag ? listeners : {})}
-        onClick={e => e.stopPropagation()}
-      >
-        <FontAwesomeIcon icon={faGripVertical} />
-      </div>
-
-      <div className="todo-row-body">
-        <div className="todo-row-title">
-          <span>{todo.name}</span>
-          {todo.url && (
-            <a
-              className="link"
-              href={todo.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={e => e.stopPropagation()}
-              aria-label="Open link"
+      {isMobile && (
+        <div className="todo-swipe-tray">
+          {isSortable && todo.sort_order > 1 && (
+            <button
+              type="button"
+              className="todo-swipe-action movetop"
+              onClick={runSwipeAction(() => onMoveToTop(todo))}
             >
-              <FontAwesomeIcon icon={faLink} />
-            </a>
+              <FontAwesomeIcon icon={faArrowUp} />
+              <span>Top</span>
+            </button>
           )}
+          <button
+            type="button"
+            className="todo-swipe-action edit"
+            onClick={runSwipeAction(() => onEdit(todo))}
+          >
+            <FontAwesomeIcon icon={faPencilAlt} />
+            <span>Edit</span>
+          </button>
+          <button
+            type="button"
+            className="todo-swipe-action delete"
+            onClick={runSwipeAction(() => onDelete(todo))}
+          >
+            <FontAwesomeIcon icon={faTrashAlt} />
+            <span>Delete</span>
+          </button>
+        </div>
+      )}
+      <div ref={foreRef} className="todo-row-inner" onClickCapture={handleForeClickCapture}>
+        <div
+          className={`todo-row-drag${canDrag ? "" : " disabled"}`}
+          aria-label={canDrag ? "Drag to reorder" : undefined}
+          aria-hidden={canDrag ? undefined : true}
+          {...(canDrag ? attributes : {})}
+          {...(canDrag ? listeners : {})}
+          onClick={e => e.stopPropagation()}
+        >
+          <FontAwesomeIcon icon={faGripVertical} />
         </div>
 
-        {view !== "compact" && todo.note && <NoteBody source={todo.note} />}
+        <div className="todo-row-body">
+          <div className="todo-row-title">
+            <span>{todo.name}</span>
+            {todo.url && (
+              <a
+                className="link"
+                href={todo.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
+                aria-label="Open link"
+              >
+                <FontAwesomeIcon icon={faLink} />
+              </a>
+            )}
+          </div>
 
-        <div className="todo-row-meta">
-          {showTags &&
-            view !== "compact" &&
-            todo.tags.map(tag => (
-              <span key={tag} className="tag-chip">
-                {tag}
-              </span>
-            ))}
-          <span className="meta-item">
-            <FontAwesomeIcon icon={faCalendarAlt} />
-            {formatDate(todo.created)}
-          </span>
-          {dueInfo && (
-            <span className={`meta-item${dueInfo.isOverdue ? " overdue" : ""}`}>
-              <FontAwesomeIcon icon={faExclamationCircle} />
-              {dueInfo.label}
+          {view !== "compact" && todo.note && <NoteBody source={todo.note} />}
+
+          <div className="todo-row-meta">
+            {showTags &&
+              view !== "compact" &&
+              todo.tags.map(tag => (
+                <span key={tag} className="tag-chip">
+                  {tag}
+                </span>
+              ))}
+            <span className="meta-item">
+              <FontAwesomeIcon icon={faCalendarAlt} />
+              {formatDate(todo.created)}
             </span>
-          )}
+            {dueInfo && (
+              <span className={`meta-item${dueInfo.isOverdue ? " overdue" : ""}`}>
+                <FontAwesomeIcon icon={faExclamationCircle} />
+                {dueInfo.label}
+              </span>
+            )}
+          </div>
         </div>
-      </div>
 
-      <div className="todo-row-right">
-        <PriorityBadge priority={todo.priority} label={todo.priority_name} />
-        <div className="todo-row-actions" onClick={e => e.stopPropagation()}>
-          <DropDownMenu
-            ref={dropdownRef}
-            dropdownSlot={
-              <ul className="dropdown-menu-list">
-                {isSortable && todo.sort_order > 1 && (
+        <div className="todo-row-right">
+          <PriorityBadge priority={todo.priority} label={todo.priority_name} />
+          <div className="todo-row-actions" onClick={e => e.stopPropagation()}>
+            <DropDownMenu
+              ref={dropdownRef}
+              dropdownSlot={
+                <ul className="dropdown-menu-list">
+                  {isSortable && todo.sort_order > 1 && (
+                    <li>
+                      <button
+                        className="dropdown-menu-item"
+                        onClick={() => {
+                          closeDropdown();
+                          onMoveToTop(todo);
+                        }}
+                      >
+                        <span className="dropdown-menu-icon">
+                          <FontAwesomeIcon icon={faArrowUp} />
+                        </span>
+                        <span className="dropdown-menu-text">Move To Top</span>
+                      </button>
+                    </li>
+                  )}
                   <li>
                     <button
                       className="dropdown-menu-item"
                       onClick={() => {
                         closeDropdown();
-                        onMoveToTop(todo);
+                        onEdit(todo);
                       }}
                     >
                       <span className="dropdown-menu-icon">
-                        <FontAwesomeIcon icon={faArrowUp} />
+                        <FontAwesomeIcon icon={faPencilAlt} />
                       </span>
-                      <span className="dropdown-menu-text">Move To Top</span>
+                      <span className="dropdown-menu-text">Edit</span>
                     </button>
                   </li>
-                )}
-                <li>
-                  <button
-                    className="dropdown-menu-item"
-                    onClick={() => {
-                      closeDropdown();
-                      onEdit(todo);
-                    }}
-                  >
-                    <span className="dropdown-menu-icon">
-                      <FontAwesomeIcon icon={faPencilAlt} />
-                    </span>
-                    <span className="dropdown-menu-text">Edit</span>
-                  </button>
-                </li>
-                <li>
-                  <button
-                    className="dropdown-menu-item"
-                    onClick={() => {
-                      closeDropdown();
-                      onDelete(todo);
-                    }}
-                  >
-                    <span className="dropdown-menu-icon">
-                      <FontAwesomeIcon icon={faTrashAlt} />
-                    </span>
-                    <span className="dropdown-menu-text">Delete</span>
-                  </button>
-                </li>
-              </ul>
-            }
-          />
+                  <li>
+                    <button
+                      className="dropdown-menu-item"
+                      onClick={() => {
+                        closeDropdown();
+                        onDelete(todo);
+                      }}
+                    >
+                      <span className="dropdown-menu-icon">
+                        <FontAwesomeIcon icon={faTrashAlt} />
+                      </span>
+                      <span className="dropdown-menu-text">Delete</span>
+                    </button>
+                  </li>
+                </ul>
+              }
+            />
+          </div>
         </div>
       </div>
     </div>

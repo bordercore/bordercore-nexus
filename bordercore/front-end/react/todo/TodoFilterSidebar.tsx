@@ -18,6 +18,7 @@ interface TodoFilterSidebarProps {
   active: FilterValue;
   totalCount: number;
   onSelect: (filter: FilterValue) => void;
+  drawerOpen: boolean;
 }
 
 export function TodoFilterSidebar({
@@ -27,9 +28,10 @@ export function TodoFilterSidebar({
   active,
   totalCount,
   onSelect,
+  drawerOpen,
 }: TodoFilterSidebarProps) {
   return (
-    <aside className="todo-sidebar">
+    <aside className={`todo-sidebar${drawerOpen ? " drawer-open" : ""}`}>
       <div className="refined-side-group">
         <nav className="refined-side-nav">
           <SideItem

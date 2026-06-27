@@ -1,6 +1,6 @@
 import React, { useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSearch, faTimes, faList, faBars } from "@fortawesome/free-solid-svg-icons";
+import { faSearch, faTimes, faList, faBars, faFilter } from "@fortawesome/free-solid-svg-icons";
 import type { ViewType } from "./types";
 import { useFocusOnCtrlK } from "../common/hooks/useFocusOnCtrlK";
 
@@ -21,6 +21,7 @@ interface TodoToolbarProps {
   onClearSearch: () => void;
   onViewChange: (view: ViewType) => void;
   onSortChange: (field: SortField) => void;
+  onToggleFilters: () => void;
 }
 
 export function TodoToolbar({
@@ -31,11 +32,18 @@ export function TodoToolbar({
   onClearSearch,
   onViewChange,
   onSortChange,
+  onToggleFilters,
 }: TodoToolbarProps) {
   const searchRef = useRef<HTMLInputElement>(null);
   useFocusOnCtrlK(searchRef);
   return (
     <div className="todo-toolbar">
+      {/* Opens the filter sidebar as a drawer on mobile; hidden on desktop. */}
+      <button type="button" className="refined-btn todo-filters-toggle" onClick={onToggleFilters}>
+        <FontAwesomeIcon icon={faFilter} className="refined-btn-icon" />
+        Filters
+      </button>
+
       <div className="todo-search-wrap">
         <FontAwesomeIcon icon={faSearch} className="icon" />
         <input

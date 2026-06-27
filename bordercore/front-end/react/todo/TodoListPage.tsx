@@ -29,6 +29,8 @@ import type {
 import { NewTodoModal } from "./NewTodoModal";
 import { EditTodoModal, EditTodoInfo } from "./EditTodoModal";
 import { doPost, doDelete, EventBus } from "../utils/reactUtils";
+import { useMediaQuery } from "../utils/useMediaQuery";
+import { useBodyScrollLock } from "../utils/useBodyScrollLock";
 import TodoFilterSidebar, { FilterValue } from "./TodoFilterSidebar";
 import TodoFilterTitle, { ActiveFilter } from "./TodoFilterTitle";
 import TodoToolbar, { SortField } from "./TodoToolbar";
@@ -165,6 +167,28 @@ export function TodoListPage({
   });
   const [editTodo, setEditTodo] = useState<EditTodoInfo | null>(null);
 
+  // Below 640px, rows expose their actions via a swipe-to-reveal tray instead of
+  // the dropdown menu. Only one row's tray is open at a time.
+  const isMobile = useMediaQuery("(max-width: 640px)");
+  const [openSwipeUuid, setOpenSwipeUuid] = useState<string | null>(null);
+
+  // On mobile the filter sidebar is a slide-in drawer toggled from the toolbar,
+  // so the list isn't pushed down by the filters.
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const toggleDrawer = useCallback(() => setDrawerOpen(o => !o), []);
+
+  // Lock the page scroll while the drawer is open so the background doesn't
+  // scroll behind it — only the drawer's own content scrolls.
+  useBodyScrollLock(drawerOpen);
+
+  // Close an open swipe tray when the list scrolls (matches native list UIs).
+  useEffect(() => {
+    if (!openSwipeUuid) return;
+    const close = () => setOpenSwipeUuid(null);
+    window.addEventListener("scroll", close, { passive: true, capture: true });
+    return () => window.removeEventListener("scroll", close, { capture: true });
+  }, [openSwipeUuid]);
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -288,6 +312,8 @@ export function TodoListPage({
     setSearchInput("");
     setActiveSearch("");
     setActive(filter);
+    // Picking a filter dismisses the mobile drawer so the list comes back.
+    setDrawerOpen(false);
   }, []);
 
   const handleSortChange = useCallback(
@@ -426,6 +452,8 @@ export function TodoListPage({
 
   return (
     <div className={`todo-app view-${view === "compact" ? "compact" : "normal"}`}>
+      {drawerOpen && <div className="todo-drawer-overlay" onClick={toggleDrawer} />}
+
       <div className="todo-shell">
         <div className="todo-viz">
           <VisualizerSlot />
@@ -453,6 +481,7 @@ export function TodoListPage({
           active={active}
           totalCount={totalCount}
           onSelect={handleSelectFilter}
+          drawerOpen={drawerOpen}
         />
 
         <main className="todo-main">
@@ -464,6 +493,7 @@ export function TodoListPage({
             onClearSearch={() => setSearchInput("")}
             onViewChange={handleViewChange}
             onSortChange={handleSortChange}
+            onToggleFilters={toggleDrawer}
           />
 
           <DndContext
@@ -490,6 +520,9 @@ export function TodoListPage({
                       onEdit={handleEdit}
                       onDelete={handleDelete}
                       onMoveToTop={handleMoveToTop}
+                      isMobile={isMobile}
+                      isSwipeOpen={openSwipeUuid === todo.uuid}
+                      onSwipeOpenChange={setOpenSwipeUuid}
                     />
                   ))}
                 </div>
