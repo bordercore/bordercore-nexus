@@ -209,6 +209,7 @@
     border-right: 0;
     box-shadow: 2px 0 8px rgb(0 0 0 / 15%);
     overflow-y: auto;
+    overscroll-behavior: contain;
     transform: translateX(-100%);
     transition: transform 0.3s ease;
 
@@ -612,7 +613,12 @@
   @media (width < 992px) {
     padding: 20px;
 
+    // Drop the shell's stacking context (z-index:1 on desktop sits above the
+    // ambient ::before gradient) so the open tags drawer nested inside it isn't
+    // trapped beneath the full-screen overlay — its z-index:1050 then wins over
+    // the overlay's z-index:1049 directly.
     .bookmark-shell {
+      z-index: auto;
       gap: 20px;
       grid-template-columns: 1fr;
     }

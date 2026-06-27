@@ -21,6 +21,7 @@ import BookmarkPagination from "./BookmarkPagination";
 import NewBookmarkModal from "./NewBookmarkModal";
 import ToggleSwitch from "../common/ToggleSwitch";
 import VisualizerSlot from "../visualizers/VisualizerSlot";
+import { useBodyScrollLock } from "../utils/useBodyScrollLock";
 import type {
   Bookmark,
   BookmarkStats,
@@ -94,6 +95,10 @@ export function BookmarkListPage({
     return [{ id: -1, name: "Untagged", bookmark_count: untaggedCount }, ...initialPinnedTags];
   });
   const [pinnedBookmarks, setPinnedBookmarks] = useState<PinnedBookmark[]>(initialPinnedBookmarks);
+
+  // Lock the page scroll while the tags drawer is open so the background doesn't
+  // scroll behind it — only the drawer's own content scrolls.
+  useBodyScrollLock(drawerOpen);
 
   const selectValueRef = useRef<SelectValueHandle>(null);
   const intervalIdRef = useRef<number | null>(null);
