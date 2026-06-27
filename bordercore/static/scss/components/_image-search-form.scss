@@ -32,11 +32,9 @@
       color: var(--text-primary);
     }
 
-    &.dragging {
-      border: 2px solid var(--accent-color);
-      background-color: rgb(99 102 241 / 8%);
-      color: var(--text-primary);
-    }
+    // The active drag state uses the site-wide `.drag-over` utility (pulsing
+    // accent outline + glow), the same treatment as the artist image drop and
+    // other drop targets — applied via the className in SearchBar.
   }
 
   &__drop-icon {

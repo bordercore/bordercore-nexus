@@ -325,7 +325,7 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(function Se
             </button>
           </div>
           <div
-            className={`image-search-form__drop-zone${dragging ? " dragging" : ""}`}
+            className={`image-search-form__drop-zone${dragging ? " drag-over" : ""}`}
             onDragOver={handleImageDragOver}
             onDragLeave={handleImageDragLeave}
             onDrop={handleImageDrop}
