@@ -2,7 +2,7 @@ import React, { useState, useRef, forwardRef, useImperativeHandle, useCallback }
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMagnifyingGlass, faImage } from "@fortawesome/free-solid-svg-icons";
 import TagsInput, { TagsInputHandle } from "../common/TagsInput";
-import { isImageFile } from "../common/imageFile";
+import { fetchImageAsFile, isImageFile, parseUriList } from "../common/imageFile";
 import { useFocusOnCtrlK } from "../common/hooks/useFocusOnCtrlK";
 import type { SearchMode } from "./SearchModeNav";
 import type { TagCount } from "./types";
@@ -50,6 +50,7 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(function Se
   const [searchSemantic, setSearchSemantic] = useState(searchSemanticInitial);
   const [searchImageText, setSearchImageText] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -132,10 +133,33 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(function Se
   const handleImageDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setDragging(false);
+    setImageError(null);
+
+    // A file dragged from the file manager arrives as a File.
     const file = e.dataTransfer.files[0];
     if (file && isImageFile(file)) {
       setImageFile(file);
+      return;
     }
+
+    // An image dragged out of another browser tab arrives as a URL, not a
+    // File. Read it synchronously (dataTransfer isn't available after an
+    // await), then fetch it into a File.
+    const url = parseUriList(
+      e.dataTransfer.getData("text/uri-list") || e.dataTransfer.getData("text/plain")
+    );
+    if (!url) return;
+
+    void (async () => {
+      const fetched = await fetchImageAsFile(url);
+      if (fetched) {
+        setImageFile(fetched);
+      } else {
+        setImageError(
+          "Couldn't load that image. Drag a file from your computer, or download the image first."
+        );
+      }
+    })();
   }, []);
 
   const handleFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -332,13 +356,17 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(function Se
               <button
                 type="button"
                 className="image-search-form__preview-clear"
-                onClick={() => setImageFile(null)}
+                onClick={() => {
+                  setImageFile(null);
+                  setImageError(null);
+                }}
                 aria-label="Remove image"
               >
                 ×
               </button>
             </div>
           )}
+          {imageError && <div className="image-search-form__error">{imageError}</div>}
         </form>
       )}
     </div>

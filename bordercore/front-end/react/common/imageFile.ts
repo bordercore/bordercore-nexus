@@ -14,3 +14,40 @@ const IMAGE_EXTENSION_RE = /\.(?:jpe?g|png|gif|webp|bmp|tiff?|avif|heic|heif|svg
 export function isImageFile(file: File): boolean {
   return file.type.startsWith("image/") || IMAGE_EXTENSION_RE.test(file.name);
 }
+
+/**
+ * Return the first real URL from a drag `text/uri-list` (or `text/plain`)
+ * payload, ignoring blank lines and `#` comments. Returns null if none.
+ *
+ * Dragging an image out of a browser tab delivers a URL here rather than a
+ * File, so this is how we recover what was dragged.
+ */
+export function parseUriList(text: string): string | null {
+  if (!text) return null;
+  const line = text
+    .split(/\r?\n/)
+    .map(s => s.trim())
+    .find(s => s.length > 0 && !s.startsWith("#"));
+  return line ?? null;
+}
+
+/**
+ * Fetch an image URL (e.g. dragged from another browser tab) and wrap it in a
+ * File so it can flow through the same path as an uploaded image.
+ *
+ * Returns null if the URL can't be fetched (cross-origin/CORS or network
+ * error) or doesn't resolve to an image.
+ */
+export async function fetchImageAsFile(url: string): Promise<File | null> {
+  let resp: Response;
+  try {
+    resp = await fetch(url);
+  } catch {
+    return null; // network error or blocked by CORS
+  }
+  if (!resp.ok) return null;
+  const blob = await resp.blob();
+  const name = decodeURIComponent(url.split(/[?#]/)[0].split("/").pop() || "image");
+  const file = new File([blob], name, { type: blob.type });
+  return isImageFile(file) ? file : null;
+}
