@@ -2,6 +2,7 @@ import React, { useState, useRef, forwardRef, useImperativeHandle, useCallback }
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMagnifyingGlass, faImage } from "@fortawesome/free-solid-svg-icons";
 import TagsInput, { TagsInputHandle } from "../common/TagsInput";
+import { isImageFile } from "../common/imageFile";
 import { useFocusOnCtrlK } from "../common/hooks/useFocusOnCtrlK";
 import type { SearchMode } from "./SearchModeNav";
 import type { TagCount } from "./types";
@@ -132,7 +133,7 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(function Se
     e.preventDefault();
     setDragging(false);
     const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith("image/")) {
+    if (file && isImageFile(file)) {
       setImageFile(file);
     }
   }, []);

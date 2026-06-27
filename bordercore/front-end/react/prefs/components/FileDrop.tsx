@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 
+import { isImageFile } from "../../common/imageFile";
+
 export type FileDropKind = "Background" | "Sidebar";
 
 export interface FileDropValue {
@@ -46,7 +48,7 @@ export function FileDrop({
 
   const handleFile = (file: File | undefined | null) => {
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
+    if (!isImageFile(file)) {
       setError("Please choose an image file.");
       return;
     }
