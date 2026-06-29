@@ -6,6 +6,7 @@ import {
   faCircleInfo,
   faCloudArrowUp,
 } from "@fortawesome/free-solid-svg-icons";
+import { extractImageUrl, fetchImageAsFile } from "../../common/imageFile";
 
 type PreviewMode = "video" | "book" | "image" | "note" | "create";
 
@@ -73,8 +74,23 @@ export function PreviewHero({
         onDrop={e => {
           e.preventDefault();
           setDragOver(false);
+          if (!onFileSelected) return;
+
           const file = e.dataTransfer.files?.[0];
-          if (file && onFileSelected) onFileSelected(file);
+          if (file) {
+            onFileSelected(file);
+            return;
+          }
+
+          // An image dragged from another browser tab arrives as a URL, not a
+          // File. Recover the URL and fetch it into a File so it flows through
+          // the same path (cross-origin fetches blocked by CORS yield null).
+          const url = extractImageUrl(e.dataTransfer);
+          if (url) {
+            fetchImageAsFile(url).then(fetched => {
+              if (fetched) onFileSelected(fetched);
+            });
+          }
         }}
       >
         {selectedFileUrl ? (

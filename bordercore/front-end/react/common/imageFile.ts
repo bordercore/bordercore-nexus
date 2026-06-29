@@ -32,6 +32,29 @@ export function parseUriList(text: string): string | null {
 }
 
 /**
+ * Pull an image URL out of a drop's DataTransfer.
+ *
+ * An image dragged from another browser tab is delivered as a URL (in
+ * `text/uri-list`, an `<img>` in `text/html`, or `text/plain`) rather than as
+ * a File, so a drop handler falls back to this when no file is present.
+ */
+export function extractImageUrl(dataTransfer: DataTransfer): string | null {
+  const uriList = parseUriList(dataTransfer.getData("text/uri-list"));
+  if (uriList) return uriList;
+
+  const html = dataTransfer.getData("text/html");
+  if (html) {
+    const match = html.match(/<img[^>]+\bsrc\s*=\s*["']([^"']+)["']/i);
+    if (match) return match[1];
+  }
+
+  const text = dataTransfer.getData("text/plain").trim();
+  if (/^https?:\/\//i.test(text)) return text;
+
+  return null;
+}
+
+/**
  * Fetch an image URL (e.g. dragged from another browser tab) and wrap it in a
  * File so it can flow through the same path as an uploaded image.
  *

@@ -14,6 +14,7 @@ import ArtistSongTable from "./ArtistSongTable";
 import AlbumGrid from "./AlbumGrid";
 import EditArtistImageModal from "./EditArtistImageModal";
 import DropDownMenu from "../common/DropDownMenu";
+import { extractImageUrl } from "../common/imageFile";
 import { EventBus } from "../utils/reactUtils";
 
 interface ArtistDetailPageProps {
@@ -27,41 +28,6 @@ interface ArtistDetailPageProps {
   staticUrl: string;
   defaultPlaylist: string;
   hasArtistImage: boolean;
-}
-
-/**
- * Pull an image URL out of a drop's DataTransfer.
- *
- * An image dragged from another browser tab is delivered as a URL (in
- * `text/uri-list`, an `<img>` in `text/html`, or `text/plain`) rather than as
- * a File, so the drop handler falls back to this when no file is present.
- */
-export function extractImageUrl(dataTransfer: DataTransfer): string | null {
-  const uriList = dataTransfer.getData("text/uri-list");
-  if (uriList) {
-    const url = uriList
-      .split("\n")
-      .map(line => line.trim())
-      .find(line => line && !line.startsWith("#"));
-    if (url) {
-      return url;
-    }
-  }
-
-  const html = dataTransfer.getData("text/html");
-  if (html) {
-    const match = html.match(/<img[^>]+\bsrc\s*=\s*["']([^"']+)["']/i);
-    if (match) {
-      return match[1];
-    }
-  }
-
-  const text = dataTransfer.getData("text/plain").trim();
-  if (/^https?:\/\//i.test(text)) {
-    return text;
-  }
-
-  return null;
 }
 
 export function ArtistDetailPage({
