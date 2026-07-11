@@ -90,6 +90,26 @@ def test_get_object_list(collection, blob_image_factory, blob_pdf_factory):
     assert blob_list[1]["name"] == blob_image_factory[0].name
 
 
+def test_get_properties_uses_prefetched_blob_tags(
+    collection, blob_image_factory, django_assert_num_queries
+):
+    collection_object = (
+        CollectionObject.objects.filter(
+            collection=collection[0], blob=blob_image_factory[0]
+        )
+        .select_related("blob", "bookmark")
+        .prefetch_related("blob__tags", "bookmark__tags")
+        .get()
+    )
+
+    with django_assert_num_queries(0):
+        properties = collection_object.get_properties()
+
+    assert properties["tags"] == [
+        tag.name for tag in blob_image_factory[0].tags.all()[:3]
+    ]
+
+
 def test_add_object(collection):
 
     blob = BlobFactory(user=collection[0].user)

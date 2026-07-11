@@ -509,7 +509,7 @@ class CollectionObject(SortOrderMixin):
                 "sha1sum": self.blob.sha1sum,
                 "cover_url": self.blob.cover_url_small,
                 "cover_url_large": self.blob.get_cover_url(),
-                "tags": list(self.blob.tags.values_list("name", flat=True))[:3],
+                "tags": [tag.name for tag in self.blob.tags.all()[:3]],
             }
         if self.bookmark is not None:
             return {
@@ -521,7 +521,7 @@ class CollectionObject(SortOrderMixin):
                 "url": self.bookmark.url,
                 "edit_url": reverse("bookmark:update", kwargs={"uuid": self.bookmark.uuid}),
                 "favicon_url": self.bookmark.get_favicon_img_tag(size=16),
-                "tags": list(self.bookmark.tags.values_list("name", flat=True))[:3],
+                "tags": [tag.name for tag in self.bookmark.tags.all()[:3]],
             }
         raise ValueError(f"Unsupported object: {self}")
 
