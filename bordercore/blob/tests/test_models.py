@@ -293,11 +293,33 @@ def test_blob_rename_file(blob_pdf_factory):
     s3 = boto3.resource("s3")
     bucket = s3.Bucket(settings.AWS_STORAGE_BUCKET_NAME)
 
-    filename = faker.file_name(extension="pdf")
+    # Prefix the current filename so the new name is guaranteed distinct,
+    # exercising the real S3 copy/delete path rather than a same-key no-op.
+    old_filename = blob_pdf_factory[0].file.name
+    filename = f"renamed-{old_filename}"
     blob_pdf_factory[0].rename_file(filename)
 
     # Verify that the blob's new filename has been changed in S3
     bucket = s3.Bucket(settings.AWS_STORAGE_BUCKET_NAME)
+    key_root = f"{settings.MEDIA_ROOT}/{blob_pdf_factory[0].uuid}"
+    objects = [
+        x.key
+        for x in list(bucket.objects.filter(Prefix=f"{key_root}/"))
+    ]
+    assert len(objects) == 1
+    assert f"{key_root}/{filename}" in objects
+
+
+def test_blob_rename_file_same_name_is_noop(blob_pdf_factory):
+    """Renaming to the current filename is a no-op, not an S3 self-copy."""
+
+    s3 = boto3.resource("s3")
+    bucket = s3.Bucket(settings.AWS_STORAGE_BUCKET_NAME)
+
+    filename = blob_pdf_factory[0].file.name
+    # S3 rejects copying an object onto itself; this must not raise.
+    blob_pdf_factory[0].rename_file(filename)
+
     key_root = f"{settings.MEDIA_ROOT}/{blob_pdf_factory[0].uuid}"
     objects = [
         x.key

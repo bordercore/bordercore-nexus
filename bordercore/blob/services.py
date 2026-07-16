@@ -1953,6 +1953,11 @@ def rename_blob_s3_file(
         old_filename: The current filename to rename from.
         new_filename: The new filename to rename to.
     """
+    if old_filename == new_filename:
+        # Renaming to the same key is a no-op. S3 rejects a copy of an
+        # object onto itself, so skip the copy/delete entirely.
+        return
+
     key_root = f"{settings.MEDIA_ROOT}/{uuid}"
     s3_copy_object(
         settings.AWS_STORAGE_BUCKET_NAME,
