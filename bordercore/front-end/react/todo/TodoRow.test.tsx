@@ -103,3 +103,53 @@ describe("TodoRow desktop", () => {
     expect(container.querySelector(".todo-row-inner")).not.toBeNull();
   });
 });
+
+describe("TodoRow note markdown", () => {
+  beforeEach(() => mockMatchMedia(false));
+
+  it("renders markdown links that open in a new tab", () => {
+    const { container } = renderRow({
+      isMobile: false,
+      todo: { ...todo, note: "See [the docs](https://example.com/docs)" },
+    });
+    const link = container.querySelector<HTMLAnchorElement>(".todo-row-desc a")!;
+    expect(link).not.toBeNull();
+    expect(link.getAttribute("href")).toBe("https://example.com/docs");
+    expect(link.getAttribute("target")).toBe("_blank");
+    expect(link.textContent).toBe("the docs");
+  });
+
+  it("linkifies bare URLs and renders bullet lists and emphasis", () => {
+    const { container } = renderRow({
+      isMobile: false,
+      todo: { ...todo, note: "- first **bold**\n- https://example.com" },
+    });
+    const desc = container.querySelector(".todo-row-desc")!;
+    expect(desc.querySelectorAll("li").length).toBe(2);
+    expect(desc.querySelector("strong")!.textContent).toBe("bold");
+    expect(desc.querySelector("a")!.getAttribute("href")).toBe("https://example.com");
+  });
+
+  it("escapes raw HTML in the note", () => {
+    const { container } = renderRow({
+      isMobile: false,
+      todo: { ...todo, note: "<img src=x onerror=alert(1)> plain" },
+    });
+    const desc = container.querySelector(".todo-row-desc")!;
+    expect(desc.querySelector("img")).toBeNull();
+    expect(desc.textContent).toContain("<img src=x onerror=alert(1)> plain");
+  });
+
+  it("follows note links without opening the edit modal", () => {
+    const { container, handlers } = renderRow({
+      isMobile: false,
+      todo: { ...todo, note: "[link](https://example.com)" },
+    });
+    fireEvent.click(container.querySelector(".todo-row-desc a")!);
+    expect(handlers.onEdit).not.toHaveBeenCalled();
+
+    // Clicking non-link note text still opens the edit modal.
+    fireEvent.click(container.querySelector(".todo-row-desc")!);
+    expect(handlers.onEdit).toHaveBeenCalledWith(expect.objectContaining({ uuid: todo.uuid }));
+  });
+});

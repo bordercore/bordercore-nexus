@@ -330,6 +330,20 @@
     p:last-child {
       margin-bottom: 0;
     }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+
+    code {
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
   }
 
   .todo-row-meta {

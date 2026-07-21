@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import DOMPurify from "dompurify";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faGripVertical,
@@ -14,6 +15,7 @@ import { CSS } from "@dnd-kit/utilities";
 import type { Todo, ViewType } from "./types";
 import DropDownMenu, { DropDownMenuHandle } from "../common/DropDownMenu";
 import PriorityBadge from "./PriorityBadge";
+import { createMarkdown } from "../common/markdown";
 
 function formatDate(isoDate: string): string {
   return new Date(isoDate).toLocaleDateString("en-US", {
@@ -36,38 +38,35 @@ function getDueInfo(dueDate: string): { label: string; isOverdue: boolean } {
   };
 }
 
-// Lightweight renderer: preserves line breaks and treats consecutive
-// "- "/"* " lines as a bulleted list. A full markdown pass would require
-// a sanitizer we don't have on the frontend yet.
+// Full markdown pass over the freeform note. Raw HTML in the note is escaped
+// by markdown-it (html: false) and the output is sanitized as a second layer;
+// DOMPurify strips `target` by default, so re-allow it for the links below.
+const markdown = createMarkdown({
+  html: false,
+  linkify: true,
+  typographer: true,
+});
+markdown.renderer.rules.link_open = (tokens, idx, options, _env, self) => {
+  tokens[idx].attrSet("target", "_blank");
+  tokens[idx].attrSet("rel", "noopener noreferrer");
+  return self.renderToken(tokens, idx, options);
+};
+
 function NoteBody({ source }: { source: string }) {
-  const lines = source.split(/\r?\n/);
-  const blocks: React.ReactNode[] = [];
-  let bullets: string[] = [];
-  const flushBullets = (key: string) => {
-    if (bullets.length === 0) return;
-    blocks.push(
-      <ul key={`ul-${key}`}>
-        {bullets.map((b, i) => (
-          <li key={i}>{b}</li>
-        ))}
-      </ul>
-    );
-    bullets = [];
-  };
-  lines.forEach((line, i) => {
-    const match = line.match(/^\s*[-*]\s+(.*)$/);
-    if (match) {
-      bullets.push(match[1]);
-    } else {
-      flushBullets(`${i}`);
-      const trimmed = line.trim();
-      if (trimmed) {
-        blocks.push(<p key={`p-${i}`}>{trimmed}</p>);
-      }
+  const html = DOMPurify.sanitize(markdown.render(source), { ADD_ATTR: ["target"] });
+  // Clicking a link in the note should follow the link, not open the edit modal.
+  const handleClick = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest("a")) {
+      e.stopPropagation();
     }
-  });
-  flushBullets("end");
-  return <div className="todo-row-desc">{blocks}</div>;
+  };
+  return (
+    <div
+      className="todo-row-desc"
+      onClick={handleClick}
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
 }
 
 interface TodoRowProps {
