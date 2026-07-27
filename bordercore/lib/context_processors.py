@@ -58,8 +58,10 @@ def get_counts(request: HttpRequest) -> dict[str, int]:
         todo_count = Todo.objects.filter(user=request.user, priority=HIGH_PRIORITY).count()
 
     # Get overdue_exercises
-    # When count_only=True, get_overdue_exercises always returns int
-    exercise_count = cast(int, get_overdue_exercises(request.user, True))
+    # When count_only=True, get_overdue_exercises always returns int.
+    # Passing the request lets this reuse the summary a fitness view already
+    # built for the same page-load instead of recomputing it.
+    exercise_count = cast(int, get_overdue_exercises(request.user, True, request=request))
 
     bookmark_untagged_count = Bookmark.objects.filter(user=request.user, tags__isnull=True).count()
 

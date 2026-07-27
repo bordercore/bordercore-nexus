@@ -5,6 +5,7 @@ from faker import Factory as FakerFactory
 
 from django import urls
 from django.contrib.auth.models import User
+from django.test import Client
 
 from fitness.models import Data, Exercise, ExerciseUser, Workout
 
@@ -76,12 +77,45 @@ def test_fitness_summary(authenticated_client, fitness):
     resp = client.get(url)
 
     assert resp.status_code == 200
-    # The card-grid landing page hands the React layer a single
-    # ``data-summary`` JSON blob built by get_fitness_card_summary.
+    # The card-grid landing page hands the React layer a single JSON blob
+    # built by get_fitness_card_summary, emitted as a json_script block.
     html = resp.content.decode()
     assert 'id="react-root"' in html
-    assert "data-summary" in html
+    assert 'id="fitness-summary-data"' in html
+    assert "data-inactive-details-url" in html
     assert "data-active-exercises" not in html  # legacy attribute removed
+    # The payload is no longer inlined into an HTML attribute.
+    assert "data-summary=" not in html
+
+
+def test_fitness_inactive_card_details(authenticated_client, fitness):
+
+    _, client = authenticated_client()
+
+    url = urls.reverse("fitness:inactive_card_details")
+    resp = client.get(url)
+
+    assert resp.status_code == 200
+    details = resp.json()["details"]
+
+    # Dead Hang is inactive in the fixture, so its series lives here rather
+    # than in the landing-page payload.
+    dead_hang = next(e for e in fitness if e.name == "Dead Hang")
+    assert str(dead_hang.uuid) in details
+    assert len(details[str(dead_hang.uuid)]["sparkline"]) > 0
+
+    # Bench Press is active, so it is served with the initial payload instead.
+    bench = next(e for e in fitness if e.name == "Bench Press")
+    assert str(bench.uuid) not in details
+
+
+def test_fitness_inactive_card_details_requires_login(db):
+    # A fresh client, since the shared `client` fixture is logged in by the
+    # time any fixture depending on authenticated_client has run.
+    url = urls.reverse("fitness:inactive_card_details")
+    resp = Client().get(url)
+
+    assert resp.status_code in (302, 403)
 
 
 def test_fitness_change_active_status(authenticated_client, fitness):

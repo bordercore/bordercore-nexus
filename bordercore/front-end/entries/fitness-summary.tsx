@@ -11,13 +11,17 @@ const EMPTY: SummaryPayload = {
 
 const container = document.getElementById("react-root");
 if (container) {
-  const raw = container.getAttribute("data-summary") || "";
+  const inactiveDetailsUrl = container.getAttribute("data-inactive-details-url") || "";
+
+  const payloadEl = document.getElementById("fitness-summary-data");
   let payload: SummaryPayload = EMPTY;
   try {
-    payload = raw ? (JSON.parse(raw) as SummaryPayload) : EMPTY;
+    payload = payloadEl ? (JSON.parse(payloadEl.textContent || "null") as SummaryPayload) : EMPTY;
   } catch (e) {
     console.error("Error parsing fitness summary payload:", e);
   }
 
-  createRoot(container).render(<FitnessSummaryPage payload={payload} />);
+  createRoot(container).render(
+    <FitnessSummaryPage payload={payload ?? EMPTY} inactiveDetailsUrl={inactiveDetailsUrl} />
+  );
 }

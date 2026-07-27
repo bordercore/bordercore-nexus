@@ -34,3 +34,18 @@ export interface SummaryPayload {
   groups: FilterGroup[];
   exercises: ExerciseCardData[];
 }
+
+/**
+ * Sparkline and last-set fields for a single card. Inactive cards start
+ * collapsed, so the server ships these blank and the page fetches them the
+ * first time the user expands the inactive section.
+ */
+export type CardDetail = Pick<
+  ExerciseCardData,
+  "last_weight" | "last_reps" | "sparkline" | "sparkline_metric"
+>;
+
+/** Response body of the inactive-card-details endpoint, keyed by exercise UUID. */
+export interface InactiveDetailsResponse {
+  details: Record<string, CardDetail>;
+}

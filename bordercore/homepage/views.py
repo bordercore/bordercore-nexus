@@ -159,7 +159,10 @@ def homepage(request: HttpRequest) -> HttpResponse:
     } if default_collection else None)
 
     # Fitness
-    overdue_exercises = cast(list[Exercise], get_overdue_exercises(user, prefetch_muscles=False))
+    overdue_exercises = cast(
+        list[Exercise],
+        get_overdue_exercises(user, prefetch_muscles=False, request=request),
+    )
     overdue_exercises_sorted = sorted(
         overdue_exercises, key=lambda x: getattr(x, "delta_days", 0), reverse=True
     )

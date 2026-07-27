@@ -27,7 +27,7 @@ from lib.mixins import get_user_object_or_404
 from django.views.decorators.http import require_POST
 from django.views.generic.detail import DetailView
 
-from fitness.services import get_fitness_card_summary
+from fitness.services import get_fitness_card_summary, get_inactive_card_details
 from lib.decorators import validate_post_data
 
 from .models import Data, Exercise, ExerciseUser, Workout
@@ -323,16 +323,34 @@ def fitness_summary(request: HttpRequest) -> HttpResponse:
     to the template as a single JSON blob that the React entry parses.
     """
     user = cast(User, request.user)
-    payload = get_fitness_card_summary(user)
 
     return render(
         request,
         "fitness/summary.html",
         {
-            "summary_payload_json": json.dumps(payload),
+            # Rendered via the json_script filter, which serializes and escapes
+            # it into a <script> block rather than an HTML attribute.
+            "summary_payload": get_fitness_card_summary(user, request=request),
+            "inactive_details_url": reverse("fitness:inactive_card_details"),
             "title": "Fitness Summary",
         },
     )
+
+
+@api_view(["GET"])
+def inactive_card_details(request: HttpRequest) -> Response:
+    """Return sparkline and last-set data for the user's inactive exercises.
+
+    The landing page defers this: inactive cards outnumber active ones several
+    times over and none are on screen until the user expands them, so shipping
+    their series with the initial payload is wasted work on every page-load.
+
+    Returns:
+        JSON response with ``details``, a mapping of exercise UUID to the
+        sparkline/last-set fields for that card.
+    """
+    user = cast(User, request.user)
+    return Response({"details": get_inactive_card_details(user, request=request)})
 
 
 @api_view(["POST"])

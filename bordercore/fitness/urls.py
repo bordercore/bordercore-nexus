@@ -25,6 +25,11 @@ urlpatterns = [
         name="delete_set"
     ),
     path(
+        route="inactive_card_details/",
+        view=views.inactive_card_details,
+        name="inactive_card_details"
+    ),
+    path(
         route="change_active_status/",
         view=views.change_active_status,
         name="change_active_status"

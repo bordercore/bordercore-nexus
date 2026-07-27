@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
-import type { SummaryPayload, FilterGroup } from "./types";
+import type { CardDetail, FilterGroup, InactiveDetailsResponse, SummaryPayload } from "./types";
 import { ExerciseCard } from "./ExerciseCard";
 import { useFocusOnCtrlK } from "../../common/hooks/useFocusOnCtrlK";
 
@@ -9,6 +9,8 @@ const ALL_GROUP: FilterGroup = { slug: "all", label: "all", color_token: "" };
 
 interface FitnessSummaryPageProps {
   payload: SummaryPayload;
+  /** Endpoint serving sparkline data for inactive cards. */
+  inactiveDetailsUrl?: string;
 }
 
 function readInitialFilter(): string {
@@ -35,7 +37,7 @@ function syncFilterToUrl(slug: string) {
  * State held locally: the active filter slug + the inactive-shown flag. The
  * filter persists to ``?group=<slug>`` so links are shareable.
  */
-export function FitnessSummaryPage({ payload }: FitnessSummaryPageProps) {
+export function FitnessSummaryPage({ payload, inactiveDetailsUrl = "" }: FitnessSummaryPageProps) {
   const { groups, exercises } = payload;
 
   const [filter, setFilter] = useState<string>(() => {
@@ -45,12 +47,46 @@ export function FitnessSummaryPage({ payload }: FitnessSummaryPageProps) {
   });
   const [query, setQuery] = useState("");
   const [showInactive, setShowInactive] = useState(false);
+  const [inactiveDetails, setInactiveDetails] = useState<Record<string, CardDetail>>({});
   const searchRef = useRef<HTMLInputElement>(null);
+  // Guards against a second fetch while the first is still in flight, and
+  // against refetching every time the section is collapsed and reopened.
+  const detailsRequested = useRef(false);
   useFocusOnCtrlK(searchRef);
 
   useEffect(() => {
     syncFilterToUrl(filter);
   }, [filter]);
+
+  // Inactive cards ship without sparklines. Fetch them the first time the
+  // section is opened, so the common case (never opened) costs nothing.
+  useEffect(() => {
+    if (!showInactive || detailsRequested.current || !inactiveDetailsUrl) return;
+    detailsRequested.current = true;
+
+    const controller = new AbortController();
+    (async () => {
+      try {
+        const resp = await fetch(inactiveDetailsUrl, {
+          method: "GET",
+          credentials: "same-origin",
+          headers: { Accept: "application/json" },
+          signal: controller.signal,
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const body = (await resp.json()) as InactiveDetailsResponse;
+        setInactiveDetails(body.details ?? {});
+      } catch (e) {
+        if ((e as Error).name === "AbortError") return;
+        // Cards stay readable without a sparkline, so allow a retry on the
+        // next expand rather than surfacing an error state.
+        detailsRequested.current = false;
+        console.error("Error fetching inactive exercise details:", e);
+      }
+    })();
+
+    return () => controller.abort();
+  }, [showInactive, inactiveDetailsUrl]);
 
   const handleFilter = useCallback((slug: string) => {
     setFilter(slug);
@@ -63,9 +99,11 @@ export function FitnessSummaryPage({ payload }: FitnessSummaryPageProps) {
     const matches = (e: (typeof exercises)[number]) => matchesGroup(e.group) && matchesName(e.name);
     const a = exercises.filter(e => e.is_active && matches(e));
     const inAll = exercises.filter(e => !e.is_active);
-    const inFiltered = inAll.filter(matches);
+    const inFiltered = inAll
+      .filter(matches)
+      .map(e => (inactiveDetails[e.uuid] ? { ...e, ...inactiveDetails[e.uuid] } : e));
     return { active: a, inactive: inFiltered, inactiveCount: inAll.length };
-  }, [exercises, filter, query]);
+  }, [exercises, filter, query, inactiveDetails]);
 
   const chipGroups = useMemo<FilterGroup[]>(() => [ALL_GROUP, ...groups], [groups]);
 

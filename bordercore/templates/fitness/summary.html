@@ -4,8 +4,9 @@
 {% block title %}Fitness :: Summary{% endblock %}
 
 {% block content %}
+    {{ summary_payload|json_script:"fitness-summary-data" }}
     <div id="react-root"
-        data-summary="{{ summary_payload_json }}"
+        data-inactive-details-url="{{ inactive_details_url }}"
     ></div>
 {% endblock %}
 

@@ -9,10 +9,12 @@ from __future__ import annotations
 
 import datetime
 from collections import defaultdict
-from typing import Any, cast
+from typing import Any, NamedTuple, cast
 
 from django.contrib.auth.models import User
-from django.db.models import F, Max, OuterRef, Q, Subquery
+from django.db.models import F, Max, OuterRef, Q, Subquery, Window
+from django.db.models.functions import RowNumber
+from django.http import HttpRequest
 from django.urls import reverse
 from django.utils import timezone
 
@@ -36,16 +38,56 @@ GROUP_TOKENS: dict[str, dict[str, str]] = {
 }
 GROUP_UNKNOWN = {"slug": "other", "color_token": "--muscle-other"}
 
+# Attribute used to memoize get_fitness_summary() on the request object. The
+# nav-badge context processor and the fitness views both need this summary, so
+# without a cache a single fitness page-load runs the (expensive) exercise
+# annotation twice. A request is discarded at the end of the response cycle, so
+# the cache can never go stale between requests.
+_SUMMARY_CACHE_ATTR = "_fitness_summary_cache"
+
+
+def _cached_summary(
+    request: HttpRequest | None, user: User, needs_muscles: bool,
+) -> tuple[list[Exercise], list[Exercise]] | None:
+    """Return this request's memoized summary, or ``None`` on a miss.
+
+    A cached entry only satisfies a caller that needs muscle data if the entry
+    was itself built with the muscle prefetch — otherwise reusing it would
+    trade one extra query for a per-exercise N+1 on ``muscle``.
+    """
+    if request is None:
+        return None
+    entry = getattr(request, _SUMMARY_CACHE_ATTR, None)
+    if entry is None or entry["user_id"] != user.pk:
+        return None
+    if needs_muscles and not entry["has_muscles"]:
+        return None
+    return cast(
+        "tuple[list[Exercise], list[Exercise]]",
+        (entry["active"], entry["inactive"]),
+    )
+
 
 def get_fitness_summary(
-    user: User, count_only: bool = False, prefetch_muscles: bool = True,
+    user: User,
+    count_only: bool = False,
+    prefetch_muscles: bool = True,
+    request: HttpRequest | None = None,
 ) -> tuple[list[Exercise], list[Exercise]]:
     """Return active and inactive exercises for a user, annotated with status.
 
     ``prefetch_muscles`` controls whether ``muscle`` / ``muscle__muscle_group``
     are eagerly loaded. Callers that don't need muscle data (e.g. the homepage
     overdue list) should pass ``False`` to avoid an unnecessary eager load.
+
+    Passing ``request`` memoizes the result for the life of that request, so
+    callers that run within the same page-load share a single evaluation.
     """
+    needs_muscles = not count_only and prefetch_muscles
+
+    cached = _cached_summary(request, user, needs_muscles)
+    if cached is not None:
+        return cached
 
     newest = ExerciseUser.objects.filter(
         exercise=OuterRef("pk"), user=user
@@ -61,7 +103,7 @@ def get_fitness_summary(
         frequency=Subquery(newest.values("frequency")[:1]),
     ).order_by(F("last_active"))
 
-    if not count_only and prefetch_muscles:
+    if needs_muscles:
         exercises = exercises.prefetch_related("muscle", "muscle__muscle_group")
 
     active_exercises = []
@@ -108,11 +150,22 @@ def get_fitness_summary(
         reverse=True,
     )
 
+    if request is not None:
+        setattr(request, _SUMMARY_CACHE_ATTR, {
+            "user_id": user.pk,
+            "has_muscles": needs_muscles,
+            "active": active_exercises,
+            "inactive": inactive_exercises,
+        })
+
     return cast(tuple[list[Exercise], list[Exercise]], (active_exercises, inactive_exercises))
 
 
 def get_overdue_exercises(
-    user: User, count_only: bool = False, prefetch_muscles: bool = True,
+    user: User,
+    count_only: bool = False,
+    prefetch_muscles: bool = True,
+    request: HttpRequest | None = None,
 ) -> int | list[Exercise]:
     """Return overdue (or due today) exercises for a user, or just the count.
 
@@ -129,6 +182,8 @@ def get_overdue_exercises(
             return the list of overdue/due-today :class:`Exercise` objects.
         prefetch_muscles: If ``False``, skip eager-loading muscle data. Use
             this when the caller only needs basic exercise fields.
+        request: Optional request to memoize the underlying summary against,
+            so callers sharing a page-load only evaluate it once.
 
     Returns:
         int | list[Exercise]: Either a count (when ``count_only`` is ``True``)
@@ -136,7 +191,7 @@ def get_overdue_exercises(
     """
     overdue_exercises = [
         x
-        for x in get_fitness_summary(user, count_only, prefetch_muscles)[0]
+        for x in get_fitness_summary(user, count_only, prefetch_muscles, request)[0]
         if x.overdue in (1, 2)  # type: ignore[attr-defined]
     ]
 
@@ -193,14 +248,27 @@ def _pick_sparkline_metric(
     return None, []
 
 
+class RecentSet(NamedTuple):
+    """One logged set, carrying only the fields a summary card renders."""
+
+    weight: float | None
+    reps: int | None
+    duration: int | None
+
+
 def _recent_data_by_exercise(
     user: User, exercise_ids: list[int], limit: int = SPARKLINE_LIMIT,
-) -> dict[int, list[Data]]:
-    """Return up to ``limit`` recent :class:`Data` rows per exercise.
+) -> dict[int, list[RecentSet]]:
+    """Return up to ``limit`` recent sets per exercise, newest first.
 
-    Single query, sorted newest-first, sliced in Python. Cards never need
-    more than ~20 points, so the row count stays small even for prolific
-    users.
+    The per-exercise cut is done in SQL with a window function so the database
+    returns only the rows the cards actually plot. Doing it in Python instead
+    means fetching the user's entire workout history — tens of thousands of
+    rows on a long-lived account — and discarding all but a few per exercise.
+
+    Values come back as plain tuples rather than model instances: this is a
+    read-only projection feeding a JSON payload, so the ORM's per-row object
+    construction would dominate the cost of the whole page.
     """
     if not exercise_ids:
         return {}
@@ -208,15 +276,24 @@ def _recent_data_by_exercise(
     rows = (
         Data.objects
         .filter(workout__user=user, workout__exercise_id__in=exercise_ids)
-        .select_related("workout")
-        .order_by("workout__exercise_id", "-date")
+        .annotate(
+            exercise=F("workout__exercise_id"),
+            rank=Window(
+                expression=RowNumber(),
+                partition_by=F("workout__exercise_id"),
+                # id breaks date ties so the cut is deterministic; ``date`` is
+                # auto_now_add and several sets can share a timestamp.
+                order_by=[F("date").desc(), F("id").desc()],
+            ),
+        )
+        .filter(rank__lte=limit)
+        .order_by("exercise", "-date", "-id")
+        .values_list("exercise", "weight", "reps", "duration")
     )
 
-    bucketed: dict[int, list[Data]] = defaultdict(list)
-    for d in rows:
-        eid = d.workout.exercise_id
-        if len(bucketed[eid]) < limit:
-            bucketed[eid].append(d)
+    bucketed: dict[int, list[RecentSet]] = defaultdict(list)
+    for exercise_id, weight, reps, duration in rows:
+        bucketed[exercise_id].append(RecentSet(weight, reps, duration))
     return bucketed
 
 
@@ -244,8 +321,72 @@ def _card_status(
     return "on_track"
 
 
-def get_fitness_card_summary(user: User) -> dict[str, Any]:
+def _recent_set_fields(
+    exercise: Exercise, recent_sets: list[RecentSet],
+) -> dict[str, Any]:
+    """Build the sparkline and last-set fields for one card.
+
+    Shared by the landing-page payload and the deferred lookup that fills in
+    inactive cards, so both render from identical logic.
+    """
+    # Recent sets come back newest-first; reverse for left-to-right plots.
+    rows = list(reversed(recent_sets))
+    series_by_metric = {
+        "weight": [float(d.weight or 0) for d in rows],
+        "reps": [float(d.reps or 0) for d in rows],
+        "duration": [float(d.duration or 0) for d in rows],
+    }
+    metric, sparkline = _pick_sparkline_metric(
+        exercise.has_weight, exercise.has_duration, series_by_metric,
+    )
+
+    last_set = recent_sets[0] if recent_sets else None
+    return {
+        "last_weight": float(last_set.weight) if last_set and last_set.weight else None,
+        "last_reps": int(last_set.reps) if last_set and last_set.reps else None,
+        "sparkline": sparkline,
+        "sparkline_metric": metric,
+    }
+
+
+def get_inactive_card_details(
+    user: User, request: HttpRequest | None = None,
+) -> dict[str, dict[str, Any]]:
+    """Return sparkline/last-set fields for the user's inactive exercises.
+
+    The landing page ships these separately because inactive cards start
+    collapsed behind a toggle — they are the large majority of the user's
+    exercises but none of them are on screen at first paint.
+
+    Returns:
+        Mapping of exercise UUID string to the same sparkline/last-set keys
+        that :func:`get_fitness_card_summary` puts on a card.
+    """
+    # Muscle data is only needed for the group chips, which the client already
+    # has from the initial payload.
+    _active, inactive = get_fitness_summary(
+        user, prefetch_muscles=False, request=request,
+    )
+    recent_data = _recent_data_by_exercise(user, [e.id for e in inactive])
+
+    return {
+        str(e.uuid): _recent_set_fields(e, recent_data.get(e.id, []))
+        for e in inactive
+    }
+
+
+def get_fitness_card_summary(
+    user: User, request: HttpRequest | None = None,
+) -> dict[str, Any]:
     """Build the payload for the card-grid landing page.
+
+    Passing ``request`` shares the underlying exercise summary with the
+    nav-badge context processor for the same page-load.
+
+    Only active exercises get sparkline and last-set data. Inactive cards are
+    collapsed behind a toggle on first paint, so their series are fetched on
+    demand via :func:`get_inactive_card_details` instead of being built and
+    shipped for every page-load.
 
     Returns a dict with:
         - ``today_dow``: int, Monday-first weekday index for today.
@@ -254,12 +395,11 @@ def get_fitness_card_summary(user: User) -> dict[str, Any]:
         - ``exercises``: list of card dicts (active first, sorted today →
           overdue → on-track; inactive cards appended at the end).
     """
-    active, inactive = get_fitness_summary(user)
+    active, inactive = get_fitness_summary(user, request=request)
     today = timezone.localdate()
     today_dow = today.weekday()
 
-    all_exercise_ids = [e.id for e in active] + [e.id for e in inactive]
-    recent_data = _recent_data_by_exercise(user, all_exercise_ids)
+    recent_data = _recent_data_by_exercise(user, [e.id for e in active])
 
     def build_card(e: Exercise, *, is_active: bool) -> dict[str, Any]:
         slug, label, color_token = _resolve_group(e)
@@ -284,22 +424,6 @@ def get_fitness_card_summary(user: User) -> dict[str, Any]:
                 if last_date < missed_day:
                     overdue_days = (today - missed_day).days
 
-        # Recent data → sparkline series (oldest → newest for plotting).
-        rows = list(reversed(recent_data.get(e.id, [])))
-        series_by_metric = {
-            "weight": [float(d.weight or 0) for d in rows],
-            "reps": [float(d.reps or 0) for d in rows],
-            "duration": [float(d.duration or 0) for d in rows],
-        }
-        metric, sparkline = _pick_sparkline_metric(
-            e.has_weight, e.has_duration, series_by_metric,
-        )
-
-        # Last-workout meta — pull from the newest grouped row per exercise.
-        last_set = recent_data.get(e.id, [None])[0] if recent_data.get(e.id) else None
-        last_weight = float(last_set.weight) if last_set and last_set.weight else None
-        last_reps = int(last_set.reps) if last_set and last_set.reps else None
-
         return {
             "uuid": str(e.uuid),
             "name": e.name,
@@ -313,10 +437,9 @@ def get_fitness_card_summary(user: User) -> dict[str, Any]:
             "group_color_token": color_token,
             "schedule": schedule_bool,
             "last_workout_days_ago": last_days,
-            "last_weight": last_weight,
-            "last_reps": last_reps,
-            "sparkline": sparkline,
-            "sparkline_metric": metric,
+            # Empty for inactive cards; the client fills these in when the
+            # user expands the inactive section.
+            **_recent_set_fields(e, recent_data.get(e.id, [])),
         }
 
     cards = [build_card(e, is_active=True) for e in active]
