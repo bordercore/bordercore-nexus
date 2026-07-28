@@ -25,6 +25,21 @@ urlpatterns = [
         name="set_inactive"
     ),
     path(
+        route="note/add/",
+        view=views.add_note,
+        name="note_add"
+    ),
+    path(
+        route="note/update/",
+        view=views.update_note,
+        name="note_update"
+    ),
+    path(
+        route="note/delete/",
+        view=views.delete_note,
+        name="note_delete"
+    ),
+    path(
         route="get_habits/",
         view=views.get_habits,
         name="get_habits"

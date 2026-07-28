@@ -13,8 +13,9 @@ from datetime import date, timedelta
 from typing import Any
 
 from django.contrib.auth.models import User
+from django.utils import timezone
 
-from habit.models import Habit, HabitLog
+from habit.models import Habit, HabitLog, HabitNote
 
 
 def create_habit(user: User, name: str, purpose: str, start_date: date) -> Habit:
@@ -53,6 +54,54 @@ def deactivate_habit(habit: Habit) -> date:
     habit.end_date = yesterday
     habit.save(update_fields=["end_date"])
     return yesterday
+
+
+def add_habit_note(habit: Habit, note_date: date, text: str) -> HabitNote | None:
+    """Append a note to a habit's day.
+
+    Notes accumulate rather than replace, so this always creates a new row.
+
+    Args:
+        habit: The habit the note belongs to.
+        note_date: The day the note is about.
+        text: The note text; surrounding whitespace is stripped.
+
+    Returns:
+        The new HabitNote, or None if `text` was blank.  Callers treat None as
+        "nothing to record" -- an empty note box is a no-op, not an error.
+    """
+    text = text.strip()
+    if not text:
+        return None
+    return HabitNote.objects.create(habit=habit, date=note_date, note=text)
+
+
+def serialize_note(note: HabitNote) -> dict[str, Any]:
+    """Serialize a note for the dashboard payload.
+
+    `created` is stored in UTC, so it is converted to local time before both
+    the clock string and the same-day comparison.  A note written at 9pm
+    Eastern is 01:00 UTC the following day; comparing raw UTC would show the
+    wrong hour and wrongly mark the note as backfilled.
+
+    Args:
+        note: The HabitNote to serialize.
+
+    Returns:
+        Dict with the note's uuid, date, text, and local clock time.  `time`
+        is None when the note was written on a later date than it describes,
+        since that clock reading would describe the writing, not the day.
+    """
+    created_local = timezone.localtime(note.created)
+    show_time = created_local.date() == note.date
+
+    return {
+        "uuid": str(note.uuid),
+        "date": note.date.isoformat(),
+        "note": note.note,
+        # lstrip beats "%-I" here, which is glibc-only.
+        "time": created_local.strftime("%I:%M %p").lstrip("0") if show_time else None,
+    }
 
 
 def _current_streak(completed_dates: set[date], today: date) -> int:
@@ -186,9 +235,17 @@ def get_habit_detail(habit: Habit, days: int = 30) -> dict[str, Any]:
             enough data to render.
 
     Returns:
-        Dict containing habit details, streak stats, and recent log entries.
+        Dict containing habit details, streak stats, recent log entries, and
+        the notes falling inside the same window.
     """
     logs = HabitLog.objects.filter(habit=habit).order_by("-date")[:days]
+
+    # Notes are a sibling of logs rather than nested inside them: a note can
+    # exist on a day that was never logged.  The window is a date range, not
+    # a row count, because a single day may hold many notes.
+    notes = HabitNote.objects.filter(
+        habit=habit, date__gte=date.today() - timedelta(days=days),
+    )
 
     # Streaks span all history, not just the windowed slice, so users don't
     # see a streak shorten when they look at a smaller window.
@@ -215,8 +272,8 @@ def get_habit_detail(habit: Habit, days: int = 30) -> dict[str, Any]:
                 "date": log_entry.date.isoformat(),
                 "completed": log_entry.completed,
                 "value": str(log_entry.value) if log_entry.value is not None else None,
-                "note": log_entry.note,
             }
             for log_entry in logs
         ],
+        "notes": [serialize_note(note) for note in notes],
     }

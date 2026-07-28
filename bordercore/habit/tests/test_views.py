@@ -5,7 +5,7 @@ import pytest
 from django import urls
 
 from accounts.tests.factories import UserFactory
-from habit.models import Habit, HabitLog
+from habit.models import Habit, HabitLog, HabitNote
 from habit.tests.factories import HabitFactory
 
 pytestmark = [pytest.mark.django_db]
@@ -102,7 +102,6 @@ def test_log_habit_update(authenticated_client):
     assert resp.status_code == 200
     data = resp.json()
     assert data["log"]["completed"] is False
-    assert data["log"]["note"] == "Changed my mind"
 
     # Verify only one log for that date
     logs = HabitLog.objects.filter(habit=habit, date="2025-06-16")
@@ -243,3 +242,220 @@ def test_set_habit_inactive_other_users_habit_returns_404(authenticated_client):
     assert resp.status_code == 404
     habit.refresh_from_db()
     assert habit.is_active is True
+
+
+# -----------------------------------------------------------------------------
+# Habit notes: many free-text observations per habit per day.
+# -----------------------------------------------------------------------------
+
+
+def test_note_add_creates_note(authenticated_client):
+
+    user, client = authenticated_client()
+    habit = HabitFactory(user=user, start_date=date.today())
+
+    url = urls.reverse("habit:note_add")
+    resp = client.post(url, {
+        "habit_uuid": str(habit.uuid),
+        "date": "2025-06-15",
+        "note": "Took it with breakfast",
+    })
+
+    assert resp.status_code == 201
+    data = resp.json()
+    assert data["note"]["note"] == "Took it with breakfast"
+    assert data["note"]["date"] == "2025-06-15"
+    assert HabitNote.objects.filter(habit=habit).count() == 1
+
+
+def test_note_add_accumulates_within_a_day(authenticated_client):
+    """Two posts for the same date leave two notes, not one."""
+    user, client = authenticated_client()
+    habit = HabitFactory(user=user, start_date=date.today())
+
+    url = urls.reverse("habit:note_add")
+    for text in ("8am dose", "2pm headache"):
+        client.post(url, {
+            "habit_uuid": str(habit.uuid),
+            "date": "2025-06-15",
+            "note": text,
+        })
+
+    notes = HabitNote.objects.filter(habit=habit, date="2025-06-15")
+    assert notes.count() == 2
+
+
+@pytest.mark.parametrize("blank", ["", "   "])
+def test_note_add_rejects_blank_note(authenticated_client, blank):
+
+    user, client = authenticated_client()
+    habit = HabitFactory(user=user, start_date=date.today())
+
+    url = urls.reverse("habit:note_add")
+    resp = client.post(url, {
+        "habit_uuid": str(habit.uuid),
+        "date": "2025-06-15",
+        "note": blank,
+    })
+
+    assert resp.status_code == 400
+    assert not HabitNote.objects.filter(habit=habit).exists()
+
+
+def test_note_add_invalid_date(authenticated_client):
+
+    user, client = authenticated_client()
+    habit = HabitFactory(user=user, start_date=date.today())
+
+    url = urls.reverse("habit:note_add")
+    resp = client.post(url, {
+        "habit_uuid": str(habit.uuid),
+        "date": "not-a-date",
+        "note": "Anything",
+    })
+
+    assert resp.status_code == 400
+    assert not HabitNote.objects.filter(habit=habit).exists()
+
+
+def test_note_add_other_users_habit_returns_404(authenticated_client):
+
+    _, client = authenticated_client()
+    other = UserFactory(username="otheruser")
+    habit = HabitFactory(user=other, start_date=date.today())
+
+    url = urls.reverse("habit:note_add")
+    resp = client.post(url, {
+        "habit_uuid": str(habit.uuid),
+        "date": "2025-06-15",
+        "note": "Not mine",
+    })
+
+    assert resp.status_code == 404
+    assert not HabitNote.objects.filter(habit=habit).exists()
+
+
+def test_note_update_changes_text(authenticated_client):
+
+    user, client = authenticated_client()
+    habit = HabitFactory(user=user, start_date=date.today())
+    note = HabitNote.objects.create(habit=habit, date=date.today(), note="typo")
+
+    url = urls.reverse("habit:note_update")
+    resp = client.post(url, {"note_uuid": str(note.uuid), "note": "fixed"})
+
+    assert resp.status_code == 200
+    assert resp.json()["note"]["note"] == "fixed"
+    note.refresh_from_db()
+    assert note.note == "fixed"
+
+
+def test_note_update_rejects_blank_note(authenticated_client):
+    """Blanking a note is a delete; the update endpoint refuses it."""
+    user, client = authenticated_client()
+    habit = HabitFactory(user=user, start_date=date.today())
+    note = HabitNote.objects.create(habit=habit, date=date.today(), note="keep me")
+
+    url = urls.reverse("habit:note_update")
+    resp = client.post(url, {"note_uuid": str(note.uuid), "note": "   "})
+
+    assert resp.status_code == 400
+    note.refresh_from_db()
+    assert note.note == "keep me"
+
+
+def test_note_update_other_users_note_returns_404(authenticated_client):
+
+    _, client = authenticated_client()
+    other = UserFactory(username="otheruser")
+    habit = HabitFactory(user=other, start_date=date.today())
+    note = HabitNote.objects.create(habit=habit, date=date.today(), note="theirs")
+
+    url = urls.reverse("habit:note_update")
+    resp = client.post(url, {"note_uuid": str(note.uuid), "note": "hijacked"})
+
+    assert resp.status_code == 404
+    note.refresh_from_db()
+    assert note.note == "theirs"
+
+
+def test_note_delete_removes_note(authenticated_client):
+
+    user, client = authenticated_client()
+    habit = HabitFactory(user=user, start_date=date.today())
+    note = HabitNote.objects.create(habit=habit, date=date.today(), note="oops")
+
+    url = urls.reverse("habit:note_delete")
+    resp = client.post(url, {"note_uuid": str(note.uuid)})
+
+    assert resp.status_code == 200
+    assert not HabitNote.objects.filter(pk=note.pk).exists()
+
+
+def test_note_delete_other_users_note_returns_404(authenticated_client):
+
+    _, client = authenticated_client()
+    other = UserFactory(username="otheruser")
+    habit = HabitFactory(user=other, start_date=date.today())
+    note = HabitNote.objects.create(habit=habit, date=date.today(), note="theirs")
+
+    url = urls.reverse("habit:note_delete")
+    resp = client.post(url, {"note_uuid": str(note.uuid)})
+
+    assert resp.status_code == 404
+    assert HabitNote.objects.filter(pk=note.pk).exists()
+
+
+def test_log_habit_note_appends_instead_of_overwriting(authenticated_client):
+    """Saving the log panel twice keeps both notes; the second no longer wins."""
+    user, client = authenticated_client()
+    habit = HabitFactory(user=user, start_date=date.today())
+
+    url = urls.reverse("habit:log")
+    for text in ("first thought", "second thought"):
+        client.post(url, {
+            "habit_uuid": str(habit.uuid),
+            "date": "2025-06-20",
+            "completed": "true",
+            "note": text,
+        })
+
+    notes = HabitNote.objects.filter(habit=habit, date="2025-06-20")
+    assert sorted(n.note for n in notes) == ["first thought", "second thought"]
+    # Still exactly one log row for the day.
+    assert HabitLog.objects.filter(habit=habit, date="2025-06-20").count() == 1
+
+
+def test_log_habit_returns_the_note_it_created(authenticated_client):
+
+    user, client = authenticated_client()
+    habit = HabitFactory(user=user, start_date=date.today())
+
+    url = urls.reverse("habit:log")
+    resp = client.post(url, {
+        "habit_uuid": str(habit.uuid),
+        "date": "2025-06-21",
+        "completed": "true",
+        "note": "Felt good",
+    })
+
+    assert resp.status_code == 201
+    assert resp.json()["note"]["note"] == "Felt good"
+
+
+def test_log_habit_blank_note_creates_nothing(authenticated_client):
+    """Logging without filling the note box must not leave an empty note."""
+    user, client = authenticated_client()
+    habit = HabitFactory(user=user, start_date=date.today())
+
+    url = urls.reverse("habit:log")
+    resp = client.post(url, {
+        "habit_uuid": str(habit.uuid),
+        "date": "2025-06-22",
+        "completed": "true",
+        "note": "   ",
+    })
+
+    assert resp.status_code == 201
+    assert resp.json()["note"] is None
+    assert not HabitNote.objects.filter(habit=habit).exists()

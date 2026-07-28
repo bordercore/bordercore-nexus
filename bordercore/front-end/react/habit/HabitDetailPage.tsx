@@ -10,13 +10,21 @@ import { HeatmapInspector } from "./detail/HeatmapInspector";
 import { DoseChart, ChartRange } from "./detail/DoseChart";
 import { Notebook } from "./detail/Notebook";
 import { RecentLogTable } from "./detail/RecentLogTable";
-import type { HabitDetail, HabitLogEntry } from "./types";
+import type { HabitDetail, HabitLogEntry, HabitNoteEntry } from "./types";
 import { todayIso } from "./utils/format";
 
 interface HabitDetailPageProps {
   habit: HabitDetail;
   logUrl: string;
   setInactiveUrl: string;
+  noteAddUrl: string;
+  noteUpdateUrl: string;
+  noteDeleteUrl: string;
+}
+
+/** Sort key matching the server: newest day first, chronological within a day. */
+function sortNotes(notes: HabitNoteEntry[]): HabitNoteEntry[] {
+  return [...notes].sort((a, b) => b.date.localeCompare(a.date));
 }
 
 /**
@@ -24,10 +32,18 @@ interface HabitDetailPageProps {
  * routes mutations through `log_habit` (upsert) so the sticky panel handles
  * both "log today" and "edit any past day" without separate endpoints.
  */
-export default function HabitDetailPage({ habit, logUrl, setInactiveUrl }: HabitDetailPageProps) {
+export default function HabitDetailPage({
+  habit,
+  logUrl,
+  setInactiveUrl,
+  noteAddUrl,
+  noteUpdateUrl,
+  noteDeleteUrl,
+}: HabitDetailPageProps) {
   const today = todayIso();
 
   const [logs, setLogs] = useState<HabitLogEntry[]>(habit.logs);
+  const [notes, setNotes] = useState<HabitNoteEntry[]>(habit.notes ?? []);
   const [isActive, setIsActive] = useState(habit.is_active);
   const [endDate, setEndDate] = useState(habit.end_date);
   const [currentStreak, setCurrentStreak] = useState(habit.current_streak);
@@ -45,7 +61,53 @@ export default function HabitDetailPage({ habit, logUrl, setInactiveUrl }: Habit
     return m;
   }, [logs]);
 
+  const notesByDate = useMemo(() => {
+    const m = new Map<string, HabitNoteEntry[]>();
+    for (const note of notes) {
+      const bucket = m.get(note.date);
+      if (bucket) bucket.push(note);
+      else m.set(note.date, [note]);
+    }
+    return m;
+  }, [notes]);
+
   const completedCount = useMemo(() => logs.filter(l => l.completed).length, [logs]);
+
+  /** Append, don't prepend: sortNotes is stable, so a new same-day note
+   *  lands after its siblings, matching the server's chronological order. */
+  function absorbNote(note: HabitNoteEntry) {
+    setNotes(prev => sortNotes([...prev, note]));
+  }
+
+  function handleAddNote(date: string, text: string) {
+    doPost(
+      noteAddUrl,
+      { habit_uuid: habit.uuid, date, note: text },
+      response => absorbNote(response.data.note),
+      "Note added"
+    );
+  }
+
+  function handleUpdateNote(uuid: string, text: string) {
+    doPost(
+      noteUpdateUrl,
+      { note_uuid: uuid, note: text },
+      response => {
+        const updated: HabitNoteEntry = response.data.note;
+        setNotes(prev => prev.map(n => (n.uuid === updated.uuid ? updated : n)));
+      },
+      "Note updated"
+    );
+  }
+
+  function handleDeleteNote(uuid: string) {
+    doPost(
+      noteDeleteUrl,
+      { note_uuid: uuid },
+      () => setNotes(prev => prev.filter(n => n.uuid !== uuid)),
+      "Note deleted"
+    );
+  }
 
   function handleDeactivate() {
     doPost(
@@ -87,6 +149,8 @@ export default function HabitDetailPage({ habit, logUrl, setInactiveUrl }: Habit
           const filtered = prev.filter(l => l.date !== newLog.date);
           return [newLog, ...filtered].sort((a, b) => b.date.localeCompare(a.date));
         });
+        // The log endpoint appends a note when the panel's note box had text.
+        if (response.data.note) absorbNote(response.data.note);
         // Reset the panel to today after a successful save unless the user
         // explicitly retargets again.
         setLogDate(today);
@@ -106,6 +170,7 @@ export default function HabitDetailPage({ habit, logUrl, setInactiveUrl }: Habit
   }
 
   const selectedLog = selectedDate ? (logByDate.get(selectedDate) ?? null) : null;
+  const selectedNotes = selectedDate ? (notesByDate.get(selectedDate) ?? []) : [];
   const editingLog = logByDate.get(logDate) ?? null;
 
   return (
@@ -165,6 +230,7 @@ export default function HabitDetailPage({ habit, logUrl, setInactiveUrl }: Habit
         <HeatmapInspector
           date={selectedDate}
           log={selectedLog}
+          notes={selectedNotes}
           unit={habit.unit}
           onEdit={d => setLogDate(d)}
         />
@@ -178,11 +244,19 @@ export default function HabitDetailPage({ habit, logUrl, setInactiveUrl }: Habit
           range={chartRange}
           onRangeChange={setChartRange}
         />
-        <Notebook logs={logs} />
+        <Notebook
+          notes={notes}
+          composerDate={selectedDate ?? today}
+          todayIso={today}
+          onAdd={handleAddNote}
+          onUpdate={handleUpdateNote}
+          onDelete={handleDeleteNote}
+        />
       </div>
 
       <RecentLogTable
         logs={logs}
+        notesByDate={notesByDate}
         unit={habit.unit}
         totalCount={logs.length}
         onEdit={d => setLogDate(d)}

@@ -5,7 +5,9 @@ This module defines:
 - `Habit`: A user-defined habit to track over time, with a name, purpose,
   start/end dates, and tags.
 - `HabitLog`: A daily log entry for a habit, recording whether the habit was
-  completed along with an optional numeric value and note.
+  completed along with an optional numeric value.
+- `HabitNote`: A free-text observation for a habit on a given day; many may
+  exist per day.
 - A signal handler (`tags_changed`) to keep `TagHabit` relations in sync when
   a habit's tags change.
 """
@@ -85,7 +87,8 @@ class HabitLog(TimeStampedModel):
     """A daily log entry for a habit.
 
     Records whether a habit was completed on a given date, with optional
-    numeric value tracking and notes.
+    numeric value tracking.  Free-text observations live in `HabitNote`,
+    which allows many per day.
 
     Attributes:
         uuid: Unique identifier for the log entry.
@@ -93,7 +96,6 @@ class HabitLog(TimeStampedModel):
         date: The date of the log entry.
         completed: Whether the habit was completed.
         value: Optional numeric value (e.g., minutes, count).
-        note: Optional text note about the log entry.
     """
 
     uuid: models.UUIDField = models.UUIDField(default=uuid.uuid4, editable=False)
@@ -105,7 +107,6 @@ class HabitLog(TimeStampedModel):
         validators=[MinValueValidator(0)],
         help_text="Optional numeric measurement (e.g. minutes, reps, miles)",
     )
-    note = models.TextField(blank=True)
 
     def __str__(self) -> str:
         status = "done" if self.completed else "missed"
@@ -119,6 +120,43 @@ class HabitLog(TimeStampedModel):
             models.UniqueConstraint(fields=["habit", "date"], name="unique_habit_date"),
         ]
         ordering = ("-date", "-created")
+
+
+class HabitNote(TimeStampedModel):
+    """A free-text observation recorded against a habit on a given day.
+
+    Notes are keyed by ``(habit, date)`` like `HabitLog`, but unlike a log
+    there may be many per day -- the model is a running record of
+    observations ("took dose 8am", "headache 2pm") rather than a single
+    summary field.
+
+    Notes deliberately do *not* reference `HabitLog`.  A note can be written
+    for a day that was never logged, and creating a log row just to hold a
+    note would mark that day as missed in the heatmap and inflate the habit's
+    log counts.
+
+    Attributes:
+        uuid: Unique identifier for the note.
+        habit: The habit this note belongs to.
+        date: The day the note is about.
+        note: The note text.
+    """
+
+    uuid: models.UUIDField = models.UUIDField(default=uuid.uuid4, editable=False)
+    habit = models.ForeignKey(Habit, on_delete=models.CASCADE, related_name="notes")
+    date = models.DateField()
+    note = models.TextField()
+
+    def __str__(self) -> str:
+        return f"{self.habit.name} - {self.date}"
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["habit", "-date"]),
+        ]
+        # Newest day first, but chronological within a day so a morning note
+        # reads above an afternoon one.
+        ordering = ("-date", "created")
 
 
 def tags_changed(sender: type[Habit], **kwargs: Any) -> None:

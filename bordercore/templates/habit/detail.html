@@ -10,6 +10,9 @@
         data-habit="{{ habit_json }}"
         data-log-url="{% url 'habit:log' %}"
         data-set-inactive-url="{% url 'habit:set_inactive' %}"
+        data-note-add-url="{% url 'habit:note_add' %}"
+        data-note-update-url="{% url 'habit:note_update' %}"
+        data-note-delete-url="{% url 'habit:note_delete' %}"
     ></div>
 {% endblock %}
 

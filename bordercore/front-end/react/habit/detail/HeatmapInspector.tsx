@@ -1,21 +1,23 @@
 import React from "react";
-import type { HabitLogEntry } from "../types";
+import type { HabitLogEntry, HabitNoteEntry } from "../types";
 import { eyebrowDate } from "../utils/format";
 
 interface HeatmapInspectorProps {
   date: string | null;
   log: HabitLogEntry | null;
+  /** Every note filed under `date`, in chronological order. */
+  notes: HabitNoteEntry[];
   unit: string;
   onEdit: (date: string) => void;
 }
 
 /**
  * Inspector strip that appears below the heatmap and reflects the current
- * selection: shows the date, status (logged / missed / untracked), the note
- * if one exists, and an "Edit this day" button that retargets the sticky
- * log panel to that date.
+ * selection: shows the date, status (logged / missed / untracked), that day's
+ * notes, and an "Edit this day" button that retargets the sticky log panel to
+ * that date.
  */
-export function HeatmapInspector({ date, log, unit, onEdit }: HeatmapInspectorProps) {
+export function HeatmapInspector({ date, log, notes, unit, onEdit }: HeatmapInspectorProps) {
   if (date === null) return null;
 
   let statusClass: string;
@@ -41,7 +43,11 @@ export function HeatmapInspector({ date, log, unit, onEdit }: HeatmapInspectorPr
         {statusText}
         {dose}
       </div>
-      {log?.note && <div className="hb-inspector-note">“{log.note}”</div>}
+      {notes.map(note => (
+        <div key={note.uuid} className="hb-inspector-note">
+          {note.time && <span className="hb-inspector-note-time">{note.time}</span>}“{note.note}”
+        </div>
+      ))}
       <button type="button" className="hb-inspector-edit" onClick={() => onEdit(date)}>
         Edit this day →
       </button>

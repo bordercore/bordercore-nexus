@@ -37,7 +37,18 @@ export interface HabitLogEntry {
   date: string;
   completed: boolean;
   value: string | null;
+}
+
+export interface HabitNoteEntry {
+  uuid: string;
+  date: string;
   note: string;
+  /**
+   * Local clock time the note was written, e.g. "8:14 AM".  Null when the
+   * note was written on a later date than the one it describes, where the
+   * clock reading would describe the writing rather than the day.
+   */
+  time: string | null;
 }
 
 export interface HabitDetail {
@@ -53,4 +64,10 @@ export interface HabitDetail {
   longest_streak: number;
   /** Up to N most recent logs, newest-first.  N = 365 from HabitDetailView. */
   logs: HabitLogEntry[];
+  /**
+   * Notes falling inside the same N-day window, newest day first and
+   * chronological within a day.  A sibling of `logs` rather than nested
+   * inside it, because a note can exist on a day that was never logged.
+   */
+  notes: HabitNoteEntry[];
 }

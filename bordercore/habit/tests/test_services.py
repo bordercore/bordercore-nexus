@@ -1,11 +1,14 @@
-from datetime import date, timedelta
+from datetime import date, datetime, time, timedelta
 
 import pytest
 
+from django.utils import timezone
+
 from accounts.tests.factories import UserFactory
-from habit.models import HabitLog
-from habit.services import get_habit_detail, get_habit_list
+from habit.models import HabitLog, HabitNote
+from habit.services import add_habit_note, get_habit_detail, get_habit_list, serialize_note
 from habit.tests.factories import HabitFactory
+from habit.tests.utils import set_note_clock_time, set_note_created
 
 pytestmark = [pytest.mark.django_db]
 
@@ -281,3 +284,148 @@ def test_get_habit_detail_longest_streak_tracks_historical_max():
 
     assert result["current_streak"] == 1
     assert result["longest_streak"] == 5
+
+
+# -----------------------------------------------------------------------------
+# Habit notes: many free-text observations per habit per day.
+# -----------------------------------------------------------------------------
+
+
+def test_add_habit_note_creates_a_note():
+    user = UserFactory()
+    habit = HabitFactory(user=user, start_date=date.today())
+
+    note = add_habit_note(habit, date.today(), "Took it with breakfast")
+
+    assert note is not None
+    assert note.note == "Took it with breakfast"
+    assert note.date == date.today()
+    assert HabitNote.objects.filter(habit=habit).count() == 1
+
+
+def test_add_habit_note_strips_surrounding_whitespace():
+    user = UserFactory()
+    habit = HabitFactory(user=user, start_date=date.today())
+
+    note = add_habit_note(habit, date.today(), "  padded  ")
+
+    assert note.note == "padded"
+
+
+@pytest.mark.parametrize("blank", ["", "   ", "\n\t "])
+def test_add_habit_note_ignores_blank_text(blank):
+    """Blank input creates nothing, so an empty log-panel note box is a no-op."""
+    user = UserFactory()
+    habit = HabitFactory(user=user, start_date=date.today())
+
+    note = add_habit_note(habit, date.today(), blank)
+
+    assert note is None
+    assert not HabitNote.objects.filter(habit=habit).exists()
+
+
+def test_add_habit_note_appends_rather_than_replacing():
+    user = UserFactory()
+    habit = HabitFactory(user=user, start_date=date.today())
+
+    add_habit_note(habit, date.today(), "first")
+    add_habit_note(habit, date.today(), "second")
+
+    assert HabitNote.objects.filter(habit=habit, date=date.today()).count() == 2
+
+
+def test_add_habit_note_works_on_a_day_with_no_log():
+    """Notes are independent of HabitLog, so no log row is created."""
+    user = UserFactory()
+    habit = HabitFactory(user=user, start_date=date.today() - timedelta(days=5))
+    unlogged_day = date.today() - timedelta(days=3)
+
+    add_habit_note(habit, unlogged_day, "felt awful, skipped it")
+
+    assert HabitNote.objects.filter(habit=habit, date=unlogged_day).count() == 1
+    assert not HabitLog.objects.filter(habit=habit, date=unlogged_day).exists()
+
+
+def test_serialize_note_reports_local_clock_time_for_a_same_day_note():
+    user = UserFactory()
+    habit = HabitFactory(user=user, start_date=date.today())
+    note = HabitNote.objects.create(habit=habit, date=date.today(), note="8am dose")
+    set_note_clock_time(note, 8, 14)
+    note.refresh_from_db()
+
+    result = serialize_note(note)
+
+    assert result["time"] == "8:14 AM"
+    assert result["note"] == "8am dose"
+    assert result["date"] == date.today().isoformat()
+
+
+def test_serialize_note_uses_local_time_not_utc_near_midnight():
+    """A 9pm ET note is stored as 01:00 UTC the next day; it must still read 9pm.
+
+    Comparing the raw UTC timestamp would both show the wrong hour and
+    misclassify the note as written on a later date.
+    """
+    user = UserFactory()
+    habit = HabitFactory(user=user, start_date=date.today())
+    note = HabitNote.objects.create(habit=habit, date=date.today(), note="late one")
+    set_note_clock_time(note, 21)
+    note.refresh_from_db()
+
+    result = serialize_note(note)
+
+    assert result["time"] == "9:00 PM"
+
+
+def test_serialize_note_omits_time_when_written_on_a_later_date():
+    """Backfilling a past day carries today's clock, which would be misleading."""
+    user = UserFactory()
+    habit = HabitFactory(user=user, start_date=date.today() - timedelta(days=5))
+    past_day = date.today() - timedelta(days=3)
+    note = HabitNote.objects.create(habit=habit, date=past_day, note="remembered later")
+    set_note_created(note, timezone.make_aware(datetime.combine(date.today(), time(10, 0))))
+    note.refresh_from_db()
+
+    result = serialize_note(note)
+
+    assert result["time"] is None
+
+
+def test_get_habit_detail_includes_notes_newest_day_first():
+    user = UserFactory()
+    habit = HabitFactory(user=user, start_date=date.today() - timedelta(days=10))
+    older = HabitNote.objects.create(
+        habit=habit, date=date.today() - timedelta(days=2), note="older",
+    )
+    newer = HabitNote.objects.create(habit=habit, date=date.today(), note="newer")
+    set_note_clock_time(older, 9)
+    set_note_clock_time(newer, 9)
+
+    result = get_habit_detail(habit)
+
+    assert [n["note"] for n in result["notes"]] == ["newer", "older"]
+
+
+def test_get_habit_detail_notes_respect_the_day_window():
+    """Notes outside the requested window are excluded, like logs."""
+    user = UserFactory()
+    habit = HabitFactory(user=user, start_date=date.today() - timedelta(days=400))
+    HabitNote.objects.create(habit=habit, date=date.today(), note="inside")
+    HabitNote.objects.create(
+        habit=habit, date=date.today() - timedelta(days=100), note="outside",
+    )
+
+    result = get_habit_detail(habit, days=30)
+
+    assert [n["note"] for n in result["notes"]] == ["inside"]
+
+
+def test_get_habit_detail_log_entries_no_longer_carry_a_note():
+    """Notes moved off HabitLog; the frontend reads them from `notes` instead."""
+    user = UserFactory()
+    habit = HabitFactory(user=user, start_date=date.today())
+    HabitLog.objects.create(habit=habit, date=date.today(), completed=True)
+
+    result = get_habit_detail(habit)
+
+    assert "note" not in result["logs"][0]

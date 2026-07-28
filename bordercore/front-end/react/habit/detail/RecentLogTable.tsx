@@ -1,9 +1,11 @@
 import React from "react";
-import type { HabitLogEntry } from "../types";
+import type { HabitLogEntry, HabitNoteEntry } from "../types";
 import { shortDate } from "../utils/format";
 
 interface RecentLogTableProps {
   logs: HabitLogEntry[];
+  /** Notes bucketed by ISO date; a day may hold several. */
+  notesByDate: Map<string, HabitNoteEntry[]>;
   unit: string;
   /** Total log count across all history; used in the head row. */
   totalCount: number;
@@ -15,12 +17,16 @@ interface RecentLogTableProps {
 /**
  * Six-column grid: Date / Status / Dose / vs target / Note / edit.
  *
+ * The Note column shows the day's first note with a "+N" badge when there
+ * are more; the full set lives in the Notebook and the heatmap inspector.
+ *
  * The "vs target" column renders "—" everywhere because Phase B (the
  * scope we're shipping) does not introduce a per-habit target field.
  * The column is preserved for visual fidelity and easy upgrade later.
  */
 export function RecentLogTable({
   logs,
+  notesByDate,
   unit,
   totalCount,
   limit = 10,
@@ -47,26 +53,36 @@ export function RecentLogTable({
           <div className="hb-recent-cell is-head" aria-hidden="true" />
         </div>
 
-        {rows.map(log => (
-          <div key={log.uuid} className="hb-recent-grid-row">
-            <div className="hb-recent-cell is-date">{shortDate(log.date)}</div>
-            <div className="hb-recent-cell">
-              <span className={`hb-status-dot ${log.completed ? "is-done" : "is-missed"}`}>
-                {log.completed ? "● Done" : "○ Missed"}
-              </span>
+        {rows.map(log => {
+          const dayNotes = notesByDate.get(log.date) ?? [];
+          return (
+            <div key={log.uuid} className="hb-recent-grid-row">
+              <div className="hb-recent-cell is-date">{shortDate(log.date)}</div>
+              <div className="hb-recent-cell">
+                <span className={`hb-status-dot ${log.completed ? "is-done" : "is-missed"}`}>
+                  {log.completed ? "● Done" : "○ Missed"}
+                </span>
+              </div>
+              <div className="hb-recent-cell is-dose">
+                {log.completed && log.value !== null
+                  ? `${log.value}${unit ? " " + unit : ""}`
+                  : "—"}
+              </div>
+              <div className="hb-recent-cell is-target">—</div>
+              <div className="hb-recent-cell is-note">
+                {dayNotes[0]?.note}
+                {dayNotes.length > 1 && (
+                  <span className="hb-recent-note-more">+{dayNotes.length - 1}</span>
+                )}
+              </div>
+              <div className="hb-recent-cell is-edit">
+                <button type="button" onClick={() => onEdit(log.date)}>
+                  edit
+                </button>
+              </div>
             </div>
-            <div className="hb-recent-cell is-dose">
-              {log.completed && log.value !== null ? `${log.value}${unit ? " " + unit : ""}` : "—"}
-            </div>
-            <div className="hb-recent-cell is-target">—</div>
-            <div className="hb-recent-cell is-note">{log.note}</div>
-            <div className="hb-recent-cell is-edit">
-              <button type="button" onClick={() => onEdit(log.date)}>
-                edit
-              </button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </article>
   );

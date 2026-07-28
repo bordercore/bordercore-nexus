@@ -2,7 +2,7 @@ import pytest
 
 from datetime import date, timedelta
 
-from habit.models import HabitLog
+from habit.models import HabitLog, HabitNote
 from habit.tests.factories import HabitFactory
 from tag.tests.factories import TagFactory
 
@@ -31,6 +31,11 @@ def habit():
         habit=habit_1,
         date=date.today() - timedelta(days=1),
         completed=False,
+    )
+
+    HabitNote.objects.create(
+        habit=habit_1,
+        date=date.today() - timedelta(days=1),
         note="Skipped",
     )
 

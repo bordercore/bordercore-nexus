@@ -25,7 +25,10 @@ interface LogPanelProps {
  * - **Editing mode** (`selectedDate !== todayIso`): "EDITING · ..." eyebrow,
  *   "Edit this day" headline with a "back to today" pill-link.
  *
- * Values reset whenever `selectedDate` changes, prefilling from `existingLog`.
+ * Completion and dose reset whenever `selectedDate` changes, prefilling from
+ * `existingLog`.  The note box does not prefill: notes accumulate, so it
+ * always starts empty and adds one more to the day rather than editing what
+ * is already there.  Editing an existing note happens in the Notebook.
  */
 export function LogPanel({
   selectedDate,
@@ -41,21 +44,23 @@ export function LogPanel({
   const [note, setNote] = useState("");
 
   // Re-prefill the form whenever the targeted date or existing-log changes.
+  // The note box is left alone here — it is an "add another" field, so it
+  // has no existing value to restore.
   useEffect(() => {
     if (existingLog) {
       setCompleted(existingLog.completed);
       setValue(existingLog.value ?? "");
-      setNote(existingLog.note ?? "");
     } else {
       setCompleted(true);
       setValue("");
-      setNote("");
     }
+    setNote("");
   }, [selectedDate, existingLog]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     onSave({ date: selectedDate, completed, value, note });
+    setNote("");
   }
 
   const checkboxClass = `hb-log-checkbox ${completed ? "is-checked" : "is-empty"}`;
@@ -115,7 +120,7 @@ export function LogPanel({
 
       <div className="hb-log-field hb-log-note-cell">
         <label className="hb-log-field-label" htmlFor="hb-log-note">
-          Note (optional)
+          Add a note (optional)
         </label>
         <input
           id="hb-log-note"

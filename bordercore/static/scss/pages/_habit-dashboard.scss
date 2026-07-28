@@ -1096,3 +1096,131 @@
   &.is-done   { color: var(--hb-cyan); }
   &.is-missed { color: var(--hb-danger); }
 }
+
+/* ---------------------------------------------------------------------------
+   Notebook: composer + per-day note groups.  Notes accumulate through the
+   day, so entries are grouped under a single date heading and each carries
+   its own edit / delete affordances.
+   --------------------------------------------------------------------------- */
+
+.hb-notebook-composer {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--hb-divider);
+  margin-top: 14px;
+  gap: 6px;
+}
+
+.hb-notebook-composer-label {
+  color: var(--hb-text-muted);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.hb-notebook-composer-input {
+  width: 100%;
+  padding: 8px 0;
+  border: 0;
+  border-bottom: 1px solid var(--hb-card-border);
+  background: transparent;
+  color: var(--hb-text);
+  font-size: 14px;
+  line-height: 1.5;
+  outline: none;
+  resize: vertical;
+
+  &:focus { border-bottom-color: var(--hb-cyan); }
+  &::placeholder { color: var(--hb-text-dim); }
+}
+
+.hb-notebook-composer-submit {
+  align-self: flex-start;
+  padding: 5px 14px;
+  border: 1px solid var(--hb-cyan);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--hb-cyan);
+  font-size: 12px;
+  font-weight: 600;
+
+  &:disabled {
+    border-color: var(--hb-card-border);
+    color: var(--hb-text-dim);
+    cursor: default;
+  }
+
+  &:hover:not(:disabled) { background: var(--hb-cyan-soft); }
+}
+
+.hb-notebook-group {
+  margin-top: 14px;
+
+  /* The date heads its group; entries below carry only times. */
+  .hb-notebook-entry:last-child { border-bottom: 0; }
+}
+
+.hb-notebook-entry-foot {
+  display: flex;
+  align-items: center;
+  margin-top: 6px;
+  gap: 10px;
+}
+
+.hb-notebook-time {
+  color: var(--hb-text-muted);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.hb-notebook-entry-actions {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  gap: 8px;
+}
+
+.hb-notebook-confirm-label {
+  color: var(--hb-text-dim);
+  font-size: 11px;
+}
+
+.hb-notebook-action {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--hb-text-muted);
+  font-size: 11px;
+
+  &:hover { color: var(--hb-cyan); }
+
+  &.is-danger:hover { color: var(--hb-danger); }
+}
+
+.hb-notebook-edit-input {
+  width: 100%;
+  padding: 6px 0;
+  border: 0;
+  border-bottom: 1px solid var(--hb-cyan);
+  background: transparent;
+  color: var(--hb-text);
+  font-size: 14px;
+  line-height: 1.5;
+  outline: none;
+  resize: vertical;
+}
+
+.hb-inspector-note-time {
+  margin-right: 6px;
+  color: var(--hb-text-muted);
+  font-size: 11px;
+  font-style: normal;
+  letter-spacing: 0.04em;
+}
+
+.hb-recent-note-more {
+  margin-left: 6px;
+  color: var(--hb-text-muted);
+  font-size: 11px;
+}

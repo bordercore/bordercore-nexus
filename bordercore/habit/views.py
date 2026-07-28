@@ -6,6 +6,8 @@ This module provides:
 - `HabitDetailView`: Renders the habit detail page with log history.
 - `get_habits`: Returns a JSON list of habits with completion stats.
 - `log_habit`: Creates or updates a daily habit log entry via POST.
+- `add_note` / `update_note` / `delete_note`: Manage the free-text notes
+  attached to a habit's day.
 """
 
 from __future__ import annotations
@@ -22,11 +24,13 @@ from rest_framework.response import Response
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
+from django.shortcuts import get_object_or_404
 from django.views.generic.detail import DetailView
 from django.views.generic.list import ListView
 
-from habit.models import Habit, HabitLog
-from habit.services import create_habit, deactivate_habit, get_habit_detail, get_habit_list
+from habit.models import Habit, HabitLog, HabitNote
+from habit.services import (add_habit_note, create_habit, deactivate_habit,
+                            get_habit_detail, get_habit_list, serialize_note)
 from lib.decorators import validate_post_data
 from lib.mixins import UserScopedQuerysetMixin, get_user_object_or_404
 
@@ -113,13 +117,17 @@ def log_habit(request: Request) -> Response:
       - 'date': Date string (YYYY-MM-DD).
       - 'completed': Whether the habit was completed ("true"/"false").
       - 'value' (optional): Numeric value.
-      - 'note' (optional): Text note.
+      - 'note' (optional): Text note, appended as a new HabitNote.
+
+    A non-blank 'note' appends a note to the day rather than replacing one, so
+    logging the same day twice leaves two notes.  This keeps "log today and
+    jot something down" a single request.
 
     Args:
         request: The HTTP request with POST data.
 
     Returns:
-        Response with {"status": "OK"} and the log entry data.
+        Response with the log entry data and the note it created, if any.
     """
     user = cast(User, request.user)
     habit_uuid = request.POST["habit_uuid"]
@@ -159,17 +167,16 @@ def log_habit(request: Request) -> Response:
                 status=400,
             )
 
-    note = request.POST.get("note", "")
-
     log, created = HabitLog.objects.update_or_create(
         habit=habit,
         date=log_date,
         defaults={
             "completed": completed,
             "value": value,
-            "note": note,
         },
     )
+
+    note = add_habit_note(habit, log_date, request.POST.get("note", ""))
 
     http_status = status.HTTP_201_CREATED if created else status.HTTP_200_OK
 
@@ -179,9 +186,94 @@ def log_habit(request: Request) -> Response:
             "date": log.date.isoformat(),
             "completed": log.completed,
             "value": str(log.value) if log.value is not None else None,
-            "note": log.note,
         },
+        "note": serialize_note(note) if note else None,
     }, status=http_status)
+
+
+@api_view(["POST"])
+@validate_post_data("habit_uuid", "date", "note")
+def add_note(request: Request) -> Response:
+    """Append a note to a habit's day.
+
+    Expects POST parameters:
+      - 'habit_uuid': UUID of the habit.
+      - 'date': Date string (YYYY-MM-DD).
+      - 'note': The note text.
+
+    Args:
+        request: The HTTP request with POST data.
+
+    Returns:
+        Response with the created note.
+    """
+    user = cast(User, request.user)
+    habit = get_user_object_or_404(user, Habit, uuid=request.POST["habit_uuid"])
+
+    try:
+        note_date = date.fromisoformat(request.POST["date"])
+    except ValueError:
+        return Response(
+            {"detail": "Invalid date format. Use YYYY-MM-DD."},
+            status=400,
+        )
+
+    note = add_habit_note(habit, note_date, request.POST["note"])
+    if note is None:
+        return Response({"detail": "Note cannot be empty."}, status=400)
+
+    return Response({"note": serialize_note(note)}, status=status.HTTP_201_CREATED)
+
+
+@api_view(["POST"])
+@validate_post_data("note_uuid", "note")
+def update_note(request: Request) -> Response:
+    """Replace the text of an existing note.
+
+    Expects POST parameters:
+      - 'note_uuid': UUID of the note.
+      - 'note': The replacement text.
+
+    Args:
+        request: The HTTP request with POST data.
+
+    Returns:
+        Response with the updated note.
+    """
+    user = cast(User, request.user)
+    # HabitNote has no user column of its own; ownership runs through the habit.
+    note = get_object_or_404(HabitNote, uuid=request.POST["note_uuid"], habit__user=user)
+
+    text = request.POST["note"].strip()
+    if not text:
+        # Emptying a note is a delete; make the caller say so explicitly.
+        return Response({"detail": "Note cannot be empty."}, status=400)
+
+    note.note = text
+    note.save(update_fields=["note", "modified"])
+
+    return Response({"note": serialize_note(note)})
+
+
+@api_view(["POST"])
+@validate_post_data("note_uuid")
+def delete_note(request: Request) -> Response:
+    """Delete a note.
+
+    Expects POST parameters:
+      - 'note_uuid': UUID of the note to delete.
+
+    Args:
+        request: The HTTP request with POST data.
+
+    Returns:
+        Response with {"status": "OK"}.
+    """
+    user = cast(User, request.user)
+    note = get_object_or_404(HabitNote, uuid=request.POST["note_uuid"], habit__user=user)
+    note.delete()
+
+    return Response({"status": "OK"})
 
 
 @api_view(["POST"])

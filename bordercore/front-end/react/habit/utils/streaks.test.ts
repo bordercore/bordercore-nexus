@@ -4,7 +4,7 @@ import { buildHeatmapGrid, cellLevel, doseSeries, maxValue, monthLabelPositions 
 import type { HabitLogEntry } from "../types";
 
 function makeLog(date: string, completed: boolean, value: string | null = null): HabitLogEntry {
-  return { uuid: `u-${date}`, date, completed, value, note: "" };
+  return { uuid: `u-${date}`, date, completed, value };
 }
 
 describe("buildHeatmapGrid", () => {

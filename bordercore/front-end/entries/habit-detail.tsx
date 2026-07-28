@@ -8,6 +8,9 @@ if (container) {
   const habitJson = container.getAttribute("data-habit") || "{}";
   const logUrl = container.getAttribute("data-log-url") || "";
   const setInactiveUrl = container.getAttribute("data-set-inactive-url") || "";
+  const noteAddUrl = container.getAttribute("data-note-add-url") || "";
+  const noteUpdateUrl = container.getAttribute("data-note-update-url") || "";
+  const noteDeleteUrl = container.getAttribute("data-note-delete-url") || "";
 
   const fallback: HabitDetail = {
     uuid: "",
@@ -21,6 +24,7 @@ if (container) {
     current_streak: 0,
     longest_streak: 0,
     logs: [],
+    notes: [],
   };
 
   let habit: HabitDetail = fallback;
@@ -36,6 +40,9 @@ if (container) {
       habit={habit}
       logUrl={logUrl}
       setInactiveUrl={setInactiveUrl}
+      noteAddUrl={noteAddUrl}
+      noteUpdateUrl={noteUpdateUrl}
+      noteDeleteUrl={noteDeleteUrl}
     />,
   );
 }
