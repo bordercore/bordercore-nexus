@@ -315,8 +315,40 @@ LOGGING = {
 
 # --- Sentry ---
 import sentry_sdk
+from redis.exceptions import ConnectionError as RedisConnectionError
+from sentry_sdk.types import Event, Hint
 
 SENTRY_DSN = os.environ.get("SENTRY_DSN", "")
+
+
+def filter_channel_layer_redis_errors(event: Event, hint: Hint) -> Event | None:
+    """Drop Daphne's channel layer errors from transient Redis restarts.
+
+    The daily unattended-upgrades run restarts redis-server whenever a security
+    update touches openssl, closing port 6379 for about a second. Every open
+    websocket consumer logs a burst of failed reconnects during that window,
+    then recovers on its own once Redis is listening again. The bursts are
+    self-healing and not actionable, so they are not worth reporting.
+    """
+    if event.get("logger") != "daphne.server":
+        return event
+
+    exc_info = hint.get("exc_info")
+    if not exc_info:
+        return event
+
+    # Walk the chain, since the Redis error may be wrapped or wrapping the
+    # underlying socket error.
+    exc: BaseException | None = exc_info[1]
+    seen: set[int] = set()
+    while exc is not None and id(exc) not in seen:
+        if isinstance(exc, RedisConnectionError):
+            return None
+        seen.add(id(exc))
+        exc = exc.__cause__ or exc.__context__
+
+    return event
+
 
 if SENTRY_DSN:
     sentry_sdk.init(
@@ -325,4 +357,5 @@ if SENTRY_DSN:
         send_default_pii=True,
         release=os.environ.get("SENTRY_RELEASE"),
         environment=os.environ.get("SENTRY_ENVIRONMENT", "production"),
+        before_send=filter_channel_layer_redis_errors,
     )
