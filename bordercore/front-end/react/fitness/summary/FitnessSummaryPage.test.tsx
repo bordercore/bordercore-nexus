@@ -71,6 +71,39 @@ function expandInactive() {
   fireEvent.click(screen.getByRole("button", { name: /show inactive/i }));
 }
 
+describe("FitnessSummaryPage completed-today mark", () => {
+  function cardFor(name: string) {
+    return screen.getByText(name).closest(".fitness-card");
+  }
+
+  it("stamps a check mark on a card worked today", () => {
+    render(
+      <FitnessSummaryPage
+        payload={payloadWith([
+          card({ uuid: "u-1", name: "Bench Press", last_workout_days_ago: 0 }),
+          card({ uuid: "u-2", name: "Squat", last_workout_days_ago: 3 }),
+        ])}
+      />
+    );
+
+    expect(cardFor("Bench Press")).toHaveAttribute("data-done", "1");
+    expect(cardFor("Squat")).toHaveAttribute("data-done", "0");
+    expect(screen.getAllByLabelText("completed today")).toHaveLength(1);
+    expect(cardFor("Bench Press")).toContainElement(screen.getByLabelText("completed today"));
+  });
+
+  it("leaves a card with no workout history unmarked", () => {
+    render(
+      <FitnessSummaryPage
+        payload={payloadWith([card({ name: "Deadlift", last_workout_days_ago: null })])}
+      />
+    );
+
+    expect(cardFor("Deadlift")).toHaveAttribute("data-done", "0");
+    expect(screen.queryByLabelText("completed today")).not.toBeInTheDocument();
+  });
+});
+
 describe("FitnessSummaryPage inactive-card details", () => {
   beforeEach(() => {
     vi.stubGlobal("fetch", mockDetails());

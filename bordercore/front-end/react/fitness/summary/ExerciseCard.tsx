@@ -31,10 +31,12 @@ function lastSetSummary(card: ExerciseCardData): string | null {
 /**
  * One card in the fitness summary grid. Branches on ``card.status``; styling
  * (gradient, glow, spine, badge) is fully driven by the SCSS modifier set on
- * the root via ``data-status`` + ``data-group``.
+ * the root via ``data-status`` + ``data-group``. Exercises already worked
+ * today carry ``data-done`` and get a check-mark watermark.
  */
 export function ExerciseCard({ card }: ExerciseCardProps) {
   const summary = lastSetSummary(card);
+  const doneToday = card.last_workout_days_ago === 0;
 
   return (
     <article
@@ -42,8 +44,14 @@ export function ExerciseCard({ card }: ExerciseCardProps) {
       data-status={card.status}
       data-group={card.group}
       data-active={card.is_active ? "1" : "0"}
+      data-done={doneToday ? "1" : "0"}
     >
       <span className="fitness-card__spine" aria-hidden="true" />
+      {doneToday && (
+        <span className="fitness-card__done" role="img" aria-label="completed today">
+          ✓
+        </span>
+      )}
       {card.status === "overdue" && card.last_workout_days_ago !== null && (
         <span
           className="fitness-card__ribbon"
