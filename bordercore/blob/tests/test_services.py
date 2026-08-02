@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, Mock, patch
 from urllib.parse import urlparse
 
 import pytest
+from django.conf import settings
 from faker import Factory as FakerFactory
 from instaloader.instaloader import Instaloader
 
@@ -14,7 +15,8 @@ pytestmark = [pytest.mark.django_db]
 from blob.models import Blob
 from blob.services import (_build_notes_rag_messages,
                            _build_question_chat_messages,
-                           _rewrite_notes_search_query, chatbot, chatbot_followups,
+                           _openai_reasoning_effort, _rewrite_notes_search_query,
+                           chatbot, chatbot_followups,
                            get_authors, get_blob_naturalsize, get_dashboard_blobs,
                            get_recent_blobs, get_recent_media, import_artstation,
                            import_instagram, import_newyorktimes, parse_date,
@@ -22,6 +24,20 @@ from blob.services import (_build_notes_rag_messages,
 from blob.tests.factories import BlobFactory
 
 faker = FakerFactory.create()
+
+
+@pytest.mark.parametrize("effort", ["minimal", "low", "medium", "high"])
+def test_openai_reasoning_effort_accepts_supported_values(settings, effort):
+    settings.OPENAI_REASONING_EFFORT = effort
+
+    assert _openai_reasoning_effort() == effort
+
+
+def test_openai_reasoning_effort_rejects_unsupported_value(settings):
+    settings.OPENAI_REASONING_EFFORT = "maximum"
+
+    with pytest.raises(ValueError, match="Invalid OPENAI_REASONING_EFFORT: maximum"):
+        _openai_reasoning_effort()
 
 
 @patch("blob.services.get_blob_sizes")
@@ -409,6 +425,9 @@ def test_chatbot_followups_returns_suggestions(mock_openai_cls):
     result = chatbot_followups("Some assistant reply.", mode="chat")
 
     assert result == ["explain more", "give an example", "related notes"]
+    kwargs = mock_client.chat.completions.create.call_args.kwargs
+    assert kwargs["model"] == settings.OPENAI_GPT_MODEL
+    assert kwargs["reasoning_effort"] == settings.OPENAI_REASONING_EFFORT
 
 
 @patch("blob.services.OpenAI")
@@ -537,7 +556,7 @@ def test_rewrite_notes_search_query_skips_rewrite_on_first_turn(mock_openai_cls)
 
 @patch("blob.services.OpenAI")
 def test_rewrite_notes_search_query_rewrites_follow_up(mock_openai_cls):
-    """_rewrite_notes_search_query uses gpt-4o-mini to rewrite multi-turn follow-ups."""
+    """_rewrite_notes_search_query uses the configured model for follow-ups."""
     mock_client = MagicMock()
     mock_openai_cls.return_value = mock_client
     mock_response = MagicMock()
@@ -554,9 +573,9 @@ def test_rewrite_notes_search_query_rewrites_follow_up(mock_openai_cls):
 
     assert _rewrite_notes_search_query(history) == "kitchen remodel timeline decisions"
     kwargs = mock_client.chat.completions.create.call_args.kwargs
-    assert kwargs["model"] == "gpt-4o-mini"
-    assert kwargs["temperature"] == 0
-    assert kwargs["max_tokens"] == 64
+    assert kwargs["model"] == settings.OPENAI_GPT_MODEL
+    assert kwargs["reasoning_effort"] == settings.OPENAI_REASONING_EFFORT
+    assert kwargs["max_completion_tokens"] == 128
     assert "What about the timeline?" in kwargs["messages"][1]["content"]
     assert "kitchen remodel" in kwargs["messages"][1]["content"]
 
@@ -624,7 +643,10 @@ def test_chatbot_notes_uses_top_hits_and_streams_sources(mock_semantic_search, m
     assert "**Sources:**" in output
     assert "1. [Best]" in output
     assert "2. [Second]" in output
-    call_messages = mock_client.chat.completions.create.call_args.kwargs["messages"]
+    call_kwargs = mock_client.chat.completions.create.call_args.kwargs
+    assert call_kwargs["model"] == settings.OPENAI_GPT_MODEL
+    assert call_kwargs["reasoning_effort"] == settings.OPENAI_REASONING_EFFORT
+    call_messages = call_kwargs["messages"]
     assert call_messages[0]["role"] == "system"
     assert "Cite sources inline as markdown links" in call_messages[0]["content"]
     assert "Source 1: [Best]" in call_messages[1]["content"]

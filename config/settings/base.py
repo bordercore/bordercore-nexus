@@ -254,7 +254,8 @@ ELASTICSEARCH_ENDPOINT = os.environ.get("ELASTICSEARCH_ENDPOINT", "http://localh
 ELASTICSEARCH_INDEX = os.environ.get("ELASTICSEARCH_INDEX", "bordercore")
 
 # OpenAI config
-OPENAI_GPT_MODEL = os.environ.get("OPENAI_GPT_MODEL", "gpt-4o")
+OPENAI_GPT_MODEL = os.environ.get("OPENAI_GPT_MODEL", "gpt-5.6-luna")
+OPENAI_REASONING_EFFORT = os.environ.get("OPENAI_REASONING_EFFORT", "low")
 
 ELASTICSEARCH_EXTRA_FIELDS = {}
 

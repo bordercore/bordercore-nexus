@@ -19,7 +19,7 @@ import urllib.request
 from collections import defaultdict
 from pathlib import Path
 
-from typing import Any, Generator, Iterable, cast
+from typing import Any, Generator, Iterable, Literal, cast
 from urllib.parse import ParseResult, urlparse
 
 import humanize
@@ -1392,7 +1392,6 @@ NOTES_RAG_SYSTEM_PROMPT = (
     "5. Be concise. Use bullet points when listing multiple items."
 )
 
-NOTES_RAG_REWRITE_MODEL = "gpt-4o-mini"
 NOTES_RAG_REWRITE_MAX_TURNS = 4
 
 NOTES_RAG_REWRITE_SYSTEM_PROMPT = (
@@ -1402,6 +1401,22 @@ NOTES_RAG_REWRITE_SYSTEM_PROMPT = (
     "earlier turns. Use keywords likely to appear in notes. Output only the query, "
     "no quotes, explanation, or punctuation beyond what the query needs."
 )
+
+OpenAIReasoningEffort = Literal["minimal", "low", "medium", "high"]
+
+
+def _openai_reasoning_effort() -> OpenAIReasoningEffort:
+    """Return the configured reasoning effort with SDK-compatible typing."""
+    value = settings.OPENAI_REASONING_EFFORT
+    if value == "minimal":
+        return "minimal"
+    if value == "low":
+        return "low"
+    if value == "medium":
+        return "medium"
+    if value == "high":
+        return "high"
+    raise ValueError(f"Invalid OPENAI_REASONING_EFFORT: {value}")
 
 
 def _note_display_title(source: dict[str, Any]) -> str:
@@ -1439,9 +1454,9 @@ def _rewrite_notes_search_query(chat_history: list[dict[str, Any]]) -> str:
     """Build a standalone search query from Notes chat history.
 
     The first user message is embedded as-is. Follow-up turns call
-    :data:`NOTES_RAG_REWRITE_MODEL` to resolve pronouns and other context from
-    earlier messages. On any rewrite failure, falls back to the latest user
-    message so retrieval still runs.
+    the configured OpenAI chat model to resolve pronouns and other context
+    from earlier messages. On any rewrite failure, falls back to the latest
+    user message so retrieval still runs.
 
     Args:
         chat_history: Parsed chat history from the Notes chatbot request.
@@ -1458,13 +1473,13 @@ def _rewrite_notes_search_query(chat_history: list[dict[str, Any]]) -> str:
     try:
         client = OpenAI()
         response = client.chat.completions.create(
-            model=NOTES_RAG_REWRITE_MODEL,
+            model=settings.OPENAI_GPT_MODEL,
             messages=[
                 {"role": "system", "content": NOTES_RAG_REWRITE_SYSTEM_PROMPT},
                 {"role": "user", "content": _format_notes_rewrite_context(chat_history)},
             ],
-            temperature=0,
-            max_tokens=64,
+            reasoning_effort=_openai_reasoning_effort(),
+            max_completion_tokens=128,
         )
         rewritten = (response.choices[0].message.content or "").strip()
         return rewritten or last_prompt
@@ -1579,8 +1594,8 @@ def chatbot(request: HttpRequest, args: dict[str, Any]) -> Generator[str, None, 
             - mode: Chat mode; ``"notes"`` runs semantic search over the user's
               notes, uses up to three excerpted sources above a similarity
               threshold, and returns a friendly message when nothing relevant
-              is found. Follow-up turns rewrite the retrieval query with
-              gpt-4o-mini before searching.
+              is found. Follow-up turns rewrite the retrieval query with the
+              configured OpenAI model before searching.
             - chat_history: JSON string of chat history (for general chat)
             - content: User prompt content (when using blob_uuid)
 
@@ -1657,6 +1672,7 @@ def chatbot(request: HttpRequest, args: dict[str, Any]) -> Generator[str, None, 
     response = client.chat.completions.create(
         model=model,
         messages=messages,  # type: ignore[arg-type]
+        reasoning_effort=_openai_reasoning_effort(),
         stream=True
     )
 
@@ -1674,8 +1690,8 @@ def chatbot(request: HttpRequest, args: dict[str, Any]) -> Generator[str, None, 
 def chatbot_followups(assistant_reply: str, mode: str = "chat") -> list[str]:
     """Generate 2-3 follow-up question suggestions for an assistant reply.
 
-    Uses gpt-3.5-turbo for cost / latency. Returns [] on any failure so the
-    UI degrades gracefully (chips simply don't appear).
+    Uses the configured OpenAI chat model. Returns [] on any failure so the UI
+    degrades gracefully (chips simply don't appear).
     """
     system = (
         "Given an assistant reply, suggest 2-3 short follow-up questions the "
@@ -1687,11 +1703,12 @@ def chatbot_followups(assistant_reply: str, mode: str = "chat") -> list[str]:
     try:
         client = OpenAI()
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model=settings.OPENAI_GPT_MODEL,
             messages=[
                 {"role": "system", "content": system},
                 {"role": "user", "content": user_msg},
             ],
+            reasoning_effort=_openai_reasoning_effort(),
             response_format={"type": "json_object"},
         )
         content = response.choices[0].message.content or ""
@@ -1991,5 +2008,3 @@ def publish_index_blob(uuid: str, file_changed: bool, new_blob: bool) -> None:
         ]
     }
     sns_publish(settings.INDEX_BLOB_TOPIC_ARN, message)
-
-
