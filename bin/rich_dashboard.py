@@ -4,8 +4,13 @@ This script provides a terminal-based dashboard using Rich to display data
 from Bordercore's REST API. It includes panels for bookmarks, todo items,
 and site statistics, all updated at regular intervals.
 
+Uses DRF_TOKEN_JERRELL if set, falling back to DRF_TOKEN otherwise. At
+startup it verifies the token via /api/whoami and refuses to run if it
+doesn't belong to 'jerrell', so a stray ambient DRF_TOKEN (e.g. pointing
+at service_user) fails loudly instead of silently showing empty panels.
+
 Run with:
-    $ DRF_TOKEN=$DRF_TOKEN_JERRELL python3 ./rich-dashboard.py
+    $ python3 ./rich-dashboard.py
 """
 
 import os
@@ -39,6 +44,9 @@ CODE_ECHOES_MAX_LINES = 200
 BOOKMARKS_URL = "https://www.bordercore.com/api/bookmarks/?ordering=-created"
 TODOS_URL = "https://www.bordercore.com/api/todos/?priority=1"
 STATS_URL = "https://www.bordercore.com/api/site/stats"
+WHOAMI_URL = "https://www.bordercore.com/api/whoami"
+
+EXPECTED_USERNAME = "jerrell"
 
 
 class KeyReader:
@@ -177,9 +185,9 @@ class Dashboard():
         self.color_normal = Color.from_triplet(parse_rgb_hex("00ff00"))
         self.color_error = Color.from_triplet(parse_rgb_hex("ff0000"))
 
-        if "DRF_TOKEN" not in os.environ:
-            raise Exception("DRF_TOKEN not found in environment")
-        self.drf_token = os.environ["DRF_TOKEN"]
+        self.drf_token = os.environ.get("DRF_TOKEN_JERRELL") or os.environ.get("DRF_TOKEN")
+        if not self.drf_token:
+            raise Exception("Neither DRF_TOKEN_JERRELL nor DRF_TOKEN found in environment")
 
         if "GITHUB_TOKEN" not in os.environ:
             raise Exception("GITHUB_TOKEN not found in environment")
@@ -188,6 +196,13 @@ class Dashboard():
         self.console = Console()
         self.layout = Layout()
         self.session = session
+
+        username = self._get(WHOAMI_URL)["username"]
+        if username != EXPECTED_USERNAME:
+            raise Exception(
+                f"DRF_TOKEN belongs to '{username}', not '{EXPECTED_USERNAME}' — "
+                "check DRF_TOKEN_JERRELL in ~/.config/secrets.env"
+            )
 
         # Initialize independent timers for each update function
         # Format: {function_name: {"last_update": timestamp, "interval": seconds}}
@@ -232,17 +247,20 @@ class Dashboard():
         self._analysis_complete = False
 
         self.layout["bookmarks"].update(Panel("Recent bookmarks", title="Bookmarks"))
+        self.layout["todo"].update(Panel("Todo items loading...", title="Todo Items"))
+        self.layout["stats"].update(Panel("Site stats loading...", title="Site Stats"))
         self.layout["code_echoes"].update(Panel("", title="Code Echoes"))
         self.layout["ups"].update(Panel("UPS status loading...", title="UPS Status"))
 
-    def _get(self, url: str) -> dict[str, Any]:
+    def _get(self, url: str) -> Any:
         """Make an authenticated GET request to the API.
 
         Args:
             url: The full API endpoint to query.
 
         Returns:
-            The parsed JSON response as a dictionary.
+            The parsed JSON response. Some endpoints return a dict,
+            others (unpaginated list endpoints) return a list.
 
         Raises:
             Exception: If the response has a non-200 status code.
@@ -288,12 +306,17 @@ class Dashboard():
         )
         text = Text()
 
-        for bookmark in info["results"]:
+        results = info["results"]
+        for bookmark in results:
             text.append(bookmark["name"] + "\n", style=Style(color=next(colors)))
-            self.layout["bookmarks"].update(Panel(
-                text,
-                title=Text("Bookmarks")
-            ))
+
+        if not results:
+            text.append("No recent bookmarks", style="dim")
+
+        self.layout["bookmarks"].update(Panel(
+            text,
+            title=Text("Bookmarks")
+        ))
         self.update_timers["bookmarks"]["last_update"] = time.time()
 
     def update_todos(self) -> None:
@@ -313,10 +336,14 @@ class Dashboard():
 
         for todo in info:
             text.append("• " + todo["name"] + "\n", style=Style(color=next(colors)))
-            self.layout["todo"].update(Panel(
-                text,
-                title=Text("Todo Items")
-            ))
+
+        if not info:
+            text.append("No high-priority todos", style="dim")
+
+        self.layout["todo"].update(Panel(
+            text,
+            title=Text("Todo Items")
+        ))
         self.update_timers["todos"]["last_update"] = time.time()
 
     def update_stats(self) -> None:

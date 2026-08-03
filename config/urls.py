@@ -13,7 +13,7 @@ from api.views import (AlbumViewSet, BlobSha1sumViewSet, BlobViewSet,
 from bordercore.api.views import PlaylistItemViewSet, PlaylistViewSet
 from collection.views import get_images
 from homepage.views import robots_txt
-from lib.services import extract_text, site_stats
+from lib.services import extract_text, site_stats, whoami
 from music.views import mark_song_as_listened_to
 from search.api import search_music
 
@@ -69,6 +69,7 @@ urlpatterns += [
     path("api/collections/images/<uuid:collection_uuid>/", get_images),
     path("api/music/mark_song_as_listened_to/<uuid:song_uuid>/", mark_song_as_listened_to, name="mark_song_as_listened_to"),
     path("api/site/stats", site_stats),
+    path("api/whoami", whoami),
     path("api/search/music/", search_music),
     path("api/extract_text", extract_text),
     re_path(r"^api/", include(router.urls)),

@@ -50,6 +50,23 @@ def site_stats(request: Request) -> Response:
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+def whoami(request: Request) -> Response:
+    """Get the username of the authenticated user.
+
+    Lets internal tooling verify which account a token belongs to
+    before trusting the data returned by other endpoints.
+
+    Args:
+        request: The HTTP request.
+
+    Returns:
+        JSON response containing the authenticated user's username.
+    """
+    return Response({"username": request.user.username})
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def extract_text(request: Request) -> Response:
     """Extract text content from a URL.
 

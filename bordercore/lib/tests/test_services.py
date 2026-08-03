@@ -29,6 +29,19 @@ def client(token):
     return client
 
 
+def test_whoami(client, token):
+    """Test that whoami returns the username of the token's owner."""
+    response = client.get("/api/whoami")
+    assert response.status_code == 200
+    assert response.json() == {"username": token.user.username}
+
+
+def test_whoami_requires_auth():
+    """Test that whoami returns 403 without authentication."""
+    response = APIClient().get("/api/whoami")
+    assert response.status_code == 403
+
+
 def test_missing_url_parameter(client):
     """Test that extract_text returns 403 without auth and 400 without a URL parameter."""
     client_unauthenticated = APIClient()
