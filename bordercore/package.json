@@ -65,7 +65,7 @@
     "husky": "^9.1.7",
     "jsdom": "^29.0.2",
     "lint-staged": "^16.2.7",
-    "postcss": "^8.5.14",
+    "postcss": "^8.5.25",
     "postcss-scss": "^4.0.9",
     "prettier": "^3.1.0",
     "sass": "^1.27.0",
