@@ -561,22 +561,31 @@
 }
 
 .refined-modal.refined-modal--viewer {
-  width: auto;
+  // width: auto would shrink-to-fit against only the space right of the
+  // left: 50% mark, capping the media at half the viewport. max-content
+  // sizes the modal from the media's own (clamped) intrinsic size instead.
+  // No scroll chrome: the base modal's auto overflow and reserved scrollbar
+  // gutter would clip the floating close button and pad the media's edges.
+  overflow: visible;
+  width: max-content;
   max-width: min(96vw, 1400px);
   padding: 0;
   border: none;
   background: transparent;
   box-shadow: none;
+  scrollbar-gutter: auto;
 
   // The image is the modal — no inner chrome to pad/border.
   // Use a transparent surface so the scrim shows behind any non-rectangular
-  // media (e.g. transparent PNGs).
+  // media (e.g. transparent PNGs). Viewport-based caps (rather than
+  // percentages of the max-content parent) let the media grow to its
+  // natural size up to the viewport bounds.
 
   > img,
   > picture > img,
   > video {
     display: block;
-    max-width: 100%;
+    max-width: min(96vw, 1400px);
     max-height: 90vh;
     border-radius: 8px;
     margin: 0 auto;
