@@ -1,0 +1,48 @@
+// =============================================================================
+// Play-stats hover popup
+// =============================================================================
+// Shared by the album detail, artist detail, and music landing song lists.
+// A host row takes .play-stats-anchor (or .play-stats-row on a <tr>, with
+// .play-stats-anchor on the cell the popup anchors to) plus a
+// .play-stats-pop child holding the formatted text (see playStats.ts).
+// Revealed after dwelling on the row so it doesn't flash while sweeping
+// down a list; pointer-events: none so it never intercepts clicks.
+
+.play-stats-anchor {
+  position: relative;
+}
+
+.play-stats-pop {
+  position: absolute;
+  z-index: 2;
+  bottom: calc(100% - 4px);
+  left: 14px;
+  padding: 6px 12px;
+  border-radius: var(--bc-radius-sm);
+  backdrop-filter: blur(var(--bc-glass-blur));
+  background: var(--bc-glass-bg);
+  box-shadow: 0 8px 24px -8px rgb(0 0 0 / 70%), 0 0 0 1px var(--bc-glass-border);
+  color: var(--bc-fg-2);
+  font-family: var(--bc-font-mono);
+  font-size: 11px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--bc-t-base) var(--bc-ease-out);
+  white-space: nowrap;
+}
+
+// Trailing variant for hosts inside overflow: hidden containers (table
+// cards, where a pill above the first row would be clipped): the pill
+// floats just past the anchor cell's right edge, vertically centered in
+// the row, over neighboring low-content cells.
+.play-stats-pop-inline {
+  margin-left: 10px;
+  inset: 50% auto auto 100%;
+  transform: translateY(-50%);
+}
+
+.play-stats-anchor:hover .play-stats-pop,
+.play-stats-row:hover .play-stats-pop {
+  opacity: 1;
+  transition-delay: 2000ms;
+}

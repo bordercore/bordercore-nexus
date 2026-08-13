@@ -22,7 +22,7 @@ import { Hero } from "./Hero";
 import { CoverImage } from "./CoverImage";
 import { Rail } from "./Rail";
 import { FullscreenReader } from "./FullscreenReader";
-import { ImageLightbox } from "./ImageLightbox";
+import { ImageLightbox } from "../../common/ImageLightbox";
 import { BackrefsSection } from "./sections/BackrefsSection";
 import type { BlobDetailPageProps, Collection, ElasticsearchInfo, BackReference } from "../types";
 

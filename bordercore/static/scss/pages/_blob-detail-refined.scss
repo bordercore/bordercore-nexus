@@ -1558,7 +1558,10 @@
   cursor: pointer;
   font-size: 16px;
   place-items: center;
-  transition: all var(--bd-t-fast);
+
+  // Fallback duration: the lightbox portals to <body>, which can be outside
+  // the .bd-page scope that defines --bd-t-fast (e.g. on the album detail page)
+  transition: all var(--bd-t-fast, 120ms);
 }
 
 .bd-image-lightbox-close:hover {

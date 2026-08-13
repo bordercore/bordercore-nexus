@@ -1,12 +1,21 @@
 import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPencilAlt, faInfo, faTimes } from "@fortawesome/free-solid-svg-icons";
+import {
+  faPencilAlt,
+  faInfo,
+  faTimes,
+  faPlay,
+  faShuffle,
+  faPlus,
+  faCheck,
+} from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
 import { createMarkdown } from "../common/markdown";
 import type { Song, Album, AlbumDetailUrls, Playlist } from "./types";
-import SongTable from "./AlbumSongTable";
+import AlbumTrackList from "./AlbumTrackList";
 import EditAlbumModal, { type EditAlbumModalHandle } from "./EditAlbumModal";
 import DropDownMenu from "../common/DropDownMenu";
+import ImageLightbox from "../common/ImageLightbox";
 import { doDelete, EventBus } from "../utils/reactUtils";
 import { tagStyle } from "../utils/tagColors";
 
@@ -35,26 +44,15 @@ export function AlbumDetailPage({
   initialTags,
   playlists,
   urls,
-  staticUrl,
-  defaultPlaylist,
+  staticUrl: _staticUrl,
+  defaultPlaylist: _defaultPlaylist,
 }: AlbumDetailPageProps) {
   const [songs, setSongs] = React.useState<Song[]>(initialSongs);
   const [currentSongUuid, setCurrentSongUuid] = React.useState<string | null>(null);
   const [isPlaying, setIsPlaying] = React.useState(false);
+  const [isCoverLightboxOpen, setIsCoverLightboxOpen] = React.useState(false);
 
   const editAlbumRef = React.useRef<EditAlbumModalHandle>(null);
-
-  const handleCurrentSong = (songIndex: number) => {
-    if (songIndex === -1) {
-      setCurrentSongUuid(null);
-    } else if (songs[songIndex]) {
-      setCurrentSongUuid(songs[songIndex].uuid);
-    }
-  };
-
-  const handleIsPlaying = (playing: boolean) => {
-    setIsPlaying(playing);
-  };
 
   React.useEffect(() => {
     const onPlay = (data: { uuid: string }) => {
@@ -91,6 +89,18 @@ export function AlbumDetailPage({
     setCurrentSongUuid(song.uuid);
   };
 
+  const handlePlayAlbum = () => {
+    if (songs.length > 0) {
+      handleSongClick(songs[0]);
+    }
+  };
+
+  const handleShuffle = () => {
+    if (songs.length > 0) {
+      handleSongClick(songs[Math.floor(Math.random() * songs.length)]);
+    }
+  };
+
   const handleRatingChange = (songUuid: string, newRating: number | null) => {
     setSongs(prevSongs =>
       prevSongs.map(song => (song.uuid === songUuid ? { ...song, rating: newRating } : song))
@@ -112,6 +122,51 @@ export function AlbumDetailPage({
         }
       })
     );
+  };
+
+  // Add every album track not already in the playlist. The endpoint toggles
+  // membership, so songs already present are skipped rather than removed.
+  const handleAddAlbumToPlaylist = async (playlistUuid: string) => {
+    const playlistName = playlists.find(p => p.uuid === playlistUuid)?.name || "playlist";
+    const songsToAdd = songs.filter(song => !song.playlists.includes(playlistUuid));
+
+    if (songsToAdd.length === 0) {
+      EventBus.$emit("toast", {
+        body: `All tracks are already in ${playlistName}`,
+        variant: "success",
+      });
+      return;
+    }
+
+    let addedCount = 0;
+    try {
+      for (const song of songsToAdd) {
+        const params = new URLSearchParams();
+        params.append("playlist_uuid", playlistUuid);
+        params.append("song_uuid", song.uuid);
+
+        const response = await axios.post(urls.addToPlaylist, params, {
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          withCredentials: true,
+        });
+        handlePlaylistToggle(song.uuid, playlistUuid, response.data.action);
+        if (response.data.action === "added") {
+          addedCount++;
+        }
+      }
+      EventBus.$emit("toast", {
+        body: `Added ${addedCount} ${addedCount === 1 ? "track" : "tracks"} to ${playlistName}`,
+        variant: "success",
+      });
+    } catch (error) {
+      console.error("Error adding album to playlist:", error);
+      EventBus.$emit("toast", {
+        body: "Failed to update playlist",
+        variant: "danger",
+      });
+    }
   };
 
   const handleEditAlbum = () => {
@@ -144,24 +199,150 @@ export function AlbumDetailPage({
     return { __html: markdown.render(album.note) };
   };
 
+  const ratedSongs = songs.filter(song => (song.rating ?? 0) > 0);
+  const ratedCount = ratedSongs.length;
+  const averageRating =
+    ratedCount > 0 ? ratedSongs.reduce((sum, song) => sum + (song.rating ?? 0), 0) / ratedCount : 0;
+  const filledStars = Math.round(averageRating);
+
   return (
-    <div className="row g-0 h-full items-start">
-      {/* Sidebar - Album artwork and player */}
-      <div className="sticky-top col-lg-3 flex flex-col">
-        <div className="card-grid ms-6 flex flex-col items-center">
-          <img
-            src={album.cover_url}
-            className="max-w-full"
-            height={400}
-            width={400}
-            alt={`${album.title} cover`}
-          />
+    <div className="adp-page">
+      {/* Hero: blurred art wash + scrim + content */}
+      <section className="adp-hero">
+        {album.cover_url && (
+          <img src={album.cover_url} alt="" aria-hidden="true" className="adp-hero-art" />
+        )}
+        <div className="adp-hero-scrim" />
+        <div className="adp-hero-content">
+          {album.cover_url ? (
+            <button
+              type="button"
+              className="adp-cover-button"
+              onClick={() => setIsCoverLightboxOpen(true)}
+              aria-label="View cover art fullscreen"
+            >
+              <img src={album.cover_url} className="adp-cover" alt={`${album.title} cover`} />
+            </button>
+          ) : (
+            <div className="adp-cover adp-cover-placeholder" />
+          )}
+          <div className="adp-hero-text">
+            <span className="adp-eyebrow">album · in your library</span>
+            <div>
+              <h1 className="adp-title">{album.title}</h1>
+              <a className="adp-artist" href={urls.artistDetail}>
+                {album.artist_name}
+              </a>
+            </div>
+            <div className="adp-meta">
+              {album.year && <span>{album.year}</span>}
+              {album.year && <span className="adp-meta-sep">·</span>}
+              <span>
+                {songs.length} {songs.length === 1 ? "track" : "tracks"}
+              </span>
+              <span className="adp-meta-sep">·</span>
+              <span>{album.playtime}</span>
+              {ratedCount > 0 && (
+                <>
+                  <span className="adp-meta-sep">·</span>
+                  <span className="adp-meta-stars">{"★".repeat(filledStars)}</span>
+                  <span className="adp-meta-dim">
+                    {averageRating.toFixed(1)} avg · {ratedCount} rated
+                  </span>
+                </>
+              )}
+              {album.original_release_year && album.original_release_year !== album.year && (
+                <>
+                  <span className="adp-meta-sep">·</span>
+                  <span className="adp-meta-dim">
+                    originally released {album.original_release_year}
+                  </span>
+                </>
+              )}
+            </div>
+            <div className="adp-actions">
+              <button className="adp-action-primary" onClick={handlePlayAlbum}>
+                <FontAwesomeIcon icon={faPlay} />
+                play album
+              </button>
+              <button className="adp-action-secondary" onClick={handleShuffle}>
+                <FontAwesomeIcon icon={faShuffle} />
+                shuffle
+              </button>
+              <DropDownMenu
+                showTarget={false}
+                iconSlot={
+                  <span className="adp-action-secondary">
+                    <FontAwesomeIcon icon={faPlus} />
+                    playlist
+                  </span>
+                }
+                dropdownSlot={
+                  <ul className="dropdown-menu-list">
+                    {playlists.map(playlist => (
+                      <li key={playlist.uuid}>
+                        <button
+                          className="dropdown-menu-item"
+                          onClick={() => handleAddAlbumToPlaylist(playlist.uuid)}
+                        >
+                          <span className="dropdown-menu-text">{playlist.name}</span>
+                          {songs.length > 0 &&
+                            songs.every(song => song.playlists.includes(playlist.uuid)) && (
+                              <span className="dropdown-menu-check">
+                                <FontAwesomeIcon icon={faCheck} className="text-ok" />
+                              </span>
+                            )}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                }
+              />
+            </div>
+          </div>
+          <div className="adp-kebab">
+            <DropDownMenu
+              dropdownSlot={
+                <ul className="dropdown-menu-list">
+                  <li>
+                    <button className="dropdown-menu-item" onClick={handleEditAlbum}>
+                      <span className="dropdown-menu-icon">
+                        <FontAwesomeIcon icon={faPencilAlt} />
+                      </span>
+                      <span className="dropdown-menu-text">Edit</span>
+                    </button>
+                  </li>
+                  <li>
+                    <button className="dropdown-menu-item" onClick={handleAlbumInfo}>
+                      <span className="dropdown-menu-icon">
+                        <FontAwesomeIcon icon={faInfo} />
+                      </span>
+                      <span className="dropdown-menu-text">Album Info</span>
+                    </button>
+                  </li>
+                  {!album.has_songs && (
+                    <li>
+                      <button className="dropdown-menu-item" onClick={handleDeleteAlbum}>
+                        <span className="dropdown-menu-icon">
+                          <FontAwesomeIcon icon={faTimes} />
+                        </span>
+                        <span className="dropdown-menu-text">Delete Album</span>
+                      </button>
+                    </li>
+                  )}
+                </ul>
+              }
+            />
+          </div>
+        </div>
+      </section>
 
-          {album.note && <h5 className="mt-4" dangerouslySetInnerHTML={renderAlbumNote()!} />}
-
+      {/* Album note and tags */}
+      {(album.note || album.tags.length > 0) && (
+        <section className="adp-note-strip">
+          {album.note && <div className="adp-note" dangerouslySetInnerHTML={renderAlbumNote()!} />}
           {album.tags.length > 0 && (
-            <div className="align-self-start ms-4 mt-4 mb-4">
-              Tags:{" "}
+            <div className="adp-tags">
               {album.tags.map((tag, index) => (
                 <span
                   key={index}
@@ -173,87 +354,33 @@ export function AlbumDetailPage({
               ))}
             </div>
           )}
-        </div>
-      </div>
+        </section>
+      )}
 
-      {/* Main content - Album info and song table */}
-      <div className="col-lg-9 h-full me-0">
-        <div className="card-grid h-full ms-6">
-          <div className="flex flex-col h-full me-2">
-            {/* Album header card */}
-            <div className="card backdrop-filter hover-target me-0">
-              <div className="card-body">
-                <div className="flex">
-                  <h1>{album.title}</h1>
-                  <div className="ms-auto">
-                    <DropDownMenu
-                      dropdownSlot={
-                        <ul className="dropdown-menu-list">
-                          <li>
-                            <button className="dropdown-menu-item" onClick={handleEditAlbum}>
-                              <span className="dropdown-menu-icon">
-                                <FontAwesomeIcon icon={faPencilAlt} />
-                              </span>
-                              <span className="dropdown-menu-text">Edit</span>
-                            </button>
-                          </li>
-                          <li>
-                            <button className="dropdown-menu-item" onClick={handleAlbumInfo}>
-                              <span className="dropdown-menu-icon">
-                                <FontAwesomeIcon icon={faInfo} />
-                              </span>
-                              <span className="dropdown-menu-text">Album Info</span>
-                            </button>
-                          </li>
-                          {!album.has_songs && (
-                            <li>
-                              <button className="dropdown-menu-item" onClick={handleDeleteAlbum}>
-                                <span className="dropdown-menu-icon">
-                                  <FontAwesomeIcon icon={faTimes} />
-                                </span>
-                                <span className="dropdown-menu-text">Delete Album</span>
-                              </button>
-                            </li>
-                          )}
-                        </ul>
-                      }
-                    />
-                  </div>
-                </div>
-                <h3>
-                  <a href={urls.artistDetail}>{album.artist_name}</a>
-                </h3>
-                <h6>{album.year}</h6>
-                {album.original_release_year && album.original_release_year !== album.year && (
-                  <h5>Originally released {album.original_release_year}</h5>
-                )}
-                <h6 className="text-accent smaller">
-                  <small>{album.playtime}</small>
-                </h6>
-              </div>
-            </div>
-
-            {/* Song table */}
-            <div className="grow me-0 mt-4 mb-4" id="album-song-list">
-              <SongTable
-                songs={songs}
-                currentSongUuid={currentSongUuid}
-                isPlaying={isPlaying}
-                staticUrl={staticUrl}
-                setSongRatingUrl={urls.setSongRating}
-                editSongUrlTemplate={urls.editSong}
-                addToPlaylistUrl={urls.addToPlaylist}
-                playlists={playlists}
-                onSongClick={handleSongClick}
-                onRatingChange={handleRatingChange}
-                onPlaylistToggle={handlePlaylistToggle}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Tracklist */}
+      <section className="adp-tracklist-section">
+        <AlbumTrackList
+          songs={songs}
+          currentSongUuid={currentSongUuid}
+          isPlaying={isPlaying}
+          setSongRatingUrl={urls.setSongRating}
+          editSongUrlTemplate={urls.editSong}
+          addToPlaylistUrl={urls.addToPlaylist}
+          playlists={playlists}
+          onSongClick={handleSongClick}
+          onRatingChange={handleRatingChange}
+          onPlaylistToggle={handlePlaylistToggle}
+        />
+      </section>
 
       {/* Modals */}
+      {isCoverLightboxOpen && album.cover_url && (
+        <ImageLightbox
+          src={album.cover_url}
+          alt={`${album.title} cover`}
+          onClose={() => setIsCoverLightboxOpen(false)}
+        />
+      )}
       <EditAlbumModal
         ref={editAlbumRef}
         album={album}

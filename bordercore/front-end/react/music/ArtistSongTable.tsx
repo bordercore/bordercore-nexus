@@ -11,6 +11,7 @@ import axios from "axios";
 import type { ArtistSong, Playlist } from "./types";
 import StarRating from "./StarRating";
 import DropDownMenu from "../common/DropDownMenu";
+import { playStats } from "./playStats";
 
 interface ArtistSongTableProps {
   songs: ArtistSong[];
@@ -109,8 +110,12 @@ export function ArtistSongTable({
         </thead>
         <tbody>
           {songs.map(song => (
-            <tr key={song.uuid} className="song hover-target cursor-pointer">
-              <td className="align-middle" onClick={() => handleRowClick(song, "title")}>
+            <tr key={song.uuid} className="song hover-target cursor-pointer play-stats-row">
+              <td
+                className="align-middle play-stats-anchor"
+                onClick={() => handleRowClick(song, "title")}
+              >
+                <span className="play-stats-pop play-stats-pop-inline">{playStats(song)}</span>
                 {currentSongUuid === song.uuid && (
                   <span className="me-2">
                     <img src={equalizerImage} width={20} height={20} alt="Playing" />

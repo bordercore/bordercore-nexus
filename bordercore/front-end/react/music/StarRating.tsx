@@ -8,6 +8,8 @@ interface StarRatingProps {
   rating: number | null;
   setSongRatingUrl: string;
   onRatingChange: (songUuid: string, newRating: number | null) => void;
+  /** Smaller, always-visible stars for dense track rows */
+  compact?: boolean;
 }
 
 export function StarRating({
@@ -15,6 +17,7 @@ export function StarRating({
   rating,
   setSongRatingUrl,
   onRatingChange,
+  compact = false,
 }: StarRatingProps) {
   const [hoverRating, setHoverRating] = useState<number | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -65,11 +68,14 @@ export function StarRating({
   const displayRating = hoverRating ?? rating ?? 0;
 
   return (
-    <div className="rating-container flex" onMouseLeave={handleMouseLeave}>
+    <div
+      className={`rating-container flex ${compact ? "rating-container-compact" : ""}`}
+      onMouseLeave={handleMouseLeave}
+    >
       {[0, 1, 2, 3, 4].map(starIndex => (
         <span
           key={starIndex}
-          className={`rating me-1 ${displayRating > starIndex ? "rating-star-selected" : ""} ${isUpdating ? "cursor-wait" : "cursor-pointer"} ${animatingIndex === starIndex ? "rating-animate" : ""}`}
+          className={`rating ${compact ? "" : "me-1"} ${displayRating > starIndex ? "rating-star-selected" : ""} ${isUpdating ? "cursor-wait" : "cursor-pointer"} ${animatingIndex === starIndex ? "rating-animate" : ""}`}
           onClick={() => handleClick(starIndex)}
           onMouseOver={() => handleMouseOver(starIndex)}
           onAnimationEnd={() => setAnimatingIndex(null)}

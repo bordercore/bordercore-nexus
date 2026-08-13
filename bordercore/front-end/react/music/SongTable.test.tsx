@@ -71,4 +71,22 @@ describe("SongTable", () => {
     const playingRow = container.querySelector(".mlo-song-row-playing");
     expect(playingRow).not.toBeNull();
   });
+
+  it("shows play stats in the row popup", () => {
+    const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+    const withStats = [{ ...songs[0], times_played: 10, last_time_played: threeDaysAgo }];
+    const { container } = render(
+      <SongTable songs={withStats} currentUuid={null} songMediaUrl="/m" markListenedUrl="/l" />
+    );
+    expect(container.querySelector(".play-stats-pop")?.textContent).toBe(
+      "played 10 times · last 3d ago"
+    );
+  });
+
+  it("shows never played for songs with no plays", () => {
+    const { container } = render(
+      <SongTable songs={[songs[1]]} currentUuid={null} songMediaUrl="/m" markListenedUrl="/l" />
+    );
+    expect(container.querySelector(".play-stats-pop")?.textContent).toBe("never played");
+  });
 });

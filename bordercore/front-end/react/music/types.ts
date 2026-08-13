@@ -17,6 +17,9 @@ export interface Song extends BaseTrack {
   length_seconds: number | null;
   length: string;
   playlists: string[]; // UUIDs of playlists containing this song
+  // Play stats; optional because only the album detail view serializes them
+  times_played?: number;
+  last_time_played?: string | null;
 }
 
 export interface Album {
@@ -77,6 +80,9 @@ export interface ArtistSong extends BaseTrack {
   year_effective: number | null;
   artist: string;
   playlists: string[]; // UUIDs of playlists containing this song
+  // Play stats for the hover popup
+  times_played?: number;
+  last_time_played?: string | null;
 }
 
 export interface ArtistDetailAlbum {
@@ -169,6 +175,9 @@ export interface RecentAddedSong {
   album_title: string | null;
   rating: number | null;
   plays: number;
+  // Play stats for the hover popup
+  times_played?: number;
+  last_time_played?: string | null;
 }
 
 export interface PaginatorInfo {

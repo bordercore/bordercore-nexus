@@ -240,7 +240,10 @@ class ArtistDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView):
                     "length": convert_seconds(song.length),
                     "artist": song.artist.name,
                     "note": re.sub("[\n\r\"]", "", song.note or ""),
-                    "playlists": song_playlists.get(song.uuid, [])
+                    "playlists": song_playlists.get(song.uuid, []),
+                    "times_played": song.times_played,
+                    "last_time_played": song.last_time_played.isoformat()
+                    if song.last_time_played else None,
                 }
             )
 
@@ -440,7 +443,10 @@ class AlbumDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, FormRequestMi
                     "rating": song.rating,
                     "length_seconds": song.length,
                     "length": convert_seconds(song.length),
-                    "playlists": song_playlists.get(song.uuid, [])
+                    "playlists": song_playlists.get(song.uuid, []),
+                    "times_played": song.times_played,
+                    "last_time_played": song.last_time_played.isoformat()
+                    if song.last_time_played else None,
                 }
             )
 
@@ -873,6 +879,9 @@ class RecentSongsListView(APIView):
                     "album_title": song.album.title if song.album else None,
                     "rating": song.rating,
                     "plays": song._plays,
+                    "times_played": song.times_played,
+                    "last_time_played": song.last_time_played.isoformat()
+                    if song.last_time_played else None,
                 }
             )
 

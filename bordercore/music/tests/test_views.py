@@ -1,3 +1,4 @@
+import datetime
 import json
 from pathlib import Path
 
@@ -99,6 +100,38 @@ def test_music_album_detail(authenticated_client, song):
     resp = client.get(url)
 
     assert resp.status_code == 200
+
+
+def test_music_album_detail_song_play_stats(authenticated_client, song):
+    """Test that album detail songs include play count and last-played time."""
+    _, client = authenticated_client()
+
+    played_at = datetime.datetime(2026, 8, 1, 12, 0, 0, tzinfo=datetime.timezone.utc)
+    Song.objects.filter(pk=song[1].pk).update(
+        times_played=3,
+        last_time_played=played_at,
+    )
+
+    url = urls.reverse("music:album_detail", kwargs={"uuid": song[1].album.uuid})
+    resp = client.get(url)
+
+    assert resp.status_code == 200
+    song_data = resp.context["song_list"][0]
+    assert song_data["times_played"] == 3
+    assert song_data["last_time_played"] == played_at.isoformat()
+
+
+def test_music_album_detail_song_never_played(authenticated_client, song):
+    """Test that never-played songs serialize null play stats."""
+    _, client = authenticated_client()
+
+    url = urls.reverse("music:album_detail", kwargs={"uuid": song[1].album.uuid})
+    resp = client.get(url)
+
+    assert resp.status_code == 200
+    song_data = resp.context["song_list"][0]
+    assert song_data["times_played"] == 0
+    assert song_data["last_time_played"] is None
 
 
 def test_music_album_update(authenticated_client, song):
@@ -658,6 +691,54 @@ def test_recent_songs_includes_album_rating_plays(authenticated_client):
     s_b = songs_by_uuid[str(song_with_listens.uuid)]
     assert s_b["plays"] == 2
     assert s_b["rating"] == 3
+
+
+def test_recent_songs_includes_play_stats(authenticated_client):
+    from django.urls import reverse
+
+    from music.tests.factories import SongFactory
+
+    user, client = authenticated_client()
+    played_at = datetime.datetime(2026, 8, 1, 12, 0, 0, tzinfo=datetime.timezone.utc)
+    song_played = SongFactory.create(user=user, album=None)
+    Song.objects.filter(pk=song_played.pk).update(
+        times_played=4,
+        last_time_played=played_at,
+    )
+    song_unplayed = SongFactory.create(user=user, album=None)
+
+    response = client.get(reverse("music:recent_songs"))
+    assert response.status_code == 200
+    songs_by_uuid = {str(s["uuid"]): s for s in response.json()["song_list"]}
+
+    assert songs_by_uuid[str(song_played.uuid)]["times_played"] == 4
+    assert songs_by_uuid[str(song_played.uuid)]["last_time_played"] == played_at.isoformat()
+    assert songs_by_uuid[str(song_unplayed.uuid)]["times_played"] == 0
+    assert songs_by_uuid[str(song_unplayed.uuid)]["last_time_played"] is None
+
+
+def test_music_artist_detail_song_play_stats(authenticated_client, song_source):
+    """Test that artist detail songs include play count and last-played time."""
+    from music.tests.factories import SongFactory
+
+    user, client = authenticated_client()
+
+    # The artist detail song list only contains songs without an album
+    artist_song = SongFactory.create(user=user, album=None)
+    played_at = datetime.datetime(2026, 8, 2, 9, 30, 0, tzinfo=datetime.timezone.utc)
+    Song.objects.filter(pk=artist_song.pk).update(
+        times_played=7,
+        last_time_played=played_at,
+    )
+
+    url = urls.reverse("music:artist_detail", kwargs={"uuid": artist_song.artist.uuid})
+    resp = client.get(url)
+
+    assert resp.status_code == 200
+    songs_by_uuid = {s["uuid"]: s for s in resp.context["song_list"]}
+    song_data = songs_by_uuid[str(artist_song.uuid)]
+    assert song_data["times_played"] == 7
+    assert song_data["last_time_played"] == played_at.isoformat()
 
 
 def test_music_list_passes_dashboard_stats(authenticated_client):

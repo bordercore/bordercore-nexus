@@ -1,0 +1,411 @@
+// =============================================================================
+// Album detail — "Cinematic" redesign
+// =============================================================================
+// Full-bleed hero with a blurred artwork wash behind an oversized display
+// title, a pill action row, and a two-column tracklist with inline compact
+// star ratings. Playback transport stays with the global audio player.
+// All colors come from the --bc-* token bridge (see _refined-topbar.scss)
+// so the page follows the active theme. Classes are prefixed adp- and
+// scoped under .adp-page to avoid bleeding into other pages.
+
+.adp-page {
+  // Fill the viewport below the 64px topbar so the page canvas doesn't
+  // end mid-screen on short tracklists (the parent column hugs content)
+  min-height: calc(100vh - 64px);
+  padding-bottom: 6rem; // clearance for the fixed global audio player
+  // Cancel the .col-lg-12 gutter so the hero wash runs edge to edge
+  margin: 0 -0.75rem;
+  background: var(--bc-bg-1);
+  font-family: var(--bc-font-sans);
+
+  // ==== Hero ====
+
+  .adp-hero {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .adp-hero-art {
+    position: absolute;
+    width: calc(100% + 120px);
+    height: calc(100% + 120px);
+    filter: blur(60px) saturate(1.5);
+    inset: -60px;
+    object-fit: cover;
+    opacity: 0.55;
+  }
+
+  // Required for text contrast on light artwork — do not remove
+  .adp-hero-scrim {
+    position: absolute;
+    background:
+      linear-gradient(
+        160deg,
+        color-mix(in oklch, var(--bc-bg-0) 62%, transparent),
+        color-mix(in oklch, var(--bc-bg-0) 90%, transparent) 60%,
+        var(--bc-bg-1)
+      );
+    inset: 0;
+  }
+
+  .adp-hero-content {
+    position: relative;
+    display: flex;
+    padding: 40px 24px 32px;
+    gap: 36px;
+  }
+
+  .adp-cover-button {
+    flex: none;
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: zoom-in;
+  }
+
+  .adp-cover {
+    width: 250px;
+    height: 250px;
+    flex: none;
+    border-radius: var(--bc-radius-md);
+    box-shadow:
+      0 24px 70px -14px rgb(0 0 0 / 90%),
+      0 0 0 1px rgb(255 255 255 / 8%);
+    object-fit: cover;
+  }
+
+  .adp-cover-placeholder {
+    background: repeating-linear-gradient(
+      135deg,
+      var(--bc-bg-2) 0 8px,
+      var(--bc-bg-3) 8px 16px
+    );
+  }
+
+  .adp-hero-text {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    padding-top: 6px;
+    gap: 16px;
+  }
+
+  .adp-eyebrow {
+    color: var(--bc-fg-3);
+    font-family: var(--bc-font-sans);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .adp-title {
+    margin: 0;
+    color: var(--bc-fg-1);
+    font-family: var(--bc-font-display);
+    font-size: clamp(48px, 6.5vw, 84px);
+    font-weight: 700;
+    letter-spacing: -0.035em;
+    line-height: 0.88;
+    overflow-wrap: anywhere;
+    text-shadow: 0 4px 40px rgb(0 0 0 / 50%);
+  }
+
+  .adp-artist {
+    display: inline-block;
+    margin-top: 10px;
+    color: var(--bc-accent-3);
+    font-family: var(--bc-font-display);
+    font-size: 26px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color var(--bc-t-fast) var(--bc-ease-out);
+
+    &:hover {
+      color: color-mix(in oklch, var(--bc-accent-3) 80%, white);
+    }
+  }
+
+  .adp-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    color: var(--bc-fg-2);
+    font-family: var(--bc-font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    gap: 14px;
+  }
+
+  .adp-meta-sep {
+    color: var(--bc-fg-4);
+  }
+
+  .adp-meta-stars {
+    color: var(--bc-accent-3);
+  }
+
+  .adp-meta-dim {
+    color: var(--bc-fg-4);
+  }
+
+  // ==== Action row ====
+
+  .adp-actions {
+    display: flex;
+    align-items: center;
+    margin-top: 6px;
+    gap: 12px;
+  }
+
+  .adp-action-primary,
+  .adp-action-secondary {
+    display: flex;
+    align-items: center;
+    padding: 11px 22px;
+    border: none;
+    border-radius: var(--bc-radius-pill);
+    cursor: pointer;
+    font-family: var(--bc-font-sans);
+    font-size: 13px;
+    gap: 9px;
+    transition:
+      background var(--bc-t-base) var(--bc-ease-out),
+      border-color var(--bc-t-base) var(--bc-ease-out),
+      transform var(--bc-t-fast) var(--bc-ease-out);
+  }
+
+  .adp-action-primary {
+    background: var(--bc-accent);
+    box-shadow: 0 0 24px -2px color-mix(in oklch, var(--bc-accent) 60%, transparent);
+    color: var(--bc-bg-1);
+    font-weight: 600;
+
+    &:hover {
+      background: color-mix(in oklch, var(--bc-accent) 82%, white);
+    }
+
+    &:active {
+      background: color-mix(in oklch, var(--bc-accent) 82%, black);
+      transform: translateY(1px);
+    }
+  }
+
+  .adp-action-secondary {
+    padding: 11px 18px;
+    border: 1px solid var(--bc-border-2);
+    backdrop-filter: blur(var(--bc-glass-blur));
+    background: var(--bc-glass-bg);
+    color: var(--bc-fg-1);
+    font-weight: 500;
+
+    &:hover {
+      border-color: var(--bc-accent);
+    }
+  }
+
+  .adp-kebab {
+    flex: none;
+    margin-left: auto;
+  }
+
+  // ==== Note + tags strip ====
+
+  .adp-note-strip {
+    display: flex;
+    flex-direction: column;
+    padding: 20px 24px 4px;
+    gap: 12px;
+  }
+
+  .adp-note {
+    max-width: 70ch;
+    color: var(--bc-fg-2);
+
+    p:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .adp-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  // ==== Tracklist ====
+
+  .adp-tracklist-section {
+    padding: 8px 24px 30px;
+  }
+
+  .adp-tracklist {
+    display: grid;
+    align-items: start;
+    column-gap: 32px;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .adp-track-menu {
+    flex: none;
+    opacity: 0;
+    transition: opacity var(--bc-t-fast) var(--bc-ease-out);
+  }
+
+  .adp-track-row {
+    display: flex;
+    align-items: center;
+    padding: 11px 14px;
+    border-radius: var(--bc-radius-md);
+    border-bottom: 1px solid var(--bc-hairline);
+    cursor: pointer;
+    gap: 16px;
+    transition: background var(--bc-t-fast) var(--bc-ease-out);
+
+    &:hover {
+      background: var(--bc-bg-2);
+
+      .adp-track-menu {
+        opacity: 1;
+      }
+    }
+  }
+
+  .adp-track-num {
+    width: 26px;
+    flex: none;
+    color: var(--bc-fg-4);
+    font-family: var(--bc-font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    text-align: right;
+  }
+
+  .adp-track-title {
+    overflow: hidden;
+    min-width: 0;
+    flex: 1;
+    color: var(--bc-fg-2);
+    font-size: 14px;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .adp-track-row-current {
+    .adp-track-num {
+      color: var(--bc-accent-3);
+    }
+
+    .adp-track-title {
+      color: var(--bc-fg-1);
+    }
+  }
+
+  .adp-track-note {
+    flex: none;
+    color: var(--bc-accent);
+  }
+
+  .adp-track-len {
+    width: 38px;
+    flex: none;
+    color: var(--bc-fg-4);
+    font-family: var(--bc-font-mono);
+    font-size: 12px;
+    text-align: right;
+  }
+
+  .adp-track-empty {
+    padding: 11px 14px;
+    color: var(--bc-fg-4);
+    font-family: var(--bc-font-mono);
+    font-size: 12px;
+  }
+
+  // Compact star rating: always visible, quiet empty stars
+  .rating-container-compact {
+    gap: 2px;
+
+    .rating {
+      color: var(--bc-border-1);
+      font-size: 10px;
+    }
+
+    .rating-star-selected {
+      color: var(--bc-accent-3);
+    }
+  }
+
+  // ==== Equalizer (current track indicator) ====
+
+  .adp-eq {
+    display: inline-flex;
+    height: 14px;
+    align-items: flex-end;
+    gap: 3px;
+  }
+
+  .adp-eq-bar {
+    width: 3px;
+    height: 4px;
+    border-radius: 2px;
+    animation: adp-eq 700ms ease-in-out infinite;
+    background: var(--bc-accent);
+
+    &:nth-child(2) {
+      animation-delay: 140ms;
+    }
+
+    &:nth-child(3) {
+      animation-delay: 280ms;
+    }
+  }
+
+  .adp-eq-paused .adp-eq-bar {
+    height: 8px;
+    animation: none;
+  }
+
+  // ==== Responsive ====
+
+  @media (width <= 1000px) {
+    .adp-tracklist {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (width <= 760px) {
+    .adp-hero-content {
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .adp-cover {
+      width: 160px;
+      height: 160px;
+    }
+
+    .adp-title {
+      font-size: clamp(34px, 9vw, 44px);
+    }
+  }
+}
+
+@keyframes adp-eq {
+  0%,
+  100% {
+    height: 4px;
+  }
+
+  50% {
+    height: 13px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .adp-page .adp-eq-bar {
+    height: 8px;
+    animation: none;
+  }
+}

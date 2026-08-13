@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlay, faVolumeHigh } from "@fortawesome/free-solid-svg-icons";
 import { EventBus } from "../utils/reactUtils";
 import type { RecentAddedSong } from "./types";
+import { playStats } from "./playStats";
 
 interface Props {
   songs: RecentAddedSong[];
@@ -48,8 +49,9 @@ const SongTable: React.FC<Props> = ({ songs, currentUuid, songMediaUrl, markList
                 handlePlay(song);
               }
             }}
-            className={`mlo-song-row${isPlaying ? " mlo-song-row-playing" : ""}`}
+            className={`mlo-song-row play-stats-anchor${isPlaying ? " mlo-song-row-playing" : ""}`}
           >
+            <span className="play-stats-pop">{playStats(song)}</span>
             <span className="mlo-song-row-num">
               {isPlaying ? (
                 <FontAwesomeIcon icon={faVolumeHigh} />

@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXmark } from "@fortawesome/free-solid-svg-icons";
 
-import { useBodyScrollLock } from "../../utils/useBodyScrollLock";
+import { useBodyScrollLock } from "../utils/useBodyScrollLock";
 
 interface ImageLightboxProps {
   src: string;
