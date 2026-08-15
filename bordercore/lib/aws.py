@@ -12,6 +12,8 @@ from io import BytesIO
 from typing import Any
 
 import boto3
+from botocore.config import Config
+from botocore.exceptions import ConnectTimeoutError, ReadTimeoutError
 
 log = logging.getLogger(f"bordercore.{__name__}")
 
@@ -236,6 +238,13 @@ def sns_publish(topic_arn: str, message: dict[str, Any]) -> None:
 # ---------------------------------------------------------------------------
 
 _lambda_client = None
+_lambda_sync_client = None
+
+# Upper bound on how long a synchronous Lambda invocation may block the
+# calling request. Gunicorn's sync workers are killed (SystemExit) after 30
+# seconds, so this must stay comfortably below that: better to fail with a
+# clear error than to have the whole worker aborted mid-request.
+LAMBDA_SYNC_READ_TIMEOUT_SECONDS = 20
 
 
 def _get_lambda_client() -> Any:
@@ -243,6 +252,27 @@ def _get_lambda_client() -> Any:
     if _lambda_client is None:
         _lambda_client = boto3.client("lambda")
     return _lambda_client
+
+
+def _get_lambda_sync_client() -> Any:
+    """Return a Lambda client tuned for request-time (RequestResponse) invokes.
+
+    Unlike the default client, this one gives up on a slow response after
+    ``LAMBDA_SYNC_READ_TIMEOUT_SECONDS`` and never retries: a retry would
+    re-run the (possibly still cold-starting) function and only push the
+    caller past the web worker's own timeout.
+    """
+    global _lambda_sync_client
+    if _lambda_sync_client is None:
+        _lambda_sync_client = boto3.client(
+            "lambda",
+            config=Config(
+                connect_timeout=5,
+                read_timeout=LAMBDA_SYNC_READ_TIMEOUT_SECONDS,
+                retries={"max_attempts": 0},
+            ),
+        )
+    return _lambda_sync_client
 
 
 def lambda_invoke_async(function_name: str, payload: dict[str, Any]) -> None:
@@ -275,14 +305,22 @@ def lambda_invoke_sync(function_name: str, payload: dict[str, Any]) -> Any:
         The function's response payload, parsed from JSON.
 
     Raises:
+        TimeoutError: If the function does not respond within
+            ``LAMBDA_SYNC_READ_TIMEOUT_SECONDS`` (typically a cold start).
         RuntimeError: If the Lambda reports a function error; the decoded error
             body is included in the message.
     """
-    response = _get_lambda_client().invoke(
-        FunctionName=function_name,
-        InvocationType="RequestResponse",
-        Payload=json.dumps(payload),
-    )
+    try:
+        response = _get_lambda_sync_client().invoke(
+            FunctionName=function_name,
+            InvocationType="RequestResponse",
+            Payload=json.dumps(payload),
+        )
+    except (ReadTimeoutError, ConnectTimeoutError) as exc:
+        raise TimeoutError(
+            f"{function_name} Lambda did not respond within "
+            f"{LAMBDA_SYNC_READ_TIMEOUT_SECONDS}s"
+        ) from exc
     body = json.loads(response["Payload"].read())
     if response.get("FunctionError"):
         raise RuntimeError(f"{function_name} Lambda crashed: {body}")

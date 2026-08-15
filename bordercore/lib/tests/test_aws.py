@@ -14,6 +14,7 @@ except (ModuleNotFoundError, NameError):
 
 from lib.aws import (
     lambda_invoke_async,
+    lambda_invoke_sync,
     s3_copy_object,
     s3_delete_object,
     s3_delete_objects_by_prefix,
@@ -36,6 +37,7 @@ def _reset_module_singletons():
     mod._s3_resource = None
     mod._sns_client = None
     mod._lambda_client = None
+    mod._lambda_sync_client = None
 
 
 @pytest.fixture()
@@ -205,3 +207,47 @@ def test_lambda_invoke_async():
             InvocationType="Event",
             Payload=json.dumps({"data": 123}),
         )
+
+
+def test_lambda_invoke_sync_returns_parsed_payload():
+    """lambda_invoke_sync invokes RequestResponse and returns the decoded JSON body."""
+    with patch("lib.aws.boto3.client") as mock_client_ctor:
+        mock_lambda = MagicMock()
+        mock_lambda.invoke.return_value = {"Payload": BytesIO(b'{"vector": [1, 2]}')}
+        mock_client_ctor.return_value = mock_lambda
+
+        result = lambda_invoke_sync("MyFunc", {"data": 123})
+
+        assert result == {"vector": [1, 2]}
+        mock_lambda.invoke.assert_called_once_with(
+            FunctionName="MyFunc",
+            InvocationType="RequestResponse",
+            Payload=json.dumps({"data": 123}),
+        )
+
+
+def test_lambda_invoke_sync_client_has_bounded_timeout_and_no_retries():
+    """The sync client must fail fast (before the gunicorn worker timeout) and never re-invoke."""
+    from lib.aws import LAMBDA_SYNC_READ_TIMEOUT_SECONDS
+
+    with patch("lib.aws.boto3.client") as mock_client_ctor:
+        mock_client_ctor.return_value = MagicMock()
+        from lib.aws import _get_lambda_sync_client
+        _get_lambda_sync_client()
+
+        config = mock_client_ctor.call_args.kwargs["config"]
+        assert config.read_timeout == LAMBDA_SYNC_READ_TIMEOUT_SECONDS
+        assert config.retries == {"max_attempts": 0}
+
+
+def test_lambda_invoke_sync_read_timeout_raises_timeout_error():
+    """A botocore ReadTimeoutError surfaces as a builtin TimeoutError naming the function."""
+    from botocore.exceptions import ReadTimeoutError
+
+    with patch("lib.aws.boto3.client") as mock_client_ctor:
+        mock_lambda = MagicMock()
+        mock_lambda.invoke.side_effect = ReadTimeoutError(endpoint_url="https://lambda")
+        mock_client_ctor.return_value = mock_lambda
+
+        with pytest.raises(TimeoutError, match="MyFunc"):
+            lambda_invoke_sync("MyFunc", {"data": 123})

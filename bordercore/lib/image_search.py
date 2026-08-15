@@ -24,10 +24,17 @@ def _invoke(payload: dict) -> List[float]:
         The 512-dim CLIP embedding as a list of floats.
 
     Raises:
-        RuntimeError: If the Lambda reports a function error or returns an
-            ``"error"`` key in the response body.
+        RuntimeError: If the Lambda reports a function error, returns an
+            ``"error"`` key in the response body, or does not respond in time
+            (the CLIP model takes ~30s to load on a cold start; a retry a few
+            seconds later hits the now-warm function).
     """
-    body = lambda_invoke_sync(_FUNCTION_NAME, payload)
+    try:
+        body = lambda_invoke_sync(_FUNCTION_NAME, payload)
+    except TimeoutError as exc:
+        raise RuntimeError(
+            "Image search is still warming up. Please try again in a few seconds."
+        ) from exc
     if "error" in body:
         raise RuntimeError(f"CreateImageEmbedding returned error: {body['error']}")
     return body["vector"]

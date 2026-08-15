@@ -4,7 +4,7 @@ import json
 from unittest.mock import MagicMock, patch
 
 
-@patch("lib.aws._get_lambda_client")
+@patch("lib.aws._get_lambda_sync_client")
 def test_encode_image_invokes_lambda_with_base64(mock_get_client):
     """encode_image_query base64-encodes the bytes and invokes the Lambda in query_image mode."""
     from lib.image_search import encode_image_query
@@ -26,7 +26,7 @@ def test_encode_image_invokes_lambda_with_base64(mock_get_client):
     assert base64.b64decode(body["image_b64"]) == b"PNGDATA"
 
 
-@patch("lib.aws._get_lambda_client")
+@patch("lib.aws._get_lambda_sync_client")
 def test_encode_text_invokes_lambda_with_text(mock_get_client):
     """encode_text_query sends the text string to the Lambda in query_text mode."""
     from lib.image_search import encode_text_query
@@ -44,7 +44,7 @@ def test_encode_text_invokes_lambda_with_text(mock_get_client):
     assert body == {"mode": "query_text", "text": "sunset over water"}
 
 
-@patch("lib.aws._get_lambda_client")
+@patch("lib.aws._get_lambda_sync_client")
 def test_lambda_error_response_raises(mock_get_client):
     """If the Lambda returns an error JSON, the invoker should raise."""
     from lib.image_search import encode_text_query
@@ -63,7 +63,7 @@ def test_lambda_error_response_raises(mock_get_client):
         raise AssertionError("expected RuntimeError")
 
 
-@patch("lib.aws._get_lambda_client")
+@patch("lib.aws._get_lambda_sync_client")
 def test_lambda_function_error_raises(mock_get_client):
     """A Lambda runtime crash (FunctionError header) raises RuntimeError with the body."""
     from lib.image_search import encode_text_query
@@ -83,5 +83,24 @@ def test_lambda_function_error_raises(mock_get_client):
         encode_text_query("anything")
     except RuntimeError as e:
         assert "Runtime.ExitError" in str(e)
+    else:
+        raise AssertionError("expected RuntimeError")
+
+
+@patch("lib.aws._get_lambda_sync_client")
+def test_lambda_timeout_raises_friendly_runtime_error(mock_get_client):
+    """A boto3 read timeout (cold-starting Lambda) becomes a user-facing RuntimeError."""
+    from botocore.exceptions import ReadTimeoutError
+
+    from lib.image_search import encode_text_query
+
+    client = MagicMock()
+    client.invoke.side_effect = ReadTimeoutError(endpoint_url="https://lambda")
+    mock_get_client.return_value = client
+
+    try:
+        encode_text_query("anything")
+    except RuntimeError as e:
+        assert "try again" in str(e).lower()
     else:
         raise AssertionError("expected RuntimeError")
