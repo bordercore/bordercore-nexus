@@ -1336,13 +1336,20 @@
     gap: 4px;
   }
 
+  // Nested so the selected/hovered state outranks the base color below;
+  // a bare global `.rating-star-selected` loses to `.music-library-os .mlo-edit-rating-star`.
   .mlo-edit-rating-star {
     border: 0;
     background: transparent;
-    color: inherit;
+    color: var(--mlo-fg-3);
     cursor: pointer;
     font-size: 18px;
     line-height: 1;
+    transition: color 0.15s ease;
+
+    &.rating-star-selected {
+      color: var(--mlo-accent);
+    }
   }
 
   .mlo-edit-actions {
