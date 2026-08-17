@@ -17,7 +17,7 @@ from django.http import HttpRequest
 from django.utils import timezone
 
 from blob.services import get_recent_blobs as get_recent_blobs_service
-from blob.services import get_recent_media, get_recently_viewed
+from blob.services import get_recently_viewed
 from bookmark.models import Bookmark
 from bookmark.services import get_recent_bookmarks
 from fitness.services import get_overdue_exercises
@@ -79,9 +79,9 @@ def get_counts(request: HttpRequest) -> dict[str, int]:
 def get_recent_objects(request: HttpRequest) -> dict[str, Any]:
     """Get a list of recently created objects for display in the UI.
 
-    Retrieves recent blobs, bookmarks, media files, and recently viewed blobs
-    for the authenticated user. Blob content is only included when viewing
-    the blob list page to reduce payload size.
+    Retrieves recent blobs, bookmarks, and recently viewed blobs for the
+    authenticated user. Blob content is only included when viewing the blob
+    list page to reduce payload size.
 
     Args:
         request: The HTTP request object containing user and path information.
@@ -90,7 +90,6 @@ def get_recent_objects(request: HttpRequest) -> dict[str, Any]:
         Dictionary containing:
             - recent_blobs: Dict with "blobList" and "docTypes" keys
             - recent_bookmarks: Dict with "bookmarkList" key
-            - recent_media: Dict with "mediaList" key
             - recently_viewed: Dict with "blobList" key
             - elasticsearch_error: Error message string if Elasticsearch fails
         Returns empty dict if user is not authenticated.
@@ -104,14 +103,12 @@ def get_recent_objects(request: HttpRequest) -> dict[str, Any]:
 
     recent_blobs: list[dict[str, Any]] = []
     doctypes: dict[str, int] = {}
-    recent_media = []
     recent_bookmarks = []
     recently_viewed_blobs = []
     elasticsearch_error = ""
 
     try:
         recent_blobs, doctypes = get_recent_blobs_service(request.user, skip_content=skip_content)
-        recent_media = get_recent_media(request.user)
         recent_bookmarks = get_recent_bookmarks(request.user)
         recently_viewed_blobs = get_recently_viewed(request.user)
     except Exception as e:
@@ -125,9 +122,6 @@ def get_recent_objects(request: HttpRequest) -> dict[str, Any]:
         },
         "recent_bookmarks": {
             "bookmarkList": recent_bookmarks
-        },
-        "recent_media": {
-            "mediaList": recent_media
         },
         "recently_viewed": {
             "blobList": recently_viewed_blobs

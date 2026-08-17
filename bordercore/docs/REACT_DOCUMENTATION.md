@@ -818,7 +818,6 @@ The base template provides:
    ```202:210:bordercore/templates/base.html
            {{ recent_blobs|json_script:"recent_blobs" }}
            {{ recent_bookmarks|json_script:"recent-bookmarks" }}
-           {{ recent_media|json_script:"recent_media" }}
            {{ overdue_tasks|json_script:"overdue_tasks" }}
            {{ recent_searches|json_script:"recent_searches" }}
            {{ recently_viewed|json_script:"recently_viewed" }}
@@ -1129,7 +1128,6 @@ Django's `json_script` filter is used for passing complex data structures. React
 ```202:207:bordercore/templates/base.html
             {{ recent_blobs|json_script:"recent_blobs" }}
             {{ recent_bookmarks|json_script:"recent-bookmarks" }}
-            {{ recent_media|json_script:"recent_media" }}
             {{ overdue_tasks|json_script:"overdue_tasks" }}
             {{ recent_searches|json_script:"recent_searches" }}
             {{ recently_viewed|json_script:"recently_viewed" }}

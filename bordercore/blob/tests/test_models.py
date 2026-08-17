@@ -453,28 +453,22 @@ def test_recently_viewed_blob_add(authenticated_client):
 
 @override_settings(CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}})
 def test_blob_save_invalidates_recent_blobs_cache(authenticated_client):
-    """Blob.save() must delete the per-user recent_blobs and recent_media cache entries."""
+    """Blob.save() must delete the per-user recent_blobs cache entry."""
     user, _ = authenticated_client()
 
     cache_key = f"recent_blobs_{user.id}_10"
     cache.set(cache_key, [{"name": "stale"}], timeout=300)
     assert cache.get(cache_key) is not None
 
-    media_key = f"recent_media_{user.id}_10"
-    cache.set(media_key, [{"url": "stale"}], timeout=300)
-    assert cache.get(media_key) is not None
-
     BlobFactory.create(user=user)
 
     assert cache.get(cache_key) is None, \
         "Blob.save() should invalidate the user's recent_blobs cache"
-    assert cache.get(media_key) is None, \
-        "Blob.save() should invalidate the user's recent_media cache"
 
 
 @override_settings(CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}})
 def test_blob_delete_invalidates_recent_blobs_cache(authenticated_client, monkeypatch):
-    """Blob.delete() must delete the per-user recent_blobs and recent_media cache entries."""
+    """Blob.delete() must delete the per-user recent_blobs cache entry."""
     user, _ = authenticated_client()
 
     blob = BlobFactory.create(user=user)
@@ -482,10 +476,6 @@ def test_blob_delete_invalidates_recent_blobs_cache(authenticated_client, monkey
     cache_key = f"recent_blobs_{user.id}_10"
     cache.set(cache_key, [{"name": "stale"}], timeout=300)
     assert cache.get(cache_key) is not None
-
-    media_key = f"recent_media_{user.id}_10"
-    cache.set(media_key, [{"url": "stale"}], timeout=300)
-    assert cache.get(media_key) is not None
 
     # Stub out the on_commit S3/ES cleanup so the test only exercises cache
     # invalidation without requiring real AWS credentials or Elasticsearch.
@@ -495,5 +485,3 @@ def test_blob_delete_invalidates_recent_blobs_cache(authenticated_client, monkey
 
     assert cache.get(cache_key) is None, \
         "Blob.delete() should invalidate the user's recent_blobs cache"
-    assert cache.get(media_key) is None, \
-        "Blob.delete() should invalidate the user's recent_media cache"

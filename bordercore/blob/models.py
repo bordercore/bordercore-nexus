@@ -625,7 +625,6 @@ class Blob(TimeStampedModel):
         # Keys must match those written in blob/services.py (which include
         # the limit suffix).
         cache.delete(f"recent_blobs_{self.user.id}_10")
-        cache.delete(f"recent_media_{self.user.id}_10")
 
     def set_s3_metadata_file_modified(self) -> None:
         """Store a file's modification time as S3 metadata after it's saved.
@@ -1176,7 +1175,6 @@ class Blob(TimeStampedModel):
         # Keys must match those written in blob/services.py (which include
         # the limit suffix).
         cache.delete(f"recent_blobs_{user_id}_10")
-        cache.delete(f"recent_media_{user_id}_10")
 
         return result
 

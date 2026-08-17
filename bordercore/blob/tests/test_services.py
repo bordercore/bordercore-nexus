@@ -18,7 +18,7 @@ from blob.services import (_build_notes_rag_messages,
                            _openai_reasoning_effort, _rewrite_notes_search_query,
                            chatbot, chatbot_followups,
                            get_authors, get_blob_naturalsize, get_dashboard_blobs,
-                           get_recent_blobs, get_recent_media, import_artstation,
+                           get_recent_blobs, import_artstation,
                            import_instagram, import_newyorktimes, parse_date,
                            parse_shortcode)
 from blob.tests.factories import BlobFactory
@@ -100,28 +100,6 @@ def test_get_dashboard_blobs(mock_get_blob_sizes, authenticated_client, blob_ima
     for key in ("uuid", "name", "url", "doctype", "tags", "bucket",
                 "is_starred", "is_pinned", "back_refs"):
         assert key in sample
-
-
-def test_get_recent_media(authenticated_client, blob_image_factory, blob_text_factory):
-    """Test recent media retrieval filters to images and videos only."""
-
-    user, _ = authenticated_client()
-
-    media_list = get_recent_media(user)
-
-    assert len(media_list) == 1
-
-    assert blob_image_factory[0].name in [
-        x["name"]
-        for x in
-        media_list
-    ]
-
-    assert blob_text_factory[0].name not in [
-        x["name"]
-        for x in
-        media_list
-    ]
 
 
 def test_get_blob_naturalizesize():
