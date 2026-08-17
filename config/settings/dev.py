@@ -36,10 +36,19 @@ INSTALLED_APPS += (
     "nplusone.ext.django",
 )
 
-# Use a dummy cache for dev
+# An in-process cache, so dev exercises the same caching paths as prod.
+# DummyCache stored nothing and always missed, which meant every page load
+# re-ran the Elasticsearch query behind the topbar's recent-objects dropdown —
+# the single most expensive thing on a dev page load, since Elasticsearch is
+# slow to reach from outside the VPC.
+#
+# Staleness is bounded: the cached values (recent blobs, recent bookmarks, meta
+# tags, graph payloads) are all invalidated explicitly on mutation, the default
+# timeout is 300s, and LocMemCache is per-process, so the autoreloader drops it
+# on any code edit.
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.dummy.DummyCache",
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
     }
 }
 
