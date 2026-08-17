@@ -90,10 +90,12 @@ class DrillListView(LoginRequiredMixin, ListView):
         user = cast(User, self.request.user)
         qs = Question.objects
 
-        total_progress = qs.total_tag_progress(user)
-        favorites_progress = qs.favorite_questions_progress(user)
+        # Both totals are computed here and handed to the progress methods,
+        # which would otherwise re-run the identical COUNT queries.
         favorites_total = qs.filter(user=user, is_favorite=True).count()
         all_total = qs.filter(user=user).count()
+        total_progress = qs.total_tag_progress(user, total=all_total)
+        favorites_progress = qs.favorite_questions_progress(user, total=favorites_total)
         needs_review = total_progress["count"]
 
         local_today = timezone.localdate()
@@ -107,7 +109,7 @@ class DrillListView(LoginRequiredMixin, ListView):
         reviewed_week = qs.reviewed_count(user, week_start)
 
         intervals = list(user.userprofile.drill_intervals or [])
-        tags_needing = qs.tags_needing_review(user)
+        tags_needing, pinned_rows, muted_rows = qs.overview_tag_sections(user)
         today = local_today
         for r in tags_needing:
             last_dt = r.pop("last_reviewed_dt", None)
@@ -118,10 +120,8 @@ class DrillListView(LoginRequiredMixin, ListView):
                 else "cool"
             )
 
-        pinned_rows = qs.get_pinned_tags(user)
         for r in pinned_rows:
             r.pop("last_reviewed_dt", None)
-        muted_rows = qs.get_muted_tags(user)
         for r in muted_rows:
             r.pop("last_reviewed_dt", None)
 

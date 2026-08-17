@@ -69,7 +69,12 @@ class DrillManager(models.Manager):
             List of tag progress dicts (as produced by ``_batch_tag_progress``),
             filtered to rows where ``todo > 0``.
         """
-        tags = (
+        rows = self._batch_tag_progress(user, self._tags_needing_review_names(user))
+        return [r for r in rows if r["todo"] > 0]
+
+    def _tags_needing_review_names(self, user: User) -> list[str]:
+        """Return candidate tag names for ``tags_needing_review``, in display order."""
+        return list(
             Tag.objects.filter(
                 user=user,
                 question__isnull=False,
@@ -81,14 +86,16 @@ class DrillManager(models.Manager):
             .distinct()
             .values_list("name", flat=True)
         )
-        rows = self._batch_tag_progress(user, list(tags))
-        return [r for r in rows if r["todo"] > 0]
 
-    def total_tag_progress(self, user: User) -> dict[str, float | int]:
+    def total_tag_progress(
+        self, user: User, total: int | None = None
+    ) -> dict[str, float | int]:
         """Get percentage of all tags not needing review.
 
         Args:
             user: The user to calculate progress for.
+            total: The user's total question count, when the caller already has
+                it. Saves a round trip; computed here when omitted.
 
         Returns:
             Dictionary with 'percentage' and 'count' keys. 'percentage'
@@ -98,7 +105,7 @@ class DrillManager(models.Manager):
 
         Question = apps.get_model("drill", "Question")
 
-        count = Question.objects.filter(user=user).count()
+        count = total if total is not None else Question.objects.filter(user=user).count()
 
         muted_tags = user.userprofile.drill_tags_muted.all()
 
@@ -116,11 +123,15 @@ class DrillManager(models.Manager):
             "count": todo
         }
 
-    def favorite_questions_progress(self, user: User) -> dict[str, float | int]:
+    def favorite_questions_progress(
+        self, user: User, total: int | None = None
+    ) -> dict[str, float | int]:
         """Get percentage of favorite questions not needing review.
 
         Args:
             user: The user to calculate progress for.
+            total: The user's favorite question count, when the caller already
+                has it. Saves a round trip; computed here when omitted.
 
         Returns:
             Dictionary with 'percentage' and 'count' keys. 'percentage'
@@ -130,7 +141,11 @@ class DrillManager(models.Manager):
 
         Question = apps.get_model("drill", "Question")
 
-        count = Question.objects.filter(user=user, is_favorite=True).count()
+        count = (
+            total
+            if total is not None
+            else Question.objects.filter(user=user, is_favorite=True).count()
+        )
 
         todo = Question.objects.filter(
             Q(user=user),
@@ -199,6 +214,45 @@ class DrillManager(models.Manager):
             user.userprofile.drill_tags_muted.values_list("name", flat=True)
         )
         return self._batch_tag_progress(user, tag_names)
+
+    def overview_tag_sections(
+        self, user: User
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+        """Return the overview page's three tag lists using one progress query.
+
+        ``tags_needing_review``, ``get_pinned_tags`` and ``get_muted_tags``
+        each resolve their own names and then call ``_batch_tag_progress``.
+        The name lookups read different tables, but the progress query is the
+        same shape three times over, so the overview runs it once for the union
+        of the names. Each section gets its own copies of the rows, because
+        callers annotate them in place.
+
+        Args:
+            user: The user whose overview is being built.
+
+        Returns:
+            ``(needing_review, pinned, muted)``, each ordered and filtered as
+            its individual method would return it.
+        """
+        needing_names = self._tags_needing_review_names(user)
+        pinned_names = [
+            t.name
+            for t in user.userprofile.pinned_drill_tags.all()
+            .only("name")
+            .order_by("drilltag__sort_order")
+        ]
+        muted_names = list(
+            user.userprofile.drill_tags_muted.values_list("name", flat=True)
+        )
+
+        union = list(dict.fromkeys(needing_names + pinned_names + muted_names))
+        rows_by_name = {row["name"]: row for row in self._batch_tag_progress(user, union)}
+
+        def section(names: list[str]) -> list[dict[str, Any]]:
+            return [dict(rows_by_name[name]) for name in names if name in rows_by_name]
+
+        needing = [row for row in section(needing_names) if row["todo"] > 0]
+        return needing, section(pinned_names), section(muted_names)
 
     def recent_tags(self, user: User) -> Any:
         """Get the tags most recently attached to questions.
@@ -339,6 +393,7 @@ class DrillManager(models.Manager):
         """
         Question = apps.get_model("drill", "Question")
         today = timezone.localdate()
+        now = timezone.now()
         base = Question.objects.filter(
             user=user, is_disabled=False, last_reviewed__isnull=False
         )
@@ -347,26 +402,46 @@ class DrillManager(models.Manager):
             output_field=DateTimeField(),
         )
         base = base.annotate(due_at=due_at)
+
+        # One grouped query covers every cell except today. Counting each day
+        # separately costs a round trip per cell, which dominates the view when
+        # the database is not local.
+        range_start, _ = _local_day_bounds(today - timedelta(days=span_days))
+        _, range_end = _local_day_bounds(today + timedelta(days=span_days))
+        per_day = (
+            base.filter(due_at__gte=range_start, due_at__lt=range_end)
+            .annotate(day=TruncDate("due_at", tzinfo=timezone.get_current_timezone()))
+            .values("day")
+            .annotate(n=Count("id"))
+        )
+        counts_by_day = {row["day"]: row["n"] for row in per_day}
+
+        # Today is a rollup of everything currently due rather than one day's
+        # bucket, and it also has to pick up never-reviewed questions, which
+        # `base` excludes. Conditional aggregation keeps both to one round trip
+        # and to a single instant.
+        totals = Question.objects.filter(user=user, is_disabled=False).aggregate(
+            due_now=Count(
+                "id",
+                filter=Q(last_reviewed__isnull=False)
+                & Q(interval__lte=now - F("last_reviewed")),  # type: ignore[operator]
+            ),
+            never_reviewed=Count("id", filter=Q(last_reviewed__isnull=True)),
+        )
+        today_count = (totals["due_now"] or 0) + (totals["never_reviewed"] or 0)
+
         out: list[dict[str, Any]] = []
         for offset in range(-span_days, span_days + 1):
             d = today + timedelta(days=offset)
-            if offset < 0:
-                start_dt, end_dt = _local_day_bounds(d)
-                count = base.filter(due_at__gte=start_dt, due_at__lt=end_dt).count()
-                state = "over" if count else "empty"
-            elif offset == 0:
-                # `base` excludes never-reviewed questions; the second .count() picks them up.
-                # Two round-trips at slightly different instants is acceptable for a display strip.
-                count = base.filter(
-                    Q(interval__lte=timezone.now() - F("last_reviewed"))  # type: ignore[operator]
-                ).count() + Question.objects.filter(
-                    user=user, is_disabled=False, last_reviewed__isnull=True
-                ).count()
+            if offset == 0:
+                count = today_count
                 state = "today"
             else:
-                start_dt, end_dt = _local_day_bounds(d)
-                count = base.filter(due_at__gte=start_dt, due_at__lt=end_dt).count()
-                state = "upcoming" if count else "empty"
+                count = counts_by_day.get(d, 0)
+                if not count:
+                    state = "empty"
+                else:
+                    state = "over" if offset < 0 else "upcoming"
             out.append({
                 "dow": d.strftime("%a").lower(),
                 "date": d.strftime("%-d"),
