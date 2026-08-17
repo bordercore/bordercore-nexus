@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import { BaseStoreProvider, useBaseStore } from "../react/stores/BaseStore";
 import Toast from "../react/common/Toast";
 import RefinedTopBar from "../react/topbar/RefinedTopBar";
-import ChatBot, { ChatBotHandle } from "../react/chatbot/ChatBot";
+import LazyChatBot from "../react/chatbot/LazyChatBot";
 import SidebarMenu from "../react/common/SidebarMenu";
 import GlobalAudioPlayer from "../react/music/GlobalAudioPlayer";
 import { createMarkdown } from "../react/common/markdown";
@@ -37,11 +37,9 @@ declare global {
 
 function ChatBotContent() {
   const data = window.BASE_TEMPLATE_DATA || {};
-  const chatBotRef = React.useRef<ChatBotHandle>(null);
 
   return (
-    <ChatBot
-      ref={chatBotRef}
+    <LazyChatBot
       blobUuid={data.chatBotConfig?.blobUuid || ""}
       chatUrl={data.chatBotConfig?.chatUrl || ""}
       followupsUrl={data.chatBotConfig?.followupsUrl || ""}
