@@ -3,10 +3,22 @@
 // =============================================================================
 // Used by <VisualizerSlot/> on pages that opt into a corner slot (e.g.
 // .todo-viz on /todo/). The dispatcher renders one canvas child; this rule
-// makes any of the registered visualizers stretch to the host container.
+// sizes any of the registered visualizers to the host container.
+// The height is a definite length rather than `height: 100%` on purpose.
+// useWireframeCanvas rewrites the canvas' width/height *attributes* from its
+// measured rect on every resize, which gives the element an intrinsic aspect
+// ratio. Slot hosts size themselves from their content (`min-height`, no
+// definite height), so a percentage height resolves against `auto` and falls
+// back to that intrinsic ratio: the canvas sizes itself from the ratio, the
+// host grows to fit, the larger rect is written back to the attributes, and
+// the loop settles wherever it lands — well past the 96px the slots budget
+// for. Where the slot shares a grid row with the page head, the inflated row
+// stretches the head and opens a gap above the page body.
+// Hosts wanting a different size set --viz-canvas-height on the slot; it must
+// stay a length, since a percentage reopens the loop above.
 
 .viz-canvas {
   display: block;
   width: 100%;
-  height: 100%;
+  height: var(--viz-canvas-height, 96px);
 }
