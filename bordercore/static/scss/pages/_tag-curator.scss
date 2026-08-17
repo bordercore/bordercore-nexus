@@ -131,15 +131,6 @@
       &:hover { background: var(--bg-3); color: var(--fg-1); }
     }
 
-    &__kbd {
-      padding: 2px 6px;
-      border: 1px solid var(--line-soft);
-      border-radius: 4px;
-      background: var(--bg-3);
-      color: var(--fg-3);
-      font: 400 10px/1 var(--font-mono);
-    }
-    &:focus-within .tg-search__kbd { display: none; }
   }
 
   .tg-search-pop {

@@ -182,7 +182,7 @@ export function LogSetCard({
           />
         </div>
         <div className="submit-row">
-          <span className="hint">⌘↵ to log</span>
+          <span className="hint">Ctrl-↵ / ⌘↵ to log</span>
           <button type="button" className="ex-btn" onClick={resetFields}>
             reset
           </button>

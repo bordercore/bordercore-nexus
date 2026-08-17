@@ -120,15 +120,6 @@ export function SongEditPage({
   const tagsInputRef = useRef<TagsInputHandle>(null);
   const selectValueRef = useRef<SelectValueHandle>(null);
   const formRef = useRef<HTMLFormElement>(null);
-  const isMac = React.useMemo(() => {
-    if (typeof navigator === "undefined") return false;
-    const platform =
-      (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData
-        ?.platform ||
-      navigator.platform ||
-      navigator.userAgent;
-    return /Mac|iPhone|iPod|iPad/i.test(platform);
-  }, []);
 
   useEffect(() => {
     const fetchFormData = async () => {
@@ -261,7 +252,6 @@ export function SongEditPage({
   }, [cancelUrl, setRating]);
 
   const displayRating = hoverRating ?? formData.rating ?? 0;
-  const modKey = isMac ? "⌘" : "Ctrl";
 
   if (loading) {
     return (
@@ -589,13 +579,11 @@ export function SongEditPage({
 
         <div className="mlo-edit-actions">
           <a href={cancelUrl} className="mlo-edit-cancel">
-            Cancel <kbd>Esc</kbd>
+            Cancel
           </a>
           <button type="submit" className="mlo-edit-save mlo-btn-primary" disabled={submitting}>
             <FontAwesomeIcon icon={faCheck} className="refined-btn-icon" />
             {submitting ? "Saving…" : "Save"}
-            <kbd>{modKey}</kbd>
-            <kbd>S</kbd>
           </button>
         </div>
       </form>

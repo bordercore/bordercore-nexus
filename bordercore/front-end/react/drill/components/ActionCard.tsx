@@ -29,7 +29,6 @@ export default function ActionCard({ streak, session, urls, onStudy, onNewQuesti
         <button type="button" className="drill-btn-huge" onClick={onStudy}>
           <FontAwesomeIcon icon={faBolt} />
           <span>Study</span>
-          <span className="kbd">⇧S</span>
         </button>
         {session && (
           <a className="drill-btn-secondary" href={urls.resume}>
@@ -58,7 +57,6 @@ export default function ActionCard({ streak, session, urls, onStudy, onNewQuesti
           <FontAwesomeIcon icon={faPlus} />
           <span>New question</span>
         </button>
-        <span className="hint">⌘N</span>
       </div>
     </section>
   );

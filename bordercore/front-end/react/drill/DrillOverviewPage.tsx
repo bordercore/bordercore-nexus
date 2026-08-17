@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import RingDefs from "./components/RingDefs";
 import Sidebar from "./components/Sidebar";
 import ActionCard from "./components/ActionCard";
@@ -34,6 +34,32 @@ export default function DrillOverviewPage({ payload }: Props) {
   const newQuestion = useCallback(() => {
     window.location.href = payload.urls.drillAdd;
   }, [payload.urls.drillAdd]);
+
+  // Bare-letter shortcuts, matching the /node/ landing page. Plain keys rather
+  // than a modifier chord because Ctrl-N and Cmd-N are reserved by the browser
+  // for "new window" and can't be intercepted. Documented in the topbar help
+  // popup via this page's {% block help_page %}, not as on-screen hints.
+  useEffect(() => {
+    const isEditable = (el: EventTarget | null) => {
+      if (!(el instanceof HTMLElement)) return false;
+      const tag = el.tagName;
+      return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || el.isContentEditable;
+    };
+    const handler = (e: KeyboardEvent) => {
+      if (studyOpen || isEditable(e.target)) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const key = e.key.toLowerCase();
+      if (key === "n") {
+        e.preventDefault();
+        newQuestion();
+      } else if (key === "s") {
+        e.preventDefault();
+        startStudy();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [studyOpen, newQuestion, startStudy]);
 
   const overdueDays = payload.schedule.filter(d => d.state === "over").length;
 

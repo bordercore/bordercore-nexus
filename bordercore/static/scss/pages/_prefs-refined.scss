@@ -1514,19 +1514,6 @@
     }
   }
 
-  .kbd {
-    display: inline-flex;
-    min-width: 22px;
-    align-items: center;
-    justify-content: center;
-    padding: 3px 7px;
-    border: 1px solid rgb(255 255 255 / 30%);
-    border-radius: 6px;
-    background: rgb(0 0 0 / 15%);
-    color: rgb(255 255 255 / 85%);
-    font-family: "JetBrains Mono", ui-monospace, monospace;
-    font-size: 11px;
-  }
 }
 
 @keyframes prefs-pulse {

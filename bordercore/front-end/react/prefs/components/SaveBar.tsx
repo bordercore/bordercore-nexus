@@ -58,7 +58,6 @@ export function SaveBar({
           >
             <FontAwesomeIcon icon={faCheck} className="refined-btn-icon" />
             <span>{saving ? "saving…" : "save"}</span>
-            <span className="kbd">⌘S</span>
           </button>
         </div>
       </div>

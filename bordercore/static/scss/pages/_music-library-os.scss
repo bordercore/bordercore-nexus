@@ -118,19 +118,6 @@
       }
     }
 
-    // The "⌘K" hint chip rendered after the input when the field is empty.
-    .mlo-search-hint {
-      flex-shrink: 0;
-    }
-
-    kbd {
-      padding: 1px 5px;
-      border: 1px solid var(--line);
-      border-radius: 3px;
-      background: var(--mlo-bg-3);
-      color: var(--mlo-fg-3);
-      font: 500 10px var(--font-mono);
-    }
   }
 
   // Stat strip
@@ -1400,21 +1387,6 @@
       }
     }
 
-    // stylelint-disable-next-line no-descending-specificity
-    kbd {
-      padding: 1px 5px;
-      border: 1px solid color-mix(in oklch, var(--accent-fg, #fff), transparent 70%);
-      border-radius: 3px;
-      background: color-mix(in oklch, var(--accent-fg, #fff), transparent 88%);
-      color: var(--accent-fg, #fff);
-      font: 500 10px var(--font-mono);
-    }
-
-    .mlo-edit-cancel kbd {
-      border-color: var(--mlo-line-soft);
-      background: var(--mlo-bg-3);
-      color: var(--mlo-fg-3);
-    }
   }
 
   .mlo-edit-loading {
@@ -1530,7 +1502,7 @@
     }
 
     // Compact variant used inside cards that lead with an explanatory
-    // single-liner (Tag Suggestions, From this file, Shortcuts).
+    // single-liner (Tag Suggestions, From this file).
     .mlo-create-hint-tight {
       margin-top: 0;
       font-size: 11px;
@@ -1543,49 +1515,6 @@
       align-self: center;
       margin-left: 0;
       line-height: 1.4;
-    }
-
-    // Two-column "key | description" rows in the Shortcuts card.
-    .mlo-create-shortcuts {
-      padding: 0;
-      margin: 0 0 10px;
-      list-style: none;
-
-      li {
-        display: flex;
-        align-items: center;
-        padding: 4px 0;
-        border-bottom: 1px solid var(--mlo-hairline);
-        gap: 12px;
-
-        &:last-child { border-bottom: 0; }
-      }
-
-      kbd {
-        display: inline-block;
-        min-width: 22px;
-        padding: 2px 6px;
-        border: 1px solid var(--mlo-line-soft);
-        border-radius: 4px;
-        background: var(--mlo-bg-3);
-        color: var(--fg-1);
-        font: 600 10px/1 var(--font-mono);
-        text-align: center;
-      }
-    }
-
-    .mlo-create-shortcut-keys {
-      display: inline-flex;
-      flex: 0 0 auto;
-      align-items: center;
-      color: var(--mlo-fg-4);
-      font: 500 11px var(--font-mono);
-      gap: 4px;
-    }
-
-    .mlo-create-shortcut-desc {
-      color: var(--mlo-fg-2);
-      font: 400 12px var(--font-ui);
     }
 
     // "Library at a glance" — three label/value pairs stacked tightly so the

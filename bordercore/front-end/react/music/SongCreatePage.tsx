@@ -441,27 +441,6 @@ export function SongCreatePage({
             </p>
           </div>
         )}
-        <div className="mlo-edit-sidebar-card">
-          <div className="mlo-edit-sidebar-head">Shortcuts</div>
-          <ul className="mlo-create-shortcuts">
-            <li>
-              <span className="mlo-create-shortcut-keys">
-                <kbd>1</kbd>–<kbd>5</kbd>
-              </span>
-              <span className="mlo-create-shortcut-desc">set rating</span>
-            </li>
-            <li>
-              <span className="mlo-create-shortcut-keys">
-                <kbd>Esc</kbd>
-              </span>
-              <span className="mlo-create-shortcut-desc">cancel and return</span>
-            </li>
-          </ul>
-          <p className="mlo-create-hint mlo-create-hint-tight">
-            Bare digits only fire when you're not typing in a field, so a year like 1985 won't
-            rewrite the rating.
-          </p>
-        </div>
         {libraryStats && (
           <div className="mlo-edit-sidebar-card">
             <div className="mlo-edit-sidebar-head">Library at a glance</div>
@@ -774,7 +753,7 @@ export function SongCreatePage({
 
         <div className="mlo-edit-actions">
           <a href={cancelUrl} className="mlo-edit-cancel">
-            Cancel <kbd>Esc</kbd>
+            Cancel
           </a>
           <button type="submit" className="mlo-edit-save mlo-btn-primary" disabled={submitting}>
             <FontAwesomeIcon icon={faCheck} className="refined-btn-icon" />

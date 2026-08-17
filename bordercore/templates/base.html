@@ -201,9 +201,21 @@
 
         {% endblock %}
 
+        {# The help modal (RefinedTopBar) reads this element's textContent and    #}
+        {# renders it as markdown. textContent preserves leading whitespace, and #}
+        {# markdown treats a line indented four spaces as a code block, so help  #}
+        {# content must be authored flush against column 0 — do not indent it to #}
+        {# match the surrounding template.                                       #}
+        {# Pages with their own help override {% block help_page %}; the global  #}
+        {# shortcuts below are appended to every page automatically. Override    #}
+        {# {% block help %} itself only to suppress that global section.         #}
         {% block help %}
             <div class="hidden" id="help-text">
-                Bordercore is a place to organize all your information.
+{% block help_page %}Bordercore is a place to organize all your information.{% endblock %}
+
+# Global Shortcuts
+- **Alt-S** *-* Open the search window
+- **Alt-C** *-* Open the chat bot
             </div>
         {% endblock %}
 

@@ -84,3 +84,45 @@ def test_html():
                 violations.append(f"Class name starting with '_' in template {template}")
 
     assert not violations, "Template quality violations found:\n" + "\n".join(violations)
+
+
+def test_help_page_blocks_are_flush_left():
+    """Verify help markdown is authored flush against column 0.
+
+    The topbar help modal reads the #help-text element's textContent and renders
+    it as markdown. textContent preserves leading whitespace, and markdown treats
+    a line indented four or more spaces as a code block, so a help block indented
+    to line up with the surrounding template silently renders as preformatted
+    text instead of a shortcut list.
+    """
+
+    bordercore_home = os.environ.get("BORDERCORE_HOME")
+    if not bordercore_home:
+        pytest.skip("BORDERCORE_HOME not set")
+
+    template_dirs = [d for engine in settings.TEMPLATES for d in engine.get("DIRS", [])]
+
+    block_re = re.compile(r"{%\s*block\s+help_page\s*%}(.*?){%\s*endblock", re.DOTALL)
+
+    # Django comments can mention the tag while documenting it, which would
+    # otherwise be picked up as a block opener.
+    comment_re = re.compile(r"{#.*?#}")
+
+    violations = []
+
+    for template_dir in template_dirs:
+        for base_dir, _, filenames in os.walk(template_dir):
+            for filename in filenames:
+                if not filename.endswith(".html"):
+                    continue
+
+                template = os.path.join(base_dir, filename)
+                with open(template, "r") as file:
+                    contents = comment_re.sub("", file.read())
+
+                for body in block_re.findall(contents):
+                    for line in body.split("\n"):
+                        if line.strip() and line.startswith("    "):
+                            violations.append(f"Indented help_page line in {template}: {line!r}")
+
+    assert not violations, "Help text must be flush-left:\n" + "\n".join(violations)

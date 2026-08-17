@@ -219,9 +219,7 @@ export default function NodeListPage({
           )}
 
           <footer className="nl-footer">
-            <span className="meta">
-              // bordercore / nodes · press <kbd>N</kbd> to create, <kbd>/</kbd> to search
-            </span>
+            <span className="meta">// bordercore / nodes</span>
           </footer>
         </main>
       </div>

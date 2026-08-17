@@ -1,5 +1,5 @@
 import React from "react";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import DrillOverviewPage from "./DrillOverviewPage";
 import type { DrillPayload } from "./types";
@@ -168,5 +168,82 @@ describe("DrillOverviewPage", () => {
     // Form action points at startStudySession.
     const form = document.querySelector(`form[action="${payload.urls.startStudySession}"]`);
     expect(form).not.toBeNull();
+  });
+
+  describe("keyboard shortcuts", () => {
+    const realLocation = window.location;
+
+    beforeEach(() => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ tag_list: [] }),
+      }) as unknown as typeof fetch;
+      // jsdom refuses assignments to the real location, so swap in a plain
+      // object to observe what the shortcut would navigate to.
+      Object.defineProperty(window, "location", {
+        value: { href: "" },
+        writable: true,
+        configurable: true,
+      });
+    });
+
+    afterEach(() => {
+      Object.defineProperty(window, "location", {
+        value: realLocation,
+        writable: true,
+        configurable: true,
+      });
+    });
+
+    it("opens the study modal on 's'", () => {
+      render(<DrillOverviewPage payload={payload} />);
+      expect(screen.queryByText("Start a session")).not.toBeInTheDocument();
+
+      fireEvent.keyDown(window, { key: "s" });
+
+      expect(screen.getByText("Start a session")).toBeInTheDocument();
+    });
+
+    it("navigates to the add-question page on 'n'", () => {
+      render(<DrillOverviewPage payload={payload} />);
+
+      fireEvent.keyDown(window, { key: "n" });
+
+      expect(window.location.href).toBe(payload.urls.drillAdd);
+    });
+
+    it("ignores keys typed into a field", () => {
+      render(<DrillOverviewPage payload={payload} />);
+      const input = document.createElement("input");
+      document.body.appendChild(input);
+      input.focus();
+
+      fireEvent.keyDown(input, { key: "s" });
+      fireEvent.keyDown(input, { key: "n" });
+
+      expect(screen.queryByText("Start a session")).not.toBeInTheDocument();
+      input.remove();
+    });
+
+    it("ignores modifier chords so browser shortcuts still work", () => {
+      render(<DrillOverviewPage payload={payload} />);
+
+      fireEvent.keyDown(window, { key: "n", ctrlKey: true });
+      fireEvent.keyDown(window, { key: "n", metaKey: true });
+      fireEvent.keyDown(window, { key: "s", ctrlKey: true });
+
+      expect(screen.queryByText("Start a session")).not.toBeInTheDocument();
+    });
+
+    it("does not reopen the study modal while it is already open", () => {
+      render(<DrillOverviewPage payload={payload} />);
+      fireEvent.keyDown(window, { key: "s" });
+      expect(screen.getByText("Start a session")).toBeInTheDocument();
+
+      // 'n' must not navigate out from under an open modal.
+      fireEvent.keyDown(window, { key: "n" });
+
+      expect(window.location.href).not.toBe(payload.urls.drillAdd);
+    });
   });
 });

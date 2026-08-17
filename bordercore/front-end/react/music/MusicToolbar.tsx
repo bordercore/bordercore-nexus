@@ -10,22 +10,14 @@ interface Props {
 }
 
 /**
- * Main-column toolbar for the music dashboard — holds the library search (with
- * its ⌘K focus hint and command-palette slot). Mirrors the toolbar position on
- * /todo/, /bookmark/, and /collection/: the search lives at the top of the main
- * column, while the page head keeps only the title and action buttons.
+ * Main-column toolbar for the music dashboard — holds the library search and
+ * the command-palette slot. Mirrors the toolbar position on /todo/, /bookmark/,
+ * and /collection/: the search lives at the top of the main column, while the
+ * page head keeps only the title and action buttons. The Ctrl-K focus binding
+ * is documented in the topbar help popup, via this page's {% block help_page %}.
  */
 const MusicToolbar: React.FC<Props> = ({ searchValue, onSearchChange, paletteSlot }) => {
   const inputRef = React.useRef<HTMLInputElement>(null);
-  const isMac = React.useMemo(() => {
-    if (typeof navigator === "undefined") return false;
-    const platform =
-      (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData
-        ?.platform ||
-      navigator.platform ||
-      navigator.userAgent;
-    return /Mac|iPhone|iPod|iPad/i.test(platform);
-  }, []);
 
   useFocusOnCtrlK(inputRef);
 
@@ -40,12 +32,6 @@ const MusicToolbar: React.FC<Props> = ({ searchValue, onSearchChange, paletteSlo
           onChange={e => onSearchChange(e.target.value)}
           placeholder="Search artists, albums, songs…"
         />
-        {!searchValue && (
-          <span className="mlo-search-hint">
-            <kbd>{isMac ? "⌘" : "Ctrl"}</kbd>
-            <kbd>K</kbd>
-          </span>
-        )}
         {paletteSlot}
       </div>
     </div>

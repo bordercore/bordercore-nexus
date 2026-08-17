@@ -129,7 +129,6 @@ export function TagSearch({ activeName, searchUrl, onPick }: TagSearchProps) {
           <FontAwesomeIcon icon={faXmark} />
         </button>
       )}
-      {!open && <kbd className="tg-search__kbd">⌘K</kbd>}
       {open && (
         <div className="tg-search-pop">
           {rows.length === 0 ? (

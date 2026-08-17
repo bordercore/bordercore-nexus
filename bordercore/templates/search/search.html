@@ -37,3 +37,8 @@
     {{ request.GET.term_search|json_script:"searchTerm" }}
     {{ request.GET.semantic_search|json_script:"searchSemantic" }}
 {% endblock %}
+
+{% block help_page %}
+# Keyboard Shortcuts
+- **Ctrl-K** / **⌘K** *-* Focus the search box
+{% endblock %}
