@@ -625,6 +625,7 @@ class Blob(TimeStampedModel):
         # Keys must match those written in blob/services.py (which include
         # the limit suffix).
         cache.delete(f"recent_blobs_{self.user.id}_10")
+        cache.delete(f"recently_viewed_{self.user.id}")
 
     def set_s3_metadata_file_modified(self) -> None:
         """Store a file's modification time as S3 metadata after it's saved.
@@ -1175,6 +1176,7 @@ class Blob(TimeStampedModel):
         # Keys must match those written in blob/services.py (which include
         # the limit suffix).
         cache.delete(f"recent_blobs_{user_id}_10")
+        cache.delete(f"recently_viewed_{user_id}")
 
         return result
 
@@ -1285,6 +1287,10 @@ class RecentlyViewedBlob(TimeStampedModel):
 
         if objects:
             RecentlyViewedBlob.objects.filter(id__in=[x.id for x in objects]).delete()
+
+        # The list this row belongs to is cached in blob/services.py; viewing
+        # something is the whole point of the list, so it must not go stale.
+        cache.delete(f"recently_viewed_{user.id}")
 
 
 class BlobToObject(SortOrderMixin):

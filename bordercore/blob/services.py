@@ -479,6 +479,16 @@ def get_recently_viewed(user: User) -> list[dict[str, Any]]:
             - name: Item name
             - uuid: Item UUID
     """
+    # Cached per user and invalidated by RecentlyViewedBlob.add, which runs on
+    # every blob/node view, so the list is never stale in practice. Blob.save
+    # and Blob.delete invalidate it too, since the rows carry names and cover
+    # URLs copied out of the blob.
+    cache_key = f"recently_viewed_{user.id}"
+
+    cached_recently_viewed = cache.get(cache_key)
+    if cached_recently_viewed is not None:
+        return cached_recently_viewed
+
     # Query optimization: Each RecentlyViewedBlob row has EITHER a blob OR a node
     # (never both). Using a single query with select_related("blob", "node") would
     # JOIN both tables for all rows, but we only use one relation per row:
@@ -534,6 +544,8 @@ def get_recently_viewed(user: User) -> list[dict[str, Any]]:
                     "uuid": x.node.uuid
                 }
             )
+
+    cache.set(cache_key, object_list)
 
     return object_list
 

@@ -452,6 +452,25 @@ def test_recently_viewed_blob_add(authenticated_client):
 
 
 @override_settings(CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}})
+def test_recently_viewed_add_invalidates_cache(authenticated_client, blob_text_factory):
+    """RecentlyViewedBlob.add() must drop the cached recently-viewed list.
+
+    Viewing something is the entire purpose of the list, so a stale cache here
+    would hide the item the user just looked at.
+    """
+    user, _ = authenticated_client()
+
+    cache_key = f"recently_viewed_{user.id}"
+    cache.set(cache_key, [{"name": "stale"}], timeout=300)
+    assert cache.get(cache_key) is not None
+
+    RecentlyViewedBlob.add(user=user, blob=blob_text_factory[0])
+
+    assert cache.get(cache_key) is None, \
+        "RecentlyViewedBlob.add() should invalidate the user's recently_viewed cache"
+
+
+@override_settings(CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}})
 def test_blob_save_invalidates_recent_blobs_cache(authenticated_client):
     """Blob.save() must delete the per-user recent_blobs cache entry."""
     user, _ = authenticated_client()
@@ -460,10 +479,15 @@ def test_blob_save_invalidates_recent_blobs_cache(authenticated_client):
     cache.set(cache_key, [{"name": "stale"}], timeout=300)
     assert cache.get(cache_key) is not None
 
+    viewed_key = f"recently_viewed_{user.id}"
+    cache.set(viewed_key, [{"name": "stale"}], timeout=300)
+
     BlobFactory.create(user=user)
 
     assert cache.get(cache_key) is None, \
         "Blob.save() should invalidate the user's recent_blobs cache"
+    assert cache.get(viewed_key) is None, \
+        "Blob.save() should invalidate the user's recently_viewed cache"
 
 
 @override_settings(CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}})
