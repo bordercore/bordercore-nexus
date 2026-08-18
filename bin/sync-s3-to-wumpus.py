@@ -2,7 +2,6 @@ import argparse
 import datetime
 import logging
 import os
-import pickle
 import re
 from os import makedirs
 from pathlib import Path
@@ -64,15 +63,6 @@ def get_blobs_from_filesystem():
     return filesystem_uuids
 
 
-def get_filesystems_blobs_from_cache():
-    """
-    Use a cache while debugging.
-    """
-    a_file = open(PICKLE_FILE, "rb")
-    output = pickle.load(a_file)
-    return output
-
-
 def copy_blob_to_wumpus(uuid, filename):
 
     makedirs(f"{BLOB_DIR}/blobs/{uuid}", exist_ok=True)
@@ -120,7 +110,6 @@ if __name__ == "__main__":
     dry_run = args.dry_run
 
     filesystem_uuids = get_blobs_from_filesystem()
-    # filesystem_uuids = get_filesystems_blobs_from_cache()
 
     s3_uuids = get_blobs_from_s3()
 

@@ -33,7 +33,6 @@ from tag.models import Tag, TagBookmark
 from .managers import BookmarkManager
 
 log = logging.getLogger(f"bordercore.{__name__}")
-IMPORTANCE_HIGH = 10
 FAVICON_URL_RE = re.compile("https?://([^/]*)")
 
 

@@ -193,26 +193,6 @@ def get_missing_bookmark_ids(expected: list[Any], found: dict[str, Any]) -> set[
     return missing
 
 
-def get_missing_metadata_ids(expected: list[Any], found: dict[str, Any]) -> set[str]:
-    """Get set of metadata blob UUIDs missing from Elasticsearch results.
-
-    Compares a list of expected metadata objects with Elasticsearch search results
-    and returns a set of blob UUIDs that are in the expected list but not found in
-    the Elasticsearch results.
-
-    Args:
-        expected: List of metadata objects with a blob attribute that has a uuid attribute.
-        found: Elasticsearch search results dictionary with structure:
-            {"hits": {"hits": [{"_id": "...", ...}, ...]}}
-
-    Returns:
-        Set of missing blob UUIDs, or empty set if none missing.
-    """
-    found_ids = {hit["_id"] for hit in found["hits"]["hits"]}
-    missing = {str(item.blob.uuid) for item in expected if str(item.blob.uuid) not in found_ids}
-    return missing
-
-
 def truncate(text: str, limit: int = 100) -> str:
     """Truncate a string to a specified length with ellipsis.
 

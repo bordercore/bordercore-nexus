@@ -29,7 +29,7 @@ from django.db.models.functions import Coalesce, TruncDate
 from django.urls import reverse
 from django.utils import timezone
 
-from lib.aws import s3_delete_object, s3_list_objects, s3_upload_fileobj
+from lib.aws import s3_list_objects, s3_upload_fileobj
 from lib.time_utils import convert_seconds
 from lib.util import fetch_url_safely, get_elasticsearch_connection
 from tag.models import Tag
@@ -659,37 +659,6 @@ def get_id3_info(song: bytes) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 # AWS service functions
 # ---------------------------------------------------------------------------
-
-def delete_song_from_s3(uuid: str) -> None:
-    """Delete a song file from the music S3 bucket.
-
-    Args:
-        uuid: The song's UUID string.
-    """
-    s3_delete_object(settings.AWS_BUCKET_NAME_MUSIC, f"songs/{uuid}")
-
-
-def upload_song_to_s3(
-    uuid: str,
-    fileobj: Any,
-    artist: str,
-    title: str,
-) -> None:
-    """Upload a song file to S3 with artist/title metadata.
-
-    Args:
-        uuid: The song's UUID string.
-        fileobj: A file-like object containing the MP3 data.
-        artist: The artist name to store as S3 metadata.
-        title: The song title to store as S3 metadata.
-    """
-    s3_upload_fileobj(
-        fileobj,
-        settings.AWS_BUCKET_NAME_MUSIC,
-        f"songs/{uuid}",
-        metadata={"artist": artist, "title": title},
-    )
-
 
 def upload_album_artwork(uuid: str, fileobj: Any, content_type: str) -> None:
     """Upload album cover artwork to S3.

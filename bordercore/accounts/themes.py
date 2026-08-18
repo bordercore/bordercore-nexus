@@ -72,27 +72,3 @@ def get_theme_choices() -> list[tuple[str, str]]:
     """
     return [(theme.css_id, theme.display_name) for theme in THEMES.values()]
 
-
-def get_theme(css_id: str) -> Theme | None:
-    """Get a theme by its CSS identifier.
-
-    Args:
-        css_id: The CSS identifier for the theme.
-
-    Returns:
-        The Theme object, or None if not found.
-    """
-    return THEMES.get(css_id)
-
-
-def get_display_name(css_id: str) -> str:
-    """Get the display name for a theme.
-
-    Args:
-        css_id: The CSS identifier for the theme.
-
-    Returns:
-        The display name, or the css_id if theme not found.
-    """
-    theme = THEMES.get(css_id)
-    return theme.display_name if theme else css_id

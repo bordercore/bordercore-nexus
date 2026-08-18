@@ -11,7 +11,7 @@ from feed.models import Feed, FeedItem
 from rest_framework import serializers
 
 from accounts.models import User
-from blob.models import Blob, MetaData
+from blob.models import Blob
 from bookmark.models import Bookmark
 from collection.models import Collection
 from drill.models import Question
@@ -384,14 +384,6 @@ class FeedItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = FeedItem
         fields = ["feed", "title", "url"]
-
-
-class MetaDataSerializer(serializers.ModelSerializer):
-    """Serializer for the blob MetaData model."""
-
-    class Meta:
-        model = MetaData
-        fields = ["name", "value", "blob", "user"]
 
 
 class NodeSerializer(serializers.ModelSerializer):

@@ -22,14 +22,6 @@ class BookmarkSearchDeleteError(Exception):
     """
 
 
-class S3Error(Exception):
-    """Raised when S3 operations fail.
-
-    This exception is used to signal errors that occur during AWS S3
-    operations, such as uploads, downloads, or bucket management.
-    """
-
-
 class UnsupportedNodeTypeError(Exception):
     """Raised when a node type is not supported.
 

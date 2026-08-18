@@ -57,7 +57,6 @@ EDITIONS = {"1": "First",
             "8": "Eighth",
             "9": "Ninth"}
 
-MAX_COVER_IMAGE_WIDTH = 800
 
 FILE_TYPES_TO_INGEST = [
     "azw3",

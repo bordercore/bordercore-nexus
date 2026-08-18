@@ -89,7 +89,6 @@ GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "")
 REDDIT_CLIENT_ID = os.environ.get("REDDIT_CLIENT_ID", "")
 REDDIT_CLIENT_SECRET = os.environ.get("REDDIT_CLIENT_SECRET", "")
 
-USE_S3 = True
 AWS_STORAGE_BUCKET_NAME = "bordercore-blobs"
 AWS_BUCKET_NAME_MUSIC = "bordercore-music"
 INDEX_BLOB_TOPIC_ARN = "arn:aws:sns:us-east-1:192218769908:IndexBlob"
