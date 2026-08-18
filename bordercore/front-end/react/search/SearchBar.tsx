@@ -2,7 +2,7 @@ import React, { useState, useRef, forwardRef, useImperativeHandle, useCallback }
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMagnifyingGlass, faImage } from "@fortawesome/free-solid-svg-icons";
 import TagsInput, { TagsInputHandle } from "../common/TagsInput";
-import { fetchImageAsFile, isImageFile, parseUriList } from "../common/imageFile";
+import { extractImageUrl, fetchImageAsFile, isImageFile } from "../common/imageFile";
 import { useFocusOnCtrlK } from "../common/hooks/useFocusOnCtrlK";
 import type { SearchMode } from "./SearchModeNav";
 import type { TagCount } from "./types";
@@ -145,9 +145,7 @@ export const SearchBar = forwardRef<SearchBarHandle, SearchBarProps>(function Se
     // An image dragged out of another browser tab arrives as a URL, not a
     // File. Read it synchronously (dataTransfer isn't available after an
     // await), then fetch it into a File.
-    const url = parseUriList(
-      e.dataTransfer.getData("text/uri-list") || e.dataTransfer.getData("text/plain")
-    );
+    const url = extractImageUrl(e.dataTransfer);
     if (!url) return;
 
     void (async () => {

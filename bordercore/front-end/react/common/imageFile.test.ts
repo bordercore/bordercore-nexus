@@ -9,6 +9,18 @@ function dataTransfer(data: Record<string, string>): DataTransfer {
 }
 
 describe("extractImageUrl", () => {
+  it("prefers the img src in text/html over text/uri-list", () => {
+    // Dragging an image that sits inside a link — the norm on search results
+    // and gallery pages — puts the link's page URL in text/uri-list. Only the
+    // <img> in text/html names the image itself.
+    const dt = dataTransfer({
+      "text/uri-list": "https://commons.wikimedia.org/wiki/File:demo.png",
+      "text/html": '<img src="https://upload.wikimedia.org/demo.png" alt="x">',
+      "text/plain": "",
+    });
+    expect(extractImageUrl(dt)).toBe("https://upload.wikimedia.org/demo.png");
+  });
+
   it("returns the first non-comment line of text/uri-list", () => {
     const dt = dataTransfer({
       "text/uri-list": "# comment\nhttps://example.com/a.jpg\nhttps://example.com/b.jpg",

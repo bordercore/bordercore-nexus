@@ -42,6 +42,7 @@ export function PreviewHero({
   selectedFileUrl,
 }: PreviewHeroProps) {
   const [dragOver, setDragOver] = useState(false);
+  const [dropError, setDropError] = useState<string | null>(null);
   const [videoPlaying, setVideoPlaying] = useState(false);
   const [imageOpen, setImageOpen] = useState(false);
 
@@ -59,73 +60,85 @@ export function PreviewHero({
 
   if (mode === "create") {
     return (
-      <div
-        className={`be-preview-drop ${dragOver ? "drag-over" : ""} ${
-          selectedFileUrl ? "has-preview" : ""
-        }`}
-        onDragOver={e => {
-          e.preventDefault();
-          setDragOver(true);
-        }}
-        onDragLeave={e => {
-          e.preventDefault();
-          setDragOver(false);
-        }}
-        onDrop={e => {
-          e.preventDefault();
-          setDragOver(false);
-          if (!onFileSelected) return;
+      <>
+        <div
+          className={`be-preview-drop ${dragOver ? "drag-over" : ""} ${
+            selectedFileUrl ? "has-preview" : ""
+          }`}
+          onDragOver={e => {
+            e.preventDefault();
+            setDragOver(true);
+          }}
+          onDragLeave={e => {
+            e.preventDefault();
+            setDragOver(false);
+          }}
+          onDrop={e => {
+            e.preventDefault();
+            setDragOver(false);
+            setDropError(null);
+            if (!onFileSelected) return;
 
-          const file = e.dataTransfer.files?.[0];
-          if (file) {
-            onFileSelected(file);
-            return;
-          }
+            const file = e.dataTransfer.files?.[0];
+            if (file) {
+              onFileSelected(file);
+              return;
+            }
 
-          // An image dragged from another browser tab arrives as a URL, not a
-          // File. Recover the URL and fetch it into a File so it flows through
-          // the same path (cross-origin fetches blocked by CORS yield null).
-          const url = extractImageUrl(e.dataTransfer);
-          if (url) {
-            fetchImageAsFile(url).then(fetched => {
-              if (fetched) onFileSelected(fetched);
+            // An image dragged from another browser tab arrives as a URL, not a
+            // File. Recover the URL and fetch it into a File so it flows through
+            // the same path.
+            const url = extractImageUrl(e.dataTransfer);
+            if (!url) return;
+
+            void fetchImageAsFile(url).then(fetched => {
+              if (fetched) {
+                onFileSelected(fetched);
+              } else {
+                // The image host sent no Access-Control-Allow-Origin, so the
+                // page can't read it. Say so rather than ignoring the drop.
+                setDropError(
+                  "Couldn't load that image. Drag a file from your computer, or download the image first."
+                );
+              }
             });
-          }
-        }}
-      >
-        {selectedFileUrl ? (
-          <>
-            <img className="be-preview-drop-image" src={selectedFileUrl} alt="selected" />
-            <label className="be-preview-drop-replace">
-              replace
-              <input
-                type="file"
-                hidden
-                onChange={e => {
-                  const file = e.target.files?.[0];
-                  if (file && onFileSelected) onFileSelected(file);
-                }}
-              />
-            </label>
-          </>
-        ) : (
-          <div>
-            <FontAwesomeIcon icon={faCloudArrowUp} />
-            <div>drag a file here</div>
-            <label>
-              choose file
-              <input
-                type="file"
-                hidden
-                onChange={e => {
-                  const file = e.target.files?.[0];
-                  if (file && onFileSelected) onFileSelected(file);
-                }}
-              />
-            </label>
-          </div>
-        )}
-      </div>
+          }}
+        >
+          {selectedFileUrl ? (
+            <>
+              <img className="be-preview-drop-image" src={selectedFileUrl} alt="selected" />
+              <label className="be-preview-drop-replace">
+                replace
+                <input
+                  type="file"
+                  hidden
+                  onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (file && onFileSelected) onFileSelected(file);
+                  }}
+                />
+              </label>
+            </>
+          ) : (
+            <div>
+              <FontAwesomeIcon icon={faCloudArrowUp} />
+              <div>drag a file here</div>
+              <label>
+                choose file
+                <input
+                  type="file"
+                  hidden
+                  onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (file && onFileSelected) onFileSelected(file);
+                  }}
+                />
+              </label>
+            </div>
+          )}
+        </div>
+        {dropError && <div className="be-preview-drop-error">{dropError}</div>}
+      </>
     );
   }
 

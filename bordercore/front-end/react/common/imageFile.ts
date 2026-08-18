@@ -37,16 +37,22 @@ export function parseUriList(text: string): string | null {
  * An image dragged from another browser tab is delivered as a URL (in
  * `text/uri-list`, an `<img>` in `text/html`, or `text/plain`) rather than as
  * a File, so a drop handler falls back to this when no file is present.
+ *
+ * The `<img>` in `text/html` wins over `text/uri-list`. When the dragged
+ * image sits inside a link — how images are usually marked up on search
+ * results and gallery pages — the browser puts the link's destination in
+ * `text/uri-list`, so trusting that first fetches an HTML page instead of the
+ * image. Only `text/html` always names the image itself.
  */
 export function extractImageUrl(dataTransfer: DataTransfer): string | null {
-  const uriList = parseUriList(dataTransfer.getData("text/uri-list"));
-  if (uriList) return uriList;
-
   const html = dataTransfer.getData("text/html");
   if (html) {
     const match = html.match(/<img[^>]+\bsrc\s*=\s*["']([^"']+)["']/i);
     if (match) return match[1];
   }
+
+  const uriList = parseUriList(dataTransfer.getData("text/uri-list"));
+  if (uriList) return uriList;
 
   const text = dataTransfer.getData("text/plain").trim();
   if (/^https?:\/\//i.test(text)) return text;

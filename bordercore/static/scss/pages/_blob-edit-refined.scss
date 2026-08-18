@@ -594,6 +594,16 @@
     background: color-mix(in oklch, var(--bg-1), transparent 25%);
   }
 
+  // Shown below the drop zone when an image dragged from another tab can't be
+  // fetched, so the drop doesn't just silently do nothing.
+  .be-preview-drop-error {
+    margin-top: 8px;
+    color: var(--danger, #e5484d);
+    font-family: var(--font-ui);
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
   // ---- file pane (under preview, edit mode only) ----
   .be-file-card {
     display: grid;
