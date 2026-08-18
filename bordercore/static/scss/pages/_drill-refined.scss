@@ -36,8 +36,16 @@
   // 2-col x 2-row grid: col 1 = sidebar/viz, col 2 = pagehead/main.
   // The visualizer slot occupies col 1 / row 1, .drill-page-head col 2 / row 1.
   .drill-shell {
+    // align-content must stay `start`. This grid has two auto rows and a
+    // viewport min-height, so the default `normal` (stretch) splits any
+    // leftover space evenly between them. Row 1 holds the page head, so on a
+    // page shorter than the viewport it absorbs half the slack and the head's
+    // bottom rule drifts hundreds of pixels below its text. The overview is
+    // short exactly until its async cards (pinned/muted/featured tags) resolve,
+    // so the gap appeared on load and then snapped shut as they filled in.
     display: grid;
     min-height: 100vh;
+    align-content: start;
     grid-template-columns: 240px 1fr;
   }
 
