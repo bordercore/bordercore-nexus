@@ -18,11 +18,10 @@ from typing import Any, Iterable, TypedDict, cast
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
-from django.db.models import F, Max, Q, QuerySet
+from django.db.models import F, Q, QuerySet
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 from django.template.defaultfilters import pluralize
-from django.urls import reverse
 from django.utils import timezone
 
 from blob.models import Blob
@@ -543,43 +542,29 @@ class Question(ElasticsearchMixin, TimeStampedModel):
             - "url": Drill URL to study this tag.
             - "count": Total number of tagged questions.
         """
-        count = (
-            Question.objects.filter(user=user)
-            .filter(tags__name=tag)
-            .count()
+        # The manager already computes count, todo and last-reviewed for a list
+        # of tags in a single aggregate; running it for one tag costs one query
+        # instead of the three this used to issue. include_disabled=True keeps
+        # the historical behaviour of counting every question regardless of its
+        # per-question disabled flag.
+        # Callers have historically passed either a name or a Tag instance; the
+        # old query-per-field implementation coerced through the ORM, whereas
+        # _batch_tag_progress keys its results by name, so normalise here.
+        tag_name = str(tag)
+
+        rows = Question.objects._batch_tag_progress(
+            user, [tag_name], include_disabled=True
         )
+        row = rows[0]
 
-        todo = (
-            Question.objects.filter(Q(user=user), Q(tags__name=tag))
-            .filter(
-                Q(interval__lte=timezone.now() - F("last_reviewed"))  # type: ignore[operator]
-                | Q(last_reviewed__isnull=True)
-            )
-            .count()
-        )
-
-        last_reviewed_qs = (
-            Tag.objects.filter(user=user, name=tag)
-            .annotate(last_reviewed=Max("question__last_reviewed"))
-            .first()
-        )
-
-        if last_reviewed_qs and last_reviewed_qs.last_reviewed:
-            last_reviewed_str: str = last_reviewed_qs.last_reviewed.strftime(
-                "%B %d, %Y"
-            )
-        else:
-            last_reviewed_str = "Never"
-
-        progress = round(100 - (todo / count * 100)) if count != 0 else 0
-
+        # Return only the historical keys; _batch_tag_progress also carries
+        # "todo" and "last_reviewed_dt", which this method never exposed.
         return {
-            "name": tag,
-            "progress": progress,
-            "last_reviewed": last_reviewed_str,
-            "url": reverse("drill:start_study_session")
-            + f"?study_method=tag&tags={tag}",
-            "count": count,
+            "name": row["name"],
+            "progress": row["progress"],
+            "last_reviewed": row["last_reviewed"],
+            "url": row["url"],
+            "count": row["count"],
         }
 
 
