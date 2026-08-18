@@ -315,10 +315,34 @@ class DrillManager(models.Manager):
         Returns:
             Number of responses recorded at or after ``since``.
         """
+        return self.reviewed_counts(user, since)[0]
+
+    def reviewed_counts(self, user: User, *since: datetime) -> list[int]:
+        """Count responses since each of several datetimes, in one query.
+
+        Callers usually want more than one window (today and this week, say).
+        Counting them separately costs a round trip apiece, which dominates
+        when the database is not local, so they are folded into conditional
+        aggregates over a single scan.
+
+        Args:
+            user: The user whose responses to count.
+            *since: Lower-bound datetimes (inclusive).
+
+        Returns:
+            One count per ``since``, in the order given.
+        """
+        if not since:
+            return []
+
         QuestionResponse = apps.get_model("drill", "QuestionResponse")
-        return QuestionResponse.objects.filter(
-            question__user=user, date__gte=since
-        ).count()
+        totals = QuestionResponse.objects.filter(question__user=user).aggregate(
+            **{
+                f"since_{i}": Count("id", filter=Q(date__gte=lower_bound))
+                for i, lower_bound in enumerate(since)
+            }
+        )
+        return [totals[f"since_{i}"] for i in range(len(since))]
 
     def study_streak(self, user: User) -> int:
         """Number of consecutive days (ending today) with at least one response.

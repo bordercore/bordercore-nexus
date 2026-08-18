@@ -21,7 +21,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
-from django.db.models import F, Q
+from django.db.models import Count, F, Q
 from django.db.models.query import QuerySet as QuerySetType
 from django.forms import BaseModelForm
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
@@ -90,14 +90,6 @@ class DrillListView(LoginRequiredMixin, ListView):
         user = cast(User, self.request.user)
         qs = Question.objects
 
-        # Both totals are computed here and handed to the progress methods,
-        # which would otherwise re-run the identical COUNT queries.
-        favorites_total = qs.filter(user=user, is_favorite=True).count()
-        all_total = qs.filter(user=user).count()
-        total_progress = qs.total_tag_progress(user, total=all_total)
-        favorites_progress = qs.favorite_questions_progress(user, total=favorites_total)
-        needs_review = total_progress["count"]
-
         local_today = timezone.localdate()
         today_start = timezone.make_aware(
             datetime.combine(local_today, datetime.min.time()),
@@ -105,8 +97,29 @@ class DrillListView(LoginRequiredMixin, ListView):
         )
         now = timezone.now()
         week_start = now - timedelta(days=7)
-        reviewed_today = qs.reviewed_count(user, today_start)
-        reviewed_week = qs.reviewed_count(user, week_start)
+
+        # Every question count the page needs, in one aggregate. These were
+        # four separate COUNTs over the same rows, and on a non-local database
+        # the round trips cost far more than the scan. The totals are also
+        # handed to the progress methods below, which would otherwise re-run
+        # two of them.
+        due = Q(interval__lte=now - F("last_reviewed")) | Q(last_reviewed__isnull=True)  # type: ignore[operator]
+        totals = qs.filter(user=user).aggregate(
+            all_total=Count("id"),
+            favorites_total=Count("id", filter=Q(is_favorite=True)),
+            favorites_remaining=Count("id", filter=Q(is_favorite=True) & due),
+            recent_week=Count("id", filter=Q(created__gte=week_start)),
+        )
+        all_total = totals["all_total"]
+        favorites_total = totals["favorites_total"]
+        favorites_remaining = totals["favorites_remaining"]
+        recent_week = totals["recent_week"]
+
+        total_progress = qs.total_tag_progress(user, total=all_total)
+        favorites_progress = qs.favorite_questions_progress(user, total=favorites_total)
+        needs_review = total_progress["count"]
+
+        reviewed_today, reviewed_week = qs.reviewed_counts(user, today_start, week_start)
 
         intervals = list(user.userprofile.drill_intervals or [])
         tags_needing, pinned_rows, muted_rows = qs.overview_tag_sections(user)
@@ -148,12 +161,6 @@ class DrillListView(LoginRequiredMixin, ListView):
                 "nextIn": next_due,
             }
 
-        favorites_remaining = qs.filter(
-            Q(user=user, is_favorite=True),
-            Q(interval__lte=timezone.now() - F("last_reviewed"))  # type: ignore[operator]
-            | Q(last_reviewed__isnull=True),
-        ).count()
-
         page_title = "Drill"
         payload = {
             "title": page_title,
@@ -177,8 +184,7 @@ class DrillListView(LoginRequiredMixin, ListView):
                 {"key": "all",       "label": "all questions", "count": all_total},
                 {"key": "review",    "label": "needs review",  "count": needs_review},
                 {"key": "favorites", "label": "favorites",     "count": favorites_total},
-                {"key": "recent",    "label": "recent · 7d",
-                 "count": qs.filter(user=user, created__gte=week_start).count()},
+                {"key": "recent",    "label": "recent · 7d", "count": recent_week},
                 {"key": "random",    "label": "random · 10",   "count": 10},
                 {"key": "keyword",   "label": "keyword search","count": None},
             ],
