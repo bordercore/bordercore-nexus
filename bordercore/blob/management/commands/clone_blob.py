@@ -33,16 +33,17 @@ class Command(BaseCommand):
         )
 
     @atomic
-    def handle(self, *args, uuid, collection_uuid, **kwargs):
+    def handle(self, *args, uuid, include_collections=False, **kwargs):
         """Clone the specified blob.
 
         Args:
             *args: Variable length argument list.
             uuid: UUID of the blob to clone.
-            collection_uuid: Unused (collections handled via --include-collections).
+            include_collections: Add the clone to the original's collections.
             **kwargs: Additional keyword arguments.
         """
         original_blob = Blob.objects.get(uuid=uuid)
         self.stdout.write(f"Cloning blob named '{original_blob.name}'")
 
-        original_blob.clone(include_collections)
+        new_blob = original_blob.clone(include_collections)
+        self.stdout.write(f"Created blob {new_blob.uuid}")
