@@ -61,16 +61,6 @@ export interface AlbumDetailUrls {
   artistDetail: string;
 }
 
-export interface AlbumDetailProps {
-  album: Album;
-  songs: Song[];
-  initialTags: string[];
-  playlists: Playlist[];
-  urls: AlbumDetailUrls;
-  staticUrl: string;
-  defaultPlaylist: string;
-}
-
 // Artist Detail Page Types
 
 export interface ArtistSong extends BaseTrack {
@@ -105,19 +95,6 @@ export interface ArtistDetailUrls {
   editSong: string;
   albumDetail: string;
   songMedia: string;
-}
-
-export interface ArtistDetailProps {
-  artist: ArtistDetail;
-  albums: ArtistDetailAlbum[];
-  compilationAlbums: ArtistDetailAlbum[];
-  songs: ArtistSong[];
-  playlists: Playlist[];
-  urls: ArtistDetailUrls;
-  imagesUrl: string;
-  staticUrl: string;
-  defaultPlaylist: string;
-  hasArtistImage: boolean;
 }
 
 // Music Dashboard Page Types
@@ -310,12 +287,6 @@ export interface PlaylistDetailUrls {
   tagSearch: string;
 }
 
-export interface PlaylistDetailProps {
-  playlist: PlaylistDetail;
-  urls: PlaylistDetailUrls;
-  staticUrl: string;
-}
-
 // Tag Search Page Types
 
 export interface TagSearchSong extends BaseTrack {
@@ -341,14 +312,6 @@ export interface TagSearchUrls {
   artistDetail: string;
   imagesUrl: string;
   musicList: string;
-}
-
-export interface TagSearchProps {
-  tagName: string;
-  songs: TagSearchSong[];
-  albums: TagSearchAlbum[];
-  urls: TagSearchUrls;
-  staticUrl: string;
 }
 
 // Album List Page Types
@@ -387,13 +350,4 @@ export interface ArtistListUrls {
   artistListBase: string;
   artistDetail: string;
   musicHome: string;
-}
-
-export interface ArtistListProps {
-  artists: ArtistListArtist[];
-  nav: string[];
-  selectedLetter: string;
-  uniqueArtistLetters: string[];
-  urls: ArtistListUrls;
-  imagesUrl: string;
 }

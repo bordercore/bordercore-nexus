@@ -72,21 +72,7 @@ export interface CollectionDetailUrls {
   blobDetail: string;
 }
 
-export interface CollectionDetailProps {
-  collection: CollectionDetail;
-  objectTags: ObjectTag[];
-  initialTags: string[];
-  urls: CollectionDetailUrls;
-  tagSearchUrl: string;
-  selectedTag: string | null;
-}
-
 // Slideshow Types
-
-export interface SlideShowOptions {
-  value: string;
-  display: string;
-}
 
 export interface SlideShowConfig {
   type: "manual" | "automatic";

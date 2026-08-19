@@ -514,8 +514,6 @@ class DrillManager(models.Manager):
         if not tag_names:
             return []
 
-        Question = apps.get_model("drill", "Question")
-
         now = timezone.now()
         due_filter = Q(
             question__interval__lte=now - F("question__last_reviewed")  # type: ignore[operator]

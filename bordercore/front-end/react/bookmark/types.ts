@@ -35,11 +35,6 @@ export interface Pagination {
   range: number[];
 }
 
-export interface BookmarkListResponse {
-  bookmarks: Bookmark[];
-  pagination: Pagination;
-}
-
 export interface BackReference {
   uuid: string;
   type: "question" | "blob";
@@ -59,11 +54,6 @@ export interface RelatedNode {
 export interface RelatedTagInfo {
   tag_name: string;
   count: number;
-}
-
-export interface TagListItem {
-  name: string;
-  related: RelatedTagInfo[];
 }
 
 export interface BookmarkStats {

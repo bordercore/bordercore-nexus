@@ -61,18 +61,6 @@ export function ArtistDetailPage({
 
   const artistImageUrl = `${imagesUrl}artist_images/${artist.uuid}`;
 
-  const handleCurrentSong = (songIndex: number) => {
-    if (songIndex === -1) {
-      setCurrentSongUuid(null);
-    } else if (songs[songIndex]) {
-      setCurrentSongUuid(songs[songIndex].uuid);
-    }
-  };
-
-  const handleIsPlaying = (playing: boolean) => {
-    setIsPlaying(playing);
-  };
-
   React.useEffect(() => {
     const onPlay = (data: { uuid: string }) => {
       setIsPlaying(true);

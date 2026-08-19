@@ -75,7 +75,7 @@ export function BookmarkEditPage({
   const noteField = getField(fields, "note");
 
   const [url, setUrl] = useState(urlField?.value || "");
-  const [tags, setTags] = useState<string[]>(initialTags);
+  const [, setTags] = useState<string[]>(initialTags);
   const [relatedTagInfo, setRelatedTagInfo] = useState<RelatedTagInfo[]>([]);
   const [importance, setImportance] = useState(initialImportance);
   const [isPinned, setIsPinned] = useState(initialIsPinned);

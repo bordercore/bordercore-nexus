@@ -1,7 +1,0 @@
-{% if request.session.drill_study_session.type == "favorites" %}Studying favorite questions.
-{% elif request.session.drill_study_session.type == "tag" %}Studying tag{% if "," in request.session.drill_study_session.tag %}s{% endif %} <strong>{{ request.session.drill_study_session.tag }}</strong>.
-{% elif request.session.drill_study_session.type == "random" %}Studying random questions.
-{% endif %}{% if request.session.drill_study_session %}
-<strong>{{ study_session_progress }}</strong> out of <strong>{{ request.session.drill_study_session.list|length }}</strong> questions completed.
-{% else %}Ad-hoc study session
-{% endif %}

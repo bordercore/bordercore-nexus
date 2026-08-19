@@ -17,8 +17,6 @@ export interface Reminder {
   form_ajax_url: string;
 }
 
-export type ScheduleType = "daily" | "weekly" | "monthly";
-
 export type FilterKey = "all" | "active" | "today";
 
 export type GroupKey = "firing-soon" | "today-tomorrow" | "this-week" | "later" | "inactive";

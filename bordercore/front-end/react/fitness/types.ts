@@ -1,18 +1,5 @@
 // TypeScript interfaces for fitness app React components
 
-export interface Exercise {
-  exercise_url: string;
-  exercise: string;
-  muscle_group: string;
-  schedule_days?: string;
-  last_active: string | null;
-  last_active_unixtime?: string;
-  delta_days?: number;
-  frequency?: string;
-  schedule?: boolean[]; // 7 booleans, index 0 = Monday
-  overdue: number; // 0=normal, 1=selected, 2=overdue
-}
-
 export interface ActivityInfo {
   started?: string;
   relative_date?: string;
@@ -58,14 +45,6 @@ export interface PlotInfo {
   plot_data: PlotData;
   paginator: Paginator;
   notes: (string | null)[];
-}
-
-export interface WorkoutDataItem {
-  index: number;
-  weight: string;
-  duration: string;
-  reps: string;
-  isEdit?: boolean;
 }
 
 export interface TargetedMuscles {

@@ -29,13 +29,6 @@ export interface TodoListResponse {
   created_counts: TimeOption[];
 }
 
-export interface FilterState {
-  tag: string;
-  priority: string;
-  time: string;
-  search: string;
-}
-
 export interface SortState {
   field: string;
   direction: "asc" | "desc";

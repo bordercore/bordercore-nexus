@@ -78,11 +78,6 @@ export const COMMUNITY_PALETTE = [
 
 const UNCLUSTERED_COLOR = "#7d8aa8";
 
-function nodeColor(community: number | null): string {
-  if (community === null || community === undefined) return UNCLUSTERED_COLOR;
-  return COMMUNITY_PALETTE[community % COMMUNITY_PALETTE.length];
-}
-
 /** Gradient id for a community's star fill. `null` → the unclustered gradient. */
 function nodeGradientId(community: number | null): string {
   if (community === null || community === undefined) return "constellation-star-unclustered";

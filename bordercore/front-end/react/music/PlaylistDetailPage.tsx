@@ -110,18 +110,6 @@ export function PlaylistDetailPage({ playlist, urls, staticUrl }: PlaylistDetail
     fetchPlaylist();
   }, [fetchPlaylist]);
 
-  const handleCurrentSong = (songIndex: number) => {
-    if (songIndex === -1) {
-      setCurrentSongUuid(null);
-    } else if (songs[songIndex]) {
-      setCurrentSongUuid(songs[songIndex].uuid);
-    }
-  };
-
-  const handleIsPlaying = (playing: boolean) => {
-    setIsPlaying(playing);
-  };
-
   useEffect(() => {
     const onPlay = (data: { uuid: string }) => {
       setIsPlaying(true);

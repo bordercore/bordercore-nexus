@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSearch, faAngleDown, faHeart } from "@fortawesome/free-solid-svg-icons";
+import { faSearch, faHeart } from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
 import { boldenOption } from "../../util.js";
 
@@ -59,7 +59,6 @@ export const SelectValue = forwardRef<SelectValueHandle, SelectValueProps>(funct
   const [options, setOptions] = useState<Option[]>([]);
   const [search, setSearch] = useState(initialValue?.[label] || initialValue?.name || "");
   const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -82,7 +81,6 @@ export const SelectValue = forwardRef<SelectValueHandle, SelectValueProps>(funct
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
 
-    setIsLoading(true);
     try {
       const response = await axios.get(`${searchUrl}${query}`, {
         signal: abortController.signal,
@@ -108,7 +106,6 @@ export const SelectValue = forwardRef<SelectValueHandle, SelectValueProps>(funct
     } finally {
       // Only set loading to false if this request wasn't aborted
       if (!abortController.signal.aborted) {
-        setIsLoading(false);
       }
     }
   };
@@ -141,7 +138,6 @@ export const SelectValue = forwardRef<SelectValueHandle, SelectValueProps>(funct
       setOptions([]);
       setIsOpen(false);
       setHighlightedIndex(-1);
-      setIsLoading(false);
       return;
     }
 
@@ -287,7 +283,6 @@ export const SelectValue = forwardRef<SelectValueHandle, SelectValueProps>(funct
       {isOpen &&
         options.length > 0 &&
         (() => {
-          const selectableOptions = getSelectableOptions();
           let selectableIndex = -1;
 
           return (

@@ -10,7 +10,6 @@ interface CalendarMiniProps {
 
 export function CalendarMini({ getCalendarEventsUrl, limit = 4 }: CalendarMiniProps) {
   const [events, setEvents] = useState<CalendarEvent[] | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     doGet(
@@ -19,10 +18,6 @@ export function CalendarMini({ getCalendarEventsUrl, limit = 4 }: CalendarMiniPr
       "Error getting calendar events"
     );
   }, [getCalendarEventsUrl]);
-
-  if (errorMessage) {
-    return <div className="mag-cal-state">{errorMessage}</div>;
-  }
 
   if (events === null) {
     return <div className="mag-cal-state">retrieving…</div>;

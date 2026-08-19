@@ -79,11 +79,6 @@ export interface Habit {
 
 // Gallery types
 
-export interface CodeSample {
-  language: string;
-  code: string;
-}
-
 // SQL Playground types
 
 export interface TableInfo {

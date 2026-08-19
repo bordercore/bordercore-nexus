@@ -107,16 +107,6 @@ export interface BlobDetailUrls {
   visualize?: string;
 }
 
-export interface RelatedObjectItem {
-  bc_object_uuid?: string;
-  uuid: string;
-  type: string;
-  name?: string;
-  url?: string;
-  cover_url?: string;
-  note?: string;
-}
-
 export interface SearchResult {
   uuid: string;
   name?: string;

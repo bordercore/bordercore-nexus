@@ -25,15 +25,6 @@ export interface AgeTone {
   label: "fresh" | "recent" | "current" | "older" | "archive";
 }
 
-export interface FormField {
-  name: string;
-  label: string;
-  type: "text" | "textarea";
-  required: boolean;
-  maxLength?: number;
-  value?: string;
-}
-
 // Layout Component Types
 
 export interface CollectionLayoutItem {
@@ -144,44 +135,8 @@ export interface NodeImage {
   blob_url: string;
 }
 
-// Modal state types
-export interface NoteModalState {
-  isOpen: boolean;
-  action: "Add" | "Edit";
-  callback: ((note: { name: string; color: 1 | 2 | 3 | 4 }) => void) | null;
-  data: { name: string; color: 1 | 2 | 3 | 4 } | null;
-}
-
-export interface QuoteModalState {
-  isOpen: boolean;
-  action: "Add" | "Edit";
-  callback: ((options: QuoteOptions) => void) | null;
-  data: QuoteOptions | null;
-}
-
-export interface NodeModalState {
-  isOpen: boolean;
-  action: "Add" | "Edit";
-  callback: ((options: NodeOptions) => void) | null;
-  data: NodeOptions | null;
-}
-
-export interface ImageModalState {
-  isOpen: boolean;
-  imageUrl: string;
-}
-
 // Priority option from Todo
 export type PriorityOption = [number, string, number?];
-
-// Collection object for ObjectSelect
-export interface CollectionObject {
-  uuid: string;
-  name: string;
-  doctype: string;
-  url?: string;
-  cover_url?: string;
-}
 
 // Color options
 export const NODE_COLORS = [1, 2, 3, 4] as const;

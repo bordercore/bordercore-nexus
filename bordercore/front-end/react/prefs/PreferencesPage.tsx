@@ -114,7 +114,6 @@ export function PreferencesPage(props: PreferencesPageProps) {
     passwordUrl,
     prefsUrl,
     authToken,
-    username,
     groups,
     sidebarImageUrl,
     sidebarImageName,

@@ -4,7 +4,7 @@ import { faBox, faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons";
 import { Card } from "../common/Card";
 import { DropDownMenu } from "../common/DropDownMenu";
 import { doGet, doPost } from "../utils/reactUtils";
-import type { NodeLayoutItem, NodeOptions, NodeInfo } from "./types";
+import type { NodeOptions, NodeInfo } from "./types";
 
 interface NodeNodeProps {
   uuid: string;

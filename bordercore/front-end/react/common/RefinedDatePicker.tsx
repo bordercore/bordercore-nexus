@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { DayPicker } from "react-day-picker";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCalendarAlt, faTimes } from "@fortawesome/free-solid-svg-icons";
@@ -49,8 +49,6 @@ export function RefinedDatePicker({
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   const selected = parseISODate(value);
-
-  const close = useCallback(() => setOpen(false), []);
 
   useEffect(() => {
     if (!open) return;

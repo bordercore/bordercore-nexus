@@ -21,23 +21,11 @@ export function TagSearchPage({
   urls,
   staticUrl,
 }: TagSearchPageProps) {
-  const [songs, setSongs] = React.useState<TagSearchSong[]>(initialSongs);
+  const [songs] = React.useState<TagSearchSong[]>(initialSongs);
   const [currentSongUuid, setCurrentSongUuid] = React.useState<string | null>(null);
   const [isPlaying, setIsPlaying] = React.useState(false);
   const [sortField, setSortField] = React.useState<SortField>("year");
   const [sortDirection, setSortDirection] = React.useState<SortDirection>("desc");
-
-  const handleCurrentSong = (songIndex: number) => {
-    if (songIndex === -1) {
-      setCurrentSongUuid(null);
-    } else if (sortedSongs[songIndex]) {
-      setCurrentSongUuid(sortedSongs[songIndex].uuid);
-    }
-  };
-
-  const handleIsPlaying = (playing: boolean) => {
-    setIsPlaying(playing);
-  };
 
   React.useEffect(() => {
     const onPlay = (data: { uuid: string }) => {
@@ -120,10 +108,6 @@ export function TagSearchPage({
     });
     return sorted;
   }, [songs, sortField, sortDirection]);
-
-  const getArtistDetailUrl = (artistUuid: string) => {
-    return urls.artistDetail.replace(/00000000-0000-0000-0000-000000000000/, artistUuid);
-  };
 
   // Convert albums to the format expected by AlbumGrid
   const albumGridItems: ArtistDetailAlbum[] = albums.map(album => ({

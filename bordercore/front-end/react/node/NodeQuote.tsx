@@ -4,7 +4,7 @@ import { faQuoteLeft, faPencilAlt, faPlus } from "@fortawesome/free-solid-svg-ic
 import { Card } from "../common/Card";
 import { DropDownMenu } from "../common/DropDownMenu";
 import { doGet, doPost } from "../utils/reactUtils";
-import type { QuoteLayoutItem, QuoteOptions, Quote } from "./types";
+import type { QuoteOptions, Quote } from "./types";
 
 interface NodeQuoteProps {
   uuid: string;

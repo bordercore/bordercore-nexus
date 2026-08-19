@@ -13,7 +13,6 @@ import {
   faEllipsisVertical,
   faGripVertical,
   faTableCellsLarge,
-  faTimes,
   faDiagramProject,
 } from "@fortawesome/free-solid-svg-icons";
 import cloneDeep from "lodash/cloneDeep";
@@ -64,7 +63,6 @@ import type {
   LayoutItem,
   CollectionLayoutItem,
   NoteLayoutItem,
-  TodoLayoutItem,
   ImageLayoutItem,
   QuoteLayoutItem,
   NodeLayoutItem,
