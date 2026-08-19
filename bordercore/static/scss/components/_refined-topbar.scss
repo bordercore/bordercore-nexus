@@ -24,7 +24,6 @@
   --bc-bg-1: var(--bg-1);
   --bc-bg-2: var(--bg-2);
   --bc-bg-3: var(--bg-3);
-  --bc-bg-4: var(--bg-4);
 
   // Foreground
   --bc-fg-1: var(--fg-1);
@@ -51,12 +50,6 @@
     0 0 0 1px color-mix(in oklch, var(--accent) 28%, transparent),
     0 0 10px -2px color-mix(in oklch, var(--accent) 35%, transparent);
   --bc-glow-danger: 0 0 16px -2px color-mix(in oklch, var(--danger) 45%, transparent);
-
-  // Elevation
-  --bc-elev-3:
-    0 1px 0 0 rgb(255 255 255 / 4%) inset,
-    0 20px 60px -12px rgb(0 0 0 / 70%),
-    0 0 0 1px var(--line-soft);
 
   // Radii
   --bc-radius-xs: 4px;
@@ -170,41 +163,6 @@
 }
 
 // ==== Section title (legacy — superseded by .refined-tb-crumb) ====
-.refined-tb-title {
-  display: flex;
-  min-width: 0;
-  align-items: center;
-  gap: 12px;
-
-  .icon {
-    display: grid;
-    width: 28px;
-    height: 28px;
-    flex-shrink: 0;
-    color: var(--bc-accent);
-    place-items: center;
-
-    i {
-      font-size: 18px;
-    }
-  }
-
-  h1 {
-    overflow: hidden;
-    max-width: 420px;
-    margin: 0;
-    background: linear-gradient(96deg, var(--warn) 0%, var(--accent) 65%, var(--accent-2) 100%);
-    background-clip: text;
-    color: transparent;
-    font-family: var(--bc-font-display);
-    font-size: 22px;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-    -webkit-text-fill-color: transparent;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-}
 
 // ==== Right cluster ====
 .refined-tb-right {
@@ -215,32 +173,6 @@
 }
 
 // ==== Icon button ====
-.refined-tb-icon {
-  position: relative;
-  display: grid;
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  border: 1px solid transparent;
-  border-radius: var(--bc-radius-sm);
-  background: none;
-  color: var(--bc-fg-2);
-  cursor: pointer;
-  font: inherit;
-  place-items: center;
-  transition: all var(--bc-t-fast) var(--bc-ease-out);
-
-  &:hover {
-    border-color: var(--bc-border-1);
-    background: var(--bc-bg-3);
-    color: var(--bc-fg-1);
-  }
-
-  i,
-  svg {
-    font-size: 14px;
-  }
-}
 
 // ==== Weather pill ====
 .refined-tb-weather {

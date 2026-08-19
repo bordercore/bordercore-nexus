@@ -20,8 +20,6 @@
   // --- Page-local tokens (genuine page identity, not theme-controlled) -------
   --be-radius-xs: 4px;
   --be-radius-sm: 6px;
-  --be-radius-xl: 20px;
-  --be-fg-disabled: var(--fg-4);
   --be-accent-hover: color-mix(in oklch, var(--accent), white 12%);
   --be-elev-1:
     0 1px 0 0 rgb(255 255 255 / 3%) inset,
@@ -35,12 +33,9 @@
     0 8px 24px -8px rgb(0 0 0 / 55%),
     0 0 0 1px var(--line-soft);
   --be-glow-accent-sm: 0 0 12px -4px color-mix(in oklch, var(--accent) 50%, transparent);
-  --be-glow-accent: 0 0 24px -6px color-mix(in oklch, var(--accent) 55%, transparent);
   --be-font-display: "Space Grotesk", "Inter", -apple-system, "Segoe UI", sans-serif;
   --be-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --be-t-fast: 120ms;
-  --be-t-base: 180ms;
-  --be-t-med: 220ms;
 
   position: relative;
   min-height: 100vh;

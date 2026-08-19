@@ -35,13 +35,6 @@
   .mag-ucase.is-purple { color: var(--accent); }
   .mag-ucase.is-danger { color: var(--danger); }
 
-  .mag-meta {
-    color: var(--fg-3);
-    font-family: var(--font-mono);
-    font-size: 11px;
-    letter-spacing: 0.02em;
-  }
-
   // ---- Hero ----
   .mag-hero {
     position: relative;
@@ -212,36 +205,6 @@
     color: var(--accent-fg);
   }
 
-  // ---- Buttons ----
-  .mag-btn {
-    display: inline-flex;
-    align-items: center;
-    padding: 6px 12px;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    background: var(--bg-3);
-    color: var(--fg-2);
-    cursor: pointer;
-    font-family: var(--font-ui);
-    font-size: 12px;
-    gap: 6px;
-    text-decoration: none;
-    transition: all 120ms var(--bc-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
-  }
-
-  .mag-btn:hover {
-    border-color: var(--fg-3);
-    background: var(--bg-3);
-    color: var(--fg-1);
-  }
-
-  .mag-btn.is-primary {
-    border-color: rgb(255 255 255 / 12%);
-    background: linear-gradient(180deg, var(--accent), color-mix(in oklch, var(--accent), black 12%));
-    box-shadow: 0 0 16px -2px color-mix(in oklch, var(--accent) 45%, transparent);
-    color: var(--accent-fg);
-  }
-
   // ---- Editorial body ----
   .mag-body {
     width: 100%;
@@ -387,22 +350,6 @@
   .mag-block + .mag-block {
     padding-top: 16px;
     border-top: 1px dashed var(--hairline);
-  }
-
-  .mag-lede {
-    color: var(--fg-0);
-    font-family: "Space Grotesk", var(--font-ui);
-    font-size: 24px;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-    line-height: 1.2;
-  }
-
-  .mag-lede a {
-    color: inherit;
-    text-decoration: none;
-
-    &:hover { color: var(--accent-3); }
   }
 
   // ---- Tasks ----
@@ -988,6 +935,5 @@
     .mag-masthead { font-size: 36px; }
     .mag-hero-overlay { padding: 20px; }
     .mag-pull-quote { font-size: 22px; }
-    .mag-lede { font-size: 22px; }
   }
 }

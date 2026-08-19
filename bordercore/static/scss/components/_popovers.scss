@@ -181,7 +181,6 @@
   // for an "input-style" affordance distinct from the page primary accent.
   --input-bg: color-mix(in oklch, var(--bg-1) 85%, transparent);
   --input-border: color-mix(in oklch, var(--accent-4) 25%, transparent);
-  --input-focus: color-mix(in oklch, var(--accent-4) 60%, transparent);
 
   display: flex;
   flex-direction: column;

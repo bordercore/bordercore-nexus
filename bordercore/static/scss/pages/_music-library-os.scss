@@ -12,8 +12,6 @@
   --mlo-fg-4: var(--fg-4, #5a5f72);
   --mlo-accent: var(--accent);
   --mlo-accent-2: color-mix(in oklch, var(--accent), white 15%);
-  --mlo-warn: var(--warn, #f0b840);
-  --mlo-ok: var(--ok, #3fd29c);
 
   // Outer app shell — mirrors .todo-app / .cl-app: padding, ambient gradient,
   // typography, and the negative margin that escapes base.html's content

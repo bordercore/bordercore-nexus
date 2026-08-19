@@ -18,7 +18,6 @@
   --cd-topbar-h: 56px;
   --cd-t-fast: 120ms cubic-bezier(0.22, 1, 0.36, 1);
   --cd-t-base: 180ms cubic-bezier(0.22, 1, 0.36, 1);
-  --cd-font-display: "Space Grotesk", "Inter", -apple-system, system-ui, sans-serif;
   --cd-line-hover: color-mix(in oklch, var(--line), var(--fg-2) 20%);
 
   // Tile-chrome tokens are intentionally fixed (not theme-derived). The chrome

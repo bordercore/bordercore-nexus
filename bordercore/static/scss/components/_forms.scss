@@ -48,29 +48,10 @@ input[type="checkbox"] {
   cursor: pointer;
 }
 
-.editable-textarea {
-  width: 100%;
-  min-height: 5rem;
-  padding: 0.5rem;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background-color: var(--bg-2);
-  color: var(--fg-0);
-  font-family: inherit;
-  resize: vertical;
-}
-
 .form-error {
   margin-top: 0.25rem;
   color: var(--danger);
   font-size: 0.875rem;
-}
-
-.form-section {
-  margin-bottom: 1.5rem;
-  color: var(--accent);
-  font-size: larger;
-  font-weight: bold;
 }
 
 // Global placeholder fallback for inputs that don't use the refined-input
@@ -83,9 +64,7 @@ input[type="checkbox"] {
 // Tags — canonical accent-tinted chip (matches the Preferences muted-drill chip).
 // Use @include refined-tag-chip on any new tag-style element.
 .tag,
-a.tag,
-.ti-input .ti-tag,
-.tag-accent {
+a.tag {
   @include refined-tag-chip;
 
   margin: 0 0.125rem;
@@ -105,13 +84,6 @@ a.tag,
     color: var(--fg-0);
     text-decoration: none;
   }
-}
-
-// Input groups
-.input-group-text {
-  border-color: var(--line);
-  background-color: var(--bg-2);
-  color: var(--fg-1);
 }
 
 // Toggle switch (the ToggleSwitch React component). This codebase doesn't
@@ -185,13 +157,6 @@ a.tag,
     min-width: 0;
     flex: 1 1 auto;
   }
-}
-
-.object-select-misc-item-below {
-  padding: 0.5rem 1rem;
-  border-top: 1px solid var(--line-soft);
-  color: var(--fg-2);
-  font-size: 0.875rem;
 }
 
 // SelectValue component

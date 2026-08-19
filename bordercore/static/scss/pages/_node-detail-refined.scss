@@ -17,41 +17,24 @@
   --nd-accent: var(--accent);
   --nd-accent-hover: color-mix(in oklab, var(--accent), white 14%);
   --nd-accent-soft: var(--accent-soft);
-  --nd-accent-2: var(--accent);
   --nd-accent-3: oklch(70% 0.18 340deg); // decorative magenta (aurora / node-color-4)
   --nd-accent-4: var(--accent-bookmark); // decorative cyan (node-color-3)
-  --nd-ok: var(--ok);
-  --nd-warn: var(--warn);
-  --nd-danger: var(--danger);
-  --nd-bg-0: var(--bg-0);
-  --nd-bg-1: var(--bg-1);
   --nd-bg-2: var(--bg-2);
-  --nd-bg-3: var(--bg-3);
-  --nd-bg-4: var(--bg-3); // theme has 4 bg steps (0-3); reuse top step
   --nd-fg-1: var(--fg-0);
-  --nd-fg-2: var(--fg-1);
   --nd-fg-3: var(--fg-2);
   --nd-fg-4: var(--fg-3);
   --nd-border-1: var(--line-soft);
-  --nd-border-2: var(--line);
   --nd-hairline: var(--line-soft);
-  --nd-radius-sm: 6px;
   --nd-radius-md: var(--radius, 10px);
-  --nd-radius-lg: var(--radius-lg, 14px);
 
   // --nd-elev-1/2 retired — node-detail cards now use the shared
   // @mixin refined-card / refined-card-hover from _refined-components.scss.
   // --nd-elev-3 is still used for popovers / sticky chrome below.
-  --nd-elev-3:
-    var(--shadow-lg),
-    0 0 0 1px var(--nd-border-1);
   --nd-font-sans: var(--font-ui, "Inter", -apple-system, blinkmacsystemfont, "Segoe UI", roboto, sans-serif);
   --nd-font-display: var(--font-ui, "Inter", -apple-system, blinkmacsystemfont, "Segoe UI", sans-serif);
   --nd-font-mono: var(--font-mono, "JetBrains Mono", ui-monospace, sfmono-regular, menlo, consolas, monospace);
   --nd-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --nd-t-fast: 120ms;
-  --nd-t-base: 180ms;
-  --nd-t-slow: 280ms;
 
   // --- Root surface (escape base layout padding; match .node-app pattern) ---
   // NOTE: We deliberately do NOT create a stacking context here (no z-index).

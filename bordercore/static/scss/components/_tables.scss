@@ -39,20 +39,6 @@
   }
 }
 
-.b-table {
-  background-color: var(--bg-1);
-  color: var(--fg-1);
-}
-
-.table-borders {
-  border: 1px solid var(--line-soft);
-}
-
-.table-borderless td,
-.table-borderless th {
-  border: none;
-}
-
 // Data table - shared thead/tbody/tr/td styling
 .data-table {
   width: 100%;
@@ -101,44 +87,6 @@
   }
 }
 
-// Drill question/answer markdown-rendered tables
-.table-colors {
-  background-color: var(--bg-1);
-
-  table {
-    overflow: hidden;
-    width: 100%;
-    border: 1px solid var(--line-soft);
-    border-radius: var(--radius);
-    margin: 0.5rem 0;
-    border-collapse: collapse;
-    color: var(--fg-1);
-
-    thead {
-      background-color: var(--bg-2);
-
-      th {
-        padding: 0.5rem 0.75rem;
-        border-bottom: 1px solid var(--line-soft);
-        color: var(--fg-3);
-        font-weight: 600;
-        text-align: left;
-      }
-    }
-
-    tbody {
-      td {
-        padding: 0.5rem 0.75rem;
-        border-bottom: 1px solid var(--line-soft);
-      }
-
-      tr:last-child td {
-        border-bottom: none;
-      }
-    }
-  }
-}
-
 .table-responsive {
   border-radius: var(--radius);
   background-color: var(--bg-1);
@@ -151,62 +99,9 @@
 
 // Oruga tables
 /* stylelint-disable no-descending-specificity */
-.o-table {
-  width: 100%;
-  border-radius: var(--radius);
-  background-color: var(--bg-1);
-
-  th {
-    padding: 0.75rem;
-    border-bottom: 2px solid var(--line-soft);
-    color: var(--fg-0);
-    font-weight: 600;
-  }
-
-  td {
-    padding: 0.75rem;
-    border-bottom: 1px solid var(--line-soft);
-    color: var(--fg-1);
-  }
-
-  tr {
-    transition: background-color 0.2s ease;
-
-    &:hover {
-      background-color: color-mix(in oklch, var(--fg-0), transparent 92%);
-    }
-  }
-
-  &.hoverable-cells {
-    td {
-      transition: background-color 0.2s ease;
-
-      &:hover {
-        background-color: color-mix(in oklch, var(--fg-0), transparent 92%);
-      }
-    }
-  }
-}
 /* stylelint-enable no-descending-specificity */
 
 /* stylelint-disable selector-class-pattern */
-.o-table__tr--selected {
-  background-color: color-mix(in oklch, var(--accent), transparent 82%);
-}
-
-// Oruga mobile cards
-.o-table__mobile-cards .o-table__mobile-card {
-  padding: 1rem;
-  border: 1px solid var(--line-soft);
-  border-radius: var(--radius);
-  margin-bottom: 1rem;
-  background-color: var(--bg-1);
-}
-
-// Table column width utilities
-.table-col-number {
-  width: 5rem;
-}
 
 .table-col-action {
   width: 3rem;
@@ -326,36 +221,6 @@
   box-shadow: var(--shadow-md);
   color: var(--fg-1);
 
-  .drag-overlay-title {
-    padding: var(--data-table-cell-padding);
-    color: var(--fg-0);
-  }
-
-  .drag-overlay-subtitle {
-    padding: var(--data-table-cell-padding);
-    margin-left: 1rem;
-    color: var(--fg-2);
-  }
-
-  // When used with grid rows (todo), padding is on columns instead
-  &.todo-grid-row {
-    background-color: var(--bg-2);
-
-    [role="cell"] {
-      color: var(--fg-1);
-    }
-
-    .todo-col-manual {
-      color: var(--drag-handle-icon-color);
-      text-align: center;
-    }
-
-    // Drag overlay is outside hover-reveal-target; keep handle icon visible
-    .drag-handle-cell .hover-reveal-object {
-      opacity: 1;
-    }
-  }
-
   // Bookmark overlay
   &.bookmark-grid-row {
     align-items: center;
@@ -377,25 +242,6 @@
       color: var(--fg-2);
       font-size: 0.875rem;
       white-space: nowrap;
-    }
-
-    .thumbnail-cell {
-      padding-right: 0.5rem;
-
-      img {
-        border-radius: var(--radius);
-        object-fit: cover;
-      }
-    }
-
-    .favicon-cell {
-      padding-top: 0;
-      padding-right: 0.5rem;
-
-      img {
-        width: 16px;
-        height: 16px;
-      }
     }
 
     .content-cell {

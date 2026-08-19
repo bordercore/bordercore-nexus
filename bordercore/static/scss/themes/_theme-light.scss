@@ -1,13 +1,4 @@
 :root[color-mode="light"] {
-
-
-  // Per-tag coloring
-  --tag-saturation: 55%;
-  --tag-text-lightness: 35%;
-  --tag-bg-lightness: 45%;
-  --tag-border-lightness: 40%;
-
-
   --text5: var(--ok);
 
   --text-notice: var(--accent);
@@ -30,24 +21,16 @@
   --node-color-4-tinted: hsl(206 66% 37%);
 
   // Chatbot
-  --chatbot-container-bg: #61a1fe;
 
   // Chart colors
 
   // Background sphere
 
   // Misc properties
-  --btn-close-filter: grayscale(100%) brightness(200%);
   --drill-progress-circle-full: var(--surface3);
   --drill-progress-circle-partial: var(--text5);
-  --fitness-overdue-bg: var(--surface7);
-  --fitness-overdue-color: var(--surface1);
-  --form-bg: var(--bg-2);
-  --form-bg-focus: var(--bg-2);
-  --form-border-color-hover: var(--fg-3);
   --border-color: var(--line-soft);
   --hr-border-color: var(--line-soft);
-  --selected-color: var(--fg-0);
   --sidebar-active-color: var(--accent);
   --sidebar-color: var(--fg-1);
   --sidebar-gradient-start: var(--bg-0);

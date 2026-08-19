@@ -3,14 +3,6 @@
 // =============================================================================
 // Styles specific to the node list and detail pages
 
-.node-list-stats {
-  font-size: 0.75rem;
-
-  li {
-    color: var(--accent);
-  }
-}
-
 .node-name {
   color: var(--accent);
 }
@@ -22,12 +14,6 @@
 .node-object-note {
   color: var(--accent);
   font-size: 0.87rem;
-}
-
-.node-column {
-  min-width: 0;
-  flex: 1;
-  padding: 0 0.5rem;
 }
 
 // Node color swatches for note color picker
@@ -153,14 +139,6 @@
       opacity: 0;
     }
   }
-}
-
-// Drop position indicator
-.drop-indicator {
-  height: 3px;
-  border-radius: 2px;
-  margin-bottom: var(--column-gutter);
-  background-color: var(--accent);
 }
 
 // Layout drag overlay - rendered outside normal flow via portal (dnd-kit DragOverlay)

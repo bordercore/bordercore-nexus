@@ -34,10 +34,6 @@
   }
 }
 
-.option-icon {
-  margin-right: 0.5rem;
-}
-
 // Pagination
 .pagination {
   display: flex;
@@ -61,33 +57,6 @@
     border-color: color-mix(in oklch, var(--accent), transparent 40%);
     background-color: color-mix(in oklch, var(--accent), transparent 82%);
     color: var(--fg-0);
-  }
-}
-
-.pagination-divider {
-  border-left: 1px solid var(--line-soft);
-  margin: 0 0.5rem;
-}
-
-// Navigation tabs
-.nav-tabs {
-  border-bottom: 1px solid var(--line-soft);
-
-  .nav-link {
-    border: 1px solid transparent;
-    border-radius: var(--radius) var(--radius) 0 0;
-    color: var(--fg-2);
-
-    &:hover {
-      border-color: var(--line-soft);
-      color: var(--fg-0);
-    }
-
-    &.active {
-      border-color: var(--line-soft) var(--line-soft) transparent;
-      background-color: var(--bg-1);
-      color: var(--fg-0);
-    }
   }
 }
 
@@ -171,31 +140,9 @@
   color: var(--fg-2);
 }
 
-.list-header-border {
-  border-bottom: 2px solid var(--line-soft);
-}
-
 li {
   &:hover {
     background-color: color-mix(in oklch, var(--fg-0), transparent 92%);
-  }
-}
-
-.list-with-counts {
-  li {
-    display: flex;
-    justify-content: space-between;
-    padding: 0.5rem 1rem;
-    border-bottom: 1px solid var(--line-soft);
-
-    &:last-child {
-      border-bottom: none;
-    }
-  }
-
-  .count {
-    color: var(--accent);
-    font-size: 0.875rem;
   }
 }
 

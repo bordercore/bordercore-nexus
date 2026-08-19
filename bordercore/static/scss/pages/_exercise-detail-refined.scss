@@ -20,10 +20,6 @@
 .exercise-detail-app {
   // --- Page-local tokens (genuine page identity, not theme-controlled) -------
   --ex-radius-sm: 6px;
-  --ex-elev-2:
-    0 1px 0 0 rgb(255, 255, 255, 3%) inset,
-    0 8px 24px -8px rgb(0, 0, 0, 55%),
-    0 0 0 1px var(--line-soft);
   --ex-font-display: "Space Grotesk", "Inter", -apple-system, "Segoe UI", sans-serif;
   --ex-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ex-t-fast: 120ms;

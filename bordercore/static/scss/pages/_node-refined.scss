@@ -26,8 +26,6 @@
   // What remains here is the page's own three-step elevation ramp for stacked
   // chrome (menus, popovers, sticky elements), the scrim recipe, and motion
   // timing.
-  --nl-radius-sm: 6px;
-  --nl-overlay: color-mix(in oklch, var(--bg-0), black 30%);
   --nl-elev-1:
     0 1px 0 0 rgb(255, 255, 255, 2%) inset,
     0 1px 2px rgb(0, 0, 0, 35%),
@@ -36,14 +34,9 @@
     0 1px 0 0 rgb(255, 255, 255, 3%) inset,
     0 8px 24px -8px rgb(0, 0, 0, 55%),
     0 0 0 1px var(--line-soft);
-  --nl-elev-3:
-    0 1px 0 0 rgb(255, 255, 255, 4%) inset,
-    0 20px 60px -12px rgb(0, 0, 0, 70%),
-    0 0 0 1px var(--line-soft);
   --nl-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --nl-t-fast: 120ms;
   --nl-t-base: 180ms;
-  --nl-t-slow: 280ms;
 
   // --- Root surface (escape base layout padding; match .todo-app pattern) ---
   // Background harmonized with /collection/ and /music/ (--bg-1) so the

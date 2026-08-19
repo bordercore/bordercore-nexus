@@ -3,46 +3,9 @@
 // =============================================================================
 // Modal dialogs, popovers, and overlay components
 
-.modal-header {
-  padding: 1rem 1.5rem;
-  border-radius: var(--radius) var(--radius) 0 0;
-  border-bottom: 1px solid var(--line-soft);
-  background-color: var(--bg-1);
-  color: var(--accent);
-  font-size: 1.5rem;
-
-  // Modal close button (× in the top-right corner of the header).
-  .close {
-    color: var(--fg-0);
-  }
-}
-
-.modal-footer {
-  border-top: 1px solid var(--line-soft);
-}
-
-.modal-content {
-  border: 1px solid var(--line-soft);
-  background-color: var(--bg-0);
-  color: var(--fg-0);
-}
-
 // Keep ObjectSelect modals above other layered content
 [id^="modalObjectSelect"] {
   z-index: 2000;
-}
-
-[id^="modalObjectSelect"] .modal-dialog {
-  z-index: 2001;
-}
-
-// Keep image modals above other layered content
-#node-image-modal {
-  z-index: 2000;
-}
-
-#node-image-modal .modal-dialog {
-  z-index: 2001;
 }
 
 // Popovers
@@ -51,14 +14,6 @@
   background-color: var(--bg-1);
   color: var(--fg-0);
   
-  .popover-header {
-    border-bottom: 1px solid var(--line-soft);
-    background-color: var(--bg-2);
-  }
-  
-  .popover-body {
-    color: var(--fg-0);
-  }
 }
 
 // Toasts
@@ -77,20 +32,4 @@
   background-color: var(--bg-1);
   box-shadow: 0 0.5rem 1rem rgb(0 0 0 / 15%);
   color: var(--fg-0);
-}
-
-.toast-header {
-  padding: 0.25rem 1rem;
-  border-radius: var(--radius) var(--radius) 0 0;
-  border-bottom: 1px solid var(--line-soft);
-  background-color: var(--bg-2);
-  color: var(--accent);
-
-  strong {
-    color: var(--accent);
-  }
-}
-
-.toast-body {
-  padding: 1rem;
 }

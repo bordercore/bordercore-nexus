@@ -44,15 +44,6 @@
   padding-left: 64px;
 }
 
-// Content block area - provides spacing for Django content block
-.row.flex-grow-1 {
-  padding: 0 var(--grid-margin) var(--grid-margin) var(--grid-margin);
-
-  .col-lg-12 {
-    padding-top: var(--grid-margin);
-  }
-}
-
 // Site banner
 .site-banner {
   padding: 0.75rem 1.5rem;
@@ -62,84 +53,6 @@
   color: var(--banner-text);
   font-weight: 600;
   text-align: center;
-}
-
-// React-based top bar layout
-.top-bar-container {
-  display: flex;
-  min-height: 3.5rem;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem var(--grid-margin);
-  border-radius: var(--radius);
-  margin: var(--grid-margin) var(--grid-margin) var(--grid-margin) var(--grid-margin);
-  background-color: transparent;
-}
-
-.top-title-container {
-  position: relative;
-  display: flex;
-  overflow: visible;
-  min-width: 0;
-  flex: 1 1 auto;
-  align-items: center;
-  padding-left: 0;
-
-  &::before {
-    position: absolute;
-    z-index: -1;
-    top: 50%;
-    left: 0;
-    width: 300px;
-    height: 100px;
-    background: radial-gradient(circle at center, color-mix(in oklch, var(--accent), transparent 85%) 0%, transparent 70%);
-    content: "";
-    filter: blur(20px);
-    pointer-events: none;
-    transform: translateY(-50%);
-  }
-
-  #top-title-text {
-    position: relative;
-    overflow: hidden;
-    padding-bottom: 0.15em;
-    animation: gradient-shift 16s ease-in-out infinite;
-    background: linear-gradient(
-      90deg,
-      var(--accent) 0%,
-      var(--accent-2) 25%,
-      var(--accent-3) 50%,
-      var(--accent-2) 75%,
-      var(--accent) 100%
-    );
-    background-clip: text;
-    background-size: 300% auto;
-    font-family: Roboto, sans-serif;
-    font-size: 2.5rem;
-    font-weight: 600;
-    -webkit-text-fill-color: transparent;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-}
-
-@keyframes gradient-shift {
-  0%, 100% {
-    background-position: 0% center;
-  }
-
-  50% {
-    background-position: 100% center;
-  }
-}
-
-.top-bar-right {
-  display: flex;
-  flex-direction: row;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 1rem;
 }
 
 .top-search-icon,
@@ -166,28 +79,6 @@
   }
 }
 
-.top-bar-item {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  &#weather-display {
-    color: var(--accent-3);
-  }
-
-  &#top-search-bar {
-    margin-left: 0.5rem;
-  }
-
-  &#recent-blobs {
-    margin: 0 0.5rem;
-  }
-
-  &.user-menu-wrapper {
-    flex-shrink: 0;
-  }
-}
-
 // Hover reveal
 .hover-reveal-target {
   .hover-reveal-content {
@@ -200,32 +91,15 @@
   }
 }
 
-// Cards
-.card-box-shadow {
-  box-shadow: 0 0.125rem 0.25rem rgb(0 0 0 / 7.5%);
-}
-
 .card {
   border: 1px solid var(--line-soft);
   border-radius: var(--radius);
   background-color: var(--bg-1);
 
-  .card-header {
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--line-soft);
-    background-color: var(--bg-2);
-    font-weight: 600;
-  }
-
   .card-body {
     padding: 1rem;
   }
 
-  .card-footer {
-    padding: 0.75rem 1rem;
-    border-top: 1px solid var(--line-soft);
-    background-color: var(--bg-2);
-  }
 }
 
 // Backdrop filter
@@ -273,32 +147,6 @@
   left: 0;
   width: 0;
   height: 100vh;
-}
-
-.sidebar-icon-container {
-  display: flex;
-  align-items: center;
-  padding: 0.75rem 1rem;
-  color: var(--fg-0);
-  gap: 0.5rem;
-  text-decoration: none;
-  transition: background-color 0.2s ease;
-
-  &:hover {
-    background-color: color-mix(in oklch, var(--fg-0), transparent 92%);
-  }
-
-  &.active {
-    background-color: color-mix(in oklch, var(--accent), transparent 82%);
-  }
-}
-
-.sidebar-icon {
-  display: flex;
-  width: var(--nav-icon-size);
-  height: var(--nav-icon-size);
-  align-items: center;
-  justify-content: center;
 }
 
 // Wrapper for sidebar + content

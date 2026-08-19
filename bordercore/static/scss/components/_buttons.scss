@@ -3,26 +3,6 @@
 // =============================================================================
 // Button styles using the refined token set (--accent, --fg-*, --bg-*, etc.).
 
-.button-icon {
-  display: flex;
-  width: 2.5rem;
-  height: 2.5rem;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: background-color 0.18s ease, color 0.18s ease;
-
-  &:hover {
-    background-color: color-mix(in oklch, var(--fg-0), transparent 90%);
-    color: var(--fg-0);
-  }
-}
-
-.close-button {
-  cursor: pointer;
-}
-
 // Base .btn reset for elements with class="btn ..." — structural styling
 // only (display, padding, line-height, border-radius, text alignment,
 // link-decoration removal). The .btn-primary / .btn-secondary modifiers
@@ -58,12 +38,6 @@
   }
 }
 
-// .btn-close — small × close button used by modal headers and some popovers.
-// The filter recolors the SVG icon to suit the active theme.
-.btn-close {
-  filter: var(--btn-close-filter);
-}
-
 // Primary button — matches .refined-btn.primary
 .btn-primary {
   border: 1px solid color-mix(in oklch, var(--accent), black 10%);
@@ -95,44 +69,5 @@
       0 1px 0 rgb(255 255 255 / 20%) inset,
       0 0 0 3px var(--accent-glow),
       0 8px 20px color-mix(in oklch, var(--accent), transparent 70%);
-  }
-}
-
-// Secondary — neutral refined button
-.btn-secondary {
-  border: 1px solid var(--line);
-  background-color: var(--bg-2);
-  color: var(--fg-0);
-
-  &:hover {
-    border-color: var(--fg-3);
-    background-color: var(--bg-3);
-    color: var(--fg-0);
-  }
-}
-
-// Segmented button group
-.btn-group {
-  .btn {
-    border-color: var(--line);
-
-    &:not(:first-child) {
-      border-left-width: 1px;
-    }
-
-    &.active {
-      border-color: color-mix(in oklch, var(--accent), transparent 40%);
-      background-color: color-mix(in oklch, var(--accent), transparent 82%);
-      color: var(--fg-0);
-    }
-  }
-
-  @media (width < 992px) {
-    display: flex;
-    flex-wrap: wrap;
-
-    .btn {
-      flex: 1 0 auto;
-    }
   }
 }

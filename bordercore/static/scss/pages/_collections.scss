@@ -36,7 +36,6 @@ $tag-colors: (
 // --cl-* tokens live here so every descendant (rail, grid, search) inherits them.
 .cl-app {
   --cl-rail-w: 260px;
-  --cl-topbar-h: 56px;
   --cl-font-display: "Space Grotesk", var(--font-ui);
   --cl-accent-25: color-mix(in oklch, var(--accent), transparent 75%);
   --cl-accent-15: color-mix(in oklch, var(--accent), transparent 85%);

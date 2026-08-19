@@ -16,7 +16,6 @@
   --bc-hairline: var(--line-soft);
   --bc-glow-accent-sm: 0 0 0 1px color-mix(in oklch, var(--accent), transparent 72%),
                        0 0 10px -2px color-mix(in oklch, var(--accent), transparent 65%);
-  --bc-glow-cyan: 0 0 18px -2px color-mix(in oklch, var(--bc-accent-4), transparent 60%);
   --bc-t-fast: 120ms;
   --bc-t-slow: 280ms;
   --bc-ease-out: cubic-bezier(0.22, 1, 0.36, 1);

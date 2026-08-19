@@ -37,8 +37,6 @@
   --bd-font-display: "Space Grotesk", "Inter", -apple-system, "Segoe UI", sans-serif;
   --bd-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --bd-t-fast: 120ms;
-  --bd-t-base: 180ms;
-  --bd-t-med: 220ms;
 
   position: relative;
 
@@ -200,97 +198,6 @@
 
   .bd-hero > * { position: relative; }
 
-  .bd-hero-thumb {
-    position: relative;
-    overflow: hidden;
-    width: 110px;
-    align-self: start;
-    border: 1px solid var(--line-soft);
-    border-radius: var(--radius);
-    background: var(--bg-3);
-
-    &.tall { aspect-ratio: 2 / 3; }
-
-    &.square {
-      width: 96px;
-      aspect-ratio: 1 / 1;
-    }
-
-    &.video {
-      width: 180px;
-      aspect-ratio: 16 / 9;
-    }
-
-    &.note,
-    &.empty {
-      display: grid;
-      width: 96px;
-      aspect-ratio: 1 / 1;
-      background:
-        repeating-linear-gradient(135deg,
-          var(--bg-2) 0 8px,
-          var(--bg-3) 8px 16px);
-      color: var(--fg-4);
-      font-family: var(--font-mono);
-      font-size: 14px;
-      letter-spacing: 0.1em;
-      place-items: center;
-      text-transform: uppercase;
-    }
-
-    &.audio {
-      display: grid;
-      width: 96px;
-      aspect-ratio: 1 / 1;
-      color: var(--accent);
-      font-size: 28px;
-      place-items: center;
-    }
-
-    img {
-      display: block;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .play-overlay {
-      position: absolute;
-      display: grid;
-      background: linear-gradient(180deg, rgb(0 0 0 / 0%) 40%, rgb(0 0 0 / 50%));
-      color: var(--accent-fg);
-      font-family: var(--font-mono);
-      font-size: 11px;
-      inset: 0;
-      place-items: center;
-    }
-
-    .play-overlay .pip {
-      display: grid;
-      width: 38px;
-      height: 38px;
-      border: 1px solid rgb(255 255 255 / 18%);
-      border-radius: 50%;
-      backdrop-filter: blur(6px);
-      background: color-mix(in oklch, var(--bg-2) 70%, transparent);
-      place-items: center;
-    }
-
-    .bd-hero-thumb-cover-fallback {
-      display: grid;
-      width: 100%;
-      height: 100%;
-      padding: 8px;
-      background: linear-gradient(135deg, var(--accent), var(--accent-2));
-      color: var(--accent-fg);
-      font-family: var(--bd-font-display);
-      font-size: 13px;
-      line-height: 1.2;
-      place-items: center;
-      text-align: center;
-    }
-  }
-
   .bd-hero-body {
     display: flex;
     min-width: 0;
@@ -328,21 +235,6 @@
     border-radius: 50%;
     background: var(--accent);
     box-shadow: 0 0 8px var(--accent);
-  }
-
-  .bd-hero-eyebrow .es-status {
-    display: inline-flex;
-    align-items: center;
-    color: var(--fg-3);
-    gap: 6px;
-  }
-
-  .bd-hero-eyebrow .es-status .dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--ok);
-    box-shadow: 0 0 8px var(--ok);
   }
 
   .bd-hero h1 {
@@ -488,40 +380,6 @@
   .bd-iconbtn[aria-label]:not(.primary, .ghost) {
     width: 30px;
     padding: 0;
-  }
-
-  // ---- pin toggle ----
-  .bd-pin-toggle {
-    display: inline-flex;
-    align-items: center;
-    padding: 3px 10px;
-    border: 1px dashed var(--line-soft);
-    border-radius: 999px;
-    background: transparent;
-    color: var(--fg-4);
-    cursor: pointer;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    gap: 6px;
-    transition: all var(--bd-t-fast) var(--bd-ease-out);
-  }
-
-  .bd-pin-toggle:hover {
-    border-style: solid;
-    border-color: color-mix(in oklch, var(--warn) 40%, transparent);
-    background: color-mix(in oklch, var(--warn) 6%, transparent);
-    color: var(--warn);
-  }
-
-  .bd-pin-toggle.active {
-    border: 1px solid color-mix(in oklch, var(--warn) 30%, transparent);
-    background: color-mix(in oklch, var(--warn) 10%, transparent);
-    color: var(--warn);
-  }
-
-  .bd-pin-toggle.active:hover {
-    border-color: color-mix(in oklch, var(--warn) 45%, transparent);
-    background: color-mix(in oklch, var(--warn) 16%, transparent);
   }
 
   .bd-iconbtn.is-end {
