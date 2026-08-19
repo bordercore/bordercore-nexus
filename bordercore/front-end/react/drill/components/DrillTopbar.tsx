@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCircleNodes,
@@ -30,6 +30,16 @@ export function DrillTopbar({
   studySession,
   studySessionProgress,
 }: DrillTopbarProps) {
+  const [isBeating, setIsBeating] = useState(false);
+
+  const handleFavoriteClick = () => {
+    // Clear first, then set on the next frame, so toggling the favorite
+    // twice in a row replays the beat instead of being a no-op class change.
+    setIsBeating(false);
+    requestAnimationFrame(() => setIsBeating(true));
+    onFavoriteToggle();
+  };
+
   const sessionTotal = studySession?.list.length ?? 0;
   const sessionIndex = Math.min(studySessionProgress + 1, sessionTotal);
   const isTagStudy = studySession?.type === "tag";
@@ -66,10 +76,15 @@ export function DrillTopbar({
           className={`drill-icon-btn ${isFavorite ? "fav-on" : ""}`}
           title={isFavorite ? "Remove favorite" : "Add favorite"}
           aria-label={isFavorite ? "Remove favorite" : "Add favorite"}
-          onClick={onFavoriteToggle}
+          onClick={handleFavoriteClick}
           type="button"
         >
-          <FontAwesomeIcon icon={faHeart} />
+          <span
+            className={`drill-fav-icon ${isBeating ? "drill-fav-beat" : ""}`}
+            onAnimationEnd={() => setIsBeating(false)}
+          >
+            <FontAwesomeIcon icon={faHeart} />
+          </span>
         </button>
         <button
           className="drill-icon-btn"
