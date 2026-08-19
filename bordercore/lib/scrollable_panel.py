@@ -58,14 +58,6 @@ class ScrollablePanel:
         """Scroll down by one page."""
         self.scroll_down(max(1, self._visible_height - 1))
 
-    def scroll_to_top(self) -> None:
-        """Scroll to the very top."""
-        self._scroll_offset = 0
-
-    def scroll_to_bottom(self) -> None:
-        """Scroll to the very bottom."""
-        self._scroll_offset = self.max_scroll
-
     @property
     def max_scroll(self) -> int:
         """Maximum valid scroll offset."""
@@ -75,14 +67,6 @@ class ScrollablePanel:
     def can_scroll(self) -> bool:
         """Whether the content is taller than the visible area."""
         return self._total_lines > self._visible_height
-
-    @property
-    def at_top(self) -> bool:
-        return self._scroll_offset <= 0
-
-    @property
-    def at_bottom(self) -> bool:
-        return self._scroll_offset >= self.max_scroll
 
     def __rich_console__(
         self, console: Console, options: ConsoleOptions

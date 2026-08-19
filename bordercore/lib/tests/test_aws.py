@@ -18,7 +18,6 @@ from lib.aws import (
     s3_copy_object,
     s3_delete_object,
     s3_delete_objects_by_prefix,
-    s3_download_fileobj,
     s3_list_objects,
     s3_put_object,
     s3_update_metadata,
@@ -105,13 +104,6 @@ def test_s3_put_object(s3):
     assert obj["ContentType"] == "application/json"
     assert obj["Metadata"]["m"] == "v"
     assert obj["CacheControl"] == "max-age=100"
-
-
-def test_s3_download_fileobj(s3):
-    """Test that s3_download_fileobj downloads an object and returns its content."""
-    s3.put_object(Bucket=BUCKET, Key="dl.txt", Body=b"content")
-    buf = s3_download_fileobj(BUCKET, "dl.txt")
-    assert buf.read() == b"content"
 
 
 # ---- S3 delete ----

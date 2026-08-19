@@ -61,28 +61,6 @@ def test_page_up_down() -> None:
     assert panel._scroll_offset == 10
 
 
-def test_scroll_to_top_bottom() -> None:
-    panel = ScrollablePanel()
-    panel._total_lines = 10
-    panel._visible_height = 2
-    panel.scroll_to_bottom()
-    assert panel._scroll_offset == 8
-    panel.scroll_to_top()
-    assert panel._scroll_offset == 0
-
-
-def test_at_top_at_bottom() -> None:
-    panel = ScrollablePanel()
-    panel._total_lines = 5
-    panel._visible_height = 2
-    panel._scroll_offset = 0
-    assert panel.at_top
-    assert not panel.at_bottom
-    panel._scroll_offset = 3
-    assert not panel.at_top
-    assert panel.at_bottom
-
-
 def test_build_scrollbar_no_scroll() -> None:
     panel = ScrollablePanel()
     panel._total_lines = 3

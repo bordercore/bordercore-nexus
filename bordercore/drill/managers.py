@@ -14,7 +14,7 @@ from typing import Any
 from django.apps import apps
 from django.contrib.auth.models import User
 from django.db import models
-from django.db.models import Count, DateTimeField, ExpressionWrapper, F, Max, Min, Q, QuerySet
+from django.db.models import Count, DateTimeField, ExpressionWrapper, F, Max, Min, Q
 from django.db.models.functions import TruncDate, TruncWeek
 from django.urls import reverse
 from django.utils import timezone
@@ -35,45 +35,12 @@ class DrillManager(models.Manager):
     user preferences such as muted tags and pinned tags.
     """
 
-    def tags_last_reviewed(self, user: User) -> QuerySet[Tag]:
-        """Return tags which haven't been reviewed in a while.
-
-        Args:
-            user: The user to get tags for.
-
-        Returns:
-            Tags ordered by last reviewed date (nulls first).
-        """
-
-        return Tag.objects.only("id", "name") \
-                          .filter(user=user, question__isnull=False) \
-                          .exclude(pk__in=user.userprofile.drill_tags_muted.all()) \
-                          .annotate(last_reviewed=Max("question__last_reviewed")) \
-                          .order_by(F("last_reviewed").asc(nulls_first=True))
-
-    def tags_needing_review(self, user: User) -> list[dict[str, Any]]:
-        """Return tag-progress rows for tags with at least one due question.
-
-        Tags whose questions are all disabled are excluded; muted tags are
-        excluded. Results are sorted by the most recent review date ascending
-        (oldest-recent-review first), so tags overdue the longest appear first.
-
-        Progress/count numbers in each row come from ``_batch_tag_progress``
-        and exclude disabled questions, so they reflect only the study-eligible
-        cards.
-
-        Args:
-            user: The user whose tags to inspect.
-
-        Returns:
-            List of tag progress dicts (as produced by ``_batch_tag_progress``),
-            filtered to rows where ``todo > 0``.
-        """
-        rows = self._batch_tag_progress(user, self._tags_needing_review_names(user))
-        return [r for r in rows if r["todo"] > 0]
-
     def _tags_needing_review_names(self, user: User) -> list[str]:
-        """Return candidate tag names for ``tags_needing_review``, in display order."""
+        """Return names of tags with at least one enabled question, oldest review first.
+
+        Muted tags are excluded. The ordering puts tags whose most recent
+        review is furthest in the past (or absent) first.
+        """
         return list(
             Tag.objects.filter(
                 user=user,
@@ -220,8 +187,8 @@ class DrillManager(models.Manager):
     ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
         """Return the overview page's three tag lists using one progress query.
 
-        ``tags_needing_review``, ``get_pinned_tags`` and ``get_muted_tags``
-        each resolve their own names and then call ``_batch_tag_progress``.
+        The three sections each resolve their own tag names and then call
+        ``_batch_tag_progress``.
         The name lookups read different tables, but the progress query is the
         same shape three times over, so the overview runs it once for the union
         of the names. Each section gets its own copies of the rows, because
@@ -304,18 +271,6 @@ class DrillManager(models.Manager):
         if hours >= 24:
             return f"in {hours // 24}d"
         return f"in {hours:02d}h {minutes:02d}m"
-
-    def reviewed_count(self, user: User, since: datetime) -> int:
-        """Count QuestionResponse rows for ``user`` since the given datetime.
-
-        Args:
-            user: The user whose responses to count.
-            since: Lower-bound datetime (inclusive).
-
-        Returns:
-            Number of responses recorded at or after ``since``.
-        """
-        return self.reviewed_counts(user, since)[0]
 
     def reviewed_counts(self, user: User, *since: datetime) -> list[int]:
         """Count responses since each of several datetimes, in one query.

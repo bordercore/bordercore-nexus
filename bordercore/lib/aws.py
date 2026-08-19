@@ -8,7 +8,6 @@ the rest of the codebase never imports ``boto3`` directly.
 
 import json
 import logging
-from io import BytesIO
 from typing import Any
 
 import boto3
@@ -108,23 +107,6 @@ def s3_copy_object(bucket: str, source_key: str, dest_key: str) -> None:
     _get_s3_resource().Object(bucket, dest_key).copy_from(
         CopySource=f"{bucket}/{source_key}"
     )
-
-
-def s3_download_fileobj(bucket: str, key: str) -> BytesIO:
-    """Download an S3 object into a BytesIO buffer and return it.
-
-    Args:
-        bucket: The S3 bucket name.
-        key: The S3 object key to download.
-
-    Returns:
-        A BytesIO buffer containing the downloaded object data, seeked to
-        the beginning.
-    """
-    buf = BytesIO()
-    _get_s3_client().download_fileobj(bucket, key, buf)
-    buf.seek(0)
-    return buf
 
 
 def s3_update_metadata(

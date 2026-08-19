@@ -13,28 +13,6 @@ from tag.tests.factories import TagFactory
 pytestmark = [pytest.mark.django_db]
 
 
-def test_tags_last_reviewed(authenticated_client):
-
-    user, _ = authenticated_client()
-
-    question_0 = QuestionFactory()
-    tag_0 = TagFactory()
-    question_0.tags.add(tag_0)
-    question_0.save()
-    question_0.record_response("good")
-
-    question_1 = QuestionFactory()
-    tag_1 = TagFactory()
-    question_1.tags.add(tag_1)
-    question_1.save()
-    question_1.record_response("good")
-
-    tags = Question.objects.tags_last_reviewed(user)
-    assert len(tags) == 2
-    assert tags[0] == tag_0
-    assert tags[1] == tag_1
-
-
 def test_total_tag_progress(authenticated_client):
 
     user, _ = authenticated_client()
@@ -165,30 +143,6 @@ def test_recent_tags(authenticated_client):
     assert tag_0.name not in [x["name"] for x in recent_tags]
 
 
-def test_tags_needing_review_filters_and_sorts():
-    user = UserFactory()
-    tag_old = TagFactory(user=user, name="oldest")
-    tag_mid = TagFactory(user=user, name="middle")
-    tag_new = TagFactory(user=user, name="newer")
-    tag_clean = TagFactory(user=user, name="clean")
-    tag_disabled_only = TagFactory(user=user, name="disabled-only")
-
-    QuestionFactory(user=user, last_reviewed=timezone.now() - timedelta(days=400)).tags.add(tag_old)
-    QuestionFactory(user=user, last_reviewed=timezone.now() - timedelta(days=200)).tags.add(tag_mid)
-    QuestionFactory(user=user, last_reviewed=timezone.now() - timedelta(days=100)).tags.add(tag_new)
-    QuestionFactory(user=user, last_reviewed=timezone.now()).tags.add(tag_clean)
-    QuestionFactory(
-        user=user,
-        last_reviewed=timezone.now() - timedelta(days=400),
-        is_disabled=True,
-    ).tags.add(tag_disabled_only)
-
-    rows = Question.objects.tags_needing_review(user)
-    names = [r["name"] for r in rows]
-    assert names == ["oldest", "middle", "newer"]  # sort survives middle insertion
-    assert all(r["todo"] > 0 for r in rows)
-
-
 def test_batch_tag_progress_includes_todo_and_dt():
     user = UserFactory()
     tag = TagFactory(user=user, name="alpha")
@@ -307,15 +261,6 @@ def test_featured_tag_histogram_returns_weeks_of_counts():
     assert len(histo) == 12
     assert sum(histo) == 1
     assert histo[-1] == 1  # today's response lands in the last (current) week slot
-
-
-def test_reviewed_count_since():
-    user = UserFactory()
-    q = QuestionFactory(user=user)
-    QuestionResponse.objects.create(question=q, response="easy")
-    QuestionResponse.objects.create(question=q, response="good")
-    yesterday = timezone.now() - timedelta(days=1)
-    assert Question.objects.reviewed_count(user, since=yesterday) == 2
 
 
 def test_study_streak_counts_consecutive_days():

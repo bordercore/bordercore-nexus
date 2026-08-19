@@ -59,11 +59,6 @@ class Command(BaseCommand):
             action="store_true"
         )
 
-    def get_missing_blob_ids(self, expected, found):
-
-        found_ids = [x["_id"] for x in found["hits"]["hits"]]
-        return [x for x in expected if str(x.uuid) not in found_ids]
-
     def get_blobs_from_es(self):
 
         search_object = {
