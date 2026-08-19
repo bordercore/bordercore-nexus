@@ -50,7 +50,7 @@ interface MenuIcon {
 
 interface MenuBadge {
   text: string | number;
-  class: string;
+  class?: string;
 }
 
 export interface MenuItemData {

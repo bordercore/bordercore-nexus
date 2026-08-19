@@ -69,28 +69,6 @@
 
   // Vue 3 Datepicker
 
-  // Media Chrome
-
-  // Reminders table container override
-  .reminders-table-container {
-    background-color: var(--surface6);
-  }
-
-  // New Reminder button - neon pink style (toned down)
-  .reminder-new-button {
-    background-color: #c800c8;
-    box-shadow: 0 10px 15px -3px rgb(200 0 200 / 25%), 0 4px 6px -2px rgb(200 0 200 / 10%);
-
-    &:hover {
-      background-color: #db00db;
-      box-shadow: 0 10px 15px -3px rgb(200 0 200 / 35%), 0 4px 6px -2px rgb(200 0 200 / 20%);
-    }
-
-    &:focus {
-      box-shadow: 0 0 0 3px rgb(200 0 200 / 30%), 0 10px 15px -3px rgb(200 0 200 / 25%);
-    }
-  }
-
   // Code samples
   :not(pre) > code[class*="language-"], pre[class*="language-"] {
     background: hsl(280 80% 15%);

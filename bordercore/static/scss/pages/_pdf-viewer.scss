@@ -1,9 +1,10 @@
 // =============================================================================
-// PAGES: REMINDER DETAIL
+// PAGES: PDF VIEWER
 // =============================================================================
+// The pdf.js iframe rendered by blob/pdf_viewer.html.
 
-.reminder-uuid {
-  color: var(--fg-1);
-  font-size: 0.95rem;
-  font-weight: normal;
+#pdf-viewer {
+  width: 100%;
+  height: calc(100vh - 60px);
+  border: none;
 }

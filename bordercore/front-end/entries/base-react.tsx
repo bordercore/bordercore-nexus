@@ -189,7 +189,7 @@ function SidebarContent() {
         color: "#fb923c",
         icon: { element: "font-awesome-icon", attributes: { icon: "tasks" }, class: "" },
         badge: data.sidebarConfig?.todoCount
-          ? { text: data.sidebarConfig.todoCount, class: "vsm--badge_default" }
+          ? { text: data.sidebarConfig.todoCount }
           : undefined,
       },
       {
@@ -220,7 +220,7 @@ function SidebarContent() {
         color: "#a3e635",
         icon: { element: "font-awesome-icon", attributes: { icon: "running" }, class: "" },
         badge: data.sidebarConfig?.exerciseCount
-          ? { text: data.sidebarConfig.exerciseCount, class: "vsm--badge_default" }
+          ? { text: data.sidebarConfig.exerciseCount }
           : undefined,
       },
       {
@@ -250,7 +250,7 @@ function SidebarContent() {
                 item.title === "Bookmarks"
                   ? {
                       ...item,
-                      badge: { text: count, class: count === 0 ? "hidden" : "vsm--badge_default" },
+                      badge: { text: count, class: count === 0 ? "hidden" : "" },
                     }
                   : item
               )

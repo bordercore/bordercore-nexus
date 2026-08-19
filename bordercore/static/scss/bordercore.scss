@@ -10,9 +10,6 @@
 // Import CSS for Prism syntax highlighter
 @import "../../node_modules/prismjs/themes/prism-okaidia.css";
 
-// Import CSS for vue-sidebar-menu
-@import "../css/vue-sidebar-menu/vue-sidebar-menu";
-
 // =============================================================================
 // MODULAR SCSS IMPORTS
 // =============================================================================
@@ -62,12 +59,11 @@
 // 5. Pages - App-specific styles
 @import "pages/book";
 @import "pages/bookmarks";
-@import "pages/blobs";
+@import "pages/pdf-viewer";
 @import "pages/blobs-dashboard";
 @import "pages/notes-landing";
 @import "pages/collections";
 @import "pages/collection-detail-curate";
-@import "pages/fitness";
 @import "pages/music";
 @import "pages/node";
 @import "pages/reminders";
