@@ -25,6 +25,8 @@ interface ReminderDetail {
   days_of_week: number[];
   days_of_week_display: string[];
   days_of_month: number[];
+  months: number[];
+  months_display: string[];
   // Legacy fields (for backward compatibility)
   interval_value: number;
   interval_unit_display: string;
@@ -145,6 +147,13 @@ export function ReminderDetailPage({ detailAjaxUrl }: ReminderDetailPageProps) {
                   <>
                     <dt className="col-sm-5 mt-2">Days of Month</dt>
                     <dd className="col-sm-7 mt-2">{reminder.days_of_month.join(", ")}</dd>
+                  </>
+                )}
+
+                {reminder.schedule_type === "yearly" && reminder.months_display.length > 0 && (
+                  <>
+                    <dt className="col-sm-5 mt-2">Months</dt>
+                    <dd className="col-sm-7 mt-2">{reminder.months_display.join(", ")}</dd>
                   </>
                 )}
 

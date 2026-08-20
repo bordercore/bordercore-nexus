@@ -18,6 +18,7 @@ function makeState(overrides: Partial<ReminderFormState> = {}): ReminderFormStat
     trigger_time: "09:00",
     days_of_week: [],
     days_of_month: [],
+    months: [],
     start_at: "",
     ...overrides,
   };
@@ -67,6 +68,7 @@ describe("submitReminderForm", () => {
     expect(params.get("trigger_time")).toBe("09:00");
     expect(params.get("days_of_week_input")).toBe("[]");
     expect(params.get("days_of_month_input")).toBe("[]");
+    expect(params.get("months_input")).toBe("[]");
     // Legacy interval fields are always sent so the server form validates.
     expect(params.get("interval_value")).toBe("1");
     expect(params.get("interval_unit")).toBe("day");
@@ -75,17 +77,18 @@ describe("submitReminderForm", () => {
     expect(config?.withCredentials).toBe(true);
   });
 
-  it("JSON-encodes days_of_week and days_of_month arrays", async () => {
+  it("JSON-encodes days_of_week, days_of_month, and months arrays", async () => {
     mockedAxios.post.mockResolvedValueOnce({ data: { success: true } });
 
     await submitReminderForm(
       "/save/",
-      makeState({ days_of_week: [0, 2, 4], days_of_month: [1, 15] })
+      makeState({ days_of_week: [0, 2, 4], days_of_month: [1, 15], months: [3, 9] })
     );
 
     const params = mockedAxios.post.mock.calls[0][1] as URLSearchParams;
     expect(params.get("days_of_week_input")).toBe("[0,2,4]");
     expect(params.get("days_of_month_input")).toBe("[1,15]");
+    expect(params.get("months_input")).toBe("[3,9]");
   });
 
   it("omits trigger_time when empty", async () => {

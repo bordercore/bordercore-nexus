@@ -13,16 +13,19 @@ from .models import Reminder
 class ReminderForm(ModelForm):
     """Form for creating and updating reminders.
 
-    Supports three schedule types:
+    Supports four schedule types:
     - Daily: Trigger every day at a specific time
     - Weekly: Trigger on specific days of the week
     - Monthly: Trigger on specific days of the month
+    - Yearly: Trigger on the 1st of specific months
     """
 
     # Custom field for days_of_week as comma-separated string from frontend
     days_of_week_input = forms.CharField(required=False, widget=forms.HiddenInput())
     # Custom field for days_of_month as comma-separated string from frontend
     days_of_month_input = forms.CharField(required=False, widget=forms.HiddenInput())
+    # Custom field for months as comma-separated string from frontend
+    months_input = forms.CharField(required=False, widget=forms.HiddenInput())
 
     class Meta:
         """Meta configuration for ReminderForm."""
@@ -140,6 +143,35 @@ class ReminderForm(ModelForm):
 
         return sorted(set(valid_days))
 
+    def clean_months_input(self) -> list[int]:
+        """Parse and validate months_input field.
+
+        Returns:
+            List of valid month numbers (1-12).
+        """
+        value = self.cleaned_data.get("months_input", "")
+        if not value:
+            return []
+
+        try:
+            # Handle both JSON array and comma-separated formats
+            if value.startswith("["):
+                months = json.loads(value)
+            else:
+                months = [int(m.strip()) for m in value.split(",") if m.strip()]
+        except (json.JSONDecodeError, ValueError) as e:
+            raise ValidationError(f"Invalid months format: {e}")
+
+        # Validate each month is in valid range
+        valid_months = []
+        for month in months:
+            if isinstance(month, int) and 1 <= month <= 12:
+                valid_months.append(month)
+            else:
+                raise ValidationError(f"Invalid month: {month}")
+
+        return sorted(set(valid_months))
+
     def clean(self) -> dict[str, Any]:
         """Validate the form based on schedule_type.
 
@@ -147,6 +179,7 @@ class ReminderForm(ModelForm):
         - Daily: trigger_time recommended
         - Weekly: days_of_week required, trigger_time recommended
         - Monthly: days_of_month required, trigger_time recommended
+        - Yearly: months required, trigger_time recommended
         """
         cleaned_data: dict[str, Any] | None = super().clean()
         if cleaned_data is None:
@@ -154,17 +187,21 @@ class ReminderForm(ModelForm):
 
         schedule_type = cleaned_data.get("schedule_type")
 
-        # Copy parsed days from the custom input fields onto the model instance.
-        # days_of_week / days_of_month are not in Meta.fields, so this clean()
-        # side effect is the only path that populates them on save. Only
-        # overwrite when the corresponding input was actually submitted, so a
-        # partial POST that omits a field does not silently wipe the stored days.
+        # Copy parsed values from the custom input fields onto the model
+        # instance. days_of_week / days_of_month / months are not in
+        # Meta.fields, so this clean() side effect is the only path that
+        # populates them on save. Only overwrite when the corresponding input
+        # was actually submitted, so a partial POST that omits a field does
+        # not silently wipe the stored values.
         days_of_week = cleaned_data.get("days_of_week_input", [])
         days_of_month = cleaned_data.get("days_of_month_input", [])
+        months = cleaned_data.get("months_input", [])
         if "days_of_week_input" in self.data:
             self.instance.days_of_week = days_of_week
         if "days_of_month_input" in self.data:
             self.instance.days_of_month = days_of_month
+        if "months_input" in self.data:
+            self.instance.months = months
 
         # Validate based on schedule type
         if schedule_type == Reminder.SCHEDULE_TYPE_WEEKLY:
@@ -179,6 +216,13 @@ class ReminderForm(ModelForm):
                 self.add_error(
                     "days_of_month_input",
                     "Please select at least one day of the month."
+                )
+
+        elif schedule_type == Reminder.SCHEDULE_TYPE_YEARLY:
+            if not months:
+                self.add_error(
+                    "months_input",
+                    "Please select at least one month."
                 )
 
         return cleaned_data

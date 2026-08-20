@@ -11,6 +11,7 @@ export interface ReminderFormState {
   trigger_time: string;
   days_of_week: number[];
   days_of_month: number[];
+  months: number[];
   start_at: string;
 }
 
@@ -38,6 +39,21 @@ const DAYS_OF_WEEK = [
 ];
 
 const DAYS_OF_MONTH = Array.from({ length: 31 }, (_, i) => i + 1);
+
+const MONTHS = [
+  { value: 1, label: "Jan" },
+  { value: 2, label: "Feb" },
+  { value: 3, label: "Mar" },
+  { value: 4, label: "Apr" },
+  { value: 5, label: "May" },
+  { value: 6, label: "Jun" },
+  { value: 7, label: "Jul" },
+  { value: 8, label: "Aug" },
+  { value: 9, label: "Sep" },
+  { value: 10, label: "Oct" },
+  { value: 11, label: "Nov" },
+  { value: 12, label: "Dec" },
+];
 
 function fieldError(errors: ReminderFormErrors, ...keys: string[]): string[] | undefined {
   for (const key of keys) {
@@ -72,12 +88,20 @@ export function ReminderFormBody({
     setField("days_of_month", next);
   };
 
+  const toggleMonth = (month: number) => {
+    const next = state.months.includes(month)
+      ? state.months.filter(m => m !== month)
+      : [...state.months, month].sort((a, b) => a - b);
+    setField("months", next);
+  };
+
   const nameErr = fieldError(errors, "name");
   const noteErr = fieldError(errors, "note");
   const scheduleErr = fieldError(errors, "schedule_type");
   const timeErr = fieldError(errors, "trigger_time");
   const dowErr = fieldError(errors, "days_of_week_input", "days_of_week");
   const domErr = fieldError(errors, "days_of_month_input", "days_of_month");
+  const monthsErr = fieldError(errors, "months_input", "months");
   const startErr = fieldError(errors, "start_at");
   const nonField = fieldError(errors, "non_field_errors", "__all__");
 
@@ -124,6 +148,7 @@ export function ReminderFormBody({
             <option value="daily">Daily</option>
             <option value="weekly">Weekly</option>
             <option value="monthly">Monthly</option>
+            <option value="yearly">Yearly</option>
           </select>
           {scheduleErr && <FieldError messages={scheduleErr} />}
         </div>
@@ -174,6 +199,27 @@ export function ReminderFormBody({
             ))}
           </div>
           {domErr && <FieldError messages={domErr} />}
+        </div>
+      )}
+
+      {state.schedule_type === "yearly" && (
+        <div className="refined-field">
+          <label>
+            months <span className="optional">· fires on the 1st</span>
+          </label>
+          <div className="rm-day-grid">
+            {MONTHS.map(month => (
+              <button
+                key={month.value}
+                type="button"
+                className={`rm-day-chip${state.months.includes(month.value) ? " is-on" : ""}`}
+                onClick={() => toggleMonth(month.value)}
+              >
+                {month.label}
+              </button>
+            ))}
+          </div>
+          {monthsErr && <FieldError messages={monthsErr} />}
         </div>
       )}
 
@@ -244,6 +290,7 @@ export const DEFAULT_FORM_STATE: ReminderFormState = {
   trigger_time: "09:00",
   days_of_week: [],
   days_of_month: [],
+  months: [],
   start_at: "",
 };
 

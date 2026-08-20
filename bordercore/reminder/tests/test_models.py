@@ -335,3 +335,121 @@ def test_calculate_next_trigger_at_unknown_schedule_type_returns_none():
     from_dt = timezone.make_aware(datetime(2025, 2, 3, 8, 0, 0), tz)
     result = reminder.calculate_next_trigger_at(from_datetime=from_dt)
     assert result is None
+
+
+def test_get_schedule_description_yearly_with_months():
+    """get_schedule_description for yearly lists the month names."""
+    reminder = ReminderFactory(
+        schedule_type=Reminder.SCHEDULE_TYPE_YEARLY,
+        trigger_time=time(9, 0),
+        months=[3, 9],
+    )
+    desc = reminder.get_schedule_description()
+    assert "Yearly on the 1st of March, September at" in desc
+    assert "9:00 AM" in desc
+
+
+def test_get_schedule_description_yearly_no_months():
+    """get_schedule_description for yearly with no months selected."""
+    reminder = ReminderFactory(
+        schedule_type=Reminder.SCHEDULE_TYPE_YEARLY,
+        trigger_time=time(9, 0),
+        months=[],
+    )
+    assert "Yearly (no months selected)" in reminder.get_schedule_description()
+
+
+def test_get_months_display():
+    """get_months_display returns human-readable month names."""
+    reminder = ReminderFactory(
+        schedule_type=Reminder.SCHEDULE_TYPE_YEARLY,
+        months=[1, 12],
+    )
+    assert reminder.get_months_display() == ["January", "December"]
+
+
+def test_calculate_next_trigger_at_yearly_later_this_year():
+    """Yearly: next trigger is the 1st of the next selected month this year."""
+    tz = timezone.get_current_timezone()
+    # Feb 3 -> months [6] -> Jun 1
+    from_dt = timezone.make_aware(datetime(2025, 2, 3, 8, 0, 0), tz)
+    reminder = ReminderFactory(
+        schedule_type=Reminder.SCHEDULE_TYPE_YEARLY,
+        trigger_time=time(9, 0),
+        months=[6],
+    )
+    result = reminder.calculate_next_trigger_at(from_datetime=from_dt)
+    assert result is not None
+    assert (result.year, result.month, result.day, result.hour) == (2025, 6, 1, 9)
+
+
+def test_calculate_next_trigger_at_yearly_next_year():
+    """Yearly: if all selected months have passed, roll over to next year."""
+    tz = timezone.get_current_timezone()
+    # Oct 15 -> months [3] -> Mar 1 next year
+    from_dt = timezone.make_aware(datetime(2025, 10, 15, 8, 0, 0), tz)
+    reminder = ReminderFactory(
+        schedule_type=Reminder.SCHEDULE_TYPE_YEARLY,
+        trigger_time=time(9, 0),
+        months=[3],
+    )
+    result = reminder.calculate_next_trigger_at(from_datetime=from_dt)
+    assert result is not None
+    assert (result.year, result.month, result.day, result.hour) == (2026, 3, 1, 9)
+
+
+def test_calculate_next_trigger_at_yearly_today_before_time():
+    """Yearly: on the 1st of a selected month before trigger time, fires today."""
+    tz = timezone.get_current_timezone()
+    from_dt = timezone.make_aware(datetime(2025, 6, 1, 8, 0, 0), tz)
+    reminder = ReminderFactory(
+        schedule_type=Reminder.SCHEDULE_TYPE_YEARLY,
+        trigger_time=time(9, 0),
+        months=[6],
+    )
+    result = reminder.calculate_next_trigger_at(from_datetime=from_dt)
+    assert result is not None
+    assert (result.year, result.month, result.day, result.hour) == (2025, 6, 1, 9)
+
+
+def test_calculate_next_trigger_at_yearly_today_after_time():
+    """Yearly: on the 1st of a selected month after trigger time, next year."""
+    tz = timezone.get_current_timezone()
+    from_dt = timezone.make_aware(datetime(2025, 6, 1, 10, 0, 0), tz)
+    reminder = ReminderFactory(
+        schedule_type=Reminder.SCHEDULE_TYPE_YEARLY,
+        trigger_time=time(9, 0),
+        months=[6],
+    )
+    result = reminder.calculate_next_trigger_at(from_datetime=from_dt)
+    assert result is not None
+    assert (result.year, result.month, result.day, result.hour) == (2026, 6, 1, 9)
+
+
+def test_calculate_next_trigger_at_yearly_multiple_months():
+    """Yearly: with several months, picks the nearest upcoming 1st."""
+    tz = timezone.get_current_timezone()
+    # Apr 10 -> months [3, 9] -> Sep 1 this year
+    from_dt = timezone.make_aware(datetime(2025, 4, 10, 8, 0, 0), tz)
+    reminder = ReminderFactory(
+        schedule_type=Reminder.SCHEDULE_TYPE_YEARLY,
+        trigger_time=time(9, 0),
+        months=[3, 9],
+    )
+    result = reminder.calculate_next_trigger_at(from_datetime=from_dt)
+    assert result is not None
+    assert (result.year, result.month, result.day, result.hour) == (2025, 9, 1, 9)
+
+
+def test_calculate_next_trigger_at_yearly_empty_months():
+    """Yearly with no months: next trigger is same date next year."""
+    tz = timezone.get_current_timezone()
+    from_dt = timezone.make_aware(datetime(2025, 2, 3, 8, 0, 0), tz)
+    reminder = ReminderFactory(
+        schedule_type=Reminder.SCHEDULE_TYPE_YEARLY,
+        trigger_time=time(9, 0),
+        months=[],
+    )
+    result = reminder.calculate_next_trigger_at(from_datetime=from_dt)
+    assert result is not None
+    assert (result.year, result.month, result.day, result.hour) == (2026, 2, 3, 9)

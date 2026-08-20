@@ -17,6 +17,7 @@ function makeReminder(overrides: Partial<Reminder> = {}): Reminder {
     schedule_description: overrides.schedule_description ?? "Daily at 9:00 AM",
     days_of_week: overrides.days_of_week ?? [],
     days_of_month: overrides.days_of_month ?? [],
+    months: overrides.months ?? [],
     interval_value: overrides.interval_value ?? 1,
     interval_unit_display: overrides.interval_unit_display ?? "day",
     next_trigger_at: overrides.next_trigger_at ?? "May 04, 12:30 PM",

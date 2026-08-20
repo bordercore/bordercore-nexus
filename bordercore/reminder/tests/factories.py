@@ -19,3 +19,4 @@ class ReminderFactory(factory.django.DjangoModelFactory):
     is_active = True
     days_of_week = []
     days_of_month = []
+    months = []

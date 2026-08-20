@@ -29,6 +29,7 @@ interface FormAjaxResponse {
   trigger_time: string;
   days_of_week: number[] | null;
   days_of_month: number[] | null;
+  months: number[] | null;
 }
 
 function localDatetimeFromIso(iso: string | null): string {
@@ -66,6 +67,7 @@ export function EditReminderModal({ open, reminder, onClose, onSaved }: EditRemi
           trigger_time: data.trigger_time ?? "09:00",
           days_of_week: data.days_of_week ?? [],
           days_of_month: data.days_of_month ?? [],
+          months: data.months ?? [],
           start_at: localDatetimeFromIso(data.start_at),
         });
         const t = window.setTimeout(() => nameRef.current?.focus(), 40);

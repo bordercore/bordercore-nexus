@@ -5,6 +5,7 @@ import {
   faClock,
   faPencilAlt,
   faRedo,
+  faStar,
   faSync,
   faTrashAlt,
 } from "@fortawesome/free-solid-svg-icons";
@@ -26,6 +27,7 @@ function getScheduleIcon(scheduleType: string) {
   if (t === "daily") return faClock;
   if (t === "weekly") return faSync;
   if (t === "monthly") return faCalendarAlt;
+  if (t === "yearly") return faStar;
   return faRedo;
 }
 

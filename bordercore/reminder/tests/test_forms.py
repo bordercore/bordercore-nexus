@@ -195,3 +195,54 @@ def test_clean_copies_days_to_instance():
     assert form.is_valid()
     assert form.instance.days_of_week == [1, 3]
     assert form.instance.days_of_month == [5, 20]
+
+
+def test_clean_months_input_json_array():
+    """clean_months_input: valid JSON array parses to sorted unique list."""
+    data = _base_form_data()
+    data["schedule_type"] = Reminder.SCHEDULE_TYPE_YEARLY
+    data["months_input"] = "[9, 3, 3]"
+    form = ReminderForm(data=data)
+    assert form.is_valid(), form.errors
+    assert form.instance.months == [3, 9]
+
+
+def test_clean_months_input_out_of_range():
+    """clean_months_input: month outside 1-12 is rejected."""
+    data = _base_form_data()
+    data["schedule_type"] = Reminder.SCHEDULE_TYPE_YEARLY
+    data["months_input"] = "[3, 13]"
+    form = ReminderForm(data=data)
+    assert not form.is_valid()
+    assert "months_input" in form.errors
+
+
+def test_clean_yearly_requires_months():
+    """clean(): schedule_type yearly with no months adds error on months_input."""
+    data = _base_form_data()
+    data["schedule_type"] = Reminder.SCHEDULE_TYPE_YEARLY
+    data["months_input"] = ""
+    form = ReminderForm(data=data)
+    assert not form.is_valid()
+    assert "months_input" in form.errors
+    assert "at least one month" in form.errors["months_input"][0].lower()
+
+
+def test_clean_yearly_with_months_valid():
+    """clean(): schedule_type yearly with months is valid."""
+    data = _base_form_data()
+    data["schedule_type"] = Reminder.SCHEDULE_TYPE_YEARLY
+    data["months_input"] = "[6]"
+    form = ReminderForm(data=data)
+    assert form.is_valid(), form.errors
+    assert form.instance.months == [6]
+
+
+def test_partial_post_preserves_stored_months_when_input_absent():
+    """A POST that omits months_input must not wipe stored months."""
+    instance = Reminder(months=[3, 9])
+    data = _base_form_data()  # daily schedule, no months_input key
+    form = ReminderForm(data=data, instance=instance)
+
+    assert form.is_valid(), form.errors
+    assert form.instance.months == [3, 9]

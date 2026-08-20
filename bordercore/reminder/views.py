@@ -139,6 +139,8 @@ class ReminderDetailAjaxView(APIView):
             "days_of_week": reminder.days_of_week,
             "days_of_week_display": reminder.get_days_of_week_display(),
             "days_of_month": reminder.days_of_month,
+            "months": reminder.months,
+            "months_display": reminder.get_months_display(),
             # Legacy fields (for backward compatibility)
             "interval_value": reminder.interval_value,
             "interval_unit_display": reminder.get_interval_unit_display().lower(),
@@ -189,6 +191,7 @@ class ReminderFormAjaxView(APIView):
             "trigger_time": trigger_time_str,
             "days_of_week": reminder.days_of_week,
             "days_of_month": reminder.days_of_month,
+            "months": reminder.months,
             # Legacy fields (for backward compatibility)
             "interval_value": reminder.interval_value,
             "interval_unit": reminder.interval_unit,
@@ -322,6 +325,7 @@ class ReminderListAjaxView(APIView):
                 "schedule_description": reminder.get_schedule_description(),
                 "days_of_week": reminder.days_of_week or [],
                 "days_of_month": reminder.days_of_month or [],
+                "months": reminder.months or [],
                 # Legacy fields (for backward compatibility)
                 "interval_value": reminder.interval_value,
                 "interval_unit_display": reminder.get_interval_unit_display().lower(),

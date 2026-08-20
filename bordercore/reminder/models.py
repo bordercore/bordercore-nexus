@@ -2,7 +2,7 @@
 
 This module defines the Reminder model, which represents user-created reminders
 that trigger on various schedules: daily at a specific time, weekly on specific
-days, or monthly on specific dates.
+days, monthly on specific dates, or yearly on the 1st of specific months.
 """
 
 import calendar
@@ -19,10 +19,11 @@ from lib.mixins import TimeStampedModel
 class Reminder(TimeStampedModel):
     """A user-owned reminder with flexible scheduling options.
 
-    Reminders support three schedule types:
+    Reminders support four schedule types:
     - Daily: Trigger every day at a specific time
     - Weekly: Trigger on specific days of the week (e.g., every Monday)
     - Monthly: Trigger on specific days of the month (e.g., the 15th)
+    - Yearly: Trigger on the 1st of specific months (e.g., every March 1st)
 
     Examples:
         - Daily at 9am: schedule_type="daily", trigger_time=09:00
@@ -30,6 +31,8 @@ class Reminder(TimeStampedModel):
           days_of_week=[0, 2], trigger_time=08:00
         - 1st and 15th of each month at noon: schedule_type="monthly",
           days_of_month=[1, 15], trigger_time=12:00
+        - Every March 1st at 9am: schedule_type="yearly",
+          months=[3], trigger_time=09:00
 
     Attributes:
         uuid: Stable UUID identifier for this reminder.
@@ -43,6 +46,8 @@ class Reminder(TimeStampedModel):
         trigger_time: Time of day when the reminder should trigger.
         days_of_week: List of weekday indices (0=Monday, 6=Sunday) for weekly reminders.
         days_of_month: List of day numbers (1-31) for monthly reminders.
+        months: List of month numbers (1-12) for yearly reminders; each fires
+            on the 1st of the month.
         interval_value: (Deprecated) The numeric value for the interval.
         interval_unit: (Deprecated) The time unit for the interval.
         last_triggered_at: Timestamp of when the reminder last triggered.
@@ -66,12 +71,16 @@ class Reminder(TimeStampedModel):
     SCHEDULE_TYPE_DAILY = "daily"
     SCHEDULE_TYPE_WEEKLY = "weekly"
     SCHEDULE_TYPE_MONTHLY = "monthly"
+    SCHEDULE_TYPE_YEARLY = "yearly"
 
     SCHEDULE_TYPE_CHOICES = [
         (SCHEDULE_TYPE_DAILY, "Daily"),
         (SCHEDULE_TYPE_WEEKLY, "Weekly"),
         (SCHEDULE_TYPE_MONTHLY, "Monthly"),
+        (SCHEDULE_TYPE_YEARLY, "Yearly"),
     ]
+
+    MONTH_CHOICES = [(m, calendar.month_name[m]) for m in range(1, 13)]
 
     # Day of week constants (Monday=0, Sunday=6, matching Python's weekday())
     MONDAY = 0
@@ -109,11 +118,12 @@ class Reminder(TimeStampedModel):
         max_length=10,
         choices=SCHEDULE_TYPE_CHOICES,
         default=SCHEDULE_TYPE_DAILY,
-        help_text="How often the reminder repeats: daily, weekly, or monthly",
+        help_text="How often the reminder repeats: daily, weekly, monthly, or yearly",
     )
     trigger_time = models.TimeField(null=True, blank=True, help_text="Time of day when the reminder fires")
     days_of_week: models.JSONField = models.JSONField(default=list, blank=True, help_text="Weekday indices for weekly reminders (0=Mon, 6=Sun)")
     days_of_month: models.JSONField = models.JSONField(default=list, blank=True, help_text="Day-of-month numbers (1-31) for monthly reminders")
+    months: models.JSONField = models.JSONField(default=list, blank=True, help_text="Month numbers (1-12) for yearly reminders; each fires on the 1st of the month")
 
     # Deprecated fields (kept for backward compatibility)
     interval_value = models.PositiveSmallIntegerField(default=1, help_text="Deprecated: legacy interval numeric value")
@@ -152,6 +162,15 @@ class Reminder(TimeStampedModel):
         day_map = dict(self.DAY_OF_WEEK_CHOICES)
         return [day_map[d] for d in self.days_of_week if d in day_map]
 
+    def get_months_display(self) -> list[str]:
+        """Return human-readable names for the selected months.
+
+        Returns:
+            List of month names (e.g., ["March", "September"]).
+        """
+        month_map = dict(self.MONTH_CHOICES)
+        return [month_map[m] for m in self.months if m in month_map]
+
     def get_schedule_description(self) -> str:
         """Return a human-readable description of the schedule.
 
@@ -172,6 +191,11 @@ class Reminder(TimeStampedModel):
                 return f"Monthly (no days selected) at {time_str}"
             day_strs = [self._ordinal(d) for d in sorted(self.days_of_month)]
             return f"Monthly on the {', '.join(day_strs)} at {time_str}"
+        elif self.schedule_type == self.SCHEDULE_TYPE_YEARLY:
+            months = self.get_months_display()
+            if not months:
+                return f"Yearly (no months selected) at {time_str}"
+            return f"Yearly on the 1st of {', '.join(months)} at {time_str}"
         return "Unknown schedule"
 
     @staticmethod
@@ -213,6 +237,8 @@ class Reminder(TimeStampedModel):
             return self._calculate_next_weekly(base_datetime, trigger_time_val)
         elif self.schedule_type == self.SCHEDULE_TYPE_MONTHLY:
             return self._calculate_next_monthly(base_datetime, trigger_time_val)
+        elif self.schedule_type == self.SCHEDULE_TYPE_YEARLY:
+            return self._calculate_next_yearly(base_datetime, trigger_time_val)
 
         # Fallback for unknown schedule type
         return None
@@ -366,6 +392,48 @@ class Reminder(TimeStampedModel):
             datetime.combine(next_date, trigger_time_val),
             timezone.get_current_timezone()
         )
+
+    def _calculate_next_yearly(
+        self, from_datetime: datetime, trigger_time_val: time
+    ) -> datetime:
+        """Calculate next trigger for yearly schedule.
+
+        Yearly reminders fire on the 1st of each selected month.
+
+        Args:
+            from_datetime: The datetime to calculate from.
+            trigger_time_val: Time of day to trigger.
+
+        Returns:
+            Next trigger datetime on the 1st of a selected month.
+        """
+        months = self.months or []
+
+        if not months:
+            # No months selected, default to same date next year
+            return self._add_months(from_datetime, 12, trigger_time_val)
+
+        sorted_months = sorted(months)
+        tz = timezone.get_current_timezone()
+
+        # Try the 1st of each selected month this year, then next year
+        for year_offset in (0, 1):
+            for month in sorted_months:
+                candidate = timezone.make_aware(
+                    datetime.combine(
+                        from_datetime.date().replace(
+                            year=from_datetime.year + year_offset, month=month, day=1
+                        ),
+                        trigger_time_val,
+                    ),
+                    tz,
+                )
+                if candidate > from_datetime:
+                    return candidate
+
+        # Unreachable: the loop above always finds a future 1st within a year,
+        # but mypy needs a terminal return.
+        return self._add_months(from_datetime, 12, trigger_time_val)
 
     def _add_months(
         self, dt: datetime, months: int, trigger_time_val: time

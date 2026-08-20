@@ -7,6 +7,7 @@ export interface Reminder {
   schedule_description: string;
   days_of_week: number[];
   days_of_month: number[];
+  months: number[];
   interval_value: number;
   interval_unit_display: string;
   next_trigger_at: string | null;

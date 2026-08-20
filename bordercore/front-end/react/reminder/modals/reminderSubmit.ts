@@ -27,6 +27,7 @@ export async function submitReminderForm(
   if (state.trigger_time) body.append("trigger_time", state.trigger_time);
   body.append("days_of_week_input", JSON.stringify(state.days_of_week ?? []));
   body.append("days_of_month_input", JSON.stringify(state.days_of_month ?? []));
+  body.append("months_input", JSON.stringify(state.months ?? []));
   if (state.start_at) {
     body.append("start_at", new Date(state.start_at).toISOString());
   }
