@@ -1,6 +1,7 @@
 import React, { useRef, useState } from "react";
 import { doPost } from "../../utils/reactUtils";
 import type { ActivityInfo } from "../types";
+import { DeactivateExerciseModal } from "./DeactivateExerciseModal";
 
 const WEEKDAY_LETTERS = ["M", "T", "W", "T", "F", "S", "S"];
 const WEEKDAY_NAMES = [
@@ -43,6 +44,7 @@ export function ActivityCard({
   lastCommittedRef.current = schedule;
 
   const [pending, setPending] = useState<boolean>(false);
+  const [showDeactivateModal, setShowDeactivateModal] = useState<boolean>(false);
 
   function toggleDay(index: number) {
     if (pending) return;
@@ -83,9 +85,6 @@ export function ActivityCard({
 
   function handleDeactivate() {
     if (pending) return;
-    if (!window.confirm("Deactivate this exercise? Your workout history is preserved.")) {
-      return;
-    }
     setPending(true);
     doPost(
       changeActiveStatusUrl,
@@ -113,7 +112,7 @@ export function ActivityCard({
           <button
             type="button"
             className="ex-btn ghost sm"
-            onClick={handleDeactivate}
+            onClick={() => setShowDeactivateModal(true)}
             disabled={pending}
             title="remove this exercise from your active schedule"
           >
@@ -167,6 +166,11 @@ export function ActivityCard({
           active days <span className="when">{scheduleDays.toLowerCase()}</span>
         </div>
       )}
+      <DeactivateExerciseModal
+        open={showDeactivateModal}
+        onClose={() => setShowDeactivateModal(false)}
+        onConfirm={handleDeactivate}
+      />
     </div>
   );
 }
