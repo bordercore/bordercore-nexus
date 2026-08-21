@@ -1,5 +1,6 @@
 import datetime
 import tempfile
+import zipfile
 from pathlib import Path
 from unittest.mock import Mock, patch
 from uuid import uuid4
@@ -244,13 +245,13 @@ def test_verify_song_in_db_multiple_found(command_instance, test_song, test_user
 @patch.object(Command, "_get_artist_directory")
 @patch.object(Command, "_get_file_path")
 @patch.object(Command, "_verify_song_in_db")
-@patch("music.management.commands.sync_music.os.rename")
-def test_sync_file_success(mock_rename, mock_verify, mock_get_file_path, mock_get_artist_dir, mock_get_id3, command_instance, test_song, temp_dir):
+@patch("music.management.commands.sync_music.shutil.move")
+def test_sync_file_success(mock_move, mock_verify, mock_get_file_path, mock_get_artist_dir, mock_get_id3, command_instance, test_song, temp_dir):
     mock_verify.return_value = Song.objects.filter(pk=test_song.pk)
     mp3_path = Path(temp_dir) / "test.mp3"
     mp3_path.touch()
     command_instance._sync_file(str(mp3_path), artist=test_song.artist.name, title=test_song.title, album_name=None, song_uuid=None, is_album_song=False)
-    mock_rename.assert_called_once()
+    mock_move.assert_called_once()
 
 
 @patch.object(Command, "_get_s3_client")
@@ -285,6 +286,39 @@ def test_sync_directory_with_files(mock_sync, command_instance, temp_dir):
 def test_sync_directory_invalid_path(command_instance):
     with pytest.raises(MusicSyncError):
         command_instance._sync_directory("/nonexistent", None, None, False)
+
+
+@patch.object(Command, "_sync_directory")
+def test_sync_zip_extracts_mp3s_as_album_songs(mock_sync, command_instance, temp_dir):
+    zip_path = Path(temp_dir) / "album.zip"
+    with zipfile.ZipFile(zip_path, "w") as archive:
+        archive.writestr("disc/song.mp3", b"mp3 data")
+        archive.writestr("cover.jpg", b"image data")
+
+    command_instance._sync_zip(str(zip_path), "Artist", "Album")
+
+    args = mock_sync.call_args.args
+    extracted_dir = Path(args[0])
+    assert args[1:] == ("Artist", "Album")
+    assert mock_sync.call_args.kwargs == {"is_album_song": True}
+    assert not extracted_dir.exists()
+
+
+def test_sync_zip_rejects_unsafe_paths(command_instance, temp_dir):
+    zip_path = Path(temp_dir) / "unsafe.zip"
+    with zipfile.ZipFile(zip_path, "w") as archive:
+        archive.writestr("../song.mp3", b"mp3 data")
+
+    with pytest.raises(MusicSyncError, match="Unsafe path"):
+        command_instance._sync_zip(str(zip_path), None, None)
+
+
+@patch.object(Command, "_sync_zip")
+def test_handle_with_zip(mock_sync, command_instance, db):
+    command_instance.handle(
+        zip_file="album.zip", artist="Artist", album_name="Album"
+    )
+    mock_sync.assert_called_once_with("album.zip", "Artist", "Album")
 
 
 @patch.object(Command, "_download_from_s3")

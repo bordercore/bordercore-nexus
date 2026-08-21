@@ -9,6 +9,7 @@ optionally run in dry-run mode.
 Args:
     --uuid (str): The UUID of the song to download from S3.
     --directory (str): Directory containing songs to sync.
+    --zip-file (str): ZIP file containing album songs to sync.
     --album-name (str): Album name for syncing.
     --file-name (str): Individual filename to sync.
     --artist (str): Artist name (overrides ID3 tag).
@@ -21,8 +22,10 @@ Args:
 from __future__ import annotations
 
 import logging
-import os
 import re
+import shutil
+import tempfile
+import zipfile
 from argparse import ArgumentParser
 from dataclasses import dataclass
 from pathlib import Path
@@ -123,6 +126,10 @@ class Command(BaseCommand):
             help="The directory of songs to sync",
         )
         parser.add_argument(
+            "--zip-file", "-z",
+            help="A ZIP file of MP3 files to sync as album songs",
+        )
+        parser.add_argument(
             "--album-name", "-l",
             help="The album name to sync",
         )
@@ -165,6 +172,7 @@ class Command(BaseCommand):
             **options: Dictionary of command line options including:
                 - uuid: UUID of song to download from S3
                 - directory: Directory path to sync
+                - zip_file: ZIP archive of album songs to sync
                 - file_name: Single file to sync
                 - artist: Artist name override
                 - title: Song title override
@@ -182,6 +190,12 @@ class Command(BaseCommand):
         try:
             if options.get("uuid"):
                 self._download_from_s3(options["uuid"])
+            elif options.get("zip_file"):
+                self._sync_zip(
+                    options["zip_file"],
+                    options.get("artist"),
+                    options.get("album_name"),
+                )
             elif options.get("directory"):
                 self._sync_directory(
                     options["directory"],
@@ -393,6 +407,50 @@ class Command(BaseCommand):
         except ClientError as e:
             raise MusicSyncError(f"Failed to download from S3: {e}") from e
 
+    def _sync_zip(
+        self,
+        filename: str,
+        artist: str | None,
+        album_name: str | None,
+    ) -> None:
+        """Extract MP3 files from a ZIP archive and sync them as album songs."""
+        zip_path = Path(filename)
+        if not zip_path.is_file():
+            raise MusicSyncError(f"ZIP file not found: {filename}")
+
+        try:
+            with tempfile.TemporaryDirectory(prefix="sync_music_") as temp_dir:
+                extract_dir = Path(temp_dir)
+                with zipfile.ZipFile(zip_path) as archive:
+                    mp3_members = [
+                        member for member in archive.infolist()
+                        if not member.is_dir()
+                        and Path(member.filename).suffix.lower() == ".mp3"
+                    ]
+                    if not mp3_members:
+                        self.stdout.write(
+                            f"{Fore.YELLOW}No MP3 files found in {filename}{Style.RESET_ALL}"
+                        )
+                        return
+
+                    for member in mp3_members:
+                        member_path = Path(member.filename)
+                        if member_path.is_absolute() or ".." in member_path.parts:
+                            raise MusicSyncError(
+                                f"Unsafe path in ZIP file: {member.filename}"
+                            )
+                        destination = extract_dir / member_path
+                        destination.parent.mkdir(parents=True, exist_ok=True)
+                        with archive.open(member) as source, destination.open("wb") as target:
+                            while chunk := source.read(1024 * 1024):
+                                target.write(chunk)
+
+                self._sync_directory(
+                    str(extract_dir), artist, album_name, is_album_song=True
+                )
+        except (zipfile.BadZipFile, OSError) as e:
+            raise MusicSyncError(f"Failed to read ZIP file {filename}: {e}") from e
+
     def _sanitize_tag(self, value: str) -> str:
         """Clean up ID3 tag values by removing unwanted suffixes.
 
@@ -534,10 +592,15 @@ class Command(BaseCommand):
                 )
                 return
 
-            if not self.dry_run:
-                os.rename(filename, target_path)
-
-            self.stdout.write(f"{Fore.GREEN}Moved song to {target_path}{Style.RESET_ALL}")
+            if self.dry_run:
+                self.stdout.write(
+                    f"{Fore.GREEN}Would move song to {target_path}{Style.RESET_ALL}"
+                )
+            else:
+                shutil.move(filename, target_path)
+                self.stdout.write(
+                    f"{Fore.GREEN}Moved song to {target_path}{Style.RESET_ALL}"
+                )
 
         except Exception as e:
             raise MusicSyncError(f"Failed to sync {filename}: {e}") from e
