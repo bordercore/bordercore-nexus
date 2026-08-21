@@ -129,9 +129,14 @@ server {
     proxy_cache_lock on;
     add_header X-Cache-Status $upstream_cache_status;
 
-    location / {
+    # Only image requests are eligible for the missing-cover fallback. This
+    # prevents probes for dotfiles, credentials, and traversal-style paths
+    # from being proxied to S3 and disguised as successful HTTP 200 responses.
+    location ~* \.(?:avif|gif|jpe?g|png|webp)$ {
 
-        proxy_pass https://bordercore-blobs.s3.amazonaws.com/;
+        # No URI component is allowed here because this is a regex location;
+        # the original request URI is forwarded unchanged to S3.
+        proxy_pass https://bordercore-blobs.s3.amazonaws.com;
         proxy_set_header Host bordercore-blobs.s3.amazonaws.com;
         proxy_intercept_errors on;
         proxy_redirect off;
@@ -143,47 +148,17 @@ server {
             error_page 403 =200 /default-cover.png;
         }
 
-        location /default-cover.png {
-            internal;
-            root /var/www/html;
-        }
-
     }
 
-    location /collections/ {
-
-        proxy_pass https://bordercore-blobs.s3.amazonaws.com/collections/;
-        proxy_set_header Host bordercore-blobs.s3.amazonaws.com;
-        proxy_intercept_errors on;
-        proxy_redirect off;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-
-        error_page 403 =200 /default-cover.png;
-
-        location /collections/default-cover.png {
-            internal;
-            root /var/www/html;
-        }
-
+    location = /default-cover.png {
+        internal;
+        root /var/www/html;
     }
 
-    location /bookmarks/ {
-
-        proxy_pass https://bordercore-blobs.s3.amazonaws.com/bookmarks/;
-        proxy_set_header Host bordercore-blobs.s3.amazonaws.com;
-        proxy_intercept_errors on;
-        proxy_redirect off;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-
-        error_page 403 =200 /default-cover.png;
-
-        location /bookmarks/default-cover.png {
-            internal;
-            root /var/www/html;
-        }
-
+    # blobs.bordercore.com is an image endpoint, not a general-purpose S3
+    # gateway. Unknown or non-image paths must not appear successful.
+    location / {
+        return 404;
     }
 
     ssl_certificate /etc/letsencrypt/live/www.bordercore.com/fullchain.pem;
