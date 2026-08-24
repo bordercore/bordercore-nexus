@@ -409,6 +409,16 @@
     outline-offset: 8px;
   }
 
+  .cd-drop-error {
+    padding: 10px 12px;
+    border: 1px solid color-mix(in oklch, var(--danger), transparent 45%);
+    border-radius: var(--radius);
+    background: color-mix(in oklch, var(--danger), transparent 90%);
+    color: var(--danger);
+    font: 500 13px/1.4 var(--font-ui);
+    grid-column: 1 / -1;
+  }
+
   // ===========================================================================
   // Tile
   // ===========================================================================

@@ -15,6 +15,7 @@ import {
   rectSortingStrategy,
 } from "@dnd-kit/sortable";
 import type { CollectionObject } from "./types";
+import { extractImageUrl, fetchImageAsFile } from "../common/imageFile";
 import CurateTile from "./CurateTile";
 
 interface CurateGridProps {
@@ -30,7 +31,7 @@ interface CurateGridProps {
   onThumbClick: (object: CollectionObject) => void;
   onRemove: (object: CollectionObject) => void;
   onTagClick: (tag: string) => void;
-  onFileDrop: (files: FileList) => void;
+  onFileDrop: (files: File[]) => void;
   onClearFilter: () => void;
   onAdd: () => void;
 }
@@ -54,6 +55,7 @@ export function CurateGrid({
 }: CurateGridProps) {
   const [isDragOverContainer, setIsDragOverContainer] = useState(false);
   const [isItemDragging, setIsItemDragging] = useState(false);
+  const [dropError, setDropError] = useState<string | null>(null);
   const gridRef = useRef<HTMLDivElement | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
@@ -129,8 +131,29 @@ export function CurateGrid({
       if (isItemDragging) return;
       e.preventDefault();
       setIsDragOverContainer(false);
-      const files = e.dataTransfer.files;
-      if (files.length > 0) onFileDrop(files);
+      setDropError(null);
+
+      const files = Array.from(e.dataTransfer.files);
+      if (files.length > 0) {
+        onFileDrop(files);
+        return;
+      }
+
+      // Images dragged from another webpage are generally exposed as a URL,
+      // not a File. Capture the URL before the async fetch because the
+      // DataTransfer object is only guaranteed to be readable during drop.
+      const url = extractImageUrl(e.dataTransfer);
+      if (!url) return;
+
+      void fetchImageAsFile(url).then(file => {
+        if (file) {
+          onFileDrop([file]);
+        } else {
+          setDropError(
+            "Couldn't load that image. The source site may block external access; download it first and drop the local file."
+          );
+        }
+      });
     },
     [isItemDragging, onFileDrop]
   );
@@ -190,6 +213,11 @@ export function CurateGrid({
       onDragLeave={handleContainerDragLeave}
       onDrop={handleContainerDrop}
     >
+      {dropError && (
+        <div className="cd-drop-error" role="alert">
+          {dropError}
+        </div>
+      )}
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}

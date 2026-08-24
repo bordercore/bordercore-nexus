@@ -238,7 +238,7 @@ export function CurateCollectionPage({
   }, [collection.uuid]);
 
   const handleFileDrop = useCallback(
-    async (files: FileList) => {
+    async (files: File[]) => {
       if (files.length === 0) return;
       setProcessingOpen(true);
 
