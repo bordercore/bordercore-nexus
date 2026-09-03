@@ -12,7 +12,7 @@ dependencies = [
     "channels-redis==4.2.1",
     "daphne==4.2.2",
     "Django==5.2.16",
-    "djangorestframework==3.15.2",
+    "djangorestframework==3.17.2",
     "django-storages==1.11.1",
     "elasticsearch==8.17.1",
     "elasticsearch-dsl==8.17.1",
