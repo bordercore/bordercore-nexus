@@ -56,6 +56,8 @@ test_data:
 
 test_unit:
 	MOCK_ELASTICSEARCH=1 \
+	PYTHONPATH=$(BORDERCORE_HOME)/..:$(BORDERCORE_HOME) \
+	DJANGO_SETTINGS_MODULE=config.settings.dev \
 	$(PYTHON) $(BORDERCORE_HOME)/../bin/test_runner.py --test unit
 
 test_wumpus:
@@ -63,6 +65,8 @@ test_wumpus:
 
 test_functional:
 	MOCK_ELASTICSEARCH=1 \
+	PYTHONPATH=$(BORDERCORE_HOME)/..:$(BORDERCORE_HOME) \
+	DJANGO_SETTINGS_MODULE=config.settings.dev \
 	$(PYTHON) $(BORDERCORE_HOME)/../bin/test_runner.py --test functional
 
 test_coverage:

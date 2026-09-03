@@ -177,6 +177,10 @@ disable = ["imported-auth-user"]
 
 [tool.pytest.ini_options]
 addopts = "--reuse-db --capture=no --tb=line -p no:cacheprovider --ignore=node_modules"
+# Import paths for both trees: the repo root (config.settings.*) and the
+# bordercore package (lib.*, accounts, metrics, ...). Matches the
+# PYTHONPATH=.:.:bordercore that CI sets.
+pythonpath = [".", "bordercore"]
 asyncio_mode = "auto"
 log_cli_level = "WARNING"
 markers = [
