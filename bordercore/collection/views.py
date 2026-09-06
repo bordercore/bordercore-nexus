@@ -119,7 +119,7 @@ def _build_cover_tiles(collection: Collection) -> list[str | None]:
     """
     tiles: list[str | None] = []
     for co in getattr(collection, "recent_blob_objects", [])[:4]:
-        tiles.append(Blob.get_cover_url_static(co.blob.uuid, co.blob.file.name, size="small"))
+        tiles.append(co.blob.get_cover_url(size="small"))
     while len(tiles) < 4:
         tiles.append(None)
     return tiles

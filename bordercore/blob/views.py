@@ -507,6 +507,9 @@ class BlobDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView):
         context["crumb_leaf"] = "file" if doctype == "blob" else doctype
 
         # JSON serialization for React
+        cover_url = self.object.get_cover_url() if self.object.sha1sum else ""
+        if cover_url:
+            cover_url += ("&" if "?" in cover_url else "?") + "nodefault=1"
         context["blob_json"] = {
             "uuid": str(self.object.uuid),
             "name": self.object.name,
@@ -530,7 +533,7 @@ class BlobDetailView(LoginRequiredMixin, UserScopedQuerysetMixin, DetailView):
             "created": self.object.created.strftime("%B %-d, %Y"),
             "doctype": self.object.doctype,
             "isIndexed": self.object.is_indexed,
-            "coverUrl": self.object.get_cover_url() + "?nodefault=1" if self.object.sha1sum else "",
+            "coverUrl": cover_url,
             "fileUrl": f"{settings.MEDIA_URL}blobs/{self.object.url}" if self.object.sha1sum else "",
             "tags": [
                 {
@@ -931,7 +934,7 @@ def update_cover_image(request: Request) -> Response:
     blob = get_user_object_or_404(user, Blob, uuid=blob_uuid)
     blob.update_cover_image(image)
 
-    return Response()
+    return Response({"cover_url": blob.get_cover_url()})
 
 
 @api_view(["GET"])
@@ -1417,5 +1420,3 @@ def recently_viewed_api(request: HttpRequest) -> Response:
     return Response({
         "blobList": get_recently_viewed(user),
     })
-
-

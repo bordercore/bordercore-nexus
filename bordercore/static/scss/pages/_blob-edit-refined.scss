@@ -734,7 +734,12 @@
     &:visited { color: var(--fg-2); }
   }
 
-  .be-nav-item:hover {
+  .be-nav-item:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  .be-nav-item:hover:not(:disabled) {
     border-color: var(--line-soft);
     background: var(--bg-1);
     color: var(--fg-1);
@@ -1234,4 +1239,3 @@
     height: auto;
   }
 }
-

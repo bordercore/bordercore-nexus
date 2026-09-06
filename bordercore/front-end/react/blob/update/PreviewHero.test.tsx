@@ -8,6 +8,18 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+describe("PreviewHero video playback", () => {
+  it("uses a separate CORS URL while preserving existing query parameters", () => {
+    const { container } = render(
+      <PreviewHero mode="video" videoUrl="https://example.com/video.mkv?version=abc" />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Play video" }));
+    const video = container.querySelector("video")!;
+    expect(video.crossOrigin).toBe("anonymous");
+    expect(video.src).toBe("https://example.com/video.mkv?version=abc&video-preview=1");
+  });
+});
+
 describe("PreviewHero create-mode drop zone", () => {
   it("accepts an image dragged from another browser tab (delivered as a URL, not a File)", async () => {
     const blob = new Blob([new Uint8Array([1, 2, 3])], { type: "image/png" });

@@ -474,6 +474,9 @@ def test_blob_update_cover_image(s3_resource, s3_bucket, authenticated_client):
     })
 
     assert resp.status_code == 200
+    blob_1.refresh_from_db()
+    assert resp.json() == {"cover_url": blob_1.get_cover_url()}
+    assert "?v=" in resp.json()["cover_url"]
 
 
 @patch("blob.models.Blob.get_elasticsearch_info")
@@ -898,5 +901,4 @@ def test_chat_followups_handles_missing_fields(mock_followups, authenticated_cli
     assert resp.status_code == 200
     assert resp.json() == {"suggestions": []}
     mock_followups.assert_called_once_with("", mode="chat")
-
 

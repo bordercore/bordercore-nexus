@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faPlay,
@@ -17,6 +17,8 @@ interface PreviewHeroProps {
   noteContentPreview?: string;
   // video-only
   videoUrl?: string;
+  videoRef?: React.RefObject<HTMLVideoElement>;
+  onVideoReadyChange?: (ready: boolean) => void;
   // book-only
   pageNumber?: number;
   totalPages?: number;
@@ -34,6 +36,8 @@ export function PreviewHero({
   durationLabel,
   noteContentPreview,
   videoUrl,
+  videoRef,
+  onVideoReadyChange,
   pageNumber,
   totalPages,
   onPageNumberChange,
@@ -45,6 +49,14 @@ export function PreviewHero({
   const [dropError, setDropError] = useState<string | null>(null);
   const [videoPlaying, setVideoPlaying] = useState(false);
   const [imageOpen, setImageOpen] = useState(false);
+  const captureVideoUrl = useMemo(() => {
+    if (!videoUrl) return undefined;
+    // Ordinary playback may have cached this file without CORS headers.
+    // Use a distinct URL for the CORS-enabled player that captures frames.
+    const url = new URL(videoUrl, window.location.href);
+    url.searchParams.set("video-preview", "1");
+    return url.href;
+  }, [videoUrl]);
 
   useEffect(() => {
     if (!imageOpen) return;
@@ -158,7 +170,19 @@ export function PreviewHero({
       <div className="be-preview">
         <div className={`be-preview-media video ${videoPlaying ? "playing" : ""}`}>
           {videoPlaying && videoUrl ? (
-            <video src={videoUrl} controls autoPlay />
+            <video
+              ref={videoRef}
+              crossOrigin="anonymous"
+              src={captureVideoUrl}
+              poster={coverUrl}
+              controls
+              autoPlay
+              onLoadedData={() => onVideoReadyChange?.(true)}
+              onSeeking={() => onVideoReadyChange?.(false)}
+              onSeeked={e => onVideoReadyChange?.(e.currentTarget.readyState >= 2)}
+              onEmptied={() => onVideoReadyChange?.(false)}
+              onError={() => onVideoReadyChange?.(false)}
+            />
           ) : (
             <>
               {coverUrl && <img src={coverUrl} alt="cover" />}

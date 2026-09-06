@@ -149,6 +149,9 @@ export function BlobUpdatePage({
   const [fileObject, setFileObject] = useState<File | null>(null);
   const [pageNumber, setPageNumber] = useState(pdfPageNumber);
   const [currentCoverUrl, setCurrentCoverUrl] = useState(coverUrl || "");
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [videoReady, setVideoReady] = useState(false);
+  const [capturingFrame, setCapturingFrame] = useState(false);
   const [previewObjectUrl, setPreviewObjectUrl] = useState<string | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState("-1");
 
@@ -308,6 +311,50 @@ export function BlobUpdatePage({
       });
   }, [urls.delete, urls.list]);
 
+  const handleCaptureFrame = useCallback(async () => {
+    const video = videoRef.current;
+    if (!blobUuid || !video || capturingFrame) return;
+
+    setCapturingFrame(true);
+    try {
+      video.pause();
+      if (video.seeking || video.readyState < 2 || !video.videoWidth || !video.videoHeight) {
+        throw new Error("Wait for the video frame to finish loading, then try again.");
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("Your browser could not capture the video frame.");
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const image = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob(
+          blob => (blob ? resolve(blob) : reject(new Error("Could not encode the video frame."))),
+          "image/jpeg",
+          0.95
+        );
+      });
+      const formData = new FormData();
+      formData.append("blob_uuid", blobUuid);
+      formData.append("image", image, "video-frame.jpg");
+      const response = await axios.post(urls.updateCoverImage, formData);
+      setCurrentCoverUrl(response.data.cover_url);
+      EventBus.$emit("toast", {
+        title: "Thumbnail saved",
+        body: "The current video frame is now the blob thumbnail.",
+        variant: "success",
+      });
+    } catch (error) {
+      EventBus.$emit("toast", {
+        title: "Error",
+        body: `Could not capture the thumbnail: ${error instanceof Error ? error.message : "Please try again."}`,
+        variant: "danger",
+      });
+    } finally {
+      setCapturingFrame(false);
+    }
+  }, [blobUuid, capturingFrame, urls.updateCoverImage]);
+
   // Cover extract for PDF
   const handleExtractCover = useCallback(() => {
     if (!blobUuid) return;
@@ -421,6 +468,8 @@ export function BlobUpdatePage({
             durationLabel={durationLabel}
             noteContentPreview={noteContentPreview}
             videoUrl={urls.download}
+            videoRef={videoRef}
+            onVideoReadyChange={setVideoReady}
             pageNumber={pageNumber}
             totalPages={pdfNumPages}
             onPageNumberChange={setPageNumber}
@@ -440,6 +489,9 @@ export function BlobUpdatePage({
           )}
           <FlagsCard flags={flags} onChange={handleSetFlag} />
           <QuickActionsCard
+            onCaptureFrame={mode === "edit" && doctype === "video" ? handleCaptureFrame : undefined}
+            canCaptureFrame={videoReady}
+            capturingFrame={capturingFrame}
             onCleanupFilename={handleCleanupFilename}
             onUppercaseFirst={handleUppercaseFirst}
             cloneUrl={mode === "edit" ? urls.clone : undefined}

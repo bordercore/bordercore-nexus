@@ -1,4 +1,5 @@
 import datetime
+import io
 import uuid
 from datetime import timedelta
 from pathlib import Path
@@ -7,6 +8,7 @@ from urllib.parse import quote_plus, urlparse
 import boto3
 import pytest
 from faker import Factory as FakerFactory
+from PIL import Image
 from django.core.cache import cache
 from django.test import override_settings
 
@@ -263,15 +265,39 @@ def test_clone(temp_blob_directory, monkeypatch_blob, blob_pdf_factory, collecti
         assert cloned_blob in [x.blob for x in c.collectionobject_set.all()]
 
 
-def test_blob_update_cover_image(blob_pdf_factory, s3_resource, s3_bucket):
+@pytest.mark.parametrize("dimensions, thumbnail_dimensions", [
+    ((1920, 1080), (640, 360)),
+    ((1080, 1920), (360, 640)),
+    ((320, 180), (320, 180)),
+])
+def test_blob_update_cover_image(blob_pdf_factory, s3_resource, s3_bucket, dimensions, thumbnail_dimensions):
     """Test cover image upload creates both large and small variants in S3."""
 
-    file_path = Path(__file__).parent / "resources/cover-large.jpg"
+    source = io.BytesIO()
+    Image.new("RGB", dimensions, "blue").save(source, "JPEG")
+    image = source.getvalue()
 
-    with open(file_path, "rb") as fh:
-        image = fh.read()
-
+    blob = blob_pdf_factory[0]
+    blob.data = {"pdf_page_number": 4}
+    Blob.objects.filter(pk=blob.pk).update(data=blob.data)
+    old_url = blob.get_cover_url()
+    cache_keys = [f"recent_blobs_{blob.user_id}_10", f"recently_viewed_{blob.user_id}"]
+    for key in cache_keys:
+        cache.set(key, [{"cover_url": old_url}])
     blob_pdf_factory[0].update_cover_image(image)
+    blob.refresh_from_db()
+    assert blob.data["pdf_page_number"] == 4
+    assert blob.data["cover_version"]
+    assert blob.get_cover_url() != old_url
+    assert blob.get_cover_url().endswith(f"?v={blob.data['cover_version']}")
+    assert blob.get_cover_url(size="small").endswith(f"?v={blob.data['cover_version']}")
+    for key in cache_keys:
+        assert cache.get(key) is None
+
+    previous_version = blob.data["cover_version"]
+    blob.update_cover_image(image)
+    blob.refresh_from_db()
+    assert blob.data["cover_version"] != previous_version
 
     s3 = boto3.resource("s3")
     bucket = s3.Bucket(settings.AWS_STORAGE_BUCKET_NAME)
@@ -285,6 +311,12 @@ def test_blob_update_cover_image(blob_pdf_factory, s3_resource, s3_bucket):
     assert len(objects) == 3
     assert f"blobs/{blob_pdf_factory[0].uuid}/cover.jpg" in objects
     assert f"blobs/{blob_pdf_factory[0].uuid}/cover-large.jpg" in objects
+    small = bucket.Object(f"blobs/{blob.uuid}/cover.jpg").get()
+    assert Image.open(io.BytesIO(small["Body"].read())).size == thumbnail_dimensions
+    assert small["Metadata"]["image-width"] == str(thumbnail_dimensions[0])
+    assert small["Metadata"]["image-height"] == str(thumbnail_dimensions[1])
+    large = bucket.Object(f"blobs/{blob.uuid}/cover-large.jpg").get()
+    assert large["Body"].read() == image
 
 
 def test_blob_rename_file(blob_pdf_factory):

@@ -41,6 +41,7 @@ from django.urls import reverse
 from collection.models import CollectionObject
 from lib.mixins import SortOrderMixin, TimeStampedModel
 from lib.time_utils import get_date_from_pattern
+from lib.thumbnails import JPEG_QUALITY, THUMBNAIL_SIZE
 from lib.util import (get_elasticsearch_connection, is_audio, is_image, is_pdf,
                       is_video)
 from node.services import delete_note_from_nodes
@@ -678,11 +679,7 @@ class Blob(TimeStampedModel):
                         "url": reverse("blob:detail", kwargs={"uuid": related_object.blob.uuid}),
                         "note": related_object.note,
                         "edit_url": reverse("blob:update", kwargs={"uuid": related_object.blob.uuid}),
-                        "cover_url": Blob.get_cover_url_static(
-                            related_object.blob.uuid,
-                            related_object.blob.file.name,
-                            size="small"
-                        )
+                        "cover_url": related_object.blob.get_cover_url(size="small")
                     }
                 )
             elif related_object.bookmark:
@@ -869,7 +866,11 @@ class Blob(TimeStampedModel):
         Returns:
             URL string for the cover image.
         """
-        return Blob.get_cover_url_static(self.uuid, self.file.name, size)
+        url = Blob.get_cover_url_static(self.uuid, self.file.name, size)
+        version = (self.data or {}).get("cover_version")
+        if version:
+            url += f"?v={quote_plus(str(version))}"
+        return url
 
     def clone(self, include_collections: bool = True) -> "Blob":
         """Create a copy of the current blob, including all its metadata and collection memberships.
@@ -918,7 +919,8 @@ class Blob(TimeStampedModel):
         """Upload and generate cover images for this blob.
 
         Uploads the provided image as both a large cover image and a small
-        thumbnail (128x128) to S3, storing image dimensions in metadata.
+        thumbnail fitting within THUMBNAIL_SIZE to S3, storing image
+        dimensions in metadata.
 
         Args:
             image: Image bytes (JPEG format).
@@ -928,13 +930,13 @@ class Blob(TimeStampedModel):
         large_width, large_height = Image.open(fo).size
         fo.seek(0)
 
-        # Small cover image (128x128 thumbnail)
+        # Match the automatically generated thumbnails, preserving aspect ratio.
         fo_small = io.BytesIO(image)
-        cover_image_small = Image.open(fo_small)
-        cover_image_small.thumbnail((128, 128))
+        cover_image_small = Image.open(fo_small).convert("RGB")
+        cover_image_small.thumbnail(THUMBNAIL_SIZE)
         small_width, small_height = cover_image_small.size
         buf_small = io.BytesIO()
-        cover_image_small.save(buf_small, "jpeg")
+        cover_image_small.save(buf_small, "jpeg", quality=JPEG_QUALITY, optimize=True)
         buf_small.seek(0)
 
         from blob.services import upload_blob_cover_images
@@ -945,6 +947,14 @@ class Blob(TimeStampedModel):
             (large_width, large_height),
             (small_width, small_height),
         )
+        # Cover URLs are cached by the image proxy. Persist a new version only
+        # after both uploads succeed, so every page requests the updated images.
+        with transaction.atomic():
+            current = Blob.objects.select_for_update().get(pk=self.pk)
+            self.data = {**(current.data or {}), "cover_version": uuid.uuid4().hex}
+            Blob.objects.filter(pk=self.pk).update(data=self.data)
+        cache.delete(f"recent_blobs_{self.user_id}_10")
+        cache.delete(f"recently_viewed_{self.user_id}")
 
     def update_page_number(self, page_number: int) -> None:
         """Update the PDF page number and trigger thumbnail regeneration.
