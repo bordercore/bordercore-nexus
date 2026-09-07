@@ -52,6 +52,74 @@ async function playSong() {
 
 const toastCalls = () => mocks.emit.mock.calls.filter(c => c[0] === "toast");
 
+describe("GlobalAudioPlayer album playback", () => {
+  beforeEach(() => {
+    mocks.emit.mockReset();
+    mocks.handlers = {};
+    mocks.playerProps = null;
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.clearAllTimers();
+    vi.useRealTimers();
+  });
+
+  const tracks = [1, 2, 3].map(n => ({ uuid: `u${n}`, title: `Track ${n}` }));
+  const playAlbum = () =>
+    act(() => {
+      mocks.handlers["play-track"]({
+        track: tracks[0],
+        trackList: tracks,
+        songUrl: "/m/",
+        markListenedToUrl: "",
+        autoPlayNext: true,
+      });
+    });
+
+  it("enables ordered playback and allows every subsequent track to play", async () => {
+    render(<GlobalAudioPlayer />);
+    await playSong();
+    expect(mocks.playerProps.playMode).toBe("singleLoop");
+
+    playAlbum();
+    expect(mocks.playerProps.playMode).toBe("order");
+    expect(mocks.playerProps.playIndex).toBe(0);
+    expect(mocks.playerProps.audioLists.map((track: any) => track.uuid)).toEqual([
+      "u1",
+      "u2",
+      "u3",
+    ]);
+
+    const pause = vi.fn();
+    mocks.playerProps.getAudioInstance({ pause });
+    for (const track of tracks) {
+      act(() => {
+        mocks.playerProps.onAudioPlay({ uuid: track.uuid, name: track.title });
+        mocks.playerProps.onAudioEnded(track.uuid, mocks.playerProps.audioLists, track);
+      });
+      expect(mocks.emit).toHaveBeenCalledWith("audio-play", { uuid: track.uuid });
+    }
+    expect(pause).not.toHaveBeenCalled();
+  });
+
+  it("clears a pending stop when an album starts after a single song ends", async () => {
+    render(<GlobalAudioPlayer />);
+    await playSong();
+    act(() => {
+      mocks.playerProps.onAudioEnded("u1", mocks.playerProps.audioLists, { uuid: "u1" });
+    });
+
+    playAlbum();
+    const pause = vi.fn();
+    mocks.playerProps.getAudioInstance({ pause });
+    mocks.emit.mockClear();
+    act(() => mocks.playerProps.onAudioPlay({ uuid: "u1", name: "Track 1" }));
+    expect(pause).not.toHaveBeenCalled();
+    expect(mocks.emit).toHaveBeenCalledWith("audio-play", { uuid: "u1" });
+  });
+});
+
 describe("GlobalAudioPlayer mark-as-listened", () => {
   beforeEach(() => {
     mocks.emit.mockReset();

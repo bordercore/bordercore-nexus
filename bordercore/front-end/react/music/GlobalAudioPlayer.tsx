@@ -14,6 +14,7 @@ interface PlayTrackEvent {
   trackList: BaseTrack[];
   songUrl: string;
   markListenedToUrl: string;
+  autoPlayNext?: boolean;
 }
 
 export const GlobalAudioPlayer: React.FC = () => {
@@ -81,6 +82,10 @@ export const GlobalAudioPlayer: React.FC = () => {
   React.useEffect(() => {
     const handlePlayTrack = (data: PlayTrackEvent) => {
       isManualPlayRef.current = true;
+      songEndedRef.current = false;
+      if (data.autoPlayNext !== undefined) {
+        setAutoPlayNext(data.autoPlayNext);
+      }
       const newList = data.trackList.map(track => {
         const t = track as unknown as Record<string, unknown>;
         const artist =

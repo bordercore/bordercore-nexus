@@ -117,13 +117,15 @@ describe("AlbumDetailPage", () => {
     expect(container.querySelector(".adp-hero-art")).toBeNull();
   });
 
-  it("plays the first track when play album is clicked", () => {
+  it("plays the whole album sequentially starting with the first track", () => {
     render(<AlbumDetailPage {...defaultProps} />);
     fireEvent.click(screen.getByText("play album"));
     expect(mocks.emit).toHaveBeenCalledWith(
       "play-track",
       expect.objectContaining({
         track: expect.objectContaining({ uuid: "s1" }),
+        trackList: songs.map(song => ({ ...song, artist: album.artist_name })),
+        autoPlayNext: true,
       })
     );
   });

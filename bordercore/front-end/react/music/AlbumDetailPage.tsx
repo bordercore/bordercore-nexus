@@ -78,20 +78,21 @@ export function AlbumDetailPage({
     };
   }, []);
 
-  const handleSongClick = (song: Song) => {
+  const handleSongClick = (song: Song, autoPlayNext?: boolean) => {
     const enriched = songs.map(s => ({ ...s, artist: album.artist_name }));
     EventBus.$emit("play-track", {
       track: { ...song, artist: album.artist_name },
       trackList: enriched,
       songUrl: urls.songMedia,
       markListenedToUrl: urls.markListenedTo,
+      autoPlayNext,
     });
     setCurrentSongUuid(song.uuid);
   };
 
   const handlePlayAlbum = () => {
     if (songs.length > 0) {
-      handleSongClick(songs[0]);
+      handleSongClick(songs[0], true);
     }
   };
 
