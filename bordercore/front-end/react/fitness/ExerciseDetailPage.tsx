@@ -46,10 +46,12 @@ interface ExerciseDetailPageProps {
   };
 }
 
-function defaultLoggedValue(values: number[]): string {
+// Pre-fill the log-set form from the first set of the last workout, since
+// the first set is the one about to be repeated when starting a new session.
+export function defaultLoggedValue(values: number[]): string {
   if (values.length === 0) return "0";
-  const last = values[values.length - 1];
-  return last === null || last === undefined ? "0" : String(last);
+  const first = values[0];
+  return first === null || first === undefined ? "0" : String(first);
 }
 
 export function ExerciseDetailPage({
