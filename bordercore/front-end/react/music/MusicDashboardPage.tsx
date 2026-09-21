@@ -33,6 +33,8 @@ interface PlaylistFetchResponse {
       artist: string;
       year: number | null;
       length: string;
+      times_played: number;
+      last_time_played: string | null;
     }>;
   };
 }
@@ -94,6 +96,8 @@ export function MusicDashboardPage({
             album_title: null,
             rating: null,
             plays: 0,
+            times_played: it.times_played,
+            last_time_played: it.last_time_played,
           }));
           then(mapped);
         },

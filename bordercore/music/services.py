@@ -96,6 +96,9 @@ def get_playlist_songs(playlist: Playlist) -> dict[str, list[dict[str, Any]] | i
                 - note: Song note/description
                 - year: Release year
                 - length: Formatted song length (e.g., "3:45")
+                - times_played: Number of times the song has been played
+                - last_time_played: ISO 8601 timestamp of the most recent play,
+                  or null when the song has not been played
             - 'playtime': Total playtime in seconds for all songs
     """
     playtime: int = PlaylistItem.objects.filter(
@@ -113,7 +116,10 @@ def get_playlist_songs(playlist: Playlist) -> dict[str, list[dict[str, Any]] | i
             "title": x.song.title,
             "note": x.song.note,
             "year": x.song.year,
-            "length": convert_seconds(x.song.length)
+            "length": convert_seconds(x.song.length),
+            "times_played": x.song.times_played,
+            "last_time_played": x.song.last_time_played.isoformat()
+            if x.song.last_time_played else None,
         }
         for x
         in PlaylistItem.objects.filter(playlist=playlist)

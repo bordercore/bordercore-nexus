@@ -367,6 +367,26 @@ def test_music_get_playlist(authenticated_client, playlist):
     assert resp.status_code == 200
 
 
+def test_music_get_playlist_includes_song_play_stats(authenticated_client, playlist):
+    """Test that playlist songs include play count and last-played time."""
+    _, client = authenticated_client()
+    playlist_item = playlist[0].playlistitem_set.first()
+    played_at = datetime.datetime(2026, 8, 1, 12, 0, 0, tzinfo=datetime.timezone.utc)
+    Song.objects.filter(pk=playlist_item.song_id).update(
+        times_played=4,
+        last_time_played=played_at,
+    )
+
+    url = urls.reverse("music:get_playlist", kwargs={"playlist_uuid": playlist[0].uuid})
+    response = client.get(url)
+
+    assert response.status_code == 200
+    songs_by_uuid = {song["uuid"]: song for song in response.json()["playlistitems"]}
+    song_data = songs_by_uuid[str(playlist_item.song.uuid)]
+    assert song_data["times_played"] == 4
+    assert song_data["last_time_played"] == played_at.isoformat()
+
+
 def test_music_sort_playlist(authenticated_client, playlist):
     """Test reordering a song within a playlist."""
     _, client = authenticated_client()

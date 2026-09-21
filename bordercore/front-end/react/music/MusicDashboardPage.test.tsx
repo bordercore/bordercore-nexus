@@ -86,6 +86,36 @@ describe("MusicDashboardPage", () => {
     expect(search.value).toBe("abba");
   });
 
+  it("preserves play stats for songs loaded from a playlist", () => {
+    mocks.doGet.mockImplementation((url: string, cb: (r: unknown) => void) => {
+      if (url.includes("get_playlist")) {
+        cb({
+          data: {
+            totalTime: "3 minutes",
+            playlistitems: [
+              {
+                uuid: "song-1",
+                title: "Played Song",
+                artist: "Artist",
+                year: 2020,
+                length: "3:00",
+                times_played: 4,
+                last_time_played: null,
+              },
+            ],
+          },
+        });
+      } else {
+        cb({ data: { song_list: [] } });
+      }
+    });
+
+    render(<MusicDashboardPage {...makeProps()} />);
+    fireEvent.click(screen.getByRole("button", { name: /mix/i }));
+
+    expect(screen.getByText("played 4 times")).toBeInTheDocument();
+  });
+
   it("disables album pager arrows when there is a single page", () => {
     render(<MusicDashboardPage {...makeProps()} />);
     const prev = screen.getByLabelText("Previous page") as HTMLButtonElement;
