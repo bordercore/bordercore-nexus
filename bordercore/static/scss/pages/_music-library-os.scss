@@ -266,11 +266,6 @@
         font-size: 11px;
       }
 
-      &:hover {
-        background: var(--bg-2);
-        color: var(--fg-1);
-      }
-
       &.mlo-playlist-row-active {
         border-color: color-mix(in oklch, var(--accent), transparent 75%);
         background: color-mix(in oklch, var(--accent), transparent 85%);
@@ -279,6 +274,21 @@
 
         .mlo-playlist-count {
           color: var(--accent);
+        }
+      }
+    }
+
+    .mlo-playlist {
+      border-radius: var(--radius);
+
+      &:hover {
+        // Smart playlists include a query below the button, so the hover
+        // surface belongs to the list item rather than just the button.
+        // This matches the background of the Recent Plays card items.
+        background: var(--mlo-bg-2);
+
+        .mlo-playlist-row {
+          color: var(--fg-1);
         }
       }
     }
@@ -869,6 +879,7 @@
 
   .mlo-recent-plays-row {
     display: grid;
+    padding: 4px 0;
     gap: 10px;
     grid-template-columns: 24px 1fr;
   }
