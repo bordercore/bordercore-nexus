@@ -541,6 +541,7 @@ class ReminderSerializer(serializers.ModelSerializer):
             "name",
             "note",
             "is_active",
+            "ios_notification",
             "schedule_type",
             "schedule_description",
             "next_trigger_at",

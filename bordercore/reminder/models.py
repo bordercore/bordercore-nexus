@@ -108,6 +108,7 @@ class Reminder(TimeStampedModel):
     note = models.TextField(null=True, blank=True)
 
     is_active = models.BooleanField(default=True)
+    ios_notification = models.BooleanField(default=True, help_text="Show an iOS notification when this reminder triggers")
     create_todo = models.BooleanField(default=False, help_text="Auto-create a Todo task when this reminder triggers")
 
     # When the schedule begins. If unset, the scheduler can treat created time as the start.

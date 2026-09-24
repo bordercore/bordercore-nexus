@@ -36,6 +36,7 @@ class ReminderForm(ModelForm):
             "note",
             "is_active",
             "create_todo",
+            "ios_notification",
             "start_at",
             "schedule_type",
             "trigger_time",
@@ -55,6 +56,7 @@ class ReminderForm(ModelForm):
                 }
             ),
             "is_active": CheckboxInput(attrs={"class": "form-check-input"}),
+            "ios_notification": CheckboxInput(attrs={"class": "form-check-input"}),
             "create_todo": CheckboxInput(attrs={"class": "form-check-input"}),
             "start_at": TextInput(attrs={"class": "form-control", "type": "datetime-local"}),
             "schedule_type": Select(attrs={"class": "form-control form-select"}),
@@ -70,6 +72,7 @@ class ReminderForm(ModelForm):
             "note": "Notes",
             "is_active": "Active",
             "create_todo": "Create Todo Task",
+            "ios_notification": "Show iOS Notification",
             "start_at": "Start Date (optional)",
             "schedule_type": "Schedule Type",
             "trigger_time": "Time",
@@ -84,6 +87,12 @@ class ReminderForm(ModelForm):
         # Make legacy fields not required
         self.fields["interval_value"].required = False
         self.fields["interval_unit"].required = False
+
+    def clean_ios_notification(self) -> bool:
+        """Preserve the preference when older clients omit the field."""
+        if "ios_notification" not in self.data:
+            return self.instance.ios_notification
+        return self.cleaned_data["ios_notification"]
 
     def clean_days_of_week_input(self) -> list[int]:
         """Parse and validate days_of_week_input field.

@@ -7,6 +7,7 @@ export interface ReminderFormState {
   note: string;
   is_active: boolean;
   create_todo: boolean;
+  ios_notification: boolean;
   schedule_type: string;
   trigger_time: string;
   days_of_week: number[];
@@ -252,6 +253,14 @@ export function ReminderFormBody({
       <div className="rm-modal-checks">
         <label className="rm-modal-check">
           <ToggleSwitch
+            name="ios_notification"
+            checked={state.ios_notification}
+            onChange={checked => setField("ios_notification", checked)}
+          />
+          <span>show iOS notification</span>
+        </label>
+        <label className="rm-modal-check">
+          <ToggleSwitch
             name="is_active"
             checked={state.is_active}
             onChange={checked => setField("is_active", checked)}
@@ -286,6 +295,7 @@ export const DEFAULT_FORM_STATE: ReminderFormState = {
   note: "",
   is_active: true,
   create_todo: false,
+  ios_notification: true,
   schedule_type: "daily",
   trigger_time: "09:00",
   days_of_week: [],

@@ -185,6 +185,7 @@ class ReminderFormAjaxView(APIView):
             "note": reminder.note or "",
             "is_active": reminder.is_active,
             "create_todo": reminder.create_todo,
+            "ios_notification": reminder.ios_notification,
             "start_at": start_at_iso,
             # New schedule fields
             "schedule_type": reminder.schedule_type,

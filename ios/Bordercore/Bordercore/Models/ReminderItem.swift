@@ -4,6 +4,7 @@ struct ReminderItem: Identifiable, Codable, Equatable {
     let uuid: UUID
     let name: String
     let note: String?
+    let iosNotification: Bool
     let isActive: Bool
     let scheduleType: String
     let scheduleDescription: String
@@ -16,6 +17,7 @@ struct ReminderItem: Identifiable, Codable, Equatable {
         case name
         case note
         case isActive = "is_active"
+        case iosNotification = "ios_notification"
         case scheduleType = "schedule_type"
         case scheduleDescription = "schedule_description"
         case nextTriggerAt = "next_trigger_at"
@@ -26,6 +28,7 @@ struct ReminderItem: Identifiable, Codable, Equatable {
         name: String,
         note: String? = nil,
         isActive: Bool = true,
+        iosNotification: Bool = true,
         scheduleType: String = "",
         scheduleDescription: String = "",
         nextTriggerAt: Date? = nil
@@ -34,6 +37,7 @@ struct ReminderItem: Identifiable, Codable, Equatable {
         self.name = name
         self.note = note
         self.isActive = isActive
+        self.iosNotification = iosNotification
         self.scheduleType = scheduleType
         self.scheduleDescription = scheduleDescription
         self.nextTriggerAt = nextTriggerAt
@@ -44,6 +48,7 @@ struct ReminderItem: Identifiable, Codable, Equatable {
         uuid = try container.decode(UUID.self, forKey: .uuid)
         name = try container.decode(String.self, forKey: .name)
         note = try container.decodeIfPresent(String.self, forKey: .note)
+        iosNotification = try container.decodeIfPresent(Bool.self, forKey: .iosNotification) ?? true
         isActive = try container.decodeIfPresent(Bool.self, forKey: .isActive) ?? true
         scheduleType = try container.decodeIfPresent(String.self, forKey: .scheduleType) ?? ""
         scheduleDescription = try container.decodeIfPresent(String.self, forKey: .scheduleDescription) ?? ""

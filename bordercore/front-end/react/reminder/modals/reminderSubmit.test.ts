@@ -14,6 +14,7 @@ function makeState(overrides: Partial<ReminderFormState> = {}): ReminderFormStat
     note: "",
     is_active: true,
     create_todo: false,
+    ios_notification: true,
     schedule_type: "daily",
     trigger_time: "09:00",
     days_of_week: [],
@@ -41,6 +42,13 @@ afterEach(() => {
 });
 
 describe("submitReminderForm", () => {
+  it.each([true, false])("submits iOS notification preference %s", async enabled => {
+    mockedAxios.post.mockResolvedValueOnce({ data: { success: true } });
+    await submitReminderForm("/save/", makeState({ ios_notification: enabled }));
+    const params = mockedAxios.post.mock.calls[0][1] as URLSearchParams;
+    expect(params.get("ios_notification")).toBe(String(enabled));
+  });
+
   it("returns { success: true } when the server confirms success", async () => {
     mockedAxios.post.mockResolvedValueOnce({ data: { success: true } });
     const result = await submitReminderForm("/save/", makeState());

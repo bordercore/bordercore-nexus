@@ -246,3 +246,31 @@ def test_partial_post_preserves_stored_months_when_input_absent():
 
     assert form.is_valid(), form.errors
     assert form.instance.months == [3, 9]
+
+
+@pytest.mark.parametrize("enabled", [True, False])
+def test_ios_notification_preference_round_trip(enabled):
+    from api.serializers import ReminderSerializer
+    from accounts.tests.factories import UserFactory
+
+    data = {**_base_form_data(), "ios_notification": str(enabled).lower()}
+    form = ReminderForm(data=data, instance=Reminder(user=UserFactory()))
+    assert form.is_valid(), form.errors
+    reminder = form.save()
+    reminder.refresh_from_db()
+    assert reminder.ios_notification is enabled
+    assert ReminderSerializer(reminder).data["ios_notification"] is enabled
+
+    data["ios_notification"] = str(not enabled).lower()
+    form = ReminderForm(data=data, instance=reminder)
+    assert form.is_valid(), form.errors
+    reminder = form.save()
+    reminder.refresh_from_db()
+    assert reminder.ios_notification is not enabled
+
+
+@pytest.mark.parametrize("enabled", [True, False])
+def test_omitted_ios_notification_preserves_preference(enabled):
+    form = ReminderForm(data=_base_form_data(), instance=Reminder(ios_notification=enabled))
+    assert form.is_valid(), form.errors
+    assert form.instance.ios_notification is enabled

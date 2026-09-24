@@ -136,7 +136,7 @@ actor ReminderNotificationService {
         var latestByIdentifier: [String: ScheduledReminderNotification] = [:]
 
         for reminder in reminders {
-            guard reminder.isActive, let nextTriggerAt = reminder.nextTriggerAt, nextTriggerAt > now else {
+            guard reminder.isActive, reminder.iosNotification, let nextTriggerAt = reminder.nextTriggerAt, nextTriggerAt > now else {
                 continue
             }
 

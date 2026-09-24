@@ -23,6 +23,7 @@ export async function submitReminderForm(
   body.append("note", state.note);
   body.append("is_active", state.is_active ? "true" : "false");
   body.append("create_todo", state.create_todo ? "true" : "false");
+  body.append("ios_notification", state.ios_notification ? "true" : "false");
   body.append("schedule_type", state.schedule_type);
   if (state.trigger_time) body.append("trigger_time", state.trigger_time);
   body.append("days_of_week_input", JSON.stringify(state.days_of_week ?? []));

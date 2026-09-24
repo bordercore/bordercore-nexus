@@ -2,6 +2,33 @@ import XCTest
 @testable import Bordercore
 
 final class ReminderNotificationServiceTests: XCTestCase {
+    func testDisabledNotificationRemovesPendingRequest() {
+        let now = Date()
+        let reminder = ReminderItem(
+            uuid: UUID(),
+            name: "Quiet reminder",
+            iosNotification: false,
+            nextTriggerAt: now.addingTimeInterval(600)
+        )
+        let identifier = ReminderNotificationService.notificationIdentifier(for: reminder.uuid)
+        let plan = ReminderNotificationService.buildPlan(
+            reminders: [reminder],
+            existingManagedIdentifiers: [identifier],
+            now: now
+        )
+        XCTAssertTrue(plan.desiredNotifications.isEmpty)
+        XCTAssertEqual(plan.staleIdentifiers, [identifier])
+    }
+
+    func testDecodeNotificationPreferenceAndLegacyDefault() throws {
+        let uuid = UUID().uuidString
+        for (field, expected) in [("", true), (",\"ios_notification\":false", false), (",\"ios_notification\":true", true)] {
+            let json = "{\"uuid\":\"\(uuid)\",\"name\":\"Test\"\(field)}"
+            let reminder = try JSONDecoder().decode(ReminderItem.self, from: Data(json.utf8))
+            XCTAssertEqual(reminder.iosNotification, expected)
+        }
+    }
+
     func testReminderUUIDFromNotificationIdentifierParsesManagedIdentifier() {
         let uuid = UUID(uuidString: "dddddddd-dddd-dddd-dddd-dddddddddddd")!
         let identifier = ReminderNotificationService.notificationIdentifier(for: uuid)

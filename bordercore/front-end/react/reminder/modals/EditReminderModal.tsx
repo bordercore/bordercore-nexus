@@ -24,6 +24,7 @@ interface FormAjaxResponse {
   note: string;
   is_active: boolean;
   create_todo: boolean;
+  ios_notification: boolean;
   start_at: string | null;
   schedule_type: string;
   trigger_time: string;
@@ -63,6 +64,7 @@ export function EditReminderModal({ open, reminder, onClose, onSaved }: EditRemi
           note: data.note ?? "",
           is_active: data.is_active ?? true,
           create_todo: data.create_todo ?? false,
+          ios_notification: data.ios_notification ?? true,
           schedule_type: data.schedule_type ?? "daily",
           trigger_time: data.trigger_time ?? "09:00",
           days_of_week: data.days_of_week ?? [],
