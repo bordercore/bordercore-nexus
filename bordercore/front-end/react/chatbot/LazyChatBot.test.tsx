@@ -64,7 +64,8 @@ describe("LazyChatBot", () => {
     bus.$emit("chat", {});
 
     await waitFor(() => expect(screen.getByTestId("chatbot")).toBeInTheDocument());
-    expect(mounted).toHaveBeenCalledTimes(1);
+    // The node can appear before ChatBot's effects flush, so wait for the mount too.
+    await waitFor(() => expect(mounted).toHaveBeenCalledTimes(1));
   });
 
   it("replays the triggering event so the panel actually opens", async () => {
