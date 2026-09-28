@@ -27,6 +27,10 @@ export function DescriptionCard({
   const hasDescription = description.trim().length > 0;
   const hasNote = note.trim().length > 0;
 
+  const descriptionHtml = useMemo(
+    () => (hasDescription ? markdown.render(description) : ""),
+    [hasDescription, description]
+  );
   const noteHtml = useMemo(() => (hasNote ? markdown.render(note) : ""), [hasNote, note]);
 
   useEffect(() => {
@@ -109,7 +113,7 @@ export function DescriptionCard({
         </span>
       </h3>
       {hasDescription ? (
-        <p className="ex-description">{description}</p>
+        <div className="ex-description" dangerouslySetInnerHTML={{ __html: descriptionHtml }} />
       ) : (
         <p className="ex-no-description">no description</p>
       )}

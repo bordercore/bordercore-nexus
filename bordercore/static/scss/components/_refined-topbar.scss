@@ -535,7 +535,9 @@
     display: flex;
     align-items: baseline;
     justify-content: space-between;
+    color: inherit;
     gap: 8px;
+    text-decoration: none;
   }
 
   .name {
@@ -550,6 +552,56 @@
   .note {
     color: var(--bc-fg-2);
     font-size: 12px;
+
+    p,
+    ul,
+    ol,
+    pre,
+    blockquote {
+      margin: 0 0 6px;
+    }
+
+    ul,
+    ol {
+      padding-left: 20px;
+    }
+
+    ul {
+      list-style: disc;
+    }
+
+    ol {
+      list-style: decimal;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      margin: 6px 0;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: underline;
+    }
+
+    blockquote {
+      padding-left: 8px;
+      border-left: 2px solid var(--bc-border-1);
+    }
+
+    > :first-child {
+      margin-top: 0;
+    }
+
+    > :last-child {
+      margin-bottom: 0;
+    }
   }
 }
 

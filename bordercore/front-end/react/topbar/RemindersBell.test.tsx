@@ -50,6 +50,38 @@ describe("RemindersBell", () => {
     expect(screen.getByText("Use Zelle")).toBeInTheDocument();
   });
 
+  it("renders Markdown notes with independent links", () => {
+    render(<RemindersBell />);
+    fire({
+      ...baseReminder,
+      note: "**Bold** and *italic* with `code`\n\n- First\n- [Payment site](https://example.com/pay)",
+    });
+    fireEvent.click(screen.getByRole("button", { name: /reminder/i }));
+
+    expect(screen.getByText("Bold").tagName).toBe("STRONG");
+    expect(screen.getByText("italic").tagName).toBe("EM");
+    expect(screen.getByText("code").tagName).toBe("CODE");
+    expect(screen.getAllByRole("listitem")).toHaveLength(2);
+    const noteLink = screen.getByRole("link", { name: "Payment site" });
+    expect(noteLink).toHaveAttribute("href", "https://example.com/pay");
+    expect(noteLink.parentElement?.closest("a")).toBeNull();
+    expect(screen.getByRole("menuitem", { name: /Pay rent/ })).toHaveAttribute(
+      "href",
+      `/reminder/${baseReminder.uuid}/`
+    );
+  });
+
+  it("does not render raw HTML or unsafe Markdown links", () => {
+    render(<RemindersBell />);
+    fire({ ...baseReminder, note: '<img src=x onerror="alert(1)"> [unsafe](javascript:alert(1))' });
+    fireEvent.click(screen.getByRole("button", { name: /reminder/i }));
+
+    const menu = screen.getByRole("menu");
+    expect(menu.querySelector("img")).toBeNull();
+    expect(menu.querySelector('a[href^="javascript:"]')).toBeNull();
+    expect(menu).toHaveTextContent("<img src=x onerror=");
+  });
+
   it("dedups repeated fires of the same uuid", () => {
     render(<RemindersBell />);
     fire();

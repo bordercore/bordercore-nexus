@@ -529,101 +529,100 @@
       font-family: var(--font-mono);
       font-size: 10px;
     }
+  }
 
-    // Markdown prose inside the coach note. Kept compact: the container is a
-    // small card so headings/paragraphs share the body font-size and tight
-    // vertical rhythm.
-    &.ex-note-md {
-      p,
-      ul,
-      ol,
-      pre,
-      blockquote {
-        margin: 0 0 8px;
-      }
+  // Shared Markdown prose for the description and coach note.
+  .ex-description,
+  .ex-note.ex-note-md {
+    p,
+    ul,
+    ol,
+    pre,
+    blockquote {
+      margin: 0 0 8px;
+    }
 
-      p:last-child,
-      ul:last-child,
-      ol:last-child,
-      pre:last-child,
-      blockquote:last-child {
-        margin-bottom: 0;
-      }
+    p:last-child,
+    ul:last-child,
+    ol:last-child,
+    pre:last-child,
+    blockquote:last-child {
+      margin-bottom: 0;
+    }
 
-      h1,
-      h2,
-      h3,
-      h4,
-      h5,
-      h6 {
-        margin: 0 0 6px;
-        color: var(--fg-1);
-        font-family: var(--ex-font-display);
-        font-size: 13px;
-        font-weight: 600;
-        letter-spacing: 0;
-        text-transform: none;
-      }
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      margin: 0 0 6px;
+      color: var(--fg-1);
+      font-family: var(--ex-font-display);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0;
+      text-transform: none;
+    }
 
-      strong {
-        color: var(--accent-3);
-        font-weight: 600;
-      }
+    strong {
+      color: var(--accent-3);
+      font-weight: 600;
+    }
 
-      em {
-        color: var(--fg-1);
-        font-style: italic;
-      }
+    em {
+      color: var(--fg-1);
+      font-style: italic;
+    }
 
-      a {
-        color: var(--accent);
-        text-decoration: underline;
-        text-decoration-color: color-mix(in oklch, var(--accent) 35%, transparent);
-        text-underline-offset: 2px;
-        transition: color var(--ex-t-fast);
-      }
+    a {
+      color: var(--accent);
+      text-decoration: underline;
+      text-decoration-color: color-mix(in oklch, var(--accent) 35%, transparent);
+      text-underline-offset: 2px;
+      transition: color var(--ex-t-fast);
+    }
 
-      a:hover { color: color-mix(in oklch, var(--accent), white 20%); }
+    a:hover { color: color-mix(in oklch, var(--accent), white 20%); }
 
-      code {
-        padding: 1px 6px;
-        border-radius: 4px;
-        background: var(--bg-3);
-        color: var(--accent-2);
-        font-family: var(--font-mono);
-        font-size: 12px;
-      }
+    code {
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: var(--bg-3);
+      color: var(--accent-2);
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
 
-      pre {
-        padding: 10px 12px;
-        border: 1px solid var(--line-soft);
-        border-radius: var(--ex-radius-sm);
-        background: var(--bg-2);
-        overflow-x: auto;
-      }
+    pre {
+      padding: 10px 12px;
+      border: 1px solid var(--line-soft);
+      border-radius: var(--ex-radius-sm);
+      background: var(--bg-2);
+      overflow-x: auto;
+    }
 
-      pre code {
-        padding: 0;
-        background: transparent;
-        color: var(--fg-1);
-      }
+    pre code {
+      padding: 0;
+      background: transparent;
+      color: var(--fg-1);
+    }
 
-      ul,
-      ol { padding-left: 20px; }
-      li { margin: 0 0 2px; }
+    ul,
+    ol { padding-left: 20px; }
+    li { margin: 0 0 2px; }
 
-      blockquote {
-        padding: 2px 10px;
-        border-left: 2px solid var(--line);
-        color: var(--fg-3);
-      }
+    blockquote {
+      padding: 2px 10px;
+      border-left: 2px solid var(--line);
+      color: var(--fg-3);
+    }
 
-      hr {
-        height: 1px;
-        border: 0;
-        margin: 10px 0;
-        background: var(--hairline);
-      }
+    hr {
+      height: 1px;
+      border: 0;
+      margin: 10px 0;
+      background: var(--hairline);
     }
   }
 

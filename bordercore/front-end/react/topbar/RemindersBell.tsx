@@ -3,6 +3,9 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBell } from "@fortawesome/free-solid-svg-icons";
 import { Popover } from "../common/Popover";
 import { useLiveChannel } from "../common/hooks/useLiveChannel";
+import { createMarkdown } from "../common/markdown";
+
+const markdown = createMarkdown({ html: false, linkify: true, typographer: true });
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
 
@@ -116,19 +119,23 @@ export default function RemindersBell() {
     >
       <div className="refined-tb-reminders-menu" role="menu">
         {fired.map(r => (
-          <a
-            key={r.uuid}
-            href={`/reminder/${r.uuid}/`}
-            className="refined-tb-reminders-item"
-            role="menuitem"
-            onClick={() => setOpen(false)}
-          >
-            <div className="row">
+          <div key={r.uuid} className="refined-tb-reminders-item">
+            <a
+              href={`/reminder/${r.uuid}/`}
+              className="row"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+            >
               <span className="name">{r.name}</span>
               <span className="ago">{formatAgo(now - r.firedAt)}</span>
-            </div>
-            {r.note && <div className="note">{r.note}</div>}
-          </a>
+            </a>
+            {r.note && (
+              <div
+                className="note markdown"
+                dangerouslySetInnerHTML={{ __html: markdown.render(r.note) }}
+              />
+            )}
+          </div>
         ))}
         <div className="refined-tb-reminders-divider" />
         <button type="button" className="refined-tb-reminders-clear" onClick={clearAll}>
