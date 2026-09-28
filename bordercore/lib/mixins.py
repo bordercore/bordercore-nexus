@@ -259,16 +259,23 @@ class SortOrderMixin(models.Model):
         this method to work correctly.
 
         Args:
-            new_order: The new sort order position for this object. Should be a
-                positive integer.
+            new_order: The new sort order position, from 1 to the number of
+                objects in this object's group.
+
+        Raises:
+            ValueError: If the position is outside the group's bounds.
         """
         # Equivalent to, say, node=self.node
         filter_kwargs = {self.field_name: getattr(self, self.field_name)}
 
-        if self.sort_order == new_order:
-            return
-
         with transaction.atomic():
+            item_count = self.get_queryset().filter(**filter_kwargs).count()
+            if not 1 <= new_order <= item_count:
+                raise ValueError(f"Position must be between 1 and {item_count}.")
+
+            if self.sort_order == new_order:
+                return
+
             if self.sort_order > int(new_order):
                 self.get_queryset().filter(
                     **filter_kwargs,

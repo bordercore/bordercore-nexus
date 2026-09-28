@@ -896,7 +896,10 @@ def sort_pinned_tags(request: HttpRequest) -> Response:
 
     user = cast(User, request.user)
     so = get_object_or_404(DrillTag, tag__name=tag_name, userprofile=user.userprofile)
-    DrillTag.reorder(so, new_position)
+    try:
+        DrillTag.reorder(so, new_position)
+    except ValueError as exc:
+        return Response({"detail": str(exc)}, status=400)
 
     return Response()
 

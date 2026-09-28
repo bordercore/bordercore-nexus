@@ -1408,7 +1408,10 @@ def sort_playlist(request: HttpRequest) -> Response:
             uuid=playlistitem_uuid,
             playlist__user=request.user
         )
-        playlistitem.reorder(new_position)
+        try:
+            playlistitem.reorder(new_position)
+        except ValueError as exc:
+            return Response({"detail": str(exc)}, status=400)
 
     return Response()
 

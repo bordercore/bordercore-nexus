@@ -284,7 +284,10 @@ def sort_todos(request: HttpRequest) -> Response:
             node__uuid=node_uuid,
             todo__uuid=todo_uuid,
         )
-        NodeTodo.reorder(so, new_position)
+        try:
+            NodeTodo.reorder(so, new_position)
+        except ValueError as exc:
+            return Response({"detail": str(exc)}, status=400)
 
         so.node.modified = timezone.now()
         so.node.save()

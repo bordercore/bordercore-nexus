@@ -619,7 +619,10 @@ def sort_objects(request: HttpRequest) -> Response:
         collection__uuid=collection_uuid,
         collection__user=user,
     )
-    CollectionObject.reorder(so, new_position)
+    try:
+        CollectionObject.reorder(so, new_position)
+    except ValueError as exc:
+        return Response({"detail": str(exc)}, status=400)
 
     return Response()
 

@@ -67,6 +67,19 @@ def test_sort_collection(collection, blob_image_factory, blob_pdf_factory):
     assert collection[0].collectionobject_set.filter().count() == 2
 
 
+@pytest.mark.parametrize("new_position", [-1, 0, 3])
+def test_sort_collection_rejects_out_of_bounds_positions(collection, new_position):
+    items = CollectionObject.objects.filter(collection=collection[0])
+    before = list(items.values_list("pk", "sort_order"))
+    item = items.first()
+
+    with pytest.raises(ValueError, match="Position must be between 1 and 2"):
+        item.reorder(new_position)
+
+    assert list(items.values_list("pk", "sort_order")) == before
+    assert item.sort_order == before[0][1]
+
+
 def test_get_tags(collection):
 
     # Use set() since get_tags() doesn't guarantee sort order

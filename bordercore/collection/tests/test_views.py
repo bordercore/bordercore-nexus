@@ -120,15 +120,36 @@ def test_collection_detail(authenticated_client, collection):
 def test_sort_collection(authenticated_client, collection):
 
     _, client = authenticated_client()
+    items = collection[0].collectionobject_set
+    moved_item = items.first()
 
     url = urls.reverse("collection:sort_objects")
     resp = client.post(url, {
         "collection_uuid": collection[0].uuid,
-        "object_uuid": collection[0].collectionobject_set.all()[0].blob.uuid,
-        "new_position": "3"
+        "object_uuid": moved_item.blob.uuid,
+        "new_position": "2"
     })
 
     assert resp.status_code == 200
+    moved_item.refresh_from_db()
+    assert moved_item.sort_order == 2
+    assert list(items.values_list("sort_order", flat=True)) == [1, 2]
+
+
+@pytest.mark.parametrize("new_position", ["-1", "0", "3", "invalid"])
+def test_sort_collection_rejects_invalid_positions(authenticated_client, collection, new_position):
+    _, client = authenticated_client()
+    items = collection[0].collectionobject_set
+    before = list(items.values_list("pk", "sort_order"))
+
+    resp = client.post(urls.reverse("collection:sort_objects"), {
+        "collection_uuid": collection[0].uuid,
+        "object_uuid": items.first().blob.uuid,
+        "new_position": new_position,
+    })
+
+    assert resp.status_code == 400
+    assert list(items.values_list("pk", "sort_order")) == before
 
 
 def test_get_blob(authenticated_client, collection):

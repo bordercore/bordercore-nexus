@@ -320,7 +320,10 @@ def sort_pinned_notes(request: HttpRequest) -> Response:
         )
 
     user_note = get_object_or_404(UserNote, userprofile=user.userprofile, blob__uuid=note_uuid)
-    UserNote.reorder(user_note, new_position)
+    try:
+        UserNote.reorder(user_note, new_position)
+    except ValueError as exc:
+        return Response({"detail": str(exc)}, status=400)
 
     return Response()
 

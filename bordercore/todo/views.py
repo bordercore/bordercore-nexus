@@ -283,7 +283,10 @@ def _reorder_todo(user: User, tag_name: str, todo_uuid: str, new_position: int) 
             todo__uuid=todo_uuid,
             todo__user=user,
         )
-        TagTodo.reorder(tag_todo, new_position)
+        try:
+            TagTodo.reorder(tag_todo, new_position)
+        except ValueError as exc:
+            raise ValidationError({"detail": str(exc)}) from exc
 
     return {"new_position": new_position}
 

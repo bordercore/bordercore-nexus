@@ -677,7 +677,10 @@ def sort_pinned_tags(request: HttpRequest) -> Response:
     tag = get_user_object_or_404(user, Tag, id=tag_id)
 
     s = get_object_or_404(UserTag, userprofile=user.userprofile, tag=tag)
-    UserTag.reorder(s, new_position)
+    try:
+        UserTag.reorder(s, new_position)
+    except ValueError as exc:
+        return Response({"detail": str(exc)}, status=400)
 
     return Response()
 
@@ -709,7 +712,10 @@ def sort_bookmarks(request: HttpRequest) -> Response:
 
     user = cast(User, request.user)
     tb = get_object_or_404(TagBookmark, tag__name=tag_name, tag__user=user, bookmark__uuid=bookmark_uuid, bookmark__user=user)
-    TagBookmark.reorder(tb, new_position)
+    try:
+        TagBookmark.reorder(tb, new_position)
+    except ValueError as exc:
+        return Response({"detail": str(exc)}, status=400)
 
     return Response()
 

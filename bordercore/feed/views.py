@@ -167,7 +167,10 @@ def sort_feed(request: HttpRequest) -> Response:
 
     user = cast(User, request.user)
     s = get_object_or_404(UserFeed, userprofile=user.userprofile, feed__id=feed_id)
-    UserFeed.reorder(s, new_position)
+    try:
+        UserFeed.reorder(s, new_position)
+    except ValueError as exc:
+        return Response({"detail": str(exc)}, status=400)
 
     return Response()
 

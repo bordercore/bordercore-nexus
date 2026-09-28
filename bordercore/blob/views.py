@@ -1088,7 +1088,10 @@ def sort_related_objects(request: Request) -> Response:
     node_to_object = get_object_or_404(
         cast(Any, node_model), get_node_to_object_query(node_uuid, object_uuid, user)
     )
-    cast(Any, node_model).reorder(node_to_object, new_position)
+    try:
+        cast(Any, node_model).reorder(node_to_object, new_position)
+    except ValueError as exc:
+        return Response({"detail": str(exc)}, status=400)
 
     return Response()
 

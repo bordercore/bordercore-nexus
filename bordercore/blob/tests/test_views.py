@@ -837,8 +837,9 @@ def test_chat(mock_chatbot, authenticated_client):
     assert content == "Hello world"
 
 
-def test_sort_related_objects(authenticated_client):
-    """Test sorting related objects changes their order."""
+@pytest.mark.parametrize("new_position, expected_status", [(2, 200), (0, 400), (-1, 400), (3, 400)])
+def test_sort_related_objects(authenticated_client, new_position, expected_status):
+    """Only positions within the related-object group's bounds are accepted."""
 
     user, client = authenticated_client()
 
@@ -847,17 +848,25 @@ def test_sort_related_objects(authenticated_client):
     blob_3 = BlobFactory.create(user=user)
 
     BlobToObject.objects.create(node=blob_1, blob=blob_2)
-    BlobToObject.objects.create(node=blob_1, blob=blob_3)
+    moved_item = BlobToObject.objects.create(node=blob_1, blob=blob_3)
+    items = BlobToObject.objects.filter(node=blob_1)
+    before = list(items.values_list("pk", "sort_order"))
 
     url = urls.reverse("blob:sort_related_objects")
     resp = client.post(url, {
         "node_uuid": blob_1.uuid,
         "object_uuid": blob_3.uuid,
-        "new_position": 0,
+        "new_position": new_position,
         "node_type": "blob"
     })
 
-    assert resp.status_code == 200
+    assert resp.status_code == expected_status
+    if expected_status == 200:
+        moved_item.refresh_from_db()
+        assert moved_item.sort_order == new_position
+        assert list(items.values_list("sort_order", flat=True)) == [1, 2]
+    else:
+        assert list(items.values_list("pk", "sort_order")) == before
 
 
 @patch("blob.views.chatbot_followups")
@@ -901,4 +910,3 @@ def test_chat_followups_handles_missing_fields(mock_followups, authenticated_cli
     assert resp.status_code == 200
     assert resp.json() == {"suggestions": []}
     mock_followups.assert_called_once_with("", mode="chat")
-
