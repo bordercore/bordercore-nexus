@@ -21,7 +21,7 @@ from fitness.models import Data, Exercise, ExerciseUser, Workout
 from music.tests.factories import PlaylistFactory, SongFactory
 from reminder.models import Reminder
 from reminder.tests.factories import ReminderFactory
-from tag.models import TagBookmark
+from tag.models import TagBookmark, TagTodo
 from tag.tests.factories import TagFactory
 from todo.tests.factories import TodoFactory
 
@@ -481,6 +481,36 @@ def test_todo_viewset_filters_by_tag(authenticated_client):
     returned_uuids = {item["uuid"] for item in result}
     assert str(work_todo.uuid) in returned_uuids
     assert str(home_todo.uuid) not in returned_uuids
+
+
+@pytest.mark.parametrize("params, expected_names", [
+    ({"tag": "work"}, ["Zulu", "Alpha"]),
+    ({"tag": "home"}, ["Alpha", "Zulu"]),
+    ({"priority": 1}, ["Alpha", "Zulu"]),
+    ({"tag": "work", "priority": 1}, ["Alpha", "Zulu"]),
+    ({}, ["Alpha", "Zulu"]),
+])
+def test_todo_viewset_multiple_tags(authenticated_client, params, expected_names):
+    """Each task appears once, ordered within the selected tag only."""
+    user, client = authenticated_client()
+    work = TagFactory(user=user, name="work")
+    home = TagFactory(user=user, name="home")
+    zulu = TodoFactory(user=user, name="Zulu", priority=1)
+    alpha = TodoFactory(user=user, name="Alpha", priority=1)
+    for todo, work_order, home_order in [(zulu, 1, 20), (alpha, 2, 10)]:
+        todo.tags.add(work, home)
+        for tag, sort_order in [(work, work_order), (home, home_order)]:
+            TagTodo.objects.update_or_create(
+                todo=todo, tag=tag, defaults={"sort_order": sort_order}
+            )
+
+    response = client.get(urls.reverse("todo-list"), params)
+
+    assert response.status_code == 200
+    result = response.json()
+    assert [item["name"] for item in result] == expected_names
+    assert len({item["uuid"] for item in result}) == 2
+    assert all(set(item["tags"]) == {"work", "home"} for item in result)
 
 
 def test_reminder_viewset(authenticated_client):

@@ -19,7 +19,7 @@ from rest_framework.response import Response
 
 from django.contrib.auth.models import User
 from django.db import transaction
-from django.db.models import Count
+from django.db.models import Count, OuterRef, Subquery
 from django.db.models import QuerySet
 from django.shortcuts import get_object_or_404
 
@@ -37,7 +37,7 @@ from music.models import Album, Playlist, PlaylistItem, Song, SongSource
 from node.models import Node
 from quote.models import Quote
 from reminder.models import Reminder
-from tag.models import Tag, TagAlias, TagBookmark
+from tag.models import Tag, TagAlias, TagBookmark, TagTodo
 from todo.models import Todo
 
 from .serializers import (AlbumSerializer, BlobSerializer,
@@ -549,7 +549,14 @@ class TodoViewSet(UserScopedQuerysetMixin, viewsets.ModelViewSet):
         if priority is not None:
             return queryset.order_by("name")
         if tag is not None:
-            return queryset.order_by("tagtodo__sort_order")
+            # Joining every TagTodo row duplicates tasks with multiple tags.
+            # Use only the selected tag's sort order, retaining tasks without one.
+            tag_order = TagTodo.objects.filter(
+                todo_id=OuterRef("pk"), tag__name=tag, tag__user=self.request.user
+            ).values("sort_order")[:1]
+            return queryset.annotate(
+                selected_tag_order=Subquery(tag_order)
+            ).order_by("selected_tag_order", "pk")
 
         return queryset.order_by("-created")
 
