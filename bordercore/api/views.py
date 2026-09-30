@@ -552,7 +552,7 @@ class TodoViewSet(UserScopedQuerysetMixin, viewsets.ModelViewSet):
             # Joining every TagTodo row duplicates tasks with multiple tags.
             # Use only the selected tag's sort order, retaining tasks without one.
             tag_order = TagTodo.objects.filter(
-                todo_id=OuterRef("pk"), tag__name=tag, tag__user=self.request.user
+                todo_id=OuterRef("pk"), tag__name=tag, tag__user=cast(User, self.request.user)
             ).values("sort_order")[:1]
             return queryset.annotate(
                 selected_tag_order=Subquery(tag_order)
