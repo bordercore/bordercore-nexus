@@ -558,7 +558,7 @@ class TodoViewSet(UserScopedQuerysetMixin, viewsets.ModelViewSet):
                 selected_tag_order=Subquery(tag_order)
             ).order_by("selected_tag_order", "pk")
 
-        return queryset.order_by("-created")
+        return queryset.order_by("-modified")
 
 
 class ReminderViewSet(UserScopedQuerysetMixin, viewsets.ReadOnlyModelViewSet):

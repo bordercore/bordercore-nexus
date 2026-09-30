@@ -23,6 +23,7 @@ from reminder.models import Reminder
 from reminder.tests.factories import ReminderFactory
 from tag.models import TagBookmark, TagTodo
 from tag.tests.factories import TagFactory
+from todo.models import Todo
 from todo.tests.factories import TodoFactory
 
 faker = FakerFactory.create()
@@ -488,10 +489,10 @@ def test_todo_viewset_filters_by_tag(authenticated_client):
     ({"tag": "home"}, ["Alpha", "Zulu"]),
     ({"priority": 1}, ["Alpha", "Zulu"]),
     ({"tag": "work", "priority": 1}, ["Alpha", "Zulu"]),
-    ({}, ["Alpha", "Zulu"]),
+    ({}, ["Zulu", "Alpha"]),
 ])
 def test_todo_viewset_multiple_tags(authenticated_client, params, expected_names):
-    """Each task appears once, ordered within the selected tag only."""
+    """Tasks appear once, sorted by modification date or the selected filter."""
     user, client = authenticated_client()
     work = TagFactory(user=user, name="work")
     home = TagFactory(user=user, name="home")
@@ -503,6 +504,15 @@ def test_todo_viewset_multiple_tags(authenticated_client, params, expected_names
             TagTodo.objects.update_or_create(
                 todo=todo, tag=tag, defaults={"sort_order": sort_order}
             )
+
+    # The older task was edited most recently and should lead the default list.
+    now = timezone.now()
+    Todo.objects.filter(pk=zulu.pk).update(
+        created=now - timedelta(days=2), modified=now
+    )
+    Todo.objects.filter(pk=alpha.pk).update(
+        created=now - timedelta(days=1), modified=now - timedelta(hours=1)
+    )
 
     response = client.get(urls.reverse("todo-list"), params)
 
