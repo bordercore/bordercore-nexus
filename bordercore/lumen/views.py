@@ -22,6 +22,7 @@ from django.views.decorators.http import require_GET
 from . import generation, services
 from .models import ACTIVE_STATUSES, GenerationJob, LessonVersion, LumenPreferences
 from .themes import themed_html
+from .math import with_math
 
 
 def endpoint(methods: list[str]) -> Callable[..., Any]:
@@ -152,7 +153,7 @@ def detail(request: Request, lesson_id: UUID) -> Response:
 def lesson_html(request: HttpRequest, lesson_id: UUID) -> HttpResponse:
     lesson = get_object_or_404(LessonVersion, user=request.user, pk=lesson_id)
     response = HttpResponse(
-        themed_html(lesson.html, cast(User, request.user).userprofile.lumen_theme),
+        with_math(themed_html(lesson.html, cast(User, request.user).userprofile.lumen_theme)),
         content_type="text/html; charset=utf-8",
     )
     response["Content-Security-Policy"] = (

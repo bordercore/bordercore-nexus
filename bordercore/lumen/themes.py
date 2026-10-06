@@ -215,7 +215,7 @@ def style_prompt(style: str) -> str:
         + theme["description"]
         + "\n"
         + typography
-        + "Use monospace formulas; a centered 980px reading column and generous section spacing. "
+        + "Use MathJax LaTeX formulas; a centered 980px reading column and generous section spacing. "
         + "Use these CSS variables for every color, including SVG and canvas drawing colors "
         "(read canvas colors using getComputedStyle): "
         + "; ".join(f"--lumen-{k}: {v}" for k, v in palette.items())

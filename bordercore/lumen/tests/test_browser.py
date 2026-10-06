@@ -22,6 +22,44 @@ from drill.tests.factories import QuestionFactory
 pytestmark = [pytest.mark.django_db(transaction=True), pytest.mark.functional]
 
 
+def test_offline_math_rendering(browser):
+    from urllib.parse import quote
+
+    from lumen.math import with_math
+    from lumen.themes import themed_html
+
+    html = generation.assemble_html(
+        {"html": r'''<!doctype html><html><head><style>svg{width:100%;height:auto}</style></head><body>
+        <p id="tex">\(p = \frac{1}{2}\)</p>
+        <div id="display">\[x_i^2 + \sqrt{y}\]</div>
+        <code id="legacy">(1 − 1/m)^(kn) ≈ e^(−kn/m)</code>
+        <span class="formula">p ≈ (1 − e^(−kn/m))^k
+best k ≈ (m/n)·ln 2 → p_min ≈ 0.6185^(m/n)
+bits needed m ≈ −n·ln p / (ln 2)²</span>
+        <pre><code id="program">const x = 2;</code></pre>
+        <p id="money">Costs $5 and $10.</p>
+        <button onclick="this.textContent='Working'">Try</button>
+        </body></html>''', "followups": [
+            {"question": r"What is \(x^2\)?", "answer": r"\(x \times x\)"}
+        ]},
+        {"question": "Q", "answer": "A"},
+    )
+    browser.get("data:text/html;charset=utf-8," + quote(with_math(themed_html(html, "midnight-scholar"))))
+    wait = WebDriverWait(browser, 20)
+    wait.until(lambda d: len(d.find_elements(By.CSS_SELECTOR, "#tex mjx-container svg")) == 1)
+    assert len(browser.find_elements(By.CSS_SELECTOR, "#display mjx-container svg")) == 1
+    assert len(browser.find_elements(By.CSS_SELECTOR, ".formula mjx-container")) == 3
+    assert len(browser.find_elements(By.CSS_SELECTOR, "#legacy mjx-container")) == 1
+    assert browser.find_element(By.CSS_SELECTOR, "#legacy mjx-container svg").rect["height"] < 100
+    assert len(browser.find_elements(By.CSS_SELECTOR, "#lumen-review mjx-container")) == 2
+    assert browser.find_element(By.ID, "program").text == "const x = 2;"
+    assert browser.find_element(By.ID, "money").text == "Costs $5 and $10."
+    assert not browser.find_elements(By.CSS_SELECTOR, "[data-mjx-error]")
+    browser.find_element(By.TAG_NAME, "button").click()
+    assert browser.find_element(By.TAG_NAME, "button").text == "Working"
+    assert browser.execute_script("return performance.getEntriesByType('resource').length") == 0
+
+
 def test_create_read_theme_and_sandbox(
     browser, live_server, client, settings, monkeypatch
 ):

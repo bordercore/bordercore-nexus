@@ -170,6 +170,16 @@ endpoint permits same-origin framing. Downloads retain a restrictive CSP meta ta
 model explanations and scripts may still contain errors. Legacy canvas pixels may
 not adapt to new themes; this matches the original dashboard's limitation.
 
+Lessons embed MathJax 3 (also used by drill pages) with SVG output, so equations work
+offline without fetching scripts or fonts or weakening the sandbox. New lessons
+use LaTeX delimiters `\(...\)` and `\[...\]`; `$$...$$` also works. At display time,
+recognizable older `.formula`/`.equation` blocks and mathematical inline code use
+MathJax's AsciiMath parser. Ordinary prose and programming examples are not inferred
+as math. Ambiguous legacy notation may still need regeneration. Formulas are typeset
+on page load; interactive readouts should use native HTML. Saved HTML is unchanged.
+To rebuild the committed renderer after changes, run `npm run build:lumen-math` from
+`bordercore/`. Its MathJax license is included in `lumen/vendor/`.
+
 Tests use synthetic provider responses. With local PostgreSQL configured, run:
 
 ```bash

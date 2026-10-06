@@ -280,6 +280,26 @@ def test_ported_assembly_and_theme():
         generation.parse_lesson(json.dumps({**PAYLOAD, "followups": []}))
 
 
+def test_math_assets_are_embedded_without_changing_csp_or_archive(owner, question, client):
+    from lumen.math import with_math
+
+    html = generation.assemble_html(PAYLOAD, {"question": "Q", "answer": r"\(x^2\)"})
+    lesson = LessonVersion.objects.create(
+        user=owner, question=question, question_uuid=question.uuid,
+        title="Math", html=html, source={"question": "Q", "answer": "A"}, followups=[],
+    )
+    client.force_login(owner)
+    url = reverse("lumen:html", args=[lesson.pk])
+    for suffix in ("", "?download=1"):
+        response = client.get(url + suffix)
+        assert response.status_code == 200
+        assert response.content.count(b'id="lumen-mathjax"') == 1
+        assert response["Content-Security-Policy"] == generation.CSP + "; sandbox allow-scripts; frame-ancestors 'self'"
+    lesson.refresh_from_db()
+    assert lesson.html == html
+    assert with_math(html).endswith("</body></html>")
+
+
 @pytest.mark.parametrize("provider", ["anthropic", "openai", "openrouter"])
 def test_provider_requests(provider, monkeypatch):
     monkeypatch.setenv(
