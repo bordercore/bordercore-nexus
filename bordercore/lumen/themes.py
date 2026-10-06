@@ -5,6 +5,8 @@ import re
 from pathlib import Path
 from typing import Any, TypedDict
 
+from django.conf import settings
+
 DEFAULT_STYLE = "midnight-scholar"
 
 
@@ -194,8 +196,13 @@ def themed_html(html: str, style: str) -> str:
             svg_rules.append(
                 f'svg [{prop}="{color}" i]{{{prop}:var(--lumen-{role})!important}}'
             )
-    extra_css = CYBERPUNK_CSS if style == "neon-circuit" else ""
-    sheet = f'<style id="lumen-lesson-theme" data-style="{style}">{variables}{CSS}{"".join(svg_rules)}{extra_css}</style>'
+    # Django's autoreloader does not watch these CSS files. Read fresh styles in
+    # development so refreshing a lesson reflects edits without restarting Python.
+    css = (Path(__file__).parent / "lesson-theme.css").read_text() if settings.DEBUG else CSS
+    extra_css = ""
+    if style == "neon-circuit":
+        extra_css = (Path(__file__).parent / "cyberpunk.css").read_text() if settings.DEBUG else CYBERPUNK_CSS
+    sheet = f'<style id="lumen-lesson-theme" data-style="{style}">{variables}{css}{"".join(svg_rules)}{extra_css}</style>'
     # Last in body wins over both the generated CSS and the appended Q&A stylesheet.
     return re.sub(r"</body\s*>", lambda _: sheet + "</body>", html, count=1, flags=re.I)
 

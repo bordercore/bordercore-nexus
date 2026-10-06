@@ -25,4 +25,5 @@ svg text {fill:var(--lumen-text)!important}
 #lumen-review small {color:var(--lumen-muted)!important}
 #lumen-review details {border-color:var(--lumen-border)!important}
 #lumen-review summary {color:var(--lumen-text)!important}
+#lumen-review > details + h2 {margin-top:2rem!important}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}

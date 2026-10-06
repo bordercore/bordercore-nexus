@@ -280,6 +280,17 @@ def test_ported_assembly_and_theme():
         generation.parse_lesson(json.dumps({**PAYLOAD, "followups": []}))
 
 
+def test_development_theme_reads_css_changes(settings, monkeypatch):
+    from lumen import themes
+
+    settings.DEBUG = True
+    stylesheet = {"value": "/* first edit */"}
+    monkeypatch.setattr(themes.Path, "read_text", lambda _: stylesheet["value"])
+    assert "/* first edit */" in themed_html(HTML, "midnight-scholar")
+    stylesheet["value"] = "/* second edit */"
+    assert "/* second edit */" in themed_html(HTML, "midnight-scholar")
+
+
 def test_math_assets_are_embedded_without_changing_csp_or_archive(owner, question, client):
     from lumen.math import with_math
 
