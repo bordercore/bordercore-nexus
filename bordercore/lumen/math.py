@@ -16,6 +16,8 @@ def math_assets() -> str:
         'mjx-container[display="true"]{display:block;margin:1em 0;text-align:center;}'
         'mjx-container svg{display:inline-block!important;max-width:none;width:auto!important;height:auto!important;}'
         'mjx-container svg text{fill:currentColor!important;}'
+        '#lumen-review .lumen-source-markdown p{white-space:normal;}'
+        '.lumen-source-markdown pre{overflow-x:auto;padding:1em;white-space:pre;}'
         '</style><script id="lumen-mathjax">' + script + '</script>'
     )
 

@@ -6,6 +6,7 @@ import { SVG } from "mathjax-full/js/output/svg.js";
 import { browserAdaptor } from "mathjax-full/js/adaptors/browserAdaptor.js";
 import { RegisterHTMLHandler } from "mathjax-full/js/handlers/html.js";
 import { AllPackages } from "mathjax-full/js/input/tex/AllPackages.js";
+import { renderOriginalDrill } from "./react/lumen/originalDrillMarkdown";
 
 RegisterHTMLHandler(browserAdaptor());
 const output = () => new SVG({ fontCache: "local" });
@@ -27,10 +28,12 @@ const ascii = mathjax.document(document, {
 });
 
 function render() {
+  renderOriginalDrill();
   // Only infer legacy notation in explicitly styled formulas or mathematical code.
   // Leave programming examples, prose, and live controls intact.
   document.querySelectorAll(".formula, .equation, code").forEach(element => {
-    if (element.children.length || element.closest("pre, mjx-container")) return;
+    if (element.children.length || element.closest("pre, mjx-container, .lumen-source-markdown"))
+      return;
     const text = element.textContent.trim();
     if (!text || /\\[([]|\$/.test(text)) return;
     if (

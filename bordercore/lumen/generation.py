@@ -239,11 +239,11 @@ def assemble_html(lesson: dict[str, Any], source: dict[str, str]) -> str:
 <style>#lumen-review{box-sizing:border-box;max-width:1050px;margin:64px auto;padding:36px;color:#eef0fa;background:#171b30;border:1px solid #444761;border-radius:24px;font:17px/1.7 system-ui}#lumen-review h2{font-size:30px;color:#ece2be}#lumen-review details{padding:18px 0;border-bottom:1px solid #444761}#lumen-review summary{cursor:pointer;font-weight:650}#lumen-review summary:focus-visible{outline:2px solid #ddc78d}#lumen-review p{white-space:pre-wrap;color:#d3d7e8}#lumen-review small{color:#b9bdd1}</style>
 <h2>Keep the curiosity going.</h2><p>Think through each question before revealing its answer.</p>"""
         + qa
-        + "<h2>The original drill</h2><small>Retrieved from Bordercore. The explanation and follow-up questions above are AI-generated.</small><h3>Question</h3><p>"
+        + '<h2>The original drill</h2><small>Retrieved from Bordercore. The explanation and follow-up questions above are AI-generated.</small><h3>Question</h3><div data-lumen-source="question">'
         + escape(source["question"])
-        + "</p><details><summary>Original answer</summary><p>"
+        + '</div><details><summary>Original answer</summary><div data-lumen-source="answer">'
         + escape(source["answer"])
-        + "</p></details></section>"
+        + "</div></details></section>"
     )
     html = re.sub(
         r"(<head\b[^>]*>)",

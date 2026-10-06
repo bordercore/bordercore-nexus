@@ -42,7 +42,7 @@ bits needed m ≈ −n·ln p / (ln 2)²</span>
         </body></html>''', "followups": [
             {"question": r"What is \(x^2\)?", "answer": r"\(x \times x\)"}
         ]},
-        {"question": "Q", "answer": "A"},
+        {"question": "**Question**", "answer": "- First\n- Second\n\n" + r"\(z^2\)"},
     )
     browser.get("data:text/html;charset=utf-8," + quote(with_math(themed_html(html, "midnight-scholar"))))
     wait = WebDriverWait(browser, 20)
@@ -51,7 +51,9 @@ bits needed m ≈ −n·ln p / (ln 2)²</span>
     assert len(browser.find_elements(By.CSS_SELECTOR, ".formula mjx-container")) == 3
     assert len(browser.find_elements(By.CSS_SELECTOR, "#legacy mjx-container")) == 1
     assert browser.find_element(By.CSS_SELECTOR, "#legacy mjx-container svg").rect["height"] < 100
-    assert len(browser.find_elements(By.CSS_SELECTOR, "#lumen-review mjx-container")) == 2
+    assert len(browser.find_elements(By.CSS_SELECTOR, "#lumen-review mjx-container")) == 3
+    assert browser.find_element(By.CSS_SELECTOR, ".lumen-source-markdown strong").text == "Question"
+    assert len(browser.find_elements(By.CSS_SELECTOR, ".lumen-source-markdown li")) == 2
     assert browser.find_element(By.ID, "program").text == "const x = 2;"
     assert browser.find_element(By.ID, "money").text == "Costs $5 and $10."
     assert not browser.find_elements(By.CSS_SELECTOR, "[data-mjx-error]")
