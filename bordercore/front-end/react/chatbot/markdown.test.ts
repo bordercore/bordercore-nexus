@@ -79,6 +79,48 @@ describe("chatbot markdown", () => {
     expect(html).toContain("x_1");
   });
 
+  it.each([
+    ["\\[", "\\]"],
+    ["$$", "$$"],
+  ])("protects multiline %s math from Markdown block parsing", (open, close) => {
+    const formula = `${open}
+\\text{MultiHead}(Q,K,V)
+=
+\\text{Concat}(\\text{head}_1,\\ldots,\\text{head}_h)W^O
+${close}`;
+    const html = renderMarkdown(`Formula:\n${formula}\n\nThe projection mixes heads.`);
+    expect(html).toContain(formula);
+    expect(html).not.toMatch(/<h[1-6]\b/);
+    expect(html).toContain("<p>The projection mixes heads.</p>");
+  });
+
+  it("preserves math across blank lines and escapes HTML inside it", () => {
+    const html = renderMarkdown("\\[\na_b\n\n< a & b\n---\n\\]");
+    expect(html).toContain("\\[\na_b\n\n&lt; a &amp; b\n---\n\\]");
+    expect(html).not.toContain("<hr");
+  });
+
+  it("preserves multiline math inside a list item", () => {
+    const html = renderMarkdown("- Formula:\n  \\[\n  x\n  =\n  y\n  \\]\n- Next item");
+    expect(html).toContain("\\[\nx\n=\ny\n\\]");
+    expect(html).toContain("<li>Next item</li>");
+    expect(html).not.toContain("<h1");
+  });
+
+  it("leaves math delimiters inside code as code", () => {
+    for (const source of ["```text\n\\[\nx\n=\ny\n\\]\n```", "    \\[\n    x\n    \\]"]) {
+      const html = renderMarkdown(source);
+      expect(html).toContain("<pre");
+      expect(html).toContain("<code");
+      expect(html).not.toContain('class="math-block"');
+    }
+  });
+
+  it("does not consume following Markdown for incomplete streamed math", () => {
+    const html = renderMarkdown("\\[\nx\n\n**Still streaming**");
+    expect(html).toContain("<strong>Still streaming</strong>");
+  });
+
   it("preserves $$...$$ inline-math delimiters for MathJax", () => {
     const html = renderMarkdown("Energy is $$ _x_ + y^2^ $$ here.");
     expect(html).toContain("$$ _x_ + y^2^ $$");
