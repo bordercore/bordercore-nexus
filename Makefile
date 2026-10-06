@@ -36,6 +36,18 @@ vite_ec2: vite_build check-env
 deploy: vite
 	git push bordercore master
 
+.PHONY: lumen-install lumen-status lumen-restart
+
+# Run after deploying Lumen code and applying migrations. Only manages the worker.
+lumen-install:
+	ssh $(EC2_HOST) 'set -e; sudo install -m 644 /var/www/django/bordercore/config/supervisor/lumen.conf /etc/supervisor/conf.d/lumen.conf; sudo supervisorctl reread; sudo supervisorctl update lumen; if ! sudo supervisorctl status lumen | grep -q RUNNING; then sudo supervisorctl start lumen; fi; sudo supervisorctl status lumen'
+
+lumen-status:
+	ssh $(EC2_HOST) 'sudo supervisorctl status lumen'
+
+lumen-restart:
+	ssh $(EC2_HOST) 'sudo supervisorctl restart lumen'
+
 admin_ec2:
 	set -e
 	ADMIN_SRC=$$($(PYTHON) -c "import django.contrib.admin, os; print(os.path.join(os.path.dirname(django.contrib.admin.__file__), 'static', 'admin'))")

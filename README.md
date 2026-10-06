@@ -142,6 +142,16 @@ Deployment/setup, against the **intended database and settings module**:
 3. Run `python manage.py run_lumen_worker` as a separate supervised process.
    `config/supervisor/lumen.conf` is a deployment template; align paths, credentials,
    and environment with the web service. `--once` handles at most one queued job.
+   For the existing EC2 deployment, run `make lumen-install` from your local checkout
+   after deploying the code and applying migrations. This installs the deployed
+   Supervisor configuration and starts the worker, with automatic startup on boot
+   and restart after failure. Re-running it leaves an already-running worker alone
+   unless its configuration changed. Use `make lumen-status` to check it and
+   `make lumen-restart` to load worker code changes after later deployments.
+   These commands only manage the worker; set `LUMEN_GENERATION_ENABLED=true` in
+   `/var/www/django/bordercore/config/settings/secrets.env` and reload the web
+   processes separately to enable generation in the UI. Worker logs are at
+   `/var/log/django/lumen.log` on EC2.
 4. Import the old dashboard library explicitly, first with a dry run:
 
    ```bash
