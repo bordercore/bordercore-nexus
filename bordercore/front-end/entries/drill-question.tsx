@@ -118,6 +118,7 @@ if (container) {
       studySession={studySession}
       sqlDb={sqlDb}
       urls={{
+        lumen: container.getAttribute("data-lumen-url") || "",
         drillAdd: drillAddUrl,
         drillAddWithTag: drillAddWithTagUrl,
         drillUpdate: drillUpdateUrl,

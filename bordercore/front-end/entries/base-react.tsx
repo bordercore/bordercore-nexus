@@ -176,6 +176,13 @@ function SidebarContent() {
         icon: { element: "font-awesome-icon", attributes: { icon: "graduation-cap" }, class: "" },
       },
       {
+        href: "/lumen/",
+        title: "Lumen",
+        alias: "/lumen/*",
+        color: "#e8b85a",
+        icon: { element: "font-awesome-icon", attributes: { icon: "graduation-cap" }, class: "" },
+      },
+      {
         href: "/music/",
         title: "Music",
         alias: ["/music/artist/*", "/music/album/*", "/music/tag/*"],

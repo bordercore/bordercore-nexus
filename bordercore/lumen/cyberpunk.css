@@ -1,0 +1,16 @@
+/* Neon Circuit: an intentionally quiet, readable cyberpunk treatment. */
+body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif!important;line-height:1.7!important;background:linear-gradient(#4deaff06 1px,transparent 1px),linear-gradient(90deg,#4deaff06 1px,transparent 1px),radial-gradient(ellipse at 90% 0%,var(--lumen-glow),var(--lumen-bg) 65%)!important;background-size:40px 40px,40px 40px,100% 100%!important}
+h1,h2,h3{font-family:ui-monospace,"Cascadia Code",Consolas,monospace!important;font-weight:700!important;letter-spacing:-.035em!important;line-height:1.25!important;text-transform:uppercase;overflow-wrap:anywhere}
+h1{color:var(--lumen-text)!important;text-shadow:2px 2px 0 #ff68b540,0 0 24px #4deaff15!important}
+h2{color:var(--lumen-accent)!important;border-left:3px solid var(--lumen-rose);padding-left:14px}
+h3{letter-spacing:.06em!important}
+.kicker,.eyebrow{font-family:ui-monospace,Consolas,monospace!important;letter-spacing:.2em!important;color:var(--lumen-gold)!important}
+.card,.panel,.lab,.callout,.studio,.interactive,.exploration,#lumen-review{border-radius:4px!important;border:1px solid var(--lumen-border)!important;border-top:2px solid var(--lumen-accent)!important;background:linear-gradient(135deg,var(--lumen-panel),var(--lumen-bg))!important;box-shadow:0 0 24px #4deaff08,4px 4px 0 #ff68b518!important}
+.formula,.equation,.out,pre{border-radius:4px!important;border:1px solid var(--lumen-border)!important}
+button{font-family:ui-monospace,Consolas,monospace!important;font-weight:700!important;letter-spacing:.06em;border:1px solid var(--lumen-rose)!important;border-radius:3px!important;box-shadow:3px 3px 0 #4deaff35!important}
+button:hover{box-shadow:0 0 14px #ff68b540!important}
+select,input:not([type=range]):not([type=checkbox]):not([type=radio]){border-radius:3px!important}
+input[type=range],input[type=checkbox]{accent-color:var(--lumen-accent)!important}
+#lumen-review{font-family:system-ui,-apple-system,"Segoe UI",sans-serif!important;line-height:1.7!important}
+#lumen-review summary{font-family:ui-monospace,Consolas,monospace!important}
+::selection{background:var(--lumen-accent);color:var(--lumen-bg)}

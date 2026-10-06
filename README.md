@@ -101,3 +101,78 @@ make reset_elasticsearch
 ### Mocking
 
 By default, the test runner sets `MOCK_ELASTICSEARCH=1` for unit and functional tests to avoid external dependencies. If you want to test with a real Elasticsearch instance, ensure `MOCK_ELASTICSEARCH` is not set to `1` in your environment.
+
+### Lumen interactive lessons
+
+Lumen is integrated at `/lumen/`. **Explore with Lumen** on a drill question
+opens its latest lesson (or the creation form) in a separate tab. Generation
+uses the saved question and answer, independently of temporary drill rephrasing.
+Every regeneration preserves earlier versions and their source snapshots.
+
+Each new lesson includes a structured **Accuracy check** card. If the model identifies
+a factual issue, the card previews the complete corrected question and answer and
+provides **Correct original question and answer**. Clicking it updates only those
+two drill fields and the modification timestamp, and refreshes the search index.
+The original lesson snapshot, versions, tags, and review schedule are preserved.
+A newer edit to the drill blocks the correction; regenerate before applying another
+proposal. Repeated clicks are safe. This is a model assessment, not independent
+fact-checking; uncertain assessments do not offer a correction.
+
+Older lessons offer **Check accuracy**, which queues a paid source-only assessment
+using the selected provider/model without regenerating their HTML. It prepares a
+proposal; applying it always requires a separate click. Assessments and correction
+buttons are rendered by the trusted app, outside the generated HTML sandbox.
+
+
+**Preferences → Lumen → Lumen lesson theme** selects Midnight Scholar, Paper &
+Ink, Forest Study, or Neon Circuit independently of the Bordercore application
+theme. The choice applies to saved versions and HTML downloads without rewriting
+archives or calling a model. Open readers refresh the theme on focus or within
+five seconds. Provider/model preferences are set on the Lumen page. Credentials
+come only from the server environment loaded by Django: `ANTHROPIC_API_KEY`,
+`OPENAI_API_KEY`, and `OPENROUTER_API_KEY` (or `OPENROUTER_KEY`). No Bordercore
+API token is needed.
+
+Deployment/setup, against the **intended database and settings module**:
+
+1. Apply migrations using `python manage.py migrate` and build assets using
+   `NODE_ENV=production npm run vite:build` from `bordercore/`.
+2. Set `LUMEN_GENERATION_ENABLED=true` in both the web and worker environments.
+   It defaults to false; the library remains readable while generation is disabled.
+3. Run `python manage.py run_lumen_worker` as a separate supervised process.
+   `config/supervisor/lumen.conf` is a deployment template; align paths, credentials,
+   and environment with the web service. `--once` handles at most one queued job.
+4. Import the old dashboard library explicitly, first with a dry run:
+
+   ```bash
+   python manage.py import_lumen_library ~/drill-lessons --user <username> --dry-run
+   python manage.py import_lumen_library ~/drill-lessons --user <username>
+   ```
+
+The importer reads SQLite in read-only mode, preserves IDs/timestamps/HTML, checks
+metadata and ownership, skips identical versions, and aborts atomically on conflicts.
+Missing questions retain their archived sources. It imports provider/model/theme
+preferences only when that user has no Lumen preferences yet. It never changes the
+source library or imports interrupted dashboard jobs.
+
+PostgreSQL stores both HTML and metadata, so normal database backups cover the
+library. The queue is limited to four active/queued jobs, with one active job per
+user/question. Run one worker initially. Job claims are safe across worker processes;
+provider calls happen outside database transactions. A 15-minute lease exceeds the
+10-minute provider read timeout. Expired jobs fail without automatically repeating a
+potentially billed call. Explicit regeneration retries with a new job. A stopped
+worker leaves queued jobs for its replacement. Supervisor allows in-flight requests
+to finish during graceful shutdown.
+
+Generated HTML is untrusted: authenticated views serve it with restrictive CSP and
+an `allow-scripts` iframe sandbox, without same-origin privileges. Only the lesson
+endpoint permits same-origin framing. Downloads retain a restrictive CSP meta tag;
+model explanations and scripts may still contain errors. Legacy canvas pixels may
+not adapt to new themes; this matches the original dashboard's limitation.
+
+Tests use synthetic provider responses. With local PostgreSQL configured, run:
+
+```bash
+python -m pytest bordercore/lumen/tests/test_lumen.py
+python -m pytest bordercore/lumen/tests/test_browser.py  # Firefox/geckodriver + built assets
+```

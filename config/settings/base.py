@@ -173,6 +173,7 @@ INSTALLED_APPS = (
     "book",
     "collection",
     "drill",
+    "lumen",
     "feed",
     "fitness",
     "habit",
@@ -359,3 +360,8 @@ if SENTRY_DSN:
         environment=os.environ.get("SENTRY_ENVIRONMENT", "production"),
         before_send=filter_channel_layer_redis_errors,
     )
+
+# Lumen generation is opt-in; the library remains readable when disabled.
+LUMEN_GENERATION_ENABLED = os.environ.get("LUMEN_GENERATION_ENABLED", "false").lower() == "true"
+LUMEN_QUEUE_LIMIT = 4
+LUMEN_JOB_TIMEOUT_SECONDS = 900

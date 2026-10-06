@@ -103,6 +103,7 @@ interface DrillQuestionPageProps {
   studySession: StudySession | null;
   sqlDb: { blob: { uuid: string } } | null;
   urls: {
+    lumen: string;
     drillAdd: string;
     drillAddWithTag: string;
     drillUpdate: string;
@@ -440,6 +441,7 @@ export function DrillQuestionPage({
         <div className="drill-main">
           <QuestionCard
             questionHtml={questionHtml}
+            lumenUrl={urls.lumen}
             answerHtml={answerHtml}
             tags={question.tags}
             intervals={intervals}

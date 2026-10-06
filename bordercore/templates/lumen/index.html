@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load vite_tags %}
+{% block title %}Lumen · Interactive lessons{% endblock %}
+{% block crumb_leaf %}Lumen{% endblock %}
+{% block content %}
+{{ lumen_config|json_script:"lumen-config" }}
+<div id="lumen-root" class="grow"></div>
+{% endblock %}
+{% block javascript_bundles %}
+{{ block.super }}
+{% vite_asset "dist/js/lumen" %}
+{% endblock %}

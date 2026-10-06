@@ -7,6 +7,7 @@ from typing import Any
 
 from django.forms import (ModelChoiceField, ModelForm, Select, Textarea,
                           TextInput, TypedChoiceField)
+from django.utils.datastructures import MultiValueDict
 
 from accounts.models import UserProfile
 from collection.models import Collection
@@ -48,6 +49,12 @@ class UserProfileForm(ModelForm):
         self.request = kwargs.pop("request", None)
 
         super().__init__(*args, **kwargs)
+
+        # Preserve this preference for older clients/forms opened before Lumen shipped.
+        if self.is_bound and "lumen_theme" not in self.data:
+            data = self.data.copy() if isinstance(self.data, MultiValueDict) else dict(self.data)
+            data["lumen_theme"] = self.instance.lumen_theme
+            self.data = data
 
         self.fields["drill_intervals"].widget.attrs["class"] = "form-control"
         self.fields["nytimes_api_key"].label = "NYTimes API key"
@@ -91,6 +98,7 @@ class UserProfileForm(ModelForm):
         model = UserProfile
         fields = (
             "theme",
+            "lumen_theme",
             "background_image",
             "sidebar_image",
             "homepage_default_collection",

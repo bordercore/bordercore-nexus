@@ -92,6 +92,10 @@ const ROUTES: Array<{ prefix: string; section: Section }> = [
     section: { icon: faBox, defaultTitle: "Nodes", label: "nodes", rootUrl: "/node/" },
   },
   {
+    prefix: "/lumen/",
+    section: { icon: faGraduationCap, defaultTitle: "Lumen", label: "lumen", rootUrl: "/lumen/" },
+  },
+  {
     prefix: "/music/",
     section: { icon: faMusic, defaultTitle: "Music", label: "music", rootUrl: "/music/" },
   },

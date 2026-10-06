@@ -107,6 +107,12 @@ class UserProfile(models.Model):
         default=DEFAULT_THEME,
     )
 
+    lumen_theme = models.CharField(
+        max_length=32, default="midnight-scholar",
+        choices=[("midnight-scholar", "Midnight Scholar"), ("paper-ink", "Paper & Ink"),
+                 ("forest-study", "Forest Study"), ("neon-circuit", "Neon Circuit")],
+    )
+
     @property
     def sidebar_order_json(self) -> str:
         """Return sidebar_order serialized as a JSON string for template embedding."""

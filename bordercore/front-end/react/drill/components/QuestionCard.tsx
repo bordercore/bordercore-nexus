@@ -12,6 +12,7 @@ interface IntervalEntry {
 }
 
 interface QuestionCardProps {
+  lumenUrl: string;
   questionHtml: string;
   answerHtml: string;
   tags: { name: string }[];
@@ -33,6 +34,7 @@ interface QuestionCardProps {
 }
 
 export function QuestionCard({
+  lumenUrl,
   questionHtml,
   answerHtml,
   tags,
@@ -92,6 +94,14 @@ export function QuestionCard({
       />
 
       <div className="utility-row">
+        <a
+          href={lumenUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn btn-sm btn-outline-primary"
+        >
+          Explore with Lumen ↗
+        </a>
         {(canRephrase || sqlPlaygroundUrl) && (
           <div className="rephrase-group">
             {canRephrase && (

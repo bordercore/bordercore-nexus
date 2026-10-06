@@ -1,0 +1,28 @@
+/* Midnight Scholar's editorial typography, shared by all lesson palettes. */
+html {color-scheme:dark}
+body {margin:0!important;background:radial-gradient(circle at 15% 0%,var(--lumen-glow) 0,var(--lumen-bg) 55%)!important;color:var(--lumen-text)!important;font-family:Georgia,"Iowan Old Style","Palatino Linotype",serif!important;line-height:1.65!important;font-size:18px!important}
+body>main,body>.wrap,body>.wrapper,body>.container {max-width:980px!important;margin:0 auto!important;padding:2.5rem 1.25rem 4rem!important}
+h1 {font-family:Georgia,"Iowan Old Style",serif!important;font-size:clamp(2rem,5vw,3.2rem)!important;line-height:1.1!important;font-weight:normal!important;color:var(--lumen-text)!important}
+h2 {font-family:Georgia,"Iowan Old Style",serif!important;font-size:1.65rem!important;font-weight:normal!important;color:var(--lumen-accent)!important}
+h3 {font-family:system-ui,sans-serif!important;font-size:1rem!important;color:var(--lumen-gold)!important}
+p,li {color:inherit}
+.lede,.lead,.subtitle,.muted {color:var(--lumen-muted)!important}
+.kicker,.eyebrow {font-family:system-ui,sans-serif!important;letter-spacing:.18em!important;text-transform:uppercase;color:var(--lumen-gold)!important;font-size:.78rem!important}
+.card,.panel,.lab,.callout,.studio,.interactive,.exploration {background:linear-gradient(160deg,var(--lumen-panel),var(--lumen-bg))!important;border-color:var(--lumen-border)!important;border-radius:18px!important;color:var(--lumen-text)!important;box-shadow:0 10px 30px #0003!important}
+.formula,.equation,.out,pre {background:var(--lumen-inset)!important;color:var(--lumen-text)!important;border-radius:12px!important}
+code,.mono {font-family:ui-monospace,Menlo,Consolas,monospace!important;color:var(--lumen-teal)!important}
+label,button,input,select,output,table {font-family:system-ui,sans-serif!important}
+label {color:var(--lumen-muted)!important}
+button {background:var(--lumen-button)!important;color:#fff!important;border:0!important;border-radius:999px!important;padding:.5rem 1.1rem!important;cursor:pointer}
+button:hover {filter:brightness(1.12)}
+select,input:not([type=range]):not([type=checkbox]):not([type=radio]) {background:var(--lumen-inset)!important;color:var(--lumen-text)!important;border:1px solid var(--lumen-border)!important;border-radius:8px}
+input {accent-color:var(--lumen-gold)!important}
+th,td {border-color:var(--lumen-border)!important}
+svg text {fill:var(--lumen-text)!important}
+:focus-visible {outline:3px solid var(--lumen-gold)!important;outline-offset:3px!important}
+#lumen-review {max-width:980px!important;background:var(--lumen-panel)!important;color:var(--lumen-text)!important;border-color:var(--lumen-border)!important;border-radius:18px!important;font:18px/1.65 Georgia,"Iowan Old Style",serif!important}
+#lumen-review p {color:var(--lumen-text)!important}
+#lumen-review small {color:var(--lumen-muted)!important}
+#lumen-review details {border-color:var(--lumen-border)!important}
+#lumen-review summary {color:var(--lumen-text)!important}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}

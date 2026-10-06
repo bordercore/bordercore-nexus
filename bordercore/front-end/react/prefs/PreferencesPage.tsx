@@ -43,6 +43,7 @@ export interface PreferencesPageProps {
 interface FieldState {
   eyeCandy: boolean;
   theme: string;
+  lumenTheme: string;
   topbarAnimation: string;
   visualizer: string;
   background: FileDropValue;
@@ -169,6 +170,7 @@ export function PreferencesPage(props: PreferencesPageProps) {
     return {
       eyeCandy,
       theme: themeField?.value || "",
+      lumenTheme: getField(formFields, "lumen_theme")?.value || "midnight-scholar",
       topbarAnimation: topbarAnimationField?.value || "aurora",
       visualizer: visualizerField?.value || "torus",
       background: {
@@ -252,6 +254,7 @@ export function PreferencesPage(props: PreferencesPageProps) {
     const form = new FormData();
 
     form.append("theme", state.theme);
+    form.append("lumen_theme", state.lumenTheme);
     form.append("topbar_animation", state.topbarAnimation);
     form.append("visualizer", state.visualizer);
     form.append("eye_candy", state.eyeCandy ? "true" : "false");
@@ -435,6 +438,23 @@ export function PreferencesPage(props: PreferencesPageProps) {
           </Row>
           <Row label="Sidebar image" hint="left-rail artwork" errors={fieldErrors.sidebar_image}>
             <FileDrop value={state.sidebar} onChange={upd("sidebar")} kind="Sidebar" />
+          </Row>
+        </SectionCard>
+
+        <SectionCard title="Lumen" meta="interactive lessons">
+          <Row
+            label="Lumen lesson theme"
+            hint="Independent of the Bordercore theme. Applies to all saved versions and downloads without regeneration."
+            errors={fieldErrors.lumen_theme}
+          >
+            <Select
+              id="id_lumen_theme"
+              value={state.lumenTheme}
+              onChange={upd("lumenTheme")}
+              options={(getField(formFields, "lumen_theme")?.choices || []).map(
+                ([value, label]) => ({ value, label })
+              )}
+            />
           </Row>
         </SectionCard>
 

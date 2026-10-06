@@ -35,6 +35,7 @@
 {% block content %}
 
     <div id="react-root" class="grow flex flex-col min-h-0"
+        data-lumen-url="{% url 'lumen:index' %}?question={{ question.uuid }}"
         data-drill-add-url="{% url 'drill:add' %}"
         data-drill-add-with-tag-url="{% if object.tags.all %}{% url 'drill:add_with_tag' object.tags.all.0 %}{% else %}{% url 'drill:add' %}{% endif %}"
         data-drill-update-url="{% url 'drill:update' question.uuid %}"
