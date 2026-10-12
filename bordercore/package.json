@@ -116,6 +116,8 @@
   },
   "overrides": {
     "glob-parent": "5.1.2",
-    "markdown-it": "$markdown-it"
+    "markdown-it": "$markdown-it",
+    "@xmldom/xmldom": "0.9.12",
+    "postcss-selector-parser": "7.1.6"
   }
 }
