@@ -38,7 +38,7 @@ except (ImportError, ModuleNotFoundError):
 
 import requests
 from openai import OpenAI
-from trafilatura import bare_extraction, extract, extract_metadata, fetch_url
+from trafilatura import bare_extraction, extract, extract_metadata
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -63,10 +63,20 @@ from lib.constants import USER_AGENT
 from lib.exceptions import (NodeNotFoundError, ObjectAlreadyRelatedError,
                             RelatedObjectNotFoundError,
                             UnsupportedNodeTypeError)
-from lib.util import get_elasticsearch_connection, is_image, is_pdf, is_video
+from lib.util import (UnsafeURLError, fetch_url_safely,
+                      get_elasticsearch_connection, is_image, is_pdf, is_video)
 from search.services import semantic_search
 
 log = logging.getLogger(__name__)
+
+# Keep each download attempt short and avoid the retries/backoff in trafilatura's
+# downloader, which can outlast a synchronous web worker's request timeout.
+ARTICLE_DOWNLOAD_TIMEOUT = 3
+ARTICLE_MAX_REDIRECTS = 2
+
+
+class BlobImportError(ValueError):
+    """An expected import failure with a message suitable for the user."""
 
 
 def get_recent_blobs(user: User, limit: int = 10, skip_content: bool = False) -> tuple[list[dict[str, Any]], dict[str, int]]:
@@ -856,7 +866,7 @@ def import_blob(user: User, url: str) -> Blob | dict[str, Any]:
         article data if generic extraction was used.
 
     Raises:
-        ValueError: If the domain is not supported and generic extraction fails.
+        BlobImportError: If the page cannot be downloaded or extracted.
     """
 
     parsed_url = urlparse(url)
@@ -881,7 +891,7 @@ def import_blob(user: User, url: str) -> Blob | dict[str, Any]:
     if extracted_data["success"]:
         return extracted_data
 
-    raise ValueError(f"Site not supported for importing: \"{domain}\". Generic extraction also failed: {extracted_data.get('error')}")
+    raise BlobImportError(extracted_data["error"])
 
 
 def extract_article_data(url: str) -> dict[str, Any]:
@@ -901,11 +911,18 @@ def extract_article_data(url: str) -> dict[str, Any]:
             - error: Error message if success is False.
     """
     try:
-        downloaded = fetch_url(url)
+        with fetch_url_safely(
+            url,
+            headers={"User-Agent": USER_AGENT},
+            timeout=ARTICLE_DOWNLOAD_TIMEOUT,
+            max_redirects=ARTICLE_MAX_REDIRECTS,
+        ) as response:
+            response.raise_for_status()
+            downloaded = response.content
         if not downloaded:
             return {
                 "success": False,
-                "error": "Failed to download content from URL.",
+                "error": "That page is empty. Check the URL or try another page.",
                 "url": url
             }
 
@@ -934,7 +951,7 @@ def extract_article_data(url: str) -> dict[str, Any]:
         if not content and not metadata:
             return {
                 "success": False,
-                "error": "Failed to extract article content or metadata.",
+                "error": "We couldn't find article content on that page. Try another URL or create the blob manually.",
                 "url": url
             }
 
@@ -951,10 +968,29 @@ def extract_article_data(url: str) -> dict[str, Any]:
             "url": url
         }
 
-    except Exception as e:
+    except requests.Timeout:
         return {
             "success": False,
-            "error": str(e),
+            "error": "That website took too long to respond. Please try again later or create the blob manually.",
+            "url": url,
+        }
+    except requests.RequestException:
+        return {
+            "success": False,
+            "error": "We couldn't download that page. Check that it opens in your browser, or try again later.",
+            "url": url,
+        }
+    except UnsafeURLError:
+        return {
+            "success": False,
+            "error": "We couldn't open that URL. Please use a direct link to a public http or https page.",
+            "url": url,
+        }
+    except Exception:
+        log.exception("Unexpected error extracting an article for blob import")
+        return {
+            "success": False,
+            "error": "We couldn't import that page. Please try again later or create the blob manually.",
             "url": url
         }
 
@@ -998,7 +1034,7 @@ def parse_shortcode(shortcode: str) -> str:
             return match.group(1)
 
     # If we got this far, we couldn't parse the shortcode
-    raise ValueError(f"Can't parse shortcode from {shortcode}")
+    raise BlobImportError("We couldn't recognize that post URL. Please copy the direct link to the post.")
 
 
 def get_sha1sum(filename: str) -> str:
@@ -1087,7 +1123,7 @@ def import_instagram(user: User, parsed_url: ParseResult) -> Blob:
     """
 
     if not user.userprofile.instagram_credentials:
-        raise ValueError("Please provide your Instagram credentials in <a href='" + reverse('accounts:prefs') + "'>preferences</a>.")
+        raise BlobImportError("Please add your Instagram credentials in account preferences.")
 
     if instaloader is None:
         raise ImportError("instaloader is not installed (requires lzma support)")
@@ -1101,9 +1137,9 @@ def import_instagram(user: User, parsed_url: ParseResult) -> Blob:
         )
     except Exception as e:
         if str(e).find("Wrong password") != -1:
-            raise ValueError("Login error. Please check your Instagram password in <a href='" + reverse('accounts:prefs') + "'>preferences</a>.")
+            raise BlobImportError("Please check your Instagram password in account preferences.")
         if str(e).find("does not exist") != -1:
-            raise ValueError("Login error. Please check your Instagram username in <a href='" + reverse('accounts:prefs') + "'>preferences</a>.")
+            raise BlobImportError("Please check your Instagram username in account preferences.")
         raise Exception(f"{type(e)}: {e}")
 
     short_code = parse_shortcode(parsed_url.geturl())
@@ -1112,7 +1148,7 @@ def import_instagram(user: User, parsed_url: ParseResult) -> Blob:
         post = Post.from_shortcode(loader.context, short_code)
     except Exception as e:
         if str(e).find("Fetching Post metadata failed") != -1:
-            raise ValueError("Instagram post not found.")
+            raise BlobImportError("Instagram post not found.")
         raise Exception(e)
 
     o = urlparse(post.url)
@@ -1178,7 +1214,7 @@ def import_artstation(user: User, parsed_url: ParseResult) -> Blob:
     result = requests.get(url, headers=headers, timeout=10)
 
     if not result.ok:
-        raise ValueError(f"Error importing image: {result.reason}")
+        raise BlobImportError("We couldn't download that ArtStation artwork. Check the URL or try again later.")
 
     result = result.json()
 
@@ -1274,7 +1310,7 @@ def import_newyorktimes(user: User, url: str) -> Blob:
 
     api_key = user.userprofile.nytimes_api_key
     if not api_key:
-        raise ValueError("Please provide your NYTimes API key in <a href='" + reverse('accounts:prefs') + "'>preferences</a>.")
+        raise BlobImportError("Please add your New York Times API key in account preferences.")
 
     # Remove any extraneous search-args from the url
     url = url.split("?")[0]
@@ -1284,15 +1320,15 @@ def import_newyorktimes(user: User, url: str) -> Blob:
     result = r.json()
 
     if result["status"] == "ERROR":
-        raise ValueError(f"There was an error retrieving the article: {result['errors']}")
+        raise BlobImportError("The New York Times couldn't return that article. Please try again later.")
 
     matches = result["response"]["docs"]
 
     if not matches:
-        raise ValueError("Error: API returned null")
+        raise BlobImportError("No New York Times article was found at that URL. Please check the link.")
 
     if len(matches) > 1:
-        raise ValueError("Error: found more than one article matching that url")
+        raise BlobImportError("More than one New York Times article matched that URL. Please use a direct article link.")
 
     date = datetime.datetime.strptime(matches[0]["pub_date"], "%Y-%m-%dT%H:%M:%S%z").strftime("%Y-%m-%d")
 

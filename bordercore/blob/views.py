@@ -42,7 +42,7 @@ from blob.forms import BlobForm
 from blob.models import (Blob, BlobTemplate, BlobToObject, MetaData,
                          RecentlyViewedBlob)
 from blob.services import add_related_object as add_related_object_service
-from blob.services import (chatbot, chatbot_followups,
+from blob.services import (BlobImportError, chatbot, chatbot_followups,
                            generate_note_thumbnail, get_book_tag_categories,
                            get_books, get_node_to_object_query,
                            get_recent_books, get_recently_viewed,
@@ -775,7 +775,7 @@ class BlobImportView(LoginRequiredMixin, View):
             redirect to the create blob page if generic extraction was used,
             or render import template with errors on failure.
         """
-        url = request.POST.get("url", None)
+        url = request.POST.get("url", "").strip()
 
         user = cast(User, request.user)
         result: Blob | dict[str, Any] | None = None
@@ -784,8 +784,15 @@ class BlobImportView(LoginRequiredMixin, View):
         else:
             try:
                 result = import_blob(user, url)
-            except Exception as e:
+            except BlobImportError as e:
                 messages.add_message(request, messages.ERROR, str(e))
+            except Exception:
+                log.exception("Unexpected error importing a blob")
+                messages.add_message(
+                    request,
+                    messages.ERROR,
+                    "We couldn't import that page. Please try again later or create the blob manually.",
+                )
 
         if result:
             if isinstance(result, Blob):

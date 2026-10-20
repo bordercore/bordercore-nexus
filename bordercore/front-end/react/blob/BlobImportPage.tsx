@@ -158,8 +158,7 @@ export function BlobImportPage({
                 <FontAwesomeIcon icon={faExclamationTriangle} className="bi-message-icon" />
                 {/*
                   Render as text — server messages can include user-controlled
-                  URL fragments. The literal <strong> tags from services.py
-                  show up verbatim, matching the previous behavior.
+                  URL fragments.
                 */}
                 <div className="bi-message-body">{msg.body}</div>
                 <button
