@@ -1,10 +1,10 @@
-FROM public.ecr.aws/lambda/python:3.10
+FROM public.ecr.aws/lambda/python:3.13
 
 # Copy requirements.txt
 COPY requirements.txt ${LAMBDA_TASK_ROOT}
 
 # Install fonts for text thumbnails and Python dependencies
-RUN yum install -y dejavu-sans-fonts && yum clean all
+RUN dnf install -y dejavu-sans-fonts && dnf clean all
 RUN pip install -r requirements.txt
 
 # Copy function code
