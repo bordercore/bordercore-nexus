@@ -92,6 +92,7 @@ module.exports = defineConfig({
         "dist/js/drill-question": path.resolve(__dirname, "front-end", "entries", "drill-question.tsx"),
         "dist/js/drill-question-edit": path.resolve(__dirname, "front-end", "entries", "drill-question-edit.tsx"),
         "dist/js/fitness-summary": path.resolve(__dirname, "front-end", "entries", "fitness-summary.tsx"),
+        "dist/js/quantified-self": path.resolve(__dirname, "front-end", "entries", "quantified-self.tsx"),
         "dist/js/habit-list": path.resolve(__dirname, "front-end", "entries", "habit-list.tsx"),
         "dist/js/habit-detail": path.resolve(__dirname, "front-end", "entries", "habit-detail.tsx"),
         "dist/js/fitness-exercise-detail": path.resolve(__dirname, "front-end", "entries", "fitness-exercise-detail.tsx"),

@@ -13,6 +13,7 @@ from api.views import (AlbumViewSet, BlobSha1sumViewSet, BlobViewSet,
 from bordercore.api.views import PlaylistItemViewSet, PlaylistViewSet
 from collection.views import get_images
 from homepage.views import robots_txt
+from quantified_self.views import ingest_awakening
 from lib.services import extract_text, site_stats, whoami
 from music.views import mark_song_as_listened_to
 from search.api import search_music
@@ -33,6 +34,7 @@ for app in ("accounts", "blob", "bookmark", "collection", "drill", "feed", "fitn
     ]
 
 urlpatterns += [
+    path("quantified-self/", include("quantified_self.urls", namespace="quantified_self")),
     path("", include("homepage.urls", namespace="homepage")),
 ]
 
@@ -66,6 +68,7 @@ router.register(r"reminders", ReminderViewSet, "reminder")
 
 urlpatterns += [
     # Specific API paths must come before the router include
+    path("api/quantified-self/awakenings/", ingest_awakening, name="ingest_awakening"),
     path("api/collections/images/<uuid:collection_uuid>/", get_images),
     path("api/music/mark_song_as_listened_to/<uuid:song_uuid>/", mark_song_as_listened_to, name="mark_song_as_listened_to"),
     path("api/site/stats", site_stats),

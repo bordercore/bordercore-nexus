@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% load vite_tags %}
+{% block title %}Quantified Self{% endblock %}
+{% block content %}
+<div id="react-root" data-api-root="{% url 'quantified_self:index' %}"></div>
+{% endblock %}
+{% block javascript_bundles %}
+{{ block.super }}
+{% vite_asset "dist/js/quantified-self" %}
+{% endblock %}
