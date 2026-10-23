@@ -17,7 +17,7 @@ from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.views.decorators.csrf import ensure_csrf_cookie
 
-from . import analytics, imports
+from . import analytics, apple_health, imports
 from .models import ImportBatch, SleepNight
 from .services import (KINDS, ZONE, fail, lock_user, parse_date, save_record,
                        serialize)
@@ -120,7 +120,9 @@ def review_nights(request: Request) -> Response:
 def import_preview(request: Request, kind: str) -> Response:
     upload = request.FILES.get("file")
     if upload is None:
-        fail("Choose a CSV file.")
+        fail("Choose an Apple Health ZIP file." if kind == "apple-health" else "Choose a CSV file.")
+    if kind == "apple-health":
+        return Response(apple_health.preview(request.user, upload))
     if upload.size > 2 * 1024 * 1024:
         fail("CSV files must be no larger than 2 MB.")
     return Response(imports.preview(request.user, kind, request.data.get("source", "CSV"), upload.read()))
@@ -129,6 +131,8 @@ def import_preview(request: Request, kind: str) -> Response:
 @api_view(["POST"])
 def import_commit(request: Request, uuid: UUID) -> Response:
     batch = get_object_or_404(ImportBatch, uuid=uuid, user=request.user)
+    if batch.kind == "apple-health":
+        return Response(apple_health.commit(request.user, batch))
     return Response(imports.commit(request.user, batch, request.data.get("include_duplicates", [])))
 
 

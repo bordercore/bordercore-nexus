@@ -89,6 +89,38 @@ with a leading apostrophe to prevent spreadsheet formula execution. Reimport rem
 that escape exactly, preserving notes, IDs, source names, and offsets. Do not add the
 format marker to third-party files unless using the same encoding.
 
+## Apple Health ZIP
+
+Select **Apple Health ZIP** in Imports and upload the iPhone's Export All Health
+Data archive. Preview shows weight and blood-pressure totals, new/existing counts,
+sources, date ranges, pairing warnings, and up to 50 recent readings. Confirm saves
+both trackers atomically. Sleep, pulse, workouts, and clinical data are not imported.
+No schema migration is needed beyond the initial Quantified Self migration.
+
+The importer streams only `apple_health_export/export.xml` (or root `export.xml`)
+without extracting the archive. Limits: 512 MB ZIP, 4 GB XML, 10,000 archive entries,
+200,000 relevant XML records, and 20,000 distinct readings. Parsing happens before
+acquiring the account write lock. Only selected measurements are saved in the
+preview batch; the original ZIP and unrelated health data are not retained.
+
+Sources are named `Apple Health · <sourceName>`. Reading identities hash the tracker,
+source, UTC start timestamp, and measurement values, independently of ZIP filename,
+record ordering, creation dates, and optional Apple metadata. Weight identity uses
+kilograms to six decimal places; stored lb/kg values round to three decimal places
+(grams convert to kg). Blood-pressure components pair only when source, start, and
+end timestamps match and each component has one distinct value. Repeated top-level
+and correlation-nested records collapse; incomplete or ambiguous groups are skipped
+and counted in the preview. Pulse matching is deferred.
+
+Explicit UTC offsets determine the instant. Display dates/times use `HKTimeZone`
+when valid, otherwise America/New_York. This avoids interpreting historical export
+offsets as the current daylight-saving offset. Reimport never overwrites website
+edits or exclusions. Concurrent commits serialize on the account and recheck IDs;
+database uniqueness enforces the source/ID identity. Different sources or changed
+measurement values are distinct observations; this is not fuzzy matching against
+manually entered readings. Replaying an already committed batch returns its original
+result. Invalid relevant records reject the preview without importing any readings.
+
 ## Validation
 
 Run `pytest bordercore/quantified_self/tests` against an isolated PostgreSQL test
