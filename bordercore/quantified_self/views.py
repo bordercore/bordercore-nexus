@@ -1,4 +1,6 @@
 """Authenticated, account-scoped HTML and JSON endpoints."""
+import json
+import logging
 from datetime import date, timedelta
 from typing import Any
 from uuid import UUID
@@ -19,8 +21,11 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 
 from . import analytics, apple_health, import_progress, imports
 from .models import ImportBatch, SleepNight
-from .services import (KINDS, ZONE, fail, lock_user, parse_date, save_record,
+from .services import (KINDS, ZONE, fail, lock_user, normalize, parse_date, save_record,
                        serialize)
+
+logger = logging.getLogger(f"bordercore.{__name__}")
+
 
 @login_required
 @ensure_csrf_cookie
@@ -171,11 +176,23 @@ def download(request: Request, kind: str) -> HttpResponse:
 
 @api_view(["POST"])
 def ingest_awakening(request: Request) -> Response:
-    """Record idempotent awakening events from an authenticated listener."""
+    """Log live switch deliveries; only overnight occurrences become awakenings."""
     if not isinstance(request.data, dict):
         fail("Expected an event object.")
     for field in ("source", "external_id", "timestamp"):
         if not isinstance(request.data.get(field), str) or not request.data[field].strip():
             fail(f"Automatic ingestion requires {field}.")
+    values = normalize("awakenings", request.data)
+    local = values["occurred_at"].astimezone(ZoneInfo(ZONE))
+    event = {"user_id": request.user.pk, "source": request.data["source"][:100],
+             "external_id": values["external_id"], "timestamp": local.isoformat(), "timezone": ZONE}
+    # Log receipt before filtering or writing, so a daytime test or failed write
+    # still leaves a diagnostic trace. JSON escapes newlines in caller fields.
+    logger.info("Awakening switch press: %s", json.dumps({**event, "status": "received"}))
+    if 9 <= local.hour < 22:
+        logger.info("Awakening switch press: %s", json.dumps({**event, "status": "ignored", "reason": "outside_sleep_window"}))
+        return Response({"status": "ignored", "reason": "outside_sleep_window"})
     row, created = save_record(request.user, "awakenings", request.data)
+    logger.info("Awakening switch press: %s", json.dumps({**event,
+        "status": "recorded" if created else "duplicate", "uuid": str(row.uuid)}))
     return Response(serialize("awakenings", row), status=201 if created else 200)

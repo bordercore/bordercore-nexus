@@ -65,6 +65,22 @@ Example JSON:
 All three identity/time fields are required. The authenticated account owns the
 record. A new event returns 201. Replaying the same source and external ID returns
 200 and the existing record without overwriting website corrections or exclusions.
+Automatic switch presses create awakenings only from **22:00 inclusive to 09:00
+exclusive in America/New_York**, with daylight saving handled by the timezone.
+The filter uses the supplied occurrence timestamp, not the time a delayed request
+arrives. Valid daytime presses return HTTP 200 with
+`{"status": "ignored", "reason": "outside_sleep_window"}`; the listener should
+acknowledge them without retrying. They create no observation, source, or night and
+do not change night completeness. Manual entries and CSV imports remain unrestricted.
+
+Every valid delivery, including daytime tests and retries, is logged through
+`bordercore.quantified_self.views`: receipt first, then `recorded`, `duplicate`, or
+`ignored`. Logs include the account ID, source, external event ID, and New York
+occurrence timestamp. A receipt is retained even if the subsequent database write
+fails. Development logs go to the server console; production logs go to
+`/var/log/django/bordercore.log` under the existing rotation policy. Daytime test
+presses are diagnostic log entries, not awakening rows.
+
 IDs must identify occurrences, not device names or rounded timestamps. Distinct IDs
 at nearby times remain distinct events. Capture and durable retry are the future
 listener's responsibility. There is no listener status/heartbeat UI until it exists.

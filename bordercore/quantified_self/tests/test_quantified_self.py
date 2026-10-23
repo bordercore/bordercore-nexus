@@ -1,4 +1,5 @@
 """Behavioral coverage for measurements, night boundaries, imports and ownership."""
+import json
 from datetime import date, datetime
 from datetime import timezone as dt_timezone
 from decimal import Decimal
@@ -6,7 +7,7 @@ from zoneinfo import ZoneInfo
 
 import pytest
 from quantified_self import analytics, imports
-from quantified_self.models import AwakeningEvent, SleepNight, WeightReading
+from quantified_self.models import AwakeningEvent, DataSource, SleepNight, WeightReading
 from quantified_self.services import normalize, save_record, serialize
 from rest_framework.exceptions import ValidationError
 from rest_framework.test import APIClient
@@ -222,6 +223,86 @@ def test_automatic_ingestion_requires_identity_and_supports_token_auth(owner):
     replay = client.post(url, awakening(), format="json")
     assert first.status_code == 201 and replay.status_code == 200
     assert first.json()["uuid"] == replay.json()["uuid"]
+
+
+@pytest.mark.parametrize("stamp, accepted", [
+    ("2026-01-09T21:59:59.999999-05:00", False),
+    ("2026-01-09T22:00:00-05:00", True),
+    ("2026-01-10T00:00:00-05:00", True),
+    ("2026-01-10T08:59:59.999999-05:00", True),
+    ("2026-01-10T09:00:00-05:00", False),
+    ("2026-01-10T12:00:00-05:00", False),
+    ("2026-01-10T02:00:00Z", False),  # 21:00 the previous day in New York
+    ("2026-01-10T03:00:00Z", True),
+    ("2026-07-10T02:00:00Z", True),  # 22:00 with daylight saving
+    ("2026-07-10T13:00:00Z", False),
+    ("2025-11-02T01:30:00-04:00", True),
+    ("2025-11-02T01:30:00-05:00", True),
+])
+def test_switch_window_and_logging(client, caplog, stamp, accepted):
+    caplog.set_level("INFO", logger="bordercore.quantified_self.views")
+    response = client.post("/api/quantified-self/awakenings/", awakening(timestamp=stamp), format="json")
+    assert response.status_code == (201 if accepted else 200)
+    assert AwakeningEvent.objects.count() == int(accepted)
+    assert SleepNight.objects.count() == int(accepted)
+    assert DataSource.objects.count() == int(accepted)
+    events = [json.loads(record.getMessage().split(": ", 1)[1]) for record in caplog.records
+              if record.name == "bordercore.quantified_self.views"]
+    assert [event["status"] for event in events] == ["received", "recorded" if accepted else "ignored"]
+    assert all(event["external_id"] == "press-1" and event["source"] == "Wumpus" for event in events)
+    assert events[-1]["timezone"] == "America/New_York"
+    if not accepted:
+        assert response.json() == {"status": "ignored", "reason": "outside_sleep_window"}
+
+
+def test_daytime_switch_retry_does_not_reopen_reviewed_night(owner, client, caplog):
+    caplog.set_level("INFO", logger="bordercore.quantified_self.views")
+    night = SleepNight.objects.create(user=owner, date="2026-01-10", status="complete")
+    for _ in range(2):
+        response = client.post("/api/quantified-self/awakenings/",
+                               awakening(timestamp="2026-01-10T10:00:00-05:00"), format="json")
+        assert response.json()["status"] == "ignored"
+    night.refresh_from_db()
+    assert night.status == "complete"
+    assert not AwakeningEvent.objects.exists()
+    assert sum('"status": "received"' in record.getMessage() for record in caplog.records) == 2
+    assert sum('"status": "ignored"' in record.getMessage() for record in caplog.records) == 2
+
+
+def test_nighttime_switch_retry_is_logged_without_duplicate(owner, client, caplog):
+    caplog.set_level("INFO", logger="bordercore.quantified_self.views")
+    for _ in range(2):
+        client.post("/api/quantified-self/awakenings/", awakening(), format="json")
+    assert AwakeningEvent.objects.count() == 1
+    assert any('"status": "duplicate"' in record.getMessage() for record in caplog.records)
+
+
+def test_switch_uses_press_time_not_delivery_time(client, monkeypatch):
+    monkeypatch.setattr("quantified_self.services.timezone.now",
+                        lambda: datetime(2026, 1, 10, 17, tzinfo=dt_timezone.utc))
+    response = client.post("/api/quantified-self/awakenings/", awakening(), format="json")
+    assert response.status_code == 201  # overnight press delivered at noon
+    assert AwakeningEvent.objects.get().occurred_at.hour == 7
+
+
+def test_daytime_manual_capture_and_invalid_switch_timestamp(client):
+    data = awakening(timestamp="2026-01-10T12:00:00-05:00")
+    assert client.post("/quantified-self/awakenings/records/", data, format="json").status_code == 201
+    for stamp in ("invalid", "2026-01-10T12:00:00", "2099-01-10T12:00:00-05:00"):
+        response = client.post("/api/quantified-self/awakenings/", awakening(timestamp=stamp), format="json")
+        assert response.status_code == 400
+    assert AwakeningEvent.objects.count() == 1
+
+
+def test_switch_receipt_is_logged_even_if_database_write_fails(client, monkeypatch, caplog):
+    caplog.set_level("INFO", logger="bordercore.quantified_self.views")
+    def failed_write(*args, **kwargs):
+        raise RuntimeError("database unavailable")
+    monkeypatch.setattr("quantified_self.views.save_record", failed_write)
+    with pytest.raises(RuntimeError, match="database unavailable"):
+        client.post("/api/quantified-self/awakenings/", awakening(), format="json")
+    assert any('"status": "received"' in record.getMessage() for record in caplog.records)
+    assert not AwakeningEvent.objects.exists()
 
 
 def test_formula_safe_csv_roundtrip(owner):
