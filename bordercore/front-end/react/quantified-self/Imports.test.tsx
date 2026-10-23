@@ -1,6 +1,6 @@
 import React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Imports from "./Imports";
 import { api } from "./api";
@@ -11,6 +11,7 @@ vi.mock("./api", () => ({
 }));
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
   vi.resetAllMocks();
 });
 
@@ -88,14 +89,17 @@ describe("Apple Health import", () => {
     expect(api).toHaveBeenCalledWith(
       "/quantified-self/apple-health/import/",
       "POST",
-      expect.any(FormData)
+      expect.any(FormData),
+      expect.objectContaining({ onUploadProgress: expect.any(Function) })
     );
     expect(onSaved).not.toHaveBeenCalled();
     await user.click(screen.getByRole("button", { name: "Confirm Apple Health import" }));
     expect(
       await screen.findByText("Imported 2 readings; skipped 2 already imported readings.")
     ).toBeVisible();
-    expect(api).toHaveBeenCalledWith("/quantified-self/imports/batch-one/commit/", "POST");
+    expect(api).toHaveBeenCalledWith("/quantified-self/imports/batch-one/commit/", "POST", {
+      progress_id: expect.any(String),
+    });
     expect(onSaved).toHaveBeenCalledOnce();
   });
 
@@ -139,8 +143,61 @@ describe("Apple Health import", () => {
     render(<Imports root="/quantified-self/" onSaved={vi.fn()} />);
     await chooseZip();
     expect(screen.getByLabelText("Import format")).toBeDisabled();
-    expect(screen.getByRole("status")).toHaveTextContent("Processing…");
+    expect(screen.getByRole("status")).toHaveTextContent("Uploading ZIP");
     resolve(preview);
     await waitFor(() => expect(screen.getByLabelText("Import format")).toBeEnabled());
+  });
+
+  it("shows real upload and scan progress, then stops polling after preview", async () => {
+    vi.useFakeTimers();
+    let resolve!: (value: unknown) => void;
+    let snapshot = {
+      stage: "scanning",
+      loaded: 50 * 1024 * 1024,
+      total: 100 * 1024 * 1024,
+      weight: 1328,
+      blood_pressure: 400,
+      duplicates: 840,
+    };
+    vi.mocked(api).mockImplementation((url, method) => {
+      if (method === "POST")
+        return new Promise(done => {
+          resolve = done;
+        }) as ReturnType<typeof api>;
+      return Promise.resolve(url.includes("/progress/") ? snapshot : []) as ReturnType<typeof api>;
+    });
+    render(<Imports root="/quantified-self/" onSaved={vi.fn()} />);
+    const input = screen.getByLabelText("Apple Health ZIP file");
+    fireEvent.change(input, { target: { files: [new File(["zip"], "export.zip")] } });
+    fireEvent.submit(input.closest("form")!);
+    const upload = vi.mocked(api).mock.calls.find(call => call[1] === "POST")!;
+    expect((upload[2] as FormData).get("progress_id")).toMatch(/^[a-f0-9-]{36}$/);
+    act(() => upload[3]!.onUploadProgress!({ loaded: 25, total: 100 } as never));
+    expect(screen.getByRole("progressbar")).toHaveAttribute("value", "25");
+    expect(screen.getByRole("status")).toHaveTextContent("Uploading ZIP · 25%");
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+    expect(screen.getByRole("status")).toHaveTextContent("Scanning health records · 50%");
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "1,328 weight readings · 400 blood-pressure pairs found"
+    );
+    expect(screen.getByRole("status")).toHaveTextContent("840 repeated entries");
+    expect(screen.getByRole("status")).toHaveTextContent("1s elapsed");
+    snapshot = { ...snapshot, stage: "checking" };
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(750);
+    });
+    expect(screen.getByRole("status")).toHaveTextContent("Checking for existing readings");
+    expect(screen.getByRole("progressbar")).not.toHaveAttribute("value");
+    await act(async () => resolve(preview));
+    const polls = vi.mocked(api).mock.calls.filter(call => call[0].includes("/progress/")).length;
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3000);
+    });
+    expect(vi.mocked(api).mock.calls.filter(call => call[0].includes("/progress/"))).toHaveLength(
+      polls
+    );
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
   });
 });

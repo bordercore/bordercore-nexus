@@ -103,6 +103,16 @@ without extracting the archive. Limits: 512 MB ZIP, 4 GB XML, 10,000 archive ent
 acquiring the account write lock. Only selected measurements are saved in the
 preview batch; the original ZIP and unrelated health data are not retained.
 
+The import panel reports browser upload bytes, XML scan bytes and discovered
+weight/pressure counts, duplicate checking, validation, and batched writes. The
+browser polls `imports/progress/<uuid>/` while the original preview/commit request
+runs. Progress is scoped to the authenticated account, expires after one hour,
+and contains only stages/counts, not measurements. It uses the configured Django
+cache (shared file cache across production workers, local-memory cache for the
+single development process). Multiple app hosts must use a shared cache backend.
+Cache failures only disable live progress; the original request remains authoritative.
+Saving remains atomic, and completion is published only after the transaction exits.
+
 Sources are named `Apple Health · <sourceName>`. Reading identities hash the tracker,
 source, UTC start timestamp, and measurement values, independently of ZIP filename,
 record ordering, creation dates, and optional Apple metadata. Weight identity uses

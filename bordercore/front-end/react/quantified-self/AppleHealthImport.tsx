@@ -2,6 +2,7 @@ import React, { useRef, useState } from "react";
 import { api, errorText } from "./api";
 import { labels } from "./types";
 import ImportFilePicker from "./ImportFilePicker";
+import ImportProgress, { useImportProgress } from "./ImportProgress";
 
 type HealthKind = "weight" | "blood-pressure";
 interface Summary {
@@ -39,6 +40,7 @@ export default function AppleHealthImport({
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const input = useRef<HTMLInputElement>(null);
+  const progress = useImportProgress(root);
 
   function working(value: boolean) {
     setBusy(value);
@@ -55,14 +57,21 @@ export default function AppleHealthImport({
       return;
     }
     working(true);
+    const progressId = progress.begin("uploading");
     const body = new FormData();
     body.set("file", file);
+    body.set("progress_id", progressId);
     try {
-      setPreview(await api<Preview>(`${root}apple-health/import/`, "POST", body));
+      setPreview(
+        await api<Preview>(`${root}apple-health/import/`, "POST", body, {
+          onUploadProgress: progress.uploaded,
+        })
+      );
       onHistoryChanged();
     } catch (err) {
       setError(errorText(err));
     } finally {
+      progress.finish();
       working(false);
     }
   }
@@ -70,10 +79,12 @@ export default function AppleHealthImport({
     if (!preview) return;
     working(true);
     setError("");
+    const progressId = progress.begin("checking");
     try {
       const result = await api<{ imported: number; skipped: number }>(
         `${root}imports/${preview.uuid}/commit/`,
-        "POST"
+        "POST",
+        { progress_id: progressId }
       );
       setMessage(
         `Imported ${result.imported} readings; skipped ${result.skipped} already imported readings.`
@@ -86,6 +97,7 @@ export default function AppleHealthImport({
     } catch (err) {
       setError(errorText(err));
     } finally {
+      progress.finish();
       working(false);
     }
   }
@@ -122,7 +134,13 @@ export default function AppleHealthImport({
         process. Repeated and overlapping exports skip existing readings and preserve your
         corrections.
       </p>
-      {busy && <p role="status">Processing…</p>}
+      {busy && progress.progress && (
+        <ImportProgress
+          progress={progress.progress}
+          elapsed={progress.elapsed}
+          unavailable={progress.unavailable}
+        />
+      )}
       {error && (
         <p className="qs-error" role="alert">
           {error}

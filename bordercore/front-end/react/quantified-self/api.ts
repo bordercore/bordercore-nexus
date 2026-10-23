@@ -1,7 +1,13 @@
-import axios from "axios";
+import axios, { AxiosRequestConfig } from "axios";
 import { getCsrfToken } from "../utils/reactUtils";
-export async function api<T>(url: string, method = "GET", data?: unknown): Promise<T> {
+export async function api<T>(
+  url: string,
+  method = "GET",
+  data?: unknown,
+  options: Pick<AxiosRequestConfig, "onUploadProgress" | "signal"> = {}
+): Promise<T> {
   const response = await axios({
+    ...options,
     url,
     method,
     data,

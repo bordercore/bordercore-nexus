@@ -4,6 +4,7 @@ import json
 from collections import defaultdict
 from datetime import datetime, timezone as dt_timezone
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+from time import monotonic
 from typing import Any, BinaryIO
 from zipfile import BadZipFile, ZipFile
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -16,6 +17,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from .models import ImportBatch
+from .import_progress import Progress
 from .services import KINDS, LB_KG, ZONE, fail, lock_user, normalize, source_for
 
 MAX_ZIP_BYTES = 512 * 1024 * 1024
@@ -160,7 +162,7 @@ class HealthParser:
                       "ambiguous_pressure": ambiguous}
 
 
-def parse_zip(upload: BinaryIO) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+def parse_zip(upload: BinaryIO, progress: Progress | None = None) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Read only export.xml; never extract routes, clinical files, or the full XML."""
     upload.seek(0, 2)
     if upload.tell() > MAX_ZIP_BYTES:
@@ -181,14 +183,25 @@ def parse_zip(upload: BinaryIO) -> tuple[list[dict[str, Any]], dict[str, Any]]:
             parser = etree.XMLParser(target=target, resolve_entities=False, no_network=True, load_dtd=False)
             with archive.open(entry) as stream:
                 size = 0
+                last_update = 0.0
                 while chunk := stream.read(1024 * 1024):
                     size += len(chunk)
                     if size > MAX_XML_BYTES:
                         fail("The Apple Health XML must be no larger than 4 GB.")
                     parser.feed(chunk)
+                    now = monotonic()
+                    if progress and (now - last_update >= 0.3 or size == entry.file_size):
+                        progress("scanning", loaded=size, total=entry.file_size,
+                                 weight=len(target.rows), blood_pressure=sum(
+                                     len(pair["systolic"]) == len(pair["diastolic"]) == 1
+                                     for pair in target.pressure.values()), duplicates=target.repeated)
+                        last_update = now
                 parser.close()
     except (BadZipFile, etree.XMLSyntaxError, RuntimeError, NotImplementedError, EOFError, ZlibError):
         fail("Unable to read this Apple Health ZIP. Upload an intact, unencrypted export.")
+    if progress:
+        progress("pairing", weight=len(target.rows), blood_pressure=sum(
+            len(pair["systolic"]) == len(pair["diastolic"]) == 1 for pair in target.pressure.values()))
     return target.finish()
 
 
@@ -214,8 +227,11 @@ def summary(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return result
 
 
-def preview(user: User, upload: BinaryIO) -> dict[str, Any]:
-    rows, warnings = parse_zip(upload)
+def preview(user: User, upload: BinaryIO, progress: Progress | None = None) -> dict[str, Any]:
+    rows, warnings = parse_zip(upload, progress)
+    if progress:
+        progress("checking", weight=sum(row["kind"] == "weight" for row in rows),
+                 blood_pressure=sum(row["kind"] == "blood-pressure" for row in rows))
     # No database lock is held while processing a potentially multi-GB XML file.
     with transaction.atomic():
         lock_user(user)
@@ -227,7 +243,9 @@ def preview(user: User, upload: BinaryIO) -> dict[str, Any]:
 
 
 @transaction.atomic
-def commit(user: User, batch: ImportBatch) -> dict[str, Any]:
+def commit(user: User, batch: ImportBatch, progress: Progress | None = None) -> dict[str, Any]:
+    if progress:
+        progress("checking")
     lock_user(user)
     batch.refresh_from_db()
     if batch.committed_at:
@@ -235,15 +253,26 @@ def commit(user: User, batch: ImportBatch) -> dict[str, Any]:
     rows = classified_rows(user, batch.rows)
     sources = {name: source_for(user, name) for name in {row["data"]["source"] for row in rows}}
     pending: dict[str, list[Any]] = defaultdict(list)
-    for row in rows:
+    for index, row in enumerate(rows, start=1):
         if row["status"] == "new":
             pending[row["kind"]].append(KINDS[row["kind"]](user=user, source=sources[row["data"]["source"]],
                 import_batch=batch, **normalize(row["kind"], row["data"])))
+        if progress and (index % 500 == 0 or index == len(rows)):
+            progress("validating", processed=index, total=len(rows))
+    total = sum(len(records) for records in pending.values())
+    written = 0
     for kind, records in pending.items():
-        KINDS[kind].objects.bulk_create(records, batch_size=500)
+        for start in range(0, len(records), 500):
+            chunk = records[start:start + 500]
+            if progress:
+                progress("saving", kind=kind, processed=written, total=total)
+            KINDS[kind].objects.bulk_create(chunk, batch_size=500)
+            written += len(chunk)
     imported = sum(len(records) for records in pending.values())
     batch.result = {"imported": imported, "skipped": len(rows) - imported, "summary": summary(rows),
                     "warnings": batch.result.get("warnings", {})}
     batch.committed_at = timezone.now()
     batch.save(update_fields=["result", "committed_at"])
+    if progress:
+        progress("finalizing", processed=written, total=total, skipped=len(rows) - imported)
     return batch.result
