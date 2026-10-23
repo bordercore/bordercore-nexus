@@ -2,6 +2,7 @@ import React, { ReactNode, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faHome,
+  faChartLine,
   faSearch,
   faBookmark,
   faBox,
@@ -73,6 +74,7 @@ interface SidebarMenuProps {
 
 const iconMap: Record<string, any> = {
   home: faHome,
+  "chart-line": faChartLine,
   search: faSearch,
   bookmark: faBookmark,
   box: faBox,

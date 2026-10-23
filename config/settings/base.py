@@ -177,6 +177,7 @@ INSTALLED_APPS = (
     "feed",
     "fitness",
     "habit",
+    "quantified_self",
     "lib",
     "node",
     "tag",

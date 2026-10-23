@@ -221,6 +221,13 @@ function SidebarContent() {
         icon: { element: "font-awesome-icon", attributes: { icon: "tags" }, class: "" },
       },
       {
+        href: "/quantified-self/",
+        title: "Quantified Self",
+        alias: "/quantified-self/*",
+        color: "#5eead4",
+        icon: { element: "font-awesome-icon", attributes: { icon: "chart-line" }, class: "" },
+      },
+      {
         href: "/fitness/",
         title: "Fitness",
         alias: "/fitness/*",

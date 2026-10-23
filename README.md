@@ -17,6 +17,7 @@ Bordercore supports a wide range of personal data types, all integrated into a s
 - **Flashcards (Drill)**: A spaced-repetition system for learning and memory.
 - **Music Library**: Manage your music collection, playlists, and listening history.
 - **Fitness Tracking**: Log workouts, exercises, and track progress over time.
+- **Quantified Self**: Track weight, blood pressure, and sleep awakenings with dashboards and CSV import/export. See [setup and data rules](bordercore/quantified_self/README.md).
 - **RSS Feeds**: Subscribe to and read your favorite web feeds.
 - **Quotes**: Collect and tag inspiring quotes.
 - **Collections**: Group any object in the system into curated collections.
