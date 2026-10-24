@@ -17,8 +17,8 @@ def average(values: list[float | int]) -> float | None:
 
 
 def dashboard(user: User, start: date, end: date, unit: str) -> dict[str, Any]:
-    weights = list(WeightReading.objects.filter(user=user, excluded=False, date__range=(start - timedelta(days=6), end)).select_related("source"))
-    pressures = list(BloodPressureReading.objects.filter(user=user, excluded=False, date__range=(start - timedelta(days=6), end)).select_related("source"))
+    weights = list(WeightReading.objects.filter(user=user, excluded=False, date__range=(start - timedelta(days=6), end)))
+    pressures = list(BloodPressureReading.objects.filter(user=user, excluded=False, date__range=(start - timedelta(days=6), end)))
     weight_days: defaultdict[date, list[float]] = defaultdict(list)
     pressure_days: defaultdict[date, list[BloodPressureReading]] = defaultdict(list)
     weight_rows: defaultdict[date, list[WeightReading]] = defaultdict(list)
@@ -28,7 +28,7 @@ def dashboard(user: User, start: date, end: date, unit: str) -> dict[str, Any]:
     for pressure in pressures:
         pressure_days[pressure.date].append(pressure)
     nights = {night.date: night for night in SleepNight.objects.filter(user=user, date__range=(start, end))}
-    events = list(AwakeningEvent.objects.filter(user=user, night__date__range=(start, end), excluded=False).select_related("night", "source").order_by("occurred_at"))
+    events = list(AwakeningEvent.objects.filter(user=user, night__date__range=(start, end), excluded=False).select_related("night").order_by("occurred_at"))
     event_days: defaultdict[date, list[dict[str, Any]]] = defaultdict(list)
     histogram = [0] * 24
     for event in events:
