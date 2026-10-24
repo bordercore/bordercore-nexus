@@ -1,8 +1,26 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPencilAlt, faPlus, faSearch, faTrashAlt } from "@fortawesome/free-solid-svg-icons";
-import { api, daysBefore, errorText, today } from "./api";
 import { dateTicks, line, scale, useWidth } from "./chart";
+import {
+  ALL_DAYS,
+  ChartTooltip,
+  Flag,
+  Kpi,
+  Metric,
+  ReadingsTable,
+  StatusLine,
+  Toggle,
+  clock,
+  datesBetween,
+  latestReading,
+  mean,
+  nearest,
+  plural,
+  rangePreset,
+  scrollToReadings,
+  short,
+  stamp,
+  useRecords,
+} from "./Ledger";
 import { Reading } from "./types";
 
 // ACC/AHA single-reading categories. Descriptive only, never diagnostic.
@@ -24,30 +42,6 @@ type DayMean = {
   pulse: number | null;
   readings: Pressure[];
 };
-type SortColumn = "date" | "time" | "systolic" | "diastolic" | "pulse" | "source";
-
-export const BP_RANGES: [number, string][] = [
-  [30, "30d"],
-  [90, "90d"],
-  [365, "1y"],
-  // The API caps a range at ten years, which stands in for "all".
-  [3660, "all"],
-];
-const PAGE = 20;
-const mean = (values: number[]) => values.reduce((a, b) => a + b, 0) / values.length;
-const short = (date: string) => date.slice(5);
-const clock = (reading: Reading) => (reading.time ? reading.time.slice(0, 5) : "");
-const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? "" : "s"}`;
-const stamp = (r: Reading) => `${r.date} ${r.time || ""}`;
-
-function datesBetween(start: string, end: string) {
-  const dates: string[] = [];
-  for (let day = start; day <= end && dates.length <= 3660; day = daysBefore(day, -1)) {
-    dates.push(day);
-  }
-  return dates;
-}
-
 function dailyMeans(readings: Pressure[]): Map<string, DayMean> {
   const byDay = new Map<string, Pressure[]>();
   for (const r of readings) byDay.set(r.date, [...(byDay.get(r.date) ?? []), r]);
@@ -66,25 +60,6 @@ function dailyMeans(readings: Pressure[]): Map<string, DayMean> {
   return result;
 }
 
-function Kpi({
-  label,
-  value,
-  meta,
-  lead = false,
-}: {
-  label: string;
-  value: React.ReactNode;
-  meta: React.ReactNode;
-  lead?: boolean;
-}) {
-  return (
-    <div className={`qs-kpi${lead ? " qs-kpi-lead" : ""}`}>
-      <div className="qs-kpi-label">{label}</div>
-      <div className="qs-kpi-value">{value}</div>
-      <div className="qs-kpi-meta">{meta}</div>
-    </div>
-  );
-}
 const pair = (a: number | null | undefined, b: number | null | undefined, sep = "/") =>
   a == null || b == null ? (
     "—"
@@ -97,10 +72,7 @@ const pair = (a: number | null | undefined, b: number | null | undefined, sep = 
   );
 
 function Kpis({ readings, means }: { readings: Pressure[]; means: DayMean[] }) {
-  const latest = readings.reduce<Pressure | null>(
-    (best, r) => (!best || stamp(r) > stamp(best) ? r : best),
-    null
-  );
+  const latest = latestReading(readings);
   const extreme = (key: "systolic" | "diastolic", pick: (a: number, b: number) => boolean) =>
     readings.reduce<Pressure | null>(
       (best, r) => (!best || pick(r[key], best[key]) ? r : best),
@@ -132,7 +104,7 @@ function Kpis({ readings, means }: { readings: Pressure[]; means: DayMean[] }) {
               <span className="qs-source">{latest.source}</span>
             </>
           ) : (
-            "no readings"
+            "—"
           )
         }
       />
@@ -183,16 +155,8 @@ function Kpis({ readings, means }: { readings: Pressure[]; means: DayMean[] }) {
       />
       <Kpi
         label="pulse"
-        value={
-          pulses.length ? (
-            <>
-              {Math.round(mean(pulses))}
-              <span className="qs-kpi-unit">bpm</span>
-            </>
-          ) : (
-            "—"
-          )
-        }
+        value={pulses.length ? Math.round(mean(pulses)) : "—"}
+        unit="bpm"
         meta={
           pulses.length ? (
             <>
@@ -217,11 +181,13 @@ const BANDS: { from: number; to: number; label: string; className: string }[] = 
 ];
 
 export function DailyChart({
+  loading = false,
   dates,
   means,
   selected,
   onSelect,
 }: {
+  loading?: boolean;
   dates: string[];
   means: Map<string, DayMean>;
   selected: string | null;
@@ -256,21 +222,14 @@ export function DailyChart({
   for (let t = Math.ceil(lo / 30) * 30; t <= hi; t += 30) ticks.push(t);
   const hovered = hover ? days.find(d => d.date === hover) : undefined;
   const toggle = (key: keyof typeof toggles, label: string) => (
-    <button
-      className={`qs-toggle${toggles[key] ? " on" : ""}`}
-      aria-pressed={toggles[key]}
+    <Toggle
+      on={toggles[key]}
+      label={label}
       onClick={() => setToggles({ ...toggles, [key]: !toggles[key] })}
-    >
-      {toggles[key] ? "●" : "○"} {label}
-    </button>
+    />
   );
-  function locate(event: React.MouseEvent<SVGRectElement>) {
-    const box = event.currentTarget.ownerSVGElement!.getBoundingClientRect();
-    const px = ((event.clientX - box.left) / (box.width || width)) * width;
-    let best: (typeof days)[number] | null = null;
-    for (const d of days) if (!best || Math.abs(x(d.i) - px) < Math.abs(x(best.i) - px)) best = d;
-    return best;
-  }
+  const locate = (event: React.MouseEvent<SVGRectElement>) =>
+    nearest(event, width, days, d => x(d.i));
   let tooltip: React.ReactNode = null;
   if (hovered) {
     const note = hovered.readings.find(r => r.note)?.note ?? "";
@@ -283,25 +242,17 @@ export function DailyChart({
     ]
       .filter(Boolean)
       .join(" · ");
-    const boxWidth = Math.max(head.length * 6.2, body.length * 6.1) + 24;
-    const px = x(hovered.i);
-    const py = y(hovered.systolic);
-    const tx = Math.min(Math.max(px - boxWidth / 2, left), width - right - boxWidth);
-    const ty = py - 58 < top ? py + 14 : py - 58;
     tooltip = (
-      <g
-        className="qs-tooltip qs-tooltip-pink"
-        transform={`translate(${tx},${ty})`}
-        pointerEvents="none"
-      >
-        <rect width={boxWidth} height="46" rx="8" />
-        <text className="qs-tooltip-head" x="12" y="18">
-          {head}
-        </text>
-        <text className="qs-tooltip-body" x="12" y="35">
-          {body}
-        </text>
-      </g>
+      <ChartTooltip
+        x={x(hovered.i)}
+        y={y(hovered.systolic)}
+        head={head}
+        body={body}
+        width={width}
+        left={left}
+        right={right}
+        top={top}
+      />
     );
   }
   return (
@@ -358,7 +309,7 @@ export function DailyChart({
                 {short(dates[i])}
               </text>
             ))}
-            {!days.length && (
+            {!days.length && !loading && (
               <text
                 className="qs-chart-empty"
                 x={(left + width) / 2}
@@ -447,253 +398,28 @@ export function DailyChart({
   );
 }
 
-function ReadingsTable({
-  rows,
-  root,
-  exportQuery,
-  selectedDay,
-  onClearDay,
-  onEdit,
-  onDelete,
-  onRestore,
-}: {
-  rows: Reading[];
-  root: string;
-  exportQuery: string;
-  selectedDay: string | null;
-  onClearDay: () => void;
-  onEdit: (row: Reading) => void;
-  onDelete: (row: Reading) => void;
-  onRestore: (row: Reading) => void;
-}) {
-  const [search, setSearch] = useState("");
-  const [query, setQuery] = useState("");
-  const [source, setSource] = useState("");
-  const [showExcluded, setShowExcluded] = useState(false);
-  const [sort, setSort] = useState<{ col: SortColumn; dir: 1 | -1 }>({ col: "date", dir: -1 });
-  const [visible, setVisible] = useState(PAGE);
-  const [confirming, setConfirming] = useState<string | null>(null);
-  useEffect(() => {
-    const timer = window.setTimeout(() => setQuery(search.trim().toLowerCase()), 200);
-    return () => window.clearTimeout(timer);
-  }, [search]);
-  useEffect(() => setVisible(PAGE), [query, source, showExcluded, selectedDay, sort]);
-  const sources = [...new Set(rows.map(r => r.source))].sort();
-  const excludedCount = rows.filter(r => r.excluded).length;
-  const filtered = rows
-    .filter(
-      r =>
-        (showExcluded || !r.excluded) &&
-        (!source || r.source === source) &&
-        (!selectedDay || r.date === selectedDay) &&
-        (!query || r.note.toLowerCase().includes(query))
-    )
-    .sort((a, b) => {
-      const key = (r: Reading): string | number =>
-        sort.col === "date"
-          ? stamp(r)
-          : sort.col === "time"
-            ? r.time || ""
-            : sort.col === "source"
-              ? r.source.toLowerCase()
-              : (r[sort.col] ?? -1);
-      const [ka, kb] = [key(a), key(b)];
-      return (ka < kb ? -1 : ka > kb ? 1 : 0) * sort.dir;
-    });
-  const shown = filtered.slice(0, visible);
-  const exportUrl = `${root}blood-pressure/export/?${exportQuery}${source ? `&source=${encodeURIComponent(source)}` : ""}`;
-  const header = (col: SortColumn | null, label: string, numeric = false) => (
-    <div
-      role="columnheader"
-      className={numeric ? "qs-num" : undefined}
-      aria-sort={
-        col && sort.col === col ? (sort.dir === 1 ? "ascending" : "descending") : undefined
-      }
-    >
-      {col ? (
-        <button
-          className="qs-sort"
-          onClick={() =>
-            setSort(
-              sort.col === col
-                ? { col, dir: sort.dir === 1 ? -1 : 1 }
-                : { col, dir: col === "date" ? -1 : 1 }
-            )
-          }
-        >
-          {label}
-          {sort.col === col && <span className="qs-sort-dir">{sort.dir === 1 ? "↑" : "↓"}</span>}
-        </button>
-      ) : (
-        label
-      )}
-    </div>
-  );
-  return (
-    <section className="qs-panel qs-readings" id="qs-readings">
-      <div className="qs-readings-toolbar">
-        <h2 className="qs-panel-title">Readings</h2>
-        <div className="qs-readings-controls">
-          {selectedDay && (
-            <button
-              className="qs-control qs-day-chip"
-              onClick={onClearDay}
-              aria-label={`Clear day filter ${selectedDay}`}
-            >
-              day: {short(selectedDay)} ×
-            </button>
-          )}
-          <label className="qs-control qs-search">
-            <FontAwesomeIcon icon={faSearch} />
-            <input
-              type="search"
-              placeholder="search notes"
-              aria-label="Search notes"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-            />
-          </label>
-          <label className="qs-control qs-source-filter">
-            source:
-            <select value={source} aria-label="Source" onChange={e => setSource(e.target.value)}>
-              <option value="">all</option>
-              {sources.map(s => (
-                <option key={s} value={s}>
-                  {s.toLowerCase()}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button
-            className={`qs-control${showExcluded ? " on" : ""}`}
-            aria-pressed={showExcluded}
-            onClick={() => setShowExcluded(!showExcluded)}
-          >
-            {showExcluded ? "●" : "○"} show excluded
-          </button>
-          <a className="qs-control qs-export" href={exportUrl}>
-            export csv
-          </a>
-        </div>
-      </div>
-      <div role="table" aria-label="Blood pressure readings" className="qs-ledger">
-        <div role="row" className="qs-ledger-row qs-ledger-head">
-          {header("date", "date")}
-          {header("time", "time")}
-          {header("systolic", "systolic", true)}
-          {header("diastolic", "diastolic", true)}
-          {header("pulse", "pulse", true)}
-          {header("source", "source")}
-          {header(null, "note")}
-          <div role="columnheader">
-            <span className="qs-visually-hidden">actions</span>
-          </div>
-        </div>
-        {shown.map(row => {
-          const level = category(row.systolic ?? 0, row.diastolic ?? 0);
-          const flagged = !row.excluded && level !== "normal";
-          const tone = flagged ? categoryTone(level) : "";
-          return (
-            <div
-              role="row"
-              key={row.uuid}
-              className={`qs-ledger-row${row.excluded ? " qs-ledger-excluded" : ""}${tone ? ` qs-ledger-${tone}` : ""}`}
-            >
-              <div role="cell" className="qs-strong">
-                {row.date}
-              </div>
-              <div role="cell">{clock(row) || "—"}</div>
-              <div role="cell" className="qs-num qs-strong qs-tinted">
-                {row.systolic}
-              </div>
-              <div role="cell" className="qs-num qs-strong qs-tinted">
-                {row.diastolic}
-              </div>
-              <div role="cell" className="qs-num">
-                {row.pulse ?? "—"}
-              </div>
-              <div role="cell" className="qs-source">
-                {row.source}
-              </div>
-              {confirming === row.uuid ? (
-                <div role="cell" className="qs-ledger-confirm">
-                  <span>delete this reading? · cannot be undone</span>
-                  <button
-                    className="qs-text-btn qs-danger-text"
-                    onClick={() => {
-                      setConfirming(null);
-                      onDelete(row);
-                    }}
-                  >
-                    delete
-                  </button>
-                  <button className="qs-text-btn" autoFocus onClick={() => setConfirming(null)}>
-                    cancel
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <div role="cell" className="qs-ledger-note">
-                    {row.excluded ? (
-                      <>
-                        <s>excluded{row.note ? ` · ${row.note}` : ""}</s>{" "}
-                        <button className="qs-text-btn qs-restore" onClick={() => onRestore(row)}>
-                          restore
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        {row.note ? (
-                          <span>{row.note}</span>
-                        ) : (
-                          <span className="qs-dim-note">—</span>
-                        )}
-                        {flagged && <span className={`qs-badge qs-badge-${tone}`}>{level}</span>}
-                      </>
-                    )}
-                  </div>
-                  <div role="cell" className="qs-ledger-actions">
-                    {!row.excluded && (
-                      <>
-                        <button
-                          aria-label={`Edit reading ${stamp(row)}`}
-                          onClick={() => onEdit(row)}
-                        >
-                          <FontAwesomeIcon icon={faPencilAlt} />
-                        </button>
-                        <button
-                          aria-label={`Delete reading ${stamp(row)}`}
-                          onClick={() => setConfirming(row.uuid)}
-                        >
-                          <FontAwesomeIcon icon={faTrashAlt} />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
-          );
-        })}
-        {!filtered.length && (
-          <div role="row" className="qs-ledger-row qs-ledger-empty">
-            <div role="cell">No readings match your filter.</div>
-          </div>
-        )}
-      </div>
-      <div className="qs-ledger-foot">
-        <span>
-          showing {shown.length} of {filtered.length}
-          {excludedCount > 0 && ` · ${excludedCount} excluded`}
-        </span>
-        {visible < filtered.length && (
-          <button className="qs-text-btn" onClick={() => setVisible(visible + PAGE)}>
-            load {Math.min(PAGE, filtered.length - visible)} more ↓
-          </button>
-        )}
-      </div>
-    </section>
-  );
+const pressureMetrics: Metric[] = [
+  {
+    key: "systolic",
+    label: "systolic",
+    sort: r => r.systolic ?? -1,
+    render: r => r.systolic,
+    className: () => "qs-strong qs-tinted",
+  },
+  {
+    key: "diastolic",
+    label: "diastolic",
+    sort: r => r.diastolic ?? -1,
+    render: r => r.diastolic,
+    className: () => "qs-strong qs-tinted",
+  },
+  { key: "pulse", label: "pulse", sort: r => r.pulse ?? -1, render: r => r.pulse ?? "—" },
+];
+function pressureFlag(row: Reading): Flag | null {
+  const level = category(row.systolic ?? 0, row.diastolic ?? 0);
+  return level === "normal"
+    ? null
+    : { label: level, tone: level === "stage 2" ? "danger" : "warn" };
 }
 
 export default function BloodPressure({
@@ -715,24 +441,16 @@ export default function BloodPressure({
   onEdit: (row: Reading) => void;
   onChanged: () => void;
 }) {
-  const [rows, setRows] = useState<Reading[] | null>(null);
-  const [error, setError] = useState("");
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [showExcluded, setShowExcluded] = useState(false);
   const query = new URLSearchParams({ start, end }).toString();
-  useEffect(() => {
-    let active = true;
-    setError("");
-    api<{ results: Reading[] }>(`${root}blood-pressure/records/?${query}&limit=20000`)
-      .then(value => {
-        if (active) setRows(value.results);
-      })
-      .catch(err => {
-        if (active) setError(errorText(err));
-      });
-    return () => {
-      active = false;
-    };
-  }, [root, query, revision]);
+  const { rows, error, remove, restore } = useRecords(
+    root,
+    "blood-pressure",
+    query,
+    revision,
+    onChanged
+  );
   useEffect(() => setSelectedDay(null), [query]);
   const readings = useMemo(
     () =>
@@ -742,114 +460,57 @@ export default function BloodPressure({
     [rows]
   );
   const means = useMemo(() => dailyMeans(readings), [readings]);
-  const preset = BP_RANGES.find(([days]) => start === daysBefore(end, days - 1))?.[0];
   // A ten-year "all" range would squeeze readings into one corner; start the chart at the first one.
   const first = readings.reduce<string | null>(
     (min, r) => (!min || r.date < min ? r.date : min),
     null
   );
-  const dates = datesBetween(preset === 3660 && first ? first : start, end);
-  const sources = [...new Set(readings.map(r => r.source))].sort();
-  const excluded = (rows ?? []).filter(r => r.excluded).length;
-  async function mutate(next: Reading[] | null, request: () => Promise<unknown>) {
-    const previous = rows;
-    setRows(next);
-    setError("");
-    try {
-      await request();
-      onChanged();
-    } catch (err) {
-      setRows(previous);
-      setError(errorText(err));
-    }
-  }
+  const dates = datesBetween(rangePreset(start, end) === ALL_DAYS && first ? first : start, end);
   return (
     <>
-      <div className="qs-statusline">
-        <div>
-          <span className="qs-dim">// </span>range{" "}
-          <b>
-            {start} → {end}
-          </b>{" "}
-          · {plural(datesBetween(start, end).length, "day")}
-          {rows && (
-            <>
-              {" "}
-              · <b>{plural(readings.length, "reading")}</b> on <b>{means.size}</b>{" "}
-              {means.size === 1 ? "day" : "days"} · {excluded} excluded
-              {sources.length > 0 && (
-                <>
-                  {" "}
-                  · sources{" "}
-                  {sources.map((s, i) => (
-                    <React.Fragment key={s}>
-                      {i > 0 && " · "}
-                      <b className="qs-source">{s}</b>
-                    </React.Fragment>
-                  ))}
-                </>
-              )}
-            </>
-          )}
-        </div>
-        <div className="qs-ranges">
-          {BP_RANGES.map(([days, label]) => (
-            <button
-              key={days}
-              className={preset === days ? "active" : ""}
-              aria-pressed={preset === days}
-              onClick={() => onRange(daysBefore(today(), days - 1), today())}
-            >
-              {label}
-            </button>
-          ))}
-          <button className="qs-cta" onClick={onAdd}>
-            <FontAwesomeIcon icon={faPlus} />
-            reading
-          </button>
-        </div>
-      </div>
+      <StatusLine
+        start={start}
+        end={end}
+        loaded={rows !== null}
+        readings={readings.length}
+        days={means.size}
+        excluded={(rows ?? []).filter(r => r.excluded).length}
+        sources={[...new Set(readings.map(r => r.source))].sort()}
+        onRange={onRange}
+        onAdd={onAdd}
+      />
       {error && (
         <p className="qs-error" role="alert">
           {error}
         </p>
       )}
-      {!rows && !error && (
-        <p className="qs-muted" role="status">
-          Loading readings…
-        </p>
-      )}
       <Kpis readings={readings} means={[...means.values()]} />
       <DailyChart
+        loading={rows === null}
         dates={dates}
         means={means}
         selected={selectedDay}
         onSelect={day => {
           setSelectedDay(selectedDay === day ? null : day);
-          document
-            .getElementById("qs-readings")
-            ?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+          scrollToReadings();
         }}
       />
       <ReadingsTable
+        loading={rows === null}
+        kind="blood-pressure"
+        title="Blood pressure readings"
         rows={rows ?? []}
         root={root}
         exportQuery={query}
+        metrics={pressureMetrics}
+        flag={pressureFlag}
+        showExcluded={showExcluded}
+        onShowExcluded={setShowExcluded}
         selectedDay={selectedDay}
         onClearDay={() => setSelectedDay(null)}
         onEdit={onEdit}
-        onDelete={row =>
-          mutate(
-            (rows ?? []).filter(r => r.uuid !== row.uuid),
-            () => api(`${root}blood-pressure/records/${row.uuid}/`, "DELETE")
-          )
-        }
-        onRestore={row =>
-          mutate(
-            (rows ?? []).map(r => (r.uuid === row.uuid ? { ...r, excluded: false } : r)),
-            () => api(`${root}blood-pressure/records/${row.uuid}/`, "PATCH", { excluded: false })
-          )
-        }
+        onDelete={remove}
+        onRestore={restore}
       />
     </>
   );

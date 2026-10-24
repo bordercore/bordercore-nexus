@@ -223,3 +223,39 @@ it("changes ranges from today and opens the editor", async () => {
   await user.click(screen.getByRole("button", { name: "Edit reading 2026-10-03 07:42:00" }));
   expect(props.onEdit).toHaveBeenCalledWith(rows[0]);
 });
+
+it("keeps the layout without loading or empty messages while the first load is pending", () => {
+  vi.mocked(api).mockReturnValue(new Promise(() => {}) as ReturnType<typeof api>);
+  render(
+    <BloodPressure
+      root="/quantified-self/"
+      start="2026-07-25"
+      end="2026-10-22"
+      revision={0}
+      onRange={vi.fn()}
+      onAdd={vi.fn()}
+      onEdit={vi.fn()}
+      onChanged={vi.fn()}
+    />
+  );
+  expect(screen.getByRole("table", { name: "Blood pressure readings" })).toHaveAttribute(
+    "aria-busy",
+    "true"
+  );
+  expect(screen.queryByText(/Loading/)).toBeNull();
+  expect(screen.queryByText("No readings match your filter.")).toBeNull();
+  expect(screen.queryByText("no readings in this range")).toBeNull();
+});
+
+it("picks a custom range and ignores reversed dates", async () => {
+  const props = setup();
+  await screen.findByRole("table", { name: "Blood pressure readings" });
+  await userEvent.setup().click(screen.getByRole("button", { name: "custom…" }));
+  expect(screen.getByRole("button", { name: "90d" })).toHaveAttribute("aria-pressed", "false");
+  fireEvent.change(screen.getByLabelText("From"), { target: { value: "2026-08-01" } });
+  expect(props.onRange).toHaveBeenCalledWith("2026-08-01", "2026-10-22");
+  props.onRange.mockClear();
+  fireEvent.change(screen.getByLabelText("From"), { target: { value: "2026-11-01" } });
+  fireEvent.change(screen.getByLabelText("To"), { target: { value: "2026-07-01" } });
+  expect(props.onRange).not.toHaveBeenCalled();
+});

@@ -107,7 +107,7 @@ it("retains measured charts while a new range loads and when it arrives", async 
 });
 
 it("keeps the current view on screen while a new range loads", async () => {
-  window.history.replaceState(null, "", "/?tab=weight");
+  window.history.replaceState(null, "", "/?tab=awakenings");
   let resolveRange!: (value: Dashboard) => void;
   vi.mocked(api).mockImplementation(url =>
     String(url).includes("/summary/") &&
@@ -128,4 +128,17 @@ it("keeps the current view on screen while a new range loads", async () => {
   await act(async () => {
     resolveRange(dashboard(7));
   });
+});
+
+it("shows the awakenings history table without a loading message while it loads", async () => {
+  window.history.replaceState(null, "", "/?tab=awakenings");
+  vi.mocked(api).mockImplementation(url =>
+    String(url).includes("/summary/")
+      ? Promise.resolve(dashboard(30))
+      : (new Promise(() => {}) as ReturnType<typeof api>)
+  );
+  render(<QuantifiedSelfPage root="/quantified-self/" />);
+  expect(await screen.findByText("Reading history")).toBeInTheDocument();
+  expect(screen.queryByText("Loading readings…")).toBeNull();
+  expect(screen.queryByText("No readings in this range.")).toBeNull();
 });

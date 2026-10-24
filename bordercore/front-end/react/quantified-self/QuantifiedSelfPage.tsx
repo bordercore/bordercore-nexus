@@ -11,6 +11,7 @@ import Imports from "./Imports";
 import Nights from "./Nights";
 import DayDetail from "./DayDetail";
 import BloodPressure from "./BloodPressure";
+import Weight from "./Weight";
 import "./quantified-self.css";
 
 const tabs: Tab[] = ["overview", "awakenings", "weight", "blood-pressure", "imports"];
@@ -45,8 +46,9 @@ export default function QuantifiedSelfPage({ root }: { root: string }) {
   const [detail, setDetail] = useState<{ kind: Kind; day: Day } | null>(null);
   const [notice, setNotice] = useState("");
   const [custom, setCustom] = useState(false);
-  // The blood pressure page loads its own readings and needs no dashboard summary.
-  const needsSummary = view.tab !== "blood-pressure";
+  // Detail pages load their own readings and need no dashboard summary.
+  const detailTab = view.tab === "blood-pressure" || view.tab === "weight" ? view.tab : null;
+  const needsSummary = !detailTab;
   const query = new URLSearchParams({
     start: view.start,
     end: view.end,
@@ -103,13 +105,14 @@ export default function QuantifiedSelfPage({ root }: { root: string }) {
   const summary = data?.summary;
   const preset = ranges.find(([days]) => view.start === daysBefore(view.end, days - 1));
   const awaiting = data?.days.filter(d => d.status === "unreviewed" && d.date <= today()).length;
-  const selectedKind = view.tab === "awakenings" || view.tab === "weight" ? view.tab : null;
   return (
-    <main className={`qs-page${needsSummary ? "" : " qs-accent-pink"}`}>
+    <main
+      className={`qs-page${detailTab ? ` qs-accent-${detailTab === "weight" ? "cyan" : "pink"}` : ""}`}
+    >
       <div className="qs-shell">
         <header className="qs-header">
           <div className="qs-title">
-            <h1>{needsSummary ? "Quantified Self" : labels["blood-pressure"]}</h1>
+            <h1>{detailTab ? labels[detailTab] : "Quantified Self"}</h1>
             <div className="qs-crumbs">
               bordercore <span>/</span> quantified-self <span>/</span> <b>{view.tab}</b>
             </div>
@@ -230,6 +233,19 @@ export default function QuantifiedSelfPage({ root }: { root: string }) {
             onEdit={row => setForm({ kind: "blood-pressure", row })}
             onChanged={refresh}
           />
+        ) : view.tab === "weight" ? (
+          <Weight
+            root={root}
+            start={view.start}
+            end={view.end}
+            unit={view.unit === "kg" ? "kg" : "lb"}
+            revision={revision}
+            onRange={(start, end) => setView({ ...view, start, end })}
+            onUnit={unit => setView({ ...view, unit })}
+            onAdd={() => setForm({ kind: "weight" })}
+            onEdit={row => setForm({ kind: "weight", row })}
+            onChanged={refresh}
+          />
         ) : view.tab === "imports" ? (
           <Imports root={root} onSaved={saved} />
         ) : view.tab === "overview" ? (
@@ -245,67 +261,51 @@ export default function QuantifiedSelfPage({ root }: { root: string }) {
             />
           </div>
         ) : (
-          data && (
+          data &&
+          view.tab === "awakenings" && (
             <div aria-busy={loading}>
-              {selectedKind && (
-                <>
-                  <section className="qs-card">
-                    <div className="qs-section-head">
-                      <div>
-                        <h2>{labels[selectedKind]}</h2>
-                        <p>
-                          {selectedKind === "awakenings"
-                            ? `${summary?.mean_awakenings ?? "—"} average · ${summary?.completed_nights} completed nights of ${summary?.total_nights} · ${summary?.recorded_awakenings} recorded events`
-                            : `${summary?.weight_days} recorded days · 7-day trend averages daily means`}
-                        </p>
-                      </div>
-                      <div className="qs-actions">
-                        <button
-                          className={`qs-add-inline qs-tone-${selectedKind}`}
-                          onClick={() => setForm({ kind: selectedKind })}
-                        >
-                          <FontAwesomeIcon icon={faPlus} />
-                          add {labels[selectedKind].toLowerCase()}
-                        </button>
-                      </div>
-                    </div>
-                    <TrackerChart
-                      kind={selectedKind}
-                      data={data}
-                      onDay={day => setDetail({ kind: selectedKind, day })}
-                    />
-                    <p className="qs-muted">
-                      {selectedKind === "awakenings"
-                        ? "Counts include recorded events on unreviewed nights. Only complete nights contribute to the average."
-                        : "Chart points show daily means; select a date for individual readings. Trends average recorded daily means over seven calendar days. Missing days are not zero."}
+              <section className="qs-card">
+                <div className="qs-section-head">
+                  <div>
+                    <h2>{labels.awakenings}</h2>
+                    <p>
+                      {`${summary?.mean_awakenings ?? "—"} average · ${summary?.completed_nights} completed nights of ${summary?.total_nights} · ${summary?.recorded_awakenings} recorded events`}
                     </p>
-                  </section>
-                  {selectedKind === "awakenings" && (
-                    <>
-                      <Nights
-                        key={query}
-                        days={data.days}
-                        root={root}
-                        onSaved={refresh}
-                        onSelect={day => setDetail({ kind: "awakenings", day })}
-                      />
-                      <section className="qs-card">
-                        <h2>Time-of-night distribution</h2>
-                        <p>All recorded events in the selected range · New York time</p>
-                        <Distribution data={data} />
-                      </section>
-                    </>
-                  )}
-                  <History
-                    key={selectedKind}
-                    root={root}
-                    kind={selectedKind}
-                    query={query}
-                    revision={revision}
-                    onEdit={row => setForm({ kind: selectedKind, row })}
-                  />
-                </>
-              )}
+                  </div>
+                  <div className="qs-actions">
+                    <button
+                      className="qs-add-inline qs-tone-awakenings"
+                      onClick={() => setForm({ kind: "awakenings" })}
+                    >
+                      <FontAwesomeIcon icon={faPlus} />
+                      add awakenings
+                    </button>
+                  </div>
+                </div>
+                <TrackerChart data={data} onDay={day => setDetail({ kind: "awakenings", day })} />
+                <p className="qs-muted">
+                  Counts include recorded events on unreviewed nights. Only complete nights
+                  contribute to the average.
+                </p>
+              </section>
+              <Nights
+                key={query}
+                days={data.days}
+                root={root}
+                onSaved={refresh}
+                onSelect={day => setDetail({ kind: "awakenings", day })}
+              />
+              <section className="qs-card">
+                <h2>Time-of-night distribution</h2>
+                <p>All recorded events in the selected range · New York time</p>
+                <Distribution data={data} />
+              </section>
+              <History
+                root={root}
+                query={query}
+                revision={revision}
+                onEdit={row => setForm({ kind: "awakenings", row })}
+              />
             </div>
           )
         )}
