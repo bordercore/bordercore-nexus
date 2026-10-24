@@ -34,8 +34,8 @@ export function datesBetween(start: string, end: string) {
   }
   return dates;
 }
-export function rangePreset(start: string, end: string) {
-  return RANGES.find(([days]) => start === daysBefore(end, days - 1))?.[0];
+export function rangePreset(start: string, end: string, ranges = RANGES) {
+  return ranges.find(([days]) => start === daysBefore(end, days - 1))?.[0];
 }
 export function latestReading<T extends Reading>(readings: T[]) {
   return readings.reduce<T | null>((best, r) => (!best || stamp(r) > stamp(best) ? r : best), null);
@@ -103,23 +103,30 @@ export function StatusLine({
   excluded,
   sources,
   extra,
+  summary,
+  ranges = RANGES,
   controls,
+  addLabel = "reading",
   onRange,
   onAdd,
 }: {
   start: string;
   end: string;
   loaded: boolean;
-  readings: number;
-  days: number;
-  excluded: number;
-  sources: string[];
+  readings?: number;
+  days?: number;
+  excluded?: number;
+  sources?: string[];
   extra?: React.ReactNode;
+  /** Replaces the default "range … · N readings on N days" text. */
+  summary?: React.ReactNode;
+  ranges?: [number, string][];
   controls?: React.ReactNode;
+  addLabel?: React.ReactNode;
   onRange: (start: string, end: string) => void;
   onAdd: () => void;
 }) {
-  const preset = rangePreset(start, end);
+  const preset = rangePreset(start, end, ranges);
   const [custom, setCustom] = useState(false);
   // The API rejects reversed ranges and spans over ten years, so ignore those
   // edits instead of sending a request that can only fail.
@@ -129,35 +136,37 @@ export function StatusLine({
   return (
     <>
       <div className="qs-statusline">
-        <div>
-          <span className="qs-dim">// </span>range{" "}
-          <b>
-            {start} → {end}
-          </b>{" "}
-          · {plural(datesBetween(start, end).length, "day")}
-          {loaded && (
-            <>
-              {" "}
-              · <b>{plural(readings, "reading")}</b> on <b>{days}</b> {days === 1 ? "day" : "days"}{" "}
-              · {excluded} excluded
-              {sources.length > 0 && (
-                <>
-                  {" "}
-                  · sources{" "}
-                  {sources.map((s, i) => (
-                    <React.Fragment key={s}>
-                      {i > 0 && " · "}
-                      <b className="qs-source">{s}</b>
-                    </React.Fragment>
-                  ))}
-                </>
-              )}
-            </>
-          )}
-          {extra}
-        </div>
+        {summary ?? (
+          <div>
+            <span className="qs-dim">// </span>range{" "}
+            <b>
+              {start} → {end}
+            </b>{" "}
+            · {plural(datesBetween(start, end).length, "day")}
+            {loaded && days !== undefined && (
+              <>
+                {" "}
+                · <b>{plural(readings ?? 0, "reading")}</b> on <b>{days}</b>{" "}
+                {days === 1 ? "day" : "days"} · {excluded} excluded
+                {sources && sources.length > 0 && (
+                  <>
+                    {" "}
+                    · sources{" "}
+                    {sources.map((s, i) => (
+                      <React.Fragment key={s}>
+                        {i > 0 && " · "}
+                        <b className="qs-source">{s}</b>
+                      </React.Fragment>
+                    ))}
+                  </>
+                )}
+              </>
+            )}
+            {extra}
+          </div>
+        )}
         <div className="qs-ranges">
-          {RANGES.map(([count, label]) => (
+          {ranges.map(([count, label]) => (
             <button
               key={count}
               className={!custom && preset === count ? "active" : ""}
@@ -181,7 +190,7 @@ export function StatusLine({
           {controls}
           <button className="qs-cta" onClick={onAdd}>
             <FontAwesomeIcon icon={faPlus} />
-            reading
+            {addLabel}
           </button>
         </div>
       </div>

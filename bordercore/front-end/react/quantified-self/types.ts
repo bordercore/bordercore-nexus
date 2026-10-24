@@ -40,7 +40,14 @@ export interface Day {
   status: Status;
   revision: string | null;
   note: string;
-  events: { uuid: string; hour: number; time: string; timestamp: string; note: string }[];
+  events: {
+    uuid: string;
+    hour: number;
+    time: string;
+    timestamp: string;
+    note: string;
+    source: string;
+  }[];
 }
 export interface Dashboard {
   days: Day[];

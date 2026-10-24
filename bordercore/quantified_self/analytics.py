@@ -28,14 +28,15 @@ def dashboard(user: User, start: date, end: date, unit: str) -> dict[str, Any]:
     for pressure in pressures:
         pressure_days[pressure.date].append(pressure)
     nights = {night.date: night for night in SleepNight.objects.filter(user=user, date__range=(start, end))}
-    events = list(AwakeningEvent.objects.filter(user=user, night__date__range=(start, end), excluded=False).select_related("night").order_by("occurred_at"))
+    events = list(AwakeningEvent.objects.filter(user=user, night__date__range=(start, end), excluded=False).select_related("night", "source").order_by("occurred_at"))
     event_days: defaultdict[date, list[dict[str, Any]]] = defaultdict(list)
     histogram = [0] * 24
     for event in events:
         local = event.occurred_at.astimezone(ZoneInfo(event.night.timezone))
         hour = (local.hour - 12) % 24 + local.minute / 60 + local.second / 3600
         event_days[event.night.date].append({"uuid": str(event.uuid), "hour": hour,
-            "time": local.strftime("%H:%M:%S %z"), "timestamp": event.occurred_at.isoformat(), "note": event.note})
+            "time": local.strftime("%H:%M:%S %z"), "timestamp": event.occurred_at.isoformat(), "note": event.note,
+            "source": event.source.name})
         histogram[local.hour] += 1
     days: list[dict[str, Any]] = []
     cursor = start

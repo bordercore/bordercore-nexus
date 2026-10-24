@@ -409,3 +409,9 @@ def test_patch_and_delete_ownership(client):
     url = f"/quantified-self/blood-pressure/records/{row.uuid}/"
     assert client.patch(url, {"excluded": True}, format="json").status_code == 404
     assert client.delete(url).status_code == 404
+
+
+def test_dashboard_events_include_source(owner):
+    save_record(owner, "awakenings", awakening())
+    night = analytics.dashboard(owner, date(2026, 1, 10), date(2026, 1, 10), "lb")["days"][0]
+    assert night["events"][0]["source"] == "Wumpus"

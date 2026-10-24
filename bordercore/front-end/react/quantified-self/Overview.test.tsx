@@ -34,7 +34,7 @@ function night(date: string, overrides: Partial<Day> = {}): Day {
     ...overrides,
   };
 }
-const event = { uuid: "e1", hour: 15, time: "03:00", timestamp: "", note: "" };
+const event = { uuid: "e1", hour: 15, time: "03:00", timestamp: "", note: "", source: "Wumpus" };
 const data: Dashboard = {
   days: [
     night("2026-01-08", { status: "complete", awakenings: 2, revision: "r8" }),

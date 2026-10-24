@@ -2,18 +2,21 @@ import React, { useEffect, useState } from "react";
 import { api, daysBefore, errorText, today } from "./api";
 import { Dashboard, Day, Kind, Reading, Tab, labels } from "./types";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCalendarAlt, faPlus } from "@fortawesome/free-solid-svg-icons";
-import { Distribution, TrackerChart } from "./Charts";
+import { faCalendarAlt } from "@fortawesome/free-solid-svg-icons";
 import Overview from "./Overview";
 import ReadingForm from "./ReadingForm";
-import History from "./History";
 import Imports from "./Imports";
-import Nights from "./Nights";
 import DayDetail from "./DayDetail";
+import Awakenings from "./Awakenings";
 import BloodPressure from "./BloodPressure";
 import Weight from "./Weight";
 import "./quantified-self.css";
 
+const accents: Record<Kind, string> = {
+  awakenings: "purple",
+  weight: "cyan",
+  "blood-pressure": "pink",
+};
 const tabs: Tab[] = ["overview", "awakenings", "weight", "blood-pressure", "imports"];
 const ranges: [number, string][] = [
   [7, "7d"],
@@ -42,12 +45,19 @@ export default function QuantifiedSelfPage({ root }: { root: string }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [revision, setRevision] = useState(0);
-  const [form, setForm] = useState<{ kind: Kind; row?: Reading } | null>(null);
+  const [form, setForm] = useState<{
+    kind: Kind;
+    row?: Reading;
+    defaults?: { date?: string; time?: string };
+  } | null>(null);
   const [detail, setDetail] = useState<{ kind: Kind; day: Day } | null>(null);
   const [notice, setNotice] = useState("");
   const [custom, setCustom] = useState(false);
   // Detail pages load their own readings and need no dashboard summary.
-  const detailTab = view.tab === "blood-pressure" || view.tab === "weight" ? view.tab : null;
+  const detailTab =
+    view.tab === "awakenings" || view.tab === "blood-pressure" || view.tab === "weight"
+      ? view.tab
+      : null;
   const needsSummary = !detailTab;
   const query = new URLSearchParams({
     start: view.start,
@@ -106,9 +116,7 @@ export default function QuantifiedSelfPage({ root }: { root: string }) {
   const preset = ranges.find(([days]) => view.start === daysBefore(view.end, days - 1));
   const awaiting = data?.days.filter(d => d.status === "unreviewed" && d.date <= today()).length;
   return (
-    <main
-      className={`qs-page${detailTab ? ` qs-accent-${detailTab === "weight" ? "cyan" : "pink"}` : ""}`}
-    >
+    <main className={`qs-page${detailTab ? ` qs-accent-${accents[detailTab]}` : ""}`}>
       <div className="qs-shell">
         <header className="qs-header">
           <div className="qs-title">
@@ -217,12 +225,18 @@ export default function QuantifiedSelfPage({ root }: { root: string }) {
             {error} <button onClick={refresh}>Retry</button>
           </p>
         )}
-        {needsSummary && loading && !data && view.tab !== "overview" && (
-          <p className="qs-muted" role="status">
-            Loading observations…
-          </p>
-        )}
-        {view.tab === "blood-pressure" ? (
+        {view.tab === "awakenings" ? (
+          <Awakenings
+            root={root}
+            start={view.start}
+            end={view.end}
+            revision={revision}
+            onRange={(start, end) => setView({ ...view, start, end })}
+            onAdd={defaults => setForm({ kind: "awakenings", defaults })}
+            onEdit={row => setForm({ kind: "awakenings", row })}
+            onChanged={refresh}
+          />
+        ) : view.tab === "blood-pressure" ? (
           <BloodPressure
             root={root}
             start={view.start}
@@ -260,55 +274,7 @@ export default function QuantifiedSelfPage({ root }: { root: string }) {
               onSaved={refresh}
             />
           </div>
-        ) : (
-          data &&
-          view.tab === "awakenings" && (
-            <div aria-busy={loading}>
-              <section className="qs-card">
-                <div className="qs-section-head">
-                  <div>
-                    <h2>{labels.awakenings}</h2>
-                    <p>
-                      {`${summary?.mean_awakenings ?? "—"} average · ${summary?.completed_nights} completed nights of ${summary?.total_nights} · ${summary?.recorded_awakenings} recorded events`}
-                    </p>
-                  </div>
-                  <div className="qs-actions">
-                    <button
-                      className="qs-add-inline qs-tone-awakenings"
-                      onClick={() => setForm({ kind: "awakenings" })}
-                    >
-                      <FontAwesomeIcon icon={faPlus} />
-                      add awakenings
-                    </button>
-                  </div>
-                </div>
-                <TrackerChart data={data} onDay={day => setDetail({ kind: "awakenings", day })} />
-                <p className="qs-muted">
-                  Counts include recorded events on unreviewed nights. Only complete nights
-                  contribute to the average.
-                </p>
-              </section>
-              <Nights
-                key={query}
-                days={data.days}
-                root={root}
-                onSaved={refresh}
-                onSelect={day => setDetail({ kind: "awakenings", day })}
-              />
-              <section className="qs-card">
-                <h2>Time-of-night distribution</h2>
-                <p>All recorded events in the selected range · New York time</p>
-                <Distribution data={data} />
-              </section>
-              <History
-                root={root}
-                query={query}
-                revision={revision}
-                onEdit={row => setForm({ kind: "awakenings", row })}
-              />
-            </div>
-          )
-        )}
+        ) : null}
       </div>
       {form && (
         <ReadingForm
@@ -325,7 +291,9 @@ export default function QuantifiedSelfPage({ root }: { root: string }) {
           {...detail}
           unit={view.unit}
           root={root}
+          revision={revision}
           onSaved={saved}
+          onEdit={row => setForm({ kind: detail.kind, row })}
           onClose={() => setDetail(null)}
         />
       )}

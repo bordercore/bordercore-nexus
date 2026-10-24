@@ -5,6 +5,7 @@ import { Kind, Reading, labels } from "./types";
 export default function ReadingForm({
   kind,
   row,
+  defaults,
   root,
   unit,
   onSaved,
@@ -12,6 +13,8 @@ export default function ReadingForm({
 }: {
   kind: Kind;
   row?: Reading;
+  /** Prefill for a new reading, e.g. "now" or a specific night. */
+  defaults?: { date?: string; time?: string };
   root: string;
   unit: string;
   onSaved: (unit?: string) => void;
@@ -23,8 +26,8 @@ export default function ReadingForm({
   const [another, setAnother] = useState(false);
   const timestamp = row?.timestamp;
   const [values, setValues] = useState<Record<string, string>>({
-    date: timestamp ? timestamp.slice(0, 10) : row?.date || today(),
-    time: timestamp ? timestamp.slice(11, 19) : row?.time || "",
+    date: timestamp ? timestamp.slice(0, 10) : row?.date || defaults?.date || today(),
+    time: timestamp ? timestamp.slice(11, 19) : row?.time || defaults?.time || "",
     timezone: row?.timezone || "America/New_York",
     utc_offset: timestamp ? timestamp.slice(-6) : row?.utc_offset || "",
     value: row?.value || "",

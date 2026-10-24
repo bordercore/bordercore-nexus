@@ -1,28 +1,65 @@
 import React, { useEffect, useRef, useState } from "react";
 import { api, errorText } from "./api";
-import { Day, Kind } from "./types";
+import { Day, Kind, Reading } from "./types";
 export default function DayDetail({
   day,
   kind,
   unit,
   root,
+  revision = 0,
   onClose,
   onSaved,
+  onEdit,
 }: {
   day: Day;
   kind: Kind;
   unit: string;
   root: string;
+  revision?: number;
   onClose: () => void;
   onSaved: () => void;
+  onEdit?: (row: Reading) => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [note, setNote] = useState(day.note);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  // Every awakening recorded for the night, including excluded ones, so they
+  // can be corrected, removed or restored here.
+  const [events, setEvents] = useState<Reading[] | null>(null);
+  const [confirming, setConfirming] = useState<string | null>(null);
   useEffect(() => {
     dialog.current?.showModal();
   }, []);
+  useEffect(() => {
+    if (kind !== "awakenings") return;
+    let active = true;
+    api<{ results: Reading[] }>(
+      `${root}awakenings/records/?start=${day.date}&end=${day.date}&limit=1000`
+    )
+      .then(value => {
+        if (active) setEvents([...value.results].reverse());
+      })
+      .catch(err => {
+        if (active) setError(errorText(err));
+      });
+    return () => {
+      active = false;
+    };
+  }, [kind, root, day.date, revision]);
+  async function change(request: () => Promise<unknown>) {
+    setBusy(true);
+    setError("");
+    try {
+      await request();
+      onSaved();
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setBusy(false);
+      setConfirming(null);
+    }
+  }
   async function save() {
     setBusy(true);
     try {
@@ -61,14 +98,65 @@ export default function DayDetail({
           <p>
             {day.awakenings ?? "No"} recorded awakenings · {day.status}
           </p>
-          <ul>
-            {day.events.map(event => (
-              <li key={event.uuid}>
-                {event.time}
-                {event.note && ` — ${event.note}`}
-              </li>
-            ))}
-          </ul>
+          {events === null ? (
+            <p className="qs-muted">…</p>
+          ) : (
+            <ul className="qs-night-events">
+              {events.map(event => (
+                <li key={event.uuid} className={event.excluded ? "qs-night-event-excluded" : ""}>
+                  <span className="qs-night-event-time">{event.timestamp?.slice(11, 19)}</span>
+                  <span className="qs-source">{event.source}</span>
+                  <span className="qs-night-event-note">
+                    {event.excluded ? "excluded" : ""}
+                    {event.excluded && event.note ? " · " : ""}
+                    {event.note}
+                  </span>
+                  {confirming === event.uuid ? (
+                    <>
+                      <button
+                        className="qs-text-btn qs-danger-text"
+                        disabled={busy}
+                        onClick={() =>
+                          change(() => api(`${root}awakenings/records/${event.uuid}/`, "DELETE"))
+                        }
+                      >
+                        delete · cannot be undone
+                      </button>
+                      <button className="qs-text-btn" onClick={() => setConfirming(null)}>
+                        cancel
+                      </button>
+                    </>
+                  ) : event.excluded ? (
+                    <button
+                      className="qs-text-btn qs-restore"
+                      disabled={busy}
+                      onClick={() =>
+                        change(() =>
+                          api(`${root}awakenings/records/${event.uuid}/`, "PATCH", {
+                            excluded: false,
+                          })
+                        )
+                      }
+                    >
+                      restore
+                    </button>
+                  ) : (
+                    <>
+                      {onEdit && (
+                        <button className="qs-text-btn" onClick={() => onEdit(event)}>
+                          edit
+                        </button>
+                      )}
+                      <button className="qs-text-btn" onClick={() => setConfirming(event.uuid)}>
+                        delete
+                      </button>
+                    </>
+                  )}
+                </li>
+              ))}
+              {!events.length && <li className="qs-muted">No awakenings recorded.</li>}
+            </ul>
+          )}
           <label>
             Night note
             <textarea
@@ -79,7 +167,6 @@ export default function DayDetail({
               onChange={e => setNote(e.target.value)}
             />
           </label>
-          <p className="qs-muted">Use reading history to correct or exclude individual events.</p>
           <button className="qs-primary" disabled={busy} onClick={save}>
             Save note
           </button>
