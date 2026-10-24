@@ -20,20 +20,14 @@ export function TrackerChart({
   kind,
   data,
   onDay,
-  pulse = false,
 }: {
-  kind: Kind;
+  kind: Exclude<Kind, "blood-pressure">;
   data: Dashboard;
   onDay: (day: Day) => void;
-  pulse?: boolean;
 }) {
   const days = data.days;
   const available = days.some(d =>
-    kind === "awakenings"
-      ? d.awakenings !== null
-      : kind === "weight"
-        ? d.weight !== null
-        : d.systolic !== null
+    kind === "awakenings" ? d.awakenings !== null : d.weight !== null
   );
   if (!available)
     return (
@@ -49,13 +43,7 @@ export function TrackerChart({
       <YAxis
         width={50}
         allowDecimals={kind !== "awakenings"}
-        domain={
-          kind === "awakenings"
-            ? [0, "auto"]
-            : kind === "weight"
-              ? ["dataMin - 1", "dataMax + 1"]
-              : ["dataMin - 5", "dataMax + 5"]
-        }
+        domain={kind === "awakenings" ? [0, "auto"] : ["dataMin - 1", "dataMax + 1"]}
         tickFormatter={value => (kind === "weight" ? Number(value).toFixed(1) : String(value))}
       />
       <Tooltip
@@ -106,67 +94,22 @@ export function TrackerChart({
         ) : (
           <LineChart data={days} onClick={handleClick}>
             {axis}
-            {kind === "weight" ? (
-              <>
-                <Line
-                  isAnimationActive={false}
-                  dataKey="weight"
-                  name={`Daily mean (${data.unit})`}
-                  stroke={colors[0]}
-                  dot={{ r: 3 }}
-                  connectNulls={false}
-                />
-                <Line
-                  isAnimationActive={false}
-                  dataKey="weight_trend"
-                  name="7-day trend"
-                  stroke={colors[1]}
-                  dot={false}
-                  connectNulls={false}
-                />
-              </>
-            ) : pulse ? (
-              <Line
-                isAnimationActive={false}
-                dataKey="pulse"
-                name="Daily mean pulse (bpm)"
-                stroke={colors[2]}
-                dot={{ r: 3 }}
-              />
-            ) : (
-              <>
-                <Line
-                  isAnimationActive={false}
-                  dataKey="systolic"
-                  name="Daily mean systolic"
-                  stroke={colors[0]}
-                  dot={{ r: 3 }}
-                />
-                <Line
-                  isAnimationActive={false}
-                  dataKey="diastolic"
-                  name="Daily mean diastolic"
-                  stroke={colors[1]}
-                  dot={{ r: 3 }}
-                />
-                <Line
-                  isAnimationActive={false}
-                  dataKey="systolic_trend"
-                  name="7-day systolic trend"
-                  stroke={colors[0]}
-                  strokeDasharray="5 4"
-                  dot={false}
-                />
-                <Line
-                  isAnimationActive={false}
-                  dataKey="diastolic_trend"
-                  name="7-day diastolic trend"
-                  stroke={colors[1]}
-                  strokeDasharray="5 4"
-                  dot={false}
-                />
-              </>
-            )}
+            <Line
+              isAnimationActive={false}
+              dataKey="weight"
+              name={`Daily mean (${data.unit})`}
+              stroke={colors[0]}
+              dot={{ r: 3 }}
+              connectNulls={false}
+            />
+            <Line
+              isAnimationActive={false}
+              dataKey="weight_trend"
+              name="7-day trend"
+              stroke={colors[1]}
+              dot={false}
+              connectNulls={false}
+            />
           </LineChart>
         )}
       </ResponsiveContainer>

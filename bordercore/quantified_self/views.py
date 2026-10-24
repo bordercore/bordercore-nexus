@@ -21,10 +21,13 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 
 from . import analytics, apple_health, import_progress, imports
 from .models import ImportBatch, SleepNight
-from .services import (KINDS, ZONE, fail, lock_user, normalize, parse_date, save_record,
-                       serialize)
+from .services import (KINDS, ZONE, delete_record, fail, lock_user, normalize, parse_date,
+                       save_record, serialize, set_excluded)
 
 logger = logging.getLogger(f"bordercore.{__name__}")
+
+# Detail pages load a whole range at once (ten years of several daily readings).
+MAX_PAGE = 20000
 
 
 @login_required
@@ -73,17 +76,27 @@ def records(request: Request, kind: str) -> Response:
     start, end = date_range(request)
     try:
         offset = int(request.GET.get("offset", 0))
-        if offset < 0:
+        limit = int(request.GET.get("limit", 50))
+        if offset < 0 or not 1 <= limit <= MAX_PAGE:
             raise ValueError
     except ValueError:
-        fail("Invalid page offset.")
+        fail(f"Invalid page offset or limit (1–{MAX_PAGE}).")
     query = records_query(request.user, kind, start, end)
-    return Response({"count": query.count(), "results": [serialize(kind, row) for row in query[offset:offset + 50]]})
+    return Response({"count": query.count(), "results": [serialize(kind, row) for row in query[offset:offset + limit]]})
 
 
-@api_view(["PUT"])
+@api_view(["PUT", "PATCH", "DELETE"])
 def record_detail(request: Request, kind: str, uuid: UUID) -> Response:
     row = get_object_or_404(tracker(kind), uuid=uuid, user=request.user)
+    if request.method == "DELETE":
+        delete_record(request.user, kind, row)
+        return Response(status=204)
+    if request.method == "PATCH":
+        # Only the exclusion flag is patchable; other corrections go through PUT validation.
+        if not isinstance(request.data, dict) or set(request.data) != {"excluded"}:
+            fail("PATCH accepts only the excluded flag.")
+        row = set_excluded(request.user, kind, row, request.data["excluded"])
+        return Response(serialize(kind, row))
     row, _ = save_record(request.user, kind, request.data, instance=row)
     return Response(serialize(kind, row))
 

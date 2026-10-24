@@ -105,3 +105,27 @@ it("retains measured charts while a new range loads and when it arrives", async 
   expect(timeline.querySelector(".qs-crosshair")).toBeNull();
   expect(disconnect).not.toHaveBeenCalled();
 });
+
+it("keeps the current view on screen while a new range loads", async () => {
+  window.history.replaceState(null, "", "/?tab=weight");
+  let resolveRange!: (value: Dashboard) => void;
+  vi.mocked(api).mockImplementation(url =>
+    String(url).includes("/summary/") &&
+    String(url).includes(`start=${daysBefore("2026-10-22", 6)}`)
+      ? (new Promise<Dashboard>(resolve => {
+          resolveRange = resolve;
+        }) as ReturnType<typeof api>)
+      : String(url).includes("/summary/")
+        ? Promise.resolve(dashboard(30))
+        : Promise.resolve({ count: 0, results: [] })
+  );
+  render(<QuantifiedSelfPage root="/quantified-self/" />);
+  expect(await screen.findByText("Reading history")).toBeInTheDocument();
+  await userEvent.setup().click(screen.getByRole("button", { name: "7d" }));
+  expect(screen.queryByText("Loading observations…")).toBeNull();
+  expect(screen.queryByText("Loading readings…")).toBeNull();
+  expect(screen.getByText("Reading history")).toBeInTheDocument();
+  await act(async () => {
+    resolveRange(dashboard(7));
+  });
+});

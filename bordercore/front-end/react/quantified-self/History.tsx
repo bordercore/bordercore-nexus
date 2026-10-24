@@ -9,7 +9,7 @@ export default function History({
   onEdit,
 }: {
   root: string;
-  kind: Kind;
+  kind: Exclude<Kind, "blood-pressure">;
   query: string;
   revision: number;
   onEdit: (row: Reading) => void;
@@ -21,15 +21,19 @@ export default function History({
     setOffset(0);
   }, [kind, query]);
   useEffect(() => {
+    // Keep the current rows on screen while a new range or page loads, so the
+    // table doesn't collapse and shift the layout on every change.
     let active = true;
-    setData(null);
     setError("");
     api<{ count: number; results: Reading[] }>(`${root}${kind}/records/?${query}&offset=${offset}`)
       .then(value => {
         if (active) setData(value);
       })
       .catch(err => {
-        if (active) setError(errorText(err));
+        if (active) {
+          setError(errorText(err));
+          setData(null);
+        }
       });
     return () => {
       active = false;
@@ -76,13 +80,7 @@ export default function History({
                         </>
                       )}
                     </td>
-                    <td>
-                      {kind === "weight"
-                        ? `${row.value} ${row.unit}`
-                        : kind === "blood-pressure"
-                          ? `${row.systolic}/${row.diastolic} mmHg${row.pulse ? ` · ${row.pulse} bpm` : ""}`
-                          : "Awakening"}
-                    </td>
+                    <td>{kind === "weight" ? `${row.value} ${row.unit}` : "Awakening"}</td>
                     <td>{row.source}</td>
                     <td className="qs-note-cell">{row.note || "—"}</td>
                     <td>{row.excluded ? "Excluded" : "Included"}</td>

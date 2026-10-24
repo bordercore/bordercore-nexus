@@ -10,6 +10,7 @@ import History from "./History";
 import Imports from "./Imports";
 import Nights from "./Nights";
 import DayDetail from "./DayDetail";
+import BloodPressure from "./BloodPressure";
 import "./quantified-self.css";
 
 const tabs: Tab[] = ["overview", "awakenings", "weight", "blood-pressure", "imports"];
@@ -42,9 +43,10 @@ export default function QuantifiedSelfPage({ root }: { root: string }) {
   const [revision, setRevision] = useState(0);
   const [form, setForm] = useState<{ kind: Kind; row?: Reading } | null>(null);
   const [detail, setDetail] = useState<{ kind: Kind; day: Day } | null>(null);
-  const [pulse, setPulse] = useState(false);
   const [notice, setNotice] = useState("");
   const [custom, setCustom] = useState(false);
+  // The blood pressure page loads its own readings and needs no dashboard summary.
+  const needsSummary = view.tab !== "blood-pressure";
   const query = new URLSearchParams({
     start: view.start,
     end: view.end,
@@ -74,6 +76,7 @@ export default function QuantifiedSelfPage({ root }: { root: string }) {
     return () => window.removeEventListener("popstate", handle);
   }, []);
   useEffect(() => {
+    if (!needsSummary) return;
     let active = true;
     setLoading(true);
     setError("");
@@ -93,20 +96,20 @@ export default function QuantifiedSelfPage({ root }: { root: string }) {
     return () => {
       active = false;
     };
-  }, [root, query, revision]);
+  }, [root, query, revision, needsSummary]);
   function range(days: number) {
     setView({ ...view, start: daysBefore(today(), days - 1), end: today() });
   }
   const summary = data?.summary;
   const preset = ranges.find(([days]) => view.start === daysBefore(view.end, days - 1));
   const awaiting = data?.days.filter(d => d.status === "unreviewed" && d.date <= today()).length;
-  const selectedKind = view.tab in labels ? (view.tab as Kind) : null;
+  const selectedKind = view.tab === "awakenings" || view.tab === "weight" ? view.tab : null;
   return (
-    <main className="qs-page">
+    <main className={`qs-page${needsSummary ? "" : " qs-accent-pink"}`}>
       <div className="qs-shell">
         <header className="qs-header">
           <div className="qs-title">
-            <h1>Quantified Self</h1>
+            <h1>{needsSummary ? "Quantified Self" : labels["blood-pressure"]}</h1>
             <div className="qs-crumbs">
               bordercore <span>/</span> quantified-self <span>/</span> <b>{view.tab}</b>
             </div>
@@ -127,55 +130,57 @@ export default function QuantifiedSelfPage({ root }: { root: string }) {
             ))}
           </nav>
         </header>
-        <div className="qs-statusline">
-          <div>
-            <span className="qs-dim">// </span>range{" "}
-            <b>
-              {view.start} → {view.end}
-            </b>{" "}
-            · tz <b>{data?.timezone ?? "America/New_York"}</b>
-            {summary && (
-              <>
-                {" "}
-                · {summary.total_nights} nights ·{" "}
-                <span className="qs-ok-text">{summary.completed_nights} complete</span> ·{" "}
-                <span className="qs-warn-text">{awaiting} awaiting review</span>
-              </>
-            )}{" "}
-            · unit{" "}
-            <button
-              className="qs-unit"
-              aria-label={`Weight unit ${view.unit}; switch to ${view.unit === "lb" ? "kg" : "lb"}`}
-              onClick={() => setView({ ...view, unit: view.unit === "lb" ? "kg" : "lb" })}
-            >
-              {view.unit}
-            </button>
-          </div>
-          <div className="qs-ranges">
-            {ranges.map(([days, label]) => (
+        {needsSummary && (
+          <div className="qs-statusline">
+            <div>
+              <span className="qs-dim">// </span>range{" "}
+              <b>
+                {view.start} → {view.end}
+              </b>{" "}
+              · tz <b>{data?.timezone ?? "America/New_York"}</b>
+              {summary && (
+                <>
+                  {" "}
+                  · {summary.total_nights} nights ·{" "}
+                  <span className="qs-ok-text">{summary.completed_nights} complete</span> ·{" "}
+                  <span className="qs-warn-text">{awaiting} awaiting review</span>
+                </>
+              )}{" "}
+              · unit{" "}
               <button
-                key={days}
-                className={!custom && preset?.[0] === days ? "active" : ""}
-                aria-pressed={!custom && preset?.[0] === days}
-                onClick={() => {
-                  setCustom(false);
-                  range(days);
-                }}
+                className="qs-unit"
+                aria-label={`Weight unit ${view.unit}; switch to ${view.unit === "lb" ? "kg" : "lb"}`}
+                onClick={() => setView({ ...view, unit: view.unit === "lb" ? "kg" : "lb" })}
               >
-                {label}
+                {view.unit}
               </button>
-            ))}
-            <button
-              className={`qs-custom${custom || !preset ? " active" : ""}`}
-              aria-expanded={custom}
-              onClick={() => setCustom(!custom)}
-            >
-              <FontAwesomeIcon icon={faCalendarAlt} />
-              custom…
-            </button>
+            </div>
+            <div className="qs-ranges">
+              {ranges.map(([days, label]) => (
+                <button
+                  key={days}
+                  className={!custom && preset?.[0] === days ? "active" : ""}
+                  aria-pressed={!custom && preset?.[0] === days}
+                  onClick={() => {
+                    setCustom(false);
+                    range(days);
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+              <button
+                className={`qs-custom${custom || !preset ? " active" : ""}`}
+                aria-expanded={custom}
+                onClick={() => setCustom(!custom)}
+              >
+                <FontAwesomeIcon icon={faCalendarAlt} />
+                custom…
+              </button>
+            </div>
           </div>
-        </div>
-        {custom && (
+        )}
+        {needsSummary && custom && (
           <div className="qs-toolbar">
             <label>
               From
@@ -204,17 +209,28 @@ export default function QuantifiedSelfPage({ root }: { root: string }) {
             {notice}
           </p>
         )}
-        {error && (
+        {needsSummary && error && (
           <p className="qs-error" role="alert">
             {error} <button onClick={refresh}>Retry</button>
           </p>
         )}
-        {loading && view.tab !== "overview" && (
+        {needsSummary && loading && !data && view.tab !== "overview" && (
           <p className="qs-muted" role="status">
             Loading observations…
           </p>
         )}
-        {view.tab === "imports" ? (
+        {view.tab === "blood-pressure" ? (
+          <BloodPressure
+            root={root}
+            start={view.start}
+            end={view.end}
+            revision={revision}
+            onRange={(start, end) => setView({ ...view, start, end })}
+            onAdd={() => setForm({ kind: "blood-pressure" })}
+            onEdit={row => setForm({ kind: "blood-pressure", row })}
+            onChanged={refresh}
+          />
+        ) : view.tab === "imports" ? (
           <Imports root={root} onSaved={saved} />
         ) : view.tab === "overview" ? (
           <div aria-busy={loading}>
@@ -240,22 +256,10 @@ export default function QuantifiedSelfPage({ root }: { root: string }) {
                         <p>
                           {selectedKind === "awakenings"
                             ? `${summary?.mean_awakenings ?? "—"} average · ${summary?.completed_nights} completed nights of ${summary?.total_nights} · ${summary?.recorded_awakenings} recorded events`
-                            : selectedKind === "weight"
-                              ? `${summary?.weight_days} recorded days · 7-day trend averages daily means`
-                              : `${summary?.pressure_readings} readings on ${summary?.pressure_days} days · reading average ${summary?.mean_systolic ?? "—"}/${summary?.mean_diastolic ?? "—"} mmHg`}
+                            : `${summary?.weight_days} recorded days · 7-day trend averages daily means`}
                         </p>
                       </div>
                       <div className="qs-actions">
-                        {selectedKind === "blood-pressure" && (
-                          <label className="qs-check">
-                            <input
-                              type="checkbox"
-                              checked={pulse}
-                              onChange={e => setPulse(e.target.checked)}
-                            />{" "}
-                            Show pulse
-                          </label>
-                        )}
                         <button
                           className={`qs-add-inline qs-tone-${selectedKind}`}
                           onClick={() => setForm({ kind: selectedKind })}
@@ -268,7 +272,6 @@ export default function QuantifiedSelfPage({ root }: { root: string }) {
                     <TrackerChart
                       kind={selectedKind}
                       data={data}
-                      pulse={pulse}
                       onDay={day => setDetail({ kind: selectedKind, day })}
                     />
                     <p className="qs-muted">
@@ -294,6 +297,7 @@ export default function QuantifiedSelfPage({ root }: { root: string }) {
                     </>
                   )}
                   <History
+                    key={selectedKind}
                     root={root}
                     kind={selectedKind}
                     query={query}

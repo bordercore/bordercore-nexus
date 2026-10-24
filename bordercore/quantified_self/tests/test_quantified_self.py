@@ -365,3 +365,47 @@ def test_simultaneous_delivery_creates_one_event(owner):
     assert results[0][0] == results[1][0]
     assert sorted(created for _,created in results) == [False,True]
     assert AwakeningEvent.objects.filter(user=owner).count() == 1
+
+
+def pressure(**kwargs):
+    return {"date": "2026-01-10", "time": "08:00", "systolic": 118, "diastolic": 76, **kwargs}
+
+
+def test_records_limit(owner, client):
+    for minute in range(3):
+        save_record(owner, "blood-pressure", pressure(time=f"08:0{minute}"))
+    url = "/quantified-self/blood-pressure/records/?start=2026-01-01&end=2026-01-31"
+    assert len(client.get(url).json()["results"]) == 3
+    assert len(client.get(f"{url}&limit=2").json()["results"]) == 2
+    assert client.get(f"{url}&limit=0").status_code == 400
+    assert client.get(f"{url}&limit=20001").status_code == 400
+
+
+def test_patch_excluded_and_delete(owner, client):
+    row, _ = save_record(owner, "blood-pressure", pressure())
+    url = f"/quantified-self/blood-pressure/records/{row.uuid}/"
+    response = client.patch(url, {"excluded": True}, format="json")
+    assert response.status_code == 200 and response.json()["excluded"]
+    assert analytics.dashboard(owner, date(2026, 1, 10), date(2026, 1, 10), "lb")["days"][0]["systolic"] is None
+    assert client.patch(url, {"excluded": "yes"}, format="json").status_code == 400
+    assert client.patch(url, {"excluded": False, "systolic": 200}, format="json").status_code == 400
+    assert client.delete(url).status_code == 204
+    assert client.delete(url).status_code == 404
+
+
+def test_delete_awakening_reopens_night(owner, client):
+    row, _ = save_record(owner, "awakenings", awakening())
+    night = row.night
+    night.status = "complete"
+    night.save()
+    assert client.delete(f"/quantified-self/awakenings/records/{row.uuid}/").status_code == 204
+    night.refresh_from_db()
+    assert night.status == "unreviewed"
+
+
+def test_patch_and_delete_ownership(client):
+    other = User.objects.create_user(username="qs-other")
+    row, _ = save_record(other, "blood-pressure", pressure())
+    url = f"/quantified-self/blood-pressure/records/{row.uuid}/"
+    assert client.patch(url, {"excluded": True}, format="json").status_code == 404
+    assert client.delete(url).status_code == 404

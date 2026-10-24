@@ -207,6 +207,28 @@ def save_record(user: User, kind: str, data: dict[str, Any], instance: Any = Non
     return write_record(user, kind, values, source, instance=instance)
 
 
+@transaction.atomic
+def set_excluded(user: User, kind: str, instance: Any, excluded: Any) -> Any:
+    if excluded not in (True, False):
+        fail("Excluded must be true or false.")
+    lock_user(user)
+    instance.refresh_from_db()
+    instance.excluded = excluded
+    instance.save(update_fields=["excluded", "modified_at"])
+    if kind == "awakenings":
+        reopen(instance.night)
+    return instance
+
+
+@transaction.atomic
+def delete_record(user: User, kind: str, instance: Any) -> None:
+    lock_user(user)
+    night = instance.night if kind == "awakenings" else None
+    instance.delete()
+    if night is not None:
+        reopen(night)
+
+
 def serialize(kind: str, row: Any) -> dict[str, Any]:
     result = {"uuid": str(row.uuid), "source": row.source.name, "external_id": row.external_id or "",
               "note": row.note, "excluded": row.excluded, "created_at": row.created_at.isoformat()}
