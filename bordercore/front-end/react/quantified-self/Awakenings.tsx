@@ -16,6 +16,18 @@ const RANGES: [number, string][] = [
 const PAGE = 20;
 // The review endpoint accepts at most this many nights per request.
 const REVIEW_BATCH = 366;
+// API event hours are offsets from noon. Match ingest_awakening's [22:00, 09:00) window.
+const TRACK_START = 10;
+const TRACK_END = 21;
+const TRACK_TICKS: [number, string][] = [
+  [10, "10 pm"],
+  [12, "midnight"],
+  [15, "3 am"],
+  [18, "6 am"],
+  [21, "9 am"],
+];
+const trackX = (hour: number, width: number) =>
+  ((hour - TRACK_START) / (TRACK_END - TRACK_START)) * width;
 const count = (day: Day) => day.events.length;
 const isEmptyUnreviewed = (day: Day) => day.status === "unreviewed" && !count(day);
 const hhmm = (time: string) => time.slice(0, 5);
@@ -507,26 +519,22 @@ function Track({ day, width }: { day: Day; width: number }) {
   const [hover, setHover] = useState<string | null>(null);
   const h = 48;
   const mid = h / 2;
-  const event = day.events.find(e => e.uuid === hover);
-  const ex = event ? (event.hour / 24) * width : 0;
+  const events = day.events.filter(e => e.hour >= TRACK_START && e.hour < TRACK_END);
+  const event = events.find(e => e.uuid === hover);
+  const ex = event ? trackX(event.hour, width) : 0;
   const label = event
     ? `${event.time.slice(0, 8)} ${event.time.slice(9, 12)} · ${event.source.toLowerCase()}`
     : "";
   const labelWidth = label.length * 6.1 + 16;
   const flip = ex + 12 + labelWidth > width;
   return (
-    <svg
-      className="qs-track"
-      viewBox={`0 0 ${width} ${h}`}
-      height={h}
-      aria-hidden={!day.events.length}
-    >
-      {[0.25, 0.5, 0.75].map(f => (
+    <svg className="qs-track" viewBox={`0 0 ${width} ${h}`} height={h} aria-hidden={!events.length}>
+      {TRACK_TICKS.slice(1, -1).map(([hour]) => (
         <line
-          key={f}
-          className={f === 0.5 ? "qs-track-midnight" : "qs-track-quarter"}
-          x1={f * width}
-          x2={f * width}
+          key={hour}
+          className={hour === 12 ? "qs-track-midnight" : "qs-track-quarter"}
+          x1={trackX(hour, width)}
+          x2={trackX(hour, width)}
           y1="0"
           y2={h}
         />
@@ -538,11 +546,11 @@ function Track({ day, width }: { day: Day; width: number }) {
         y1={mid}
         y2={mid}
       />
-      {day.events.map(e => (
+      {events.map(e => (
         <circle
           key={e.uuid}
           className="qs-track-dot"
-          cx={(e.hour / 24) * width}
+          cx={trackX(e.hour, width)}
           cy={mid}
           r="5"
           tabIndex={0}
@@ -659,7 +667,7 @@ function Timeline({
         <div className="qs-timeline-title">
           <h2 className="qs-panel-title">Nightly timeline</h2>
           <span className="qs-timeline-sub">
-            night ending on the date shown · New York time · noon → noon
+            night ending on the date shown · New York time · 10 pm → 9 am
           </span>
         </div>
         <div className="qs-readings-controls">
@@ -725,10 +733,19 @@ function Timeline({
           </div>
           <div role="columnheader">night ending</div>
           <div role="columnheader" className="qs-track-labels" ref={trackRef}>
-            <span>noon</span>
-            <span>6 pm</span>
-            <span className="qs-track-label-midnight">midnight</span>
-            <span>6 am</span>
+            <svg viewBox={`0 0 ${trackWidth} 16`} height="16">
+              {TRACK_TICKS.map(([hour, label], i) => (
+                <text
+                  key={hour}
+                  className={hour === 12 ? "qs-track-label-midnight" : undefined}
+                  x={trackX(hour, trackWidth)}
+                  y="12"
+                  textAnchor={i === 0 ? "start" : i === TRACK_TICKS.length - 1 ? "end" : "middle"}
+                >
+                  {label}
+                </text>
+              ))}
+            </svg>
           </div>
           <div role="columnheader" className="qs-num">
             recorded

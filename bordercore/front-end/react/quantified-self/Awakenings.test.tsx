@@ -151,6 +151,37 @@ it("fills the status line and KPI strip, comparing with the previous period", as
   expect(tile("longest quiet streak")).toHaveTextContent("2nights");
 });
 
+it("zooms the nightly timeline to 10 pm–9 am with correctly aligned overnight events", async () => {
+  const day = night("2026-10-24", "unreviewed", [10 - 1 / 3600, 10, 12, 15, 18, 21 - 1 / 3600, 21]);
+  const times = [
+    "21:59:59",
+    "22:00:00",
+    "00:00:00",
+    "03:00:00",
+    "06:00:00",
+    "08:59:59",
+    "09:00:00",
+  ];
+  day.events.forEach((event, i) => (event.time = `${times[i]} -0400`));
+  setup([day]);
+  const first = await screen.findByRole("img", { name: "Awakening 22:00:00 -0400 · Wumpus" });
+  const table = screen.getByRole("table", { name: "Nightly timeline" });
+  expect(within(table).getByText("10 pm")).toBeVisible();
+  expect(within(table).getByText("9 am")).toBeVisible();
+  expect(within(table).queryByText("noon")).toBeNull();
+  expect(within(table).queryByRole("img", { name: /21:59:59|09:00:00/ })).toBeNull();
+  const dots = within(table).getAllByRole("img", { name: /^Awakening/ });
+  expect(dots).toHaveLength(5);
+  const width = Number(first.closest("svg")!.getAttribute("viewBox")!.split(" ")[2]);
+  for (const [i, fraction] of [0, 2 / 11, 5 / 11, 8 / 11, (11 - 1 / 3600) / 11].entries()) {
+    expect(Number(dots[i].getAttribute("cx")) / width).toBeCloseTo(fraction, 5);
+  }
+  const midnight = within(table).getByText("midnight");
+  expect(midnight.getAttribute("x")).toBe(dots[1].getAttribute("cx"));
+  // Zooming the display must not change full-night totals or remove editable records.
+  expect(within(table).getByRole("cell", { name: "7" })).toBeVisible();
+});
+
 it("reviews one night with its revision and shows it optimistically", async () => {
   const { props } = setup();
   const table = await screen.findByRole("table", { name: "Nightly timeline" });

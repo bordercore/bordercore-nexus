@@ -1869,14 +1869,18 @@
   box-shadow: 0 0 0 2px rgb(179 107 255 / 35%);
 }
 .qs-track-labels {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  min-width: 0;
   font-size: 10px;
   text-transform: none;
   letter-spacing: 0;
 }
+.qs-track-labels svg {
+  display: block;
+  width: 100%;
+  fill: var(--fg-3);
+}
 .qs-track-label-midnight {
-  color: var(--fg-2);
+  fill: var(--fg-2);
 }
 .qs-track-cell {
   align-self: stretch;
