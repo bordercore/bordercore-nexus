@@ -18,10 +18,22 @@ from django.db import transaction
 from django.utils import timezone
 
 from .models import (AwakeningEvent, BloodPressureReading, DataSource,
-                     ImportBatch, SleepNight, WeightReading)
+                     HeartRateVariabilityReading, ImportBatch, RestingHeartRateReading,
+                     SleepNight, WeightReading)
 
 ZONE = "America/New_York"
-KINDS: dict[str, type[AwakeningEvent] | type[WeightReading] | type[BloodPressureReading]] = {"awakenings": AwakeningEvent, "weight": WeightReading, "blood-pressure": BloodPressureReading}
+CARDIAC_MODELS: dict[str, type[RestingHeartRateReading] | type[HeartRateVariabilityReading]] = {
+    "resting-heart-rate": RestingHeartRateReading,
+    "hrv": HeartRateVariabilityReading,
+}
+CARDIAC_UNITS = {"resting-heart-rate": "bpm", "hrv": "ms"}
+KINDS: dict[str, type[AwakeningEvent] | type[WeightReading] | type[BloodPressureReading]
+            | type[RestingHeartRateReading] | type[HeartRateVariabilityReading]] = {
+    "awakenings": AwakeningEvent,
+    "weight": WeightReading,
+    "blood-pressure": BloodPressureReading,
+    **CARDIAC_MODELS,
+}
 LB_KG = Decimal("0.45359237")
 
 
@@ -145,6 +157,17 @@ def normalize(kind: str, data: dict[str, Any]) -> dict[str, Any]:
         if unit not in ("lb", "kg"):
             fail("Weight unit must be lb or kg.")
         values.update(value=value, unit=unit, kilograms=(value * (LB_KG if unit == "lb" else 1)).quantize(Decimal("0.000001")))
+    elif kind in CARDIAC_UNITS:
+        unit = CARDIAC_UNITS[kind]
+        if data.get("unit", unit) != unit:
+            fail(f"Unit must be {unit}.")
+        try:
+            value = Decimal(str(data.get("value")))
+            if not value.is_finite() or not 0 < value < 1000000 or cast(int, value.as_tuple().exponent) < -6:
+                fail("Value must be positive, below 1,000,000, with at most six decimal places.")
+        except (InvalidOperation, ValueError):
+            fail("Enter a valid measurement.")
+        values["value"] = value
     else:
         values.update(systolic=positive_integer(data.get("systolic"), "Systolic"),
                       diastolic=positive_integer(data.get("diastolic"), "Diastolic"),
@@ -239,6 +262,8 @@ def serialize(kind: str, row: Any) -> dict[str, Any]:
                       utc_offset=row.occurred_at.astimezone(ZoneInfo(row.timezone)).strftime("%z") if row.occurred_at else "")
         if kind == "weight":
             result.update(value=str(row.value), unit=row.unit, kilograms=float(row.kilograms))
+        elif kind in CARDIAC_UNITS:
+            result.update(value=str(row.value), unit=CARDIAC_UNITS[kind])
         else:
             result.update(systolic=row.systolic, diastolic=row.diastolic, pulse=row.pulse)
     return result

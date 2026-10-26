@@ -22,6 +22,10 @@ COLUMNS = {
 REQUIRED = {"awakenings": {"timestamp"}, "weight": {"date", "value", "unit"},
             "blood-pressure": {"date", "systolic", "diastolic"}}
 
+for cardiac_kind in ("resting-heart-rate", "hrv"):
+    COLUMNS[cardiac_kind] = COLUMNS["weight"]
+    REQUIRED[cardiac_kind] = {"date", "value", "unit"}
+
 
 def classify(user: User, kind: str, source: DataSource, values: dict[str, Any]) -> str:
     query = KINDS[kind].objects.filter(user=user)

@@ -7,9 +7,10 @@ from zoneinfo import ZoneInfo
 
 from django.contrib.auth.models import User
 
+from . import sleep
 from .models import (AwakeningEvent, BloodPressureReading, SleepNight,
                      WeightReading)
-from .services import LB_KG, ZONE, serialize
+from .services import CARDIAC_MODELS, LB_KG, ZONE, serialize
 
 
 def average(values: list[float | int]) -> float | None:
@@ -27,6 +28,12 @@ def dashboard(user: User, start: date, end: date, unit: str) -> dict[str, Any]:
         weight_days[row.date].append(float(row.kilograms) / (float(LB_KG) if unit == "lb" else 1))
     for pressure in pressures:
         pressure_days[pressure.date].append(pressure)
+    cardiac: dict[str, dict[date, list[Any]]] = {}
+    for kind, model in CARDIAC_MODELS.items():
+        grouped: dict[date, list[Any]] = defaultdict(list)
+        for measurement in model.objects.filter(user=user, excluded=False, date__range=(start - timedelta(days=6), end)):
+            grouped[measurement.date].append(measurement)
+        cardiac[kind] = grouped
     nights = {night.date: night for night in SleepNight.objects.filter(user=user, date__range=(start, end))}
     events = list(AwakeningEvent.objects.filter(user=user, night__date__range=(start, end), excluded=False).select_related("night", "source").order_by("occurred_at"))
     event_days: defaultdict[date, list[dict[str, Any]]] = defaultdict(list)
@@ -61,6 +68,14 @@ def dashboard(user: User, start: date, end: date, unit: str) -> dict[str, Any]:
             "status": night.status if night else "unreviewed", "revision": night.modified_at.isoformat() if night else None,
             "note": night.note if night else "", "events": recorded,
         })
+        for kind, grouped in cardiac.items():
+            key = kind.replace("-", "_")
+            days[-1].update({
+                key: average([float(r.value) for r in grouped[cursor]]),
+                f"{key}_trend": average([mean([float(r.value) for r in grouped[d]]) for d in window if grouped[d]]),
+                f"{key}_samples": [{"uuid": str(r.uuid), "value": float(r.value),
+                    "time": r.time.isoformat() if r.time else "Time unknown"} for r in grouped[cursor]],
+            })
         if cursor == end:
             break
         cursor += timedelta(days=1)
@@ -68,8 +83,16 @@ def dashboard(user: User, start: date, end: date, unit: str) -> dict[str, Any]:
     in_range_pressure = [r for r in pressures if r.date >= start]
     latest_weight = list(WeightReading.objects.filter(user=user, excluded=False).select_related("source")[:2])
     latest_pressure = BloodPressureReading.objects.filter(user=user, excluded=False).select_related("source").first()
-    return {"days": days, "timezone": ZONE, "unit": unit,
-        "summary": {"completed_nights": len(reviewed), "total_nights": len(days), "mean_awakenings": average(reviewed),
+    cardiac_summary = {}
+    for kind, grouped in cardiac.items():
+        key = kind.replace("-", "_")
+        in_range = [rows for day, rows in grouped.items() if day >= start and rows]
+        latest = CARDIAC_MODELS[kind].objects.filter(user=user, excluded=False).select_related("source").first()
+        cardiac_summary.update({f"{key}_days": len(in_range), f"{key}_readings": sum(len(rows) for rows in in_range),
+            f"mean_{key}": average([mean([float(r.value) for r in rows]) for rows in in_range]),
+            f"latest_{key}": serialize(kind, latest) if latest else None})
+    return {"days": days, "timezone": ZONE, "unit": unit, "sleep": sleep.dashboard(user, start, end),
+        "summary": {**cardiac_summary, "completed_nights": len(reviewed), "total_nights": len(days), "mean_awakenings": average(reviewed),
                     "recorded_awakenings": len(events), "weight_days": sum(bool(weight_days[d]) for d in weight_days if d >= start),
                     "pressure_readings": len(in_range_pressure), "pressure_days": len({r.date for r in in_range_pressure}),
                     "mean_systolic": average([r.systolic for r in in_range_pressure]),

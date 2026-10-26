@@ -19,7 +19,7 @@ from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.views.decorators.csrf import ensure_csrf_cookie
 
-from . import analytics, apple_health, import_progress, imports
+from . import analytics, apple_health, import_progress, imports, sleep
 from .models import ImportBatch, SleepNight
 from .services import (KINDS, ZONE, delete_record, fail, lock_user, normalize, parse_date,
                        save_record, serialize, set_excluded)
@@ -65,6 +65,18 @@ def summary(request: Request) -> Response:
     if unit not in ("lb", "kg"):
         fail("Unit must be lb or kg.")
     return Response(analytics.dashboard(request.user, start, end, unit))
+
+
+@api_view(["GET"])
+def sleep_summary(request: Request) -> Response:
+    start, end = date_range(request)
+    return Response(sleep.dashboard(request.user, start, end, request.GET.get("source", "")))
+
+
+@api_view(["GET"])
+def sleep_night(request: Request) -> Response:
+    day = parse_date(request.GET.get("date"))
+    return Response(sleep.dashboard(request.user, day, day, request.GET.get("source", ""), detail=True))
 
 
 @api_view(["GET", "POST"])

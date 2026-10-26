@@ -5,6 +5,8 @@ from . import views
 app_name = "quantified_self"
 urlpatterns = [
     path("", views.index, name="index"),
+    path("sleep/summary/", views.sleep_summary, name="sleep_summary"),
+    path("sleep/night/", views.sleep_night, name="sleep_night"),
     path("summary/", views.summary, name="summary"),
     path("nights/review/", views.review_nights, name="review"),
     path("imports/", views.import_history, name="imports"),

@@ -102,3 +102,56 @@ class BloodPressureReading(Measurement):
             models.CheckConstraint(condition=Q(systolic__gt=0) & Q(diastolic__gt=0), name="qs_pressure_positive"),
             models.CheckConstraint(condition=Q(pulse__isnull=True) | Q(pulse__gt=0), name="qs_pulse_positive"),
         ]
+
+
+class CardiacMeasurement(Measurement):
+    value = models.DecimalField(max_digits=12, decimal_places=6)
+
+    class Meta(Measurement.Meta):
+        abstract = True
+        constraints = Observation.Meta.constraints + [
+            models.CheckConstraint(condition=Q(value__gt=0), name="%(class)s_positive"),
+        ]
+
+
+class RestingHeartRateReading(CardiacMeasurement):
+    """Resting heart rate in beats per minute."""
+
+
+class HeartRateVariabilityReading(CardiacMeasurement):
+    """SDNN heart rate variability in milliseconds."""
+
+
+class SleepSession(Observation):
+    """A source-reported sleep session, including its reported time asleep."""
+    date = models.DateField(help_text="Morning date of the noon-to-noon reporting window")
+    started_at = models.DateTimeField()
+    ended_at = models.DateTimeField()
+    asleep_seconds = models.PositiveIntegerField(null=True, blank=True)
+    algorithm_version = models.CharField(max_length=64, blank=True)
+    source_updated_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta(Observation.Meta):
+        ordering = ["-date", "-started_at", "-id"]
+        indexes = [models.Index(fields=["user", "date"])]
+        constraints = Observation.Meta.constraints + [
+            models.CheckConstraint(condition=Q(ended_at__gt=models.F("started_at")), name="qs_sleep_session_order"),
+        ]
+
+
+class SleepInterval(Observation):
+    """Original stage intervals; Apple Health can supply these without sessions."""
+    STAGES = [(value, value) for value in ("awake", "light", "deep", "rem", "asleep", "restless", "in_bed")]
+    date = models.DateField(help_text="Morning date of the noon-to-noon reporting window")
+    started_at = models.DateTimeField()
+    ended_at = models.DateTimeField()
+    stage = models.CharField(max_length=12, choices=STAGES)
+    session = models.ForeignKey(SleepSession, on_delete=models.CASCADE, null=True, blank=True, related_name="intervals")
+
+    class Meta(Observation.Meta):
+        ordering = ["date", "started_at", "id"]
+        indexes = [models.Index(fields=["user", "date"])]
+        constraints = Observation.Meta.constraints + [
+            models.CheckConstraint(condition=Q(ended_at__gt=models.F("started_at")), name="qs_sleep_interval_order"),
+            models.CheckConstraint(condition=Q(stage__in=["awake", "light", "deep", "rem", "asleep", "restless", "in_bed"]), name="qs_sleep_stage"),
+        ]

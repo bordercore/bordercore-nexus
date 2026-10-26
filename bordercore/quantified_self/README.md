@@ -1,6 +1,6 @@
 # Quantified Self
 
-Bordercore's `/quantified-self/` app records weight, blood pressure, and timestamped
+Bordercore's `/quantified-self/` app records weight, blood pressure, resting heart rate, HRV, and timestamped
 sleep awakenings. It includes a dashboard, tracker detail views, editable history,
 night completeness review, CSV preview/import, and CSV export. The Wumpus listener
 is intentionally not included.
@@ -108,19 +108,44 @@ format marker to third-party files unless using the same encoding.
 ## Apple Health ZIP
 
 Select **Apple Health ZIP** in Imports and upload the iPhone's Export All Health
-Data archive. Preview shows weight and blood-pressure totals, new/existing counts,
+Data archive. Preview shows totals for weight, blood pressure, resting heart rate,
+HRV (SDNN), and sleep intervals, with new/existing counts,
 sources, date ranges, pairing warnings, and up to 50 recent readings. Confirm saves
-both trackers atomically. Sleep, pulse, workouts, and clinical data are not imported.
-No schema migration is needed beyond the initial Quantified Self migration.
+all supported trackers atomically. Pulse, workouts, and clinical data are not imported.
+Migration `0002` adds resting-heart-rate (bpm) and HRV SDNN (ms) tables.
+Apply it before serving the updated dashboard. Re-uploading an older export adds
+the newly supported metrics while skipping previously imported weight and pressure.
+
+Migration `0003` adds sleep sessions and stage intervals. Apply it before serving
+the sleep dashboard. Sleep is available on the overview and its own detail page,
+with duration, a seven-calendar-day average, stage intervals, and switch-press
+markers. Select a source to inspect its estimates; different sources are never
+added together. Missing nights and in-bed-only records do not imply sleep duration.
+
+Apple Health sleep imports `HKCategoryTypeIdentifierSleepAnalysis`: awake, core
+(light), deep, REM, unspecified asleep, and in-bed intervals. Identity includes
+source, UTC start/end, and stage, so reimporting is safe. Overlapping intervals
+within a source are unioned; awake takes precedence, detailed stages override
+unspecified asleep, and conflicting detailed stages become unspecified asleep.
+In-bed coverage is reported independently and never added to time asleep.
+
+The one-time Google Health data load retains session totals and stage provenance.
+Overlapping Google session estimates prefer `sleep_session_v2` over v1; other
+ties prefer the source's update time. Nonoverlapping sessions, including naps,
+remain included. Reported sleep duration can differ from summed stage durations.
+There is no Google Takeout upload workflow. Sleep morning dates use the same
+New York noon-to-noon window as awakenings; elapsed durations use UTC, including
+across daylight-saving changes. Device-detected awake stages remain separate from
+button presses and do not mark an awakening night complete.
 
 The importer streams only `apple_health_export/export.xml` (or root `export.xml`)
 without extracting the archive. Limits: 512 MB ZIP, 4 GB XML, 10,000 archive entries,
-200,000 relevant XML records, and 20,000 distinct readings. Parsing happens before
+1,000,000 relevant XML records, and 100,000 distinct readings. Parsing happens before
 acquiring the account write lock. Only selected measurements are saved in the
 preview batch; the original ZIP and unrelated health data are not retained.
 
 The import panel reports browser upload bytes, XML scan bytes and discovered
-weight/pressure counts, duplicate checking, validation, and batched writes. The
+per-tracker counts, duplicate checking, validation, and batched writes. The
 browser polls `imports/progress/<uuid>/` while the original preview/commit request
 runs. Progress is scoped to the authenticated account, expires after one hour,
 and contains only stages/counts, not measurements. It uses the configured Django
@@ -137,6 +162,15 @@ kilograms to six decimal places; stored lb/kg values round to three decimal plac
 end timestamps match and each component has one distinct value. Repeated top-level
 and correlation-nested records collapse; incomplete or ambiguous groups are skipped
 and counted in the preview. Pulse matching is deferred.
+
+Resting heart rate imports `HKQuantityTypeIdentifierRestingHeartRate` in
+`count/min`, displayed as bpm. HRV imports only
+`HKQuantityTypeIdentifierHeartRateVariabilitySDNN` in ms. Both retain six decimal
+places and use the same repeat-safe source/timestamp/value identities. Ordinary
+heart-rate samples and other HRV definitions are not imported. Detail charts show
+daily means and seven-calendar-day trends, averaging only recorded daily means
+so days with many samples do not dominate. Missing days remain missing; excluded
+readings do not affect statistics. Detail tables paginate through the entire range.
 
 Explicit UTC offsets determine the instant. Display dates/times use `HKTimeZone`
 when valid, otherwise America/New_York. This avoids interpreting historical export
