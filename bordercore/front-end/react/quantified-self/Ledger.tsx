@@ -54,13 +54,22 @@ export function useRecords(
   useEffect(() => {
     let active = true;
     setError("");
-    api<{ results: Reading[] }>(`${root}${kind}/records/?${query}&limit=20000`)
-      .then(value => {
-        if (active) setRows(value.results);
-      })
-      .catch(err => {
-        if (active) setError(errorText(err));
-      });
+    async function load() {
+      const collected: Reading[] = [];
+      let offset = 0;
+      while (active) {
+        const page = await api<{ count?: number; results: Reading[] }>(
+          `${root}${kind}/records/?${query}&limit=20000${offset ? `&offset=${offset}` : ""}`
+        );
+        collected.push(...page.results);
+        offset += page.results.length;
+        if (!page.results.length || offset >= (page.count ?? offset)) break;
+      }
+      if (active) setRows(collected);
+    }
+    load().catch(err => {
+      if (active) setError(errorText(err));
+    });
     return () => {
       active = false;
     };
@@ -124,7 +133,7 @@ export function StatusLine({
   controls?: React.ReactNode;
   addLabel?: React.ReactNode;
   onRange: (start: string, end: string) => void;
-  onAdd: () => void;
+  onAdd?: () => void;
 }) {
   const preset = rangePreset(start, end, ranges);
   const [custom, setCustom] = useState(false);
@@ -188,10 +197,12 @@ export function StatusLine({
             custom…
           </button>
           {controls}
-          <button className="qs-cta" onClick={onAdd}>
-            <FontAwesomeIcon icon={faPlus} />
-            {addLabel}
-          </button>
+          {onAdd && (
+            <button className="qs-cta" onClick={onAdd}>
+              <FontAwesomeIcon icon={faPlus} />
+              {addLabel}
+            </button>
+          )}
         </div>
       </div>
       {custom && (

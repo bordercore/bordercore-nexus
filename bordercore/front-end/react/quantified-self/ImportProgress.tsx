@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import type { AxiosProgressEvent } from "axios";
+import { Kind, labels } from "./types";
 import { api } from "./api";
 
 interface Progress {
@@ -9,6 +10,9 @@ interface Progress {
   processed?: number;
   weight?: number;
   blood_pressure?: number;
+  resting_heart_rate?: number;
+  hrv?: number;
+  sleep?: number;
   duplicates?: number;
   kind?: string;
 }
@@ -114,7 +118,7 @@ export default function ImportProgress({
     pairing: "Pairing blood-pressure readings",
     checking: "Checking for existing readings",
     validating: "Validating readings",
-    saving: `Saving ${progress.kind === "weight" ? "weight" : "blood-pressure"} readings`,
+    saving: `Saving ${progress.kind === "sleep" ? "sleep" : (labels[progress.kind as Kind]?.toLowerCase() ?? "health")} readings`,
     finalizing: "Finalizing import",
   };
   const completed =
@@ -157,6 +161,10 @@ export default function ImportProgress({
         <p>
           {progress.weight.toLocaleString()} weight readings ·{" "}
           {(progress.blood_pressure ?? 0).toLocaleString()} blood-pressure pairs found
+          {progress.resting_heart_rate !== undefined &&
+            ` · ${progress.resting_heart_rate.toLocaleString()} resting heart rate readings`}
+          {progress.hrv !== undefined && ` · ${progress.hrv.toLocaleString()} HRV readings`}
+          {progress.sleep !== undefined && ` · ${progress.sleep.toLocaleString()} sleep intervals`}
           {progress.duplicates !== undefined
             ? ` · ${progress.duplicates.toLocaleString()} repeated entries detected`
             : ""}

@@ -4,7 +4,8 @@ import { labels } from "./types";
 import ImportFilePicker from "./ImportFilePicker";
 import ImportProgress, { useImportProgress } from "./ImportProgress";
 
-type HealthKind = "weight" | "blood-pressure";
+type HealthKind = "weight" | "blood-pressure" | "resting-heart-rate" | "hrv" | "sleep";
+const importLabels = { ...labels, sleep: "Sleep intervals" };
 interface Summary {
   kind: HealthKind;
   total: number;
@@ -104,9 +105,9 @@ export default function AppleHealthImport({
   return (
     <div aria-busy={busy}>
       <p>
-        Upload the ZIP from Apple Health’s “Export All Health Data”. Preview and import weight and
-        blood pressure together. Sources and measurement times are preserved; other health data is
-        ignored.
+        Upload the ZIP from Apple Health’s “Export All Health Data”. Preview and import weight,
+        blood pressure, resting heart rate, and HRV (SDNN), and sleep intervals together. Sources
+        and measurement times are preserved; other health data is ignored.
       </p>
       <form onSubmit={upload}>
         <fieldset disabled={busy}>
@@ -130,7 +131,7 @@ export default function AppleHealthImport({
         </fieldset>
       </form>
       <p className="qs-muted">
-        Up to 512 MB compressed / 20,000 readings. Large exports may take a minute or more to
+        Up to 512 MB compressed / 100,000 readings. Large exports may take a minute or more to
         process. Repeated and overlapping exports skip existing readings and preserve your
         corrections.
       </p>
@@ -176,7 +177,7 @@ export default function AppleHealthImport({
               <tbody>
                 {preview.summary.map(item => (
                   <tr key={item.kind}>
-                    <td>{labels[item.kind]}</td>
+                    <td>{importLabels[item.kind]}</td>
                     <td>{item.total}</td>
                     <td>{item.new}</td>
                     <td>{item.existing}</td>
@@ -192,7 +193,7 @@ export default function AppleHealthImport({
             .filter(item => item.total > 0)
             .map(item => (
               <p key={item.kind} className="qs-muted">
-                {labels[item.kind]} sources: {item.sources.join(", ")}
+                {importLabels[item.kind]} sources: {item.sources.join(", ")}
               </p>
             ))}
           <p>
@@ -226,14 +227,16 @@ export default function AppleHealthImport({
                 <tbody>
                   {preview.rows.map(row => (
                     <tr key={row.data.external_id}>
-                      <td>{labels[row.kind]}</td>
+                      <td>{importLabels[row.kind]}</td>
                       <td>
                         {row.data.date} {row.data.time} {row.data.timezone}
                       </td>
                       <td>
-                        {row.kind === "weight"
-                          ? `${row.data.value} ${row.data.unit}`
-                          : `${row.data.systolic}/${row.data.diastolic} mmHg`}
+                        {row.kind === "sleep"
+                          ? `${row.data.stage.replaceAll("_", " ")} · ${row.data.start} → ${row.data.end}`
+                          : row.kind !== "blood-pressure"
+                            ? `${row.data.value} ${row.data.unit}`
+                            : `${row.data.systolic}/${row.data.diastolic} mmHg`}
                       </td>
                       <td>{row.data.source}</td>
                       <td>{row.status === "new" ? "New" : "Already imported"}</td>

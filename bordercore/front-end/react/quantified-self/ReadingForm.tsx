@@ -31,7 +31,7 @@ export default function ReadingForm({
     timezone: row?.timezone || "America/New_York",
     utc_offset: timestamp ? timestamp.slice(-6) : row?.utc_offset || "",
     value: row?.value || "",
-    unit: row?.unit || unit,
+    unit: row?.unit || (kind === "hrv" ? "ms" : kind === "resting-heart-rate" ? "bpm" : unit),
     systolic: String(row?.systolic || ""),
     diastolic: String(row?.diastolic || ""),
     pulse: String(row?.pulse || ""),
@@ -50,9 +50,25 @@ export default function ReadingForm({
         required={required}
         value={values[name]}
         step={
-          type === "number" ? (name === "value" ? "0.001" : "1") : type === "time" ? "1" : undefined
+          type === "number"
+            ? name === "value"
+              ? kind === "weight"
+                ? "0.001"
+                : "0.000001"
+              : "1"
+            : type === "time"
+              ? "1"
+              : undefined
         }
-        min={type === "number" ? (name === "value" ? "0.001" : "1") : undefined}
+        min={
+          type === "number"
+            ? name === "value"
+              ? kind === "weight"
+                ? "0.001"
+                : "0.000001"
+              : "1"
+            : undefined
+        }
         onChange={e =>
           setValues({
             ...values,
@@ -134,6 +150,13 @@ export default function ReadingForm({
                 </label>
               </>
             )}
+            {(kind === "resting-heart-rate" || kind === "hrv") &&
+              field(
+                "value",
+                kind === "hrv" ? "HRV (SDNN) · ms" : "Resting heart rate · bpm",
+                "number",
+                true
+              )}
             {kind === "blood-pressure" && (
               <>
                 {field("systolic", "Systolic · mmHg", "number", true)}

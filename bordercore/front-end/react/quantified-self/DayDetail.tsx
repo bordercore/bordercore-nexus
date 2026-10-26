@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { api, errorText } from "./api";
-import { Day, Kind, Reading } from "./types";
+import { Day, Kind, Reading, cardiacMetrics } from "./types";
 export default function DayDetail({
   day,
   kind,
@@ -179,11 +179,17 @@ export default function DayDetail({
                   {r.value.toFixed(3)} {unit} · {r.time}
                 </li>
               ))
-            : day.pressure_samples.map(r => (
-                <li key={r.uuid}>
-                  {r.systolic}/{r.diastolic} mmHg{r.pulse ? ` · ${r.pulse} bpm` : ""} · {r.time}
-                </li>
-              ))}
+            : kind === "hrv" || kind === "resting-heart-rate"
+              ? (day[`${cardiacMetrics[kind].key}_samples`] ?? []).map(r => (
+                  <li key={r.uuid}>
+                    {r.value.toFixed(1)} {cardiacMetrics[kind].unit} · {r.time}
+                  </li>
+                ))
+              : day.pressure_samples.map(r => (
+                  <li key={r.uuid}>
+                    {r.systolic}/{r.diastolic} mmHg{r.pulse ? ` · ${r.pulse} bpm` : ""} · {r.time}
+                  </li>
+                ))}
         </ul>
       )}
       {error && (

@@ -2,8 +2,9 @@ import React, { useId, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowRight, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { api, errorText, today } from "./api";
+import { SleepOverview } from "./Sleep";
 import { dateTicks, line, scale, useWidth } from "./chart";
-import { Dashboard, Day, Kind, Status } from "./types";
+import { CardiacKind, Dashboard, Day, Kind, Status, TrackerView, cardiacMetrics } from "./types";
 
 type Point = { x: number; y: number; day: Day };
 const KG_PER_LB = 0.45359237;
@@ -79,7 +80,7 @@ function Gauges({
 }: {
   data: Dashboard | null;
   unit: string;
-  onExplore: (kind: Kind) => void;
+  onExplore: (kind: TrackerView, date?: string) => void;
 }) {
   const summary = data?.summary;
   const days = data?.days.length ?? null;
@@ -154,17 +155,43 @@ function Gauges({
           ? `${pressure.pulse ? `pulse ${pressure.pulse} · ` : ""}${pressure.date}`
           : "no readings yet"}
       </Gauge>
+      {(["resting-heart-rate", "hrv"] as CardiacKind[]).map(kind => {
+        const metric = cardiacMetrics[kind];
+        const latest = summary?.[`latest_${metric.key}`];
+        const average = summary?.[`mean_${metric.key}`];
+        return (
+          <Gauge
+            key={kind}
+            tone={kind}
+            count={summary?.[`${metric.key}_days`] ?? null}
+            total={days}
+            totalLabel="days"
+            label={metric.label.toLowerCase()}
+            value={latest?.value != null ? Number(latest.value).toFixed(1) : blank}
+            unit={metric.unit}
+            onClick={() => onExplore(kind)}
+          >
+            mean {average == null ? "—" : average.toFixed(1)} ·{" "}
+            {summary ? plural(summary[`${metric.key}_readings`] ?? 0, "reading") : "… readings"}
+            <br />
+            {latest?.date ?? "no readings yet"}
+          </Gauge>
+        );
+      })}
     </>
   );
 }
 
-const LANES: { kind: Kind; top: number; bottom: number }[] = [
+const LANES: { kind: TrackerView; top: number; bottom: number }[] = [
   { kind: "awakenings", top: 0, bottom: 100 },
   { kind: "weight", top: 100, bottom: 200 },
   { kind: "blood-pressure", top: 200, bottom: 310 },
+  { kind: "resting-heart-rate", top: 310, bottom: 410 },
+  { kind: "hrv", top: 410, bottom: 510 },
+  { kind: "sleep", top: 510, bottom: 610 },
 ];
 const GUTTER = 60;
-const HEIGHT = 330;
+const HEIGHT = 630;
 
 function PressurePair({
   systolic,
@@ -204,7 +231,15 @@ function PressurePair({
   );
 }
 
-function Timeline({ data, onDay }: { data: Dashboard; onDay: (kind: Kind, day: Day) => void }) {
+function Timeline({
+  data,
+  onDay,
+  onSleep,
+}: {
+  data: Dashboard;
+  onDay: (kind: Kind, day: Day) => void;
+  onSleep: (date: string) => void;
+}) {
   const [ref, width] = useWidth(780);
   const [selection, setSelection] = useState<{ days: Day[]; index: number } | null>(null);
   const gradient = useId();
@@ -214,6 +249,14 @@ function Timeline({ data, onDay }: { data: Dashboard; onDay: (kind: Kind, day: D
   const slot = (width - GUTTER) / Math.max(days.length, 1);
   const x = (i: number) => GUTTER + slot * (i + 0.5);
   const barWidth = Math.max(Math.min(12, slot * 0.6), 1);
+  const sleepByDate = new Map(data.sleep?.days.map(day => [day.date, day.asleep_seconds]));
+  const sleepHours = days.map(day => {
+    const seconds = sleepByDate.get(day.date);
+    return seconds == null ? null : seconds / 3600;
+  });
+  const hasSleep = sleepHours.some(hours => hours !== null);
+  const maxSleep = Math.ceil(Math.max(2, ...sleepHours.map(hours => hours ?? 0)) / 2) * 2;
+  const sleepY = scale([0, maxSleep], [600, 538]);
 
   const maxWake = Math.max(1, ...days.map(d => d.awakenings ?? 0));
   const wakeY = scale([0, maxWake], [90, 24]);
@@ -250,12 +293,34 @@ function Timeline({ data, onDay }: { data: Dashboard; onDay: (kind: Kind, day: D
     diastolic.push({ x: x(i), y: pressureY(day.diastolic), day });
   });
 
+  const cardiacLanes = (["resting-heart-rate", "hrv"] as CardiacKind[]).map((kind, n) => {
+    const metric = cardiacMetrics[kind];
+    const top = 310 + n * 100,
+      bottom = top + 100;
+    const domain = extent(
+      days.flatMap(d => [d[metric.key] ?? null, d[`${metric.key}_trend`] ?? null]),
+      1
+    );
+    const y = domain ? scale(domain, [bottom - 10, top + 28]) : null;
+    const points = y
+      ? days.flatMap((day, i) =>
+          day[metric.key] == null ? [] : [{ x: x(i), y: y(day[metric.key]!), day }]
+        )
+      : [];
+    const trends = y
+      ? days.flatMap((day, i) =>
+          day[`${metric.key}_trend`] == null ? [] : [{ x: x(i), y: y(day[`${metric.key}_trend`]!) }]
+        )
+      : [];
+    return { kind, metric, top, bottom, domain, points, trends };
+  });
+
   function locate(event: React.MouseEvent<SVGRectElement>) {
     const box = event.currentTarget.ownerSVGElement!.getBoundingClientRect();
     const px = ((event.clientX - box.left) / box.width) * width;
     const py = ((event.clientY - box.top) / box.height) * HEIGHT;
     const index = Math.floor((px - GUTTER) / slot);
-    const lane = LANES.find(l => py < l.bottom) ?? LANES[2];
+    const lane = LANES.find(l => py < l.bottom) ?? LANES[LANES.length - 1];
     return { index: Math.max(0, Math.min(days.length - 1, index)), kind: lane.kind };
   }
   function keyDown(event: React.KeyboardEvent<SVGSVGElement>) {
@@ -278,7 +343,7 @@ function Timeline({ data, onDay }: { data: Dashboard; onDay: (kind: Kind, day: D
         height={HEIGHT}
         role="img"
         tabIndex={0}
-        aria-label="Timeline of awakenings, weight and blood pressure on a shared date axis. Use the arrow keys to read a day and Enter to open it."
+        aria-label="Timeline of awakenings, weight, blood pressure, resting heart rate, HRV and total sleep hours on a shared date axis. Use the arrow keys to read a day and Enter to open it."
         onKeyDown={keyDown}
         onBlur={() => setHover(null)}
       >
@@ -289,7 +354,7 @@ function Timeline({ data, onDay }: { data: Dashboard; onDay: (kind: Kind, day: D
           </linearGradient>
         </defs>
         <g className="qs-grid">
-          <line x1={GUTTER} y1="0" x2={GUTTER} y2="310" />
+          <line x1={GUTTER} y1="0" x2={GUTTER} y2="610" />
           {LANES.map(lane => (
             <line key={lane.kind} x1={GUTTER} y1={lane.bottom} x2={width} y2={lane.bottom} />
           ))}
@@ -303,6 +368,9 @@ function Timeline({ data, onDay }: { data: Dashboard; onDay: (kind: Kind, day: D
           </text>
           <text x="0" y="214">
             MMHG
+          </text>
+          <text x="0" y="524">
+            SLEEP H
           </text>
         </g>
         <g className="qs-axis-text">
@@ -340,14 +408,19 @@ function Timeline({ data, onDay }: { data: Dashboard; onDay: (kind: Kind, day: D
             <text
               key={i}
               x={x(i)}
-              y="326"
+              y="626"
               textAnchor={n === 0 ? "start" : n === all.length - 1 ? "end" : "middle"}
             >
               {short(days[i].date)}
             </text>
           ))}
         </g>
-        {[!hasWake && LANES[0], !weightDomain && LANES[1], !pressureDomain && LANES[2]].map(
+        {[
+          !hasWake && LANES[0],
+          !weightDomain && LANES[1],
+          !pressureDomain && LANES[2],
+          !hasSleep && LANES[5],
+        ].map(
           lane =>
             lane && (
               <text
@@ -362,7 +435,7 @@ function Timeline({ data, onDay }: { data: Dashboard; onDay: (kind: Kind, day: D
             )
         )}
         {hover !== null && (
-          <rect className="qs-crosshair" x={x(hover) - slot / 2} y="0" width={slot} height="310" />
+          <rect className="qs-crosshair" x={x(hover) - slot / 2} y="0" width={slot} height="610" />
         )}
         <g>
           {days.map((day, i) => {
@@ -452,24 +525,94 @@ function Timeline({ data, onDay }: { data: Dashboard; onDay: (kind: Kind, day: D
             </g>
           </>
         )}
+        {cardiacLanes.map(lane => (
+          <g key={lane.kind} className={`qs-tone-${lane.kind}`}>
+            <text className="qs-lane-label" x="0" y={lane.top + 14}>
+              {lane.kind === "hrv" ? "HRV MS" : "RHR BPM"}
+            </text>
+            {lane.domain ? (
+              <g className="qs-axis-text">
+                <text x="0" y={lane.top + 32}>
+                  {Math.round(lane.domain[1])}
+                </text>
+                <text x="0" y={lane.bottom - 10}>
+                  {Math.round(lane.domain[0])}
+                </text>
+              </g>
+            ) : (
+              <text
+                className="qs-axis-text"
+                x={(GUTTER + width) / 2}
+                y={lane.top + 54}
+                textAnchor="middle"
+              >
+                no readings in this range
+              </text>
+            )}
+            <path className="qs-cardiac-trend" d={line(lane.trends)} />
+            <g className="qs-cardiac-dots">
+              {lane.points.map(p => (
+                <circle key={p.day.date} cx={p.x} cy={p.y} r={hovered === p.day ? 4 : 3} />
+              ))}
+            </g>
+          </g>
+        ))}
+        {hasSleep && (
+          <g className="qs-timeline-sleep">
+            <g className="qs-axis-text">
+              <text x="0" y="542">
+                {maxSleep}h
+              </text>
+              <text x="0" y="600">
+                0h
+              </text>
+            </g>
+            {sleepHours.map((hours, i) =>
+              hours == null ? null : (
+                <rect
+                  key={days[i].date}
+                  className="qs-sleep-bar"
+                  x={x(i) - barWidth / 2}
+                  y={sleepY(hours)}
+                  width={barWidth}
+                  height={Math.max(2, 600 - sleepY(hours))}
+                  rx="2"
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${days[i].date}: ${hours.toFixed(1)} hours asleep; view sleep stages`}
+                  onClick={() => onSleep(days[i].date)}
+                  onFocus={() => setHover(i)}
+                  onKeyDown={e => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onSleep(days[i].date);
+                    }
+                  }}
+                />
+              )
+            )}
+          </g>
+        )}
         {days.length > 0 && (
           <rect
             className="qs-hit"
             x={GUTTER}
             y="0"
             width={Math.max(width - GUTTER, 0)}
-            height="310"
+            height="610"
             onMouseMove={e => setHover(locate(e).index)}
             onMouseLeave={() => setHover(null)}
             onClick={e => {
               const { index, kind } = locate(e);
-              onDay(kind, days[index]);
+              if (kind === "sleep") onSleep(days[index].date);
+              else onDay(kind, days[index]);
             }}
           />
         )}
         {hovered && (
           <g className="qs-tooltip" transform={`translate(${tipX},6)`} pointerEvents="none">
-            <rect width="150" height="78" rx="8" />
+            <rect width="150" height="132" rx="8" />
             <text className="qs-tooltip-head" x="12" y="18">
               {hovered.date} · {hovered.status}
             </text>
@@ -489,6 +632,23 @@ function Timeline({ data, onDay }: { data: Dashboard; onDay: (kind: Kind, day: D
                     hovered.pulse !== null ? ` · ${Math.round(hovered.pulse)}` : ""
                   }`
                 : "—"}
+            </text>
+            {cardiacLanes.map((lane, i) => (
+              <text
+                key={lane.kind}
+                className={`qs-tone-${lane.kind} qs-cardiac-tip`}
+                x="12"
+                y={84 + i * 16}
+              >
+                ● {lane.kind === "hrv" ? "HRV" : "RHR"}{" "}
+                {hovered[lane.metric.key]?.toFixed(1) ?? "—"} {lane.metric.unit}
+              </text>
+            ))}
+            <text className="qs-tone-sleep qs-cardiac-tip" x="12" y="116">
+              ● Sleep{" "}
+              {sleepByDate.get(hovered.date) == null
+                ? "—"
+                : `${(sleepByDate.get(hovered.date)! / 3600).toFixed(1)} h`}
             </text>
           </g>
         )}
@@ -831,7 +991,7 @@ export default function Overview({
   unit: string;
   onAdd: (kind: Kind) => void;
   onDay: (kind: Kind, day: Day) => void;
-  onExplore: (kind: Kind) => void;
+  onExplore: (kind: TrackerView, date?: string) => void;
   onSaved: () => void;
 }) {
   return (
@@ -845,6 +1005,8 @@ export default function Overview({
                 ["awakenings", "awakening"],
                 ["weight", "weight"],
                 ["blood-pressure", "pressure"],
+                ["resting-heart-rate", "resting HR"],
+                ["hrv", "HRV"],
               ] as [Kind, string][]
             ).map(([kind, label]) => (
               <button key={kind} className={`qs-add qs-tone-${kind}`} onClick={() => onAdd(kind)}>
@@ -857,15 +1019,20 @@ export default function Overview({
         <section className="qs-panel qs-timeline-card">
           <div className="qs-panel-head qs-ruled">
             <h3 className="qs-panel-title">Timeline</h3>
-            <span className="qs-panel-meta">shared axis · hover a day to cross-read all three</span>
+            <span className="qs-panel-meta">shared axis · hover a day to cross-read all six</span>
           </div>
           {data ? (
-            <Timeline data={data} onDay={onDay} />
+            <Timeline data={data} onDay={onDay} onSleep={date => onExplore("sleep", date)} />
           ) : (
             <div className="qs-timeline-chart qs-loading">…</div>
           )}
         </section>
       </div>
+      <SleepOverview
+        data={data?.sleep}
+        loading={data === null}
+        onOpen={date => onExplore("sleep", date)}
+      />
       <div className="qs-row">
         <WakeClock data={data} />
         <ReviewQueue

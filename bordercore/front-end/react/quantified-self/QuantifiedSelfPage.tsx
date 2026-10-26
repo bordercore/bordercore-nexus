@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { api, daysBefore, errorText, today } from "./api";
-import { Dashboard, Day, Kind, Reading, Tab, labels } from "./types";
+import { Dashboard, Day, Kind, Reading, Tab, TrackerView, labels } from "./types";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCalendarAlt } from "@fortawesome/free-solid-svg-icons";
 import Overview from "./Overview";
@@ -9,15 +9,29 @@ import Imports from "./Imports";
 import DayDetail from "./DayDetail";
 import Awakenings from "./Awakenings";
 import BloodPressure from "./BloodPressure";
+import Cardiac from "./Cardiac";
+import Sleep from "./Sleep";
 import Weight from "./Weight";
 import "./quantified-self.css";
 
-const accents: Record<Kind, string> = {
+const accents: Record<TrackerView, string> = {
+  sleep: "blue",
+  "resting-heart-rate": "orange",
+  hrv: "green",
   awakenings: "purple",
   weight: "cyan",
   "blood-pressure": "pink",
 };
-const tabs: Tab[] = ["overview", "awakenings", "weight", "blood-pressure", "imports"];
+const tabs: Tab[] = [
+  "overview",
+  "sleep",
+  "awakenings",
+  "weight",
+  "blood-pressure",
+  "resting-heart-rate",
+  "hrv",
+  "imports",
+];
 const ranges: [number, string][] = [
   [7, "7d"],
   [30, "30d"],
@@ -51,13 +65,11 @@ export default function QuantifiedSelfPage({ root }: { root: string }) {
     defaults?: { date?: string; time?: string };
   } | null>(null);
   const [detail, setDetail] = useState<{ kind: Kind; day: Day } | null>(null);
+  const [sleepDate, setSleepDate] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
   const [custom, setCustom] = useState(false);
   // Detail pages load their own readings and need no dashboard summary.
-  const detailTab =
-    view.tab === "awakenings" || view.tab === "blood-pressure" || view.tab === "weight"
-      ? view.tab
-      : null;
+  const detailTab = view.tab !== "overview" && view.tab !== "imports" ? view.tab : null;
   const needsSummary = !detailTab;
   const query = new URLSearchParams({
     start: view.start,
@@ -120,7 +132,9 @@ export default function QuantifiedSelfPage({ root }: { root: string }) {
       <div className="qs-shell">
         <header className="qs-header">
           <div className="qs-title">
-            <h1>{detailTab ? labels[detailTab] : "Quantified Self"}</h1>
+            <h1>
+              {detailTab === "sleep" ? "Sleep" : detailTab ? labels[detailTab] : "Quantified Self"}
+            </h1>
             <div className="qs-crumbs">
               bordercore <span>/</span> quantified-self <span>/</span> <b>{view.tab}</b>
             </div>
@@ -136,7 +150,7 @@ export default function QuantifiedSelfPage({ root }: { root: string }) {
                   setNotice("");
                 }}
               >
-                {tab}
+                {tab === "resting-heart-rate" ? "resting heart rate" : tab}
               </button>
             ))}
           </nav>
@@ -225,7 +239,17 @@ export default function QuantifiedSelfPage({ root }: { root: string }) {
             {error} <button onClick={refresh}>Retry</button>
           </p>
         )}
-        {view.tab === "awakenings" ? (
+        {view.tab === "sleep" ? (
+          <Sleep
+            root={root}
+            start={view.start}
+            end={view.end}
+            revision={revision}
+            initialDate={sleepDate}
+            onRange={(start, end) => setView({ ...view, start, end })}
+            onImport={() => setView({ ...view, tab: "imports" })}
+          />
+        ) : view.tab === "awakenings" ? (
           <Awakenings
             root={root}
             start={view.start}
@@ -260,6 +284,19 @@ export default function QuantifiedSelfPage({ root }: { root: string }) {
             onEdit={row => setForm({ kind: "weight", row })}
             onChanged={refresh}
           />
+        ) : view.tab === "resting-heart-rate" || view.tab === "hrv" ? (
+          <Cardiac
+            key={view.tab}
+            kind={view.tab}
+            root={root}
+            start={view.start}
+            end={view.end}
+            revision={revision}
+            onRange={(start, end) => setView({ ...view, start, end })}
+            onAdd={() => setForm({ kind: view.tab as Kind })}
+            onEdit={row => setForm({ kind: view.tab as Kind, row })}
+            onChanged={refresh}
+          />
         ) : view.tab === "imports" ? (
           <Imports root={root} onSaved={saved} />
         ) : view.tab === "overview" ? (
@@ -270,7 +307,10 @@ export default function QuantifiedSelfPage({ root }: { root: string }) {
               unit={view.unit}
               onAdd={kind => setForm({ kind })}
               onDay={(kind, day) => setDetail({ kind, day })}
-              onExplore={kind => setView({ ...view, tab: kind })}
+              onExplore={(kind, date) => {
+                setSleepDate(date ?? null);
+                setView({ ...view, tab: kind });
+              }}
               onSaved={refresh}
             />
           </div>

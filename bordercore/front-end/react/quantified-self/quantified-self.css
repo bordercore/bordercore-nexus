@@ -1024,7 +1024,7 @@
   --qs-cta-end: #9355ef;
   --qs-cta-fg: #fff;
 }
-.qs-page:is(.qs-accent-pink, .qs-accent-cyan, .qs-accent-purple)::before {
+.qs-page[class*="qs-accent-"]::before {
   background:
     radial-gradient(800px 400px at 0% 0%, rgb(var(--qs-accent-rgb) / 12%), transparent 60%),
     radial-gradient(600px 400px at 100% 100%, rgb(76 194 255 / 8%), transparent 60%);
@@ -1999,5 +1999,240 @@
 @media (max-width: 760px) {
   .qs-nights {
     min-width: 760px;
+  }
+}
+
+/* Resting heart rate and HRV share the measurement ledger. */
+.qs-tone-resting-heart-rate {
+  --qs-tone: #ffb86c;
+  --qs-tone-glow: rgb(255 184 108 / 70%);
+}
+.qs-tone-hrv {
+  --qs-tone: #63dcb0;
+  --qs-tone-glow: rgb(99 220 176 / 70%);
+}
+.qs-page.qs-accent-orange {
+  --qs-accent: #ffb86c;
+  --qs-accent-rgb: 255 184 108;
+  --qs-cta-end: #e79b4b;
+  --qs-cta-fg: #07070c;
+}
+.qs-page.qs-accent-green {
+  --qs-accent: #63dcb0;
+  --qs-accent-rgb: 99 220 176;
+  --qs-cta-end: #37b78b;
+  --qs-cta-fg: #07070c;
+}
+.qs-cardiac-trend {
+  fill: none;
+  stroke: var(--qs-tone, var(--qs-accent));
+  stroke-width: 2;
+  opacity: 0.65;
+}
+.qs-cardiac-dots circle,
+.qs-cardiac-individual circle,
+.qs-cardiac-tip {
+  fill: var(--qs-tone, var(--qs-accent));
+}
+.qs-cardiac-dots [role="button"] {
+  cursor: pointer;
+}
+.qs-cardiac-dots [aria-pressed="true"] {
+  stroke: var(--fg-0);
+  stroke-width: 2;
+}
+.qs-cardiac-individual {
+  opacity: 0.3;
+}
+.qs-tabs {
+  flex-wrap: wrap;
+}
+
+.qs-ledger-resting-heart-rate .qs-ledger-row,
+.qs-ledger-hrv .qs-ledger-row {
+  grid-template-columns: 120px 80px 100px minmax(120px, 1fr) minmax(100px, 2fr) 80px;
+}
+.qs-ledger-resting-heart-rate .qs-ledger-confirm,
+.qs-ledger-hrv .qs-ledger-confirm {
+  grid-column: 5 / -1;
+}
+
+/* Sleep: reported duration, original stages, and independent switch presses. */
+.qs-page.qs-accent-blue {
+  --qs-accent: #8ca8ff;
+  --qs-accent-rgb: 140 168 255;
+  --qs-cta-end: #647ee1;
+  --qs-cta-fg: #07070c;
+}
+.qs-tone-sleep {
+  --qs-tone: #8ca8ff;
+}
+.qs-sleep-panel,
+.qs-sleep-overview {
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+.qs-sleep-overview {
+  margin-bottom: 0;
+}
+.qs-sleep-duration svg,
+.qs-sleep-stage-chart svg {
+  display: block;
+  width: 100%;
+  overflow: visible;
+}
+.qs-sleep-bar {
+  fill: #8ca8ff;
+  opacity: 0.65;
+  cursor: pointer;
+}
+.qs-sleep-bar:hover,
+.qs-sleep-bar.selected {
+  opacity: 1;
+}
+.qs-sleep-trend {
+  fill: none;
+  stroke: #d1dbff;
+  stroke-width: 2;
+  stroke-dasharray: 5 3;
+}
+.qs-sleep-overview-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.4fr;
+  gap: 24px;
+  padding: 18px 0;
+}
+.qs-sleep-overview-stats > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font: 12px var(--qs-mono);
+}
+.qs-sleep-overview-stats strong {
+  font-size: 26px;
+  color: #8ca8ff;
+}
+.qs-sleep-night-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.qs-sleep-night-controls select {
+  width: auto;
+  min-width: 150px;
+}
+.qs-page .qs-source-filter select,
+.qs-sleep-night-controls select {
+  padding-right: 32px;
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none' stroke='%238a8fa0' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><polyline points='1 1.5 6 6.5 11 1.5'/></svg>");
+  background-position: right 12px center;
+  background-repeat: no-repeat;
+  background-size: 12px 8px;
+}
+.qs-page .qs-source-filter {
+  gap: 12px;
+  padding: 6px 14px;
+}
+.qs-page .qs-source-filter select {
+  min-width: 180px;
+  padding: 4px 40px 4px 8px;
+  background-position: right 14px center;
+}
+.qs-sleep-breakdown {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+}
+.qs-sleep-breakdown dt {
+  color: var(--fg-2);
+  font: 11px var(--qs-mono);
+}
+.qs-sleep-breakdown dd {
+  margin: 8px 0 0;
+  color: var(--fg-0);
+  font: 16px var(--qs-mono);
+}
+.qs-sleep-breakdown i {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 5px;
+  border-radius: 2px;
+}
+.qs-stage-awake {
+  fill: #ffb86c;
+  background: #ffb86c;
+}
+.qs-stage-rem {
+  fill: #bf91f3;
+  background: #bf91f3;
+}
+.qs-stage-light {
+  fill: #79beeb;
+  background: #79beeb;
+}
+.qs-stage-deep {
+  fill: #6979d9;
+  background: #6979d9;
+}
+.qs-stage-asleep {
+  fill: #99b5bd;
+  background: #99b5bd;
+}
+.qs-stage-restless {
+  fill: #d99898;
+  background: #d99898;
+}
+.qs-stage-in_bed {
+  fill: #596771;
+  background: #596771;
+}
+.qs-sleep-press line {
+  stroke: #eff5ff;
+  stroke-width: 1.5;
+  stroke-dasharray: 3 3;
+  opacity: 0.85;
+}
+.qs-sleep-press circle {
+  fill: #eff5ff;
+}
+.qs-page .qs-sleep-caption {
+  font-size: 12px;
+  line-height: 1.6;
+  margin-bottom: 0;
+}
+.qs-sleep-table {
+  font: 12px var(--qs-mono);
+  white-space: nowrap;
+}
+.qs-page .qs-sleep-table td {
+  color: var(--fg-1);
+}
+.qs-sleep-table .selected {
+  background: rgb(140 168 255 / 10%);
+}
+.qs-sleep-table [aria-pressed="true"] {
+  color: #8ca8ff;
+}
+@media (max-width: 900px) {
+  .qs-sleep-breakdown {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .qs-sleep-overview-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+  .qs-sleep-breakdown {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .qs-sleep-night-controls {
+    flex-wrap: wrap;
+  }
+  .qs-sleep-panel,
+  .qs-sleep-overview {
+    padding: 16px;
   }
 }

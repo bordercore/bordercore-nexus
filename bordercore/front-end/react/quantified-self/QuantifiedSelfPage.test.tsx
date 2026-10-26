@@ -22,6 +22,12 @@ afterEach(() => {
 function dashboard(count: number): Dashboard {
   const days: Day[] = Array.from({ length: count }, (_, i) => ({
     date: daysBefore("2026-10-22", count - i - 1),
+    resting_heart_rate: null,
+    resting_heart_rate_trend: null,
+    resting_heart_rate_samples: [],
+    hrv: null,
+    hrv_trend: null,
+    hrv_samples: [],
     weight: null,
     weight_trend: null,
     weight_samples: [],
@@ -43,6 +49,14 @@ function dashboard(count: number): Dashboard {
     timezone: "America/New_York",
     histogram: [],
     summary: {
+      resting_heart_rate_days: 0,
+      resting_heart_rate_readings: 0,
+      mean_resting_heart_rate: null,
+      latest_resting_heart_rate: null,
+      hrv_days: 0,
+      hrv_readings: 0,
+      mean_hrv: null,
+      latest_hrv: null,
       completed_nights: 0,
       total_nights: count,
       mean_awakenings: null,
@@ -85,14 +99,14 @@ it("retains measured charts while a new range loads and when it arrives", async 
   const pressure = screen.getByRole("img", {
     name: "Daily mean systolic and diastolic blood pressure",
   });
-  await waitFor(() => expect(timeline).toHaveAttribute("viewBox", "0 0 920 330"));
+  await waitFor(() => expect(timeline).toHaveAttribute("viewBox", "0 0 920 630"));
   // An active tooltip at the end of the old range must not leave an out-of-range
   // crosshair when the shorter range arrives.
   fireEvent.keyDown(timeline, { key: "ArrowLeft" });
   expect(timeline.querySelector(".qs-crosshair")).toBeInTheDocument();
   await userEvent.setup().click(screen.getByRole("button", { name: "7d" }));
   expect(screen.getByRole("img", { name: /^Timeline of awakenings/ })).toBe(timeline);
-  expect(timeline).toHaveAttribute("viewBox", "0 0 920 330");
+  expect(timeline).toHaveAttribute("viewBox", "0 0 920 630");
   await act(async () => {
     resolveRange(dashboard(7));
   });
@@ -100,8 +114,24 @@ it("retains measured charts while a new range loads and when it arrives", async 
   expect(
     screen.getByRole("img", { name: "Daily mean systolic and diastolic blood pressure" })
   ).toBe(pressure);
-  expect(timeline).toHaveAttribute("viewBox", "0 0 920 330");
+  expect(timeline).toHaveAttribute("viewBox", "0 0 920 630");
   expect(timeline).toHaveTextContent("10-16");
   expect(timeline.querySelector(".qs-crosshair")).toBeNull();
   expect(disconnect).not.toHaveBeenCalled();
 });
+
+it.each(["resting-heart-rate", "hrv"])(
+  "opens the %s detail route without loading the overview",
+  async tab => {
+    window.history.replaceState(null, "", `/?tab=${tab}&start=2026-09-23&end=2026-10-22`);
+    vi.mocked(api).mockResolvedValue({ count: 0, results: [] });
+    render(<QuantifiedSelfPage root="/quantified-self/" />);
+    expect(
+      await screen.findByRole("table", {
+        name: tab === "hrv" ? "HRV (SDNN) readings" : "Resting heart rate readings",
+      })
+    ).toBeInTheDocument();
+    expect(api).toHaveBeenCalledWith(expect.stringContaining(`/${tab}/records/`));
+    expect(vi.mocked(api).mock.calls.some(([url]) => url.includes("summary/"))).toBe(false);
+  }
+);

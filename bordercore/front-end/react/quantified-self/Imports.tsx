@@ -11,7 +11,7 @@ interface Preview {
 }
 interface Batch {
   uuid: string;
-  kind: Kind | "apple-health";
+  kind: Kind | "apple-health" | "sleep";
   source: string;
   created_at: string;
   committed: boolean;
@@ -269,7 +269,13 @@ export default function Imports({ root, onSaved }: { root: string; onSaved: () =
             {history.map(b => (
               <tr key={b.uuid}>
                 <td>{new Date(b.created_at).toLocaleString()}</td>
-                <td>{b.kind === "apple-health" ? "Weight & blood pressure" : labels[b.kind]}</td>
+                <td>
+                  {b.kind === "apple-health"
+                    ? "Apple Health"
+                    : b.kind === "sleep"
+                      ? "Sleep"
+                      : labels[b.kind]}
+                </td>
                 <td>{b.source}</td>
                 <td>
                   {b.committed

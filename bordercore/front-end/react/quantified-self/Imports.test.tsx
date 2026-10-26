@@ -201,3 +201,41 @@ describe("Apple Health import", () => {
     expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
   });
 });
+
+it("previews resting heart rate and HRV with the correct units", async () => {
+  const rows = [
+    {
+      kind: "resting-heart-rate",
+      status: "new",
+      data: { ...preview.rows[0].data, external_id: "rhr", value: "58.25", unit: "bpm" },
+    },
+    {
+      kind: "hrv",
+      status: "new",
+      data: { ...preview.rows[0].data, external_id: "hrv", value: "43.123457", unit: "ms" },
+    },
+  ];
+  vi.mocked(api).mockImplementation(async (_, method) =>
+    method === "POST"
+      ? {
+          ...preview,
+          rows,
+          summary: rows.map(row => ({
+            ...preview.summary[0],
+            kind: row.kind,
+            total: 1,
+            new: 1,
+            existing: 0,
+          })),
+        }
+      : []
+  );
+  render(<Imports root="/qs/" onSaved={vi.fn()} />);
+  const user = await chooseZip();
+  expect(
+    (await screen.findAllByText("Resting heart rate", { selector: "td" })).length
+  ).toBeGreaterThan(0);
+  await user.click(screen.getByText("Latest readings (up to 50)"));
+  expect(screen.getByText("58.25 bpm")).toBeVisible();
+  expect(screen.getByText("43.123457 ms")).toBeVisible();
+});

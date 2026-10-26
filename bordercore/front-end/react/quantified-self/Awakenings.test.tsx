@@ -22,6 +22,12 @@ afterEach(() => {
 function night(date: string, status: Status = "unreviewed", hours: number[] = []): Day {
   return {
     date,
+    resting_heart_rate: null,
+    resting_heart_rate_trend: null,
+    resting_heart_rate_samples: [],
+    hrv: null,
+    hrv_trend: null,
+    hrv_samples: [],
     weight: null,
     weight_trend: null,
     weight_samples: [],
@@ -75,6 +81,14 @@ function dashboard(days: Day[]): Dashboard {
     timezone: "America/New_York",
     histogram,
     summary: {
+      resting_heart_rate_days: 0,
+      resting_heart_rate_readings: 0,
+      mean_resting_heart_rate: null,
+      latest_resting_heart_rate: null,
+      hrv_days: 0,
+      hrv_readings: 0,
+      mean_hrv: null,
+      latest_hrv: null,
       completed_nights: days.filter(d => d.status === "complete").length,
       total_nights: days.length,
       mean_awakenings: null,

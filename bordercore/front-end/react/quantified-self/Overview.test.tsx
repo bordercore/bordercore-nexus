@@ -1,10 +1,10 @@
 import React from "react";
 import { afterEach, expect, it, vi } from "vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Overview from "./Overview";
 import { api } from "./api";
-import { Dashboard, Day } from "./types";
+import { Dashboard, Day, SleepDay } from "./types";
 vi.mock("./api", () => ({
   api: vi.fn(),
   errorText: () => "Night changed since it was displayed. Refresh and review it again.",
@@ -17,6 +17,12 @@ afterEach(() => {
 function night(date: string, overrides: Partial<Day> = {}): Day {
   return {
     date,
+    resting_heart_rate: null,
+    resting_heart_rate_trend: null,
+    resting_heart_rate_samples: [],
+    hrv: null,
+    hrv_trend: null,
+    hrv_samples: [],
     weight: null,
     weight_trend: null,
     systolic: null,
@@ -48,6 +54,14 @@ const data: Dashboard = {
     count: i === 15 ? 1 : 0,
   })),
   summary: {
+    resting_heart_rate_days: 0,
+    resting_heart_rate_readings: 0,
+    mean_resting_heart_rate: null,
+    latest_resting_heart_rate: null,
+    hrv_days: 0,
+    hrv_readings: 0,
+    mean_hrv: null,
+    latest_hrv: null,
     completed_nights: 1,
     total_nights: 3,
     mean_awakenings: 2,
@@ -86,7 +100,7 @@ it("summarizes trackers and the peak waking hour", () => {
   expect(screen.getByRole("button", { name: /^awakenings\s*2\s*\/ night/ })).toBeInTheDocument();
   expect(screen.getByText("03:00")).toBeInTheDocument();
   expect(screen.getByText("● unreviewed")).toBeInTheDocument();
-  expect(screen.getAllByText("no readings in this range")).toHaveLength(3);
+  expect(screen.getAllByText("no readings in this range")).toHaveLength(6);
 });
 it("makes an isolated pressure reading visible in the timeline and pressure chart", async () => {
   renderOverview({
@@ -171,4 +185,116 @@ it("bulk-completes only the empty nights on screen", async () => {
       .reverse()
       .map(d => d.date)
   );
+});
+
+it("shows the new metrics in the overview and links their gauges to detail pages", async () => {
+  const onExplore = vi.fn();
+  const reading = {
+    uuid: "r",
+    date: "2026-01-09",
+    value: "58.2",
+    source: "Watch",
+    external_id: "",
+    excluded: false,
+    note: "",
+  };
+  render(
+    <Overview
+      root="/qs/"
+      unit="lb"
+      onExplore={onExplore}
+      onAdd={vi.fn()}
+      onDay={vi.fn()}
+      onSaved={vi.fn()}
+      data={{
+        ...data,
+        days: [
+          night("2026-01-09", {
+            resting_heart_rate: 58.2,
+            resting_heart_rate_trend: 59,
+            hrv: 42.3,
+            hrv_trend: 41,
+          }),
+        ],
+        summary: {
+          ...data.summary,
+          latest_resting_heart_rate: reading,
+          resting_heart_rate_days: 1,
+          resting_heart_rate_readings: 1,
+          latest_hrv: { ...reading, value: "42.3" },
+          hrv_days: 1,
+          hrv_readings: 1,
+        },
+      }}
+    />
+  );
+  const timeline = screen.getByRole("img", { name: /^Timeline of awakenings/ });
+  expect(timeline.querySelectorAll(".qs-tone-resting-heart-rate circle")).toHaveLength(1);
+  expect(timeline.querySelectorAll(".qs-tone-hrv circle")).toHaveLength(1);
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: /^resting heart rate\s*58.2/i }));
+  expect(onExplore).toHaveBeenLastCalledWith("resting-heart-rate");
+  await user.click(screen.getByRole("button", { name: /^hrv \(sdnn\)\s*42.3/i }));
+  expect(onExplore).toHaveBeenLastCalledWith("hrv");
+});
+
+it("aligns sleep totals by date, preserves missing days and opens the selected night's stages", async () => {
+  const sleepDay = (date: string, seconds: number): SleepDay => ({
+    date,
+    asleep_seconds: seconds,
+    trend_seconds: null,
+    duration_basis: "reported",
+    stages: { awake: 0, light: 0, deep: 0, rem: 0, asleep: seconds, restless: 0, in_bed: 0 },
+    session_count: 1,
+    bedtime: null,
+    wake_time: null,
+    recorded_awakenings: 0,
+  });
+  const onExplore = vi.fn(),
+    onDay = vi.fn();
+  render(
+    <Overview
+      root="/qs/"
+      unit="lb"
+      onExplore={onExplore}
+      onDay={onDay}
+      onAdd={vi.fn()}
+      onSaved={vi.fn()}
+      data={{
+        ...data,
+        sleep: {
+          days: [sleepDay("2026-01-10", 0), sleepDay("2026-01-08", 27000)],
+          timezone: "America/New_York",
+          source: null,
+          sources: [],
+          summary: { nights: 2, mean_seconds: 13500, latest: null },
+        },
+      }}
+    />
+  );
+  const timeline = screen.getByRole("img", { name: /^Timeline of awakenings/ });
+  const bars = timeline.querySelectorAll(".qs-timeline-sleep .qs-sleep-bar");
+  expect(bars).toHaveLength(2);
+  expect(bars[0]).toHaveAttribute("aria-label", "2026-01-08: 7.5 hours asleep; view sleep stages");
+  expect(bars[1]).toHaveAttribute("aria-label", "2026-01-10: 0.0 hours asleep; view sleep stages");
+  expect(Number(bars[0].getAttribute("x"))).toBeLessThan(Number(bars[1].getAttribute("x")));
+  const user = userEvent.setup();
+  timeline.focus();
+  await user.keyboard("{ArrowLeft}");
+  expect(timeline.querySelector(".qs-tooltip")).toHaveTextContent("Sleep —");
+  await user.keyboard("{ArrowLeft}");
+  expect(timeline.querySelector(".qs-tooltip")).toHaveTextContent("Sleep 7.5 h");
+  (bars[0] as SVGElement).focus();
+  await user.keyboard("{Enter}");
+  expect(onExplore).toHaveBeenLastCalledWith("sleep", "2026-01-08");
+  expect(onDay).not.toHaveBeenCalled();
+  vi.spyOn(timeline, "getBoundingClientRect").mockReturnValue({
+    left: 0,
+    top: 0,
+    width: 780,
+    height: 630,
+  } as DOMRect);
+  fireEvent.click(timeline.querySelector(".qs-hit")!, { clientX: 180, clientY: 550 });
+  expect(onExplore).toHaveBeenCalledTimes(2);
+  expect(onExplore).toHaveBeenLastCalledWith("sleep", "2026-01-08");
 });
