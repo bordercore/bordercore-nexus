@@ -709,6 +709,19 @@
 // -----------------------------------------------------------------------------
 .rm-form-modal {
   max-width: 540px;
+
+  // Native time/calendar popups and select menus use color-scheme, not the
+  // input's background. Follow the site's theme rather than the OS setting.
+  color-scheme: dark;
+
+  select option {
+    background: var(--bg-0);
+    color: var(--fg-1);
+  }
+}
+
+:root[color-mode="light"] .rm-form-modal {
+  color-scheme: light;
 }
 
 .rm-confirm-modal {
