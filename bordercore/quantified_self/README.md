@@ -144,6 +144,12 @@ without extracting the archive. Limits: 512 MB ZIP, 4 GB XML, 10,000 archive ent
 acquiring the account write lock. Only selected measurements are saved in the
 preview batch; the original ZIP and unrelated health data are not retained.
 
+Production Gunicorn workers allow 300 seconds per request in `bin/gunicorn_start`.
+Large exports can exceed Gunicorn's default 30-second timeout while parsing;
+progress polling does not keep the busy synchronous worker alive. Activating a
+change to this startup option requires a full Gunicorn restart, not the deployment
+hook's HUP reload. The longer timeout applies to all requests on these workers.
+
 The import panel reports browser upload bytes, XML scan bytes and discovered
 per-tracker counts, duplicate checking, validation, and batched writes. The
 browser polls `imports/progress/<uuid>/` while the original preview/commit request

@@ -19,7 +19,8 @@ after=$(git rev-parse HEAD)
 # workers that import the new code, then drains the old ones: zero dropped
 # requests. The oldest matching pid is the master; workers recycle to higher
 # pids via --max-requests. Note: a HUP does not re-run bin/gunicorn_start, so it
-# picks up code changes only -- run a full restart for dependency changes.
+# picks up code changes only -- run a full restart for dependency or startup
+# option changes (including the worker timeout).
 gunicorn_master=$(pgrep -f 'gunicorn config.wsgi:application' | sort -n | head -1)
 [ -n "$gunicorn_master" ] && kill -HUP "$gunicorn_master"
 

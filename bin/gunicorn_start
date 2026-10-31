@@ -27,9 +27,12 @@ source /var/www/.env
 
 # Start your Django Unicorn
 # Programs meant to be run under supervisor should not daemonize themselves (do not use --daemon)
+# Apple Health previews synchronously scan multi-GB XML; the default 30-second
+# worker timeout can kill valid imports even while progress polling succeeds.
 exec gunicorn ${DJANGO_WSGI_MODULE}:application \
   --name $NAME \
   --workers $NUM_WORKERS \
+  --timeout=300 \
   --pythonpath $PYTHONPATH/bordercore \
   --user=$USER \
   --group=$GROUP \
