@@ -20,9 +20,12 @@ interface Preview {
   committed: boolean;
   result: { imported?: number; skipped?: number };
   summary: Summary[];
+  groups: (Summary & { source: string })[];
   warnings: { repeated_entries: number; incomplete_pressure: number; ambiguous_pressure: number };
   rows: { kind: HealthKind; data: Record<string, string>; status: string }[];
 }
+
+const groupKey = (kind: string, source: string) => JSON.stringify([kind, source]);
 
 export default function AppleHealthImport({
   root,
@@ -37,11 +40,16 @@ export default function AppleHealthImport({
 }) {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<Preview | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const input = useRef<HTMLInputElement>(null);
   const progress = useImportProgress(root);
+  const chosen =
+    preview?.groups.filter(group => selected.has(groupKey(group.kind, group.source))) ?? [];
+  const newCount = chosen.reduce((total, group) => total + group.new, 0);
+  const existingCount = chosen.reduce((total, group) => total + group.existing, 0);
 
   function working(value: boolean) {
     setBusy(value);
@@ -53,6 +61,7 @@ export default function AppleHealthImport({
     setError("");
     setMessage("");
     setPreview(null);
+    setSelected(new Set());
     if (file.size > 512 * 1024 * 1024) {
       setError("Apple Health ZIP files must be no larger than 512 MB.");
       return;
@@ -77,7 +86,7 @@ export default function AppleHealthImport({
     }
   }
   async function commit() {
-    if (!preview) return;
+    if (!preview || !newCount) return;
     working(true);
     setError("");
     const progressId = progress.begin("checking");
@@ -85,7 +94,7 @@ export default function AppleHealthImport({
       const result = await api<{ imported: number; skipped: number }>(
         `${root}imports/${preview.uuid}/commit/`,
         "POST",
-        { progress_id: progressId }
+        { progress_id: progressId, selection: chosen.map(({ kind, source }) => ({ kind, source })) }
       );
       setMessage(
         `Imported ${result.imported} readings; skipped ${result.skipped} already imported readings.`
@@ -106,8 +115,9 @@ export default function AppleHealthImport({
     <div aria-busy={busy}>
       <p>
         Upload the ZIP from Apple Health’s “Export All Health Data”. Preview and import weight,
-        blood pressure, resting heart rate, and HRV (SDNN), and sleep intervals together. Sources
-        and measurement times are preserved; other health data is ignored.
+        blood pressure, resting heart rate, HRV (SDNN), and sleep intervals. Choose which trackers
+        and sources to save after previewing. Sources and measurement times are preserved; other
+        health data is ignored.
       </p>
       <form onSubmit={upload}>
         <fieldset disabled={busy}>
@@ -163,11 +173,42 @@ export default function AppleHealthImport({
               import.
             </p>
           )}
+          {!preview.committed && (
+            <>
+              <p>
+                Choose the sources to import for each tracker. Nothing is selected automatically.
+              </p>
+              <div className="qs-actions">
+                <button
+                  disabled={busy}
+                  onClick={() =>
+                    setSelected(
+                      new Set(
+                        preview.groups
+                          .filter(group => group.new > 0)
+                          .map(group => groupKey(group.kind, group.source))
+                      )
+                    )
+                  }
+                >
+                  Select all new readings
+                </button>
+                <button
+                  disabled={busy || selected.size === 0}
+                  onClick={() => setSelected(new Set())}
+                >
+                  Clear selection
+                </button>
+              </div>
+            </>
+          )}
           <div className="qs-table-wrap">
             <table>
               <thead>
                 <tr>
+                  {!preview.committed && <th>Import</th>}
                   <th>Tracker</th>
+                  <th>Source</th>
                   <th>Found</th>
                   <th>New</th>
                   <th>Already imported</th>
@@ -175,9 +216,27 @@ export default function AppleHealthImport({
                 </tr>
               </thead>
               <tbody>
-                {preview.summary.map(item => (
-                  <tr key={item.kind}>
+                {preview.groups.map(item => (
+                  <tr key={groupKey(item.kind, item.source)}>
+                    {!preview.committed && (
+                      <td>
+                        <input
+                          type="checkbox"
+                          aria-label={`Import ${importLabels[item.kind]} from ${item.source}`}
+                          checked={selected.has(groupKey(item.kind, item.source))}
+                          disabled={busy || item.new === 0}
+                          onChange={event => {
+                            const next = new Set(selected);
+                            const key = groupKey(item.kind, item.source);
+                            if (event.target.checked) next.add(key);
+                            else next.delete(key);
+                            setSelected(next);
+                          }}
+                        />
+                      </td>
+                    )}
                     <td>{importLabels[item.kind]}</td>
+                    <td>{item.source}</td>
                     <td>{item.total}</td>
                     <td>{item.new}</td>
                     <td>{item.existing}</td>
@@ -189,13 +248,6 @@ export default function AppleHealthImport({
               </tbody>
             </table>
           </div>
-          {preview.summary
-            .filter(item => item.total > 0)
-            .map(item => (
-              <p key={item.kind} className="qs-muted">
-                {importLabels[item.kind]} sources: {item.sources.join(", ")}
-              </p>
-            ))}
           <p>
             {preview.warnings.repeated_entries} repeated XML entries removed within this export.
           </p>
@@ -208,11 +260,13 @@ export default function AppleHealthImport({
             </p>
           )}
           <p>
-            Existing readings are skipped automatically. Blood-pressure pulse is not imported in
-            this version.
+            Existing readings are skipped automatically, including exact Google Health sleep copies
+            already present from the direct Google Health import. Other sources remain separate.
+            Blood-pressure pulse is not imported in this version.
           </p>
           <details>
             <summary>Latest readings (up to 50)</summary>
+            <p className="qs-muted">Sample from the whole export, including unselected sources.</p>
             <div className="qs-table-wrap qs-preview-table">
               <table>
                 <thead>
@@ -239,7 +293,13 @@ export default function AppleHealthImport({
                             : `${row.data.systolic}/${row.data.diastolic} mmHg`}
                       </td>
                       <td>{row.data.source}</td>
-                      <td>{row.status === "new" ? "New" : "Already imported"}</td>
+                      <td>
+                        {row.status === "new"
+                          ? "New"
+                          : row.status === "existing_google_health"
+                            ? "Already in Google Health"
+                            : "Already imported"}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -247,15 +307,18 @@ export default function AppleHealthImport({
             </div>
           </details>
           {!preview.committed && (
-            <button
-              className="qs-primary"
-              disabled={busy || !preview.summary.some(item => item.new > 0)}
-              onClick={commit}
-            >
-              {busy ? "Importing…" : "Confirm Apple Health import"}
-            </button>
+            <>
+              <p role="status">
+                Selection: {newCount.toLocaleString()} new readings;{" "}
+                {existingCount.toLocaleString()} already imported readings will be skipped.{" "}
+                Unselected sources will not be imported.
+              </p>
+              <button className="qs-primary" disabled={busy || !newCount} onClick={commit}>
+                {busy ? "Importing…" : "Confirm Apple Health import"}
+              </button>
+            </>
           )}
-          {!preview.committed && !preview.summary.some(item => item.new > 0) && (
+          {!preview.committed && !preview.groups.some(item => item.new > 0) && (
             <p>No new readings to import.</p>
           )}
         </div>

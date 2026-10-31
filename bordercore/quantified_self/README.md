@@ -110,8 +110,15 @@ format marker to third-party files unless using the same encoding.
 Select **Apple Health ZIP** in Imports and upload the iPhone's Export All Health
 Data archive. Preview shows totals for weight, blood pressure, resting heart rate,
 HRV (SDNN), and sleep intervals, with new/existing counts,
-sources, date ranges, pairing warnings, and up to 50 recent readings. Confirm saves
-all supported trackers atomically. Pulse, workouts, and clinical data are not imported.
+sources, date ranges, pairing warnings, and up to 50 recent readings. The preview
+shows counts for each tracker/source pair, with opt-in checkboxes and a selected
+new/existing total. For example, choose only Google Health for sleep while choosing
+other sources for weight. Confirm saves only the selected pairs atomically.
+Partial selections receive their own repeat-safe import batch; omitted sources
+remain available on a later upload. The commit API accepts `selection` as a list
+of `{ "kind": "sleep", "source": "Apple Health · Google Health" }` objects.
+Empty, null, or unknown selections are rejected. Omitting `selection` retains the
+legacy all-source API behavior. Pulse, workouts, and clinical data are not imported.
 Migration `0002` adds resting-heart-rate (bpm) and HRV SDNN (ms) tables.
 Apply it before serving the updated dashboard. Re-uploading an older export adds
 the newly supported metrics while skipping previously imported weight and pressure.
@@ -128,6 +135,12 @@ source, UTC start/end, and stage, so reimporting is safe. Overlapping intervals
 within a source are unioned; awake takes precedence, detailed stages override
 unspecified asleep, and conflicting detailed stages become unspecified asleep.
 In-bed coverage is reported independently and never added to time asleep.
+
+Apple Health copies from `Google Health` are also checked against the same user's
+direct `Google Health` import. Identical start/end/stage intervals are skipped;
+in-bed intervals are skipped when their bounds exactly match a Google sleep
+session. This check includes excluded records, runs again at commit, and does not
+merge sources or treat mere overlap as a duplicate. Other sources remain independent.
 
 The one-time Google Health data load retains session totals and stage provenance.
 Overlapping Google session estimates prefer `sleep_session_v2` over v1; other

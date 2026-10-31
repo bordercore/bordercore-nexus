@@ -16,7 +16,7 @@ from django.contrib.auth.models import User
 from django.db import transaction
 from django.utils import timezone
 
-from .models import ImportBatch, SleepInterval
+from .models import ImportBatch, SleepInterval, SleepSession
 from .sleep import morning_date, normalize_interval
 from .import_progress import Progress
 from .services import CARDIAC_UNITS, KINDS, LB_KG, ZONE, fail, lock_user, normalize, source_for
@@ -249,8 +249,27 @@ def classified_rows(user: User, rows: list[dict[str, Any]]) -> list[dict[str, An
         sources = {row["data"]["source"] for row in rows if row["kind"] == kind}
         existing[kind] = set(IMPORT_MODELS[kind].objects.filter(user=user, source__name__in=sources)
                              .values_list("source__name", "external_id"))
-    return [{**row, "status": "existing_id" if (row["data"]["source"], row["data"]["external_id"]) in existing[row["kind"]] else "new"}
-            for row in rows]
+    # Google Health can write copies of its own records to Apple Health. Only
+    # this known source pair is equivalent; other devices remain independent.
+    google_copies = [row for row in rows if row["kind"] == "sleep"
+                     and row["data"]["source"] == source_name("Google Health")]
+    google_intervals: set[tuple[datetime, datetime, str]] = set()
+    if google_copies:
+        filters = {"user": user, "source__name": "Google Health",
+                   "started_at__gte": min(datetime.fromisoformat(row["data"]["start"]) for row in google_copies),
+                   "started_at__lte": max(datetime.fromisoformat(row["data"]["start"]) for row in google_copies)}
+        google_intervals.update(SleepInterval.objects.filter(**filters).values_list("started_at", "ended_at", "stage"))
+        google_intervals.update((start, end, "in_bed") for start, end in
+                                SleepSession.objects.filter(**filters).values_list("started_at", "ended_at"))
+    classified = []
+    for row in rows:
+        data = row["data"]
+        status = "existing_id" if (data["source"], data["external_id"]) in existing[row["kind"]] else "new"
+        if (status == "new" and row["kind"] == "sleep" and data["source"] == source_name("Google Health")
+                and (datetime.fromisoformat(data["start"]), datetime.fromisoformat(data["end"]), data["stage"]) in google_intervals):
+            status = "existing_google_health"
+        classified.append({**row, "status": status})
+    return classified
 
 
 def summary(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -259,10 +278,18 @@ def summary(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         readings = [row for row in rows if row["kind"] == kind]
         dates = [row["data"]["date"] for row in readings]
         result.append({"kind": kind, "total": len(readings), "new": sum(row["status"] == "new" for row in readings),
-                       "existing": sum(row["status"] == "existing_id" for row in readings),
+                       "existing": sum(row["status"] != "new" for row in readings),
                        "first_date": min(dates) if dates else None, "last_date": max(dates) if dates else None,
                        "sources": sorted({row["data"]["source"] for row in readings})})
     return result
+
+
+def source_summary(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    groups: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+    for row in rows:
+        groups[row["kind"], row["data"]["source"]].append(row)
+    return [{**next(item for item in summary(readings) if item["kind"] == kind), "source": source}
+            for (kind, source), readings in sorted(groups.items(), key=lambda item: (HEALTH_KINDS.index(item[0][0]), item[0][1]))]
 
 
 def preview(user: User, upload: BinaryIO, progress: Progress | None = None) -> dict[str, Any]:
@@ -277,19 +304,43 @@ def preview(user: User, upload: BinaryIO, progress: Progress | None = None) -> d
             kind="apple-health", digest=fingerprint(rows), defaults={"rows": rows, "result": {"warnings": warnings}})
         classified = classified_rows(user, rows)
         return {"uuid": str(batch.uuid), "committed": batch.committed_at is not None, "result": batch.result,
-                "summary": summary(classified), "warnings": warnings, "rows": sorted(classified, key=lambda r: (r["data"]["date"], r["data"]["time"]), reverse=True)[:50]}
+                "summary": summary(classified), "groups": source_summary(classified), "warnings": warnings,
+                "rows": sorted(classified, key=lambda r: (r["data"]["date"], r["data"]["time"]), reverse=True)[:50]}
+
+
+def selected_rows(rows: list[dict[str, Any]], selection: Any) -> list[dict[str, Any]]:
+    """Validate explicit tracker/source pairs; never fall back to importing all."""
+    if not isinstance(selection, list) or not selection:
+        fail("Choose at least one tracker and source to import.")
+    available = {(row["kind"], row["data"]["source"]) for row in rows}
+    selected = set()
+    for item in selection:
+        if (not isinstance(item, dict) or set(item) != {"kind", "source"}
+                or not isinstance(item["kind"], str) or not isinstance(item["source"], str)
+                or (item["kind"], item["source"]) not in available):
+            fail("Choose tracker and source combinations from this preview.")
+        selected.add((item["kind"], item["source"]))
+    return [row for row in rows if (row["kind"], row["data"]["source"]) in selected]
 
 
 @transaction.atomic
-def commit(user: User, batch: ImportBatch, progress: Progress | None = None) -> dict[str, Any]:
+def commit(user: User, batch: ImportBatch, progress: Progress | None = None, selection: Any = None) -> dict[str, Any]:
     if progress:
         progress("checking")
     lock_user(user)
     batch.refresh_from_db()
+    if selection is not None:
+        chosen = selected_rows(batch.rows, selection)
+        if len(chosen) != len(batch.rows):
+            # A subset gets its own repeat-safe receipt. The original preview
+            # stays available so omitted sources can be imported later.
+            batch, _ = ImportBatch.objects.get_or_create(user=user, source=batch.source,
+                kind="apple-health", digest=fingerprint(chosen),
+                defaults={"rows": chosen, "result": {"warnings": batch.result.get("warnings", {})}})
     if batch.committed_at:
         return batch.result
     rows = classified_rows(user, batch.rows)
-    sources = {name: source_for(user, name) for name in {row["data"]["source"] for row in rows}}
+    sources = {name: source_for(user, name) for name in {row["data"]["source"] for row in rows if row["status"] == "new"}}
     pending: dict[str, list[Any]] = defaultdict(list)
     for index, row in enumerate(rows, start=1):
         if row["status"] == "new":

@@ -163,8 +163,10 @@ def import_preview(request: Request, kind: str) -> Response:
 def import_commit(request: Request, uuid: UUID) -> Response:
     batch = get_object_or_404(ImportBatch, uuid=uuid, user=request.user)
     if batch.kind == "apple-health":
+        if "selection" in request.data and request.data["selection"] is None:
+            fail("Choose at least one tracker and source to import.")
         with import_progress.tracking(request.user, request.data.get("progress_id")) as progress:
-            return Response(apple_health.commit(request.user, batch, progress))
+            return Response(apple_health.commit(request.user, batch, progress, request.data.get("selection")))
     return Response(imports.commit(request.user, batch, request.data.get("include_duplicates", [])))
 
 

@@ -15,7 +15,7 @@ afterEach(() => {
   vi.resetAllMocks();
 });
 
-const preview = {
+const basePreview = {
   uuid: "batch-one",
   committed: false,
   result: {},
@@ -57,6 +57,11 @@ const preview = {
   ],
 };
 
+const preview = {
+  ...basePreview,
+  groups: basePreview.summary.map(item => ({ ...item, source: item.sources[0] })),
+};
+
 async function chooseZip() {
   const user = userEvent.setup();
   await user.selectOptions(screen.getByLabelText("Import format"), "apple-health");
@@ -93,12 +98,15 @@ describe("Apple Health import", () => {
       expect.objectContaining({ onUploadProgress: expect.any(Function) })
     );
     expect(onSaved).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Confirm Apple Health import" })).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "Select all new readings" }));
     await user.click(screen.getByRole("button", { name: "Confirm Apple Health import" }));
     expect(
       await screen.findByText("Imported 2 readings; skipped 2 already imported readings.")
     ).toBeVisible();
     expect(api).toHaveBeenCalledWith("/quantified-self/imports/batch-one/commit/", "POST", {
       progress_id: expect.any(String),
+      selection: preview.groups.map(({ kind, source }) => ({ kind, source })),
     });
     expect(onSaved).toHaveBeenCalledOnce();
   });
@@ -113,6 +121,77 @@ describe("Apple Health import", () => {
     expect(
       screen.queryByRole("button", { name: "Confirm Apple Health import" })
     ).not.toBeInTheDocument();
+  });
+
+  it("imports only the chosen tracker/source pairs and can clear the selection", async () => {
+    const groups = [
+      ...preview.groups,
+      {
+        ...preview.groups[0],
+        kind: "sleep",
+        source: "Apple Health · Google Health",
+        new: 4,
+        existing: 295,
+      },
+      { ...preview.groups[0], kind: "sleep", source: "Apple Health · Oura", new: 100 },
+    ];
+    vi.mocked(api).mockImplementation(async (url, method) => {
+      if (method === "POST")
+        return url.endsWith("/commit/") ? { imported: 5, skipped: 297 } : { ...preview, groups };
+      return [];
+    });
+    render(<Imports root="/quantified-self/" onSaved={vi.fn()} />);
+    const user = await chooseZip();
+    const google = await screen.findByLabelText(
+      "Import Sleep intervals from Apple Health · Google Health"
+    );
+    const weight = screen.getByLabelText("Import Weight from Apple Health · Scale");
+    const confirm = screen.getByRole("button", { name: "Confirm Apple Health import" });
+    expect(google).not.toBeChecked();
+    expect(confirm).toBeDisabled();
+    await user.click(google);
+    expect(screen.getByText(/Selection: 4 new readings; 295 already imported/)).toBeVisible();
+    expect(
+      screen.getByLabelText("Import Sleep intervals from Apple Health · Oura")
+    ).not.toBeChecked();
+    await user.click(screen.getByRole("button", { name: "Clear selection" }));
+    expect(confirm).toBeDisabled();
+    await user.click(google);
+    await user.click(weight);
+    await user.click(confirm);
+    await waitFor(() =>
+      expect(api).toHaveBeenCalledWith("/quantified-self/imports/batch-one/commit/", "POST", {
+        progress_id: expect.any(String),
+        selection: [
+          { kind: "weight", source: "Apple Health · Scale" },
+          { kind: "sleep", source: "Apple Health · Google Health" },
+        ],
+      })
+    );
+  });
+
+  it("does not select Google Health sleep copies that are already imported", async () => {
+    const groups = [
+      {
+        ...preview.groups[0],
+        kind: "sleep",
+        source: "Apple Health · Google Health",
+        total: 295,
+        new: 0,
+        existing: 295,
+      },
+    ];
+    vi.mocked(api).mockImplementation(async (_, method) =>
+      method === "POST" ? { ...preview, groups } : []
+    );
+    render(<Imports root="/quantified-self/" onSaved={vi.fn()} />);
+    const user = await chooseZip();
+    expect(
+      await screen.findByLabelText("Import Sleep intervals from Apple Health · Google Health")
+    ).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "Select all new readings" }));
+    expect(screen.getByRole("button", { name: "Confirm Apple Health import" })).toBeDisabled();
+    expect(screen.getByText("No new readings to import.")).toBeVisible();
   });
 
   it("keeps a failed upload available for retry", async () => {
@@ -220,6 +299,13 @@ it("previews resting heart rate and HRV with the correct units", async () => {
       ? {
           ...preview,
           rows,
+          groups: rows.map(row => ({
+            ...preview.groups[0],
+            kind: row.kind,
+            total: 1,
+            new: 1,
+            existing: 0,
+          })),
           summary: rows.map(row => ({
             ...preview.summary[0],
             kind: row.kind,
